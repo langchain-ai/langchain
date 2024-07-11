@@ -85,22 +85,7 @@ def _create_retry_decorator(
 
 
 class ChatOCIModelDeploymentEndpoint(BaseChatModel):
-    """OCI large language chat models.
-
-    To authenticate, the OCI client uses the methods described in
-    https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
-
-    The authentifcation method is passed through auth_type and should be one of:
-    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL
-
-    Make sure you have the required policies (profile/roles) to
-    access the OCI Generative AI service.
-    If a specific config profile is used, you must pass
-    the name of the profile (from ~/.oci/config) through auth_profile.
-
-    To use, you must provide the compartment id
-    along with the endpoint url, and model id
-    as named parameters to the constructor.
+    """Base class for chat model deployed on OCI Data Science Model Deployment.
 
     Example:
         .. code-block:: python
@@ -171,21 +156,12 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         """Return whether this model can be serialized by Langchain."""
         return True
 
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return [
-            "langchain",
-            "chat_models",
-            "oci_data_science_model_deployment_endpoint",
-        ]
-
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        _model_kwargs = self.model_kwargs or {}
         return {
-            **{"model_kwargs": _model_kwargs},
+            **{"endpoint": self.endpoint},
+            **self._default_params,
         }
 
     @property
@@ -211,8 +187,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         Args:
             messages:  The messages in the conversation with the chat model.
             stop: Optional list of stop words to use when generating.
-            run_manager:
-            stream: Optional
 
         Returns:
             LangChain ChatResult
@@ -299,7 +273,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         )
         default_chunk_class = AIMessageChunk
         for line in self._parse_stream(response.iter_lines()):
-            # print(default_chunk_class) # check if changing
             chunk = self._handle_sse_line(line, default_chunk_class)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
