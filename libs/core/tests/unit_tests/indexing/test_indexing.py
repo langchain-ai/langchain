@@ -1280,14 +1280,14 @@ def test_indexing_custom_batch_size(
 
     try:
         mock_add_documents = MagicMock()
-        vector_store.add_documents = mock_add_documents
+        vector_store.add_documents = mock_add_documents  # type: ignore
 
         index(docs, record_manager, vector_store, batch_size=batch_size)
         args, kwargs = mock_add_documents.call_args
         assert args == (docs,)
         assert kwargs == {"ids": ids, "batch_size": batch_size}
     finally:
-        vector_store.add_documents = original
+        vector_store.add_documents = original  # type: ignore
 
 
 async def test_aindexing_custom_batch_size(
@@ -1304,7 +1304,7 @@ async def test_aindexing_custom_batch_size(
 
     batch_size = 1
     mock_add_documents = AsyncMock()
-    vector_store.aadd_documents = mock_add_documents
+    vector_store.aadd_documents = mock_add_documents  # type: ignore
     await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
     args, kwargs = mock_add_documents.call_args
     assert args == (docs,)
