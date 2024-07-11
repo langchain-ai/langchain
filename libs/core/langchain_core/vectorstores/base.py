@@ -61,13 +61,14 @@ if TYPE_CHECKING:
     )
     from langchain_core.documents import Document
     from langchain_core.indexing.base import UpsertResponse
+    from langchain_core.indexing.index import BaseIndex
 
 logger = logging.getLogger(__name__)
 
 VST = TypeVar("VST", bound="VectorStore")
 
 
-class VectorStore(ABC):
+class VectorStore(BaseIndex[Document]):
     """Interface for vector store."""
 
     def add_texts(
@@ -129,32 +130,6 @@ class VectorStore(ABC):
         raise NotImplementedError(
             f"`add_texts` has not been implemented for {self.__class__.__name__} "
         )
-
-    # Developer guidelines:
-    # Do not override streaming_upsert!
-    @beta(message="Added in 0.2.11. The API is subject to change.")
-    def streaming_upsert(
-        self, items: Iterable[Document], /, batch_size: int, **kwargs: Any
-    ) -> Iterator[UpsertResponse]:
-        """Upsert documents in a streaming fashion.
-
-        Args:
-            items: Iterable of Documents to add to the vectorstore.
-            batch_size: The size of each batch to upsert.
-            **kwargs: Additional keyword arguments.
-                kwargs should only include parameters that are common to all
-                documents. (e.g., timeout for indexing, retry policy, etc.)
-                kwargs should not include ids to avoid ambiguous semantics.
-                Instead the ID should be provided as part of the Document object.
-
-        .. versionadded:: 0.2.11
-        """
-        # The default implementation of this method breaks the input into
-        # batches of size `batch_size` and calls the `upsert` method on each batch.
-        # Subclasses can override this method to provide a more efficient
-        # implementation.
-        for item_batch in batch_iterate(batch_size, items):
-            yield self.upsert(item_batch, **kwargs)
 
     # Please note that we've added a new method `upsert` instead of re-using the
     # existing `add_documents` method.
@@ -224,30 +199,6 @@ class VectorStore(ABC):
         raise NotImplementedError(
             f"upsert has not been implemented for {self.__class__.__name__}"
         )
-
-    @beta(message="Added in 0.2.11. The API is subject to change.")
-    async def astreaming_upsert(
-        self,
-        items: AsyncIterable[Document],
-        /,
-        batch_size: int,
-        **kwargs: Any,
-    ) -> AsyncIterator[UpsertResponse]:
-        """Upsert documents in a streaming fashion. Async version of streaming_upsert.
-
-        Args:
-            items: Iterable of Documents to add to the vectorstore.
-            batch_size: The size of each batch to upsert.
-            **kwargs: Additional keyword arguments.
-                kwargs should only include parameters that are common to all
-                documents. (e.g., timeout for indexing, retry policy, etc.)
-                kwargs should not include ids to avoid ambiguous semantics.
-                Instead the ID should be provided as part of the Document object.
-
-        .. versionadded:: 0.2.11
-        """
-        async for batch in abatch_iterate(batch_size, items):
-            yield await self.aupsert(batch, **kwargs)
 
     @beta(message="Added in 0.2.11. The API is subject to change.")
     async def aupsert(

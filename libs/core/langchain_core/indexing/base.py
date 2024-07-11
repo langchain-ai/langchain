@@ -447,3 +447,11 @@ class UpsertResponse(TypedDict):
     """The IDs that were successfully indexed."""
     failed: List[str]
     """The IDs that failed to index."""
+
+class DeleteResponse(TypedDict):
+    """A response to a delete request."""
+
+    num_deleted: NotRequired[int]
+    num_failed: NotRequired[int]
+    succeeded: NotRequired[Sequence[str]]
+    failed: NotRequired[Sequence[str]]
