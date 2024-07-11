@@ -125,8 +125,8 @@ class PebbloRetrievalQA(Chain):
                     "doc": doc.page_content,
                     "vector_db": self.retriever.vectorstore.__class__.__name__,
                     **(
-                        {"content_checksum": doc.metadata.get("content_checksum")}
-                        if doc.metadata.get("content_checksum")
+                        {"pb_checksum": doc.metadata.get("pb_checksum")}
+                        if doc.metadata.get("pb_checksum")
                         else {}
                     ),
                 }
