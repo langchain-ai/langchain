@@ -204,7 +204,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
 @deprecated(
     since="0.2.8",
-    removal="0.4.0",  # TODO (jennings): determine when to set removal
+    removal="0.4.0",
     alternative_import="langchain_unstructured.UnstructuredSDKFileLoader",
 )
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
@@ -364,7 +364,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
 @deprecated(
     since="0.2.8",
-    removal="0.4.0",  # TODO (jennings): determine when to set removal
+    removal="0.4.0",
     alternative_import="langchain_unstructured.UnstructuredSDKFileIOLoader",
 )
 class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
