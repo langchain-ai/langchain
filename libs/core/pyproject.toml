@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.2.12"
+version = "0.2.13"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -37,6 +37,11 @@ python = ">=3.12.4"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/unit_tests/prompts/test_chat.py" = ["E501"]
+"tests/unit_tests/runnables/test_runnable.py" = ["E501"]
+"tests/unit_tests/runnables/test_graph.py" = ["E501"]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
