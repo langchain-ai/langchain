@@ -148,7 +148,7 @@ class OllamaFunctions(ChatOllama):
         ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        if isinstance(tools, Runnable):
+        if any(isinstance(tool, Runnable) for tool in tools):
             raise NotImplementedError(
                 "OllamaFunctions does not support binding Runnables as tools. "
                 "Use Runnable.as_tool() to convert the runnable to a tool."
