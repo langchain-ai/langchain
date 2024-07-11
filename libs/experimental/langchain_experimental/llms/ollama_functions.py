@@ -143,9 +143,16 @@ class OllamaFunctions(ChatOllama):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[
+            Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable]
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
+        if isinstance(tools, Runnable):
+            raise NotImplementedError(
+                "OllamaFunctions does not support binding Runnables as tools. "
+                "Use Runnable.as_tool() to convert the runnable to a tool."
+            )
         return self.bind(functions=tools, **kwargs)
 
     def with_structured_output(
