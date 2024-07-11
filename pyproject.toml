@@ -6,7 +6,6 @@ authors = []
 license = "MIT"
 readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
-package-mode = false
 
 
 [tool.poetry.dependencies]
@@ -55,8 +54,8 @@ ipykernel = "^6.29.2"
 # Support Python 3.8 and 3.12+.
 # Can be removed once the numpy version is fixed in langchain-community.
 numpy = [
-    {version = "^1.24.0", python = "<3.12"},
-    {version = "^1.26.0", python = ">=3.12"}
+    { version = "^1.24.0", python = "<3.12" },
+    { version = "^1.26.0", python = ">=3.12" },
 ]
 
 [tool.poetry.group.test.dependencies]
@@ -77,19 +76,18 @@ ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 [tool.ruff]
 extend-include = ["*.ipynb"]
 extend-exclude = [
-    "docs/docs/expression_language/why.ipynb"  # TODO: look into why linter errors
+    "docs/docs/expression_language/why.ipynb", # TODO: look into why linter errors
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
-    "E402",  # allow imports to appear anywhere in docs
-    "F401",  # allow "imported but unused" example code
-    "F811",  # allow re-importing the same module, so that cells can stay independent
-    "F841",  # allow assignments to variables that are never read -- it's example code
+    "E402", # allow imports to appear anywhere in docs
+    "F401", # allow "imported but unused" example code
+    "F811", # allow re-importing the same module, so that cells can stay independent
+    "F841", # allow assignments to variables that are never read -- it's example code
 ]
 
 # These files were failing the listed rules at the time ruff was adopted for notebooks.
 # Don't require them to change at once, though we should look into them eventually.
 "cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
 "docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]
-
