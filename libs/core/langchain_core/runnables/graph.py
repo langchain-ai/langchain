@@ -170,7 +170,7 @@ def node_data_json(
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
     if isinstance(node.data, RunnableSerializable):
-        return {
+        json: Dict[str, Any] = {
             "type": "runnable",
             "data": {
                 "id": node.data.lc_id(),
@@ -178,7 +178,7 @@ def node_data_json(
             },
         }
     elif isinstance(node.data, Runnable):
-        return {
+        json = {
             "type": "runnable",
             "data": {
                 "id": to_json_not_implemented(node.data)["id"],
@@ -186,7 +186,7 @@ def node_data_json(
             },
         }
     elif inspect.isclass(node.data) and issubclass(node.data, BaseModel):
-        return (
+        json = (
             {
                 "type": "schema",
                 "data": node.data.schema(),
@@ -198,10 +198,13 @@ def node_data_json(
             }
         )
     else:
-        return {
+        json = {
             "type": "unknown",
             "data": node_data_str(node.id, node.data),
         }
+    if node.metadata is not None:
+        json["metadata"] = node.metadata
+    return json
 
 
 @dataclass

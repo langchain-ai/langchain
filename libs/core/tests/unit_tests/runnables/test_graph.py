@@ -57,6 +57,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
+                "metadata": {"key": 2},
             },
             {
                 "id": 3,
@@ -111,6 +112,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
+                "metadata": {"key": 2},
             },
             {
                 "id": 3,
