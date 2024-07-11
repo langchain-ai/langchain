@@ -6,6 +6,7 @@ authors = []
 license = "MIT"
 readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
+package-mode = false
 
 
 [tool.poetry.dependencies]
