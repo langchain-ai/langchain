@@ -614,7 +614,9 @@ class QianfanChatEndpoint(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[
+            Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable]
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -623,9 +625,9 @@ class QianfanChatEndpoint(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
+                Can be  a dictionary, pydantic model, callable, BaseTool, or Runnable.
+                Pydantic models, callables, BaseTools, and Runnables will be
+                automatically converted to their schema dictionary representation.
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """

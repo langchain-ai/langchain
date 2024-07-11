@@ -334,7 +334,9 @@ class ChatLlamaCpp(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[
+            Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable]
+        ],
         *,
         tool_choice: Optional[Union[Dict[str, Dict], bool, str]] = None,
         **kwargs: Any,
