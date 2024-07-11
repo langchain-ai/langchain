@@ -962,7 +962,7 @@ def test_tool_arg_descriptions() -> None:
     # Test parses docstring
     foo2 = tool(foo, parse_docstring=True)
     args_schema = foo2.args_schema.schema()  # type: ignore
-    assert args_schema == {
+    expected = {
         "title": "fooSchema",
         "description": "The foo.",
         "type": "object",
@@ -972,7 +972,27 @@ def test_tool_arg_descriptions() -> None:
         },
         "required": ["bar", "baz"],
     }
+    assert args_schema == expected
 
+    # Test parsing with run_manager does not raise error
+    def foo3(
+        bar: str, baz: int, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    as_tool = tool(foo3, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+    assert args_schema["properties"] == expected["properties"]
+
+
+def test_tool_invalid_docstrings() -> None:
     # Test invalid docstrings
     def foo3(bar: str, baz: int) -> str:
         """The foo."""
