@@ -117,20 +117,19 @@ def node_data_str(node: Node, *, html: bool = False) -> str:
 
     Args:
         node: The node to convert.
+        html: Whether to format the data as HTML rich text.
 
     Returns:
         A string representation of the data.
     """
     from langchain_core.runnables.base import Runnable, RunnableBinding
 
-    if not is_uuid(node.id):
-        return node.id
-    elif (
-        html and isinstance(node.data, RunnableBinding) and node.data.config["metadata"]
-    ):
+    if html and isinstance(node.data, RunnableBinding) and node.data.config["metadata"]:
         return f"<strong>{node_data_str(node)}</strong>\n" + "\n".join(
             f"{key} = {value}" for key, value in node.data.config["metadata"].items()
         )
+    elif not is_uuid(node.id):
+        return node.id
     elif isinstance(node.data, Runnable):
         try:
             data = str(node.data)
