@@ -870,7 +870,9 @@ class BaseChatOpenAI(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[
+            Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable]
+        ],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
@@ -883,9 +885,9 @@ class BaseChatOpenAI(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
+                Can be  a dictionary, pydantic model, callable, BaseTool, or Runnable.
+                Pydantic models, callables, and BaseTools will be automatically
+                converted to their schema dictionary representation.
             tool_choice: Which tool to require the model to call.
                 Options are:
                 name of the tool (str): calls corresponding tool;
@@ -946,7 +948,8 @@ class BaseChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]:
+        ...
 
     @overload
     def with_structured_output(
@@ -956,7 +959,8 @@ class BaseChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        ...
 
     def with_structured_output(
         self,

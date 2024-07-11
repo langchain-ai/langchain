@@ -636,7 +636,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[
+            Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable]
+        ],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
@@ -664,7 +666,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]:
+        ...
 
     @overload
     def with_structured_output(
@@ -674,7 +677,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        ...
 
     def with_structured_output(
         self,
