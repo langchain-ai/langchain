@@ -39,6 +39,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    get_type_hints,
 )
 
 from typing_extensions import Annotated, get_args, get_origin
@@ -1218,3 +1219,76 @@ class BaseToolkit(BaseModel, ABC):
     @abstractmethod
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
+
+
+def _get_description_from_runnable(runnable: Runnable) -> str:
+    """Generate a placeholder description of a runnable."""
+    input_schema = runnable.input_schema.schema()
+    return f"Takes {input_schema}."
+
+
+def _get_schema_from_runnable_and_arg_types(
+    runnable: Runnable,
+    name: str,
+    arg_types: Optional[Dict[str, Type]] = None,
+) -> Type[BaseModel]:
+    """Infer args_schema for tool."""
+    if arg_types is None:
+        try:
+            arg_types = get_type_hints(runnable.InputType)
+        except TypeError as e:
+            raise TypeError(
+                "Tool input must be str or dict. If dict, dict arguments must be "
+                "typed. Either annotate types (e.g., with TypedDict) or pass "
+                f"arg_types into `.as_tool` to specify. {str(e)}"
+            )
+    fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
+    return create_model(name, **fields)  # type: ignore
+
+
+def convert_runnable_to_tool(
+    runnable: Runnable,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    arg_types: Optional[Dict[str, Type]] = None,
+) -> BaseTool:
+    """Convert a Runnable into a BaseTool."""
+    description = description or _get_description_from_runnable(runnable)
+    name = name or runnable.get_name()
+
+    schema = runnable.input_schema.schema()
+    if schema.get("type") == "string":
+        return Tool(
+            name=name,
+            func=runnable.invoke,
+            coroutine=runnable.ainvoke,
+            description=description,
+        )
+    else:
+
+        async def ainvoke_wrapper(
+            callbacks: Optional[Callbacks] = None, **kwargs: Any
+        ) -> Any:
+            return await runnable.ainvoke(kwargs, config={"callbacks": callbacks})
+
+        def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
+            return runnable.invoke(kwargs, config={"callbacks": callbacks})
+
+        if (
+            arg_types is None
+            and schema.get("type") == "object"
+            and schema.get("properties")
+        ):
+            args_schema = runnable.input_schema
+        else:
+            args_schema = _get_schema_from_runnable_and_arg_types(
+                runnable, name, arg_types=arg_types
+            )
+
+        return StructuredTool.from_function(
+            name=name,
+            func=invoke_wrapper,
+            coroutine=ainvoke_wrapper,
+            description=description,
+            args_schema=args_schema,
+        )
