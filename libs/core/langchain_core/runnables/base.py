@@ -2073,6 +2073,8 @@ class Runnable(Generic[Input, Output], ABC):
             runnable = RunnableLambda(f) | g
             as_tool = runnable.as_tool()
             as_tool.invoke("b")
+
+        .. versionadded:: 0.2.14
         """
         # Avoid circular import
         from langchain_core.tools import convert_runnable_to_tool

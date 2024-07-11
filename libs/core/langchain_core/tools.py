@@ -88,6 +88,8 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.runnables.utils import accepts_context
 
+FILTERED_ARGS = ("run_manager", "callbacks")
+
 
 class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
@@ -152,14 +154,27 @@ def _get_filtered_args(
     }
 
 
-def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
+def _parse_python_function_docstring(
+    function: Callable, annotations: dict, error_on_invalid_docstring: bool = False
+) -> Tuple[str, dict]:
     """Parse the function and argument descriptions from the docstring of a function.
 
     Assumes the function docstring follows Google Python style guide.
     """
+    invalid_docstring_error = ValueError(
+        f"Found invalid Google-Style docstring for {function}."
+    )
     docstring = inspect.getdoc(function)
     if docstring:
         docstring_blocks = docstring.split("\n\n")
+        if error_on_invalid_docstring:
+            filtered_annotations = {
+                arg for arg in annotations if arg not in (*(FILTERED_ARGS), "return")
+            }
+            if filtered_annotations and (
+                len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
+            ):
+                raise (invalid_docstring_error)
         descriptors = []
         args_block = None
         past_descriptors = False
@@ -176,6 +191,8 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
                 continue
         description = " ".join(descriptors)
     else:
+        if error_on_invalid_docstring:
+            raise (invalid_docstring_error)
         description = ""
         args_block = None
     arg_descriptions = {}
@@ -190,20 +207,38 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
     return description, arg_descriptions
 
 
+def _validate_docstring_args_against_annotations(
+    arg_descriptions: dict, annotations: dict
+) -> None:
+    """Raise error if docstring arg is not in type annotations."""
+    for docstring_arg in arg_descriptions:
+        if docstring_arg not in annotations:
+            raise ValueError(
+                f"Arg {docstring_arg} in docstring not found in function signature."
+            )
+
+
 def _infer_arg_descriptions(
-    fn: Callable, *, parse_docstring: bool = False
+    fn: Callable,
+    *,
+    parse_docstring: bool = False,
+    error_on_invalid_docstring: bool = False,
 ) -> Tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
-    if parse_docstring:
-        description, arg_descriptions = _parse_python_function_docstring(fn)
-    else:
-        description = inspect.getdoc(fn) or ""
-        arg_descriptions = {}
     if hasattr(inspect, "get_annotations"):
         # This is for python < 3.10
         annotations = inspect.get_annotations(fn)  # type: ignore
     else:
         annotations = getattr(fn, "__annotations__", {})
+    if parse_docstring:
+        description, arg_descriptions = _parse_python_function_docstring(
+            fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
+        )
+    else:
+        description = inspect.getdoc(fn) or ""
+        arg_descriptions = {}
+    if parse_docstring:
+        _validate_docstring_args_against_annotations(arg_descriptions, annotations)
     for arg, arg_type in annotations.items():
         if arg in arg_descriptions:
             continue
@@ -225,6 +260,7 @@ def create_schema_from_function(
     *,
     filter_args: Optional[Sequence[str]] = None,
     parse_docstring: bool = False,
+    error_on_invalid_docstring: bool = False,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
     Args:
@@ -232,21 +268,23 @@ def create_schema_from_function(
         func: Function to generate the schema from
         filter_args: Optional list of arguments to exclude from the schema
         parse_docstring: Whether to parse the function's docstring for descriptions
-             for each argument.
+            for each argument.
+        error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+            whether to raise ValueError on invalid Google Style docstrings.
     Returns:
         A pydantic model with the same arguments as the function
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
     inferred_model = validated.model  # type: ignore
-    filter_args = (
-        filter_args if filter_args is not None else ("run_manager", "callbacks")
-    )
+    filter_args = filter_args if filter_args is not None else FILTERED_ARGS
     for arg in filter_args:
         if arg in inferred_model.__fields__:
             del inferred_model.__fields__[arg]
     description, arg_descriptions = _infer_arg_descriptions(
-        func, parse_docstring=parse_docstring
+        func,
+        parse_docstring=parse_docstring,
+        error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
@@ -822,6 +860,8 @@ class StructuredTool(BaseTool):
         infer_schema: bool = True,
         *,
         response_format: Literal["content", "content_and_raw_output"] = "content",
+        parse_docstring: bool = False,
+        error_on_invalid_docstring: bool = False,
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -840,6 +880,10 @@ class StructuredTool(BaseTool):
                 the tool is interpreted as the contents of a ToolMessage. If
                 "content_and_raw_output" then the output is expected to be a two-tuple
                 corresponding to the (content, raw_output) of a ToolMessage.
+            parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt
+                to parse parameter descriptions from Google Style function docstrings.
+            error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+                whether to raise ValueError on invalid Google Style docstrings.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -880,7 +924,12 @@ class StructuredTool(BaseTool):
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
             # schema name is appended within function
-            _args_schema = create_schema_from_function(name, source_function)
+            _args_schema = create_schema_from_function(
+                name,
+                source_function,
+                parse_docstring=parse_docstring,
+                error_on_invalid_docstring=error_on_invalid_docstring,
+            )
         return cls(
             name=name,
             func=func,
@@ -899,6 +948,8 @@ def tool(
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_raw_output"] = "content",
+    parse_docstring: bool = False,
+    error_on_invalid_docstring: bool = True,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -914,6 +965,10 @@ def tool(
             the tool is interpreted as the contents of a ToolMessage. If
             "content_and_raw_output" then the output is expected to be a two-tuple
             corresponding to the (content, raw_output) of a ToolMessage.
+        parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt to
+            parse parameter descriptions from Google Style function docstrings.
+        error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+            whether to raise ValueError on invalid Google Style docstrings.
 
     Requires:
         - Function must be of type (str) -> str
@@ -935,6 +990,78 @@ def tool(
             @tool(response_format="content_and_raw_output")
             def search_api(query: str) -> Tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
+
+    .. versionadded:: 0.2.14
+    Parse Google-style docstrings:
+
+        .. code-block:: python
+
+            @tool(parse_docstring=True)
+            def foo(bar: str, baz: int) -> str:
+                \"\"\"The foo.
+
+                Args:
+                    bar: The bar.
+                    baz: The baz.
+                \"\"\"
+                return bar
+
+            foo.args_schema.schema()
+
+        .. code-block:: python
+
+            {
+                "title": "fooSchema",
+                "description": "The foo.",
+                "type": "object",
+                "properties": {
+                    "bar": {
+                        "title": "Bar",
+                        "description": "The bar.",
+                        "type": "string"
+                    },
+                    "baz": {
+                        "title": "Baz",
+                        "description": "The baz.",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "bar",
+                    "baz"
+                ]
+            }
+
+        Note that parsing by default will raise ``ValueError`` if the docstring
+        is considered invalid. A docstring is considered invalid if it contains
+        arguments not in the function signature, or is unable to be parsed into
+        a summary and "Args:" blocks. Examples below:
+
+        .. code-block:: python
+
+            # No args section
+            def invalid_docstring_1(bar: str, baz: int) -> str:
+                \"\"\"The foo.\"\"\"
+                return bar
+
+            # Improper whitespace between summary and args section
+            def invalid_docstring_2(bar: str, baz: int) -> str:
+                \"\"\"The foo.
+                Args:
+                    bar: The bar.
+                    baz: The baz.
+                \"\"\"
+                return bar
+
+            # Documented args absent from function signature
+            def invalid_docstring_3(bar: str, baz: int) -> str:
+                \"\"\"The foo.
+
+                Args:
+                    banana: The bar.
+                    monkey: The baz.
+                \"\"\"
+                return bar
     """
 
     def _make_with_name(tool_name: str) -> Callable:
@@ -980,6 +1107,8 @@ def tool(
                     args_schema=schema,
                     infer_schema=infer_schema,
                     response_format=response_format,
+                    parse_docstring=parse_docstring,
+                    error_on_invalid_docstring=error_on_invalid_docstring,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
