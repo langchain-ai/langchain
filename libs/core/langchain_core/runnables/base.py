@@ -398,7 +398,9 @@ class Runnable(Generic[Input, Output], ABC):
             input_node = graph.add_node(self.get_input_schema(config))
         except TypeError:
             input_node = graph.add_node(create_model(self.get_name("Input")))
-        runnable_node = graph.add_node(self)
+        runnable_node = graph.add_node(
+            self, metadata=config.get("metadata") if config else None
+        )
         try:
             output_node = graph.add_node(self.get_output_schema(config))
         except TypeError:
@@ -4629,7 +4631,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         return self.bound.config_specs
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
-        return self.bound.get_graph(config)
+        return self.bound.get_graph(self._merge_configs(config))
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

@@ -33,7 +33,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
     prompt = PromptTemplate.from_template("Hello, {name}!")
     list_parser = CommaSeparatedListOutputParser()
 
-    sequence = prompt | fake_llm | list_parser
+    sequence = prompt | fake_llm.with_config(metadata={"key": 2}) | list_parser
     graph = sequence.get_graph()
     assert graph.to_json() == {
         "nodes": [
