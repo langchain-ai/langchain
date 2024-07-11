@@ -250,7 +250,9 @@ class FullDocumentIndex(BaseIndex[Document], BaseModel):
         """Get documents by their ids."""
         return self.vectorstore.get_by_ids(ids)
 
-    def get_retriever(self, **kwargs) -> ParentRetrieverV2:  # <-- Unnecessary -- should just use a queryable index
+    # We should inherit from a more generalized version of a retriever
+    # so we don't have to do get_retriever()
+    def get_retriever(self, **kwargs) -> ParentRetrieverV2:
         """Get documents by their ids."""
         # We do this to maintain the order of the ids that are returned
         return ParentRetrieverV2(
