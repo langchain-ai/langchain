@@ -191,6 +191,25 @@ def test_aperturedb_upsert_entities() -> None:
     ApertureDB.delete_vectorstore(vectorstore.descriptor_set)
 
 
+def test_aperturedb_upsert_empty() -> None:
+    """Test upsert when no ids are provided"""
+    ids = [str(i) for i in range(len(fake_texts))]
+    vectorstore = _aperturedb_from_texts(ids=ids)
+    documents = [
+        Document(page_content="test"),
+    ]
+    response = vectorstore.upsert(documents)
+    assert len(response["succeeded"]) == 1, response["succeeded"]
+    assert response["failed"] == [], response["failed"]
+    docs = vectorstore.similarity_search("foo", k=10)
+    ids.append(response["succeeded"][0])
+    docs_by_id = {doc.id: doc for doc in docs}
+    ids2 = set(docs_by_id.keys())
+    assert set(ids) == ids2, (ids, ids2)
+    assert docs_by_id[response["succeeded"][0]].page_content == "test"
+    ApertureDB.delete_vectorstore(vectorstore.descriptor_set)
+
+
 if __name__ == "__main__":
     test_aperturedb()
     test_aperturedb_with_metadata()
@@ -201,3 +220,4 @@ if __name__ == "__main__":
     test_aperturedb_add_extra_mmr()
     test_aperturedb_generate_ids()
     test_aperturedb_upsert_entities()
+    test_aperturedb_upsert_empty()

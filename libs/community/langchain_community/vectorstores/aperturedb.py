@@ -525,6 +525,7 @@ class ApertureDB(VectorStore):
         ids: List[str] = [
             item.id for item in items if hasattr(item, "id") and item.id is not None
         ]
-        self.delete(ids)
+        if ids:
+            self.delete(ids)
         ids = self.add_documents(list(items))
         return UpsertResponse(succeeded=ids, failed=[])
