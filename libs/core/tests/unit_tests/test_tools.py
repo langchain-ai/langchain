@@ -959,6 +959,19 @@ def test_tool_arg_descriptions() -> None:
         "required": ["bar", "baz"],
     }
 
+    foo2 = tool(foo, parse_docstring=True)
+    args_schema = foo2.args_schema.schema()  # type: ignore
+    assert args_schema == {
+        "title": "fooSchema",
+        "description": "The foo.",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "description": "The bar.", "type": "string"},
+            "baz": {"title": "Baz", "description": "The baz.", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
+
 
 def test_tool_annotated_descriptions() -> None:
     def foo(

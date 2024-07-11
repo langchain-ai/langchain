@@ -909,6 +909,7 @@ class StructuredTool(BaseTool):
         return_direct: bool = False,
         args_schema: Optional[Type[BaseModel]] = None,
         infer_schema: bool = True,
+        parse_docstring: bool = False,
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -923,6 +924,8 @@ class StructuredTool(BaseTool):
             return_direct: Whether to return the result directly or as a callback
             args_schema: The schema of the tool's input arguments
             infer_schema: Whether to infer the schema from the function's signature
+            parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt
+                to parse parameter descriptions from Google Style function docstrings.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -963,7 +966,9 @@ class StructuredTool(BaseTool):
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
             # schema name is appended within function
-            _args_schema = create_schema_from_function(name, source_function)
+            _args_schema = create_schema_from_function(
+                name, source_function, parse_docstring=parse_docstring
+            )
         return cls(
             name=name,
             func=func,
@@ -980,6 +985,7 @@ def tool(
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
+    parse_docstring: bool = False,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -991,6 +997,8 @@ def tool(
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
+        parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt to
+            parse parameter descriptions from Google Style function docstrings.
 
     Requires:
         - Function must be of type (str) -> str
@@ -1052,6 +1060,7 @@ def tool(
                     return_direct=return_direct,
                     args_schema=schema,
                     infer_schema=infer_schema,
+                    parse_docstring=parse_docstring,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
