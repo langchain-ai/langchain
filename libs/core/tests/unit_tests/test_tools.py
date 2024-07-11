@@ -959,6 +959,84 @@ def test_tool_arg_descriptions() -> None:
         "required": ["bar", "baz"],
     }
 
+    # Test parses docstring
+    foo2 = tool(foo, parse_docstring=True)
+    args_schema = foo2.args_schema.schema()  # type: ignore
+    expected = {
+        "title": "fooSchema",
+        "description": "The foo.",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "description": "The bar.", "type": "string"},
+            "baz": {"title": "Baz", "description": "The baz.", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
+    assert args_schema == expected
+
+    # Test parsing with run_manager does not raise error
+    def foo3(
+        bar: str, baz: int, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    as_tool = tool(foo3, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+    assert args_schema["properties"] == expected["properties"]
+
+    # Test parameterless tool does not raise error for missing Args section
+    # in docstring.
+    def foo4() -> str:
+        """The foo."""
+        return "bar"
+
+    as_tool = tool(foo4, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+
+    def foo5(run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """The foo."""
+        return "bar"
+
+    as_tool = tool(foo5, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+
+
+def test_tool_invalid_docstrings() -> None:
+    # Test invalid docstrings
+    def foo3(bar: str, baz: int) -> str:
+        """The foo."""
+        return bar
+
+    def foo4(bar: str, baz: int) -> str:
+        """The foo.
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    def foo5(bar: str, baz: int) -> str:
+        """The foo.
+
+        Args:
+            banana: The bar.
+            monkey: The baz.
+        """
+        return bar
+
+    for func in [foo3, foo4, foo5]:
+        with pytest.raises(ValueError):
+            _ = tool(func, parse_docstring=True)
+
 
 def test_tool_annotated_descriptions() -> None:
     def foo(
