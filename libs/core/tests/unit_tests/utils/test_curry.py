@@ -4,7 +4,7 @@ from langchain_core.utils.curry import curry
 
 
 def test_curry() -> None:
-    def test_fn(a: str, b: str):
+    def test_fn(a: str, b: str) -> str:
         return a + b
 
     curried = curry(test_fn, a="hey")
@@ -12,7 +12,7 @@ def test_curry() -> None:
 
 
 def test_curry_with_kwargs_values() -> None:
-    def test_fn(a: str, b: str, **kwargs: Any):
+    def test_fn(a: str, b: str, **kwargs: Any) -> str:
         return a + b + kwargs["c"]
 
     curried = curry(test_fn, c=" you you")
@@ -20,7 +20,7 @@ def test_curry_with_kwargs_values() -> None:
 
 
 def test_noop_curry() -> None:
-    def test_fn(a: str, b: str):
+    def test_fn(a: str, b: str) -> str:
         return a + b
 
     curried = curry(test_fn)
@@ -28,7 +28,7 @@ def test_noop_curry() -> None:
 
 
 async def test_async_curry() -> None:
-    async def test_fn(a: str, b: str):
+    async def test_fn(a: str, b: str) -> str:
         return a + b
 
     curried = curry(test_fn, a="hey")
@@ -36,7 +36,7 @@ async def test_async_curry() -> None:
 
 
 async def test_async_curry_with_kwargs_values() -> None:
-    async def test_fn(a: str, b: str, **kwargs: Any):
+    async def test_fn(a: str, b: str, **kwargs: Any) -> str:
         return a + b + kwargs["c"]
 
     curried = curry(test_fn, c=" you you")
@@ -44,7 +44,7 @@ async def test_async_curry_with_kwargs_values() -> None:
 
 
 async def test_noop_async_curry() -> None:
-    async def test_fn(a: str, b: str):
+    async def test_fn(a: str, b: str) -> str:
         return a + b
 
     curried = curry(test_fn)

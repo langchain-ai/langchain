@@ -33,8 +33,10 @@ def curry(func: Callable[..., Any], **curried_kwargs: Any) -> Callable[..., Any]
     new_params = [p for name, p in sig.parameters.items() if name not in curried_kwargs]
 
     if asyncio.iscoroutinefunction(func):
-        async_wrapper.__signature__ = sig.replace(parameters=new_params)
+        async_wrapper = wraps(func)(async_wrapper)
+        setattr(async_wrapper, "__signature__", sig.replace(parameters=new_params))
         return async_wrapper
     else:
-        sync_wrapper.__signature__ = sig.replace(parameters=new_params)
+        sync_wrapper = wraps(func)(sync_wrapper)
+        setattr(sync_wrapper, "__signature__", sig.replace(parameters=new_params))
         return sync_wrapper
