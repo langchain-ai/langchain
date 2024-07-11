@@ -1513,7 +1513,7 @@ class CallbackManager(BaseCallbackManager):
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
 
-        .. versionadded:: 0.2.13
+        .. versionadded:: 0.2.14
         """
         if kwargs:
             raise ValueError(
@@ -1892,7 +1892,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
 
-        .. versionadded:: 0.2.13
+        .. versionadded:: 0.2.14
         """
         if run_id is None:
             run_id = uuid.uuid4()
@@ -2341,7 +2341,7 @@ async def adispatch_custom_event(
         LangChain from automatically propagating the config object on the user's
         behalf.
 
-    .. versionadded:: 0.2.13
+    .. versionadded:: 0.2.14
     """
     from langchain_core.runnables.config import (
         ensure_config,
@@ -2410,7 +2410,7 @@ def dispatch_custom_event(
             foo_ = RunnableLambda(foo)
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
-    .. versionadded:: 0.2.13
+    .. versionadded:: 0.2.14
     """
     from langchain_core.runnables.config import (
         ensure_config,
