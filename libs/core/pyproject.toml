@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.2.14"
+version = "0.2.15"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -38,11 +38,6 @@ python = ">=3.12.4"
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/unit_tests/prompts/test_chat.py" = ["E501"]
-"tests/unit_tests/runnables/test_runnable.py" = ["E501"]
-"tests/unit_tests/runnables/test_graph.py" = ["E501"]
-
 [tool.coverage.run]
 omit = [ "tests/*",]
 
@@ -65,6 +60,11 @@ optional = true
 
 [tool.poetry.group.test_integration]
 optional = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
+"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
+"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
@@ -90,12 +90,6 @@ pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
 pytest-profiling = "^1.7.0"
 responses = "^0.25.0"
-
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
-path = "../standard-tests"
-develop = true
-
-
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1.24.0"
 python = "<3.12"
@@ -108,4 +102,8 @@ python = ">=3.12"
 
 [tool.poetry.group.typing.dependencies.langchain-text-splitters]
 path = "../text-splitters"
+develop = true
+
+[tool.poetry.group.test.dependencies.langchain-standard-tests]
+path = "../standard-tests"
 develop = true
