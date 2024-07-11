@@ -6,7 +6,7 @@ from typing import (
     Iterator,
     Sequence,
 )
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 
 import pytest
 import pytest_asyncio
@@ -189,7 +189,7 @@ def test_index_simple_delete_full(
 
         doc_texts = set(
             # Ignoring type since doc should be in the store and not a None
-            vector_store.store.get_by_ids([uid])[0].page_content  # type: ignore
+            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
             for uid in vector_store.store
         )
         assert doc_texts == {"mutated document 1", "This is another document."}
@@ -1135,8 +1135,10 @@ def test_deduplication_v2(
 
     # using in memory implementation here
     assert isinstance(vector_store, InMemoryVectorStore)
+
+    ids = list(vector_store.store.keys())
     contents = sorted(
-        [document.page_content for document in vector_store.store.values()]
+        [document.page_content for document in vector_store.get_by_ids(ids)]
     )
     assert contents == ["1", "2", "3"]
 
@@ -1301,8 +1303,8 @@ async def test_aindexing_custom_batch_size(
     ids = [_HashedDocument.from_document(doc).uid for doc in docs]
 
     batch_size = 1
-    mock_add_documents = MagicMock()
-    vector_store.add_documents = mock_add_documents
+    mock_add_documents = AsyncMock()
+    vector_store.aadd_documents = mock_add_documents
     await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
     args, kwargs = mock_add_documents.call_args
     assert args == (docs,)

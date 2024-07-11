@@ -1,44 +1,4 @@
-"""A generic indexing interface for storing and querying content.
-
-This proposal has the following goals:
-
-1. Have a well-defined READ/WRITE API for indexing.
-    - Use upsert instead of add
-    - Support upsert, delete and read by ID
-2. Support indexing of binary data.
-3. Have a well-defined query API on retrieval
-    - Define filters, limit, offset, sort
-    - Support similarity search
-    - Enforcement can be done by standard unit-tests against the implementation.
-    - Implementations can be required to either self-describe supported features
-      or else just raise a NotImplementedError for unsupported features, so
-      no silent failures occur.
-    - We may need to throw in an extra field for disambiguating between
-      a query executing using the `raw` interface vs. via a standardized langchain
-      interface.
-
-The query API should allow us to support adhoc capabilities like:
-    - mmr search
-    - setting min score threshold etc
-
------
-
-Discussion points:
-
-* Force all content to have metadata OR only ID?
-    - If it's only ID, then we don't support the ability to filter by metadata in the query API.
-    Abstraction is more generic, and we can sub-class to add an interface that supports metadata operations.
-* Base Indexing abstraction forced to support metadata?
-* Support get_with_extras for indexers or vectorstores? (See below)
-
-*. Two options for how to deal with the retriever interface:
-    1. Have a standalone interface, and a vectorstore implements both indexer and retriever interfaces.
-    2. The retriever interface is defined in the vectorstore abstraction itself (which inherits from indexing interface).
-
-*. Need to determine if we try to add an API that will support sync primitives.
-    - This is not needed for the initial version of the API.
-    - Requires an indexed integer or datetime field to be updatable, and filterable
-"""
+"""A generic indexing interface for storing and querying content."""
 
 import abc
 from typing import (
