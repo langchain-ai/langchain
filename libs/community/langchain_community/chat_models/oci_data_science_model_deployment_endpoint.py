@@ -108,10 +108,11 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             from langchain_community.chat_models import ChatOCIModelDeploymentEndpoint
 
             llm = ChatOCIModelDeploymentEndpoint(
-                )
+                endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
+            )
     """
 
-    """Base class for LLM deployed on OCI Data Science Model Deployment."""
+    """Base class for chat model deployed on OCI Data Science Model Deployment."""
 
     auth: dict = Field(default_factory=dict, exclude=True)
     """ADS auth dictionary for OCI authentication:
@@ -133,12 +134,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     """The name of the model."""
 
     max_retries: int = 3
-    # TODO: discuss if needed
-    max_tokens: int = 256
-    """Denotes the number of tokens to predict per generation."""
-
-    temperature: float = 0.2
-    """A non-negative float that tunes the degree of randomness in generation."""
 
     stop: Optional[List[str]] = None
     """Stop words to use when generating. Model output is cut off
@@ -196,115 +191,316 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters."""
-        # TODO: default parameter should be required one? or the most freq used one?
         return {
             "model": self.model,
-            # "max_tokens": self.max_tokens,
             "stop": self.stop,
-            "temperature": self.temperature,
-            # "top_k": self.k,
-            # "top_p": self.p,
             "stream": self.streaming,
-            # "whole_output_stream": self.streaming,
-            **self.model_kwargs,  # will overwrite value
+            **self.model_kwargs,
         }
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Call out to an OCI Model Deployment Online endpoint.
+
+        Args:
+            messages:  The messages in the conversation with the chat model.
+            stop: Optional list of stop words to use when generating.
+            run_manager:
+            stream: Optional
+
+        Returns:
+            LangChain ChatResult
+
+        Raises:
+            ValueError:
+                Raise when invoking endpoint fails.
+
+        Example:
+
+            .. code-block:: python
+
+                from langchain_core.messages import HumanMessage, AIMessage
+
+                messages = [
+                            HumanMessage(content="hello!"),
+                            AIMessage(content="Hi there human!"),
+                            HumanMessage(content="Meow!")
+                          ]
+                response = chat.invoke(messages)
+        """
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
+
+        requests_kwargs = kwargs.pop("requests_kwargs", {})
+        params = self._invocation_params(stop, **kwargs)
+        body = self._construct_json_body(messages, params)
+        res = self.completion_with_retry(
+            data=body, run_manager=run_manager, **requests_kwargs
+        )
+        return self._process_response(res.json())
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        """Stream OCI Data Science Model Deployment endpoint on given messages.
+
+        Args:
+            messages (List[BaseMessage]):
+                The messagaes to pass into the model.
+            stop (List[str], Optional):
+                List of stop words to use when generating.
+            kwargs:
+                requests_kwargs:
+                    Additional ``**kwargs`` to pass to requests.post
+
+        Returns:
+            An iterator of ChatGenerationChunk.
+
+        Raises:
+            ValueError:
+                Raise when invoking endpoint fails.
+
+        Example:
+
+            .. code-block:: python
+
+                messages = [
+                    (
+                        "system",
+                        "You are a helpful assistant that translates English to French. Translate the user sentence.",
+                    ),
+                    ("human", "I love programming."),
+                ]
+
+                chunk_iter = chat.stream(messages)
+
+        """
+        requests_kwargs = kwargs.pop("requests_kwargs", {})
+        self.streaming = True
+        params = self._invocation_params(stop, **kwargs)
+        body = self._construct_json_body(messages, params)  # request json body
+
+        response = self.completion_with_retry(
+            data=body, run_manager=run_manager, stream=True, **requests_kwargs
+        )
+        default_chunk_class = AIMessageChunk
+        for line in self._parse_stream(response.iter_lines()):
+            # print(default_chunk_class) # check if changing
+            chunk = self._handle_sse_line(line, default_chunk_class)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
+
+        requests_kwargs = kwargs.pop("requests_kwargs", {})
+        params = self._invocation_params(stop, **kwargs)
+        body = self._construct_json_body(messages, params)
+        response = await self.acompletion_with_retry(
+            data=body,
+            run_manager=run_manager,
+            **requests_kwargs,
+        )
+        return self._process_response(response)
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        requests_kwargs = kwargs.pop("requests_kwargs", {})
+        self.streaming = True
+        params = self._invocation_params(stop, **kwargs)
+        body = self._construct_json_body(messages, params)  # request json body
+
+        default_chunk_class = AIMessageChunk
+        async for line in await self.acompletion_with_retry(
+            data=body, run_manager=run_manager, stream=True, **requests_kwargs
+        ):
+            chunk = self._handle_sse_line(line, default_chunk_class)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Options are:
+                name of the tool (str): calls corresponding tool;
+                "auto": automatically selects a tool (including no tool);
+                "none": does not call a tool;
+                "any" or "required": force at least one tool to be called;
+                True: forces tool call (requires `tools` be length 1);
+                False: no effect;
+
+                or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "any", "required"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+                # 'any' is not natively supported by OpenAI API.
+                # We support 'any' since other models use this instead of 'required'.
+                if tool_choice == "any":
+                    tool_choice = "required"
+            elif isinstance(tool_choice, bool):
+                tool_choice = "required"
+            elif isinstance(tool_choice, dict):
+                tool_names = [
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
+                ]
+                if not any(
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(
+        self,
+        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec.
+            method: The method for steering model generation, either "function_calling"
+                or "json_mode". If "function_calling" then the schema will be converted
+                to a OpenAI function and the returned model will make use of the
+                function-calling API. If "json_mode" then JSON mode will be
+                used. Note that if using "json_mode" then you must include instructions
+                for formatting the output into the desired schema into the model call.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If include_raw is True then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_DictOrPydantic]
+                    parsing_error: Optional[BaseException]
+
+                If include_raw is False then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
+
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
+                    class.
+
+                If schema is a dict then _DictOrPydantic is a dict.
+
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            raise NotImplementedError()
+        elif method == "json_mode":
+            llm = self.bind(response_format={"type": "json_object"})
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
 
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         """Combines the invocation parameters with default parameters."""
         params = self._default_params
-        # stop pased to _generate has higher priority
         params["stop"] = stop or params["stop"]
         return {**params, **kwargs}
-
-    def _construct_json_body(self, messages: list, params: dict) -> dict:
-        """Constructs the request body as a dictionary (JSON)."""
-        # TODO: add tools related params
-        return {
-            "messages": [convert_message_to_dict(m) for m in messages],
-            **params,
-        }
-
-    def _process_stream_response(
-        self, response_json: dict, default_chunk_cls=AIMessageChunk
-    ) -> ChatGenerationChunk:
-        """Formats response for OpenAI spec.
-        {"id":"cmpl-350e41c3d94a4b66b3d27f494e893069",
-        "object":"chat.completion.chunk",
-        "created":99245,
-        "model":"odsc-llm",
-        "choices":[{
-            "index":0,
-            "delta":{"role":"assistant"},
-            "finish_reason":null}]}
-
-        """
-        try:
-            choice = response_json["choices"][0]
-            if not isinstance(choice, dict):
-                raise TypeError("Endpoint response is not well formed.")
-        except (KeyError, IndexError, TypeError) as e:
-            raise ValueError(
-                "Error while formatting response payload for chat model of type"
-            ) from e
-
-        chunk = _convert_delta_to_message_chunk(choice["delta"], default_chunk_cls)
-        default_chunk_cls = chunk.__class__
-        finish_reason = choice.get("finish_reason")
-        usage = choice.get("usage")
-        gen_info = {}
-        if finish_reason is not None:
-            gen_info.update({"finish_reason": finish_reason})
-        if usage is not None:
-            gen_info.update({"usage": usage})
-
-        return ChatGenerationChunk(
-            message=chunk, generation_info=gen_info if gen_info else None
-        )
-
-    def _process_response(self, response_json: dict) -> ChatResult:
-        """Formats response for OpenAI spec.
-
-        sample response:
-        {'id': 'cmpl-c115536d6d284a0ebbd49bf7107cd778',
-        'object': 'chat.completion',
-        'created': 96512,
-        'model': 'odsc-llm',
-        'choices': [{'index': 0,
-        'message': {'role': 'assistant',
-            'content': "?\nDeep learning is a subset of machine learning, which is based on artificial neural networks. It is designed to simulate the behavior of the human brain – to learn from large amounts of data and improve its performance as it is exposed to more data.\n\nIn deep learning, artificial neural networks are employed to make predictions or decisions without being explicitly programmed to perform the task. These neural networks are made up of many layers of interconnected nodes or neurons, which can be trained to recognize patterns in the data.\n\nThe main difference between deep learning and traditional machine learning is the depth of the neural network. In deep learning, there are many layers of interconnected nodes, while in traditional machine learning there are usually just one or two layers. This depth allows deep learning models to better understand the input data and make more accurate predictions.\n\nHere's a simple example of how deep learning can be used:\n\n- A deep learning algorithm can be trained on a large dataset of images of cats and dogs. The goal is to build a model that can look at any image and determine whether it is a cat or a dog.\n- The deep learning algorithm would use many layers of interconnected nodes to analyze different features of the images, such as the shapes of the eyes, the size of the ears, and the patterns in the fur.\n- As the algorithm is exposed to more images, it can refine its understanding of what constitutes a cat and what constitutes a dog, improving its accuracy over time.\n\nDeep learning has been applied to a wide range of fields, including image and speech recognition, natural language processing, and even playing games like Go and chess."},
-        'finish_reason': 'stop'}],
-        'usage': {'prompt_tokens': 34, 'total_tokens': 383, 'completion_tokens': 349}}
-
-        """
-        generations = []
-        try:
-            choices = response_json["choices"]
-            if not isinstance(choices, list):
-                raise TypeError("Endpoint response is not well formed.")
-        except (KeyError, TypeError) as e:
-            raise ValueError(
-                "Error while formatting response payload for chat model of type"
-            ) from e
-
-        for choice in choices:
-            message = convert_dict_to_message(choice["message"])
-            generation_info = dict(finish_reason=choice.get("finish_reason"))
-            if "logprobs" in choice:
-                generation_info["logprobs"] = choice["logprobs"]
-
-            gen = ChatGeneration(
-                message=message,
-                generation_info=generation_info,
-            )
-            generations.append(gen)
-
-        token_usage = response_json.get("usage", {})
-        llm_output = {
-            "token_usage": token_usage,
-            "model_name": self.model,
-            "system_fingerprint": response_json.get("system_fingerprint", ""),
-        }
-        return ChatResult(generations=generations, llm_output=llm_output)
 
     def _headers(self, is_async=False, body=None) -> Dict:
         if is_async:
@@ -413,227 +609,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
         return await _completion_with_retry(**kwargs)
 
-    def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        """Call out to an OCI Model Deployment Online endpoint.
-
-        Args:
-            messages:  The messages in the conversation with the chat model.
-            stop: Optional list of stop words to use when generating.
-            run_manager:
-            stream: Optional
-
-        Returns:
-            LangChain ChatResult
-
-        Raises:
-            ValueError:
-                Raise when invoking endpoint fails.
-
-        Example:
-
-            .. code-block:: python
-
-                from langchain_core.messages import HumanMessage, AIMessage
-
-                messages = [
-                            HumanMessage(content="hello!"),
-                            AIMessage(content="Hi there human!"),
-                            HumanMessage(content="Meow!")
-                          ]
-                response = chat.invoke(messages)
-        """
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
-            stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
-
-        params = self._invocation_params(stop, **kwargs)
-        body = self._construct_json_body(messages, params)
-        res = self.completion_with_retry(
-            data=body,
-            run_manager=run_manager,
-            # **kwargs,
-        )
-        return self._process_response(res.json())
-
-    def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        """Stream OCI Data Science Model Deployment endpoint on given messages.
-
-        Args:
-            messages (List[BaseMessage]):
-                The messagaes to pass into the model.
-            stop (List[str], Optional):
-                List of stop words to use when generating.
-            kwargs:
-                requests_kwargs:
-                    Additional ``**kwargs`` to pass to requests.post
-
-        Returns:
-            An iterator of ChatGenerationChunk.
-
-        Raises:
-            ValueError:
-                Raise when invoking endpoint fails.
-
-        Example:
-
-            .. code-block:: python
-
-                messages = [
-                    (
-                        "system",
-                        "You are a helpful assistant that translates English to French. Translate the user sentence.",
-                    ),
-                    ("human", "I love programming."),
-                ]
-
-                chunk_iter = chat.stream(messages)
-
-        """
-        requests_kwargs = kwargs.pop("requests_kwargs", {})
-        self.streaming = True
-        params = self._invocation_params(stop, **kwargs)
-        body = self._construct_json_body(messages, params)  # request json body
-
-        response = self.completion_with_retry(
-            data=body, run_manager=run_manager, stream=True, **requests_kwargs
-        )
-        default_chunk_class = AIMessageChunk
-        for line in self._parse_stream(response.iter_lines()):
-            # print(default_chunk_class) # check if changing
-            chunk = self._handle_sse_line(line, default_chunk_class)
-            if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
-            yield chunk
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
-            stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return await agenerate_from_stream(stream_iter)
-
-        params = self._invocation_params(stop, **kwargs)
-        body = self._construct_json_body(messages, params)
-        response = await self.acompletion_with_retry(
-            data=body,
-            run_manager=run_manager,
-            **kwargs,
-        )
-        return self._process_response(response)
-
-    async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        requests_kwargs = kwargs.pop("requests_kwargs", {})
-        self.streaming = True
-        params = self._invocation_params(stop, **kwargs)
-        body = self._construct_json_body(messages, params)  # request json body
-
-        default_chunk_class = AIMessageChunk
-        async for line in await self.acompletion_with_retry(
-            data=body, run_manager=run_manager, stream=True, **requests_kwargs
-        ):
-            chunk = self._handle_sse_line(line, default_chunk_class)
-            if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
-            yield chunk
-
-    def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
-        ] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind tool-like objects to this chat model.
-
-        Assumes model is compatible with OpenAI tool-calling API.
-
-        Args:
-            tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
-            tool_choice: Which tool to require the model to call.
-                Options are:
-                name of the tool (str): calls corresponding tool;
-                "auto": automatically selects a tool (including no tool);
-                "none": does not call a tool;
-                "any" or "required": force at least one tool to be called;
-                True: forces tool call (requires `tools` be length 1);
-                False: no effect;
-
-                or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
-        """
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if tool_choice:
-            if isinstance(tool_choice, str):
-                # tool_choice is a tool/function name
-                if tool_choice not in ("auto", "none", "any", "required"):
-                    tool_choice = {
-                        "type": "function",
-                        "function": {"name": tool_choice},
-                    }
-                # 'any' is not natively supported by OpenAI API.
-                # We support 'any' since other models use this instead of 'required'.
-                if tool_choice == "any":
-                    tool_choice = "required"
-            elif isinstance(tool_choice, bool):
-                tool_choice = "required"
-            elif isinstance(tool_choice, dict):
-                tool_names = [
-                    formatted_tool["function"]["name"]
-                    for formatted_tool in formatted_tools
-                ]
-                if not any(
-                    tool_name == tool_choice["function"]["name"]
-                    for tool_name in tool_names
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice} was specified, but the only "
-                        f"provided tools were {tool_names}."
-                    )
-            else:
-                raise ValueError(
-                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
-                    f"Received: {tool_choice}"
-                )
-            kwargs["tool_choice"] = tool_choice
-        return super().bind(tools=formatted_tools, **kwargs)
-
     def _parse_stream(self, lines: Iterator[bytes]) -> Iterator[str]:
         for line in lines:
             _line = self._parse_stream_line(line)
@@ -688,79 +663,158 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             return True
         return False
 
-    def with_structured_output(
-        self,
-        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
-        *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
-        include_raw: bool = False,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        """Model wrapper that returns outputs formatted to match the given schema.
+    # The following methods can be overwrite by subclass to satisfied
+    # custom need for request's payload and handle response.
+    def _construct_json_body(self, messages: list, params: dict) -> dict:
+        """Constructs the request body as a dictionary (JSON)."""
+        return {
+            "messages": [convert_message_to_dict(m) for m in messages],
+            **params,
+        }
 
-        Args:
-            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
-                then the model output will be an object of that class. If a dict then
-                the model output will be a dict. With a Pydantic class the returned
-                attributes will be validated, whereas with a dict they will not be. If
-                `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec.
-            method: The method for steering model generation, either "function_calling"
-                or "json_mode". If "function_calling" then the schema will be converted
-                to a OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then Groq's JSON mode will be
-                used. Note that if using "json_mode" then you must include instructions
-                for formatting the output into the desired schema into the model call.
-            include_raw: If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
-
-        Returns:
-            A Runnable that takes any ChatModel input and returns as output:
-
-                If include_raw is True then a dict with keys:
-                    raw: BaseMessage
-                    parsed: Optional[_DictOrPydantic]
-                    parsing_error: Optional[BaseException]
-
-                If include_raw is False then just _DictOrPydantic is returned,
-                where _DictOrPydantic depends on the schema:
-
-                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
-                    class.
-
-                If schema is a dict then _DictOrPydantic is a dict.
-
-        """  # noqa: E501
-        if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = _is_pydantic_class(schema)
-        if method == "function_calling":
-            raise NotImplementedError()
-        elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
-        else:
+    def _process_stream_response(
+        self, response_json: dict, default_chunk_cls=AIMessageChunk
+    ) -> ChatGenerationChunk:
+        """Formats streaming response for OpenAI spec."""
+        try:
+            choice = response_json["choices"][0]
+            if not isinstance(choice, dict):
+                raise TypeError("Endpoint response is not well formed.")
+        except (KeyError, IndexError, TypeError) as e:
             raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
-            )
+                "Error while formatting response payload for chat model of type"
+            ) from e
 
-        if include_raw:
-            parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+        chunk = _convert_delta_to_message_chunk(choice["delta"], default_chunk_cls)
+        default_chunk_cls = chunk.__class__
+        finish_reason = choice.get("finish_reason")
+        usage = choice.get("usage")
+        gen_info = {}
+        if finish_reason is not None:
+            gen_info.update({"finish_reason": finish_reason})
+        if usage is not None:
+            gen_info.update({"usage": usage})
+
+        return ChatGenerationChunk(
+            message=chunk, generation_info=gen_info if gen_info else None
+        )
+
+    def _process_response(self, response_json: dict) -> ChatResult:
+        """Formats response for OpenAI spec."""
+        generations = []
+        try:
+            choices = response_json["choices"]
+            if not isinstance(choices, list):
+                raise TypeError("Endpoint response is not well formed.")
+        except (KeyError, TypeError) as e:
+            raise ValueError(
+                "Error while formatting response payload for chat model of type"
+            ) from e
+
+        for choice in choices:
+            message = convert_dict_to_message(choice["message"])
+            generation_info = dict(finish_reason=choice.get("finish_reason"))
+            if "logprobs" in choice:
+                generation_info["logprobs"] = choice["logprobs"]
+
+            gen = ChatGeneration(
+                message=message,
+                generation_info=generation_info,
             )
-            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
-            parser_with_fallback = parser_assign.with_fallbacks(
-                [parser_none], exception_key="parsing_error"
-            )
-            return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm | output_parser
+            generations.append(gen)
+
+        token_usage = response_json.get("usage", {})
+        llm_output = {
+            "token_usage": token_usage,
+            "model_name": self.model,
+            "system_fingerprint": response_json.get("system_fingerprint", ""),
+        }
+        return ChatResult(generations=generations, llm_output=llm_output)
+
+
+class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
+    """OCI large language chat models deployed with vLLM"""
+
+    # TODO: add docstring
+
+    # openai supported parameters
+    frequency_penalty: float = 0.0
+    logit_bias: Optional[dict] = None
+    logprobs: Optional[int] = None
+    max_tokens: Optional[int] = 256
+    n: int = 1
+    presence_penalty: float = 0.0
+    seed: Optional[int] = None
+    temperature: float = 0.2
+    top_logprobs: Optional[int] = None
+    top_p: float = 1.0
+    user: Optional[str] = None
+
+    # vllm extra support
+    best_of: Optional[int] = None
+    use_beam_search: Optional[bool] = False
+    top_k: Optional[int] = -1
+    min_p: Optional[float] = 0.0
+    repetition_penalty: Optional[float] = 1.0
+    length_penalty: Optional[float] = 1.0
+    early_stopping: Optional[bool] = False
+    ignore_eos: Optional[bool] = False
+    min_tokens: Optional[int] = 0
+    stop_token_ids: Optional[List[int]] = Field(default_factory=list)
+    skip_special_tokens: Optional[bool] = True
+    spaces_between_special_tokens: Optional[bool] = True
+
+    # additonal if needed
+    model_kwargs: Optional[dict] = None
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "oci_model_depolyment_chat_endpoint_vllm"
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters."""
+        params = {
+            "model": self.model,
+            "stop": self.stop,
+            "stream": self.streaming,
+        }
+        for attr_name in self._get_model_params():
+            try:
+                value = getattr(self, attr_name)
+                if value is not None:
+                    params.update({attr_name: value})
+            except:
+                pass
+
+        params.update(**self.model_kwargs)
+        return params
+
+    def _get_model_params(self) -> List[str]:
+        """Gets the name of model parameters."""
+        return [
+            "best_of",
+            "early_stopping",
+            "frequency_penalty",
+            "ignore_eos",
+            "length_penalty",
+            "logit_bias",
+            "logprobs",
+            "max_tokens",
+            "min_p",
+            "min_tokens",
+            "n",
+            "presence_penalty",
+            "repetition_penalty",
+            "seed",
+            "skip_special_tokens",
+            "spaces_between_special_tokens",
+            "stop_token_ids",
+            "temperature",
+            "top_k",
+            "top_logprobs",
+            "top_p",
+            "use_beam_search",
+            "user",
+        ]
