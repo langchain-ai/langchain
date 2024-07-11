@@ -991,6 +991,24 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema["description"] == expected["description"]
     assert args_schema["properties"] == expected["properties"]
 
+    # Test parameterless tool does not raise error for missing Args section
+    # in docstring.
+    def foo4() -> str:
+        """The foo."""
+        return "bar"
+
+    as_tool = tool(foo4, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+
+    def foo5(run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """The foo."""
+        return "bar"
+
+    as_tool = tool(foo5, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+
 
 def test_tool_invalid_docstrings() -> None:
     # Test invalid docstrings

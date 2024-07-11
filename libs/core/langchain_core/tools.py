@@ -85,6 +85,8 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.runnables.utils import accepts_context
 
+FILTERED_ARGS = ("run_manager", "callbacks")
+
 
 class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
@@ -150,7 +152,7 @@ def _get_filtered_args(
 
 
 def _parse_python_function_docstring(
-    function: Callable, error_on_invalid_docstring: bool = False
+    function: Callable, annotations: dict, error_on_invalid_docstring: bool = False
 ) -> Tuple[str, dict]:
     """Parse the function and argument descriptions from the docstring of a function.
 
@@ -163,7 +165,12 @@ def _parse_python_function_docstring(
     if docstring:
         docstring_blocks = docstring.split("\n\n")
         if error_on_invalid_docstring:
-            if len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:"):
+            filtered_annotations = {
+                arg for arg in annotations if arg not in (*(FILTERED_ARGS), "return")
+            }
+            if filtered_annotations and (
+                len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
+            ):
                 raise (invalid_docstring_error)
         descriptors = []
         args_block = None
@@ -215,18 +222,18 @@ def _infer_arg_descriptions(
     error_on_invalid_docstring: bool = False,
 ) -> Tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
-    if parse_docstring:
-        description, arg_descriptions = _parse_python_function_docstring(
-            fn, error_on_invalid_docstring=error_on_invalid_docstring
-        )
-    else:
-        description = inspect.getdoc(fn) or ""
-        arg_descriptions = {}
     if hasattr(inspect, "get_annotations"):
         # This is for python < 3.10
         annotations = inspect.get_annotations(fn)  # type: ignore
     else:
         annotations = getattr(fn, "__annotations__", {})
+    if parse_docstring:
+        description, arg_descriptions = _parse_python_function_docstring(
+            fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
+        )
+    else:
+        description = inspect.getdoc(fn) or ""
+        arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)
     for arg, arg_type in annotations.items():
@@ -267,9 +274,7 @@ def create_schema_from_function(
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
     inferred_model = validated.model  # type: ignore
-    filter_args = (
-        filter_args if filter_args is not None else ("run_manager", "callbacks")
-    )
+    filter_args = filter_args if filter_args is not None else FILTERED_ARGS
     for arg in filter_args:
         if arg in inferred_model.__fields__:
             del inferred_model.__fields__[arg]
