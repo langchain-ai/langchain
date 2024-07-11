@@ -10,17 +10,20 @@ from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
 
 if TYPE_CHECKING:
-    from langchainhub import Client
+    from langsmith import Client
 
 
 def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Client:
     try:
-        from langchainhub import Client
+        from langsmith import Client
     except ImportError as e:
-        raise ImportError(
-            "Could not import langchainhub, please install with `pip install "
-            "langchainhub`."
-        ) from e
+        try:
+            from langchainhub import Client
+        except ImportError as e:
+            raise ImportError(
+                "Could not import langsmith or langchainhub (deprecated), please install with `pip install "
+                "langsmith`."
+            ) from e
 
     # Client logic will also attempt to load URL/key from environment variables
     return Client(api_url, api_key=api_key)
@@ -81,6 +84,12 @@ def pull(
     """
     client = _get_client(api_url=api_url, api_key=api_key)
 
+    # then its langsmith
+    if hasattr(client, "pull_prompt"):
+        response = client.pull_prompt(owner_repo_commit) # add format = 'langchain'
+        return response
+
+    # then its langchainhub
     if hasattr(client, "pull_repo"):
         # >= 0.1.15
         res_dict = client.pull_repo(owner_repo_commit)
@@ -93,6 +102,6 @@ def pull(
             obj.metadata["lc_hub_commit_hash"] = res_dict["commit_hash"]
         return obj
 
-    # Then it's < 0.1.15
+    # Then it's < 0.1.15 langchainhub
     resp: str = client.pull(owner_repo_commit)
     return loads(resp)
