@@ -35,6 +35,8 @@ class GraphStoreLink:
         return GraphStoreLink(kind=kind, direction="bidir", tag=tag)
 
 
+Link = GraphStoreLink  # Alias for backwards compatibility
+
 METADATA_LINKS_KEY = "links"
 
 

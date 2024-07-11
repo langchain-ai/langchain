@@ -76,6 +76,9 @@ class GraphStoreNode(Serializable):
     """Links associated with the node."""
 
 
+Node = GraphStoreNode  # Alias for backwards compatibility
+
+
 def _texts_to_nodes(
     texts: Iterable[str],
     metadatas: Optional[Iterable[dict]],
