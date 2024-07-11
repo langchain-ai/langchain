@@ -473,7 +473,7 @@ class ApertureDB(VectorStore):
     @classmethod
     def delete_vectorstore(class_, descriptor_set: str) -> None:
         """Deletes a vectorstore and all its data from the database
-        
+
         Args:
             descriptor_set: The name of the descriptor set to delete
         """
@@ -486,7 +486,7 @@ class ApertureDB(VectorStore):
     @classmethod
     def list_vectorstores(class_) -> None:
         """Returns a list of all vectorstores in the database
-        
+
         Returns:
             List of descriptor sets with properties
         """
@@ -513,7 +513,6 @@ class ApertureDB(VectorStore):
         """Insert or update items
 
         Updating documents is dependent on the documents' `id` attribute.
-        
         Args:
             items: List of Document objects to upsert
 
