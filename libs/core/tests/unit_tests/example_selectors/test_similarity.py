@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Optional, cast
+from typing import Any, Iterable, List, Optional, Sequence, cast
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
@@ -6,6 +6,7 @@ from langchain_core.example_selectors import (
     MaxMarginalRelevanceExampleSelector,
     SemanticSimilarityExampleSelector,
 )
+from langchain_core.indexing.base import DeleteResponse
 from langchain_core.vectorstores import VectorStore
 
 
@@ -30,6 +31,16 @@ class DummyVectorStore(VectorStore):
         if metadatas:
             self.metadatas.extend(metadatas)
         return ["dummy_id"]
+
+    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        raise NotImplementedError()
+
+    def delete_by_ids(
+        self,
+        ids: Sequence[str],
+        /,
+    ) -> DeleteResponse:
+        raise NotImplementedError()
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any

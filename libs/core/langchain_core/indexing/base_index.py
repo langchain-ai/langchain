@@ -18,6 +18,7 @@ from typing import (
 from langchain_core._api import beta
 from langchain_core.documents.base import BaseMedia
 from langchain_core.indexing.base import DeleteResponse, UpsertResponse
+from langchain_core.runnables import run_in_executor
 from langchain_core.utils import abatch_iterate, batch_iterate
 
 
@@ -153,6 +154,12 @@ class BaseIndex(Generic[T]):
 
         .. versionadded:: 0.2.11
         """
+        return await run_in_executor(
+            None,
+            self.upsert,
+            items,
+            **kwargs,
+        )
 
     @abc.abstractmethod
     def get_by_ids(
@@ -169,31 +176,3 @@ class BaseIndex(Generic[T]):
         /,
     ) -> DeleteResponse:
         """Delete items by id."""
-
-    # Delete and get are part of the READ/WRITE interface.
-    # They do not take advantage of indexes on the content.
-    # However, all the indexers ARE assumed to have the capability to index
-    # on metadata if they implement the delete_by_query and get_by_query methods.
-    # @abc.abstractmethod
-    # def get_by_query(
-    #     self,
-    #     *,
-    #     filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
-    #     limit: Optional[int] = None,
-    #     offset: Optional[int] = None,
-    #     sort: Optional[Union[Sort, List[Sort]]] = None,
-    #     **kwargs: Any,
-    # ) -> Iterable[T]:
-    #     """Get items by query."""
-    #
-    # @abc.abstractmethod
-    # def delete_by_query(
-    #     self,
-    #     *,
-    #     filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
-    #     limit: Optional[int] = None,
-    #     offset: Optional[int] = None,
-    #     sort: Optional[Union[Sort, List[Sort]]] = None,
-    #     **kwargs: Any,
-    # ) -> Iterable[DeleteResponse]:
-    #     """Delete items by query."""

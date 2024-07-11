@@ -7,7 +7,7 @@ from typing_extensions import TypedDict
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.indexing.base import UpsertResponse
+from langchain_core.indexing.base import DeleteResponse, UpsertResponse
 from langchain_core.vectorstores import VectorStore
 
 
@@ -67,6 +67,18 @@ class CustomSyncVectorStore(VectorStore):
 
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         return [self.store[id] for id in ids if id in self.store]
+
+    def delete_by_ids(
+        self,
+        ids: Sequence[str],
+        /,
+    ) -> DeleteResponse:
+        for id_ in ids:
+            self.store.pop(id_, None)
+        return {
+            "succeeded": ids,
+            "failed": [],
+        }
 
     def from_texts(  # type: ignore
         cls,
