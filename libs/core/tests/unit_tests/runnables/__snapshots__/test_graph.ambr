@@ -36,7 +36,8 @@
   graph TD;
   	PromptInput[PromptInput]:::startclass;
   	PromptTemplate([PromptTemplate]):::otherclass;
-  	FakeListLLM([FakeListLLM]):::otherclass;
+  	FakeListLLM([<strong>FakeListLLM</strong>
+  key = 2]):::otherclass;
   	CommaSeparatedListOutputParser([CommaSeparatedListOutputParser]):::otherclass;
   	CommaSeparatedListOutputParserOutput[CommaSeparatedListOutputParserOutput]:::endclass;
   	PromptInput --> PromptTemplate;
