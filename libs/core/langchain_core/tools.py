@@ -1059,6 +1059,7 @@ def tool(
                 # Searches the API for the query.
                 return
 
+        .. versionadded:: 0.2.14
         Parse Google-style docstrings:
 
         .. code-block:: python
