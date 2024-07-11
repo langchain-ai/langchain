@@ -86,7 +86,7 @@ def pull(
 
     # then its langsmith
     if hasattr(client, "pull_prompt"):
-        response = client.pull_prompt(owner_repo_commit) # add format = 'langchain'
+        response = client.pull_prompt(owner_repo_commit)  # add format = 'langchain'
         return response
 
     # then its langchainhub
