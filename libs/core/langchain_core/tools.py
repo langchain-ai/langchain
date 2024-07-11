@@ -58,7 +58,6 @@ from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages.base import Content
 from langchain_core.messages.tool import ToolCall, ToolMessage
 from langchain_core.prompts import (
     BasePromptTemplate,
@@ -800,7 +799,7 @@ class StructuredTool(BaseTool):
         *args: Any,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs: Any,
-    ) -> Tuple[Content, Any]:
+    ) -> Any:
         """Use the tool asynchronously."""
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
