@@ -2,25 +2,21 @@ from datetime import datetime
 from typing import (
     Any,
     AsyncIterator,
-    Dict,
     Iterable,
     Iterator,
-    List,
-    Optional,
     Sequence,
-    Type,
 )
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
+from langchain_core.embeddings import DeterministicFakeEmbedding
 from langchain_core.indexing import InMemoryRecordManager, aindex, index
 from langchain_core.indexing.api import _abatch, _HashedDocument
-from langchain_core.vectorstores import VST, VectorStore
+from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
 
 
 class ToyLoader(BaseLoader):
@@ -42,101 +38,6 @@ class ToyLoader(BaseLoader):
             yield document
 
 
-class InMemoryVectorStore(VectorStore):
-    """In-memory implementation of VectorStore using a dictionary."""
-
-    def __init__(self, permit_upserts: bool = False) -> None:
-        """Vector store interface for testing things in memory."""
-        self.store: Dict[str, Document] = {}
-        self.permit_upserts = permit_upserts
-
-    def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
-        """Delete the given documents from the store using their IDs."""
-        if ids:
-            for _id in ids:
-                self.store.pop(_id, None)
-
-    async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
-        """Delete the given documents from the store using their IDs."""
-        if ids:
-            for _id in ids:
-                self.store.pop(_id, None)
-
-    def add_documents(  # type: ignore
-        self,
-        documents: Sequence[Document],
-        *,
-        ids: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        """Add the given documents to the store (insert behavior)."""
-        if ids and len(ids) != len(documents):
-            raise ValueError(
-                f"Expected {len(ids)} ids, got {len(documents)} documents."
-            )
-
-        if not ids:
-            raise NotImplementedError("This is not implemented yet.")
-
-        for _id, document in zip(ids, documents):
-            if _id in self.store and not self.permit_upserts:
-                raise ValueError(
-                    f"Document with uid {_id} already exists in the store."
-                )
-            self.store[_id] = document
-
-        return list(ids)
-
-    async def aadd_documents(
-        self,
-        documents: Sequence[Document],
-        *,
-        ids: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        if ids and len(ids) != len(documents):
-            raise ValueError(
-                f"Expected {len(ids)} ids, got {len(documents)} documents."
-            )
-
-        if not ids:
-            raise NotImplementedError("This is not implemented yet.")
-
-        for _id, document in zip(ids, documents):
-            if _id in self.store and not self.permit_upserts:
-                raise ValueError(
-                    f"Document with uid {_id} already exists in the store."
-                )
-            self.store[_id] = document
-        return list(ids)
-
-    def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        """Add the given texts to the store (insert behavior)."""
-        raise NotImplementedError()
-
-    @classmethod
-    def from_texts(
-        cls: Type[VST],
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
-        **kwargs: Any,
-    ) -> VST:
-        """Create a vector store from a list of texts."""
-        raise NotImplementedError()
-
-    def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        """Find the most similar documents to the given query."""
-        raise NotImplementedError()
-
-
 @pytest.fixture
 def record_manager() -> InMemoryRecordManager:
     """Timestamped set fixture."""
@@ -156,13 +57,15 @@ async def arecord_manager() -> InMemoryRecordManager:
 @pytest.fixture
 def vector_store() -> InMemoryVectorStore:
     """Vector store fixture."""
-    return InMemoryVectorStore()
+    embeddings = DeterministicFakeEmbedding(size=5)
+    return InMemoryVectorStore(embeddings)
 
 
 @pytest.fixture
 def upserting_vector_store() -> InMemoryVectorStore:
     """Vector store fixture."""
-    return InMemoryVectorStore(permit_upserts=True)
+    embeddings = DeterministicFakeEmbedding(size=5)
+    return InMemoryVectorStore(embeddings)
 
 
 def test_indexing_same_content(
@@ -286,7 +189,7 @@ def test_index_simple_delete_full(
 
         doc_texts = set(
             # Ignoring type since doc should be in the store and not a None
-            vector_store.store.get(uid).page_content  # type: ignore
+            vector_store.get_by_ids([uid])[0].page_content  # type: ignore
             for uid in vector_store.store
         )
         assert doc_texts == {"mutated document 1", "This is another document."}
@@ -368,7 +271,7 @@ async def test_aindex_simple_delete_full(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
     )
     assert doc_texts == {"mutated document 1", "This is another document."}
@@ -659,7 +562,7 @@ def test_incremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
     )
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -718,7 +621,7 @@ def test_incremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
     )
     assert doc_texts == {
@@ -786,7 +689,7 @@ def test_incremental_indexing_with_batch_size(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
     )
     assert doc_texts == {"1", "2", "3", "4"}
@@ -836,7 +739,7 @@ def test_incremental_delete_with_batch_size(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
     )
     assert doc_texts == {"1", "2", "3", "4"}
@@ -981,7 +884,7 @@ async def test_aincremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
     )
     assert doc_texts == {"This is another document.", "This is a test document."}
@@ -1040,7 +943,7 @@ async def test_aincremental_delete(
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
-        vector_store.store.get(uid).page_content  # type: ignore
+        vector_store.get_by_ids([uid])[0].page_content  # type: ignore
         for uid in vector_store.store
     )
     assert doc_texts == {
@@ -1232,8 +1135,10 @@ def test_deduplication_v2(
 
     # using in memory implementation here
     assert isinstance(vector_store, InMemoryVectorStore)
+
+    ids = list(vector_store.store.keys())
     contents = sorted(
-        [document.page_content for document in vector_store.store.values()]
+        [document.page_content for document in vector_store.get_by_ids(ids)]
     )
     assert contents == ["1", "2", "3"]
 
@@ -1370,11 +1275,19 @@ def test_indexing_custom_batch_size(
     ids = [_HashedDocument.from_document(doc).uid for doc in docs]
 
     batch_size = 1
-    with patch.object(vector_store, "add_documents") as mock_add_documents:
+
+    original = vector_store.add_documents
+
+    try:
+        mock_add_documents = MagicMock()
+        vector_store.add_documents = mock_add_documents  # type: ignore
+
         index(docs, record_manager, vector_store, batch_size=batch_size)
         args, kwargs = mock_add_documents.call_args
         assert args == (docs,)
         assert kwargs == {"ids": ids, "batch_size": batch_size}
+    finally:
+        vector_store.add_documents = original  # type: ignore
 
 
 async def test_aindexing_custom_batch_size(
@@ -1390,8 +1303,9 @@ async def test_aindexing_custom_batch_size(
     ids = [_HashedDocument.from_document(doc).uid for doc in docs]
 
     batch_size = 1
-    with patch.object(vector_store, "aadd_documents") as mock_add_documents:
-        await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
-        args, kwargs = mock_add_documents.call_args
-        assert args == (docs,)
-        assert kwargs == {"ids": ids, "batch_size": batch_size}
+    mock_add_documents = AsyncMock()
+    vector_store.aadd_documents = mock_add_documents  # type: ignore
+    await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
+    args, kwargs = mock_add_documents.call_args
+    assert args == (docs,)
+    assert kwargs == {"ids": ids, "batch_size": batch_size}

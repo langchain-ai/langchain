@@ -33,8 +33,20 @@ class _Foo2(BaseModel):
 def test_tools_output_parser() -> None:
     output_parser = ToolsOutputParser()
     expected = [
-        {"name": "_Foo1", "args": {"bar": 0}, "id": "1", "index": 1},
-        {"name": "_Foo2", "args": {"baz": "a"}, "id": "2", "index": 3},
+        {
+            "name": "_Foo1",
+            "args": {"bar": 0},
+            "id": "1",
+            "index": 1,
+            "type": "tool_call",
+        },
+        {
+            "name": "_Foo2",
+            "args": {"baz": "a"},
+            "id": "2",
+            "index": 3,
+            "type": "tool_call",
+        },
     ]
     actual = output_parser.parse_result(_RESULT)
     assert expected == actual
@@ -56,7 +68,13 @@ def test_tools_output_parser_args_only() -> None:
 
 def test_tools_output_parser_first_tool_only() -> None:
     output_parser = ToolsOutputParser(first_tool_only=True)
-    expected: Any = {"name": "_Foo1", "args": {"bar": 0}, "id": "1", "index": 1}
+    expected: Any = {
+        "name": "_Foo1",
+        "args": {"bar": 0},
+        "id": "1",
+        "index": 1,
+        "type": "tool_call",
+    }
     actual = output_parser.parse_result(_RESULT)
     assert expected == actual
 
@@ -81,7 +99,14 @@ def test_tools_output_parser_empty_content() -> None:
     )
     message = AIMessage(
         "",
-        tool_calls=[{"name": "ChartType", "args": {"chart_type": "pie"}, "id": "foo"}],
+        tool_calls=[
+            {
+                "name": "ChartType",
+                "args": {"chart_type": "pie"},
+                "id": "foo",
+                "type": "tool_call",
+            }
+        ],
     )
     actual = output_parser.invoke(message)
     expected = ChartType(chart_type="pie")
