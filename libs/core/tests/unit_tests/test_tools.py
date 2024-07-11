@@ -11,14 +11,14 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.runnables import ensure_config
+from langchain_core.runnables import Runnable, RunnableLambda, ensure_config
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -987,3 +987,85 @@ def test_tool_annotated_descriptions() -> None:
         },
         "required": ["bar", "baz"],
     }
+
+
+def test_convert_from_runnable_dict() -> None:
+    # Test with typed dict input
+    class Args(TypedDict):
+        a: int
+        b: List[int]
+
+    def f(x: Args) -> str:
+        return str(x["a"] * max(x["b"]))
+
+    runnable: Runnable = RunnableLambda(f)
+    as_tool = runnable.as_tool()
+    args_schema = as_tool.args_schema
+    assert args_schema is not None
+    assert args_schema.schema() == {
+        "title": "f",
+        "type": "object",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "array", "items": {"type": "integer"}},
+        },
+        "required": ["a", "b"],
+    }
+    assert as_tool.description
+    result = as_tool.invoke({"a": 3, "b": [1, 2]})
+    assert result == "6"
+
+    as_tool = runnable.as_tool(name="my tool", description="test description")
+    assert as_tool.name == "my tool"
+    assert as_tool.description == "test description"
+
+    # Dict without typed input-- must supply arg types
+    def g(x: Dict[str, Any]) -> str:
+        return str(x["a"] * max(x["b"]))
+
+    runnable = RunnableLambda(g)
+    as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+    result = as_tool.invoke({"a": 3, "b": [1, 2]})
+    assert result == "6"
+
+    # Test with config
+    def h(x: Dict[str, Any]) -> str:
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        return str(x["a"] * max(x["b"]))
+
+    runnable = RunnableLambda(h)
+    as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+    result = as_tool.invoke(
+        {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
+    )
+    assert result == "6"
+
+
+def test_convert_from_runnable_other() -> None:
+    # String input
+    def f(x: str) -> str:
+        return x + "a"
+
+    def g(x: str) -> str:
+        return x + "z"
+
+    runnable: Runnable = RunnableLambda(f) | g
+    as_tool = runnable.as_tool()
+    args_schema = as_tool.args_schema
+    assert args_schema is None
+    assert as_tool.description
+
+    result = as_tool.invoke("b")
+    assert result == "baz"
+
+    # Test with config
+    def h(x: str) -> str:
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        return x + "a"
+
+    runnable = RunnableLambda(h)
+    as_tool = runnable.as_tool()
+    result = as_tool.invoke("b", config={"configurable": {"foo": "not-bar"}})
+    assert result == "ba"
