@@ -36,7 +36,7 @@ def push(
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
     parent_commit_hash: Optional[str] = "latest",
-    new_repo_is_public: bool = True,
+    new_repo_is_public: bool = False,
     new_repo_description: str = "",
 ) -> str:
     """
@@ -56,6 +56,16 @@ def push(
         string.
     """
     client = _get_client(api_url=api_url, api_key=api_key)
+
+    if hasattr(client, "push_prompt"):
+        return client.push_prompt(
+            repo_full_name,
+            object,
+            parent_commit_hash,
+            new_repo_is_public,
+            new_repo_description,
+        )
+
     manifest_json = dumps(object)
     message = client.push(
         repo_full_name,
