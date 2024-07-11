@@ -213,7 +213,7 @@ class VDMS(VectorStore):
             return self.embedding.embed_video(paths=paths, **kwargs)
         else:
             raise ValueError(
-                "Must provide `embedding` which has attribute `embed_image`"
+                "Must provide `embedding` which has attribute `embed_video`"
             )
 
     def _embed_image(self, uris: List[str]) -> List[List[float]]:
