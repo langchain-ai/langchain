@@ -187,6 +187,17 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
     return description, arg_descriptions
 
 
+def _validate_docstring_args_against_annotations(
+    arg_descriptions: dict, annotations: dict
+) -> None:
+    """Raise error if docstring arg is not in type annotations."""
+    for docstring_arg in arg_descriptions:
+        if docstring_arg not in annotations:
+            raise ValueError(
+                f"Arg {docstring_arg} in docstring not found in function signature."
+            )
+
+
 def _infer_arg_descriptions(
     fn: Callable, *, parse_docstring: bool = False
 ) -> Tuple[str, dict]:
@@ -201,6 +212,8 @@ def _infer_arg_descriptions(
         annotations = inspect.get_annotations(fn)  # type: ignore
     else:
         annotations = getattr(fn, "__annotations__", {})
+    if parse_docstring:
+        _validate_docstring_args_against_annotations(arg_descriptions, annotations)
     for arg, arg_type in annotations.items():
         if arg in arg_descriptions:
             continue

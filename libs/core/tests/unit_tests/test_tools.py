@@ -959,6 +959,7 @@ def test_tool_arg_descriptions() -> None:
         "required": ["bar", "baz"],
     }
 
+    # Test parses docstring
     foo2 = tool(foo, parse_docstring=True)
     args_schema = foo2.args_schema.schema()  # type: ignore
     assert args_schema == {
@@ -971,6 +972,19 @@ def test_tool_arg_descriptions() -> None:
         },
         "required": ["bar", "baz"],
     }
+
+    # Test invalid docstring
+    def foo3(bar: str, baz: int) -> str:
+        """The foo.
+
+        Args:
+            banana: The bar.
+            monkey: The baz.
+        """
+        return bar
+
+    with pytest.raises(ValueError):
+        _ = tool(foo3, parse_docstring=True)
 
 
 def test_tool_annotated_descriptions() -> None:
