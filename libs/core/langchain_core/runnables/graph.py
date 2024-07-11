@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
@@ -63,12 +64,32 @@ class Edge(NamedTuple):
     data: Optional[Stringifiable] = None
     conditional: bool = False
 
+    def copy(
+        self, *, source: Optional[str] = None, target: Optional[str] = None
+    ) -> Edge:
+        return Edge(
+            source=source or self.source,
+            target=target or self.target,
+            data=self.data,
+            conditional=self.conditional,
+        )
+
 
 class Node(NamedTuple):
     """Node in a graph."""
 
     id: str
+    name: str
     data: Union[Type[BaseModel], RunnableType]
+    metadata: Optional[Dict[str, Any]]
+
+    def copy(self, *, id: Optional[str] = None, name: Optional[str] = None) -> Node:
+        return Node(
+            id=id or self.id,
+            name=name or self.name,
+            data=self.data,
+            metadata=self.metadata,
+        )
 
 
 class Branch(NamedTuple):
@@ -111,35 +132,25 @@ class MermaidDrawMethod(Enum):
     API = "api"  # Uses Mermaid.INK API to render the graph
 
 
-def node_data_str(node: Node) -> str:
+def node_data_str(id: str, data: Union[Type[BaseModel], RunnableType]) -> str:
     """Convert the data of a node to a string.
 
     Args:
         node: The node to convert.
+        html: Whether to format the data as HTML rich text.
 
     Returns:
         A string representation of the data.
     """
     from langchain_core.runnables.base import Runnable
 
-    if not is_uuid(node.id):
-        return node.id
-    elif isinstance(node.data, Runnable):
-        try:
-            data = str(node.data)
-            if (
-                data.startswith("<")
-                or data[0] != data[0].upper()
-                or len(data.splitlines()) > 1
-            ):
-                data = node.data.__class__.__name__
-            elif len(data) > 42:
-                data = data[:42] + "..."
-        except Exception:
-            data = node.data.__class__.__name__
+    if not is_uuid(id):
+        return id
+    elif isinstance(data, Runnable):
+        data_str = data.get_name()
     else:
-        data = node.data.__name__
-    return data if not data.startswith("Runnable") else data[8:]
+        data_str = data.__name__
+    return data_str if not data_str.startswith("Runnable") else data_str[8:]
 
 
 def node_data_json(
@@ -163,7 +174,7 @@ def node_data_json(
             "type": "runnable",
             "data": {
                 "id": node.data.lc_id(),
-                "name": node.data.get_name(),
+                "name": node_data_str(node.id, node.data),
             },
         }
     elif isinstance(node.data, Runnable):
@@ -171,7 +182,7 @@ def node_data_json(
             "type": "runnable",
             "data": {
                 "id": to_json_not_implemented(node.data)["id"],
-                "name": node.data.get_name(),
+                "name": node_data_str(node.id, node.data),
             },
         }
     elif inspect.isclass(node.data) and issubclass(node.data, BaseModel):
@@ -183,13 +194,13 @@ def node_data_json(
             if with_schemas
             else {
                 "type": "schema",
-                "data": node_data_str(node),
+                "data": node_data_str(node.id, node.data),
             }
         )
     else:
         return {
             "type": "unknown",
-            "data": node_data_str(node),
+            "data": node_data_str(node.id, node.data),
         }
 
 
@@ -236,12 +247,17 @@ class Graph:
         return uuid4().hex
 
     def add_node(
-        self, data: Union[Type[BaseModel], RunnableType], id: Optional[str] = None
+        self,
+        data: Union[Type[BaseModel], RunnableType],
+        id: Optional[str] = None,
+        *,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Node:
         """Add a node to the graph and return it."""
         if id is not None and id in self.nodes:
             raise ValueError(f"Node with id {id} already exists")
-        node = Node(id=id or self.next_id(), data=data)
+        id = id or self.next_id()
+        node = Node(id=id, data=data, metadata=metadata, name=node_data_str(id, data))
         self.nodes[node.id] = node
         return node
 
@@ -285,25 +301,47 @@ class Graph:
 
         # prefix each node
         self.nodes.update(
-            {prefixed(k): Node(prefixed(k), v.data) for k, v in graph.nodes.items()}
+            {prefixed(k): v.copy(id=prefixed(k)) for k, v in graph.nodes.items()}
         )
         # prefix each edge's source and target
         self.edges.extend(
             [
-                Edge(
-                    prefixed(edge.source),
-                    prefixed(edge.target),
-                    edge.data,
-                    edge.conditional,
-                )
+                edge.copy(source=prefixed(edge.source), target=prefixed(edge.target))
                 for edge in graph.edges
             ]
         )
         # return (prefixed) first and last nodes of the subgraph
         first, last = graph.first_node(), graph.last_node()
         return (
-            Node(prefixed(first.id), first.data) if first else None,
-            Node(prefixed(last.id), last.data) if last else None,
+            first.copy(id=prefixed(first.id)) if first else None,
+            last.copy(id=prefixed(last.id)) if last else None,
+        )
+
+    def reid(self) -> Graph:
+        """Return a new graph with all nodes re-identified,
+        using their unique, readable names where possible."""
+        node_labels = {node.id: node.name for node in self.nodes.values()}
+        node_label_counts = Counter(node_labels.values())
+
+        def _get_node_id(node_id: str) -> str:
+            label = node_labels[node_id]
+            if is_uuid(node_id) and node_label_counts[label] == 1:
+                return label
+            else:
+                return node_id
+
+        return Graph(
+            nodes={
+                _get_node_id(id): node.copy(id=_get_node_id(id))
+                for id, node in self.nodes.items()
+            },
+            edges=[
+                edge.copy(
+                    source=_get_node_id(edge.source),
+                    target=_get_node_id(edge.target),
+                )
+                for edge in self.edges
+            ],
         )
 
     def first_node(self) -> Optional[Node]:
@@ -357,7 +395,7 @@ class Graph:
         from langchain_core.runnables.graph_ascii import draw_ascii
 
         return draw_ascii(
-            {node.id: node_data_str(node) for node in self.nodes.values()},
+            {node.id: node.name for node in self.nodes.values()},
             self.edges,
         )
 
@@ -388,9 +426,7 @@ class Graph:
     ) -> Union[bytes, None]:
         from langchain_core.runnables.graph_png import PngDrawer
 
-        default_node_labels = {
-            node.id: node_data_str(node) for node in self.nodes.values()
-        }
+        default_node_labels = {node.id: node.name for node in self.nodes.values()}
 
         return PngDrawer(
             fontname,
@@ -415,19 +451,15 @@ class Graph:
     ) -> str:
         from langchain_core.runnables.graph_mermaid import draw_mermaid
 
-        nodes = {node.id: node_data_str(node) for node in self.nodes.values()}
-
-        first_node = self.first_node()
-        first_label = node_data_str(first_node) if first_node is not None else None
-
-        last_node = self.last_node()
-        last_label = node_data_str(last_node) if last_node is not None else None
+        graph = self.reid()
+        first_node = graph.first_node()
+        last_node = graph.last_node()
 
         return draw_mermaid(
-            nodes=nodes,
-            edges=self.edges,
-            first_node_label=first_label,
-            last_node_label=last_label,
+            nodes=graph.nodes,
+            edges=graph.edges,
+            first_node=first_node.id if first_node else None,
+            last_node=last_node.id if last_node else None,
             with_styles=with_styles,
             curve_style=curve_style,
             node_colors=node_colors,
