@@ -48,9 +48,8 @@ from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
 )
-from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -91,20 +90,86 @@ def _create_retry_decorator(
 
 
 class ChatOCIModelDeploymentEndpoint(BaseChatModel):
-    """Base class for chat model deployed on OCI Data Science Model Deployment.
+    """OCI Data Science Model Deployment chat model integration.
 
-    Example:
-
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatOCIModelDeploymentEndpoint
 
-            llm = ChatOCIModelDeploymentEndpoint(
+            chat = ChatOCIModelDeploymentEndpoint(
                 endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
+                model="odsc-llm",
+                # other params...
             )
-    """
 
-    """Base class for chat model deployed on OCI Data Science Model Deployment."""
+    Invocation:
+        .. code-block:: python
+
+            messages = [
+                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                ("human", "Hello World!"),
+            ]
+            chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content='Bonjour le monde!', response_metadata={'token_usage': {'prompt_tokens': 40, 'total_tokens': 50, 'completion_tokens': 10}, 'model_name': 'odsc-llm', 'system_fingerprint': '', 'finish_reason': 'stop'}, id='run-cbed62da-e1b3-4abd-9df3-ec89d69ca012-0')
+
+    Streaming:
+        .. code-block:: python
+
+            for chunk in chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content='\n' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content='B' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content='on' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content='j' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content='our' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content=' le' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content=' monde' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content='!' id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+            content='' response_metadata={'finish_reason': 'stop'} id='run-23df02c6-c43f-42de-87c6-8ad382e125c3'
+
+    Asyc:
+        .. code-block:: python
+
+            await chat.ainvoke(messages)
+
+            # stream:
+            # async for chunk in (await chat.astream(messages))
+
+        .. code-block:: python
+
+            AIMessage(content='Bonjour le monde!', response_metadata={'finish_reason': 'stop'}, id='run-8657a105-96b7-4bb6-b98e-b69ca420e5d1-0')
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class Joke(BaseModel):
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+
+            structured_llm = chat.with_structured_output(Joke, method="json_mode")
+            structured_llm.invoke(
+                "Tell me a joke about cats, respond in JSON with `setup` and `punchline` keys"
+            )
+
+        .. code-block:: python
+
+            Joke(setup='Why did the cat get stuck in the tree?', punchline='Because it was chasing its tail!')
+
+        See ``ChatOCIModelDeploymentEndpoint.with_structured_output()`` for more.
+
+    """
 
     auth: dict = Field(default_factory=dict, exclude=True)
     """ADS auth dictionary for OCI authentication:
@@ -265,7 +330,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
                         "system",
                         "You are a helpful assistant that translates English to French. Translate the user sentence.",
                     ),
-                    ("human", "I love programming."),
+                    ("human", "Hello World!"),
                 ]
 
                 chunk_iter = chat.stream(messages)
@@ -517,7 +582,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
-            raise NotImplementedError()
+            raise NotImplementedError("Currently only supprot `json_mode`.")
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
