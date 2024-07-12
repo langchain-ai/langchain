@@ -1,4 +1,5 @@
 """Utils for interacting with the Semantic Scholar API."""
+
 import logging
 from typing import Any, Dict, Optional
 

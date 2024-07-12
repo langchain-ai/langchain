@@ -1,4 +1,5 @@
 """Question answering over a graph."""
+
 from __future__ import annotations
 
 import json
@@ -322,6 +323,6 @@ class OntotextGraphDBQAChain(Chain):
         Returns the query results in json format
         """
         query_bindings = query_results.bindings  # List[Dict[str, Value]]
-        res = [{k: v.value} for d in query_bindings for k, v in d.items()]
+        res = [{k: v.value for k, v in d.items()} for d in query_bindings]
         query_results_str = json.dumps(res)
         return query_results_str

@@ -1,4 +1,5 @@
 """Integration test for Merriam Webster API Wrapper."""
+
 import pytest
 
 from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapper

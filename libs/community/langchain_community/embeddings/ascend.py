@@ -54,8 +54,10 @@ class AscendEmbeddings(Embeddings, BaseModel):
             self.model.half()
         self.encode([f"warmup {i} times" for i in range(10)])
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
+        if "model_path" not in values:
+            raise ValueError("model_path is required")
         if not os.access(values["model_path"], os.F_OK):
             raise FileNotFoundError(
                 f"Unabled to find valid model path in [{values['model_path']}]"

@@ -1,4 +1,5 @@
 """Lightweight wrapper around requests library, with async support."""
+
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict, Literal, Optional, Union
 
