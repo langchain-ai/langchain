@@ -15,8 +15,8 @@ from langchain_core.indexing.base import (
 
 __all__ = [
     "aindex",
-    "index",
     "BaseIndex",
+    "index",
     "IndexingResult",
     "InMemoryRecordManager",
     "RecordManager",

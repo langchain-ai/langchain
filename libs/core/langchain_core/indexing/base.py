@@ -7,18 +7,18 @@ from typing import (
     Any,
     AsyncIterable,
     AsyncIterator,
+    Dict,
     Generic,
     Iterable,
     Iterator,
     List,
+    Literal,
     NotRequired,
+    Optional,
     Sequence,
     TypedDict,
     TypeVar,
-    Optional,
     Union,
-    Dict,
-    Literal,
 )
 
 from langchain_core._api import beta
@@ -110,7 +110,7 @@ class DeleteResponse(TypedDict, total=False):
     """
 
 
-class BaseIndex(Generic[T, Q]):
+class BaseIndex(Generic[T]):
     """A collection of items that can be queried.
 
     This indexing interface is designed to be a generic abstraction for storing and

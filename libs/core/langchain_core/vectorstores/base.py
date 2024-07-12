@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from langchain_core.indexing.base import UpsertResponse
 
 from langchain_core.documents.base import Document
-from langchain_core.indexing.base_index import BaseIndex
+from langchain_core.indexing import BaseIndex
 
 logger = logging.getLogger(__name__)
 
