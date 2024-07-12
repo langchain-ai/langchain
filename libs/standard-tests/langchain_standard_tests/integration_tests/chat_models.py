@@ -44,6 +44,7 @@ def _validate_tool_call_message(message: BaseMessage) -> None:
     assert tool_call["name"] == "magic_function"
     assert tool_call["args"] == {"input": 3}
     assert tool_call["id"] is not None
+    assert tool_call["type"] == "tool_call"
 
 
 def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
@@ -53,6 +54,7 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert tool_call["name"] == "magic_function_no_args"
     assert tool_call["args"] == {}
     assert tool_call["id"] is not None
+    assert tool_call["type"] == "tool_call"
 
 
 class ChatModelIntegrationTests(ChatModelTests):
@@ -212,6 +214,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert result.tool_calls
         tool_call = result.tool_calls[0]
         assert tool_call["args"].get("answer_style")
+        assert tool_call["type"] == "tool_call"
 
     def test_structured_output(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
@@ -266,6 +269,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),
@@ -310,6 +314,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),
@@ -342,6 +347,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),
