@@ -1,3 +1,5 @@
+# Copyright (c) 2024 Oracle and/or its affiliates.
+
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -68,6 +70,10 @@ class TokenExpiredError(Exception):
     pass
 
 
+class ServerError(Exception):
+    pass
+
+
 def _create_retry_decorator(
     llm,
     *,
@@ -88,6 +94,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     """Base class for chat model deployed on OCI Data Science Model Deployment.
 
     Example:
+
         .. code-block:: python
 
             from langchain_community.chat_models import ChatOCIModelDeploymentEndpoint
@@ -119,6 +126,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     """The name of the model."""
 
     max_retries: int = 3
+    """Maximum number of retries to make when generating."""
 
     stop: Optional[List[str]] = None
     """Stop words to use when generating. Model output is cut off
@@ -286,6 +294,39 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        """Asynchronously call out to OCI Data Science Model Deployment endpoint on given messages.
+
+        Args:
+            messages (List[BaseMessage]):
+                The messagaes to pass into the model.
+            stop (List[str], Optional):
+                List of stop words to use when generating.
+            kwargs:
+                requests_kwargs:
+                    Additional ``**kwargs`` to pass to requests.post
+
+        Returns:
+            LangChain ChatResult.
+
+        Raises:
+            ValueError:
+                Raise when invoking endpoint fails.
+
+        Example:
+
+            .. code-block:: python
+
+                messages = [
+                    (
+                        "system",
+                        "You are a helpful assistant that translates English to French. Translate the user sentence.",
+                    ),
+                    ("human", "I love programming."),
+                ]
+
+                resp = await chat.ainvoke(messages)
+
+        """
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
             stream_iter = self._astream(
@@ -310,6 +351,39 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        """Asynchronously streaming OCI Data Science Model Deployment endpoint on given messages.
+
+        Args:
+            messages (List[BaseMessage]):
+                The messagaes to pass into the model.
+            stop (List[str], Optional):
+                List of stop words to use when generating.
+            kwargs:
+                requests_kwargs:
+                    Additional ``**kwargs`` to pass to requests.post
+
+        Returns:
+            An Asynciterator of ChatGenerationChunk.
+
+        Raises:
+            ValueError:
+                Raise when invoking endpoint fails.
+
+        Example:
+
+            .. code-block:: python
+
+                messages = [
+                    (
+                        "system",
+                        "You are a helpful assistant that translates English to French. Translate the user sentence.",
+                    ),
+                    ("human", "I love programming."),
+                ]
+
+                chunk_iter = await chat.astream(messages)
+
+        """
         requests_kwargs = kwargs.pop("requests_kwargs", {})
         self.streaming = True
         params = self._invocation_params(stop, **kwargs)
@@ -476,6 +550,15 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         return {**params, **kwargs}
 
     def _headers(self, is_async=False, body=None) -> Dict:
+        """Construct and return the headers for a request.
+
+        Args:
+            is_async (bool, optional): Indicates if the request is asynchronous. Defaults to `False`.
+            body (optional): The request body to be included in the headers if the request is asynchronous.
+
+        Returns:
+            Dict: A dictionary containing the appropriate headers for the request.
+        """
         if is_async:
             signer = self.auth["signer"]
             req = requests.Request("POST", self.endpoint, json=body)
@@ -526,16 +609,10 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
                     stream=stream,
                     **kwargs,
                 )
-                response.raise_for_status()
+                self._check_response(response)
                 return response
-            except requests.exceptions.HTTPError as http_err:
-                if response.status_code == 401 and self._refresh_signer():
-                    raise TokenExpiredError() from http_err
-                else:
-                    raise ValueError(
-                        f"Error occurs by inference endpoint "
-                        f"{str(http_err)}: {response.text}"
-                    ) from http_err
+            except TokenExpiredError as e:
+                raise e
             except Exception as err:
                 raise ValueError(
                     f"Error occurs by inference endpoint: {str(err)}"
@@ -571,18 +648,60 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
                         url=self.endpoint,
                         data=data,
                         timeout=request_timeout,
-                    ) as resp:
-                        resp.raise_for_status()
-                        data = await resp.json()
+                    ) as response:
+                        self._check_response(response)
+                        data = await response.json()
                         return data
+            except TokenExpiredError as e:
+                raise e
             except Exception as err:
                 raise ValueError(
-                    f"Error occurs by inference endpoint " f"{str(err)}"
+                    f"Error occurs by inference endpoint: {str(err)}"
                 ) from err
 
         return await _completion_with_retry(**kwargs)
 
+    def _check_response(
+        self, response: Union[requests.Response, aiohttp.ClientResponse]
+    ) -> None:
+        """Handle server error by checking the response status.
+
+        Args:
+            response (Union[requests.Response, aiohttp.ClientResponse]):
+                The response object from either `requests` or `aiohttp` library.
+
+        Raises:
+            TokenExpiredError:
+                If the response status code is 401 and the token refresh is successful.
+            ServerError:
+                If any other HTTP error occurs.
+        """
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as http_err:
+            status_code = (
+                response.status_code
+                if hasattr(response, "status_code")
+                else response.status
+            )
+            if status_code == 401 and self._refresh_signer():
+                raise TokenExpiredError() from http_err
+            else:
+                raise ServerError(
+                    f"Server error: {str(http_err)}. Message: {response.text}"
+                ) from http_err
+
     def _parse_stream(self, lines: Iterator[bytes]) -> Iterator[str]:
+        """Parse a stream of byte lines and yield parsed string lines.
+
+        Args:
+            lines (Iterator[bytes]):
+                An iterator that yields lines in byte format.
+
+        Yields:
+            Iterator[str]:
+                An iterator that yields parsed lines as strings.
+        """
         for line in lines:
             _line = self._parse_stream_line(line)
             if _line is not None:
@@ -592,12 +711,32 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         self,
         lines: aiohttp.StreamReader,
     ) -> AsyncIterator[str]:
+        """
+        Asynchronously parse a stream of byte lines and yield parsed string lines.
+
+        Args:
+            lines (aiohttp.StreamReader):
+                An `aiohttp.StreamReader` object that yields lines in byte format.
+
+        Yields:
+            AsyncIterator[str]:
+                An asynchronous iterator that yields parsed lines as strings.
+        """
         async for line in lines:
             _line = self._parse_stream_line(line)
             if _line is not None:
                 yield _line
 
     def _parse_stream_line(self, line: bytes) -> Optional[str]:
+        """Parse a single byte line and return a processed string line if valid.
+
+        Args:
+            line (bytes): A single line in byte format.
+
+        Returns:
+            Optional[str]:
+                The processed line as a string if valid, otherwise `None`.
+        """
         line = line.strip()
         if line:
             line = line.decode("utf-8")
@@ -605,12 +744,23 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
                 return None
 
             if line.startswith("data:"):
-                return line[6:] if line.startswith("data: ") else line[5:]
+                return line[5:].lstrip()
         return None
 
     def _handle_sse_line(
         self, line: str, default_chunk_cls: AIMessageChunk
     ) -> ChatGenerationChunk:
+        """Handle a single Server-Sent Events (SSE) line and process it into a chat generation chunk.
+
+        Args:
+            line (str): A single line from the SSE stream in string format.
+            default_chunk_cls (AIMessageChunk): The default class for message chunks to be used
+                during the processing of the stream response.
+
+        Returns:
+            ChatGenerationChunk: The processed chat generation chunk. If an error occurs, an empty
+                `ChatGenerationChunk` is returned.
+        """
         try:
             obj = json.loads(line)
             return self._process_stream_response(obj, default_chunk_cls)
@@ -621,14 +771,25 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         self,
         async_cntx_mgr,
     ) -> AsyncIterator[Dict]:
-        """Iterate over the server-sent events."""
+        """Asynchronously iterate over server-sent events (SSE).
+
+        Args:
+            async_cntx_mgr: An asynchronous context manager that yields a client response object.
+
+        Yields:
+            AsyncIterator[Dict]: An asynchronous iterator that yields parsed server-sent event lines as dictionaries.
+        """
         async with async_cntx_mgr as client_resp:
-            client_resp.raise_for_status()
+            self._check_response(client_resp)
             async for line in self._parse_stream_async(client_resp.content):
                 yield line
 
     def _refresh_signer(self) -> None:
-        """Refresh token."""
+        """Attempt to refresh the security token using the signer.
+
+        Returns:
+                bool: `True` if the token was successfully refreshed, `False` otherwise.
+        """
         if self.auth.get("signer", None) and hasattr(
             self.auth["signer"], "refresh_security_token"
         ):
@@ -639,7 +800,16 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     # The following methods can be overwrite by subclass to satisfied
     # custom need for request's payload and handle response.
     def _construct_json_body(self, messages: list, params: dict) -> dict:
-        """Constructs the request body as a dictionary (JSON)."""
+        """Constructs the request body as a dictionary (JSON).
+
+        Args:
+            messages (list): A list of message objects to be included in the request body.
+            params (dict): A dictionary of additional parameters to be included in the request body.
+
+        Returns:
+            dict: A dictionary representing the JSON request body, including converted messages and additional parameters.
+
+        """
         return {
             "messages": [convert_message_to_dict(m) for m in messages],
             **params,
@@ -648,7 +818,20 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     def _process_stream_response(
         self, response_json: dict, default_chunk_cls=AIMessageChunk
     ) -> ChatGenerationChunk:
-        """Formats streaming response for OpenAI spec."""
+        """Formats streaming response in OpenAI spec.
+
+        Args:
+            response_json (dict): The JSON response from the streaming endpoint.
+            default_chunk_cls (type, optional): The default class to use for creating message chunks.
+                Defaults to `AIMessageChunk`.
+
+        Returns:
+            ChatGenerationChunk: An object containing the processed message chunk and any relevant
+                generation information such as finish reason and usage.
+
+        Raises:
+            ValueError: If the response JSON is not well-formed or does not contain the expected structure.
+        """
         try:
             choice = response_json["choices"][0]
             if not isinstance(choice, dict):
@@ -673,7 +856,18 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         )
 
     def _process_response(self, response_json: dict) -> ChatResult:
-        """Formats response for OpenAI spec."""
+        """Formats response in OpenAI spec.
+
+        Args:
+            response_json (dict): The JSON response from the chat model endpoint.
+
+        Returns:
+            ChatResult: An object containing the list of `ChatGeneration` objects and additional LLM output information.
+
+        Raises:
+            ValueError: If the response JSON is not well-formed or does not contain the expected structure.
+
+        """
         generations = []
         try:
             choices = response_json["choices"]
