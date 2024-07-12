@@ -1084,6 +1084,35 @@ class Milvus(VectorStore):
             metadata=data.pop(self._metadata_field) if self._metadata_field else data,
         )
 
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        # TODO: Handle the case where the user doesn't provide ids on the Collection
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return self.add_texts(texts, metadatas, **kwargs)
+
+    async def aadd_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return await self.aadd_texts(texts, metadatas, **kwargs)
+
     def get_pks(self, expr: str, **kwargs: Any) -> List[int] | None:
         """Get primary keys with expression
 
@@ -1110,7 +1139,7 @@ class Milvus(VectorStore):
         pks = [item.get(self._primary_field) for item in query_result]
         return pks
 
-    def upsert(
+    def upsert(  # type: ignore
         self,
         ids: Optional[List[str]] = None,
         documents: List[Document] | None = None,

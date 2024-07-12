@@ -1,6 +1,5 @@
 """Test the base tool implementation."""
 
-import asyncio
 import inspect
 import json
 import sys
@@ -8,17 +7,23 @@ import textwrap
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain_core.messages import ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.runnables import ensure_config
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableLambda,
+    ensure_config,
+)
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -913,7 +918,6 @@ async def test_async_tool_pass_context() -> None:
     @tool
     async def foo(bar: str) -> str:
         """The foo."""
-        await asyncio.sleep(0.0001)
         config = ensure_config()
         assert config["configurable"]["foo"] == "not-bar"
         assert bar == "baz"
@@ -921,6 +925,64 @@ async def test_async_tool_pass_context() -> None:
 
     assert (
         await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+    )
+
+
+def assert_bar(bar: Any, bar_config: RunnableConfig) -> Any:
+    assert bar_config["configurable"]["foo"] == "not-bar"
+    assert bar == "baz"
+    return bar
+
+
+@tool
+def foo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    return assert_bar(bar, bar_config)
+
+
+@tool
+async def afoo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    return assert_bar(bar, bar_config)
+
+
+@tool(infer_schema=False)
+def simple_foo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    return assert_bar(bar, bar_config)
+
+
+@tool(infer_schema=False)
+async def asimple_foo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    return assert_bar(bar, bar_config)
+
+
+class FooBase(BaseTool):
+    name: str = "Foo"
+    description: str = "Foo"
+
+    def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        return assert_bar(bar, bar_config)
+
+
+class AFooBase(FooBase):
+    async def _arun(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        return assert_bar(bar, bar_config)
+
+
+@pytest.mark.parametrize("tool", [foo, simple_foo, FooBase(), AFooBase()])
+def test_tool_pass_config(tool: BaseTool) -> None:
+    assert tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
+
+
+@pytest.mark.parametrize(
+    "tool", [foo, afoo, simple_foo, asimple_foo, FooBase(), AFooBase()]
+)
+async def test_async_tool_pass_config(tool: BaseTool) -> None:
+    assert (
+        await tool.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}})
+        == "baz"
     )
 
 
@@ -959,6 +1021,84 @@ def test_tool_arg_descriptions() -> None:
         "required": ["bar", "baz"],
     }
 
+    # Test parses docstring
+    foo2 = tool(foo, parse_docstring=True)
+    args_schema = foo2.args_schema.schema()  # type: ignore
+    expected = {
+        "title": "fooSchema",
+        "description": "The foo.",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "description": "The bar.", "type": "string"},
+            "baz": {"title": "Baz", "description": "The baz.", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
+    assert args_schema == expected
+
+    # Test parsing with run_manager does not raise error
+    def foo3(
+        bar: str, baz: int, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    as_tool = tool(foo3, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+    assert args_schema["properties"] == expected["properties"]
+
+    # Test parameterless tool does not raise error for missing Args section
+    # in docstring.
+    def foo4() -> str:
+        """The foo."""
+        return "bar"
+
+    as_tool = tool(foo4, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+
+    def foo5(run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """The foo."""
+        return "bar"
+
+    as_tool = tool(foo5, parse_docstring=True)
+    args_schema = as_tool.args_schema.schema()  # type: ignore
+    assert args_schema["description"] == expected["description"]
+
+
+def test_tool_invalid_docstrings() -> None:
+    # Test invalid docstrings
+    def foo3(bar: str, baz: int) -> str:
+        """The foo."""
+        return bar
+
+    def foo4(bar: str, baz: int) -> str:
+        """The foo.
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    def foo5(bar: str, baz: int) -> str:
+        """The foo.
+
+        Args:
+            banana: The bar.
+            monkey: The baz.
+        """
+        return bar
+
+    for func in [foo3, foo4, foo5]:
+        with pytest.raises(ValueError):
+            _ = tool(func, parse_docstring=True)
+
 
 def test_tool_annotated_descriptions() -> None:
     def foo(
@@ -987,3 +1127,144 @@ def test_tool_annotated_descriptions() -> None:
         },
         "required": ["bar", "baz"],
     }
+
+
+def test_tool_call_input_tool_message_output() -> None:
+    tool_call = {
+        "name": "structured_api",
+        "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
+        "id": "123",
+        "type": "tool_call",
+    }
+    tool = _MockStructuredTool()
+    expected = ToolMessage("1 True {'img': 'base64string...'}", tool_call_id="123")
+    actual = tool.invoke(tool_call)
+    assert actual == expected
+
+    tool_call.pop("type")
+    with pytest.raises(ValidationError):
+        tool.invoke(tool_call)
+
+
+class _MockStructuredToolWithRawOutput(BaseTool):
+    name: str = "structured_api"
+    args_schema: Type[BaseModel] = _MockSchema
+    description: str = "A Structured Tool"
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
+
+    def _run(
+        self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+    ) -> Tuple[str, dict]:
+        return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
+
+
+@tool("structured_api", response_format="content_and_artifact")
+def _mock_structured_tool_with_artifact(
+    arg1: int, arg2: bool, arg3: Optional[dict] = None
+) -> Tuple[str, dict]:
+    """A Structured Tool"""
+    return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
+
+
+@pytest.mark.parametrize(
+    "tool", [_MockStructuredToolWithRawOutput(), _mock_structured_tool_with_artifact]
+)
+def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
+    tool_call: Dict = {
+        "name": "structured_api",
+        "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
+        "id": "123",
+        "type": "tool_call",
+    }
+    expected = ToolMessage("1 True", artifact=tool_call["args"], tool_call_id="123")
+    actual = tool.invoke(tool_call)
+    assert actual == expected
+
+    tool_call.pop("type")
+    with pytest.raises(ValidationError):
+        tool.invoke(tool_call)
+
+    actual_content = tool.invoke(tool_call["args"])
+    assert actual_content == expected.content
+
+
+def test_convert_from_runnable_dict() -> None:
+    # Test with typed dict input
+    class Args(TypedDict):
+        a: int
+        b: List[int]
+
+    def f(x: Args) -> str:
+        return str(x["a"] * max(x["b"]))
+
+    runnable: Runnable = RunnableLambda(f)
+    as_tool = runnable.as_tool()
+    args_schema = as_tool.args_schema
+    assert args_schema is not None
+    assert args_schema.schema() == {
+        "title": "f",
+        "type": "object",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "array", "items": {"type": "integer"}},
+        },
+        "required": ["a", "b"],
+    }
+    assert as_tool.description
+    result = as_tool.invoke({"a": 3, "b": [1, 2]})
+    assert result == "6"
+
+    as_tool = runnable.as_tool(name="my tool", description="test description")
+    assert as_tool.name == "my tool"
+    assert as_tool.description == "test description"
+
+    # Dict without typed input-- must supply arg types
+    def g(x: Dict[str, Any]) -> str:
+        return str(x["a"] * max(x["b"]))
+
+    runnable = RunnableLambda(g)
+    as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+    result = as_tool.invoke({"a": 3, "b": [1, 2]})
+    assert result == "6"
+
+    # Test with config
+    def h(x: Dict[str, Any]) -> str:
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        return str(x["a"] * max(x["b"]))
+
+    runnable = RunnableLambda(h)
+    as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+    result = as_tool.invoke(
+        {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
+    )
+    assert result == "6"
+
+
+def test_convert_from_runnable_other() -> None:
+    # String input
+    def f(x: str) -> str:
+        return x + "a"
+
+    def g(x: str) -> str:
+        return x + "z"
+
+    runnable: Runnable = RunnableLambda(f) | g
+    as_tool = runnable.as_tool()
+    args_schema = as_tool.args_schema
+    assert args_schema is None
+    assert as_tool.description
+
+    result = as_tool.invoke("b")
+    assert result == "baz"
+
+    # Test with config
+    def h(x: str) -> str:
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        return x + "a"
+
+    runnable = RunnableLambda(h)
+    as_tool = runnable.as_tool()
+    result = as_tool.invoke("b", config={"configurable": {"foo": "not-bar"}})
+    assert result == "ba"
