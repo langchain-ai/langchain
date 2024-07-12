@@ -1,19 +1,13 @@
 import uuid
 from typing import Any, List, Optional, Sequence
 
-from langchain.pydantic_v1 import BaseModel
-from langchain.retrievers import MultiVectorRetriever
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
-from langchain_core.documents import BaseDocumentTransformer, Document
-from langchain_core.indexing import UpsertResponse
-from langchain_core.indexing.base import DeleteResponse
-from langchain_core.indexing.base_index import BaseIndex
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.vectorstores import VectorStore
+from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
 
+from langchain.retrievers import MultiVectorRetriever
 
-class ParentDocumentRetriever(MultiVectorRetriever, BaseIndex[Document]):
+
+class ParentDocumentRetriever(MultiVectorRetriever):
     """Retrieve small chunks then retrieve their parent documents.
 
     When splitting documents for retrieval, there are often conflicting desires:
@@ -64,6 +58,8 @@ class ParentDocumentRetriever(MultiVectorRetriever, BaseIndex[Document]):
     child_splitter: TextSplitter
     """The text splitter to use to create child documents."""
 
+    """The key to use to track the parent id. This will be stored in the
+    metadata of child documents."""
     parent_splitter: Optional[TextSplitter] = None
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
@@ -127,135 +123,3 @@ class ParentDocumentRetriever(MultiVectorRetriever, BaseIndex[Document]):
         self.vectorstore.add_documents(docs, **kwargs)
         if add_to_docstore:
             self.docstore.mset(full_docs)
-
-
-## V2 Implementation
-
-
-class ParentRetrieverV2(BaseRetriever):
-    underlying_retriever: BaseRetriever
-    """The underlying retriever to use to retrieve the parent documents."""
-    id_key: str = "doc_id"
-    """The key to use to look up the parent documents."""
-    store: BaseIndex[Document]
-    transformer: BaseDocumentTransformer
-
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        """Get documents relevant to a query.
-
-        Args:
-            query: String to find relevant documents for
-            run_manager: The callback handler to use
-        Returns:
-            List of relevant documents
-        """
-        # Config is a problem for composition?
-        sub_docs = self.underlying_retriever.invoke(
-            query, config={"callbacks": run_manager}
-        )
-        ids = []
-        for d in sub_docs:
-            if self.id_key in d.metadata and d.metadata[self.id_key] not in ids:
-                ids.append(d.metadata[self.id_key])
-        docs = self.store.get_by_ids(ids)
-        return docs
-
-
-# Needs a better name
-class FullDocumentIndex(BaseIndex[Document], BaseModel):
-    """A specialized index that stores small chunks of data and their embeddings."""
-
-    vectorstore: VectorStore  # <-- Unnecessarily strict. We should just create a QueryableIndex here
-    """A specialized index that stores small chunks of data and their embeddings."""
-    store: BaseIndex[Document]
-    """The storage interface for the parent documents"""
-    id_key: str = "doc_id"
-    """The key to use to look up the parent documents."""
-    chunker: BaseDocumentTransformer
-    """Used to chunk the source documents into small chunks that can will be searched."""
-
-    def upsert(
-        self,
-        items: Sequence[Document],
-        /,
-        vector_store_kwargs: Optional[dict] = None,
-        **kwargs: Any,
-    ) -> UpsertResponse:
-        """Upsert documents into the index and vectorstore."""
-        for item in items:
-            if item.id is None:
-                raise ValueError("Document must have an ID.")
-
-        child_docs = []
-
-        # This logic is inefficient since we don't have a good way to keep
-        # track of the original document
-        for doc in items:
-            # Can't do this efficiently cuz we have to keep track of the original
-            # document
-            sub_docs = self.chunker.transform_documents([doc])
-            for sub_doc in sub_docs:
-                # Select the metadata for the child documents
-                for _doc in sub_doc:
-                    _doc.metadata = {
-                        k: _doc.metadata[k] for k in self.child_metadata_fields
-                    }
-                    # Add the parent id to the child documents
-                    _doc.metadata[self.id_key] = doc.id
-
-            child_docs.extend(sub_docs)
-
-        # Needs to clean UP first to keep things synchronized.
-        self.vectorstore.delete_by_filter(
-            {
-                "filter": {
-                    self.id_key: {
-                        "$in": [doc.id for doc in items],
-                    }
-                }
-            }
-        )
-
-        self.vectorstore.upsert(child_docs, **(vector_store_kwargs or {}))
-
-        return self.docstore.upsert(items)
-
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
-        """Get documents by their ids."""
-        return self.store.get_by_ids(ids)
-
-    def delete_by_ids(
-        self,
-        ids: Sequence[str],
-        /,
-    ) -> DeleteResponse:
-        """Delete documents by their ids."""
-        # First delete from vectorstore
-        self.vectorstore.delete_by_filter(
-            {
-                "filter": {
-                    self.id_key: {
-                        "$in": ids,
-                    }
-                }
-            }
-        )
-        delete_response = self.store.delete_by_ids(ids)
-        return delete_response
-
-    # This could be an argument for accepting kwargs in get_by_ids!
-    def get_by_ids_from_vectorstore(self, ids: Sequence[str], /) -> List[Document]:
-        """Get documents by their ids."""
-        return self.vectorstore.get_by_ids(ids)
-
-    # We should inherit from a more generalized version of a retriever
-    # so we don't have to do get_retriever()
-    def get_retriever(self, **kwargs) -> ParentRetrieverV2:
-        """Get documents by their ids."""
-        # We do this to maintain the order of the ids that are returned
-        return ParentRetrieverV2(
-            underlying_retriever=self.vectortore.as_retriever(**kwargs),
-            store=self.store,
-        )

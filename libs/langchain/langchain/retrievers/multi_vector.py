@@ -54,11 +54,9 @@ class MultiVectorRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant to a query.
-
         Args:
             query: String to find relevant documents for
             run_manager: The callbacks handler to use
-
         Returns:
             List of relevant documents
         """
@@ -81,11 +79,9 @@ class MultiVectorRetriever(BaseRetriever):
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
-
         Args:
             query: String to find relevant documents for
             run_manager: The callbacks handler to use
-
         Returns:
             List of relevant documents
         """
