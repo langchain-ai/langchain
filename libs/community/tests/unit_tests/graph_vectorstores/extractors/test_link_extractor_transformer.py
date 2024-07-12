@@ -14,7 +14,7 @@ TEXT2 = "Text2"
 
 class FakeKeywordExtractor(LinkExtractor[Document]):
     def extract_one(self, input: Document) -> Set[Link]:
-        kws = {}
+        kws: Set[str] = set()
         if input.page_content == TEXT1:
             kws = {"a", "b"}
         elif input.page_content == TEXT2:
@@ -36,9 +36,11 @@ class FakeHyperlinkExtractor(LinkExtractor[Document]):
                 Link.incoming(kind="fakehref", tag="http://text2"),
                 Link.outgoing(kind="fakehref", tag="http://text3"),
             }
+        else:
+            raise ValueError(f"Unsupported input for FakeHyperlinkExtractor: '{input.page_content}'")
 
 
-def test_one_extractor():
+def test_one_extractor() -> None:
     transformer = LinkExtractorTransformer(
         [
             FakeKeywordExtractor(),
@@ -61,7 +63,7 @@ def test_one_extractor():
     }
 
 
-def test_multiple_extractors():
+def test_multiple_extractors() -> None:
     transformer = LinkExtractorTransformer(
         [
             FakeKeywordExtractor(),
