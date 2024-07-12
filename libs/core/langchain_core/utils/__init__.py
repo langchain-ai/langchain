@@ -6,6 +6,7 @@ These functions do not depend on any other LangChain module.
 
 from langchain_core.utils import image
 from langchain_core.utils.aiter import abatch_iterate
+from langchain_core.utils.curry import curry
 from langchain_core.utils.env import get_from_dict_or_env, get_from_env
 from langchain_core.utils.formatting import StrictFormatter, formatter
 from langchain_core.utils.input import (
@@ -33,6 +34,7 @@ __all__ = [
     "StrictFormatter",
     "check_package_version",
     "convert_to_secret_str",
+    "curry",
     "formatter",
     "get_bolded_text",
     "get_color_mapping",
