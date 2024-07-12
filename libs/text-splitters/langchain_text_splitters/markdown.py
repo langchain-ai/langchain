@@ -1,5 +1,3 @@
-
-
 import re
 from typing import Any, Dict, List, Tuple, TypedDict, Union
 
@@ -17,6 +15,21 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
         """Initialize a MarkdownTextSplitter."""
         separators = self.get_separators_for_language(Language.MARKDOWN)
         super().__init__(separators=separators, **kwargs)
+
+
+class LineType(TypedDict):
+    """Line type as typed dict."""
+
+    metadata: Dict[str, str]
+    content: str
+
+
+class HeaderType(TypedDict):
+    """Header type as typed dict."""
+
+    level: int
+    name: str
+    data: str
 
 
 class MarkdownHeaderTextSplitter:
@@ -220,21 +233,6 @@ class MarkdownHeaderTextSplitter:
                 Document(page_content=chunk["content"], metadata=chunk["metadata"])
                 for chunk in lines_with_metadata
             ]
-
-
-class LineType(TypedDict):
-    """Line type as typed dict."""
-
-    metadata: Dict[str, str]
-    content: str
-
-
-class HeaderType(TypedDict):
-    """Header type as typed dict."""
-
-    level: int
-    name: str
-    data: str
 
 
 class ExperimentalMarkdownSyntaxTextSplitter:
