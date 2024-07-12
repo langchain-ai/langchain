@@ -11,6 +11,10 @@ on:
         required: false
         type: string
         description: "Relative path to the langchain library folder"
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
 
 env:
   POETRY_VERSION: "1.7.1"
@@ -21,22 +25,14 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
-    name: "make test #${{ matrix.python-version }}"
+    name: "make test #${{ inputs.python-version }}"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: core
