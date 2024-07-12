@@ -48,8 +48,8 @@ Operator = Literal["$and", "$or", "$not"]
 class Description(TypedDict, total=False):
     """Description of the index."""
 
-    supported_comparators: List[str]  # Set to [] if filtering is not supported
-    supported_operators: List[str]  # Set to [] if filtering is not supported
+    supported_comparators: List[Comparator]  # Set to [] if filtering is not supported
+    supported_operators: List[Operator]  # Set to [] if filtering is not supported
     supports_sort: bool
     supports_pagination: bool
 
@@ -195,6 +195,7 @@ class BaseIndex(Generic[T, Q]):
         self,
         ids: Sequence[str],
         /,
+        **kwargs: Any,
     ) -> List[T]:
         """Get items by id.
 
@@ -207,15 +208,22 @@ class BaseIndex(Generic[T, Q]):
 
         This method should **NOT** raise exceptions if no items are found for
         some IDs.
+
+        Args:
+            ids: List of IDs to get.
+            kwargs: Additional keyword arguments. These are up to the implementation.
+
+        Returns:
+            List[T]: List of items that were found.
         """
 
     @abc.abstractmethod
-    def delete_by_ids(
+    def delete(
         self,
         ids: Sequence[str],
         /,
         **kwargs: Any,
-    ) -> DeleteResponse:
+    ) -> Union[DeleteResponse, bool]:
         """Delete by IDs or other criteria.
 
         Args:
@@ -225,6 +233,10 @@ class BaseIndex(Generic[T, Q]):
         Returns:
             DeleteResponse: A response object that contains the list of IDs that were
             successfully deleted and the list of IDs that failed to be deleted.
+
+            OR
+
+            bool: A boolean indicating whether the delete operation was successful.
         """
 
     # Delete and get are part of the READ/WRITE interface.
@@ -286,7 +298,7 @@ class BaseIndex(Generic[T, Q]):
         filter: Union[Dict[str, Any], List[Dict[str, Any]]],
         /,
         **kwargs: Any,
-    ) -> Iterable[DeleteResponse]:
+    ) -> DeleteResponse:
         """Delete items by a filter.
 
         Args:
@@ -329,6 +341,7 @@ class BaseIndex(Generic[T, Q]):
         #    }
 
     @classmethod
+    @beta(message="Added in 0.2.15. The API is subject to change.")
     def describe(cls) -> Description:
         """Get a description of the functionality supported by the index."""
         # Developer guidelines:
