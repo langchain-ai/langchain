@@ -6,7 +6,7 @@ from langchain_core.runnables.graph import Graph, LabelsDict
 class PngDrawer:
     """Helper class to draw a state graph into a PNG file.
 
-    It requires graphviz and pygraphviz to be installed.
+    It requires `graphviz` and `pygraphviz` to be installed.
     :param fontname: The font to use for the labels
     :param labels: A dictionary of label overrides. The dictionary
         should have the following format:
@@ -33,7 +33,7 @@ class PngDrawer:
         """Initializes the PNG drawer.
 
         Args:
-            fontname: The font to use for the labels
+            fontname: The font to use for the labels. Defaults to "arial".
             labels: A dictionary of label overrides. The dictionary
                 should have the following format:
                 {
@@ -48,6 +48,7 @@ class PngDrawer:
                     }
                 }
                 The keys are the original labels, and the values are the new labels.
+                Defaults to None.
         """
         self.fontname = fontname or "arial"
         self.labels = labels or LabelsDict(nodes={}, edges={})
@@ -56,7 +57,7 @@ class PngDrawer:
         """Returns the label to use for a node.
 
         Args:
-            label: The original label
+            label: The original label.
 
         Returns:
             The new label.
@@ -68,7 +69,7 @@ class PngDrawer:
         """Returns the label to use for an edge.
 
         Args:
-            label: The original label
+            label: The original label.
 
         Returns:
             The new label.
@@ -80,8 +81,8 @@ class PngDrawer:
         """Adds a node to the graph.
 
         Args:
-            viz: The graphviz object
-            node: The node to add
+            viz: The graphviz object.
+            node: The node to add.
 
         Returns:
             None
@@ -106,9 +107,9 @@ class PngDrawer:
         """Adds an edge to the graph.
 
         Args:
-            viz: The graphviz object
-            source: The source node
-            target: The target node
+            viz: The graphviz object.
+            source: The source node.
+            target: The target node.
             label: The label for the edge. Defaults to None.
             conditional: Whether the edge is conditional. Defaults to False.
 
@@ -127,7 +128,7 @@ class PngDrawer:
     def draw(self, graph: Graph, output_path: Optional[str] = None) -> Optional[bytes]:
         """Draw the given state graph into a PNG file.
 
-        Requires graphviz and pygraphviz to be installed.
+        Requires `graphviz` and `pygraphviz` to be installed.
         :param graph: The graph to draw
         :param output_path: The path to save the PNG. If None, PNG bytes are returned.
         """
@@ -156,14 +157,32 @@ class PngDrawer:
             viz.close()
 
     def add_nodes(self, viz: Any, graph: Graph) -> None:
+        """Add nodes to the graph.
+
+        Args:
+            viz: The graphviz object.
+            graph: The graph to draw.
+        """
         for node in graph.nodes:
             self.add_node(viz, node)
 
     def add_edges(self, viz: Any, graph: Graph) -> None:
+        """Add edges to the graph.
+
+        Args:
+            viz: The graphviz object.
+            graph: The graph to draw.
+        """
         for start, end, data, cond in graph.edges:
             self.add_edge(viz, start, end, str(data), cond)
 
     def update_styles(self, viz: Any, graph: Graph) -> None:
+        """Update the styles of the entrypoint and END nodes.
+
+        Args:
+            viz: The graphviz object.
+            graph: The graph to draw.
+        """
         if first := graph.first_node():
             viz.get_node(first.id).attr.update(fillcolor="lightblue")
         if last := graph.last_node():
