@@ -163,6 +163,7 @@ class BaseIndex(Generic[T]):
         for item_batch in batch_iterate(batch_size, items):
             yield self.upsert(item_batch, **kwargs)
 
+    @abc.abstractmethod
     @beta(message="Added in 0.2.15. The API is subject to change.")
     def upsert(self, items: Sequence[T], /, **kwargs: Any) -> UpsertResponse:
         """Upsert items into the index.
@@ -270,11 +271,8 @@ class BaseIndex(Generic[T]):
 
     @abc.abstractmethod
     def delete(
-        self,
-        ids: Sequence[str],
-        /,
-        **kwargs: Any,
-    ) -> Union[DeleteResponse, bool]:
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Union[DeleteResponse, bool, None]:
         """Delete by IDs or other criteria.
 
         Args:

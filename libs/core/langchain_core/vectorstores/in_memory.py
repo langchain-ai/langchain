@@ -73,7 +73,7 @@ class InMemoryVectorStore(VectorStore):
             "failed": [],
         }
 
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
         """Get documents by their ids."""
         documents = []
 
@@ -89,7 +89,7 @@ class InMemoryVectorStore(VectorStore):
                 )
         return documents
 
-    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    async def aget_by_ids(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
         return self.get_by_ids(ids)
 
     async def aadd_texts(

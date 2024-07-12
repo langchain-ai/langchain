@@ -54,7 +54,7 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
     )
-    from langchain_core.indexing.base import UpsertResponse
+    from langchain_core.indexing.base import DeleteResponse, UpsertResponse
 
 from langchain_core.documents.base import Document
 from langchain_core.indexing import BaseIndex
@@ -235,8 +235,10 @@ class VectorStore(BaseIndex[Document]):
         )
         return None
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        """Delete by vector ID or other criteria.
+    def delete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Union[DeleteResponse, None, bool]:
+        """Delete by ID or other criteria.
 
         Args:
             ids: List of ids to delete.
@@ -249,7 +251,7 @@ class VectorStore(BaseIndex[Document]):
 
         raise NotImplementedError("delete method must be implemented by subclass.")
 
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
         """Get documents by their IDs.
 
         The returned documents are expected to have the ID field set to the ID of the
@@ -267,6 +269,7 @@ class VectorStore(BaseIndex[Document]):
 
         Args:
             ids: List of ids to retrieve.
+            kwargs: Other keyword arguments these are up to the implementation.
 
         Returns:
             List of Documents.
@@ -278,7 +281,7 @@ class VectorStore(BaseIndex[Document]):
         )
 
     # Implementations should override this method to provide an async native version.
-    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    async def aget_by_ids(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
         """Get documents by their IDs.
 
         The returned documents are expected to have the ID field set to the ID of the
@@ -296,6 +299,7 @@ class VectorStore(BaseIndex[Document]):
 
         Args:
             ids: List of ids to retrieve.
+            kwargs: Other keyword arguments these are up to the implementation.
 
         Returns:
             List of Documents.
@@ -306,8 +310,8 @@ class VectorStore(BaseIndex[Document]):
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
-    ) -> Optional[bool]:
-        """Delete by vector ID or other criteria.
+    ) -> Union[DeleteResponse, None, bool]:
+        """Delete by ID or other criteria.
 
         Args:
             ids: List of ids to delete.

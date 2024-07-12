@@ -65,7 +65,7 @@ class CustomSyncVectorStore(VectorStore):
             "failed": [],
         }
 
-    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    def get_by_ids(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
         return [self.store[id] for id in ids if id in self.store]
 
     def delete_by_ids(
