@@ -54,7 +54,7 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
     )
-    from langchain_core.indexing.base import DeleteResponse, UpsertResponse
+    from langchain_core.indexing.base import DeleteResponse, Sort, T, UpsertResponse
 
 from langchain_core.documents.base import Document
 from langchain_core.indexing import BaseIndex
@@ -515,6 +515,54 @@ class VectorStore(BaseIndex[Document]):
                 f"search_type of {search_type} not allowed. Expected "
                 "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
             )
+
+    def delete_by_filter(
+        self,
+        filter: Union[Dict[str, Any], List[Dict[str, Any]]],
+        /,
+        **kwargs: Any,
+    ) -> DeleteResponse:
+        """Delete documents by filter.
+
+        Args:
+            filter: Filter to apply to documents.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            DeleteResponse: A response object that contains the list of IDs that were
+            successfully deleted from the vectorstore and the list of IDs that failed
+            to be deleted.
+
+        .. versionadded:: 0.2.15
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not yet support delete_by_filter."
+        )
+
+    def get_by_filter(
+        self,
+        *,
+        filter: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
+        limit: Optional[int] = None,
+        sort: Optional[Sort] = None,
+        **kwargs: Any,
+    ) -> Iterable[T]:
+        """Get documents by filter.
+
+        Args:
+            filter: Filter to apply to documents.
+            limit: Maximum number of documents to return.
+            sort: Sort order for the returned documents.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Iterable of documents that match the filter.
+
+        .. versionadded:: 0.2.15
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not yet support get_by_filter."
+        )
 
     @abstractmethod
     def similarity_search(
