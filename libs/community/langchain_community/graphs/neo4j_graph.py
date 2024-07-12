@@ -555,11 +555,13 @@ class Neo4jGraph(GraphStore):
                     el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
                     and el["properties"] == ["id"]
                     for el in self.structured_schema.get("metadata", {}).get(
-                        "constraint"
+                        "constraint", []
                     )
                 ]
             )
+
             if not constraint_exists:
+                print("create constraint")
                 # Create constraint
                 self.query(
                     f"CREATE CONSTRAINT IF NOT EXISTS FOR (b:{BASE_ENTITY_LABEL}) "
