@@ -111,7 +111,7 @@ class BaseMessage(Serializable):
 
 def merge_content(
     first_content: Union[str, List[Union[str, Dict]]],
-    second_content: Union[str, List[Union[str, Dict]]],
+    *contents: Union[str, List[Union[str, Dict]]],
 ) -> Union[str, List[Union[str, Dict]]]:
     """Merge two message contents.
 
@@ -122,31 +122,32 @@ def merge_content(
     Returns:
         The merged content.
     """
-    # If first chunk is a string
-    if isinstance(first_content, str):
-        # If the second chunk is also a string, then merge them naively
-        if isinstance(second_content, str):
-            return first_content + second_content
-        # If the second chunk is a list, add the first chunk to the start of the list
+    merged = first_content
+    for content in contents:
+        # If current is a string
+        if isinstance(merged, str):
+            # If the next chunk is also a string, then merge them naively
+            if isinstance(content, str):
+                merged = cast(str, merged) + content
+            # If the next chunk is a list, add the current to the start of the list
+            else:
+                merged = [merged] + content  # type: ignore
+        elif isinstance(content, list):
+            # If both are lists
+            merged = merge_lists(cast(List, merged), content)  # type: ignore
+        # If the first content is a list, and the second content is a string
         else:
-            return_list: List[Union[str, Dict]] = [first_content]
-            return return_list + second_content
-    elif isinstance(second_content, List):
-        # If both are lists
-        merged_list = merge_lists(first_content, second_content)
-        return cast(list, merged_list)
-    # If the first content is a list, and the second content is a string
-    else:
-        # If the last element of the first content is a string
-        # Add the second content to the last element
-        if isinstance(first_content[-1], str):
-            return first_content[:-1] + [first_content[-1] + second_content]
-        # If second content is an empty string, treat as a no-op
-        elif second_content == "":
-            return first_content
-        else:
-            # Otherwise, add the second content as a new element of the list
-            return first_content + [second_content]
+            # If the last element of the first content is a string
+            # Add the second content to the last element
+            if isinstance(merged[-1], str):
+                merged[-1] += content
+            # If second content is an empty string, treat as a no-op
+            elif content == "":
+                pass
+            else:
+                # Otherwise, add the second content as a new element of the list
+                merged.append(content)
+    return merged
 
 
 class BaseMessageChunk(BaseMessage):
@@ -194,6 +195,22 @@ class BaseMessageChunk(BaseMessage):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
+            )
+        elif isinstance(other, list) and all(
+            isinstance(o, BaseMessageChunk) for o in other
+        ):
+            content = merge_content(self.content, *(o.content for o in other))
+            additional_kwargs = merge_dicts(
+                self.additional_kwargs, *(o.additional_kwargs for o in other)
+            )
+            response_metadata = merge_dicts(
+                self.response_metadata, *(o.response_metadata for o in other)
+            )
+            return self.__class__(  # type: ignore[call-arg]
+                id=self.id,
+                content=content,
+                additional_kwargs=additional_kwargs,
+                response_metadata=response_metadata,
             )
         else:
             raise TypeError(

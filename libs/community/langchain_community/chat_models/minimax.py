@@ -116,18 +116,133 @@ def _convert_delta_to_message_chunk(
 
 
 class MiniMaxChat(BaseChatModel):
-    """MiniMax large language models.
+    """MiniMax chat model integration.
 
-    To use, you should have the environment variable``MINIMAX_API_KEY`` set with
-    your API token, or pass it as a named parameter to the constructor.
+    Setup:
+        To use, you should have the environment variable``MINIMAX_API_KEY`` set with
+    your API KEY.
 
-    Example:
+        .. code-block:: bash
+
+            export MINIMAX_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: Optional[str]
+            Name of MiniMax model to use.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        temperature: Optional[float]
+            Sampling temperature.
+        top_p: Optional[float]
+            Total probability mass of tokens to consider at each step.
+        streaming: Optional[bool]
+             Whether to stream the results or not.
+
+    Key init args — client params:
+        api_key: Optional[str]
+            MiniMax API key. If not passed in will be read from env var MINIMAX_API_KEY.
+        base_url: Optional[str]
+            Base URL for API requests.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.chat_models import MiniMaxChat
-            llm = MiniMaxChat(model="abab5-chat")
 
-    """
+            chat = MiniMaxChat(
+                api_key=api_key,
+                model='abab6.5-chat',
+                # temperature=...,
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'token_usage': {'total_tokens': 48},
+                    'model_name': 'abab6.5-chat',
+                    'finish_reason': 'stop'
+                },
+                id='run-42d62ba6-5dc1-4e16-98dc-f72708a4162d-0'
+            )
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-a5837c45-4aaa-4f64-9ab4-2679bbd55522'
+            content=' enjoy programming.' response_metadata={'finish_reason': 'stop'} id='run-a5837c45-4aaa-4f64-9ab4-2679bbd55522'
+
+        .. code-block:: python
+
+            stream = chat.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(
+                content='I enjoy programming.',
+                response_metadata={'finish_reason': 'stop'},
+                id='run-01aed0a0-61c4-4709-be22-c6d8b17155d6'
+            )
+
+    Async:
+        .. code-block:: python
+
+            await chat.ainvoke(messages)
+
+            # stream
+            # async for chunk in chat.astream(messages):
+            #     print(chunk)
+
+            # batch
+            # await chat.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'token_usage': {'total_tokens': 48},
+                    'model_name': 'abab6.5-chat',
+                    'finish_reason': 'stop'
+                },
+                id='run-c263b6f1-1736-4ece-a895-055c26b3436f-0'
+            )
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {'token_usage': {'total_tokens': 48},
+             'model_name': 'abab6.5-chat',
+             'finish_reason': 'stop'}
+
+    """  # noqa: E501conj
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

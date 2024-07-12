@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import httpx
 import pytest
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -14,6 +14,8 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
 
@@ -129,6 +131,19 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
+    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        if not self.returns_usage_metadata:
+            pytest.skip("Not implemented.")
+        full: Optional[BaseMessageChunk] = None
+        for chunk in model.stream("Hello"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+        assert isinstance(full, AIMessageChunk)
+        assert full.usage_metadata is not None
+        assert isinstance(full.usage_metadata["input_tokens"], int)
+        assert isinstance(full.usage_metadata["output_tokens"], int)
+        assert isinstance(full.usage_metadata["total_tokens"], int)
+
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         result = model.invoke("hi", stop=["you"])
         assert isinstance(result, AIMessage)
@@ -170,6 +185,33 @@ class ChatModelIntegrationTests(ChatModelTests):
             full = chunk if full is None else full + chunk  # type: ignore
         assert isinstance(full, AIMessage)
         _validate_tool_call_message_no_args(full)
+
+    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "Repeat what the user says in the style of {answer_style}."),
+                ("human", "{user_input}"),
+            ]
+        )
+        llm = GenericFakeChatModel(messages=iter(["hello matey"]))
+        chain = prompt | llm | StrOutputParser()
+        tool_ = chain.as_tool(
+            name="repeat_in_answer_style",
+            description="Repeat the user_input in a particular style of speaking.",
+        )
+        model_with_tools = model.bind_tools([tool_])
+        query = (
+            "Using the repeat_in_answer_style tool, ask a Pirate how they would say "
+            "hello."
+        )
+        result = model_with_tools.invoke(query)
+        assert isinstance(result, AIMessage)
+        assert result.tool_calls
+        tool_call = result.tool_calls[0]
+        assert tool_call["args"].get("answer_style")
 
     def test_structured_output(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:

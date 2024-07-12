@@ -23,3 +23,7 @@ class TestTogetherStandard(ChatModelIntegrationTests):
     @pytest.mark.xfail(reason=("May not call a tool."))
     def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
         super().test_tool_calling_with_no_arguments(model)
+
+    @pytest.mark.xfail(reason="Not yet supported.")
+    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        super().test_usage_metadata_streaming(model)
