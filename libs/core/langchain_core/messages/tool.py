@@ -25,7 +25,7 @@ class ToolMessage(BaseMessage):
     Example: A ToolMessage where only part of the tool output is sent to the model
         and the full output is passed in to artifact.
 
-        .. versionadded:: 0.2.15
+        .. versionadded:: 0.2.17
 
         .. code-block:: python
 
@@ -64,7 +64,7 @@ class ToolMessage(BaseMessage):
     different from the message content, i.e. if only a subset of the full tool output
     is being passed as message content.
     
-    .. versionadded:: 0.2.15
+    .. versionadded:: 0.2.17
     """
 
     @classmethod
