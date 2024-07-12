@@ -91,7 +91,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """
 
     runnable: Runnable[Input, Output]
-    """The runnable to run first."""
+    """The Runnable to run first."""
     fallbacks: Sequence[Runnable[Input, Output]]
     """A sequence of fallbacks to try."""
     exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
@@ -102,7 +102,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     exception_key: Optional[str] = None
     """If string is specified then handled exceptions will be passed to fallbacks as 
         part of the input under the specified key. If None, exceptions
-        will not be passed to fallbacks. If used, the base runnable and its fallbacks 
+        will not be passed to fallbacks. If used, the base Runnable and its fallbacks 
         must accept a dictionary as input."""
 
     class Config:
@@ -554,7 +554,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         await run_manager.on_chain_end(output)
 
     def __getattr__(self, name: str) -> Any:
-        """Get an attribute from the wrapped runnable and its fallbacks.
+        """Get an attribute from the wrapped Runnable and its fallbacks.
 
         Returns:
             If the attribute is anything other than a method that outputs a Runnable,
