@@ -26,6 +26,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
+    LangSmithParams,
     generate_from_stream,
 )
 from langchain_core.messages import (
@@ -41,10 +42,12 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolCallChunk,
     ToolMessage,
     ToolMessageChunk,
     convert_to_messages,
 )
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
@@ -173,6 +176,7 @@ def _convert_delta_to_message_chunk(
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: Dict = {}
+    tool_call_chunks: List[ToolCallChunk] = []
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -180,21 +184,18 @@ def _convert_delta_to_message_chunk(
         additional_kwargs["function_call"] = function_call
     if raw_tool_calls := _dict.get("tool_calls"):
         additional_kwargs["tool_calls"] = raw_tool_calls
-        try:
-            tool_call_chunks = [
-                {
-                    "name": rtc["function"].get("name"),
-                    "args": rtc["function"].get("arguments"),
-                    "id": rtc.get("id"),
-                    "index": rtc["index"],
-                }
-                for rtc in raw_tool_calls
-            ]
-        except KeyError:
-            pass
-    else:
-        tool_call_chunks = []
-
+        for rtc in raw_tool_calls:
+            try:
+                tool_call_chunks.append(
+                    create_tool_call_chunk(
+                        name=rtc["function"].get("name"),
+                        args=rtc["function"].get("arguments"),
+                        id=rtc.get("id"),
+                        index=rtc.get("index"),
+                    )
+                )
+            except KeyError:
+                pass
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
@@ -310,7 +311,17 @@ class ChatWatsonx(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
+        """Return type of chat model."""
         return "watsonx-chat"
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        params["ls_provider"] = "together"
+        params["ls_model_name"] = self.model_id
+        return params
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -457,11 +468,8 @@ Remember, even when answering to the user, you must still use this only JSON for
             if "tool_choice" in kwargs:
                 del kwargs["tool_choice"]
 
-        if "params" in kwargs:
-            del kwargs["params"]
-
         response = self.watsonx_model.generate(
-            prompt=chat_prompt, params=params, **kwargs
+            prompt=chat_prompt, **(kwargs | {"params": params})
         )
         return self._create_chat_result(response)
 
@@ -472,11 +480,37 @@ Remember, even when answering to the user, you must still use this only JSON for
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        message_dicts, params = self._create_message_dicts(messages, stop, **kwargs)
         chat_prompt = self._create_chat_prompt(message_dicts)
 
+        tools = kwargs.get("tools")
+
+        if tools:
+            chat_prompt = f"""[AVAILABLE_TOOLS]
+{json.dumps(tools[0], indent=2)}
+[/AVAILABLE_TOOLS]
+[INST]<<SYS>>You are Mixtral Chat function calling, an AI language model developed by 
+Mistral AI. You are a cautious assistant. You carefully follow instructions. You are 
+helpful and harmless and you follow ethical guidelines and promote positive behavior.
+<</SYS>>
+
+To use these tools you must always respond in JSON format containing `"type"` and 
+`"function"` key-value pairs. Also `"function"` key-value pair always containing 
+`"name"` and `"arguments"` key-value pairs.
+
+Between subsequent JSONs should be one blank line.
+
+Remember, even when answering to the user, you must still use this only JSON format!
+
+{chat_prompt}[/INST]"""
+
+        if "tools" in kwargs:
+            del kwargs["tools"]
+        if "tool_choice" in kwargs:
+            del kwargs["tool_choice"]
+
         for chunk in self.watsonx_model.generate_text_stream(
-            prompt=chat_prompt, raw_response=True, params=params, **kwargs
+            prompt=chat_prompt, raw_response=True, **(kwargs | {"params": params})
         ):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
@@ -497,7 +531,9 @@ Remember, even when answering to the user, you must still use this only JSON for
                 message=chunk, generation_info=generation_info or None
             )
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+                run_manager.on_llm_new_token(
+                    chunk.content, chunk=chunk, logprobs=logprobs
+                )
 
             yield chunk
 
@@ -532,7 +568,9 @@ Remember, even when answering to the user, you must still use this only JSON for
                     prompt += message["content"] + "\n[/INST]\n"
 
         else:
-            prompt = ChatPromptValue(messages=convert_to_messages(messages)).to_string()
+            prompt = ChatPromptValue(
+                messages=convert_to_messages(messages) + [AIMessage(content="")]
+            ).to_string()
 
         return prompt
 
@@ -567,6 +605,13 @@ Remember, even when answering to the user, you must still use this only JSON for
                 sum_of_total_generated_tokens += res["generated_token_count"]
             if "input_token_count" in res:
                 sum_of_total_input_tokens += res["input_token_count"]
+            total_token = sum_of_total_generated_tokens + sum_of_total_input_tokens
+            if total_token and isinstance(message, AIMessage):
+                message.usage_metadata = {
+                    "input_tokens": sum_of_total_input_tokens,
+                    "output_tokens": sum_of_total_generated_tokens,
+                    "total_tokens": total_token,
+                }
             gen = ChatGeneration(
                 message=message,
                 generation_info=generation_info,

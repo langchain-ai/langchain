@@ -4,15 +4,18 @@ from typing import List, Optional
 
 import httpx
 import pytest
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
 
@@ -28,12 +31,27 @@ def magic_function(input: int) -> int:
     return input + 2
 
 
-def _validate_tool_call_message(message: AIMessage) -> None:
+@tool
+def magic_function_no_args() -> int:
+    """Calculates a magic function."""
+    return 5
+
+
+def _validate_tool_call_message(message: BaseMessage) -> None:
     assert isinstance(message, AIMessage)
     assert len(message.tool_calls) == 1
     tool_call = message.tool_calls[0]
     assert tool_call["name"] == "magic_function"
     assert tool_call["args"] == {"input": 3}
+    assert tool_call["id"] is not None
+
+
+def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
+    assert isinstance(message, AIMessage)
+    assert len(message.tool_calls) == 1
+    tool_call = message.tool_calls[0]
+    assert tool_call["name"] == "magic_function_no_args"
+    assert tool_call["args"] == {}
     assert tool_call["id"] is not None
 
 
@@ -113,6 +131,19 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
+    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        if not self.returns_usage_metadata:
+            pytest.skip("Not implemented.")
+        full: Optional[BaseMessageChunk] = None
+        for chunk in model.stream("Hello"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+        assert isinstance(full, AIMessageChunk)
+        assert full.usage_metadata is not None
+        assert isinstance(full.usage_metadata["input_tokens"], int)
+        assert isinstance(full.usage_metadata["output_tokens"], int)
+        assert isinstance(full.usage_metadata["total_tokens"], int)
+
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         result = model.invoke("hi", stop=["you"])
         assert isinstance(result, AIMessage)
@@ -131,7 +162,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
         result = model_with_tools.invoke(query)
-        assert isinstance(result, AIMessage)
         _validate_tool_call_message(result)
 
         # Test stream
@@ -140,6 +170,38 @@ class ChatModelIntegrationTests(ChatModelTests):
             full = chunk if full is None else full + chunk  # type: ignore
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
+
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        model_with_tools = model.bind_tools([magic_function_no_args])
+        query = "What is the value of magic_function()? Use the tool."
+        result = model_with_tools.invoke(query)
+        _validate_tool_call_message_no_args(result)
+
+        full: Optional[BaseMessageChunk] = None
+        for chunk in model_with_tools.stream(query):
+            full = chunk if full is None else full + chunk  # type: ignore
+        assert isinstance(full, AIMessage)
+        _validate_tool_call_message_no_args(full)
+
+    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        prompt = ChatPromptTemplate.from_messages(
+            [("human", "Hello. Please respond in the style of {answer_style}.")]
+        )
+        llm = GenericFakeChatModel(messages=iter(["hello matey"]))
+        chain = prompt | llm | StrOutputParser()
+        model_with_tools = model.bind_tools([chain.as_tool()])
+        query = "Using the tool, ask a Pirate how it would say hello."
+        result = model_with_tools.invoke(query)
+        assert isinstance(result, AIMessage)
+        assert result.tool_calls
+        tool_call = result.tool_calls[0]
+        assert tool_call["args"].get("answer_style")
 
     def test_structured_output(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:

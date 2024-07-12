@@ -86,6 +86,7 @@ def _get_search_client(
     user_agent: Optional[str] = "langchain",
     cors_options: Optional[CorsOptions] = None,
     async_: bool = False,
+    additional_search_client_options: Optional[Dict[str, Any]] = None,
 ) -> Union[SearchClient, AsyncSearchClient]:
     from azure.core.credentials import AzureKeyCredential
     from azure.core.exceptions import ResourceNotFoundError
@@ -109,6 +110,7 @@ def _get_search_client(
         VectorSearchProfile,
     )
 
+    additional_search_client_options = additional_search_client_options or {}
     default_fields = default_fields or []
     if key is None:
         credential = DefaultAzureCredential()
@@ -225,6 +227,7 @@ def _get_search_client(
             index_name=index_name,
             credential=credential,
             user_agent=user_agent,
+            **additional_search_client_options,
         )
     else:
         return AsyncSearchClient(
@@ -232,6 +235,7 @@ def _get_search_client(
             index_name=index_name,
             credential=credential,
             user_agent=user_agent,
+            **additional_search_client_options,
         )
 
 
@@ -256,6 +260,7 @@ class AzureSearch(VectorStore):
         cors_options: Optional[CorsOptions] = None,
         *,
         vector_search_dimensions: Optional[int] = None,
+        additional_search_client_options: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
         try:
@@ -320,6 +325,7 @@ class AzureSearch(VectorStore):
             default_fields=default_fields,
             user_agent=user_agent,
             cors_options=cors_options,
+            additional_search_client_options=additional_search_client_options,
         )
         self.search_type = search_type
         self.semantic_configuration_name = semantic_configuration_name

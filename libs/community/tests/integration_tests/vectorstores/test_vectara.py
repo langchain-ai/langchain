@@ -1,6 +1,6 @@
 import tempfile
 import urllib.request
-from typing import Iterable
+from typing import Generator, Iterable
 
 import pytest
 from langchain_core.documents import Document
@@ -102,10 +102,10 @@ def test_vectara_add_documents(vectara1: Vectara) -> None:
 
 
 @pytest.fixture(scope="function")
-def vectara2():  # type: ignore[no-untyped-def]
+def vectara2() -> Generator[Vectara, None, None]:
     # download documents to local storage and then upload as files
     # attention paper and deep learning book
-    vectara2: Vectara = Vectara()
+    vectara2: Vectara = Vectara()  # type: ignore
 
     urls = [
         (

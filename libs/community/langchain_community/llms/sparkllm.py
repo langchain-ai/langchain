@@ -17,8 +17,8 @@ from wsgiref.handlers import format_date_time
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class SparkLLM(LLM):
     top_k: int = 4
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
