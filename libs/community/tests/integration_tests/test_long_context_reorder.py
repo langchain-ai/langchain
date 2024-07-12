@@ -1,4 +1,5 @@
 """Integration test for doc reordering."""
+
 from langchain_community.document_transformers.long_context_reorder import (
     LongContextReorder,
 )

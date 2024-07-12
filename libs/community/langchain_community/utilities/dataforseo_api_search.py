@@ -42,7 +42,7 @@ class DataForSeoAPIWrapper(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
     """The aiohttp session to use for the DataForSEO SERP API."""
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that login and password exists in environment."""
         login = get_from_dict_or_env(values, "api_login", "DATAFORSEO_LOGIN")

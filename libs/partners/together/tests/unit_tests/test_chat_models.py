@@ -2,7 +2,7 @@ import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
@@ -26,7 +26,7 @@ def test_initialization() -> None:
 def test_together_model_param() -> None:
     llm = ChatTogether(model="foo")
     assert llm.model_name == "foo"
-    llm = ChatTogether(model_name="foo")
+    llm = ChatTogether(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
     ls_params = llm._get_ls_params()
     assert ls_params["ls_provider"] == "together"

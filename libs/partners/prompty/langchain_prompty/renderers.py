@@ -5,6 +5,8 @@ from .core import Invoker, Prompty, SimpleModel
 
 
 class MustacheRenderer(Invoker):
+    """Render a mustache template."""
+
     def __init__(self, prompty: Prompty) -> None:
         self.prompty = prompty
 

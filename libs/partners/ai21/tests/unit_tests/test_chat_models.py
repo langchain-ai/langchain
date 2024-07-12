@@ -1,4 +1,5 @@
 """Test chat model integration."""
+
 from typing import cast
 from unittest.mock import Mock, call
 
@@ -28,12 +29,12 @@ def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
     with temporarily_unset_api_key():
         with pytest.raises(MissingApiKeyError):
-            ChatAI21(model="j2-ultra")
+            ChatAI21(model="j2-ultra")  # type: ignore[call-arg]
 
 
 def test_initialization__when_default_parameters_in_init() -> None:
     """Test chat model initialization."""
-    ChatAI21(api_key=DUMMY_API_KEY, model="j2-ultra")
+    ChatAI21(api_key=DUMMY_API_KEY, model="j2-ultra")  # type: ignore[call-arg, arg-type]
 
 
 def test_initialization__when_custom_parameters_in_init() -> None:
@@ -48,8 +49,8 @@ def test_initialization__when_custom_parameters_in_init() -> None:
     presence_penalty = Penalty(scale=0.2, apply_to_stopwords=True)
     count_penalty = Penalty(scale=0.2, apply_to_punctuation=True, apply_to_emojis=True)
 
-    llm = ChatAI21(
-        api_key=DUMMY_API_KEY,
+    llm = ChatAI21(  # type: ignore[call-arg]
+        api_key=DUMMY_API_KEY,  # type: ignore[arg-type]
         model=model,
         num_results=num_results,
         max_tokens=max_tokens,
@@ -78,9 +79,9 @@ def test_invoke(mock_client_with_chat: Mock) -> None:
 
     llm = ChatAI21(
         model="j2-ultra",
-        api_key=DUMMY_API_KEY,
+        api_key=DUMMY_API_KEY,  # type: ignore[arg-type]
         client=mock_client_with_chat,
-        **BASIC_EXAMPLE_CHAT_PARAMETERS,
+        **BASIC_EXAMPLE_CHAT_PARAMETERS,  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
     )
     llm.invoke(input=chat_input, config=dict(tags=["foo"]), stop=["\n"])
 
@@ -106,7 +107,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
     llm = ChatAI21(
         model="j2-ultra",
         client=mock_client_with_chat,
-        **BASIC_EXAMPLE_CHAT_PARAMETERS,
+        **BASIC_EXAMPLE_CHAT_PARAMETERS,  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
     )
 
     llm.generate(messages=[messages0, messages1])
@@ -140,7 +141,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
 
 
 def test_api_key_is_secret_string() -> None:
-    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")  # type: ignore[call-arg, arg-type]
     assert isinstance(llm.api_key, SecretStr)
 
 
@@ -149,7 +150,7 @@ def test_api_key_masked_when_passed_from_env(
 ) -> None:
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("AI21_API_KEY", "secret-api-key")
-    llm = ChatAI21(model="j2-ultra")
+    llm = ChatAI21(model="j2-ultra")  # type: ignore[call-arg]
     print(llm.api_key, end="")
     captured = capsys.readouterr()
 
@@ -160,7 +161,7 @@ def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
-    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")  # type: ignore[call-arg, arg-type]
     print(llm.api_key, end="")
     captured = capsys.readouterr()
 
@@ -169,5 +170,5 @@ def test_api_key_masked_when_passed_via_constructor(
 
 def test_uses_actual_secret_value_from_secretstr() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
-    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")  # type: ignore[call-arg, arg-type]
     assert cast(SecretStr, llm.api_key).get_secret_value() == "secret-api-key"

@@ -22,7 +22,7 @@ Please follow this link [huggingface token](https://huggingface.co/docs/hub/secu
 export HUGGINGFACEHUB_API_TOKEN=<token> 
 ```
 
-Send a request to check if the endpoint is wokring:
+Send a request to check if the endpoint is working:
 
 ```bash
 curl localhost:8080/generate -X POST -d '{"inputs":"Which NFL team won the Super Bowl in the 2010 season?","parameters":{"max_new_tokens":128, "do_sample": true}}'   -H 'Content-Type: application/json'

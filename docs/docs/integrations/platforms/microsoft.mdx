@@ -223,9 +223,15 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
-## Vector stores
+## AI Agent Memory System
 
-### Azure Cosmos DB MongoDB vCore
+[AI agent](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents) needs robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation.
+
+AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode. 
+
+Below are two available Azure Cosmos DB APIs that can provide vector store functionalities.
+
+### Azure Cosmos DB for MongoDB (vCore)
 
 >[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
 > You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
@@ -312,7 +318,7 @@ from langchain.retrievers import AzureAISearchRetriever
 ### Azure Container Apps dynamic sessions
 
 We need to get the `POOL_MANAGEMENT_ENDPOINT` environment variable from the Azure Container Apps service.
-See the instructions [here](https://python.langchain.com/v0.2/docs/integrations/tools/azure_dynamic_sessions/#setup).
+See the instructions [here](/docs/integrations/tools/azure_dynamic_sessions/#setup).
 
 We need to install a python package.
 
@@ -326,6 +332,19 @@ See a [usage example](/docs/integrations/tools/azure_dynamic_sessions).
 from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
 ```
 
+### Bing Search
+
+Follow the documentation [here](/docs/integrations/tools/bing_search) to get a detail explanations and instructions of this tool.
+
+The environment variable `BING_SUBSCRIPTION_KEY` and `BING_SEARCH_URL` are required from Bing Search resource.
+
+```bash
+from langchain_community.tools.bing_search import BingSearchResults
+from langchain_community.utilities import BingSearchAPIWrapper
+
+api_wrapper = BingSearchAPIWrapper()
+tool = BingSearchResults(api_wrapper=api_wrapper)
+```
 
 ## Toolkits
 

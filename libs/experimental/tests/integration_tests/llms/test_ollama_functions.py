@@ -65,7 +65,7 @@ class TestOllamaFunctions(unittest.TestCase):
     def test_ollama_functions_tools(self) -> None:
         base_model = OllamaFunctions(model="phi3", format="json")
         model = base_model.bind_tools(
-            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]
+            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]  # type: ignore[call-arg]
         )
         res = model.invoke("What causes lung cancer?")
         self.assertIsInstance(res, AIMessage)
@@ -135,6 +135,7 @@ class TestOllamaFunctions(unittest.TestCase):
         structured_llm = model.with_structured_output(Joke, include_raw=True)
 
         res = structured_llm.invoke("Tell me a joke about cars")
+        assert isinstance(res, dict)
         assert "raw" in res
         assert "parsed" in res
         assert isinstance(res["raw"], AIMessage)

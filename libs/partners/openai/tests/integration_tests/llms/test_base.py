@@ -1,4 +1,5 @@
 """Test OpenAI llm."""
+
 from typing import Generator
 
 import pytest
@@ -6,9 +7,7 @@ from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
 
 from langchain_openai import OpenAI
-from tests.unit_tests.fake.callbacks import (
-    FakeCallbackHandler,
-)
+from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
 def test_stream() -> None:
@@ -91,7 +90,7 @@ def test_openai_llm_output_contains_model_name() -> None:
 def test_openai_stop_valid() -> None:
     """Test openai stop logic on valid configuration."""
     query = "write an ordered list of five items"
-    first_llm = OpenAI(stop="3", temperature=0)
+    first_llm = OpenAI(stop="3", temperature=0)  # type: ignore[call-arg]
     first_output = first_llm.invoke(query)
     second_llm = OpenAI(temperature=0)
     second_output = second_llm.invoke(query, stop=["3"])
