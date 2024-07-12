@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import re
+
 from typing import Any, Dict, List, Tuple, TypedDict, Union
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-
 from langchain_text_splitters.base import Language
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
@@ -23,10 +23,10 @@ class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
     def __init__(
-            self,
-            headers_to_split_on: List[Tuple[str, str]],
-            return_each_line: bool = False,
-            strip_headers: bool = True,
+        self,
+        headers_to_split_on: List[Tuple[str, str]],
+        return_each_line: bool = False,
+        strip_headers: bool = True,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
@@ -54,20 +54,20 @@ class MarkdownHeaderTextSplitter:
 
         for line in lines:
             if (
-                    aggregated_chunks
-                    and aggregated_chunks[-1]["metadata"] == line["metadata"]
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] == line["metadata"]
             ):
                 # If the last line in the aggregated list
                 # has the same metadata as the current line,
                 # append the current content to the last lines's content
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
             elif (
-                    aggregated_chunks
-                    and aggregated_chunks[-1]["metadata"] != line["metadata"]
-                    # may be issues if other metadata is present
-                    and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
-                    and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
-                    and not self.strip_headers
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] != line["metadata"]
+                # may be issues if other metadata is present
+                and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
+                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and not self.strip_headers
             ):
                 # If the last line in the aggregated list
                 # has different metadata as the current line,
@@ -145,9 +145,9 @@ class MarkdownHeaderTextSplitter:
             for sep, name in self.headers_to_split_on:
                 # Check if line starts with a header that we intend to split on
                 if stripped_line.startswith(sep) and (
-                        # Header with no text OR header is followed by space
-                        # Both are valid conditions that sep is being used a header
-                        len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
+                    # Header with no text OR header is followed by space
+                    # Both are valid conditions that sep is being used a header
+                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
                 ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
@@ -156,8 +156,8 @@ class MarkdownHeaderTextSplitter:
 
                         # Pop out headers of lower or same level from the stack
                         while (
-                                header_stack
-                                and header_stack[-1]["level"] >= current_header_level
+                            header_stack
+                            and header_stack[-1]["level"] >= current_header_level
                         ):
                             # We have encountered a new header
                             # at the same or higher level
