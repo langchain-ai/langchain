@@ -74,7 +74,7 @@ class PlayWrightBrowserToolkit(BaseToolkit):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_imports_and_browser_provided(cls, values: dict) -> dict:
         """Check that the arguments are valid."""
         lazy_import_playwright_browsers()

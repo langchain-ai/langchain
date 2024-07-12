@@ -4,7 +4,7 @@ import uuid
 from typing import Generator
 
 import chromadb
-import pytest
+import pytest  # type: ignore[import-not-found]
 import requests
 from chromadb.api.client import SharedSystemClient
 from langchain_core.documents import Document

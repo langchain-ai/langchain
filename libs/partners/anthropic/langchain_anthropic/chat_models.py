@@ -43,6 +43,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
@@ -636,31 +637,28 @@ class ChatAnthropic(BaseChatModel):
         values["_async_client"] = anthropic.AsyncClient(**client_params)
         return values
 
-    def _format_params(
+    def _get_request_payload(
         self,
+        input_: LanguageModelInput,
         *,
-        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         **kwargs: Dict,
     ) -> Dict:
-        # get system prompt if any
+        messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
-        stop_sequences = stop or self.stop_sequences
-        rtn = {
+        payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
             "messages": formatted_messages,
             "temperature": self.temperature,
             "top_k": self.top_k,
             "top_p": self.top_p,
-            "stop_sequences": stop_sequences,
+            "stop_sequences": stop or self.stop_sequences,
             "system": system,
             **self.model_kwargs,
             **kwargs,
         }
-        rtn = {k: v for k, v in rtn.items() if v is not None}
-
-        return rtn
+        return {k: v for k, v in payload.items() if v is not None}
 
     def _stream(
         self,
@@ -673,9 +671,10 @@ class ChatAnthropic(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         if stream_usage is None:
             stream_usage = self.stream_usage
-        params = self._format_params(messages=messages, stop=stop, **kwargs)
-        stream = self._client.messages.create(**params, stream=True)
-        coerce_content_to_string = not _tools_in_params(params)
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        stream = self._client.messages.create(**payload)
+        coerce_content_to_string = not _tools_in_params(payload)
         for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
                 event,
@@ -699,9 +698,10 @@ class ChatAnthropic(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         if stream_usage is None:
             stream_usage = self.stream_usage
-        params = self._format_params(messages=messages, stop=stop, **kwargs)
-        stream = await self._async_client.messages.create(**params, stream=True)
-        coerce_content_to_string = not _tools_in_params(params)
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        stream = await self._async_client.messages.create(**payload)
+        coerce_content_to_string = not _tools_in_params(payload)
         async for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
                 event,
@@ -748,13 +748,13 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._format_params(messages=messages, stop=stop, **kwargs)
         if self.streaming:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-        data = self._client.messages.create(**params)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        data = self._client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -764,13 +764,13 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._format_params(messages=messages, stop=stop, **kwargs)
         if self.streaming:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
-        data = await self._async_client.messages.create(**params)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        data = await self._async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
     def bind_tools(
@@ -1103,12 +1103,12 @@ def _make_message_chunk_from_anthropic_event(
             warnings.warn("Received unexpected tool content block.")
         content_block = event.content_block.model_dump()
         content_block["index"] = event.index
-        tool_call_chunk = {
-            "index": event.index,
-            "id": event.content_block.id,
-            "name": event.content_block.name,
-            "args": "",
-        }
+        tool_call_chunk = create_tool_call_chunk(
+            index=event.index,
+            id=event.content_block.id,
+            name=event.content_block.name,
+            args="",
+        )
         message_chunk = AIMessageChunk(
             content=[content_block],
             tool_call_chunks=[tool_call_chunk],  # type: ignore

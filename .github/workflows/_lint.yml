@@ -11,6 +11,10 @@ on:
         required: false
         type: string
         description: "Relative path to the langchain library folder"
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
 
 env:
   POETRY_VERSION: "1.7.1"
@@ -21,27 +25,15 @@ env:
 
 jobs:
   build:
-    name: "make lint #${{ matrix.python-version }}"
+    name: "make lint #${{ inputs.python-version }}"
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Only lint on the min and max supported Python versions.
-        # It's extremely unlikely that there's a lint issue on any version in between
-        # that doesn't show up on the min or max versions.
-        #
-        # GitHub rate-limits how many jobs can be running at any one time.
-        # Starting new jobs is also relatively slow,
-        # so linting on fewer versions makes CI faster.
-        python-version:
-          - "3.8"
-          - "3.12"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: lint-with-extras
@@ -86,7 +78,7 @@ jobs:
         with:
           path: |
             ${{ env.WORKDIR }}/.mypy_cache
-          key: mypy-lint-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
+          key: mypy-lint-${{ runner.os }}-${{ runner.arch }}-py${{ inputs.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
 
 
       - name: Analysing the code with our lint
@@ -120,7 +112,7 @@ jobs:
         with:
           path: |
             ${{ env.WORKDIR }}/.mypy_cache_test
-          key: mypy-test-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
+          key: mypy-test-${{ runner.os }}-${{ runner.arch }}-py${{ inputs.python-version }}-${{ inputs.working-directory }}-${{ hashFiles(format('{0}/poetry.lock', inputs.working-directory)) }}
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}

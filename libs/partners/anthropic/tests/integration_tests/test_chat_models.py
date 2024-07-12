@@ -247,7 +247,7 @@ def test_system_invoke() -> None:
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    chat = ChatAnthropic(model="test")  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
@@ -256,7 +256,7 @@ def test_anthropic_call() -> None:
 
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
-    chat = ChatAnthropic(model="test")  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -272,7 +272,7 @@ def test_anthropic_generate() -> None:
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    chat = ChatAnthropic(model="test")  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.stream([message])
     for token in response:
@@ -285,7 +285,7 @@ def test_anthropic_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(  # type: ignore[call-arg]
-        model="test",
+        model=MODEL_NAME,
         callback_manager=callback_manager,
         verbose=True,
     )
@@ -301,7 +301,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(  # type: ignore[call-arg]
-        model="test",
+        model=MODEL_NAME,
         callback_manager=callback_manager,
         verbose=True,
     )
@@ -365,10 +365,7 @@ async def test_astreaming() -> None:
 
 
 def test_tool_use() -> None:
-    llm = ChatAnthropic(  # type: ignore[call-arg]
-        model=MODEL_NAME,
-    )
-
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools(
         [
             {
@@ -478,6 +475,7 @@ def test_anthropic_with_empty_text_block() -> None:
                     "name": "type_letter",
                     "args": {"letter": "d"},
                     "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "type": "tool_call",
                 },
             ],
         ),
