@@ -67,7 +67,7 @@ langchain app add neo4j-semantic-ollama
 
 And add the following code to your `server.py` file:
 ```python
-from neo4j_semantic_layer import agent_executor as neo4j_semantic_agent
+from neo4j_semantic_ollama import agent_executor as neo4j_semantic_agent
 
 add_routes(app, neo4j_semantic_agent, path="/neo4j-semantic-ollama")
 ```
