@@ -19,6 +19,8 @@ class ExecPythonInput(BaseModel):
 
 
 class ExecPython(BaseTool):
+    """A tool implementation to execute Python via Riza's Code Interpreter API."""
+
     name: str = "riza_exec_python"
     description: str = """Execute Python code to solve problems.
 
@@ -29,7 +31,7 @@ class ExecPython(BaseTool):
 
     client: Any = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         try:
             from rizaio import Riza
         except ImportError as e:
@@ -57,6 +59,8 @@ class ExecJavaScriptInput(BaseModel):
 
 
 class ExecJavaScript(BaseTool):
+    """A tool implementation to execute JavaScript via Riza's Code Interpreter API."""
+
     name: str = "riza_exec_javascript"
     description: str = """Execute JavaScript code to solve problems.
 
@@ -68,7 +72,7 @@ class ExecJavaScript(BaseTool):
 
     client: Any = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         try:
             from rizaio import Riza
         except ImportError as e:
