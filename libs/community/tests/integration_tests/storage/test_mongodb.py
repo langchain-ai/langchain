@@ -1,12 +1,10 @@
-from _ast import Store
-
 from typing import Generator, Tuple
 
 import pytest
 from langchain_core.documents import Document
+from langchain_standard_tests.integration_tests.base_store import BaseStoreSyncTests
 
 from langchain_community.storage.mongodb import MongoDBByteStore, MongoDBStore
-from langchain_standard_tests.integration_tests.base_store import BaseStoreSyncTests
 
 pytest.importorskip("pymongo")
 
@@ -149,10 +147,11 @@ class TestMongoDBStore(BaseStoreSyncTests):
         return b"foo", b"bar", b"buzz"
 
     @pytest.fixture
-    def kv_store(self) -> Store:
+    def kv_store(self) -> MongoDBByteStore:
         import mongomock
 
         # mongomock creates a mock MongoDB instance for testing purposes
         with mongomock.patch(servers=(("localhost", 27017),)):
-            yield MongoDBByteStore("mongodb://localhost:27017/", "test_db",
-                               "test_collection")
+            return MongoDBByteStore(
+                "mongodb://localhost:27017/", "test_db", "test_collection"
+            )
