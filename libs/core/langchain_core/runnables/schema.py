@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Literal, Sequence, Union
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -37,7 +37,7 @@ class EventData(TypedDict, total=False):
     """
 
 
-class StreamEvent(TypedDict):
+class BaseStreamEvent(TypedDict):
     """Streaming event.
 
     Schema of a streaming event which is produced from the astream_events method.
@@ -101,8 +101,6 @@ class StreamEvent(TypedDict):
     
     Please see the documentation for `EventData` for more details.
     """
-    name: str
-    """The name of the runnable that generated the event."""
     run_id: str
     """An randomly generated ID to keep track of the execution of the given runnable.
     
@@ -128,11 +126,6 @@ class StreamEvent(TypedDict):
     
         `.astream_events(..., {"metadata": {"foo": "bar"}})`.
     """
-    data: EventData
-    """Event data.
-
-    The contents of the event data depend on the event type.
-    """
 
     parent_ids: Sequence[str]
     """A list of the parent IDs associated with this event.
@@ -146,3 +139,34 @@ class StreamEvent(TypedDict):
     
     Only supported as of v2 of the astream events API. v1 will return an empty list.
     """
+
+
+class StandardStreamEvent(BaseStreamEvent):
+    """A standard stream event that follows LangChain convention for event data."""
+
+    data: EventData
+    """Event data.
+
+    The contents of the event data depend on the event type.
+    """
+    name: str
+    """The name of the runnable that generated the event."""
+
+
+class CustomStreamEvent(BaseStreamEvent):
+    """A custom stream event created by the user.
+
+    .. versionadded:: 0.2.14
+    """
+
+    # Overwrite the event field to be more specific.
+    event: Literal["on_custom_event"]  # type: ignore[misc]
+
+    """The event type."""
+    name: str
+    """A user defined name for the event."""
+    data: Any
+    """The data associated with the event. Free form and can be anything."""
+
+
+StreamEvent = Union[StandardStreamEvent, CustomStreamEvent]
