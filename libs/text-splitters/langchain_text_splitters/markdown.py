@@ -23,10 +23,10 @@ class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
     def __init__(
-        self,
-        headers_to_split_on: List[Tuple[str, str]],
-        return_each_line: bool = False,
-        strip_headers: bool = True,
+            self,
+            headers_to_split_on: List[Tuple[str, str]],
+            return_each_line: bool = False,
+            strip_headers: bool = True,
     ):
         """Create a new MarkdownHeaderTextSplitter.
 
@@ -54,20 +54,20 @@ class MarkdownHeaderTextSplitter:
 
         for line in lines:
             if (
-                aggregated_chunks
-                and aggregated_chunks[-1]["metadata"] == line["metadata"]
+                    aggregated_chunks
+                    and aggregated_chunks[-1]["metadata"] == line["metadata"]
             ):
                 # If the last line in the aggregated list
                 # has the same metadata as the current line,
                 # append the current content to the last lines's content
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
             elif (
-                aggregated_chunks
-                and aggregated_chunks[-1]["metadata"] != line["metadata"]
-                # may be issues if other metadata is present
-                and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
-                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
-                and not self.strip_headers
+                    aggregated_chunks
+                    and aggregated_chunks[-1]["metadata"] != line["metadata"]
+                    # may be issues if other metadata is present
+                    and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
+                    and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                    and not self.strip_headers
             ):
                 # If the last line in the aggregated list
                 # has different metadata as the current line,
@@ -91,8 +91,10 @@ class MarkdownHeaderTextSplitter:
         since="0.2.3",
         removal="0.3.0",
         alternative="split_text_to_doc()",
-        addendum=("To be able to combine MarkdownHeaderTextSplitter and "
-                  "MarkdownTextSplitter later, they must not be ambiguous.")
+        addendum=(
+            "To be able to combine MarkdownHeaderTextSplitter and "
+            "MarkdownTextSplitter later, they must not be ambiguous."
+        )
     )
     def split_text(self, text: str) -> List[Document]:
         return self.split_text_to_doc(text)
@@ -143,9 +145,9 @@ class MarkdownHeaderTextSplitter:
             for sep, name in self.headers_to_split_on:
                 # Check if line starts with a header that we intend to split on
                 if stripped_line.startswith(sep) and (
-                    # Header with no text OR header is followed by space
-                    # Both are valid conditions that sep is being used a header
-                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
+                        # Header with no text OR header is followed by space
+                        # Both are valid conditions that sep is being used a header
+                        len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
                 ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
@@ -154,8 +156,8 @@ class MarkdownHeaderTextSplitter:
 
                         # Pop out headers of lower or same level from the stack
                         while (
-                            header_stack
-                            and header_stack[-1]["level"] >= current_header_level
+                                header_stack
+                                and header_stack[-1]["level"] >= current_header_level
                         ):
                             # We have encountered a new header
                             # at the same or higher level
@@ -169,7 +171,7 @@ class MarkdownHeaderTextSplitter:
                         header: HeaderType = {
                             "level": current_header_level,
                             "name": name,
-                            "data": stripped_line[len(sep) :].strip(),
+                            "data": stripped_line[len(sep):].strip(),
                         }
                         header_stack.append(header)
                         # Update initial_metadata with the current header
@@ -286,10 +288,10 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     }
 
     def __init__(
-        self,
-        headers_to_split_on: Union[List[Tuple[str, str]], None] = None,
-        return_each_line: bool = False,
-        strip_headers: bool = True,
+            self,
+            headers_to_split_on: Union[List[Tuple[str, str]], None] = None,
+            return_each_line: bool = False,
+            strip_headers: bool = True,
     ):
         self.chunks: List[Document] = []
         self.current_chunk = Document(page_content="")
