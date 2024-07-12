@@ -1,6 +1,13 @@
 from langchain_qdrant import __all__
 
-EXPECTED_ALL = ["Qdrant", "SparseEmbeddings", "SparseVector", "FastEmbedSparse"]
+EXPECTED_ALL = [
+    "Qdrant",
+    "QdrantVectorStore",
+    "SparseEmbeddings",
+    "SparseVector",
+    "FastEmbedSparse",
+    "RetrievalMode",
+]
 
 
 def test_all_imports() -> None:

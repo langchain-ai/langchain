@@ -207,13 +207,13 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "fastembed"
-version = "0.3.1"
+version = "0.3.3"
 description = "Fast, light, accurate library built for retrieval embedding generation"
 optional = true
 python-versions = "<3.13,>=3.8.0"
 files = [
-    {file = "fastembed-0.3.1-py3-none-any.whl", hash = "sha256:5e9fecf6031a010eff75c02986f556d0635102210c0b1765e784cfca07df8975"},
-    {file = "fastembed-0.3.1.tar.gz", hash = "sha256:01a52c5c9cdfe2504dfa56b3c1b032d1ad88d621de144fc9a571371a79df6457"},
+    {file = "fastembed-0.3.3-py3-none-any.whl", hash = "sha256:1282a44dac187bbb0765b7e05a0612f1a7eb28c0c65ccb10b2b963467807fef6"},
+    {file = "fastembed-0.3.3.tar.gz", hash = "sha256:2735777d8c4462a92ec289ad99534242deb2073cede7d4ad3b37d070994d767f"},
 ]
 
 [package.dependencies]
@@ -622,7 +622,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.11"
+version = "0.2.16"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1530,13 +1530,13 @@ files = [
 
 [[package]]
 name = "qdrant-client"
-version = "1.10.0"
+version = "1.10.1"
 description = "Client library for the Qdrant vector search engine"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "qdrant_client-1.10.0-py3-none-any.whl", hash = "sha256:423c2586709ccf3db20850cd85c3d18954692a8faff98367dfa9dc82ab7f91d9"},
-    {file = "qdrant_client-1.10.0.tar.gz", hash = "sha256:47c4f7abfab152fb7e5e4902ab0e2e9e33483c49ea5e80128ccd0295f342cf9b"},
+    {file = "qdrant_client-1.10.1-py3-none-any.whl", hash = "sha256:b9fb8fe50dd168d92b2998be7c6135d5a229b3a3258ad158cc69c8adf9ff1810"},
+    {file = "qdrant_client-1.10.1.tar.gz", hash = "sha256:2284c8c5bb1defb0d9dbacb07d16f344972f395f4f2ed062318476a7951fd84c"},
 ]
 
 [package.dependencies]
@@ -1932,4 +1932,4 @@ fastembed = ["fastembed"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "192e50ec7768ff659cfe7d2bbc75497dbeba3ee9f1e245d12f2eb3cdf7fe07d9"
+content-hash = "a73d49a493892731f3fccc06217626d20b8114bc83ad107bc7336eabca479988"
