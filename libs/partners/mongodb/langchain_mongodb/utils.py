@@ -7,6 +7,7 @@ are duplicated in this utility respectively from modules:
     - "libs/community/langchain_community/vectorstores/utils.py"
     - "libs/community/langchain_community/utils/math.py"
 """
+
 from __future__ import annotations
 
 import logging
