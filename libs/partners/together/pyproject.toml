@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-together"
-version = "0.1.3"
+version = "0.1.4"
 description = "An integration package connecting Together AI and LangChain"
 authors = []
 readme = "README.md"
