@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-mistralai"
-version = "0.1.9"
+version = "0.1.10"
 description = "An integration package connecting Mistral and LangChain"
 authors = []
 readme = "README.md"
