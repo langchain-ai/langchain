@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-anthropic"
-version = "0.1.19"
+version = "0.1.20"
 description = "An integration package connecting AnthropicMessages and LangChain"
 authors = []
 readme = "README.md"
