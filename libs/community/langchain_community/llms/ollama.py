@@ -1,5 +1,15 @@
 import json
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Union,
+)
 
 import aiohttp
 import requests
