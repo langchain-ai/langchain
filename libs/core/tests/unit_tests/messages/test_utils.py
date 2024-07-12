@@ -1,4 +1,3 @@
-from functools import reduce
 from typing import Dict, List, Type
 
 import pytest
@@ -191,7 +190,6 @@ _MESSAGES_TO_TRIM = [
     HumanMessage("This is a 4 token text.", id="third"),
     AIMessage("This is a 4 token text.", id="fourth"),
 ]
-_MESSAGES_TO_TRIM_LCEL = reduce(lambda x, y: x + y, _MESSAGES_TO_TRIM)
 _MESSAGES_TO_TRIM_COPY = [m.copy(deep=True) for m in _MESSAGES_TO_TRIM]
 
 
@@ -202,21 +200,6 @@ def test_trim_messages_first_30() -> None:
     ]
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        max_tokens=30,
-        token_counter=dummy_token_counter,
-        strategy="first",
-    )
-    assert actual == expected
-    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
-
-
-def test_trim_messages_first_30_lcel() -> None:
-    expected = [
-        SystemMessage("This is a 4 token text."),
-        HumanMessage("This is a 4 token text.", id="first"),
-    ]
-    actual = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL,
         max_tokens=30,
         token_counter=dummy_token_counter,
         strategy="first",
@@ -244,25 +227,6 @@ def test_trim_messages_first_30_allow_partial() -> None:
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
-def test_trim_messages_first_30_allow_partial_lcel() -> None:
-    expected = [
-        SystemMessage("This is a 4 token text."),
-        HumanMessage("This is a 4 token text.", id="first"),
-        AIMessage(
-            [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"
-        ),
-    ]
-    actual = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL,
-        max_tokens=30,
-        token_counter=dummy_token_counter,
-        strategy="first",
-        allow_partial=True,
-    )
-    assert actual == expected
-    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
-
-
 def test_trim_messages_first_30_allow_partial_end_on_human() -> None:
     expected = [
         SystemMessage("This is a 4 token text."),
@@ -271,24 +235,6 @@ def test_trim_messages_first_30_allow_partial_end_on_human() -> None:
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        max_tokens=30,
-        token_counter=dummy_token_counter,
-        strategy="first",
-        allow_partial=True,
-        end_on="human",
-    )
-    assert actual == expected
-    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
-
-
-def test_trim_messages_first_30_allow_partial_end_on_human_lcel() -> None:
-    expected = [
-        SystemMessage("This is a 4 token text."),
-        HumanMessage("This is a 4 token text.", id="first"),
-    ]
-
-    actual = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL,
         max_tokens=30,
         token_counter=dummy_token_counter,
         strategy="first",
@@ -317,24 +263,6 @@ def test_trim_messages_last_30_include_system() -> None:
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
-def test_trim_messages_last_30_include_system_lcel() -> None:
-    expected = [
-        SystemMessage("This is a 4 token text."),
-        HumanMessage("This is a 4 token text.", id="third"),
-        AIMessage("This is a 4 token text.", id="fourth"),
-    ]
-
-    actual = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL,
-        max_tokens=30,
-        include_system=True,
-        token_counter=dummy_token_counter,
-        strategy="last",
-    )
-    assert actual == expected
-    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
-
-
 def test_trim_messages_last_40_include_system_allow_partial() -> None:
     expected = [
         SystemMessage("This is a 4 token text."),
@@ -350,32 +278,6 @@ def test_trim_messages_last_40_include_system_allow_partial() -> None:
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        max_tokens=40,
-        token_counter=dummy_token_counter,
-        strategy="last",
-        allow_partial=True,
-        include_system=True,
-    )
-
-    assert actual == expected
-    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
-
-
-def test_trim_messages_last_40_include_system_allow_partial_lcel() -> None:
-    expected = [
-        SystemMessage("This is a 4 token text."),
-        AIMessage(
-            [
-                {"type": "text", "text": "This is the SECOND 4 token block."},
-            ],
-            id="second",
-        ),
-        HumanMessage("This is a 4 token text.", id="third"),
-        AIMessage("This is a 4 token text.", id="fourth"),
-    ]
-
-    actual = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL,
         max_tokens=40,
         token_counter=dummy_token_counter,
         strategy="last",
@@ -413,32 +315,6 @@ def test_trim_messages_last_30_include_system_allow_partial_end_on_human() -> No
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
-def test_trim_messages_last_30_include_system_allow_partial_end_on_human_lcel() -> None:
-    expected = [
-        SystemMessage("This is a 4 token text."),
-        AIMessage(
-            [
-                {"type": "text", "text": "This is the SECOND 4 token block."},
-            ],
-            id="second",
-        ),
-        HumanMessage("This is a 4 token text.", id="third"),
-    ]
-
-    actual = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL,
-        max_tokens=30,
-        token_counter=dummy_token_counter,
-        strategy="last",
-        allow_partial=True,
-        include_system=True,
-        end_on="human",
-    )
-
-    assert actual == expected
-    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
-
-
 def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> None:
     expected = [
         SystemMessage("This is a 4 token text."),
@@ -448,29 +324,6 @@ def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> 
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        max_tokens=30,
-        token_counter=dummy_token_counter,
-        strategy="last",
-        allow_partial=True,
-        include_system=True,
-        start_on="human",
-    )
-
-    assert actual == expected
-    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
-
-
-def test_trim_messages_last_40_include_system_allow_partial_start_on_human_lcel() -> (
-    None
-):
-    expected = [
-        SystemMessage("This is a 4 token text."),
-        HumanMessage("This is a 4 token text.", id="third"),
-        AIMessage("This is a 4 token text.", id="fourth"),
-    ]
-
-    actual = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL,
         max_tokens=30,
         token_counter=dummy_token_counter,
         strategy="last",
@@ -516,55 +369,12 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
-def test_trim_messages_allow_partial_text_splitter_lcel() -> None:
-    expected = [
-        HumanMessage("a 4 token text.", id="third"),
-        AIMessage("This is a 4 token text.", id="fourth"),
-    ]
-
-    def count_words(msgs: List[BaseMessage]) -> int:
-        count = 0
-        for msg in msgs:
-            if isinstance(msg.content, str):
-                count += len(msg.content.split(" "))
-            else:
-                count += len(
-                    " ".join(block["text"] for block in msg.content).split(" ")  # type: ignore[index]
-                )
-        return count
-
-    def _split_on_space(text: str) -> List[str]:
-        splits = text.split(" ")
-        return [s + " " for s in splits[:-1]] + splits[-1:]
-
-    actual = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL,
-        max_tokens=10,
-        token_counter=count_words,
-        strategy="last",
-        allow_partial=True,
-        text_splitter=_split_on_space,
-    )
-    assert actual == expected
-    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
-
-
 def test_trim_messages_invoke() -> None:
     actual = trim_messages(max_tokens=10, token_counter=dummy_token_counter).invoke(
         _MESSAGES_TO_TRIM
     )
     expected = trim_messages(
         _MESSAGES_TO_TRIM, max_tokens=10, token_counter=dummy_token_counter
-    )
-    assert actual == expected
-
-
-def test_trim_messages_invoke_lcel() -> None:
-    actual = trim_messages(max_tokens=10, token_counter=dummy_token_counter).invoke(
-        _MESSAGES_TO_TRIM_LCEL
-    )
-    expected = trim_messages(
-        _MESSAGES_TO_TRIM_LCEL, max_tokens=10, token_counter=dummy_token_counter
     )
     assert actual == expected
 

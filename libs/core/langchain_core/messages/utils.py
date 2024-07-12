@@ -42,7 +42,6 @@ if TYPE_CHECKING:
 
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
-    from langchain_core.prompts.chat import BaseChatPromptTemplate
     from langchain_core.runnables.base import Runnable
 
 AnyMessage = Union[
@@ -287,11 +286,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
 
 
 def convert_to_messages(
-    messages: Union[
-        Iterable[MessageLikeRepresentation],
-        PromptValue,
-        BaseChatPromptTemplate,
-    ],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
 ) -> List[BaseMessage]:
     """Convert a sequence of messages to a list of messages.
 
@@ -303,12 +298,9 @@ def convert_to_messages(
     """
     # Import here to avoid circular imports
     from langchain_core.prompt_values import PromptValue
-    from langchain_core.prompts.chat import BaseChatPromptTemplate
 
     if isinstance(messages, PromptValue):
-        return [_convert_to_message(m) for m in messages.to_messages()]
-    if isinstance(messages, BaseChatPromptTemplate) and hasattr(messages, "messages"):
-        return [_convert_to_message(m) for m in messages.messages]
+        return messages.to_messages()
     return [_convert_to_message(m) for m in messages]
 
 
@@ -344,11 +336,7 @@ def _runnable_support(func: Callable) -> Callable:
 
 @_runnable_support
 def filter_messages(
-    messages: Union[
-        Iterable[MessageLikeRepresentation],
-        PromptValue,
-        BaseChatPromptTemplate,
-    ],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
@@ -436,11 +424,7 @@ def filter_messages(
 
 @_runnable_support
 def merge_message_runs(
-    messages: Union[
-        Iterable[MessageLikeRepresentation],
-        PromptValue,
-        BaseChatPromptTemplate,
-    ],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
 ) -> List[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
@@ -529,11 +513,7 @@ def merge_message_runs(
 
 @_runnable_support
 def trim_messages(
-    messages: Union[
-        Iterable[MessageLikeRepresentation],
-        PromptValue,
-        BaseChatPromptTemplate,
-    ],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
     max_tokens: int,
     token_counter: Union[
