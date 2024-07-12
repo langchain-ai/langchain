@@ -101,7 +101,7 @@ class HuggingFacePipeline(BaseLLM):
                 logger.warning(
                     "Both `device` and `device_map` are specified. "
                     "`device` will override `device_map`. "
-                    "You will most likely encounter unexpected behavior." 
+                    "You will most likely encounter unexpected behavior."
                     "Please remove `device` and keep "
                     "`device_map`."
                 )
