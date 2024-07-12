@@ -2,7 +2,8 @@ from enum import Enum
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.utils import pre_init
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -89,7 +90,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument
         """Validate that OCI config and python package exists in environment."""
 
@@ -132,13 +133,13 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
                     oci_config=client_kwargs["config"]
                 )
             elif values["auth_type"] == OCIAuthType(3).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                )
             elif values["auth_type"] == OCIAuthType(4).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.get_resource_principals_signer()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.get_resource_principals_signer()
+                )
             else:
                 raise ValueError("Please provide valid value to auth_type")
 
