@@ -200,7 +200,6 @@ class OCIModelDeploymentLLM(BaseLLM):
                     **kwargs,
                 )
                 generations.append(self._process_response(res.json()))
-                # generations.append(self._create_generation(res.json()))
         return LLMResult(generations=generations)
 
     async def _agenerate(
@@ -572,7 +571,9 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
             from langchain_community.llms import ModelDeploymentTGI
 
-            oci_md = ModelDeploymentTGI(endpoint=""https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict"")
+            oci_md = ModelDeploymentTGI(
+                endpoint="https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict"
+            )
 
     """
 
