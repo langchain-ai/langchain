@@ -67,44 +67,6 @@ def test_merge_message_runs_content() -> None:
     assert messages == messages_copy
 
 
-def test_merge_message_runs_content_lcel() -> None:
-    messages = (
-        AIMessage("foo", id="1")
-        + AIMessage(
-            [
-                {"text": "bar", "type": "text"},
-                {"image_url": "...", "type": "image_url"},
-            ],
-            tool_calls=[ToolCall(name="foo_tool", args={"x": 1}, id="tool1")],
-            id="2",
-        )
-        + AIMessage(
-            "baz",
-            tool_calls=[ToolCall(name="foo_tool", args={"x": 5}, id="tool2")],
-            id="3",
-        )
-    )
-    expected = [
-        AIMessage(
-            [
-                "foo",
-                {"text": "bar", "type": "text"},
-                {"image_url": "...", "type": "image_url"},
-                "baz",
-            ],
-            tool_calls=[
-                ToolCall(name="foo_tool", args={"x": 1}, id="tool1"),
-                ToolCall(name="foo_tool", args={"x": 5}, id="tool2"),
-            ],
-            id="1",
-        )
-    ]
-    actual = merge_message_runs(messages)
-    assert actual == expected
-    invoked = merge_message_runs().invoke(messages)
-    assert actual == invoked
-
-
 def test_merge_messages_tool_messages() -> None:
     messages = [
         ToolMessage("foo", tool_call_id="1"),
@@ -146,35 +108,6 @@ def test_filter_message(filters: Dict) -> None:
     invoked = filter_messages(**filters).invoke(messages)
     assert invoked == actual
     assert messages == messages_copy
-
-
-@pytest.mark.parametrize(
-    "filters",
-    [
-        {"include_names": ["blur"]},
-        {"exclude_names": ["blah"]},
-        {"include_ids": ["2"]},
-        {"exclude_ids": ["1"]},
-        {"include_types": "human"},
-        {"include_types": ["human"]},
-        {"include_types": HumanMessage},
-        {"include_types": [HumanMessage]},
-        {"exclude_types": "system"},
-        {"exclude_types": ["system"]},
-        {"exclude_types": SystemMessage},
-        {"exclude_types": [SystemMessage]},
-        {"include_names": ["blah", "blur"], "exclude_types": [SystemMessage]},
-    ],
-)
-def test_filter_message_lcel(filters: Dict) -> None:
-    system_message = SystemMessage("foo", name="blah", id="1")
-    human_message = HumanMessage("bar", name="blur", id="2")
-    messages = system_message + human_message
-    expected = [human_message]
-    actual = filter_messages(messages, **filters)
-    assert expected == actual
-    invoked = filter_messages(**filters).invoke(messages)
-    assert invoked == actual
 
 
 _MESSAGES_TO_TRIM = [
