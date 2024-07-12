@@ -203,7 +203,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             description="Repeat the user_input in a particular style of speaking.",
         )
         model_with_tools = model.bind_tools([tool_])
-        query = "Using the repeat_in_answer_style tool, ask a Pirate how they would say hello."
+        query = (
+            "Using the repeat_in_answer_style tool, ask a Pirate how they would say "
+            "hello."
+        )
         result = model_with_tools.invoke(query)
         assert isinstance(result, AIMessage)
         assert result.tool_calls
