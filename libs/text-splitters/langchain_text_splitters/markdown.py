@@ -1,11 +1,9 @@
-from __future__ import annotations
-
 import re
-
-from typing import Any, Dict, List, Tuple, TypedDict, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
+
 from langchain_text_splitters.base import Language
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
@@ -94,7 +92,7 @@ class MarkdownHeaderTextSplitter:
         addendum=(
             "To be able to combine MarkdownHeaderTextSplitter and "
             "MarkdownTextSplitter later, they must not be ambiguous."
-        )
+        ),
     )
     def split_text(self, text: str) -> List[Document]:
         return self.split_text_to_doc(text)
@@ -171,7 +169,7 @@ class MarkdownHeaderTextSplitter:
                         header: HeaderType = {
                             "level": current_header_level,
                             "name": name,
-                            "data": stripped_line[len(sep):].strip(),
+                            "data": stripped_line[len(sep) :].strip(),
                         }
                         header_stack.append(header)
                         # Update initial_metadata with the current header
@@ -288,10 +286,10 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     }
 
     def __init__(
-            self,
-            headers_to_split_on: Union[List[Tuple[str, str]], None] = None,
-            return_each_line: bool = False,
-            strip_headers: bool = True,
+        self,
+        headers_to_split_on: Union[List[Tuple[str, str]], None] = None,
+        return_each_line: bool = False,
+        strip_headers: bool = True,
     ):
         self.chunks: List[Document] = []
         self.current_chunk = Document(page_content="")
