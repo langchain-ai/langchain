@@ -42,7 +42,7 @@ class NanoPQRetriever(BaseRetriever):
     """Threshold for relevancy."""
     subspace: int = 4
     """No of subspaces to be created, should be a multiple of embedding shape"""
-    clusters: int = 256
+    clusters: int = 128
     """No of clusters to be created"""
 
     class Config:
@@ -92,12 +92,12 @@ class NanoPQRetriever(BaseRetriever):
 
         query_embeds = np.array(self.embeddings.embed_query(query))
         try:
-            pq = PQ(M=self.subspace, Ks=self.clusters).fit(vecs=self.index)
+            pq = PQ(M=self.subspace, Ks=self.clusters, verbose=True).fit(self.index.astype("float32"))
         except AssertionError:
-            raise RuntimeError("subspace should be divisible by embedding size")
+            raise RuntimeError("Received params: training_sample={training_sample}, n_cluster={n_clusters}, subspace={subspace}, embedding_shape={embedding_shape}. Issue with the combination. Please retrace back to find the exact error".format(training_sample =self.index.shape[0], n_clusters=self.clusters, subspace = self.subspace, embedding_shape=self.index.shape[1]))
 
-        index_code = pq.encode(vecs=self.index)
-        dt = pq.dtable(query=query_embeds)
+        index_code = pq.encode(vecs=self.index.astype("float32"))
+        dt = pq.dtable(query=query_embeds.astype("float32"))
         dists = dt.adist(codes=index_code)
 
         sorted_ix = np.argsort(dists)
