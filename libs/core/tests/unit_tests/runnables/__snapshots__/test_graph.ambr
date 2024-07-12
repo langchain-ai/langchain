@@ -34,18 +34,18 @@
   '''
   %%{init: {'flowchart': {'curve': 'linear'}}}%%
   graph TD;
-  	PromptInput[PromptInput]:::startclass;
-  	PromptTemplate([PromptTemplate]):::otherclass;
-  	FakeListLLM([FakeListLLM]):::otherclass;
-  	CommaSeparatedListOutputParser([CommaSeparatedListOutputParser]):::otherclass;
-  	CommaSeparatedListOutputParserOutput[CommaSeparatedListOutputParserOutput]:::endclass;
+  	PromptInput([PromptInput]):::first
+  	PromptTemplate(PromptTemplate)
+  	FakeListLLM(FakeListLLM<hr/><small><em>key = 2</em></small>)
+  	CommaSeparatedListOutputParser(CommaSeparatedListOutputParser)
+  	CommaSeparatedListOutputParserOutput([CommaSeparatedListOutputParserOutput]):::last
   	PromptInput --> PromptTemplate;
   	PromptTemplate --> FakeListLLM;
   	CommaSeparatedListOutputParser --> CommaSeparatedListOutputParserOutput;
   	FakeListLLM --> CommaSeparatedListOutputParser;
-  	classDef startclass fill:#ffdfba;
-  	classDef endclass fill:#baffc9;
-  	classDef otherclass fill:#fad7de;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
   
   '''
 # ---
@@ -673,6 +673,13 @@
                   'title': 'Name',
                   'type': 'string',
                 }),
+                'type': dict({
+                  'enum': list([
+                    'invalid_tool_call',
+                  ]),
+                  'title': 'Type',
+                  'type': 'string',
+                }),
               }),
               'required': list([
                 'name',
@@ -773,6 +780,13 @@
                 }),
                 'name': dict({
                   'title': 'Name',
+                  'type': 'string',
+                }),
+                'type': dict({
+                  'enum': list([
+                    'tool_call',
+                  ]),
+                  'title': 'Type',
                   'type': 'string',
                 }),
               }),
@@ -1010,16 +1024,16 @@
   '''
   %%{init: {'flowchart': {'curve': 'linear'}}}%%
   graph TD;
-  	PromptInput[PromptInput]:::startclass;
-  	PromptTemplate([PromptTemplate]):::otherclass;
-  	FakeListLLM([FakeListLLM]):::otherclass;
-  	Parallel_as_list_as_str_Input([Parallel<as_list,as_str>Input]):::otherclass;
-  	Parallel_as_list_as_str_Output[Parallel_as_list_as_str_Output]:::endclass;
-  	CommaSeparatedListOutputParser([CommaSeparatedListOutputParser]):::otherclass;
-  	conditional_str_parser_input([conditional_str_parser_input]):::otherclass;
-  	conditional_str_parser_output([conditional_str_parser_output]):::otherclass;
-  	StrOutputParser([StrOutputParser]):::otherclass;
-  	XMLOutputParser([XMLOutputParser]):::otherclass;
+  	PromptInput([PromptInput]):::first
+  	PromptTemplate(PromptTemplate)
+  	FakeListLLM(FakeListLLM)
+  	Parallel_as_list_as_str_Input(Parallel<as_list,as_str>Input)
+  	Parallel_as_list_as_str_Output([Parallel_as_list_as_str_Output]):::last
+  	CommaSeparatedListOutputParser(CommaSeparatedListOutputParser)
+  	conditional_str_parser_input(conditional_str_parser_input)
+  	conditional_str_parser_output(conditional_str_parser_output)
+  	StrOutputParser(StrOutputParser)
+  	XMLOutputParser(XMLOutputParser)
   	PromptInput --> PromptTemplate;
   	PromptTemplate --> FakeListLLM;
   	Parallel_as_list_as_str_Input --> CommaSeparatedListOutputParser;
@@ -1031,9 +1045,9 @@
   	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
   	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
   	FakeListLLM --> Parallel_as_list_as_str_Input;
-  	classDef startclass fill:#ffdfba;
-  	classDef endclass fill:#baffc9;
-  	classDef otherclass fill:#fad7de;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
   
   '''
 # ---
@@ -1060,14 +1074,14 @@
   '''
   %%{init: {'flowchart': {'curve': 'linear'}}}%%
   graph TD;
-  	StrOutputParserInput[StrOutputParserInput]:::startclass;
-  	StrOutputParser([StrOutputParser]):::otherclass;
-  	StrOutputParserOutput[StrOutputParserOutput]:::endclass;
+  	StrOutputParserInput([StrOutputParserInput]):::first
+  	StrOutputParser(StrOutputParser)
+  	StrOutputParserOutput([StrOutputParserOutput]):::last
   	StrOutputParserInput --> StrOutputParser;
   	StrOutputParser --> StrOutputParserOutput;
-  	classDef startclass fill:#ffdfba;
-  	classDef endclass fill:#baffc9;
-  	classDef otherclass fill:#fad7de;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
   
   '''
 # ---
