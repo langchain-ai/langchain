@@ -290,7 +290,7 @@ def create_schema_from_function(
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
     return _create_subset_model(
-        f"{model_name}Schema",
+        model_name,
         inferred_model,
         list(valid_properties),
         descriptions=arg_descriptions,
