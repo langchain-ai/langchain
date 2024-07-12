@@ -561,7 +561,6 @@ class Neo4jGraph(GraphStore):
             )
 
             if not constraint_exists:
-                print("create constraint")
                 # Create constraint
                 self.query(
                     f"CREATE CONSTRAINT IF NOT EXISTS FOR (b:{BASE_ENTITY_LABEL}) "
