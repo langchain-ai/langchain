@@ -1,4 +1,5 @@
 """Experimental implementation of lm-format-enforcer wrapped LLM."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Optional

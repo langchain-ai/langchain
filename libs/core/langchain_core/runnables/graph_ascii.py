@@ -17,6 +17,7 @@ class VertexViewer:
     """
 
     HEIGHT = 3  # top and bottom box edges + text
+    """Height of the box."""
 
     def __init__(self, name: str) -> None:
         self._h = self.HEIGHT  # top and bottom box edges + text

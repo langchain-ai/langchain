@@ -1,4 +1,5 @@
 """Test cohere embeddings."""
+
 from langchain_community.embeddings.cohere import CohereEmbeddings
 
 
