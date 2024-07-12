@@ -136,13 +136,17 @@ def convert_pydantic_to_gigachat_function(
                 return_schema["properties"]["result"]["type"] = "object"
             return_parameters = return_schema["properties"]["result"]
 
-    return {
-        "name": name or title,
-        "description": description or schema["description"],
-        "parameters": schema,
-        "return_parameters": return_parameters,
-        "few_shot_examples": few_shot_examples,
-    }
+    # Remove empty return paramters
+    if return_parameters and "properties" not in return_parameters:
+        return_parameters = None
+
+    return GigaFunctionDescription(
+        name=name or title,
+        description=description or schema["description"],
+        parameters=schema,
+        return_parameters=return_parameters,
+        few_shot_examples=few_shot_examples,
+    )
 
 
 @deprecated(
