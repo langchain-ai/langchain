@@ -191,14 +191,16 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool calling.")
 
         prompt = ChatPromptTemplate.from_messages(
-            [("system", "Repeat what the user says in the style of {answer_style}."),
-             ("human", "{user_input}")]
+            [
+                ("system", "Repeat what the user says in the style of {answer_style}."),
+                ("human", "{user_input}"),
+            ]
         )
         llm = GenericFakeChatModel(messages=iter(["hello matey"]))
         chain = prompt | llm | StrOutputParser()
         tool_ = chain.as_tool(
             name="repeat_in_answer_style",
-            description="Repeat the user_input in a particular style of speaking."
+            description="Repeat the user_input in a particular style of speaking.",
         )
         model_with_tools = model.bind_tools([tool_])
         query = "Using the repeat_in_answer_style tool, ask a Pirate how they would say hello."
