@@ -24,6 +24,11 @@ disallow_untyped_defs = true
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.1.52,<0.3"
 qdrant-client = "^1.9.0"
+pydantic = "^2.7.4"
+fastembed = { version = "^0.3.1", python = ">=3.8.1,<3.13", optional = true}
+
+[tool.poetry.extras]
+fastembed = [ "fastembed"]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
