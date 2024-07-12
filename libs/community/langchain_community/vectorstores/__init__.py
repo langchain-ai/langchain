@@ -188,6 +188,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.neo4j_vector import (
         Neo4jVector,
     )
+    from langchain_community.vectorstores.objective import (
+        Objective,
+    )
     from langchain_community.vectorstores.opensearch_vector_search import (
         OpenSearchVectorSearch,
     )
@@ -369,6 +372,7 @@ __all__ = [
     "Neo4jVector",
     "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
+    "Objective",
     "OracleVS",
     "OpenSearchVectorSearch",
     "PGEmbedding",
@@ -472,6 +476,7 @@ _module_lookup = {
     "Neo4jVector": "langchain_community.vectorstores.neo4j_vector",
     "NeuralDBClientVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "NeuralDBVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
+    "Objective": "langchain_community.vectorstores.objective",
     "OpenSearchVectorSearch": "langchain_community.vectorstores.opensearch_vector_search",  # noqa: E501
     "OracleVS": "langchain_community.vectorstores.oraclevs",
     "PathwayVectorClient": "langchain_community.vectorstores.pathway",
