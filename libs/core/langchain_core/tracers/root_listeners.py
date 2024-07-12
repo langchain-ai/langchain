@@ -89,7 +89,7 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         on_start: The listener to call on run start.
         on_end: The listener to call on run end.
         on_error: The listener to call on run error.
-        """
+    """
 
     log_missing_parent = False
 
