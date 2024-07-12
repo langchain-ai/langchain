@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-ibm"
-version = "0.1.9"
+version = "0.1.10"
 description = "An integration package connecting IBM watsonx.ai and LangChain"
 authors = [ "IBM",]
 readme = "README.md"
