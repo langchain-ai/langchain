@@ -37,7 +37,9 @@ class FakeHyperlinkExtractor(LinkExtractor[Document]):
                 Link.outgoing(kind="fakehref", tag="http://text3"),
             }
         else:
-            raise ValueError(f"Unsupported input for FakeHyperlinkExtractor: '{input.page_content}'")
+            raise ValueError(
+                f"Unsupported input for FakeHyperlinkExtractor: '{input.page_content}'"
+            )
 
 
 def test_one_extractor() -> None:
