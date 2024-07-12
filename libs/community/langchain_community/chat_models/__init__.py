@@ -121,6 +121,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.mlx import (
         ChatMLX,
     )
+    from langchain_community.chat_models.oci_generative_ai import (
+        ChatOCIGenAI,  # noqa: F401
+    )
     from langchain_community.chat_models.octoai import ChatOctoAI
     from langchain_community.chat_models.ollama import (
         ChatOllama,
@@ -194,6 +197,7 @@ __all__ = [
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
+    "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
@@ -248,6 +252,7 @@ _module_lookup = {
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
+    "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",

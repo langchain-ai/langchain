@@ -8,6 +8,8 @@ from .core import Invoker, Prompty, SimpleModel
 
 
 class PromptyChatParser(Invoker):
+    """Parse a chat prompt into a list of messages."""
+
     def __init__(self, prompty: Prompty) -> None:
         self.prompty = prompty
         self.roles = ["assistant", "function", "system", "user", "human", "ai"]

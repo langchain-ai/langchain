@@ -14,7 +14,11 @@ from langchain_community.utilities.nasa import NasaAPIWrapper
 
 
 class NasaToolkit(BaseToolkit):
-    """Nasa Toolkit."""
+    """Nasa Toolkit.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
+    """
 
     tools: List[BaseTool] = []
 

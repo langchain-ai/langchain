@@ -21,6 +21,11 @@ def my_adder_tool(a: int, b: int) -> int:
     return a + b
 
 
+def my_adder(a: int, b: int) -> int:
+    """Takes two integers, a and b, and returns their sum."""
+    return a + b
+
+
 class ChatModelTests(ABC):
     @property
     @abstractmethod
@@ -37,7 +42,7 @@ class ChatModelTests(ABC):
             "temperature": 0,
             "max_tokens": 100,
             "timeout": 60,
-            "stop_sequences": [],
+            "stop": [],
             "max_retries": 2,
         }
 
@@ -69,6 +74,10 @@ class ChatModelTests(ABC):
     @property
     def returns_usage_metadata(self) -> bool:
         return True
+
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        return False
 
 
 class ChatModelUnitTests(ChatModelTests):
@@ -104,7 +113,7 @@ class ChatModelUnitTests(ChatModelTests):
             return
 
         tool_model = model.bind_tools(
-            [Person, Person.schema(), my_adder_tool], tool_choice="any"
+            [Person, Person.schema(), my_adder_tool, my_adder], tool_choice="any"
         )
         assert isinstance(tool_model, RunnableBinding)
 

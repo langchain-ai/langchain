@@ -64,13 +64,15 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-3.5-turbo-16k-0613-completion": 0.004,
     # Azure GPT-35 input
     "gpt-35-turbo": 0.0015,  # Azure OpenAI version of ChatGPT
-    "gpt-35-turbo-0301": 0.0015,  # Azure OpenAI version of ChatGPT
+    "gpt-35-turbo-0125": 0.0005,
+    "gpt-35-turbo-0301": 0.002,  # Azure OpenAI version of ChatGPT
     "gpt-35-turbo-0613": 0.0015,
     "gpt-35-turbo-instruct": 0.0015,
     "gpt-35-turbo-16k": 0.003,
     "gpt-35-turbo-16k-0613": 0.003,
     # Azure GPT-35 output
     "gpt-35-turbo-completion": 0.002,  # Azure OpenAI version of ChatGPT
+    "gpt-35-turbo-0125-completion": 0.0015,
     "gpt-35-turbo-0301-completion": 0.002,  # Azure OpenAI version of ChatGPT
     "gpt-35-turbo-0613-completion": 0.002,
     "gpt-35-turbo-instruct-completion": 0.002,
@@ -221,19 +223,23 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 message = generation.message
                 if isinstance(message, AIMessage):
                     usage_metadata = message.usage_metadata
+                    response_metadata = message.response_metadata
                 else:
                     usage_metadata = None
+                    response_metadata = None
             except AttributeError:
                 usage_metadata = None
+                response_metadata = None
         else:
             usage_metadata = None
+            response_metadata = None
         if usage_metadata:
             token_usage = {"total_tokens": usage_metadata["total_tokens"]}
             completion_tokens = usage_metadata["output_tokens"]
             prompt_tokens = usage_metadata["input_tokens"]
-            if response.llm_output is None:
-                # model name (and therefore cost) is unavailable in
-                # streaming responses
+            if response_model_name := (response_metadata or {}).get("model_name"):
+                model_name = standardize_model_name(response_model_name)
+            elif response.llm_output is None:
                 model_name = ""
             else:
                 model_name = standardize_model_name(

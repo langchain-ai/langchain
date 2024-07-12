@@ -1,12 +1,19 @@
+"""This is the Azure Dynamic Sessions module.
+
+This module provides the SessionsPythonREPLTool class for
+managing dynamic sessions in Azure.
+"""
+
 import importlib.metadata
 import json
 import os
 import re
 import urllib
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from typing import Any, BinaryIO, Callable, List, Optional
+from typing import Any, BinaryIO, Callable, List, Literal, Optional, Tuple
 from uuid import uuid4
 
 import requests
@@ -27,7 +34,6 @@ def _access_token_provider_factory() -> Callable[[], Optional[str]]:
     Returns:
         Callable[[], Optional[str]]: The access token provider function
     """
-
     access_token: Optional[AccessToken] = None
 
     def access_token_provider() -> Optional[str]:
@@ -44,6 +50,7 @@ def _access_token_provider_factory() -> Callable[[], Optional[str]]:
 
 def _sanitize_input(query: str) -> str:
     """Sanitize input to the python REPL.
+
     Remove whitespace, backtick & python (if llm mistakes python console as terminal)
 
     Args:
@@ -52,7 +59,6 @@ def _sanitize_input(query: str) -> str:
     Returns:
         str: The sanitized query
     """
-
     # Removes `, whitespace & python from start
     query = re.sub(r"^(\s|`)*(?i:python)?\s*", "", query)
     # Removes whitespace & ` from end
@@ -86,11 +92,11 @@ class RemoteFileMetadata:
 
 
 class SessionsPythonREPLTool(BaseTool):
-    """A tool for running Python code in an Azure Container Apps dynamic sessions
-    code interpreter.
+    """A tool for running Python code.
+
+     Run python code in an Azure Container Apps dynamic sessions code interpreter.
 
     Example:
-
         .. code-block:: python
 
             from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
@@ -113,13 +119,15 @@ class SessionsPythonREPLTool(BaseTool):
     pool_management_endpoint: str
     """The management endpoint of the session pool. Should end with a '/'."""
 
-    access_token_provider: Callable[
-        [], Optional[str]
-    ] = _access_token_provider_factory()
+    access_token_provider: Callable[[], Optional[str]] = (
+        _access_token_provider_factory()
+    )
     """A function that returns the access token to use for the session pool."""
 
     session_id: str = str(uuid4())
     """The session ID to use for the code interpreter. Defaults to a random UUID."""
+
+    response_format: Literal["content_and_raw_output"] = "content_and_raw_output"
 
     def _build_url(self, path: str) -> str:
         pool_management_endpoint = self.pool_management_endpoint
@@ -135,7 +143,6 @@ class SessionsPythonREPLTool(BaseTool):
 
     def execute(self, python_code: str) -> Any:
         """Execute Python code in the session."""
-
         if self.sanitize_input:
             python_code = _sanitize_input(python_code)
 
@@ -160,16 +167,16 @@ class SessionsPythonREPLTool(BaseTool):
         properties = response_json.get("properties", {})
         return properties
 
-    def _run(self, python_code: str) -> Any:
+    def _run(self, python_code: str, **kwargs: Any) -> Tuple[str, dict]:
         response = self.execute(python_code)
 
         # if the result is an image, remove the base64 data
-        result = response.get("result")
+        result = deepcopy(response.get("result"))
         if isinstance(result, dict):
             if result.get("type") == "image" and "base64_data" in result:
                 result.pop("base64_data")
 
-        return json.dumps(
+        content = json.dumps(
             {
                 "result": result,
                 "stdout": response.get("stdout"),
@@ -177,6 +184,7 @@ class SessionsPythonREPLTool(BaseTool):
             },
             indent=2,
         )
+        return content, response
 
     def upload_file(
         self,
@@ -197,7 +205,6 @@ class SessionsPythonREPLTool(BaseTool):
         Returns:
             RemoteFileMetadata: The metadata for the uploaded file
         """
-
         if data and local_file_path:
             raise ValueError("data and local_file_path cannot be provided together")
 

@@ -1,20 +1,24 @@
 # flake8: noqa: E501
 """Test SQL database wrapper."""
+
 import pytest
 import sqlalchemy as sa
+from packaging import version
 from sqlalchemy import (
     Column,
     Integer,
     MetaData,
-    Result,
     String,
     Table,
     Text,
     insert,
     select,
 )
+from sqlalchemy.engine import Engine, Result
 
 from langchain_community.utilities.sql_database import SQLDatabase, truncate_word
+
+is_sqlalchemy_v1 = version.parse(sa.__version__).major == 1
 
 metadata_obj = MetaData()
 
@@ -35,18 +39,18 @@ company = Table(
 
 
 @pytest.fixture
-def engine() -> sa.Engine:
+def engine() -> Engine:
     return sa.create_engine("sqlite:///:memory:")
 
 
 @pytest.fixture
-def db(engine: sa.Engine) -> SQLDatabase:
+def db(engine: Engine) -> SQLDatabase:
     metadata_obj.create_all(engine)
     return SQLDatabase(engine)
 
 
 @pytest.fixture
-def db_lazy_reflection(engine: sa.Engine) -> SQLDatabase:
+def db_lazy_reflection(engine: Engine) -> SQLDatabase:
     metadata_obj.create_all(engine)
     return SQLDatabase(engine, lazy_table_reflection=True)
 
@@ -230,6 +234,7 @@ def test_sql_database_run_update(db: SQLDatabase) -> None:
     assert output == expected_output
 
 
+@pytest.mark.skipif(is_sqlalchemy_v1, reason="Requires SQLAlchemy 2 or newer")
 def test_sql_database_schema_translate_map() -> None:
     """Verify using statement-specific execution options."""
 

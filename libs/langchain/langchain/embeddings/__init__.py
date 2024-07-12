@@ -10,7 +10,6 @@ from different APIs and services.
     Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
 """
 
-
 import logging
 from typing import TYPE_CHECKING, Any
 

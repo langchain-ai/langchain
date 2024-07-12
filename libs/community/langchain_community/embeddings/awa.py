@@ -16,7 +16,7 @@ class AwaEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model: str = "all-mpnet-base-v2"
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that awadb library is installed."""
 

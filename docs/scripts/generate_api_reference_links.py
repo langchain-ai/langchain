@@ -24,7 +24,7 @@ _IMPORT_RE = re.compile(
 
 _CURRENT_PATH = Path(__file__).parent.absolute()
 # Directory where generated markdown files are stored
-_DOCS_DIR = _CURRENT_PATH / "docs"
+_DOCS_DIR = _CURRENT_PATH.parent.parent / "docs"
 
 
 def find_files(path):
@@ -75,6 +75,7 @@ def main():
 
     for file in find_files(args.docs_dir):
         file_imports = replace_imports(file)
+        print(file)
 
         if file_imports:
             # Use relative file path as key

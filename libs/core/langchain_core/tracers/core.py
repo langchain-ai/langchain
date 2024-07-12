@@ -50,6 +50,8 @@ class _TracerCore(ABC):
     This class provides common methods, and reusable methods for tracers.
     """
 
+    log_missing_parent: bool = True
+
     def __init__(
         self,
         *,
@@ -118,10 +120,11 @@ class _TracerCore(ABC):
                 if parent_run := self.run_map.get(str(run.parent_run_id)):
                     self._add_child_run(parent_run, run)
             else:
-                logger.warning(
-                    f"Parent run {run.parent_run_id} not found for run {run.id}."
-                    " Treating as a root run."
-                )
+                if self.log_missing_parent:
+                    logger.warning(
+                        f"Parent run {run.parent_run_id} not found for run {run.id}."
+                        " Treating as a root run."
+                    )
                 run.parent_run_id = None
                 run.trace_id = run.id
                 run.dotted_order = current_dotted_order

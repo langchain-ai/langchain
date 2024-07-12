@@ -15,7 +15,8 @@ def _split_texts_into_batches(texts: List[str], batch_size: int) -> Iterator[Lis
 
 
 class AI21Embeddings(Embeddings, AI21Base):
-    """AI21 Embeddings embedding model.
+    """AI21 embedding model.
+
     To use, you should have the 'AI21_API_KEY' environment variable set
     or pass as a named parameter to the constructor.
 

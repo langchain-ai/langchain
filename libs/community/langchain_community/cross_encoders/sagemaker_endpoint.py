@@ -95,14 +95,14 @@ class SagemakerEndpointCrossEncoder(BaseModel, BaseCrossEncoder):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
         try:
             import boto3
 
             try:
-                if values["credentials_profile_name"] is not None:
+                if values.get("credentials_profile_name"):
                     session = boto3.Session(
                         profile_name=values["credentials_profile_name"]
                     )
