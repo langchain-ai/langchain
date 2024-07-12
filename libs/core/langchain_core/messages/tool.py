@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.utils._merge import merge_dicts, merge_obj
@@ -21,8 +21,11 @@ class ToolMessage(BaseMessage):
 
             ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
 
+
     Example: A ToolMessage where only part of the tool output is sent to the model
-        and the full output is passed in to raw_output.
+        and the full output is passed in to artifact.
+
+        .. versionadded:: 0.2.17
 
         .. code-block:: python
 
@@ -36,7 +39,7 @@ class ToolMessage(BaseMessage):
 
             ToolMessage(
                 content=tool_output["stdout"],
-                raw_output=tool_output,
+                artifact=tool_output,
                 tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
             )
 
@@ -54,12 +57,14 @@ class ToolMessage(BaseMessage):
     type: Literal["tool"] = "tool"
     """The type of the message (used for serialization). Defaults to "tool"."""
 
-    raw_output: Any = None
-    """The raw output of the tool.
+    artifact: Any = None
+    """Artifact of the Tool execution which is not meant to be sent to the model.
     
-    **Not part of the payload sent to the model.** Should only be specified if it is 
-    different from the message content, i.e. if only a subset of the full tool output
-    is being passed as message content.
+    Should only be specified if it is different from the message content, e.g. if only 
+    a subset of the full tool output is being passed as message content but the full
+    output is needed in other parts of the code.
+    
+    .. versionadded:: 0.2.17
     """
 
     @classmethod
@@ -106,7 +111,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
-                raw_output=merge_obj(self.raw_output, other.raw_output),
+                artifact=merge_obj(self.artifact, other.artifact),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
@@ -146,6 +151,11 @@ class ToolCall(TypedDict):
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
+    type: NotRequired[Literal["tool_call"]]
+
+
+def tool_call(*, name: str, args: Dict[str, Any], id: Optional[str]) -> ToolCall:
+    return ToolCall(name=name, args=args, id=id, type="tool_call")
 
 
 class ToolCallChunk(TypedDict):
@@ -176,6 +186,19 @@ class ToolCallChunk(TypedDict):
     """An identifier associated with the tool call."""
     index: Optional[int]
     """The index of the tool call in a sequence."""
+    type: NotRequired[Literal["tool_call_chunk"]]
+
+
+def tool_call_chunk(
+    *,
+    name: Optional[str] = None,
+    args: Optional[str] = None,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> ToolCallChunk:
+    return ToolCallChunk(
+        name=name, args=args, id=id, index=index, type="tool_call_chunk"
+    )
 
 
 class InvalidToolCall(TypedDict):
@@ -193,6 +216,19 @@ class InvalidToolCall(TypedDict):
     """An identifier associated with the tool call."""
     error: Optional[str]
     """An error message associated with the tool call."""
+    type: NotRequired[Literal["invalid_tool_call"]]
+
+
+def invalid_tool_call(
+    *,
+    name: Optional[str] = None,
+    args: Optional[str] = None,
+    id: Optional[str] = None,
+    error: Optional[str] = None,
+) -> InvalidToolCall:
+    return InvalidToolCall(
+        name=name, args=args, id=id, error=error, type="invalid_tool_call"
+    )
 
 
 def default_tool_parser(
