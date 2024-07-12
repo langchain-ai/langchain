@@ -72,7 +72,6 @@ class ConsistentFakeSparseEmbeddings(SparseEmbeddings):
         out_vectors = []
         for text in texts:
             if text not in self.known_texts:
-                print("")
                 self.known_texts.append(text)
             index = self.known_texts.index(text)
             indices = [i + index for i in range(self.dimensionality)]
