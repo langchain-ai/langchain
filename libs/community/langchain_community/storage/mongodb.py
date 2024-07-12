@@ -92,8 +92,6 @@ class MongoDBByteStore(BaseStore[str, bytes]):
         Args:
             key_value_pairs (list[tuple[str, Document]]): A list of id-document
                 pairs.
-        Returns:
-            None
         """
         from pymongo import UpdateOne
 
