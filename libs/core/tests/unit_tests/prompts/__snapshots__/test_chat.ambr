@@ -461,7 +461,7 @@
           Example: A ToolMessage where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.15
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -1069,7 +1069,7 @@
           Example: A ToolMessage where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.15
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
