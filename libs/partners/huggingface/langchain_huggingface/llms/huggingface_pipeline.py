@@ -105,6 +105,8 @@ class HuggingFacePipeline(BaseLLM):
                     "Please remove `device` and keep "
                     "`device_map`."
                 )
+            if model_kwargs is None:
+                model_kwargs = {}
             model_kwargs["device_map"] = device_map
             device = None
         _model_kwargs = model_kwargs or {}
