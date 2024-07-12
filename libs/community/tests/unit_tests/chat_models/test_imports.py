@@ -26,6 +26,7 @@ EXPECTED_ALL = [
     "ChatMlflow",
     "ChatMLflowAIGateway",
     "ChatMLX",
+    "ChatOCIModelDeploymentEndpoint",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
