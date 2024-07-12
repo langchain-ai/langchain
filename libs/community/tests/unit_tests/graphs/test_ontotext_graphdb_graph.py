@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from pathlib import Path
 
 import pytest
 
@@ -9,7 +10,7 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
     def test_import(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph  # noqa: F401
 
-    @pytest.mark.requires("rdflib")
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
     def test_validate_user_query_wrong_type(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
@@ -24,7 +25,7 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
             )
         self.assertEqual("Ontology query must be provided as string.", str(e.exception))
 
-    @pytest.mark.requires("rdflib")
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
     def test_validate_user_query_invalid_sparql_syntax(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
@@ -39,7 +40,7 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
             str(e.exception),
         )
 
-    @pytest.mark.requires("rdflib")
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
     def test_validate_user_query_invalid_query_type_select(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
@@ -50,7 +51,7 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
             str(e.exception),
         )
 
-    @pytest.mark.requires("rdflib")
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
     def test_validate_user_query_invalid_query_type_ask(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
@@ -61,7 +62,7 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
             str(e.exception),
         )
 
-    @pytest.mark.requires("rdflib")
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
     def test_validate_user_query_invalid_query_type_describe(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
@@ -76,7 +77,7 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
             str(e.exception),
         )
 
-    @pytest.mark.requires("rdflib")
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
     def test_validate_user_query_construct(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
@@ -84,37 +85,37 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
             "CONSTRUCT {?s ?p ?o} FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}"
         )
 
-    @pytest.mark.requires("rdflib")
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
     def test_check_connectivity(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
             OntotextGraphDBGraph(
-                query_endpoint="http://localhost:7200/repositories/non-existing-repository",
-                query_ontology="PREFIX swapi: <https://swapi.co/ontology/> "
+                gdb_repository="http://localhost:7200/repositories/non-existing-repository",
+                ontology_query="PREFIX swapi: <https://swapi.co/ontology/> "
                 "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
                 "DESCRIBE ?term WHERE {?term rdfs:isDefinedBy swapi: }",
             )
         self.assertEqual(
-            "Could not query the provided endpoint. "
+            "Could not query the provided repository. "
             "Please, check, if the value of the provided "
-            "query_endpoint points to the right repository. "
+            "gdb_repository points to the right repository. "
             "If GraphDB is secured, please, make sure that the environment variables "
             "'GRAPHDB_USERNAME' and 'GRAPHDB_PASSWORD' are set.",
             str(e.exception),
         )
 
-    @pytest.mark.requires("rdflib")
-    def test_local_file_does_not_exist(self) -> None:
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
+    def test_validate_file_does_not_exist(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
         non_existing_file = os.path.join("non", "existing", "path", "to", "file.ttl")
         with self.assertRaises(FileNotFoundError) as e:
-            OntotextGraphDBGraph._load_ontology_schema_from_file(non_existing_file)
+            OntotextGraphDBGraph._validate_file(Path(non_existing_file))
         self.assertEqual(f"File {non_existing_file} does not exist.", str(e.exception))
 
-    @pytest.mark.requires("rdflib")
-    def test_local_file_no_access(self) -> None:
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
+    def test_validate_file_no_access(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
         with tempfile.NamedTemporaryFile() as tmp_file:
@@ -124,14 +125,14 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
             os.chmod(tmp_file_name, 0o300)
 
             with self.assertRaises(PermissionError) as e:
-                OntotextGraphDBGraph._load_ontology_schema_from_file(tmp_file_name)
+                OntotextGraphDBGraph._validate_file(Path(tmp_file_name))
 
             self.assertEqual(
                 f"Read permission for {tmp_file_name} is restricted", str(e.exception)
             )
 
-    @pytest.mark.requires("rdflib")
-    def test_local_file_bad_syntax(self) -> None:
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
+    def test_ontology_file_bad_syntax(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
         with tempfile.TemporaryDirectory() as tempdir:
@@ -140,7 +141,9 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
                 tmp_file.write("invalid trig")
 
             with self.assertRaises(ValueError) as e:
-                OntotextGraphDBGraph._load_ontology_schema_from_file(tmp_file_path)
+                OntotextGraphDBGraph._load_ontology_schema_from_file(
+                    Path(tmp_file_path)
+                )
             self.assertEqual(
                 f"('Invalid file format for {tmp_file_path} : '"
                 ", BadSyntax('', 0, 'invalid trig', 0, "
@@ -148,28 +151,28 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
                 str(e.exception),
             )
 
-    @pytest.mark.requires("rdflib")
-    def test_both_query_and_local_file_provided(self) -> None:
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
+    def test_both_query_and_file_provided(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
             OntotextGraphDBGraph(
-                query_endpoint="http://localhost:7200/repositories/non-existing-repository",
-                query_ontology="CONSTRUCT {?s ?p ?o}"
+                gdb_repository="http://localhost:7200/repositories/non-existing-repository",
+                ontology_query="CONSTRUCT {?s ?p ?o}"
                 "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
-                local_file="starwars-ontology-wrong.trig",
+                ontology_file_path=Path("starwars-ontology-wrong.trig"),
             )
         self.assertEqual(
             "Both file and query provided. Only one is allowed.", str(e.exception)
         )
 
-    @pytest.mark.requires("rdflib")
-    def test_nor_query_nor_local_file_provided(self) -> None:
+    @pytest.mark.requires("rdflib", "SPARQLWrapper")
+    def test_nor_query_nor_file_provided(self) -> None:
         from langchain_community.graphs import OntotextGraphDBGraph
 
         with self.assertRaises(ValueError) as e:
             OntotextGraphDBGraph(
-                query_endpoint="http://localhost:7200/repositories/non-existing-repository",
+                gdb_repository="http://localhost:7200/repositories/non-existing-repository",
             )
         self.assertEqual(
             "Neither file nor query provided. One is required.", str(e.exception)
