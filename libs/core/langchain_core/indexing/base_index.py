@@ -16,6 +16,7 @@ from typing import (
     Optional,
     Union,
     Dict,
+    Literal,
 )
 
 from langchain_core._api import beta
@@ -26,25 +27,35 @@ from langchain_core.utils import abatch_iterate, batch_iterate
 
 
 class Sort(TypedDict):
-    """A sort object."""
+    """Sort order for the results."""
 
     field: str
-    ascending: NotRequired[bool]  # Assume asc=True
+    """The field to sort by."""
+    ascending: NotRequired[bool]
+    """Sort order. True for ascending, False for descending.
+    
+    If missing, the default sort order is ascending.
+    """
+
+
+# Need to compare against supported filtering operators
+Comparator = Literal[
+    "$eq", "$ne", "$lt", "$lte", "$gt", "$gte", "$in", "$nin", "$exists"
+]
+Operator = Literal["$and", "$or", "$not"]
+
+
+class Description(TypedDict, total=False):
+    """Description of the index."""
+
+    supported_comparators: List[str]  # Set to [] if filtering is not supported
+    supported_operators: List[str]  # Set to [] if filtering is not supported
+    supports_sort: bool
+    supports_pagination: bool
 
 
 T = TypeVar("T", bound=BaseMedia)
-
-
-class Query(TypedDict, total=False):
-    """Standard query"""
-
-    filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]]
-    limit: Optional[int]
-    offset: Optional[int]
-    sort: Optional[Union[Sort, List[Sort]]]
-
-
-Q = TypeVar("Q", bound=Query)
+Q = TypeVar("Q")
 
 
 class BaseIndex(Generic[T, Q]):
@@ -69,6 +80,8 @@ class BaseIndex(Generic[T, Q]):
     While strongly encouraged, implementations are not required to support
     querying based on metadata. Such implementations override the `get_by_query`
     and `delete_by_query` methods to raise a NotImplementedError.
+
+    .. versionadded:: 0.2.15
     """
 
     # Developer guidelines:
@@ -99,8 +112,7 @@ class BaseIndex(Generic[T, Q]):
         for item_batch in batch_iterate(batch_size, items):
             yield self.upsert(item_batch, **kwargs)
 
-    # TODO(Eugene) Update documentation
-    @abc.abstractmethod
+    @beta(message="Added in 0.2.15. The API is subject to change.")
     def upsert(self, items: Sequence[T], /, **kwargs: Any) -> UpsertResponse:
         """Upsert items into the index.
 
@@ -120,6 +132,8 @@ class BaseIndex(Generic[T, Q]):
             UpsertResponse: A response object that contains the list of IDs that were
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
+
+        .. versionadded:: 0.2.15
         """
 
     @beta(message="Added in 0.2.11. The API is subject to change.")
@@ -146,7 +160,7 @@ class BaseIndex(Generic[T, Q]):
         async for batch in abatch_iterate(batch_size, items):
             yield await self.aupsert(batch, **kwargs)
 
-    @beta(message="Added in 0.2.11. The API is subject to change.")
+    @beta(message="Added in 0.2.15. The API is subject to change.")
     async def aupsert(self, items: Sequence[T], /, **kwargs: Any) -> UpsertResponse:
         """Add or update items in the vectorstore. Async version of upsert.
 
@@ -167,7 +181,7 @@ class BaseIndex(Generic[T, Q]):
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
 
-        .. versionadded:: 0.2.11
+        .. versionadded:: 0.2.15
         """
         return await run_in_executor(
             None,
@@ -182,34 +196,151 @@ class BaseIndex(Generic[T, Q]):
         ids: Sequence[str],
         /,
     ) -> List[T]:
-        """Get items by id."""
+        """Get items by id.
+
+        Fewer items may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned items matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned items.
+
+        This method should **NOT** raise exceptions if no items are found for
+        some IDs.
+        """
 
     @abc.abstractmethod
     def delete_by_ids(
         self,
         ids: Sequence[str],
         /,
+        **kwargs: Any,
     ) -> DeleteResponse:
-        """Delete items by id."""
+        """Delete by IDs or other criteria.
+
+        Args:
+            ids: List of ids to delete.
+            kwargs: Additional keyword arguments. This is up to the implementation.
+
+        Returns:
+            DeleteResponse: A response object that contains the list of IDs that were
+            successfully deleted and the list of IDs that failed to be deleted.
+        """
 
     # Delete and get are part of the READ/WRITE interface.
     # They do not take advantage of indexes on the content.
     # However, all the indexers ARE assumed to have the capability to index
-    # on metadata if they implement the delete_by_query and get_by_query methods.
+    # on metadata if they implement the get_by_filter and delete_by_filter methods.
     @abc.abstractmethod
-    def get_by_query(
+    def get_by_filter(
         self,
-        query: Q,
-        /,
+        *,
+        filter: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
+        limit: Optional[int] = None,
+        sort: Optional[Sort] = None,
         **kwargs: Any,
     ) -> Iterable[T]:
-        """Get items by query."""
+        """Get items by a filter query.
+
+        Args:
+            filter: A filter to apply to the query. Must be a valid filter.
+                Expected to follow the standard LangChain filtering syntax.
+            limit: Number of items to return.
+            sort: Sort order for the results if supported by the index.
+            **kwargs: Additional keyword arguments.
+        """
+        # Developer guidelines
+        # 1. The filter should be a dictionary or a list of dictionaries.
+        # 2. An invalid filter should raise an exception.
+        # 3. A None filter is considered valid and should return items.
+        # 4. The **default** filter syntax should follow standard LangChain
+        #    filtering syntax.
+        #    The syntax is as follows:
+        #    - All operators and comparators should be prefixed with a "$".
+        #    - Field names are expected to be valid identifiers allowing [a-zA-Z0-9_]
+        #      only.
+        #    - Top level dict with multiple keys should be treated as an "$and" query.
+        #    - Top level list should be treated as an "$and" query.
+        #    - A key that starts with "$" should be treated as an operator or comparator
+        #      (e.g., "$and", "$or", "$not", "$eq", "$ne", "$lt", "$lte", "$gt", "$gte",
+        #    - A key that is not prefixed with "$" should be treated as a field name.
+        # 5. Supported filtering operators should be documented in the description
+        #   of the index.
+        # 6. Providers are free to support **additional** types of filtering operators
+        #    to do that, they should define the filter as
+        #    Union[existing_format, provider_format]
+        #    the provider format should contain an extra `type`
+        #    field, so that it could be distinguished from the standard format.
+        #    We suggest for the type value to be "provider". The rest of the syntax is
+        #    up to the provider to define.
+        #
+        #    For example:
+        #    {
+        #        "type": "provider",
+        #        "filter": "and(or(eq('field', 'value'), eq('field2', 'value2')))"A
+        #    }
 
     @abc.abstractmethod
-    def delete_by_query(
+    def delete_by_filter(
         self,
-        query: Q,
+        filter: Union[Dict[str, Any], List[Dict[str, Any]]],
         /,
         **kwargs: Any,
     ) -> Iterable[DeleteResponse]:
-        """Delete items by query."""
+        """Delete items by a filter.
+
+        Args:
+            filter: A filter to apply to the query. Must be a valid filter.
+                Expected to follow the standard LangChain filtering syntax.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Iterable[DeleteResponse]: An iterable of delete responses.
+        """
+        # Developer guidelines:
+        # 1. The filter should be a dictionary or a list of dictionaries.
+        # 2. An invalid filter should raise an exception.
+        # 3. An empty filter is considered invalid and should raise an exception.
+        # 4. The **default** filter syntax should follow standard LangChain
+        #    filtering syntax.
+        #    The syntax is as follows:
+        #    - All operators and comparators should be prefixed with a "$".
+        #    - Field names are expected to be valid identifiers allowing [a-zA-Z0-9_]
+        #      only.
+        #    - Top level dict with multiple keys should be treated as an "$and" query.
+        #    - Top level list should be treated as an "$and" query.
+        #    - A key that starts with "$" should be treated as an operator or comparator
+        #      (e.g., "$and", "$or", "$not", "$eq", "$ne", "$lt", "$lte", "$gt", "$gte",
+        #    - A key that is not prefixed with "$" should be treated as a field name.
+        # 5. Supported filtering operators should be documented in the description
+        #   of the index.
+        # 6. Providers are free to support **additional** types of filtering operators
+        #    to do that, they should define the filter as
+        #    Union[existing_format, provider_format]
+        #    the provider format should contain an extra `type`
+        #    field, so that it could be distinguished from the standard format.
+        #    We suggest for the type value to be "provider". The rest of the syntax is
+        #    up to the provider to define.
+        #
+        #    For example:
+        #    {
+        #        "type": "provider",
+        #        "filter": "and(or(eq('field', 'value'), eq('field2', 'value2')))"A
+        #    }
+
+    @classmethod
+    def describe(cls) -> Description:
+        """Get a description of the functionality supported by the index."""
+        # Developer guidelines:
+        # Developers are encouraged to override this method to provide a
+        # detailed description of the functionality supported by the index.
+        # The description will be used in the following manners:
+        # 1. Surfaced in the documentation to provide users with an overview of
+        #    the functionality supported by the index.
+        # 2. Used by standard test suites to verify that the index actually supports
+        #    the functionality it claims to support correctly.
+        # 3. By you, the developer, to leverage utility code that will be used to
+        #    provide run-time validation of user provided queries.
+        # 4. Will be accessible to users in an interactive environment to help them
+        #    understand the capabilities of the index.
+        raise NotImplementedError(f"{cls.__name__} does not implement describe method.")

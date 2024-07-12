@@ -208,7 +208,7 @@ class FullDocumentIndex(BaseIndex[Document], BaseModel):
             child_docs.extend(sub_docs)
 
         # Needs to clean UP first to keep things synchronized.
-        self.vectorstore.delete_by_query(
+        self.vectorstore.delete_by_filter(
             {
                 "filter": {
                     self.id_key: {
@@ -233,7 +233,7 @@ class FullDocumentIndex(BaseIndex[Document], BaseModel):
     ) -> DeleteResponse:
         """Delete documents by their ids."""
         # First delete from vectorstore
-        self.vectorstore.delete_by_query(
+        self.vectorstore.delete_by_filter(
             {
                 "filter": {
                     self.id_key: {
