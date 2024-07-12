@@ -15,7 +15,7 @@ def curry(func: Callable[..., Any], **curried_kwargs: Any) -> Callable[..., Any]
     Returns:
         A new function with curried arguments applied.
 
-    .. versionadded:: 0.2.14
+    .. versionadded:: 0.2.18
     """
 
     @wraps(func)
