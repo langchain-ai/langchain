@@ -33,7 +33,7 @@ markers = [ "requires: mark tests as requiring a specific library", "asyncio: ma
 asyncio_mode = "auto"
 
 [tool.poetry.dependencies.langchain-core]
-version = ">=0.2.10,<0.3"
+version = ">=0.2.17,<0.3"
 
 [tool.poetry.dependencies.defusedxml]
 version = "^0.7.1"

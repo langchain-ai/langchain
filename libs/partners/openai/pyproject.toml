@@ -22,7 +22,7 @@ ignore_missing_imports = true
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.13"
+langchain-core = "^0.2.17"
 openai = "^1.32.0"
 tiktoken = ">=0.7,<1"
 
