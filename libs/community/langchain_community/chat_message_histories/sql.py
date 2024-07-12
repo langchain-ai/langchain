@@ -113,7 +113,33 @@ _warned_once_already = False
 
 
 class SQLChatMessageHistory(BaseChatMessageHistory):
-    """Chat message history stored in an SQL database."""
+    """Chat message history stored in an SQL database.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.messages import HumanMessage
+
+            from langchain_community.chat_message_histories import SQLChatMessageHistory
+
+            # create sync sql message history by connection_string
+            message_history = SQLChatMessageHistory(
+                session_id='foo', connection_string='sqlite///:memory.db'
+            )
+            message_history.add_message(HumanMessage("hello"))
+            message_history.message
+
+            # create async sql message history using aiosqlite
+            # from sqlalchemy.ext.asyncio import create_async_engine
+            #
+            # async_engine = create_async_engine("sqlite+aiosqlite:///memory.db")
+            # async_message_history = SQLChatMessageHistory(
+            #     session_id='foo', connection=async_engine,
+            # )
+            # await async_message_history.aadd_message(HumanMessage("hello"))
+            # await async_message_history.aget_messages()
+
+    """
 
     @property
     @deprecated("0.2.2", removal="0.3.0", alternative="session_maker")
@@ -131,6 +157,21 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         engine_args: Optional[Dict[str, Any]] = None,
         async_mode: Optional[bool] = None,  # Use only if connection is a string
     ):
+        """Initialize with a SQLChatMessageHistory instance.
+
+        Args:
+            session_id: Indicates the id of the same session.
+            connection_string: String parameter configuration for connecting
+                to the database.
+            table_name: Table name used to save data.
+            session_id_field_name: The name of field of `session_id`.
+            custom_message_converter: Custom message converter for converting
+                database data and `BaseMessage`
+            connection: Database connection object, which can be a string containing
+                connection configuration, Engine object or AsyncEngine object.
+            engine_args: Additional configuration for creating database engines.
+            async_mode: Whether it is an asynchronous connection.
+        """
         assert not (
             connection_string and connection
         ), "connection_string and connection are mutually exclusive"

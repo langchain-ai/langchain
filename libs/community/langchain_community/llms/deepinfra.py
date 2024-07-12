@@ -8,8 +8,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.utilities.requests import Requests
 
@@ -43,7 +43,7 @@ class DeepInfra(LLM):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         deepinfra_api_token = get_from_dict_or_env(

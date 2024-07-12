@@ -63,7 +63,7 @@ class FileManagementToolkit(BaseToolkit):
     selected_tools: Optional[List[str]] = None
     """If provided, only provide the selected tools. Defaults to all."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_tools(cls, values: dict) -> dict:
         selected_tools = values.get("selected_tools") or []
         for tool_name in selected_tools:

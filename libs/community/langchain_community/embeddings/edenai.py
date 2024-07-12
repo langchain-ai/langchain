@@ -6,9 +6,8 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     SecretStr,
-    root_validator,
 )
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.utilities.requests import Requests
 
@@ -35,7 +34,7 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["edenai_api_key"] = convert_to_secret_str(

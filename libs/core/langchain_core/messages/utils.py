@@ -221,7 +221,8 @@ def _create_message_from_message_type(
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
-        message = ToolMessage(content=content, **kwargs)
+        artifact = kwargs.get("additional_kwargs", {}).pop("artifact", None)
+        message = ToolMessage(content=content, artifact=artifact, **kwargs)
     elif message_type == "remove":
         message = RemoveMessage(**kwargs)
     else:
