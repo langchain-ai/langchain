@@ -13,13 +13,13 @@ from typing import (
     Iterator,
     List,
     Literal,
-    NotRequired,
     Optional,
     Sequence,
-    TypedDict,
     TypeVar,
     Union,
 )
+
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_core._api import beta
 from langchain_core.documents.base import BaseMedia
