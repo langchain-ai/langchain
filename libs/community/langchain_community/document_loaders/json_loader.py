@@ -156,8 +156,8 @@ class JSONLoader(BaseLoader):
         # and prevent the user from getting a cryptic error later on.
         if self._content_key is not None:
             self._validate_content_key(data)
-        if self._metadata_func is not None:
-            self._validate_metadata_func(data)
+        # if self._metadata_func is not None:
+        #     self._validate_metadata_func(data)
 
         for i, sample in enumerate(data, index + 1):
             text = self._get_text(sample=sample)
@@ -201,8 +201,19 @@ class JSONLoader(BaseLoader):
         :param additional_fields: key-word arguments to be added as metadata values
         :return:
         """
+        # if self._metadata_func is not None:
+        #     return self._metadata_func(sample, additional_fields)
+        # else:
+        #     return additional_fields
+
         if self._metadata_func is not None:
-            return self._metadata_func(sample, additional_fields)
+            result = self._metadata_func(sample, additional_fields)
+            if not isinstance(result, dict):
+                raise ValueError(
+                    f"Expected the metadata_func to return a dict but got \
+                                `{type(result)}`"
+                )
+            return result
         else:
             return additional_fields
 
@@ -233,14 +244,14 @@ class JSONLoader(BaseLoader):
                     with the key `{self._content_key}` which should be parsable by jq"
             )
 
-    def _validate_metadata_func(self, data: Any) -> None:
-        """Check if the metadata_func output is valid"""
-
-        sample = data.first()
-        if self._metadata_func is not None:
-            sample_metadata = self._metadata_func(sample, {"source": ".", "seq_num": 0})
-            if not isinstance(sample_metadata, dict):
-                raise ValueError(
-                    f"Expected the metadata_func to return a dict but got \
-                        `{type(sample_metadata)}`"
-                )
+    # def _validate_metadata_func(self, data: Any) -> None:
+    #     """Check if the metadata_func output is valid"""
+    #
+    #     sample = data.first()
+    #     if self._metadata_func is not None:
+    #         sample_metadata = self._metadata_func(sample, {"source": ".", "seq_num": 0})
+    #         if not isinstance(sample_metadata, dict):
+    #             raise ValueError(
+    #                 f"Expected the metadata_func to return a dict but got \
+    #                     `{type(sample_metadata)}`"
+    #             )
