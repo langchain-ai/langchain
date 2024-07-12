@@ -58,11 +58,11 @@ class ToolMessage(BaseMessage):
     """The type of the message (used for serialization). Defaults to "tool"."""
 
     artifact: Any = None
-    """The raw output of the tool.
+    """Artifact of the Tool execution which is not meant to be sent to the model.
     
-    **Not part of the payload sent to the model.** Should only be specified if it is 
-    different from the message content, i.e. if only a subset of the full tool output
-    is being passed as message content.
+    Should only be specified if it is different from the message content, e.g. if only 
+    a subset of the full tool output is being passed as message content but the full
+    output is needed in other parts of the code.
     
     .. versionadded:: 0.2.17
     """
