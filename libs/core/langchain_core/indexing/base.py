@@ -56,7 +56,6 @@ class Description(TypedDict, total=False):
 
 
 T = TypeVar("T", bound=BaseMedia)
-Q = TypeVar("Q")
 
 
 class UpsertResponse(TypedDict):
