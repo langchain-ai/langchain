@@ -1,17 +1,21 @@
-from langchain_community.graph_vectorstores.extractors.html_link_extractor import (
+from .html_link_extractor import (
     HtmlInput,
     HtmlLinkExtractor,
 )
-from langchain_community.graph_vectorstores.extractors.link_extractor import (
+from .link_extractor import (
     LinkExtractor,
 )
-from langchain_community.graph_vectorstores.extractors.link_extractor_adapter import (
+from .link_extractor_adapter import (
     LinkExtractorAdapter,
+)
+from .link_extractor_transformer import (
+    LinkExtractorTransformer,
 )
 
 __all__ = [
     "LinkExtractor",
     "LinkExtractorAdapter",
+    "LinkExtractorTransformer",
     "HtmlInput",
     "HtmlLinkExtractor",
 ]
