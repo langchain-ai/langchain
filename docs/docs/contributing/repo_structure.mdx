@@ -15,12 +15,22 @@ Here's the structure visualized as a tree:
 ├── cookbook # Tutorials and examples
 ├── docs # Contains content for the documentation here: https://python.langchain.com/
 ├── libs
-│   ├── langchain # Main package
+│   ├── langchain
+│   │   ├── langchain
 │   │   ├── tests/unit_tests # Unit tests (present in each package not shown for brevity)
 │   │   ├── tests/integration_tests # Integration tests (present in each package not shown for brevity)
-│   ├── langchain-community # Third-party integrations
-│   ├── langchain-core # Base interfaces for key abstractions
-│   ├── langchain-experimental # Experimental components and chains
+│   ├── community # Third-party integrations
+│   │   ├── langchain-community
+│   ├── core # Base interfaces for key abstractions
+│   │   ├── langchain-core
+│   ├── experimental # Experimental components and chains
+│   │   ├── langchain-experimental
+|   ├── cli # Command line interface
+│   │   ├── langchain-cli
+│   ├── text-splitters
+│   │   ├── langchain-text-splitters
+│   ├── standard-tests
+│   │   ├── langchain-standard-tests
 │   ├── partners
 │       ├── langchain-partner-1
 │       ├── langchain-partner-2

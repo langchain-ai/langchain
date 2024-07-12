@@ -81,7 +81,7 @@ def draw_mermaid(
         # Add BR every wrap_label_n_words words
         if edge.data is not None:
             edge_data = edge.data
-            words = edge_data.split()  # Split the string into words
+            words = str(edge_data).split()  # Split the string into words
             # Group words into chunks of wrap_label_n_words size
             if len(words) > wrap_label_n_words:
                 edge_data = "<br>".join(

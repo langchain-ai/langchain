@@ -203,6 +203,35 @@ def test_complex_ai_message_chunks() -> None:
         )
     ), "Concatenating when both content arrays are dicts with separate indexes should not merge"  # noqa: E501
 
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block"}]
+        )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and type should merge"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
+        )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and different types should merge without updating type"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(content="", response_metadata={"extra": "value"})
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am", "type": "text_block"}],
+            response_metadata={"extra": "value"},
+        )
+    ), "Concatenating when one content is an array and one is an empty string should not add a new item, but should concat other fields"  # noqa: E501
+
 
 def test_function_message_chunks() -> None:
     assert FunctionMessageChunk(

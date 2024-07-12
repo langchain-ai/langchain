@@ -43,6 +43,12 @@ codespell = "^2.2.0"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
+# Support Python 3.8 and 3.12+.
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
+
 
 [tool.poetry.group.lint]
 optional = true

@@ -103,9 +103,12 @@ def mustache_template_vars(
             in_section = False
         elif in_section:
             continue
-        elif type in ("variable", "section") and key != ".":
+        elif (
+            type in ("variable", "section", "inverted section", "no escape")
+            and key != "."
+        ):
             vars.add(key.split(".")[0])
-            if type == "section":
+            if type in ("section", "inverted section"):
                 in_section = True
     return vars
 
@@ -117,24 +120,25 @@ def mustache_schema(
     template: str,
 ) -> Type[BaseModel]:
     """Get the variables from a mustache template."""
-    fields = set()
+    fields = {}
     prefix: Tuple[str, ...] = ()
     for type, key in mustache.tokenize(template):
         if key == ".":
             continue
         if type == "end":
             prefix = prefix[: -key.count(".")]
-        elif type == "section":
+        elif type in ("section", "inverted section"):
             prefix = prefix + tuple(key.split("."))
-        elif type == "variable":
-            fields.add(prefix + tuple(key.split(".")))
+            fields[prefix] = False
+        elif type in ("variable", "no escape"):
+            fields[prefix + tuple(key.split("."))] = True
     defs: Defs = {}  # None means leaf node
     while fields:
-        field = fields.pop()
+        field, is_leaf = fields.popitem()
         current = defs
         for part in field[:-1]:
             current = current.setdefault(part, {})
-        current[field[-1]] = {}
+        current.setdefault(field[-1], "" if is_leaf else {})  # type: ignore[arg-type]
     return _create_model_recursive("PromptInput", defs)
 
 
@@ -142,7 +146,7 @@ def _create_model_recursive(name: str, defs: Defs) -> Type:
     return create_model(  # type: ignore[call-overload]
         name,
         **{
-            k: (_create_model_recursive(k, v), None) if v else (str, None)
+            k: (_create_model_recursive(k, v), None) if v else (type(v), None)
             for k, v in defs.items()
         },
     )

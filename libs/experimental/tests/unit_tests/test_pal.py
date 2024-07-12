@@ -189,7 +189,9 @@ def test_math_question_1() -> None:
     prompt = MATH_PROMPT.format(question=question)
     queries = {prompt: _MATH_SOLUTION_1}
     fake_llm = FakeLLM(queries=queries)
-    fake_pal_chain = PALChain.from_math_prompt(fake_llm, timeout=None)
+    fake_pal_chain = PALChain.from_math_prompt(
+        fake_llm, timeout=None, allow_dangerous_code=True
+    )
     output = fake_pal_chain.run(question)
     assert output == "8"
 
@@ -202,7 +204,9 @@ def test_math_question_2() -> None:
     prompt = MATH_PROMPT.format(question=question)
     queries = {prompt: _MATH_SOLUTION_2}
     fake_llm = FakeLLM(queries=queries)
-    fake_pal_chain = PALChain.from_math_prompt(fake_llm, timeout=None)
+    fake_pal_chain = PALChain.from_math_prompt(
+        fake_llm, timeout=None, allow_dangerous_code=True
+    )
     output = fake_pal_chain.run(question)
     assert output == "33"
 
@@ -214,7 +218,9 @@ def test_math_question_3() -> None:
     prompt = MATH_PROMPT.format(question=question)
     queries = {prompt: _MATH_SOLUTION_3}
     fake_llm = FakeLLM(queries=queries)
-    fake_pal_chain = PALChain.from_math_prompt(fake_llm, timeout=None)
+    fake_pal_chain = PALChain.from_math_prompt(
+        fake_llm, timeout=None, allow_dangerous_code=True
+    )
     with pytest.raises(ValueError) as exc_info:
         fake_pal_chain.run(question)
     assert (
@@ -231,7 +237,9 @@ def test_math_question_infinite_loop() -> None:
     prompt = MATH_PROMPT.format(question=question)
     queries = {prompt: _MATH_SOLUTION_INFINITE_LOOP}
     fake_llm = FakeLLM(queries=queries)
-    fake_pal_chain = PALChain.from_math_prompt(fake_llm, timeout=1)
+    fake_pal_chain = PALChain.from_math_prompt(
+        fake_llm, timeout=1, allow_dangerous_code=True
+    )
     output = fake_pal_chain.run(question)
     assert output == "Execution timed out"
 
@@ -245,7 +253,9 @@ def test_color_question_1() -> None:
     prompt = COLORED_OBJECT_PROMPT.format(question=question)
     queries = {prompt: _COLORED_OBJECT_SOLUTION_1}
     fake_llm = FakeLLM(queries=queries)
-    fake_pal_chain = PALChain.from_colored_object_prompt(fake_llm, timeout=None)
+    fake_pal_chain = PALChain.from_colored_object_prompt(
+        fake_llm, timeout=None, allow_dangerous_code=True
+    )
     output = fake_pal_chain.run(question)
     assert output == "0"
 
@@ -260,7 +270,9 @@ def test_color_question_2() -> None:
     prompt = COLORED_OBJECT_PROMPT.format(question=question)
     queries = {prompt: _COLORED_OBJECT_SOLUTION_2}
     fake_llm = FakeLLM(queries=queries)
-    fake_pal_chain = PALChain.from_colored_object_prompt(fake_llm, timeout=None)
+    fake_pal_chain = PALChain.from_colored_object_prompt(
+        fake_llm, timeout=None, allow_dangerous_code=True
+    )
     output = fake_pal_chain.run(question)
     assert output == "brown"
 

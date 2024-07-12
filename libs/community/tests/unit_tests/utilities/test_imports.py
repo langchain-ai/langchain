@@ -41,7 +41,6 @@ EXPECTED_ALL = [
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
-    "PythonREPL",
     "Requests",
     "RequestsWrapper",
     "RememberizerAPIWrapper",

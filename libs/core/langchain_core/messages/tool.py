@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from typing_extensions import TypedDict
 
@@ -26,6 +26,12 @@ class ToolMessage(BaseMessage):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
+
+    def __init__(
+        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+    ) -> None:
+        """Pass in content as positional arg."""
+        super().__init__(content=content, **kwargs)
 
 
 ToolMessage.update_forward_refs()

@@ -54,7 +54,7 @@ class ZapierToolkit(BaseToolkit):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return self.tools

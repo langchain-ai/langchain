@@ -30,7 +30,6 @@ pytest-asyncio = "^0.21.1"
 langchain-openai = { path = "../openai", develop = true }
 langchain-core = { path = "../../core", develop = true }
 docarray = "^0.32.1"
-pydantic = "^1.10.9"
 langchain-standard-tests = { path = "../../standard-tests", develop = true }
 
 [tool.poetry.group.codespell]
@@ -43,6 +42,12 @@ codespell = "^2.2.0"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
+# Support Python 3.8 and 3.12+.
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
+
 
 [tool.poetry.group.lint]
 optional = true

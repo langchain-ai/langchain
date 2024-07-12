@@ -99,13 +99,6 @@ def test_openai_stop_valid() -> None:
     assert first_output == second_output
 
 
-def test_openai_stop_error() -> None:
-    """Test openai stop logic on bad configuration."""
-    llm = OpenAI(stop="3", temperature=0)
-    with pytest.raises(ValueError):
-        llm.invoke("write an ordered list of five items", stop=["\n"])
-
-
 @pytest.mark.scheduled
 def test_openai_streaming() -> None:
     """Test streaming tokens from OpenAI."""

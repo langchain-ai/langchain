@@ -228,6 +228,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.yandex import (
         YandexGPTEmbeddings,
     )
+    from langchain_community.embeddings.zhipuai import (
+        ZhipuAIEmbeddings,
+    )
 
 __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
@@ -307,6 +310,7 @@ __all__ = [
     "VoyageEmbeddings",
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
+    "ZhipuAIEmbeddings",
 ]
 
 _module_lookup = {
@@ -387,6 +391,7 @@ _module_lookup = {
     "TitanTakeoffEmbed": "langchain_community.embeddings.titan_takeoff",
     "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
+    "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
 }
 
 

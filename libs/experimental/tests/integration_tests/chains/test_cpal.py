@@ -261,7 +261,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         expected_output = {
             "chain_answer": None,
             "chain_data": QueryModel(
-                narrative_input="how many pets does jan have? ",
+                question="how many pets does jan have? ",
                 llm_error_msg="",
                 expression="SELECT name, value FROM df WHERE name = 'jan'",
             ),

@@ -28,7 +28,59 @@ V = TypeVar("V")
 
 
 class BaseStore(Generic[K, V], ABC):
-    """Abstract interface for a key-value store."""
+    """Abstract interface for a key-value store.
+
+    This is an interface that's meant to abstract away the details of
+    different key-value stores. It provides a simple interface for
+    getting, setting, and deleting key-value pairs.
+
+    The basic methods are `mget`, `mset`, and `mdelete` for getting,
+    setting, and deleting multiple key-value pairs at once. The `yield_keys`
+    method is used to iterate over keys that match a given prefix.
+
+    The async versions of these methods are also provided, which are
+    meant to be used in async contexts. The async methods are named with
+    an `a` prefix, e.g., `amget`, `amset`, `amdelete`, and `ayield_keys`.
+
+    By default, the `amget`, `amset`, `amdelete`, and `ayield_keys` methods
+    are implemented using the synchronous methods. If the store can natively
+    support async  operations, it should override these methods.
+
+    By design the methods only accept batches of keys and values, and not
+    single keys or values. This is done to force user code to work with batches
+    which will usually be more efficient by saving on round trips to the store.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.storage import BaseStore
+
+            class MyInMemoryStore(BaseStore[str, int]):
+
+                def __init__(self):
+                    self.store = {}
+
+                def mget(self, keys):
+                    return [self.store.get(key) for key in keys]
+
+                def mset(self, key_value_pairs):
+                    for key, value in key_value_pairs:
+                        self.store[key] = value
+
+                def mdelete(self, keys):
+                    for key in keys:
+                        if key in self.store:
+                            del self.store[key]
+
+                def yield_keys(self, prefix=None):
+                    if prefix is None:
+                        yield from self.store.keys()
+                    else:
+                        for key in self.store.keys():
+                            if key.startswith(prefix):
+                                yield key
+    """
 
     @abstractmethod
     def mget(self, keys: Sequence[K]) -> List[Optional[V]]:

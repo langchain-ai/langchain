@@ -242,7 +242,7 @@ def _load_pickled_fn_from_hex_string(
         raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
 
     try:
-        return cloudpickle.loads(bytes.fromhex(data))
+        return cloudpickle.loads(bytes.fromhex(data))  # ignore[pickle]: explicit-opt-in
     except Exception as e:
         raise ValueError(
             f"Failed to load the pickled function from a hexadecimal string. Error: {e}"

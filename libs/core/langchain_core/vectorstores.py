@@ -772,17 +772,17 @@ class VectorStoreRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
-        search_type = values["search_type"]
+        search_type = values.get("search_type", "similarity")
         if search_type not in cls.allowed_search_types:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Valid values are: "
                 f"{cls.allowed_search_types}"
             )
         if search_type == "similarity_score_threshold":
-            score_threshold = values["search_kwargs"].get("score_threshold")
+            score_threshold = values.get("search_kwargs", {}).get("score_threshold")
             if (score_threshold is None) or (not isinstance(score_threshold, float)):
                 raise ValueError(
                     "`score_threshold` is not specified with a float value(0~1) "

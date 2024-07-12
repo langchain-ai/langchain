@@ -163,23 +163,115 @@ def _truncate_params(payload: Dict[str, Any]) -> None:
 
 
 class ChatZhipuAI(BaseChatModel):
-    """
-    `ZhipuAI` large language chat models API.
+    """ZhipuAI chat model integration.
 
-    To use, you should have the ``PyJWT`` python package installed.
+    Setup:
+        Install ``PyJWT`` and set environment variable ``ZHIPUAI_API_KEY``
 
-    Example:
-    .. code-block:: python
+        .. code-block:: bash
 
-    from langchain_community.chat_models import ChatZhipuAI
+            pip install pyjwt
+            export ZHIPUAI_API_KEY="your-api-key"
 
-    zhipuai_chat = ChatZhipuAI(
-        temperature=0.5,
-        api_key="your-api-key",
-        model="glm-4"
-    )
+    Key init args — completion params:
+        model: Optional[str]
+            Name of OpenAI model to use.
+        temperature: float
+            Sampling temperature.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
 
-    """
+    Key init args — client params:
+        api_key: Optional[str]
+        ZhipuAI API key. If not passed in will be read from env var ZHIPUAI_API_KEY.
+        api_base: Optional[str]
+        Base URL for API requests.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatZhipuAI
+
+            zhipuai_chat = ChatZhipuAI(
+                temperature=0.5,
+                api_key="your-api-key",
+                model="glm-4",
+                # api_base="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            zhipuai_chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content='I enjoy programming.', response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 23, 'total_tokens': 29}, 'model_name': 'glm-4', 'finish_reason': 'stop'}, id='run-c5d9af91-55c6-470e-9545-02b2fa0d7f9d-0')
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in zhipuai_chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-4df71729-618f-4e2b-a4ff-884682723082'
+            content=' enjoy' id='run-4df71729-618f-4e2b-a4ff-884682723082'
+            content=' programming' id='run-4df71729-618f-4e2b-a4ff-884682723082'
+            content='.' id='run-4df71729-618f-4e2b-a4ff-884682723082'
+            content='' response_metadata={'finish_reason': 'stop'} id='run-4df71729-618f-4e2b-a4ff-884682723082'
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block::
+
+            AIMessageChunk(content='I enjoy programming.', response_metadata={'finish_reason': 'stop'}, id='run-20b05040-a0b4-4715-8fdc-b39dba9bfb53')
+
+    Async:
+        .. code-block:: python
+
+            await zhipuai_chat.ainvoke(messages)
+
+            # stream:
+            # async for chunk in zhipuai_chat.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await zhipuai_chat.abatch([messages])
+
+        .. code-block:: python
+
+            [AIMessage(content='I enjoy programming.', response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 23, 'total_tokens': 29}, 'model_name': 'glm-4', 'finish_reason': 'stop'}, id='run-ba06af9d-4baa-40b2-9298-be9c62aa0849-0')]
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = zhipuai_chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {'token_usage': {'completion_tokens': 6,
+              'prompt_tokens': 23,
+              'total_tokens': 29},
+              'model_name': 'glm-4',
+              'finish_reason': 'stop'}
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

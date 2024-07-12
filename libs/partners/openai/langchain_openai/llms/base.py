@@ -440,8 +440,6 @@ class BaseOpenAI(BaseLLM):
     ) -> List[List[str]]:
         """Get the sub prompts for llm call."""
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         if params["max_tokens"] == -1:
             if len(prompts) != 1:

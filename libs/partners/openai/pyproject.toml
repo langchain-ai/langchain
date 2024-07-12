@@ -29,7 +29,11 @@ pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 pytest-cov = "^4.1.0"
 langchain-standard-tests = { path = "../../standard-tests", develop = true }
-numpy = "^1.24"
+# Support Python 3.8 and 3.12+.
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 [tool.poetry.group.codespell]
 optional = true
@@ -58,7 +62,11 @@ langchain-core = { path = "../../core", develop = true }
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
-numpy = "^1"
+# Support Python 3.8 and 3.12+.
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 [tool.ruff.lint]
 select = [

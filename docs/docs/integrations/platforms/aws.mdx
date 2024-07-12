@@ -134,6 +134,20 @@ See a [usage example](/docs/integrations/document_loaders/athena).
 from langchain_community.document_loaders.athena import AthenaLoader
 ```
 
+### AWS Glue
+
+>The [AWS Glue Data Catalog](https://docs.aws.amazon.com/en_en/glue/latest/dg/catalog-and-crawler.html) is a centralized metadata 
+> repository that allows you to manage, access, and share metadata about 
+> your data stored in AWS. It acts as a metadata store for your data assets, 
+> enabling various AWS services and your applications to query and connect 
+> to the data they need efficiently.
+
+See a [usage example](/docs/integrations/document_loaders/glue_catalog).
+
+```python
+from langchain_community.document_loaders.glue_catalog import GlueCatalogLoader
+```
+
 ## Vector stores
 
 ### Amazon OpenSearch Service

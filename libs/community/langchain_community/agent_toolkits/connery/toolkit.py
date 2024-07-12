@@ -19,7 +19,7 @@ class ConneryToolkit(BaseToolkit):
         """
         return self.tools
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_attributes(cls, values: dict) -> dict:
         """
         Validate the attributes of the ConneryToolkit class.

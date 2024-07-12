@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class WatsonxLLM(BaseLLM):
     """
-    IBM watsonx.ai large language models.
+    IBM WatsonX.ai large language models.
 
     To use, you should have ``langchain_ibm`` python package installed,
     and the environment variable ``WATSONX_APIKEY`` set with your API key, or pass
