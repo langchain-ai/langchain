@@ -319,9 +319,9 @@ class BaseChatOpenAI(BaseChatModel):
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
-    presence_penalty: float = 0
+    presence_penalty: Optional[float] = None
     """Penalizes repeated tokens."""
-    frequency_penalty: float = 0
+    frequency_penalty: Optional[float] = None
     """Penalizes repeated tokens according to frequency."""
     seed: Optional[int] = None
     """Seed for generation"""
@@ -337,7 +337,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
-    top_p: float = 1.0
+    top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
