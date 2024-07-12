@@ -95,7 +95,10 @@ class Node(NamedTuple):
     """Node in a graph.
 
     Parameters:
-
+        id: The unique identifier of the node.
+        name: The name of the node.
+        data: The data of the node.
+        metadata: Optional metadata for the node. Defaults to None.
     """
 
     id: str
