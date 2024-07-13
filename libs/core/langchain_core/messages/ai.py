@@ -15,11 +15,18 @@ from langchain_core.messages.tool import (
     default_tool_chunk_parser,
     default_tool_parser,
 )
+from langchain_core.messages.tool import (
+    invalid_tool_call as create_invalid_tool_call,
+)
+from langchain_core.messages.tool import (
+    tool_call as create_tool_call,
+)
+from langchain_core.messages.tool import (
+    tool_call_chunk as create_tool_call_chunk,
+)
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
-from langchain_core.utils.json import (
-    parse_partial_json,
-)
+from langchain_core.utils.json import parse_partial_json
 
 
 class UsageMetadata(TypedDict):
@@ -216,7 +223,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         if not values["tool_call_chunks"]:
             if values["tool_calls"]:
                 values["tool_call_chunks"] = [
-                    ToolCallChunk(
+                    create_tool_call_chunk(
                         name=tc["name"],
                         args=json.dumps(tc["args"]),
                         id=tc["id"],
@@ -228,7 +235,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 tool_call_chunks = values.get("tool_call_chunks", [])
                 tool_call_chunks.extend(
                     [
-                        ToolCallChunk(
+                        create_tool_call_chunk(
                             name=tc["name"], args=tc["args"], id=tc["id"], index=None
                         )
                         for tc in values["invalid_tool_calls"]
@@ -244,7 +251,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
-                        ToolCall(
+                        create_tool_call(
                             name=chunk["name"] or "",
                             args=args_,
                             id=chunk["id"],
@@ -254,7 +261,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     raise ValueError("Malformed args.")
             except Exception:
                 invalid_tool_calls.append(
-                    InvalidToolCall(
+                    create_invalid_tool_call(
                         name=chunk["name"],
                         args=chunk["args"],
                         id=chunk["id"],
@@ -297,7 +304,7 @@ def add_ai_message_chunks(
         left.tool_call_chunks, *(o.tool_call_chunks for o in others)
     ):
         tool_call_chunks = [
-            ToolCallChunk(
+            create_tool_call_chunk(
                 name=rtc.get("name"),
                 args=rtc.get("args"),
                 index=rtc.get("index"),
