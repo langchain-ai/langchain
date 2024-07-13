@@ -35,12 +35,16 @@ def test_merge_message_runs_content() -> None:
                 {"text": "bar", "type": "text"},
                 {"image_url": "...", "type": "image_url"},
             ],
-            tool_calls=[ToolCall(name="foo_tool", args={"x": 1}, id="tool1")],
+            tool_calls=[
+                ToolCall(name="foo_tool", args={"x": 1}, id="tool1", type="tool_call")
+            ],
             id="2",
         ),
         AIMessage(
             "baz",
-            tool_calls=[ToolCall(name="foo_tool", args={"x": 5}, id="tool2")],
+            tool_calls=[
+                ToolCall(name="foo_tool", args={"x": 5}, id="tool2", type="tool_call")
+            ],
             id="3",
         ),
     ]
@@ -54,8 +58,8 @@ def test_merge_message_runs_content() -> None:
                 "baz",
             ],
             tool_calls=[
-                ToolCall(name="foo_tool", args={"x": 1}, id="tool1"),
-                ToolCall(name="foo_tool", args={"x": 5}, id="tool2"),
+                ToolCall(name="foo_tool", args={"x": 1}, id="tool1", type="tool_call"),
+                ToolCall(name="foo_tool", args={"x": 5}, id="tool2", type="tool_call"),
             ],
             id="1",
         ),
