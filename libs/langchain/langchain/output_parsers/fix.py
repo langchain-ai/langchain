@@ -74,7 +74,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                             completion = self.retry_chain.invoke(
                                 dict(
                                     instructions=self.parser.get_format_instructions(),  # noqa: E501
-                                    input=completion,
+                                    completion=completion,
                                     error=repr(e),
                                 )
                             )
