@@ -113,24 +113,55 @@ class AIMessage(BaseMessage):
 
     @root_validator(pre=True)
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
-        raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
-        tool_calls = (
-            values.get("tool_calls")
-            or values.get("invalid_tool_calls")
-            or values.get("tool_call_chunks")
+        check_additional_kwargs = not any(
+            values.get(k)
+            for k in ("tool_calls", "invalid_tool_calls", "tool_call_chunks")
         )
-        if raw_tool_calls and not tool_calls:
+        if check_additional_kwargs and (
+            raw_tool_calls := values.get("additional_kwargs", {}).get("tool_calls")
+        ):
             try:
                 if issubclass(cls, AIMessageChunk):  # type: ignore
                     values["tool_call_chunks"] = default_tool_chunk_parser(
                         raw_tool_calls
                     )
                 else:
-                    tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
-                    values["tool_calls"] = tool_calls
-                    values["invalid_tool_calls"] = invalid_tool_calls
+                    parsed_tool_calls, parsed_invalid_tool_calls = default_tool_parser(
+                        raw_tool_calls
+                    )
+                    values["tool_calls"] = parsed_tool_calls
+                    values["invalid_tool_calls"] = parsed_invalid_tool_calls
             except Exception:
                 pass
+
+        # Ensure "type" is properly set on all tool call-like dicts.
+        if tool_calls := values.get("tool_calls"):
+            updated: List = []
+            for tc in tool_calls:
+                updated.append(
+                    create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
+                )
+            values["tool_calls"] = updated
+        if invalid_tool_calls := values.get("invalid_tool_calls"):
+            updated = []
+            for tc in invalid_tool_calls:
+                updated.append(
+                    create_invalid_tool_call(
+                        **{k: v for k, v in tc.items() if k != "type"}
+                    )
+                )
+            values["invalid_tool_calls"] = updated
+
+        if tool_call_chunks := values.get("tool_call_chunks"):
+            updated = []
+            for tc in tool_call_chunks:
+                updated.append(
+                    create_tool_call_chunk(
+                        **{k: v for k, v in tc.items() if k != "type"}
+                    )
+                )
+            values["tool_call_chunks"] = updated
+
         return values
 
     def pretty_repr(self, html: bool = False) -> str:
