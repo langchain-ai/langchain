@@ -382,12 +382,12 @@ class ChildTool(BaseTool):
     ] = False
     """Handle the content of the ValidationError thrown."""
 
-    response_format: Literal["content", "content_and_raw_output"] = "content"
+    response_format: Literal["content", "content_and_artifact"] = "content"
     """The tool response format. 
 
     If "content" then the output of the tool is interpreted as the contents of a 
-    ToolMessage. If "content_and_raw_output" then the output is expected to be a 
-    two-tuple corresponding to the (content, raw_output) of a ToolMessage.
+    ToolMessage. If "content_and_artifact" then the output is expected to be a 
+    two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
 
     class Config(Serializable.Config):
@@ -540,7 +540,7 @@ class ChildTool(BaseTool):
         )
 
         content = None
-        raw_output = None
+        artifact = None
         error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -553,15 +553,15 @@ class ChildTool(BaseTool):
             if config_param := _get_runnable_config_param(self._run):
                 tool_kwargs[config_param] = config
             response = context.run(self._run, *tool_args, **tool_kwargs)
-            if self.response_format == "content_and_raw_output":
+            if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     raise ValueError(
-                        "Since response_format='content_and_raw_output' "
+                        "Since response_format='content_and_artifact' "
                         "a two-tuple of the message content and raw tool output is "
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
-                content, raw_output = response
+                content, artifact = response
             else:
                 content = response
         except ValidationError as e:
@@ -580,7 +580,7 @@ class ChildTool(BaseTool):
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
-        output = _format_output(content, raw_output, tool_call_id)
+        output = _format_output(content, artifact, tool_call_id)
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -624,7 +624,7 @@ class ChildTool(BaseTool):
             **kwargs,
         )
         content = None
-        raw_output = None
+        artifact = None
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
@@ -644,15 +644,15 @@ class ChildTool(BaseTool):
                 response = await asyncio.create_task(coro, context=context)  # type: ignore
             else:
                 response = await coro
-            if self.response_format == "content_and_raw_output":
+            if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
                     raise ValueError(
-                        "Since response_format='content_and_raw_output' "
+                        "Since response_format='content_and_artifact' "
                         "a two-tuple of the message content and raw tool output is "
                         f"expected. Instead generated response of type: "
                         f"{type(response)}."
                     )
-                content, raw_output = response
+                content, artifact = response
             else:
                 content = response
         except ValidationError as e:
@@ -672,7 +672,7 @@ class ChildTool(BaseTool):
             await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
-        output = _format_output(content, raw_output, tool_call_id)
+        output = _format_output(content, artifact, tool_call_id)
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -883,7 +883,7 @@ class StructuredTool(BaseTool):
         args_schema: Optional[Type[BaseModel]] = None,
         infer_schema: bool = True,
         *,
-        response_format: Literal["content", "content_and_raw_output"] = "content",
+        response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
         **kwargs: Any,
@@ -902,8 +902,8 @@ class StructuredTool(BaseTool):
             infer_schema: Whether to infer the schema from the function's signature
             response_format: The tool response format. If "content" then the output of
                 the tool is interpreted as the contents of a ToolMessage. If
-                "content_and_raw_output" then the output is expected to be a two-tuple
-                corresponding to the (content, raw_output) of a ToolMessage.
+                "content_and_artifact" then the output is expected to be a two-tuple
+                corresponding to the (content, artifact) of a ToolMessage.
             parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt
                 to parse parameter descriptions from Google Style function docstrings.
             error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
@@ -980,7 +980,7 @@ def tool(
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
-    response_format: Literal["content", "content_and_raw_output"] = "content",
+    response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
 ) -> Callable:
@@ -996,8 +996,8 @@ def tool(
             accept a dictionary input to its `run()` function.
         response_format: The tool response format. If "content" then the output of
             the tool is interpreted as the contents of a ToolMessage. If
-            "content_and_raw_output" then the output is expected to be a two-tuple
-            corresponding to the (content, raw_output) of a ToolMessage.
+            "content_and_artifact" then the output is expected to be a two-tuple
+            corresponding to the (content, artifact) of a ToolMessage.
         parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt to
             parse parameter descriptions from Google Style function docstrings.
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
@@ -1020,7 +1020,7 @@ def tool(
                 # Searches the API for the query.
                 return
 
-            @tool(response_format="content_and_raw_output")
+            @tool(response_format="content_and_artifact")
             def search_api(query: str) -> Tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
 
@@ -1385,7 +1385,7 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, raw_output: Any, tool_call_id: Optional[str]
+    content: Any, artifact: Any, tool_call_id: Optional[str]
 ) -> Union[ToolMessage, Any]:
     if tool_call_id:
         # NOTE: This will fail to stringify lists which aren't actually content blocks
@@ -1397,7 +1397,7 @@ def _format_output(
             and isinstance(content[0], (str, dict))
         ):
             content = _stringify(content)
-        return ToolMessage(content, raw_output=raw_output, tool_call_id=tool_call_id)
+        return ToolMessage(content, artifact=artifact, tool_call_id=tool_call_id)
     else:
         return content
 
