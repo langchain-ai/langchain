@@ -57,7 +57,14 @@ def is_uuid(value: str) -> bool:
 
 
 class Edge(NamedTuple):
-    """Edge in a graph."""
+    """Edge in a graph.
+
+    Parameters:
+        source: The source node id.
+        target: The target node id.
+        data: Optional data associated with the edge. Defaults to None.
+        conditional: Whether the edge is conditional. Defaults to False.
+    """
 
     source: str
     target: str
@@ -67,6 +74,15 @@ class Edge(NamedTuple):
     def copy(
         self, *, source: Optional[str] = None, target: Optional[str] = None
     ) -> Edge:
+        """Return a copy of the edge with optional new source and target nodes.
+
+        Args:
+            source: The new source node id. Defaults to None.
+            target: The new target node id. Defaults to None.
+
+        Returns:
+            A copy of the edge with the new source and target nodes.
+        """
         return Edge(
             source=source or self.source,
             target=target or self.target,
@@ -76,7 +92,14 @@ class Edge(NamedTuple):
 
 
 class Node(NamedTuple):
-    """Node in a graph."""
+    """Node in a graph.
+
+    Parameters:
+        id: The unique identifier of the node.
+        name: The name of the node.
+        data: The data of the node.
+        metadata: Optional metadata for the node. Defaults to None.
+    """
 
     id: str
     name: str
@@ -84,6 +107,15 @@ class Node(NamedTuple):
     metadata: Optional[Dict[str, Any]]
 
     def copy(self, *, id: Optional[str] = None, name: Optional[str] = None) -> Node:
+        """Return a copy of the node with optional new id and name.
+
+        Args:
+            id: The new node id. Defaults to None.
+            name: The new node name. Defaults to None.
+
+        Returns:
+            A copy of the node with the new id and name.
+        """
         return Node(
             id=id or self.id,
             name=name or self.name,
@@ -93,7 +125,13 @@ class Node(NamedTuple):
 
 
 class Branch(NamedTuple):
-    """Branch in a graph."""
+    """Branch in a graph.
+
+    Parameters:
+        condition: A callable that returns a string representation of the condition.
+        ends: Optional dictionary of end node ids for the branches. Defaults
+            to None.
+    """
 
     condition: Callable[..., str]
     ends: Optional[dict[str, str]]
@@ -118,7 +156,13 @@ class CurveStyle(Enum):
 
 @dataclass
 class NodeStyles:
-    """Schema for Hexadecimal color codes for different node types"""
+    """Schema for Hexadecimal color codes for different node types.
+
+    Parameters:
+        default: The default color code. Defaults to "fill:#f2f0ff,line-height:1.2".
+        first: The color code for the first node. Defaults to "fill-opacity:0".
+        last: The color code for the last node. Defaults to "fill:#bfb6fc".
+    """
 
     default: str = "fill:#f2f0ff,line-height:1.2"
     first: str = "fill-opacity:0"
@@ -161,7 +205,7 @@ def node_data_json(
     Args:
         node: The node to convert.
         with_schemas: Whether to include the schema of the data if
-            it is a Pydantic model.
+            it is a Pydantic model. Defaults to False.
 
     Returns:
         A dictionary with the type of the data and the data itself.
@@ -209,13 +253,26 @@ def node_data_json(
 
 @dataclass
 class Graph:
-    """Graph of nodes and edges."""
+    """Graph of nodes and edges.
+
+    Parameters:
+        nodes: Dictionary of nodes in the graph. Defaults to an empty dictionary.
+        edges: List of edges in the graph. Defaults to an empty list.
+    """
 
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
 
     def to_json(self, *, with_schemas: bool = False) -> Dict[str, List[Dict[str, Any]]]:
-        """Convert the graph to a JSON-serializable format."""
+        """Convert the graph to a JSON-serializable format.
+
+        Args:
+            with_schemas: Whether to include the schemas of the nodes if they are
+                Pydantic models. Defaults to False.
+
+        Returns:
+            A dictionary with the nodes and edges of the graph.
+        """
         stable_node_ids = {
             node.id: i if is_uuid(node.id) else node.id
             for i, node in enumerate(self.nodes.values())
@@ -247,6 +304,8 @@ class Graph:
         return bool(self.nodes)
 
     def next_id(self) -> str:
+        """Return a new unique node
+        identifier that can be used to add a node to the graph."""
         return uuid4().hex
 
     def add_node(
@@ -256,7 +315,19 @@ class Graph:
         *,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Node:
-        """Add a node to the graph and return it."""
+        """Add a node to the graph and return it.
+
+        Args:
+            data: The data of the node.
+            id: The id of the node. Defaults to None.
+            metadata: Optional metadata for the node. Defaults to None.
+
+        Returns:
+            The node that was added to the graph.
+
+        Raises:
+            ValueError: If a node with the same id already exists.
+        """
         if id is not None and id in self.nodes:
             raise ValueError(f"Node with id {id} already exists")
         id = id or self.next_id()
@@ -265,7 +336,11 @@ class Graph:
         return node
 
     def remove_node(self, node: Node) -> None:
-        """Remove a node from the graph and all edges connected to it."""
+        """Remove a node from the graph and all edges connected to it.
+
+        Args:
+            node: The node to remove.
+        """
         self.nodes.pop(node.id)
         self.edges = [
             edge
@@ -280,7 +355,20 @@ class Graph:
         data: Optional[Stringifiable] = None,
         conditional: bool = False,
     ) -> Edge:
-        """Add an edge to the graph and return it."""
+        """Add an edge to the graph and return it.
+
+        Args:
+            source: The source node of the edge.
+            target: The target node of the edge.
+            data: Optional data associated with the edge. Defaults to None.
+            conditional: Whether the edge is conditional. Defaults to False.
+
+        Returns:
+            The edge that was added to the graph.
+
+        Raises:
+            ValueError: If the source or target node is not in the graph.
+        """
         if source.id not in self.nodes:
             raise ValueError(f"Source node {source.id} not in graph")
         if target.id not in self.nodes:
@@ -295,7 +383,15 @@ class Graph:
         self, graph: Graph, *, prefix: str = ""
     ) -> Tuple[Optional[Node], Optional[Node]]:
         """Add all nodes and edges from another graph.
-        Note this doesn't check for duplicates, nor does it connect the graphs."""
+        Note this doesn't check for duplicates, nor does it connect the graphs.
+
+        Args:
+            graph: The graph to add.
+            prefix: The prefix to add to the node ids. Defaults to "".
+
+        Returns:
+            A tuple of the first and last nodes of the subgraph.
+        """
         if all(is_uuid(node.id) for node in graph.nodes.values()):
             prefix = ""
 
@@ -350,7 +446,7 @@ class Graph:
     def first_node(self) -> Optional[Node]:
         """Find the single node that is not a target of any edge.
         If there is no such node, or there are multiple, return None.
-        When drawing the graph this node would be the origin."""
+        When drawing the graph, this node would be the origin."""
         targets = {edge.target for edge in self.edges}
         found: List[Node] = []
         for node in self.nodes.values():
@@ -361,7 +457,7 @@ class Graph:
     def last_node(self) -> Optional[Node]:
         """Find the single node that is not a source of any edge.
         If there is no such node, or there are multiple, return None.
-        When drawing the graph this node would be the destination.
+        When drawing the graph, this node would be the destination.
         """
         sources = {edge.source for edge in self.edges}
         found: List[Node] = []
@@ -372,7 +468,7 @@ class Graph:
 
     def trim_first_node(self) -> None:
         """Remove the first node if it exists and has a single outgoing edge,
-        ie. if removing it would not leave the graph without a "first" node."""
+        i.e., if removing it would not leave the graph without a "first" node."""
         first_node = self.first_node()
         if first_node:
             if (
@@ -384,7 +480,7 @@ class Graph:
 
     def trim_last_node(self) -> None:
         """Remove the last node if it exists and has a single incoming edge,
-        ie. if removing it would not leave the graph without a "last" node."""
+        i.e., if removing it would not leave the graph without a "last" node."""
         last_node = self.last_node()
         if last_node:
             if (
@@ -395,6 +491,7 @@ class Graph:
                 self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
+        """Draw the graph as an ASCII art string."""
         from langchain_core.runnables.graph_ascii import draw_ascii
 
         return draw_ascii(
@@ -403,6 +500,7 @@ class Graph:
         )
 
     def print_ascii(self) -> None:
+        """Print the graph as an ASCII art string."""
         print(self.draw_ascii())  # noqa: T201
 
     @overload
@@ -427,6 +525,17 @@ class Graph:
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
     ) -> Union[bytes, None]:
+        """Draw the graph as a PNG image.
+
+        Args:
+            output_file_path: The path to save the image to. If None, the image
+                is not saved. Defaults to None.
+            fontname: The name of the font to use. Defaults to None.
+            labels: Optional labels for nodes and edges in the graph. Defaults to None.
+
+        Returns:
+            The PNG image as bytes if output_file_path is None, None otherwise.
+        """
         from langchain_core.runnables.graph_png import PngDrawer
 
         default_node_labels = {node.id: node.name for node in self.nodes.values()}
@@ -450,6 +559,18 @@ class Graph:
         node_colors: NodeStyles = NodeStyles(),
         wrap_label_n_words: int = 9,
     ) -> str:
+        """Draw the graph as a Mermaid syntax string.
+
+        Args:
+            with_styles: Whether to include styles in the syntax. Defaults to True.
+            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
+            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            wrap_label_n_words: The number of words to wrap the node labels at.
+                Defaults to 9.
+
+        Returns:
+            The Mermaid syntax string.
+        """
         from langchain_core.runnables.graph_mermaid import draw_mermaid
 
         graph = self.reid()
@@ -478,6 +599,23 @@ class Graph:
         background_color: str = "white",
         padding: int = 10,
     ) -> bytes:
+        """Draw the graph as a PNG image using Mermaid.
+
+        Args:
+            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
+            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            wrap_label_n_words: The number of words to wrap the node labels at.
+                Defaults to 9.
+            output_file_path: The path to save the image to. If None, the image
+                is not saved. Defaults to None.
+            draw_method: The method to use to draw the graph.
+                Defaults to MermaidDrawMethod.API.
+            background_color: The color of the background. Defaults to "white".
+            padding: The padding around the graph. Defaults to 10.
+
+        Returns:
+            The PNG image as bytes.
+        """
         from langchain_core.runnables.graph_mermaid import draw_mermaid_png
 
         mermaid_syntax = self.draw_mermaid(

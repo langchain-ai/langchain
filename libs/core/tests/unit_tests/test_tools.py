@@ -1150,7 +1150,7 @@ class _MockStructuredToolWithRawOutput(BaseTool):
     name: str = "structured_api"
     args_schema: Type[BaseModel] = _MockSchema
     description: str = "A Structured Tool"
-    response_format: Literal["content_and_raw_output"] = "content_and_raw_output"
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _run(
         self, arg1: int, arg2: bool, arg3: Optional[dict] = None
@@ -1158,8 +1158,8 @@ class _MockStructuredToolWithRawOutput(BaseTool):
         return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
-@tool("structured_api", response_format="content_and_raw_output")
-def _mock_structured_tool_with_raw_output(
+@tool("structured_api", response_format="content_and_artifact")
+def _mock_structured_tool_with_artifact(
     arg1: int, arg2: bool, arg3: Optional[dict] = None
 ) -> Tuple[str, dict]:
     """A Structured Tool"""
@@ -1167,16 +1167,16 @@ def _mock_structured_tool_with_raw_output(
 
 
 @pytest.mark.parametrize(
-    "tool", [_MockStructuredToolWithRawOutput(), _mock_structured_tool_with_raw_output]
+    "tool", [_MockStructuredToolWithRawOutput(), _mock_structured_tool_with_artifact]
 )
-def test_tool_call_input_tool_message_with_raw_output(tool: BaseTool) -> None:
+def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
     tool_call: Dict = {
         "name": "structured_api",
         "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
         "id": "123",
         "type": "tool_call",
     }
-    expected = ToolMessage("1 True", raw_output=tool_call["args"], tool_call_id="123")
+    expected = ToolMessage("1 True", artifact=tool_call["args"], tool_call_id="123")
     actual = tool.invoke(tool_call)
     assert actual == expected
 

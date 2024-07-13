@@ -662,7 +662,7 @@ def test_convert_to_messages() -> None:
                 "role": "tool",
                 "tool_call_id": "tool_id2",
                 "content": "Bye!",
-                "raw_output": {"foo": 123},
+                "artifact": {"foo": 123},
             },
             {"role": "remove", "id": "message_to_remove", "content": ""},
         ]
@@ -685,7 +685,7 @@ def test_convert_to_messages() -> None:
             tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
         ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
-        ToolMessage(tool_call_id="tool_id2", content="Bye!", raw_output={"foo": 123}),
+        ToolMessage(tool_call_id="tool_id2", content="Bye!", artifact={"foo": 123}),
         RemoveMessage(id="message_to_remove"),
     ]
     assert expected == actual
@@ -787,7 +787,7 @@ def test_merge_tool_calls() -> None:
 
 
 def test_tool_message_serdes() -> None:
-    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
     ser_message = {
         "lc": 1,
         "type": "constructor",
@@ -796,7 +796,7 @@ def test_tool_message_serdes() -> None:
             "content": "foo",
             "type": "tool",
             "tool_call_id": "1",
-            "raw_output": {"bar": {"baz": 123}},
+            "artifact": {"bar": {"baz": 123}},
         },
     }
     assert dumpd(message) == ser_message
@@ -809,7 +809,7 @@ class BadObject:
 
 def test_tool_message_ser_non_serializable() -> None:
     bad_obj = BadObject()
-    message = ToolMessage("foo", raw_output=bad_obj, tool_call_id="1")
+    message = ToolMessage("foo", artifact=bad_obj, tool_call_id="1")
     ser_message = {
         "lc": 1,
         "type": "constructor",
@@ -818,7 +818,7 @@ def test_tool_message_ser_non_serializable() -> None:
             "content": "foo",
             "type": "tool",
             "tool_call_id": "1",
-            "raw_output": {
+            "artifact": {
                 "lc": 1,
                 "type": "not_implemented",
                 "id": ["tests", "unit_tests", "test_messages", "BadObject"],
@@ -832,14 +832,14 @@ def test_tool_message_ser_non_serializable() -> None:
 
 
 def test_tool_message_to_dict() -> None:
-    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
     expected = {
         "type": "tool",
         "data": {
             "content": "foo",
             "additional_kwargs": {},
             "response_metadata": {},
-            "raw_output": {"bar": {"baz": 123}},
+            "artifact": {"bar": {"baz": 123}},
             "type": "tool",
             "name": None,
             "id": None,
@@ -851,16 +851,16 @@ def test_tool_message_to_dict() -> None:
 
 
 def test_tool_message_repr() -> None:
-    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
     expected = (
-        "ToolMessage(content='foo', tool_call_id='1', raw_output={'bar': {'baz': 123}})"
+        "ToolMessage(content='foo', tool_call_id='1', artifact={'bar': {'baz': 123}})"
     )
     actual = repr(message)
     assert expected == actual
 
 
 def test_tool_message_str() -> None:
-    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
-    expected = "content='foo' tool_call_id='1' raw_output={'bar': {'baz': 123}}"
+    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = "content='foo' tool_call_id='1' artifact={'bar': {'baz': 123}}"
     actual = str(message)
     assert expected == actual

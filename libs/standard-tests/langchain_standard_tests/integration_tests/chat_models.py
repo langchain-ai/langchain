@@ -44,6 +44,7 @@ def _validate_tool_call_message(message: BaseMessage) -> None:
     assert tool_call["name"] == "magic_function"
     assert tool_call["args"] == {"input": 3}
     assert tool_call["id"] is not None
+    assert tool_call["type"] == "tool_call"
 
 
 def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
@@ -53,6 +54,7 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert tool_call["name"] == "magic_function_no_args"
     assert tool_call["args"] == {}
     assert tool_call["id"] is not None
+    assert tool_call["type"] == "tool_call"
 
 
 class ChatModelIntegrationTests(ChatModelTests):
@@ -191,17 +193,28 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool calling.")
 
         prompt = ChatPromptTemplate.from_messages(
-            [("human", "Hello. Please respond in the style of {answer_style}.")]
+            [
+                ("system", "Repeat what the user says in the style of {answer_style}."),
+                ("human", "{user_input}"),
+            ]
         )
         llm = GenericFakeChatModel(messages=iter(["hello matey"]))
         chain = prompt | llm | StrOutputParser()
-        model_with_tools = model.bind_tools([chain.as_tool()])
-        query = "Using the tool, ask a Pirate how it would say hello."
+        tool_ = chain.as_tool(
+            name="repeat_in_answer_style",
+            description="Repeat the user_input in a particular style of speaking.",
+        )
+        model_with_tools = model.bind_tools([tool_])
+        query = (
+            "Using the repeat_in_answer_style tool, ask a Pirate how they would say "
+            "hello."
+        )
         result = model_with_tools.invoke(query)
         assert isinstance(result, AIMessage)
         assert result.tool_calls
         tool_call = result.tool_calls[0]
         assert tool_call["args"].get("answer_style")
+        assert tool_call["type"] == "tool_call"
 
     def test_structured_output(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
@@ -256,6 +269,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),
@@ -300,6 +314,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),
@@ -332,6 +347,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),

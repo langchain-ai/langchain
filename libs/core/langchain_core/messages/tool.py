@@ -21,8 +21,11 @@ class ToolMessage(BaseMessage):
 
             ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
 
+
     Example: A ToolMessage where only part of the tool output is sent to the model
-        and the full output is passed in to raw_output.
+        and the full output is passed in to artifact.
+
+        .. versionadded:: 0.2.17
 
         .. code-block:: python
 
@@ -36,7 +39,7 @@ class ToolMessage(BaseMessage):
 
             ToolMessage(
                 content=tool_output["stdout"],
-                raw_output=tool_output,
+                artifact=tool_output,
                 tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
             )
 
@@ -54,12 +57,14 @@ class ToolMessage(BaseMessage):
     type: Literal["tool"] = "tool"
     """The type of the message (used for serialization). Defaults to "tool"."""
 
-    raw_output: Any = None
-    """The raw output of the tool.
+    artifact: Any = None
+    """Artifact of the Tool execution which is not meant to be sent to the model.
     
-    **Not part of the payload sent to the model.** Should only be specified if it is 
-    different from the message content, i.e. if only a subset of the full tool output
-    is being passed as message content.
+    Should only be specified if it is different from the message content, e.g. if only 
+    a subset of the full tool output is being passed as message content but the full
+    output is needed in other parts of the code.
+    
+    .. versionadded:: 0.2.17
     """
 
     @classmethod
@@ -106,7 +111,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
-                raw_output=merge_obj(self.raw_output, other.raw_output),
+                artifact=merge_obj(self.artifact, other.artifact),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
