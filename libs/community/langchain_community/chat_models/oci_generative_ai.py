@@ -36,6 +36,11 @@ from langchain_core.pydantic_v1 import BaseModel, Extra
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -529,6 +534,36 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         formatted_tools = [self._provider.convert_to_oci_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict.
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns either a dict or
+            Pydantic class as output.
+        """
+        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        llm = self.bind_tools([schema], **kwargs)
+        if is_pydantic_schema:
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
+            )
+        else:
+            key_name = self._provider.convert_to_oci_tool(schema)["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
+
+        return llm | output_parser
 
     def _generate(
         self,
