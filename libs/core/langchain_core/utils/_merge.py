@@ -72,3 +72,26 @@ def merge_lists(left: Optional[List], *others: Optional[List]) -> Optional[List]
                 else:
                     merged.append(e)
     return merged
+
+
+def merge_obj(left: Any, right: Any) -> Any:
+    if left is None or right is None:
+        return left if left is not None else right
+    elif type(left) is not type(right):
+        raise TypeError(
+            f"left and right are of different types. Left type:  {type(left)}. Right "
+            f"type: {type(right)}."
+        )
+    elif isinstance(left, str):
+        return left + right
+    elif isinstance(left, dict):
+        return merge_dicts(left, right)
+    elif isinstance(left, list):
+        return merge_lists(left, right)
+    elif left == right:
+        return left
+    else:
+        raise ValueError(
+            f"Unable to merge {left=} and {right=}. Both must be of type str, dict, or "
+            f"list, or else be two equal objects."
+        )

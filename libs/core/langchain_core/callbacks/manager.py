@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+    from langchain_core.runnables.config import RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -1494,6 +1495,46 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Dispatch an adhoc event to the handlers (async version).
+
+        This event should NOT be used in any internal LangChain code. The event
+        is meant specifically for users of the library to dispatch custom
+        events that are tailored to their application.
+
+        Args:
+            name: The name of the adhoc event.
+            data: The data for the adhoc event.
+            run_id: The ID of the run. Defaults to None.
+
+        .. versionadded:: 0.2.14
+        """
+        if kwargs:
+            raise ValueError(
+                "The dispatcher API does not accept additional keyword arguments."
+                "Please do not pass any additional keyword arguments, instead "
+                "include them in the data field."
+            )
+        if run_id is None:
+            run_id = uuid.uuid4()
+
+        handle_event(
+            self.handlers,
+            "on_custom_event",
+            "ignore_custom_event",
+            name,
+            data,
+            run_id=run_id,
+            tags=self.tags,
+            metadata=self.metadata,
+        )
+
     @classmethod
     def configure(
         cls,
@@ -1833,6 +1874,46 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    async def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Dispatch an adhoc event to the handlers (async version).
+
+        This event should NOT be used in any internal LangChain code. The event
+        is meant specifically for users of the library to dispatch custom
+        events that are tailored to their application.
+
+        Args:
+            name: The name of the adhoc event.
+            data: The data for the adhoc event.
+            run_id: The ID of the run. Defaults to None.
+
+        .. versionadded:: 0.2.14
+        """
+        if run_id is None:
+            run_id = uuid.uuid4()
+
+        if kwargs:
+            raise ValueError(
+                "The dispatcher API does not accept additional keyword arguments."
+                "Please do not pass any additional keyword arguments, instead "
+                "include them in the data field."
+            )
+        await ahandle_event(
+            self.handlers,
+            "on_custom_event",
+            "ignore_custom_event",
+            name,
+            data,
+            run_id=run_id,
+            tags=self.tags,
+            metadata=self.metadata,
+        )
+
     async def on_retriever_start(
         self,
         serialized: Dict[str, Any],
@@ -2169,3 +2250,189 @@ def _configure(
                 ):
                     callback_manager.add_handler(var_handler, inheritable)
     return callback_manager
+
+
+async def adispatch_custom_event(
+    name: str, data: Any, *, config: Optional[RunnableConfig] = None
+) -> None:
+    """Dispatch an adhoc event to the handlers.
+
+    Args:
+        name: The name of the adhoc event.
+        data: The data for the adhoc event. Free form data. Ideally should be
+              JSON serializable to avoid serialization issues downstream, but
+              this is not enforced.
+        config: Optional config object. Mirrors the async API but not strictly needed.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.callbacks import (
+                AsyncCallbackHandler,
+                adispatch_custom_event
+            )
+            from langchain_core.runnable import RunnableLambda
+
+            class CustomCallbackManager(AsyncCallbackHandler):
+                async def on_custom_event(
+                    self,
+                    name: str,
+                    data: Any,
+                    *,
+                    run_id: UUID,
+                    tags: Optional[List[str]] = None,
+                    metadata: Optional[Dict[str, Any]] = None,
+                    **kwargs: Any,
+                ) -> None:
+                    print(f"Received custom event: {name} with data: {data}")
+
+            callback = CustomCallbackManager()
+
+            async def foo(inputs):
+                await adispatch_custom_event("my_event", {"bar": "buzz})
+                return inputs
+
+            foo_ = RunnableLambda(foo)
+            await foo_.ainvoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+
+    Example: Use with astream events
+
+        .. code-block:: python
+
+            from langchain_core.callbacks import (
+                AsyncCallbackHandler,
+                adispatch_custom_event
+            )
+            from langchain_core.runnable import RunnableLambda
+
+            class CustomCallbackManager(AsyncCallbackHandler):
+                async def on_custom_event(
+                    self,
+                    name: str,
+                    data: Any,
+                    *,
+                    run_id: UUID,
+                    tags: Optional[List[str]] = None,
+                    metadata: Optional[Dict[str, Any]] = None,
+                    **kwargs: Any,
+                ) -> None:
+                    print(f"Received custom event: {name} with data: {data}")
+
+            callback = CustomCallbackManager()
+
+            async def foo(inputs):
+                await adispatch_custom_event("event_type_1", {"bar": "buzz})
+                await adispatch_custom_event("event_type_2", 5)
+                return inputs
+
+            foo_ = RunnableLambda(foo)
+
+            async for event in foo_.ainvoke_stream(
+                {"a": "1"},
+                version="v2",
+                config={"callbacks": [CustomCallbackManager()]}
+            ):
+                print(event)
+
+    .. warning: If using python <= 3.10 and async, you MUST
+        specify the `config` parameter or the function will raise an error.
+        This is due to a limitation in asyncio for python <= 3.10 that prevents
+        LangChain from automatically propagating the config object on the user's
+        behalf.
+
+    .. versionadded:: 0.2.14
+    """
+    from langchain_core.runnables.config import (
+        ensure_config,
+        get_async_callback_manager_for_config,
+    )
+
+    config = ensure_config(config)
+    callback_manager = get_async_callback_manager_for_config(config)
+    # We want to get the callback manager for the parent run.
+    # This is a work-around for now to be able to dispatch adhoc events from
+    # within a tool or a lambda and have the metadata events associated
+    # with the parent run rather than have a new run id generated for each.
+    if callback_manager.parent_run_id is None:
+        raise RuntimeError(
+            "Unable to dispatch an adhoc event without a parent run id."
+            "This function can only be called from within an existing run (e.g.,"
+            "inside a tool or a RunnableLambda or a RunnableGenerator.)"
+            "If you are doing that and still seeing this error, try explicitly"
+            "passing the config parameter to this function."
+        )
+
+    await callback_manager.on_custom_event(
+        name,
+        data,
+        run_id=callback_manager.parent_run_id,
+    )
+
+
+def dispatch_custom_event(
+    name: str, data: Any, *, config: Optional[RunnableConfig] = None
+) -> None:
+    """Dispatch an adhoc event.
+
+    Args:
+        name: The name of the adhoc event.
+        data: The data for the adhoc event. Free form data. Ideally should be
+              JSON serializable to avoid serialization issues downstream, but
+              this is not enforced.
+        config: Optional config object. Mirrors the async API but not strictly needed.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.callbacks import BaseCallbackHandler
+            from langchain_core.callbacks import dispatch_custom_event
+            from langchain_core.runnable import RunnableLambda
+
+            class CustomCallbackManager(BaseCallbackHandler):
+                def on_custom_event(
+                    self,
+                    name: str,
+                    data: Any,
+                    *,
+                    run_id: UUID,
+                    tags: Optional[List[str]] = None,
+                    metadata: Optional[Dict[str, Any]] = None,
+                    **kwargs: Any,
+                ) -> None:
+                    print(f"Received custom event: {name} with data: {data}")
+
+            def foo(inputs):
+                dispatch_custom_event("my_event", {"bar": "buzz})
+                return inputs
+
+            foo_ = RunnableLambda(foo)
+            foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+
+    .. versionadded:: 0.2.14
+    """
+    from langchain_core.runnables.config import (
+        ensure_config,
+        get_callback_manager_for_config,
+    )
+
+    config = ensure_config(config)
+    callback_manager = get_callback_manager_for_config(config)
+    # We want to get the callback manager for the parent run.
+    # This is a work-around for now to be able to dispatch adhoc events from
+    # within a tool or a lambda and have the metadata events associated
+    # with the parent run rather than have a new run id generated for each.
+    if callback_manager.parent_run_id is None:
+        raise RuntimeError(
+            "Unable to dispatch an adhoc event without a parent run id."
+            "This function can only be called from within an existing run (e.g.,"
+            "inside a tool or a RunnableLambda or a RunnableGenerator.)"
+            "If you are doing that and still seeing this error, try explicitly"
+            "passing the config parameter to this function."
+        )
+    callback_manager.on_custom_event(
+        name,
+        data,
+        run_id=callback_manager.parent_run_id,
+    )

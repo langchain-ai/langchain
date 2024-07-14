@@ -39,7 +39,7 @@ class SteamWebAPIWrapper(BaseModel):
         """Return a list of operations."""
         return self.operations
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_environment(cls, values: dict) -> dict:
         """Validate api key and python package has been configured."""
 
