@@ -43,6 +43,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
@@ -1102,12 +1103,12 @@ def _make_message_chunk_from_anthropic_event(
             warnings.warn("Received unexpected tool content block.")
         content_block = event.content_block.model_dump()
         content_block["index"] = event.index
-        tool_call_chunk = {
-            "index": event.index,
-            "id": event.content_block.id,
-            "name": event.content_block.name,
-            "args": "",
-        }
+        tool_call_chunk = create_tool_call_chunk(
+            index=event.index,
+            id=event.content_block.id,
+            name=event.content_block.name,
+            args="",
+        )
         message_chunk = AIMessageChunk(
             content=[content_block],
             tool_call_chunks=[tool_call_chunk],  # type: ignore

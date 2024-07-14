@@ -50,6 +50,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -103,19 +104,10 @@ def _convert_mistral_chat_message_to_message(
                     dict, parse_tool_call(raw_tool_call, return_id=True)
                 )
                 if not parsed["id"]:
-                    tool_call_id = uuid.uuid4().hex[:]
-                    tool_calls.append(
-                        {
-                            **parsed,
-                            **{"id": tool_call_id},
-                        },
-                    )
-                else:
-                    tool_calls.append(parsed)
+                    parsed["id"] = uuid.uuid4().hex[:]
+                tool_calls.append(parsed)
             except Exception as e:
-                invalid_tool_calls.append(
-                    dict(make_invalid_tool_call(raw_tool_call, str(e)))
-                )
+                invalid_tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)))
     return AIMessage(
         content=content,
         additional_kwargs=additional_kwargs,
@@ -206,12 +198,12 @@ def _convert_chunk_to_message_chunk(
                     else:
                         tool_call_id = raw_tool_call.get("id")
                     tool_call_chunks.append(
-                        {
-                            "name": raw_tool_call["function"].get("name"),
-                            "args": raw_tool_call["function"].get("arguments"),
-                            "id": tool_call_id,
-                            "index": raw_tool_call.get("index"),
-                        }
+                        tool_call_chunk(
+                            name=raw_tool_call["function"].get("name"),
+                            args=raw_tool_call["function"].get("arguments"),
+                            id=tool_call_id,
+                            index=raw_tool_call.get("index"),
+                        )
                     )
             except KeyError:
                 pass
