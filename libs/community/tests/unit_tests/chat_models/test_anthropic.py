@@ -1,4 +1,5 @@
 """Test Anthropic Chat API wrapper."""
+
 import os
 from typing import List
 

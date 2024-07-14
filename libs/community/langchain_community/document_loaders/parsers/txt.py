@@ -1,4 +1,5 @@
 """Module for parsing text files.."""
+
 from typing import Iterator
 
 from langchain_core.documents import Document

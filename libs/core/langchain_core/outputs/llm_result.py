@@ -48,9 +48,9 @@ class LLMResult(BaseModel):
         """Flatten generations into a single list.
 
         Unpack List[List[Generation]] -> List[LLMResult] where each returned LLMResult
-            contains only a single Generation. If token usage information is available,
-            it is kept only for the LLMResult corresponding to the top-choice
-            Generation, to avoid over-counting of token usage downstream.
+        contains only a single Generation. If token usage information is available,
+        it is kept only for the LLMResult corresponding to the top-choice
+        Generation, to avoid over-counting of token usage downstream.
 
         Returns:
             List of LLMResults where each returned LLMResult contains a single

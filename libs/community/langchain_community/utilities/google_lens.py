@@ -35,7 +35,7 @@ class GoogleLensAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["serp_api_key"] = convert_to_secret_str(

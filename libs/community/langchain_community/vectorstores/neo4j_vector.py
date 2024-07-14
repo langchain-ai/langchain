@@ -909,6 +909,11 @@ class Neo4jVector(VectorStore):
         Args:
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query.
@@ -936,6 +941,11 @@ class Neo4jVector(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -972,6 +982,11 @@ class Neo4jVector(VectorStore):
         Args:
             embedding (List[float]): The embedding vector to compare against.
             k (int, optional): The number of top similar documents to retrieve.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
 
         Returns:
             List[Tuple[Document, float]]: A list of tuples, each containing
@@ -1077,6 +1092,7 @@ class Neo4jVector(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
+        params: Dict[str, Any] = {},
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -1084,12 +1100,17 @@ class Neo4jVector(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
 
         Returns:
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter, **kwargs
+            embedding=embedding, k=k, filter=filter, params=params, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
