@@ -29,6 +29,8 @@ class GoogleApiClient:
     As the google api expects credentials you need to set up a google account and
     register your Service. "https://developers.google.com/docs/api/quickstart/python"
 
+    Note that parsing of the transcripts relies on the standard xml library but the 
+    input is viewed as trusted in this case.
 
 
     Example:
