@@ -4,10 +4,11 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Type
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  #  pydantic: ignore
 from pydantic import Field as FieldV2Maybe  #  pydantic: ignore
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
@@ -50,6 +51,18 @@ def function() -> Callable:
         pass
 
     return dummy_function
+
+
+@pytest.fixture()
+def runnable() -> Runnable:
+    class Args(TypedDict):
+        arg1: Annotated[int, "foo"]
+        arg2: Annotated[Literal["bar", "baz"], "one of 'bar', 'baz'"]
+
+    def dummy_function(input_dict: Args) -> None:
+        pass
+
+    return RunnableLambda(dummy_function)
 
 
 @pytest.fixture()
@@ -141,6 +154,7 @@ def test_convert_to_openai_function(
     json_schema: Dict,
     annotated_function: Callable,
     dummy_pydantic: Type[BaseModel],
+    runnable: Runnable,
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -172,6 +186,23 @@ def test_convert_to_openai_function(
     ):
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
+
+    # Test runnables
+    actual = convert_to_openai_function(runnable.as_tool(description="dummy function"))
+    parameters = {
+        "type": "object",
+        "properties": {
+            "arg1": {"type": "integer"},
+            "arg2": {
+                "enum": ["bar", "baz"],
+                "type": "string",
+            },
+        },
+        "required": ["arg1", "arg2"],
+    }
+    runnable_expected = expected.copy()
+    runnable_expected["parameters"] = parameters
+    assert actual == runnable_expected
 
 
 def test_convert_to_openai_function_nested() -> None:

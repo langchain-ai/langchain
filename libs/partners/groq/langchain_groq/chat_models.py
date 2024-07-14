@@ -53,6 +53,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -511,19 +512,19 @@ class ChatGroq(BaseChatModel):
             generation = chat_result.generations[0]
             message = cast(AIMessage, generation.message)
             tool_call_chunks = [
-                {
-                    "name": rtc["function"].get("name"),
-                    "args": rtc["function"].get("arguments"),
-                    "id": rtc.get("id"),
-                    "index": rtc.get("index"),
-                }
+                create_tool_call_chunk(
+                    name=rtc["function"].get("name"),
+                    args=rtc["function"].get("arguments"),
+                    id=rtc.get("id"),
+                    index=rtc.get("index"),
+                )
                 for rtc in message.additional_kwargs.get("tool_calls", [])
             ]
             chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
-                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
+                    tool_call_chunks=tool_call_chunks,
                     usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,

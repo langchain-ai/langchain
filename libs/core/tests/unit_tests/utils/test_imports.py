@@ -24,6 +24,7 @@ EXPECTED_ALL = [
     "stringify_dict",
     "comma_list",
     "stringify_value",
+    "pre_init",
 ]
 
 
