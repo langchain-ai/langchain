@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import IO, Any, Iterator, Sequence, Union
 from langchain_core.documents import Document
 
-from langchain_community.document_loaders import UnstructuredBaseLoader
+from langchain_community.document_loaders import _UnstructuredBaseLoader
 
-class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
+class UnstructuredSDKFileLoader(_UnstructuredBaseLoader):
     """Unstructured document loader integration.
     
     Load files using the `unstructured-client` sdk to the Unstructured API.
@@ -123,7 +123,7 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
         return elements
 
 
-class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
+class UnstructuredSDKFileIOLoader(_UnstructuredBaseLoader):
     """Send file-like objects with `unstructured-client` sdk to the Unstructured API.
 
     By default, the loader makes a call to the hosted Unstructured API. If you are

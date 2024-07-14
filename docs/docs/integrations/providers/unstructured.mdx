@@ -13,12 +13,14 @@ dependencies running.
 
 - For the smallest installation footprint and to take advantage of features not available in the
   open-source `unstructured` package, install the Python SDK with `pip install unstructured-client`
-  and use the `UnstructuredSDKFileLoader` or `UnstructuredSDKFileIOLoader`.
+  along with `pip install langchain-unstructured` to use the `UnstructuredSDKFileLoader` or
+  `UnstructuredSDKFileIOLoader`. These loaders live in a LangChain partner repo instead of the
+  `langchain-community` repo.
     - Unstructured's documentation for the sdk can be found here:
       https://docs.unstructured.io/api-reference/api-services/sdk
 
 - To run everything locally, install the open-source python package with `pip install unstructured`
-  and use the `UnstructuredFileLoader` or `UnstructuredFileIOLoader`.
+  along with `pip install langchain-community` and use the `UnstructuredFileLoader` or `UnstructuredFileIOLoader`.
     - You can install document specific dependencies with extras, i.e. `pip install "unstructured[docx]"`.
     - To install the dependencies for all document types, use `pip install "unstructured[all-docs]"`.
 - Install the following system dependencies if they are not already available on your system with e.g. `brew install` for Mac.
@@ -29,6 +31,9 @@ dependencies running.
     - `qpdf` (PDFs)
     - `libreoffice` (MS Office docs)
     - `pandoc` (EPUBs)
+- When running locally, Unstructured also recommends using Docker [by following this
+  guide](https://docs.unstructured.io/open-source/installation/docker-installation) to ensure all
+  system dependencies are installed correctly.
 
 The Unstructured API requires API keys to make requests.
 You can request an API key [here](https://unstructured.io/api-key-hosted) and start using it today!

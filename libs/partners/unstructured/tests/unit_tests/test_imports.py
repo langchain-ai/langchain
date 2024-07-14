@@ -1,10 +1,8 @@
 from langchain_unstructured import __all__
 
 EXPECTED_ALL = [
-    "UnstructuredLLM",
-    "ChatUnstructured",
-    "UnstructuredVectorStore",
-    "UnstructuredEmbeddings",
+    "UnstructuredSDKFileLoader",
+    "UnstructuredSDKFileIOLoader",
 ]
 
 
