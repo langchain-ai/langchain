@@ -512,8 +512,14 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        with self.client.with_raw_response.create(**payload) as raw_response:
+        if self.include_response_headers:
+            raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
+            base_generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = self.client.create(**payload)
+            base_generation_info = {}
+        with response:
             is_first_chunk = True
             for chunk in response:
                 if not isinstance(chunk, dict):
@@ -540,11 +546,7 @@ class BaseChatOpenAI(BaseChatModel):
                     message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
-                    generation_info = (
-                        {"headers": dict(raw_response.headers)}
-                        if self.include_response_headers and is_first_chunk
-                        else {}
-                    )
+                    generation_info = {**base_generation_info} if is_first_chunk else {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
                         if model_name := chunk.get("model"):
@@ -579,16 +581,14 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        raw_response = self.client.with_raw_response.create(**payload)
-        response = raw_response.parse()
-        return self._create_chat_result(
-            response,
-            (
-                {"headers": dict(raw_response.headers)}
-                if self.include_response_headers
-                else None
-            ),
-        )
+        if self.include_response_headers:
+            raw_response = self.client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = self.client.create(**payload)
+            generation_info = None
+        return self._create_chat_result(response, generation_info)
 
     def _get_request_payload(
         self,
@@ -655,8 +655,13 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        raw_response = await self.async_client.with_raw_response.create(**payload)
-        response = raw_response.parse()
+        if self.include_response_headers:
+            raw_response = self.async_client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            base_generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = self.async_client.create(**payload)
+            base_generation_info = {}
         async with response:
             is_first_chunk = True
             async for chunk in response:
@@ -687,11 +692,7 @@ class BaseChatOpenAI(BaseChatModel):
                         choice["delta"],
                         default_chunk_class,
                     )
-                    generation_info = (
-                        {"headers": dict(raw_response.headers)}
-                        if self.include_response_headers and is_first_chunk
-                        else {}
-                    )
+                    generation_info = {**base_generation_info} if is_first_chunk else {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
                         if model_name := chunk.get("model"):
@@ -728,17 +729,15 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        raw_response = await self.async_client.with_raw_response.create(**payload)
-        response = raw_response.parse()
+        if self.include_response_headers:
+            raw_response = await self.async_client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = await self.async_client.create(**payload)
+            generation_info = None
         return await run_in_executor(
-            None,
-            self._create_chat_result,
-            response,
-            (
-                {"headers": dict(raw_response.headers)}
-                if self.include_response_headers
-                else None
-            ),
+            None, self._create_chat_result, response, generation_info
         )
 
     @property
