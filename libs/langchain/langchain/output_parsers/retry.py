@@ -103,7 +103,7 @@ class RetryOutputParser(BaseOutputParser[T]):
                         completion = self.retry_chain.invoke(
                             dict(
                                 prompt=prompt_value.to_string(),
-                                input=completion,
+                                completion=completion,
                             )
                         )
 
@@ -139,7 +139,7 @@ class RetryOutputParser(BaseOutputParser[T]):
                         completion = await self.retry_chain.ainvoke(
                             dict(
                                 prompt=prompt_value.to_string(),
-                                input=completion,
+                                completion=completion,
                             )
                         )
 
@@ -204,7 +204,9 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         chain = prompt | llm
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
-    def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:  # noqa: E501
+    def parse_with_prompt(
+        self, completion: str, prompt_value: PromptValue
+    ) -> T:  # noqa: E501
         retries = 0
 
         while retries <= self.max_retries:
@@ -224,7 +226,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                     else:
                         completion = self.retry_chain.invoke(
                             dict(
-                                input=completion,
+                                completion=completion,
                                 prompt=prompt_value.to_string(),
                                 error=repr(e),
                             )
@@ -253,7 +255,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                         completion = await self.retry_chain.ainvoke(
                             dict(
                                 prompt=prompt_value.to_string(),
-                                input=completion,
+                                completion=completion,
                                 error=repr(e),
                             )
                         )
