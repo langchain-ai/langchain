@@ -9,6 +9,9 @@ services:
       - ..:/workspaces/langchain:cached
     networks:
       - langchain-network
+    extra_hosts: 
+      - "host.docker.internal:host-gateway"
+
   #   environment:
   #     MONGO_ROOT_USERNAME: root
   #     MONGO_ROOT_PASSWORD: example123
