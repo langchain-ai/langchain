@@ -1294,6 +1294,15 @@ def injected_tool(x: int, y: Annotated[str, InjectedToolArg]) -> str:
     return y
 
 
+class InjectedTool(BaseTool):
+    name: str = "foo"
+    description: str = "foo."
+
+    def _run(self, x: int, y: Annotated[str, InjectedToolArg]) -> Any:
+        """foo."""
+        return y
+
+
 class fooSchema(BaseModel):
     """foo."""
 
@@ -1301,7 +1310,7 @@ class fooSchema(BaseModel):
     y: Annotated[str, InjectedToolArg()]
 
 
-class InjectedTool(BaseTool):
+class InjectedToolWithSchema(BaseTool):
     name: str = "foo"
     description: str = "foo."
     args_schema: Type[BaseModel] = fooSchema
@@ -1316,22 +1325,13 @@ def injected_tool_with_schema(x: int, y: str) -> str:
     return y
 
 
-class InjectedToolWithoutSchema(BaseTool):
-    name: str = "foo"
-    description: str = "foo."
-
-    def _run(self, x: int, y: Annotated[str, InjectedToolArg]) -> Any:
-        """foo."""
-        return y
-
-
 @pytest.mark.parametrize(
     "tool_",
     [
         injected_tool,
         InjectedTool(),
         injected_tool_with_schema,
-        InjectedToolWithoutSchema(),
+        InjectedToolWithSchema(),
     ],
 )
 def test_tool_injected_arg(tool_: BaseTool) -> None:
@@ -1357,9 +1357,7 @@ def test_tool_injected_arg(tool_: BaseTool) -> None:
         {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
     ) == ToolMessage("bar", tool_call_id="123", name="foo")
     expected_error = (
-        ValidationError
-        if not isinstance(tool_, InjectedToolWithoutSchema)
-        else TypeError
+        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
     )
     with pytest.raises(expected_error):
         tool_.invoke({"x": 5})
