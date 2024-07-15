@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.2.11"
+version = "0.2.18"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -61,6 +61,11 @@ optional = true
 [tool.poetry.group.test_integration]
 optional = true
 
+[tool.ruff.lint.per-file-ignores]
+"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
+"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
+"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
@@ -97,4 +102,8 @@ python = ">=3.12"
 
 [tool.poetry.group.typing.dependencies.langchain-text-splitters]
 path = "../text-splitters"
+develop = true
+
+[tool.poetry.group.test.dependencies.langchain-standard-tests]
+path = "../standard-tests"
 develop = true

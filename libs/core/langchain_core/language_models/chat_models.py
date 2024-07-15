@@ -94,13 +94,11 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         ChatResult: Chat result.
     """
 
-    generation: Optional[ChatGenerationChunk] = None
-    for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
+    generation = next(stream, None)
+    if generation:
+        generation += list(stream)
+    if generation is None:
+        raise ValueError("No generations found in stream.")
     return ChatResult(
         generations=[
             ChatGeneration(
@@ -123,21 +121,8 @@ async def agenerate_from_stream(
         ChatResult: Chat result.
     """
 
-    generation: Optional[ChatGenerationChunk] = None
-    async for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=message_chunk_to_message(generation.message),
-                generation_info=generation.generation_info,
-            )
-        ]
-    )
+    chunks = [chunk async for chunk in stream]
+    return await run_in_executor(None, generate_from_stream, iter(chunks))
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):

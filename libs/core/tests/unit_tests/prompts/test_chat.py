@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
+from syrupy import SnapshotAssertion
 
 from langchain_core._api.deprecation import (
     LangChainPendingDeprecationWarning,
@@ -28,6 +29,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
+from langchain_core.pydantic_v1 import ValidationError
 
 
 @pytest.fixture
@@ -786,3 +788,20 @@ async def test_messages_prompt_accepts_list() -> None:
 
     with pytest.raises(TypeError):
         await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+
+
+def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
+    prompt_all_required = ChatPromptTemplate.from_messages(
+        messages=[MessagesPlaceholder("history", optional=False), ("user", "${input}")]
+    )
+    prompt_all_required.input_variables == {"input"}
+    prompt_all_required.optional_variables == {"history"}
+    with pytest.raises(ValidationError):
+        prompt_all_required.input_schema(input="")
+    assert prompt_all_required.input_schema.schema() == snapshot(name="required")
+    prompt_optional = ChatPromptTemplate.from_messages(
+        messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
+    )
+    prompt_optional.input_variables == {"history", "input"}
+    prompt_optional.input_schema(input="")  # won't raise error
+    prompt_optional.input_schema.schema() == snapshot(name="partial")
