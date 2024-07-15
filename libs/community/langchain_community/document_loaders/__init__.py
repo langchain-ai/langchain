@@ -474,9 +474,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.unstructured import (
         UnstructuredAPIFileIOLoader,
         UnstructuredAPIFileLoader,
-        _UnstructuredBaseLoader,
         UnstructuredFileIOLoader,
         UnstructuredFileLoader,
+        _UnstructuredBaseLoader,
     )
     from langchain_community.document_loaders.url import (
         UnstructuredURLLoader,

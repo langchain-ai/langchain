@@ -7,8 +7,9 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import IO, Any, Callable, Iterator, Optional, Sequence, Union
 
-from langchain_core.documents import Document
 from langchain_core._api.deprecation import deprecated
+from langchain_core.documents import Document
+
 from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__file__)
@@ -24,7 +25,7 @@ class _UnstructuredBaseLoader(BaseLoader, ABC):
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
-                
+
         # `single` - elements are combined into one (default)
         # `elements` - maintain individual elements
         # `paged` - elements are combined by page
@@ -59,7 +60,7 @@ class _UnstructuredBaseLoader(BaseLoader, ABC):
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
         elements = self._get_elements()
-        self._post_process_elements(elements)            
+        self._post_process_elements(elements)
         if self.mode == "elements":
             for element in elements:
                 metadata = self._get_metadata()
@@ -74,8 +75,8 @@ class _UnstructuredBaseLoader(BaseLoader, ABC):
                 yield Document(page_content=str(element), metadata=metadata)
         elif self.mode == "paged":
             logger.warning(
-                "`mode='paged'` is deprecated in favor of the 'by_page' chunking strategy. Learn"
-                " more about chunking here:"
+                "`mode='paged'` is deprecated in favor of the 'by_page' chunking"
+                " strategy. Learn more about chunking here:"
                 " https://docs.unstructured.io/open-source/core-functionality/chunking"
             )
             text_dict: dict[int, str] = {}
@@ -201,6 +202,7 @@ class UnstructuredFileLoader(_UnstructuredBaseLoader):
             for post_processor in self.post_processors:
                 element.apply(post_processor)
         return elements
+
 
 @deprecated(
     since="0.2.8",
@@ -362,6 +364,7 @@ class UnstructuredFileIOLoader(_UnstructuredBaseLoader):
                 element.apply(post_processor)
         return elements
 
+
 @deprecated(
     since="0.2.8",
     removal="0.4.0",
@@ -425,7 +428,6 @@ class UnstructuredAPIFileIOLoader(_UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-
     def _get_elements(self) -> list:
         if self.unstructured_kwargs.get("metadata_filename"):
             return _get_elements_from_api(
@@ -440,8 +442,6 @@ class UnstructuredAPIFileIOLoader(_UnstructuredBaseLoader):
                 "If partitioning a file via api,"
                 " metadata_filename must be specified as well.",
             )
-
-        
 
     def _get_metadata(self) -> dict:
         return {}
@@ -472,8 +472,8 @@ def _get_elements_from_api(
         from unstructured.partition.api import partition_multiple_via_api
 
         _doc_elements = partition_multiple_via_api(
-            filenames=file_path, # type: ignore
-            files=file, # type: ignore
+            filenames=file_path,  # type: ignore
+            files=file,  # type: ignore
             api_key=api_key,
             api_url=api_url,
             **unstructured_kwargs,

@@ -3,13 +3,14 @@
 import json
 from pathlib import Path
 from typing import IO, Any, Iterator, Sequence, Union
-from langchain_core.documents import Document
 
 from langchain_community.document_loaders import _UnstructuredBaseLoader
+from langchain_core.documents import Document
+
 
 class UnstructuredSDKFileLoader(_UnstructuredBaseLoader):
     """Unstructured document loader integration.
-    
+
     Load files using the `unstructured-client` sdk to the Unstructured API.
 
     By default, the loader makes a call to the hosted Unstructured API. If you are
@@ -48,7 +49,7 @@ class UnstructuredSDKFileLoader(_UnstructuredBaseLoader):
 
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
-    
+
     References
     ----------
     https://docs.unstructured.io/api-reference/api-services/sdk
@@ -83,7 +84,9 @@ class UnstructuredSDKFileLoader(_UnstructuredBaseLoader):
         for element in elements_json:
             metadata = self._get_metadata()
             metadata.update(element.get("metadata"))
-            metadata.update({"category": element.get("category") or element.get("type")})
+            metadata.update(
+                {"category": element.get("category") or element.get("type")}
+            )
             metadata.update({"element_id": element.get("element_id")})
             yield Document(page_content=element.get("text"), metadata=metadata)
 
@@ -198,7 +201,9 @@ class UnstructuredSDKFileIOLoader(_UnstructuredBaseLoader):
         for element in elements_json:
             metadata = self._get_metadata()
             metadata.update(element.get("metadata"))
-            metadata.update({"category": element.get("category") or element.get("type")})
+            metadata.update(
+                {"category": element.get("category") or element.get("type")}
+            )
             metadata.update({"element_id": element.get("element_id")})
             yield Document(page_content=element.get("text"), metadata=metadata)
 
@@ -284,6 +289,7 @@ def _get_elements_from_api(
         raise ValueError(
             f"Receive unexpected status code {response.status_code} from the API.",
         )
+
 
 def _get_content(
     file_path: Union[str, Path], file: Union[IO[bytes], None] = None

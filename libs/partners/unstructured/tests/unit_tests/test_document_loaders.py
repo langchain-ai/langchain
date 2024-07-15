@@ -1,19 +1,24 @@
 import os
 from contextlib import ExitStack
+from pathlib import Path
 from typing import Any, Callable
 from unittest import mock
 from unittest.mock import ANY
 
 import pytest
 
-from langchain_unstructured import UnstructuredSDKFileLoader, UnstructuredSDKFileIOLoader
+from langchain_unstructured import (
+    UnstructuredSDKFileIOLoader,
+    UnstructuredSDKFileLoader,
+)
 from langchain_unstructured.document_loaders import _get_content
 
-
-EXAMPLE_DOCS_DIRECTORY = "libs/community/tests/integration_tests/examples"
+# EXAMPLE_DOCS_DIRECTORY = "libs/community/tests/integration_tests/examples"
+EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent.parent.parent.parent / "community/tests/integration_tests/examples/")
 
 
 # -- UnstructuredSDKFileLoader -------------------------------
+
 
 def test_api_file_loader_calls_get_elements_from_api(fake_json_response) -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
@@ -28,16 +33,19 @@ def test_api_file_loader_calls_get_elements_from_api(fake_json_response) -> None
         return_value=fake_json_response,
     ) as mock_get_elements:
         docs = loader.load()
-    
+
     mock_get_elements.assert_called_once_with(
-            file_path=file_path,
-            api_key="FAKE_API_KEY",
-            api_url="https://api.unstructuredapp.io/general/v0/general",
-            strategy="fast",
+        file_path=file_path,
+        api_key="FAKE_API_KEY",
+        api_url="https://api.unstructuredapp.io/general/v0/general",
+        strategy="fast",
     )
     assert docs[0].metadata.get("element_id") is not None
     # check that the Document metadata contains all of the element metadata
-    assert all(docs[0].metadata[k] == v for k, v in fake_json_response[0].get("metadata").items())
+    assert all(
+        docs[0].metadata[k] == v
+        for k, v in fake_json_response[0].get("metadata").items()
+    )
 
 
 def test_api_file_loader_with_multiple_files_calls_get_elements_from_api(
@@ -59,20 +67,24 @@ def test_api_file_loader_with_multiple_files_calls_get_elements_from_api(
     ) as mock_get_elements:
         docs = loader.load()
 
-    mock_get_elements.assert_has_calls([
-        mock.call(
-            file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-            api_key="FAKE_API_KEY",
-            api_url="https://api.unstructuredapp.io/general/v0/general",
-            strategy="fast",
-        ), 
-        mock.call(
-            file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
-            api_key="FAKE_API_KEY",
-            api_url="https://api.unstructuredapp.io/general/v0/general",
-            strategy="fast",
-        ),
-    ])
+    mock_get_elements.assert_has_calls(
+        [
+            mock.call(
+                file_path=os.path.join(
+                    EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"
+                ),
+                api_key="FAKE_API_KEY",
+                api_url="https://api.unstructuredapp.io/general/v0/general",
+                strategy="fast",
+            ),
+            mock.call(
+                file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
+                api_key="FAKE_API_KEY",
+                api_url="https://api.unstructuredapp.io/general/v0/general",
+                strategy="fast",
+            ),
+        ]
+    )
     assert mock_get_elements.call_count == 2
     assert docs[0].metadata.get("filename") == "layout-parser-paper.pdf"
     assert docs[-1].metadata.get("filename") == "whatsapp_chat.txt"
@@ -92,15 +104,19 @@ def test_api_file_loader_ignores_mode(fake_json_response) -> None:
         return_value=fake_json_response,
     ) as mock_get_elements:
         docs = loader.load()
-    
+
     mock_get_elements.assert_called_once_with(
-            file_path=file_path,
-            api_key="FAKE_API_KEY",
-            api_url="https://api.unstructuredapp.io/general/v0/general",
-            strategy="fast",
+        file_path=file_path,
+        api_key="FAKE_API_KEY",
+        api_url="https://api.unstructuredapp.io/general/v0/general",
+        strategy="fast",
     )
     # check the document has not been chunked into a single object
-    assert docs[0].page_content == "LayoutParser: A Uniﬁed Toolkit for Deep Learning Based DocumentImage Analysis"
+    assert (
+        docs[0].page_content
+        == "LayoutParser: A Uniﬁed Toolkit for Deep Learning Based"
+        " DocumentImage Analysis"
+    )
 
 
 def test_api_file_loader_with_post_processors(
@@ -127,10 +143,14 @@ def test_api_file_loader_with_post_processors(
         strategy="fast",
     )
     assert docs[0].page_content.endswith("THE END!")
-    assert all(docs[0].metadata[k] == v for k, v in fake_json_response[0].get("metadata").items())
+    assert all(
+        docs[0].metadata[k] == v
+        for k, v in fake_json_response[0].get("metadata").items()
+    )
 
 
 # -- UnstructuredSDKFileIOLoader -------------------------------
+
 
 def test_api_file_io_loader_calls_get_elements_from_api(fake_json_response) -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
@@ -156,7 +176,10 @@ def test_api_file_io_loader_calls_get_elements_from_api(fake_json_response) -> N
         strategy="fast",
     )
     assert docs[0].metadata.get("element_id") is not None
-    assert all(docs[0].metadata[k] == v for k, v in fake_json_response[0].get("metadata").items())
+    assert all(
+        docs[0].metadata[k] == v
+        for k, v in fake_json_response[0].get("metadata").items()
+    )
 
 
 def test_api_file_io_loader_with_multiple_files_calls_get_elements_from_api(
@@ -181,22 +204,26 @@ def test_api_file_io_loader_with_multiple_files_calls_get_elements_from_api(
         ) as mock_get_elements:
             docs = loader.load()
 
-    mock_get_elements.assert_has_calls([
-        mock.call(
-            file=ANY,
-            file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-            api_key="FAKE_API_KEY",
-            api_url="https://api.unstructuredapp.io/general/v0/general",
-            strategy="fast",
-        ), 
-        mock.call(
-            file=ANY,
-            file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
-            api_key="FAKE_API_KEY",
-            api_url="https://api.unstructuredapp.io/general/v0/general",
-            strategy="fast",
-        ),
-    ])
+    mock_get_elements.assert_has_calls(
+        [
+            mock.call(
+                file=ANY,
+                file_path=os.path.join(
+                    EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"
+                ),
+                api_key="FAKE_API_KEY",
+                api_url="https://api.unstructuredapp.io/general/v0/general",
+                strategy="fast",
+            ),
+            mock.call(
+                file=ANY,
+                file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
+                api_key="FAKE_API_KEY",
+                api_url="https://api.unstructuredapp.io/general/v0/general",
+                strategy="fast",
+            ),
+        ]
+    )
     assert mock_get_elements.call_count == 2
     assert docs[0].metadata.get("filename") == "layout-parser-paper.pdf"  # type: ignore
     assert docs[-1].metadata.get("filename") == "whatsapp_chat.txt"  # type: ignore
@@ -229,10 +256,14 @@ def test_api_file_io_loader_with_post_processors(
         strategy="fast",
     )
     assert docs[0].page_content.endswith("THE END!")
-    assert all(docs[0].metadata[k] == v for k, v in fake_json_response[0].get("metadata").items())
+    assert all(
+        docs[0].metadata[k] == v
+        for k, v in fake_json_response[0].get("metadata").items()
+    )
 
 
 # -- _get_content() -------------------------------
+
 
 def test_get_content_from_file() -> None:
     with open(
@@ -257,6 +288,7 @@ def test_get_content_from_file_path() -> None:
 
 
 # -- fixtures -------------------------------
+
 
 @pytest.fixture()
 def get_post_processor() -> Callable[[str], str]:

@@ -3,6 +3,7 @@ from langchain_unstructured import __all__
 EXPECTED_ALL = [
     "UnstructuredSDKFileLoader",
     "UnstructuredSDKFileIOLoader",
+    '__version__',
 ]
 
 
