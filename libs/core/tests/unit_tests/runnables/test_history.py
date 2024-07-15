@@ -73,9 +73,9 @@ async def test_input_messages_async() -> None:
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config = {"session_id": "1_async"}
-    output = await with_history.ainvoke([HumanMessage(content="hello")], config)
+    output = await with_history.ainvoke([HumanMessage(content="hello")], config)  # type: ignore[arg-type]
     assert output == "you said: hello"
-    output = await with_history.ainvoke([HumanMessage(content="good bye")], config)
+    output = await with_history.ainvoke([HumanMessage(content="good bye")], config)  # type: ignore[arg-type]
     assert output == "you said: hello\ngood bye"
     assert store == {
         "1_async": InMemoryChatMessageHistory(
