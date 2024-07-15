@@ -96,43 +96,17 @@ class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
 
-class Injected:
-    """An annotation to indicate that a parameter is omitted from the schema.
-    and rather by some other means, such as a callback or config."""
-
-    def __init__(self, /):
-        pass
-
-
 def _is_annotated_type(typ: Type[Any]) -> bool:
     return get_origin(typ) is Annotated
 
 
-def _get_annotation_description(arg_type: Type[Any]) -> str | None:
+def _get_annotation_description(arg_type: Type) -> str | None:
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
-        arg_type = annotated_args[0]
-        if len(annotated_args) > 1:
-            for annotation in annotated_args[1:]:
-                if isinstance(annotation, str):
-                    return annotation
+        for annotation in annotated_args[1:]:
+            if isinstance(annotation, str):
+                return annotation
     return None
-
-
-def _is_injected_type(ann: Any) -> bool:
-    if not _is_annotated_type(ann):
-        return False
-    annotated_args = get_args(ann)
-    if len(annotated_args) > 1 and any(
-        [
-            isinstance(arg, Injected)
-            or (isinstance(arg, type) and issubclass(arg, Injected))
-            for arg in annotated_args[1:]
-        ]
-    ):
-        return True
-
-    return False
 
 
 def _create_subset_model(
@@ -175,9 +149,7 @@ def _get_filtered_args(
     return {
         k: schema[k]
         for i, (k, param) in enumerate(valid_keys.items())
-        if k not in filter_args
-        and (i > 0 or param.name not in ("self", "cls"))
-        and not _is_injected_type(param.annotation)
+        if k not in filter_args and (i > 0 or param.name not in ("self", "cls"))
     }
 
 
@@ -290,6 +262,7 @@ def create_schema_from_function(
     error_on_invalid_docstring: bool = False,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
+
     Args:
         model_name: Name to assign to the generated pydandic schema
         func: Function to generate the schema from
@@ -298,6 +271,7 @@ def create_schema_from_function(
             for each argument.
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
             whether to raise ValueError on invalid Google Style docstrings.
+
     Returns:
         A pydantic model with the same arguments as the function
     """
@@ -429,11 +403,20 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        if self.args_schema is not None:
-            return self.args_schema.schema()["properties"]
-        else:
-            schema = create_schema_from_function(self.name, self._run)
-            return schema.schema()["properties"]
+        return self.get_input_schema().schema()["properties"]
+
+    @property
+    def tool_call_schema(self) -> Type[BaseModel]:
+        full_schema = self.get_input_schema()
+        fields = []
+        for name, type_ in full_schema.__annotations__.items():
+            if not _is_injected_arg_type(type_):
+                fields.append(name)
+        return _create_subset_model(
+            full_schema.__name__,
+            full_schema,
+            fields,
+        )
 
     # --- Runnable ---
 
@@ -973,21 +956,13 @@ class StructuredTool(BaseTool):
         description_ = f"{description_.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
-            if config_param := _get_runnable_config_param(source_function):
-                filter_args: Tuple[str, ...] = (
-                    config_param,
-                    "run_manager",
-                    "callbacks",
-                )
-            else:
-                filter_args = ("run_manager", "callbacks")
             # schema name is appended within function
             _args_schema = create_schema_from_function(
                 name,
                 source_function,
                 parse_docstring=parse_docstring,
                 error_on_invalid_docstring=error_on_invalid_docstring,
-                filter_args=filter_args,
+                filter_args=_filter_schema_args(source_function),
             )
         return cls(
             name=name,
@@ -1519,22 +1494,27 @@ def _get_type_hints(func: Callable) -> Optional[Dict[str, Type]]:
 
 def _get_runnable_config_param(func: Callable) -> Optional[str]:
     type_hints = _get_type_hints(func)
-    if type_hints:
-        for name, type_ in type_hints.items():
-            if type_ is RunnableConfig:
-                return name
+    for name, type_ in type_hints.items():
+        if type_ is RunnableConfig:
+            return name
     return None
 
 
-__all__ = [
-    "BaseTool",
-    "BaseToolkit",
-    "Tool",
-    "StructuredTool",
-    "tool",
-    "create_retriever_tool",
-    "render_text_description",
-    "render_text_description_and_args",
-    "convert_runnable_to_tool",
-    "create_schema_from_function",
-]
+class InjectedToolArg:
+    """"""
+
+
+def _is_injected_arg_type(type_: Type) -> bool:
+    return any(
+        isinstance(arg, InjectedToolArg)
+        or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
+        for arg in get_args(type_)[1:]
+    )
+
+
+def _filter_schema_args(func: Callable) -> List[str]:
+    filter_args = list(FILTERED_ARGS)
+    if config_param := _get_runnable_config_param(func):
+        filter_args.append(config_param)
+    # filter_args.extend(_get_non_model_params(type_hints))
+    return filter_args

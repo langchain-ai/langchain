@@ -158,9 +158,9 @@ def convert_python_function_to_openai_function(
 )
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API."""
-    if tool.args_schema:
+    if tool.tool_call_schema:
         return convert_pydantic_to_openai_function(
-            tool.args_schema, name=tool.name, description=tool.description
+            tool.tool_call_schema, name=tool.name, description=tool.description
         )
     else:
         return {
