@@ -1137,7 +1137,9 @@ def test_tool_call_input_tool_message_output() -> None:
         "type": "tool_call",
     }
     tool = _MockStructuredTool()
-    expected = ToolMessage("1 True {'img': 'base64string...'}", tool_call_id="123")
+    expected = ToolMessage(
+        "1 True {'img': 'base64string...'}", tool_call_id="123", name="structured_api"
+    )
     actual = tool.invoke(tool_call)
     assert actual == expected
 
@@ -1176,7 +1178,9 @@ def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
         "id": "123",
         "type": "tool_call",
     }
-    expected = ToolMessage("1 True", artifact=tool_call["args"], tool_call_id="123")
+    expected = ToolMessage(
+        "1 True", artifact=tool_call["args"], tool_call_id="123", name="structured_api"
+    )
     actual = tool.invoke(tool_call)
     assert actual == expected
 
