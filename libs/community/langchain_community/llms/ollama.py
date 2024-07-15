@@ -120,12 +120,12 @@ class _OllamaCommon(BaseLanguageModel):
     3. any negative number which will keep the model loaded \
         in memory (e.g. -1 or "-1m");
     4. 0 which will unload the model immediately after generating a response;
-    
+
     See the [Ollama documents](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-keep-a-model-loaded-in-memory-or-make-it-unload-immediately)"""
 
     raw: Optional[bool] = None
     """raw or not."""
-    
+
     headers: Optional[dict] = None
     """Additional headers to pass to endpoint (e.g. Authorization, Referer).
     This is useful when Ollama is hosted on cloud services that require
