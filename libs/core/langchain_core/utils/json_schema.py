@@ -90,7 +90,16 @@ def dereference_refs(
     full_schema: Optional[dict] = None,
     skip_keys: Optional[Sequence[str]] = None,
 ) -> dict:
-    """Try to substitute $refs in JSON Schema."""
+    """Try to substitute $refs in JSON Schema.
+
+    Args:
+        schema_obj: The schema object to dereference.
+        full_schema: The full schema object. Defaults to None.
+        skip_keys: The keys to skip. Defaults to None.
+
+    Returns:
+        The dereferenced schema object.
+    """
 
     full_schema = full_schema or schema_obj
     skip_keys = (

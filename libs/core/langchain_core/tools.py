@@ -1438,11 +1438,15 @@ def _get_schema_from_runnable_and_arg_types(
 
 def convert_runnable_to_tool(
     runnable: Runnable,
+    args_schema: Optional[Type[BaseModel]] = None,
+    *,
     name: Optional[str] = None,
     description: Optional[str] = None,
     arg_types: Optional[Dict[str, Type]] = None,
 ) -> BaseTool:
     """Convert a Runnable into a BaseTool."""
+    if args_schema:
+        runnable = runnable.with_types(input_type=args_schema)
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
