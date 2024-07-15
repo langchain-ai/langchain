@@ -31,7 +31,11 @@ class TavilySearchAPIRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         try:
-            from tavily import TavilyClient
+            try:
+                from tavily import TavilyClient
+            except TypeError:
+                # Older of tavily used Client
+                from tavily import Client as TavilyClient
         except ImportError:
             raise ImportError(
                 "Tavily python package not found. "
