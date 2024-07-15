@@ -989,7 +989,8 @@ class StructuredTool(BaseTool):
             func: The function from which to create a tool.
             coroutine: The async function from which to create a tool.
             name: The name of the tool. Defaults to the function name.
-            description: The description of the tool. Defaults to the function docstring.
+            description: The description of the tool.
+                Defaults to the function docstring.
             return_direct: Whether to return the result directly or as a callback.
                 Defaults to False.
             args_schema: The schema of the tool's input arguments. Defaults to None.
