@@ -189,38 +189,56 @@ def mock_completion() -> dict:
     }
 
 
-def test_openai_invoke(mock_completion: dict) -> None:
+@pytest.fixture
+def mock_client(mock_completion: dict) -> MagicMock:
+    rtn = MagicMock()
+
+    mock_create = MagicMock()
+
+    mock_resp = MagicMock()
+    mock_resp.headers = {"content-type": "application/json"}
+    mock_resp.parse.return_value = mock_completion
+    mock_create.return_value = mock_resp
+
+    rtn.with_raw_response.create = mock_create
+    return rtn
+
+
+@pytest.fixture
+def mock_async_client(mock_completion: dict) -> AsyncMock:
+    rtn = AsyncMock()
+
+    mock_create = AsyncMock()
+    mock_resp = MagicMock()
+    mock_resp.parse.return_value = mock_completion
+    mock_create.return_value = mock_resp
+
+    rtn.with_raw_response.create = mock_create
+    return rtn
+
+
+def test_openai_invoke(mock_client: MagicMock) -> None:
     llm = ChatOpenAI()
-    mock_client = MagicMock()
-    completed = False
 
-    def mock_create(*args: Any, **kwargs: Any) -> Any:
-        nonlocal completed
-        completed = True
-        return mock_completion
-
-    mock_client.create = mock_create
     with patch.object(llm, "client", mock_client):
         res = llm.invoke("bar")
         assert res.content == "Bar Baz"
-    assert completed
+
+        # headers are not in response_metadata if include_response_headers not set
+        assert "headers" not in res.response_metadata
+    assert mock_client.with_raw_response.create.called
 
 
-async def test_openai_ainvoke(mock_completion: dict) -> None:
+async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
     llm = ChatOpenAI()
-    mock_client = AsyncMock()
-    completed = False
 
-    async def mock_create(*args: Any, **kwargs: Any) -> Any:
-        nonlocal completed
-        completed = True
-        return mock_completion
-
-    mock_client.create = mock_create
-    with patch.object(llm, "async_client", mock_client):
+    with patch.object(llm, "async_client", mock_async_client):
         res = await llm.ainvoke("bar")
         assert res.content == "Bar Baz"
-    assert completed
+
+        # headers are not in response_metadata if include_response_headers not set
+        assert "headers" not in res.response_metadata
+    assert mock_async_client.with_raw_response.create.called
 
 
 @pytest.mark.parametrize(
@@ -239,16 +257,13 @@ def test__get_encoding_model(model: str) -> None:
     return
 
 
-def test_openai_invoke_name(mock_completion: dict) -> None:
+def test_openai_invoke_name(mock_client: MagicMock) -> None:
     llm = ChatOpenAI()
-
-    mock_client = MagicMock()
-    mock_client.create.return_value = mock_completion
 
     with patch.object(llm, "client", mock_client):
         messages = [HumanMessage(content="Foo", name="Katie")]
         res = llm.invoke(messages)
-        call_args, call_kwargs = mock_client.create.call_args
+        call_args, call_kwargs = mock_client.with_raw_response.create.call_args
         assert len(call_args) == 0  # no positional args
         call_messages = call_kwargs["messages"]
         assert len(call_messages) == 1

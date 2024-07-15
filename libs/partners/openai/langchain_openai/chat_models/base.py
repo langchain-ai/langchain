@@ -514,7 +514,8 @@ class BaseChatOpenAI(BaseChatModel):
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         with self.client.with_raw_response.create(**payload) as raw_response:
             response = raw_response.parse()
-            for chunk_index, chunk in enumerate(response):
+            is_first_chunk = True
+            for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
@@ -540,8 +541,8 @@ class BaseChatOpenAI(BaseChatModel):
                         choice["delta"], default_chunk_class
                     )
                     generation_info = (
-                        {"headers": raw_response.headers}
-                        if self.include_response_headers and chunk_index == 0
+                        {"headers": dict(raw_response.headers)}
+                        if self.include_response_headers and is_first_chunk
                         else {}
                     )
                     if finish_reason := choice.get("finish_reason"):
@@ -562,6 +563,7 @@ class BaseChatOpenAI(BaseChatModel):
                     run_manager.on_llm_new_token(
                         generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
+                is_first_chunk = False
                 yield generation_chunk
 
     def _generate(
@@ -577,12 +579,12 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        raw_response = self.client.with_raw_response.with_raw_response.create(**payload)
+        raw_response = self.client.with_raw_response.create(**payload)
         response = raw_response.parse()
         return self._create_chat_result(
             response,
             (
-                {"headers": raw_response.headers}
+                {"headers": dict(raw_response.headers)}
                 if self.include_response_headers
                 else None
             ),
@@ -656,7 +658,8 @@ class BaseChatOpenAI(BaseChatModel):
         raw_response = await self.async_client.with_raw_response.create(**payload)
         response = raw_response.parse()
         async with response:
-            async for chunk_index, chunk in enumerate(response):
+            is_first_chunk = True
+            async for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
@@ -685,8 +688,8 @@ class BaseChatOpenAI(BaseChatModel):
                         default_chunk_class,
                     )
                     generation_info = (
-                        {"headers": raw_response.headers}
-                        if self.include_response_headers and chunk_index == 0
+                        {"headers": dict(raw_response.headers)}
+                        if self.include_response_headers and is_first_chunk
                         else {}
                     )
                     if finish_reason := choice.get("finish_reason"):
@@ -709,6 +712,7 @@ class BaseChatOpenAI(BaseChatModel):
                         chunk=generation_chunk,
                         logprobs=logprobs,
                     )
+                is_first_chunk = False
                 yield generation_chunk
 
     async def _agenerate(
@@ -731,7 +735,7 @@ class BaseChatOpenAI(BaseChatModel):
             self._create_chat_result,
             response,
             (
-                {"headers": raw_response.headers}
+                {"headers": dict(raw_response.headers)}
                 if self.include_response_headers
                 else None
             ),
