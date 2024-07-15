@@ -1800,7 +1800,7 @@ url = "libs/community"
 
 [[package]]
 name = "langchain-core"
-version = "0.2.14"
+version = "0.2.18"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1841,7 +1841,7 @@ url = "libs/experimental"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.15"
+version = "0.1.16"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1849,7 +1849,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.2.13"
+langchain-core = "^0.2.17"
 openai = "^1.32.0"
 tiktoken = ">=0.7,<1"
 
@@ -4601,4 +4601,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "77a145d9802e5db861ae41de9c6450308571dc8106df59b1dc614f6c295abf7b"
+content-hash = "89412a783c9ef2fca7f286b61176adf566ed20e80b265a9e2b51264ff149aa1a"
