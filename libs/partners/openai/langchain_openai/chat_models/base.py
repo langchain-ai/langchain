@@ -455,11 +455,7 @@ class BaseChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        params = {
-            "model": self.model_name,
-            "stream": self.streaming,
-            "n": self.n,
-            "temperature": self.temperature,
+        exclude_if_none = {
             "presence_penalty": self.presence_penalty,
             "frequency_penalty": self.frequency_penalty,
             "seed": self.seed,
@@ -467,14 +463,19 @@ class BaseChatOpenAI(BaseChatModel):
             "logprobs": self.logprobs,
             "top_logprobs": self.top_logprobs,
             "logit_bias": self.logit_bias,
+            "stop": self.stop or None,  # also exclude empty list for this
+            "max_tokens": self.max_tokens,
+            "extra_body": self.extra_body,
+        }
+
+        params = {
+            "model": self.model_name,
+            "stream": self.streaming,
+            "n": self.n,
+            "temperature": self.temperature,
+            **{k: v for k, v in exclude_if_none.items() if v is not None},
             **self.model_kwargs,
         }
-        if self.max_tokens is not None:
-            params["max_tokens"] = self.max_tokens
-        if self.stop:
-            params["stop"] = self.stop
-        if self.extra_body is not None:
-            params["extra_body"] = self.extra_body
 
         return params
 
