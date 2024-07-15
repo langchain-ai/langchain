@@ -1397,7 +1397,9 @@ def _format_output(
             and isinstance(content[0], (str, dict))
         ):
             content = _stringify(content)
-        return ToolMessage(content, artifact=artifact, tool_call_id=tool_call_id, name=name)
+        return ToolMessage(
+            content, artifact=artifact, tool_call_id=tool_call_id, name=name
+        )
     else:
         return content
 
