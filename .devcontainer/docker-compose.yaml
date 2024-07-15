@@ -8,7 +8,10 @@ services:
    # Update this to wherever you want VS Code to mount the folder of your project
       - ..:/workspaces/langchain:cached
     networks:
-      - langchain-network 
+      - langchain-network
+    extra_hosts: 
+      - "host.docker.internal:host-gateway"
+
   #   environment:
   #     MONGO_ROOT_USERNAME: root
   #     MONGO_ROOT_PASSWORD: example123
@@ -28,5 +31,3 @@ services:
 networks:
   langchain-network:
     driver: bridge
-    
-    
