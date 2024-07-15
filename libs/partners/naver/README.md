@@ -10,8 +10,7 @@ Please refer to [NCP User Guide](https://guide.ncloud-docs.com/docs/clovastudio-
 
 ## Installation and Setup
 
-- Get both CLOVA Studio API Key and API Gateway Key by [creating your app](https://guide.ncloud-docs.com/docs/en/clovastudio-playground01#create-test-app) and set them as environment variables respectively (`NCP_CLOVASTUDIO_API_KEY`, `NCP_APIGW_API_KEY`).
-- Install the integration Python package with:
+Install the integration Python package with:
 
 ```bash
 pip install -U langchain-naver
