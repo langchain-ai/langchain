@@ -1,4 +1,3 @@
-"""Naver chat models."""
 import logging
 from typing import (
     Any, AsyncIterator, Iterator, List, Optional, Dict, cast, Tuple, AsyncContextManager, Union, Callable, Type
@@ -133,9 +132,9 @@ class ChatClovaX(BaseChatModel):
 
             from langchain_core.messages import HumanMessage
 
-            from langchain_naver import ChatNaver
+            from langchain_naver import ChatClovaX
 
-            model = ChatNaver()
+            model = ChatClovaX()
             model.invoke([HumanMessage(content="Come up with 10 names for a song about parrots.")])
     """  # noqa: E501
 
