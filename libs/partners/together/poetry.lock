@@ -604,7 +604,7 @@ url = "../../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.15"
+version = "0.1.16"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1798,4 +1798,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "32ec0f5b1afd7492c096028403f1f2f94a227cb0d922530ca743e1bd65db3f9f"
+content-hash = "8e255f5a0e6ecf23a3d04d0eeee9918d411339b5960c24c888521fbd1f6bf531"

@@ -1327,7 +1327,7 @@ class Runnable(Generic[Input, Output], ABC):
     def with_config(
         self,
         config: Optional[RunnableConfig] = None,
-        # Sadly Unpack is not well supported by mypy so this will have to be untyped
+        # Sadly Unpack is not well-supported by mypy so this will have to be untyped
         **kwargs: Any,
     ) -> Runnable[Input, Output]:
         """
