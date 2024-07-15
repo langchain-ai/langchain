@@ -96,11 +96,19 @@ class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
 
+class Injected:
+    """An annotation to indicate that a parameter is omitted from the schema.
+    and rather by some other means, such as a callback or config."""
+
+    def __init__(self, /):
+        pass
+
+
 def _is_annotated_type(typ: Type[Any]) -> bool:
     return get_origin(typ) is Annotated
 
 
-def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
+def _get_annotation_description(arg_type: Type[Any]) -> str | None:
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
         arg_type = annotated_args[0]
@@ -109,6 +117,22 @@ def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
                 if isinstance(annotation, str):
                     return annotation
     return None
+
+
+def _is_injected_type(ann: Any) -> bool:
+    if not _is_annotated_type(ann):
+        return False
+    annotated_args = get_args(ann)
+    if len(annotated_args) > 1 and any(
+        [
+            isinstance(arg, Injected)
+            or (isinstance(arg, type) and issubclass(arg, Injected))
+            for arg in annotated_args[1:]
+        ]
+    ):
+        return True
+
+    return False
 
 
 def _create_subset_model(
@@ -151,7 +175,9 @@ def _get_filtered_args(
     return {
         k: schema[k]
         for i, (k, param) in enumerate(valid_keys.items())
-        if k not in filter_args and (i > 0 or param.name not in ("self", "cls"))
+        if k not in filter_args
+        and (i > 0 or param.name not in ("self", "cls"))
+        and not _is_injected_type(param.annotation)
     }
 
 
@@ -243,7 +269,7 @@ def _infer_arg_descriptions(
     for arg, arg_type in annotations.items():
         if arg in arg_descriptions:
             continue
-        if desc := _get_annotation_description(arg, arg_type):
+        if desc := _get_annotation_description(arg_type):
             arg_descriptions[arg] = desc
     return description, arg_descriptions
 
@@ -1482,15 +1508,33 @@ def convert_runnable_to_tool(
         )
 
 
-def _get_runnable_config_param(func: Callable) -> Optional[str]:
+def _get_type_hints(func: Callable) -> Optional[Dict[str, Type]]:
     if isinstance(func, functools.partial):
         func = func.func
     try:
-        type_hints = get_type_hints(func)
+        return get_type_hints(func)
     except Exception:
         return None
-    else:
+
+
+def _get_runnable_config_param(func: Callable) -> Optional[str]:
+    type_hints = _get_type_hints(func)
+    if type_hints:
         for name, type_ in type_hints.items():
             if type_ is RunnableConfig:
                 return name
     return None
+
+
+__all__ = [
+    "BaseTool",
+    "BaseToolkit",
+    "Tool",
+    "StructuredTool",
+    "tool",
+    "create_retriever_tool",
+    "render_text_description",
+    "render_text_description_and_args",
+    "convert_runnable_to_tool",
+    "create_schema_from_function",
+]
