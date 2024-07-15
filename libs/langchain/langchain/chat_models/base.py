@@ -97,9 +97,9 @@ def init_chat_model(
     """Initialize a ChatModel from the model name and provider.
 
     Must have the integration package corresponding to the model provider installed.
-    
+
     .. versionadded:: 0.2.7
-    
+
     .. versionchanged:: 0.2.8
 
     Args:
