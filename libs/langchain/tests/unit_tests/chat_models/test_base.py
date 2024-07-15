@@ -106,6 +106,13 @@ def test_configurable() -> None:
             "stream": False,
             "n": 1,
             "temperature": 0.7,
+            "presence_penalty": None,
+            "frequency_penalty": None,
+            "seed": None,
+            "top_p": None,
+            "logprobs": False,
+            "top_logprobs": None,
+            "logit_bias": None,
             "_type": "openai-chat",
         },
         "kwargs": {
