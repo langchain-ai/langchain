@@ -9,10 +9,11 @@ import json
 import os
 import re
 import urllib
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from typing import Any, BinaryIO, Callable, List, Optional
+from typing import Any, BinaryIO, Callable, List, Literal, Optional, Tuple
 from uuid import uuid4
 
 import requests
@@ -118,13 +119,15 @@ class SessionsPythonREPLTool(BaseTool):
     pool_management_endpoint: str
     """The management endpoint of the session pool. Should end with a '/'."""
 
-    access_token_provider: Callable[
-        [], Optional[str]
-    ] = _access_token_provider_factory()
+    access_token_provider: Callable[[], Optional[str]] = (
+        _access_token_provider_factory()
+    )
     """A function that returns the access token to use for the session pool."""
 
     session_id: str = str(uuid4())
     """The session ID to use for the code interpreter. Defaults to a random UUID."""
+
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _build_url(self, path: str) -> str:
         pool_management_endpoint = self.pool_management_endpoint
@@ -164,16 +167,16 @@ class SessionsPythonREPLTool(BaseTool):
         properties = response_json.get("properties", {})
         return properties
 
-    def _run(self, python_code: str) -> Any:
+    def _run(self, python_code: str, **kwargs: Any) -> Tuple[str, dict]:
         response = self.execute(python_code)
 
         # if the result is an image, remove the base64 data
-        result = response.get("result")
+        result = deepcopy(response.get("result"))
         if isinstance(result, dict):
             if result.get("type") == "image" and "base64_data" in result:
                 result.pop("base64_data")
 
-        return json.dumps(
+        content = json.dumps(
             {
                 "result": result,
                 "stdout": response.get("stdout"),
@@ -181,6 +184,7 @@ class SessionsPythonREPLTool(BaseTool):
             },
             indent=2,
         )
+        return content, response
 
     def upload_file(
         self,

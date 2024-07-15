@@ -664,8 +664,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -675,8 +674,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     def with_structured_output(
         self,
@@ -868,7 +866,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             llm = self.bind_tools([schema], tool_choice=tool_name)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(
@@ -877,7 +876,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )

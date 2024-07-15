@@ -38,7 +38,7 @@ class RouterInput(TypedDict):
 
     Attributes:
         key: The key to route on.
-        input: The input to pass to the selected runnable.
+        input: The input to pass to the selected Runnable.
     """
 
     key: str
@@ -49,6 +49,9 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     """
     Runnable that routes to a set of Runnables based on Input['key'].
     Returns the output of the selected Runnable.
+
+    Parameters:
+        runnables: A mapping of keys to Runnables.
 
     For example,
 

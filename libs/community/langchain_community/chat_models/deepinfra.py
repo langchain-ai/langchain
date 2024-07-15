@@ -45,8 +45,10 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
 )
 from langchain_core.messages.tool import ToolCall
+from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -92,10 +94,10 @@ def _parse_tool_calling(tool_call: dict) -> ToolCall:
     Returns:
 
     """
-    name = tool_call.get("name", "")
+    name = tool_call["function"].get("name", "")
     args = json.loads(tool_call["function"]["arguments"])
     id = tool_call.get("id")
-    return ToolCall(name=name, args=args, id=id)
+    return create_tool_call(name=name, args=args, id=id)
 
 
 def _convert_to_tool_calling(tool_call: ToolCall) -> Dict[str, Any]:
@@ -180,6 +182,13 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             "role": "function",
             "content": message.content,
             "name": message.name,
+        }
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "name": message.name,  # type: ignore[dict-item]
+            "tool_call_id": message.tool_call_id,
         }
     else:
         raise ValueError(f"Got unknown type {message}")

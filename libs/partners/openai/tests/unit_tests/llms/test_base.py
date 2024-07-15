@@ -11,7 +11,7 @@ os.environ["OPENAI_API_KEY"] = "foo"
 def test_openai_model_param() -> None:
     llm = OpenAI(model="foo")
     assert llm.model_name == "foo"
-    llm = OpenAI(model_name="foo")
+    llm = OpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
 
 
@@ -27,7 +27,7 @@ def test_openai_invalid_model_kwargs() -> None:
 
 def test_openai_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = OpenAI(foo="bar")
+        llm = OpenAI(foo="bar")  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 

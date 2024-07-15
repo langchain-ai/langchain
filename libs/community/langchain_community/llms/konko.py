@@ -1,4 +1,5 @@
 """Wrapper around Konko AI's Completion API."""
+
 import logging
 import warnings
 from typing import Any, Dict, List, Optional
