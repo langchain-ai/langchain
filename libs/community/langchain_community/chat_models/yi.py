@@ -79,17 +79,3 @@ class YiChat(YiCommon, ChatOpenAI):  # type: ignore[misc]
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **super()._identifying_params}
 
-if __name__ == '__main__':
-    os.environ["YI_API_KEY"] = "70116f6e1e2947dda1d75c18c4f59280"
-    from langchain_core.messages import HumanMessage, SystemMessage
-
-    messages = [
-        SystemMessage(
-            content="你是一个翻译官，你的任务就是将英语翻译成中文"
-        ),
-        HumanMessage(
-            content="我爱你"
-        ),
-    ]
-    yi_chat = YiChat()
-    print(yi_chat(messages))
