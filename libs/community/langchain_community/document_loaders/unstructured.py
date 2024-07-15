@@ -15,7 +15,7 @@ from langchain_community.document_loaders.base import BaseLoader
 logger = logging.getLogger(__file__)
 
 
-class _UnstructuredBaseLoader(BaseLoader, ABC):
+class UnstructuredBaseLoader(BaseLoader, ABC):
     """Parent class for Unstructured Base Loaders."""
 
     def __init__(
@@ -121,7 +121,7 @@ class _UnstructuredBaseLoader(BaseLoader, ABC):
             )
 
 
-class UnstructuredFileLoader(_UnstructuredBaseLoader):
+class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured`.
 
     The file loader uses the unstructured partition function and will automatically
@@ -209,7 +209,7 @@ class UnstructuredFileLoader(_UnstructuredBaseLoader):
     removal="0.4.0",
     alternative_import="langchain_unstructured.UnstructuredSDKFileLoader",
 )
-class UnstructuredAPIFileLoader(_UnstructuredBaseLoader):
+class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured` API.
 
     By default, the loader makes a call to the hosted Unstructured API. If you are
@@ -287,7 +287,7 @@ class UnstructuredAPIFileLoader(_UnstructuredBaseLoader):
         return elements
 
 
-class UnstructuredFileIOLoader(_UnstructuredBaseLoader):
+class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Load file-like objects opened in read mode using `Unstructured`.
 
     The file loader uses the unstructured partition function and will automatically
@@ -370,7 +370,7 @@ class UnstructuredFileIOLoader(_UnstructuredBaseLoader):
     removal="0.4.0",
     alternative_import="langchain_unstructured.UnstructuredSDKFileIOLoader",
 )
-class UnstructuredAPIFileIOLoader(_UnstructuredBaseLoader):
+class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     """Send file-like objects with `unstructured-client` sdk to the Unstructured API.
 
     By default, the loader makes a call to the hosted Unstructured API. If you are
