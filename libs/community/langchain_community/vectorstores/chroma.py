@@ -542,7 +542,7 @@ class Chroma(VectorStore):
             to the query image and their similarity scores.
             0th element in each tuple is a Langchain Document Object.
             The page content is b64 encoded img, metadata is default or defined by user.
-        
+
         Raises:
             ValueError: If the embedding function does not support image embeddings.
         """
