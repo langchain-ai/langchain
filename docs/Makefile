@@ -29,7 +29,7 @@ install-py-deps:
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install --upgrade uv
 	$(PYTHON) -m uv pip install -r vercel_requirements.txt
-	$(PYTHON) -m uv pip install --editable $(PARTNER_DEPS_LIST)
+	$(PYTHON) -m pip install --editable $(PARTNER_DEPS_LIST)
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
