@@ -204,9 +204,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         chain = prompt | llm
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
-    def parse_with_prompt(
-        self, completion: str, prompt_value: PromptValue
-    ) -> T:  # noqa: E501
+    def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:  # noqa: E501
         retries = 0
 
         while retries <= self.max_retries:
