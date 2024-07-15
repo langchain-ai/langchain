@@ -2,7 +2,7 @@ from typing import Any, Iterable, Sequence
 
 from langchain_core.documents import Document
 from langchain_core.documents.transformers import BaseDocumentTransformer
-from langchain_core.graph_vectorstores.links import add_links
+from langchain_core.graph_vectorstores.links import copy_with_links
 
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
@@ -30,15 +30,14 @@ class LinkExtractorTransformer(BaseDocumentTransformer):
     ) -> Sequence[Document]:
         # Implement `transform_docments` directly, so that LinkExtractors which operate
         # better in batch (`extract_many`) get a chance to do so.
-        document_links = zip(
-            documents,
-            zip(
-                *[
-                    extractor.extract_many(documents)
-                    for extractor in self.link_extractors
-                ]
-            ),
-        )
-        for document, links in document_links:
-            add_links(document, *links)
-        return documents
+
+        # Run each extractor over all documents.
+        links_per_extractor = [e.extract_many(documents) for e in self.link_extractors]
+
+        # Transpose the list of lists to pair each document with the tuple of links.
+        links_per_document = zip(*links_per_extractor)
+
+        return [
+            copy_with_links(document, links)
+            for document, links in zip(documents, links_per_document)
+        ]
