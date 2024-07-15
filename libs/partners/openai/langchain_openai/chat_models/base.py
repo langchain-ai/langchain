@@ -537,7 +537,7 @@ class BaseChatOpenAI(BaseChatModel):
                     message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
-                    generation_info = {}
+                    generation_info = {"headers": raw_response.headers}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
                         if model_name := chunk.get("model"):
@@ -573,8 +573,7 @@ class BaseChatOpenAI(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         raw_response = self.client.with_raw_response.with_raw_response.create(**payload)
         response = raw_response.parse()
-        headers = raw_response.headers
-        return self._create_chat_result(response)
+        return self._create_chat_result(response, {"headers": raw_response.headers})
 
     def _get_request_payload(
         self,
@@ -593,7 +592,9 @@ class BaseChatOpenAI(BaseChatModel):
         }
 
     def _create_chat_result(
-        self, response: Union[dict, openai.BaseModel]
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[Dict] = None,
     ) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
@@ -615,7 +616,9 @@ class BaseChatOpenAI(BaseChatModel):
                     "output_tokens": token_usage.get("completion_tokens", 0),
                     "total_tokens": token_usage.get("total_tokens", 0),
                 }
-            generation_info = dict(finish_reason=res.get("finish_reason"))
+            generation_info = dict(
+                finish_reason=res.get("finish_reason"), **(generation_info or {})
+            )
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(message=message, generation_info=generation_info)
@@ -707,7 +710,9 @@ class BaseChatOpenAI(BaseChatModel):
         raw_response = await self.async_client.with_raw_response.create(**payload)
         response = raw_response.parse()
         headers = raw_response.headers
-        return await run_in_executor(None, self._create_chat_result, response)
+        return await run_in_executor(
+            None, self._create_chat_result, response, {"headers": headers}
+        )
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
