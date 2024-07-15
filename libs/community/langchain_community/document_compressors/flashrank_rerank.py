@@ -62,7 +62,7 @@ class FlashrankRerank(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         passages = [
-            {"id": i, "text": doc.page_content, "meta": doc.metadata}
+            {"id": i, "text": doc.page_content, "metadata": doc.metadata}
             for i, doc in enumerate(documents)
         ]
 
