@@ -55,7 +55,9 @@ class ToolDescription(TypedDict):
     """Representation of a callable function to the OpenAI API."""
 
     type: Literal["function"]
+    """The type of the tool."""
     function: FunctionDescription
+    """The function description."""
 
 
 def _rm_titles(kv: dict, prev_key: str = "") -> dict:
@@ -85,7 +87,19 @@ def convert_pydantic_to_openai_function(
     description: Optional[str] = None,
     rm_titles: bool = True,
 ) -> FunctionDescription:
-    """Converts a Pydantic model to a function description for the OpenAI API."""
+    """Converts a Pydantic model to a function description for the OpenAI API.
+
+    Args:
+        model: The Pydantic model to convert.
+        name: The name of the function. If not provided, the title of the schema will be
+            used.
+        description: The description of the function. If not provided, the description
+            of the schema will be used.
+        rm_titles: Whether to remove titles from the schema. Defaults to True.
+
+    Returns:
+        The function description.
+    """
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
     title = schema.pop("title", "")
@@ -108,7 +122,18 @@ def convert_pydantic_to_openai_tool(
     name: Optional[str] = None,
     description: Optional[str] = None,
 ) -> ToolDescription:
-    """Converts a Pydantic model to a function description for the OpenAI API."""
+    """Converts a Pydantic model to a function description for the OpenAI API.
+
+    Args:
+        model: The Pydantic model to convert.
+        name: The name of the function. If not provided, the title of the schema will be
+            used.
+        description: The description of the function. If not provided, the description
+            of the schema will be used.
+
+    Returns:
+        The tool description.
+    """
     function = convert_pydantic_to_openai_function(
         model, name=name, description=description
     )
@@ -133,6 +158,12 @@ def convert_python_function_to_openai_function(
     Assumes the Python function has type hints and a docstring with a description. If
         the docstring has Google Python style argument descriptions, these will be
         included as well.
+
+    Args:
+        function: The Python function to convert.
+
+    Returns:
+        The OpenAI function description.
     """
     from langchain_core import tools
 
@@ -157,7 +188,14 @@ def convert_python_function_to_openai_function(
     removal="0.3.0",
 )
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
-    """Format tool into the OpenAI function API."""
+    """Format tool into the OpenAI function API.
+
+    Args:
+        tool: The tool to format.
+
+    Returns:
+        The function description.
+    """
     if tool.args_schema:
         return convert_pydantic_to_openai_function(
             tool.args_schema, name=tool.name, description=tool.description
@@ -187,7 +225,14 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     removal="0.3.0",
 )
 def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
-    """Format tool into the OpenAI function API."""
+    """Format tool into the OpenAI function API.
+
+    Args:
+        tool: The tool to format.
+
+    Returns:
+        The tool description.
+    """
     function = format_tool_to_openai_function(tool)
     return {"type": "function", "function": function}
 
@@ -206,6 +251,9 @@ def convert_to_openai_function(
     Returns:
         A dict version of the passed in function which is compatible with the
             OpenAI function-calling API.
+
+    Raises:
+        ValueError: If the function is not in a supported format.
     """
     from langchain_core.tools import BaseTool
 
@@ -284,7 +332,7 @@ def tool_example_to_messages(
             BaseModels
         tool_outputs: Optional[List[str]], a list of tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
-            will be inserted.
+            will be inserted. Defaults to None.
 
     Returns:
         A list of messages
