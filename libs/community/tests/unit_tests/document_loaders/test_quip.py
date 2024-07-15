@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.quip import QuipLoader
 
 try:
-    from quip_api.quip import QuipClient  # noqa: F401
+    from quipclient.quip import QuipClient  # noqa: F401
 
     quip_installed = True
 except ImportError:
@@ -17,11 +17,11 @@ except ImportError:
 @pytest.fixture
 def mock_quip():  # type: ignore
     # mock quip_client
-    with patch("quip_api.quip.QuipClient") as mock_quip:
+    with patch("quipclient.quip.QuipClient") as mock_quip:
         yield mock_quip
 
 
-@pytest.mark.requires("quip_api", "beautifulsoup4")
+@pytest.mark.requires("quipclient", "bs4")
 class TestQuipLoader:
     API_URL = "https://example-api.quip.com"
     DOC_URL_PREFIX = ("https://example.quip.com",)
@@ -31,14 +31,24 @@ class TestQuipLoader:
     MOCK_THREAD_IDS = ["ABC", "DEF"]
 
     def test_quip_loader_initialization(self, mock_quip: MagicMock) -> None:
-        QuipLoader(self.API_URL, access_token=self.ACCESS_TOKEN, request_timeout=60)
+        QuipLoader(
+            self.API_URL,
+            access_token=self.ACCESS_TOKEN,
+            request_timeout=60,
+            allow_dangerous_xml_parsing=True,
+        )
         mock_quip.assert_called_once_with(
-            access_token=self.ACCESS_TOKEN, base_url=self.API_URL, request_timeout=60
+            access_token=self.ACCESS_TOKEN,
+            base_url=self.API_URL,
+            request_timeout=60,
         )
 
     def test_quip_loader_load_date_invalid_args(self) -> None:
         quip_loader = QuipLoader(
-            self.API_URL, access_token=self.ACCESS_TOKEN, request_timeout=60
+            self.API_URL,
+            access_token=self.ACCESS_TOKEN,
+            request_timeout=60,
+            allow_dangerous_xml_parsing=True,
         )
 
         with pytest.raises(
@@ -125,7 +135,10 @@ class TestQuipLoader:
 
     def _get_mock_quip_loader(self, mock_quip: MagicMock) -> QuipLoader:
         quip_loader = QuipLoader(
-            self.API_URL, access_token=self.ACCESS_TOKEN, request_timeout=60
+            self.API_URL,
+            access_token=self.ACCESS_TOKEN,
+            request_timeout=60,
+            allow_dangerous_xml_parsing=True,
         )
         quip_loader.quip_client = mock_quip
         return quip_loader
