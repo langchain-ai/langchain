@@ -189,12 +189,15 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
                 handled.
                 **For internal use only. This API will change.**
                 - 'original' is the format used by all current tracers.
-                   This format is slightly inconsistent with respect to inputs
-                   and outputs.
+                  This format is slightly inconsistent with respect to inputs
+                  and outputs.
                 - 'streaming_events' is used for supporting streaming events,
-                   for internal usage. It will likely change in the future, or
-                   be deprecated entirely in favor of a dedicated async tracer
-                   for streaming events.
+                  for internal usage. It will likely change in the future, or
+                  be deprecated entirely in favor of a dedicated async tracer
+                  for streaming events.
+
+        Raises:
+            ValueError: If an invalid schema format is provided (internal use only).
         """
         if _schema_format not in {"original", "streaming_events"}:
             raise ValueError(
@@ -224,7 +227,15 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         return self.receive_stream.__aiter__()
 
     def send(self, *ops: Dict[str, Any]) -> bool:
-        """Send a patch to the stream, return False if the stream is closed."""
+        """Send a patch to the stream, return False if the stream is closed.
+
+        Args:
+            *ops: The operations to send to the stream.
+
+        Returns:
+            bool: True if the patch was sent successfully, False if the stream
+                is closed.
+        """
         # We will likely want to wrap this in try / except at some point
         # to handle exceptions that might arise at run time.
         # For now we'll let the exception bubble up, and always return
@@ -235,7 +246,15 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
     async def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
-        """Tap an output async iterator to stream its values to the log."""
+        """Tap an output async iterator to stream its values to the log.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output async iterator.
+
+        Yields:
+            T: The output value.
+        """
         async for chunk in output:
             # root run is handled in .astream_log()
             if run_id != self.root_id:
@@ -254,7 +273,15 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap an output async iterator to stream its values to the log."""
+        """Tap an output async iterator to stream its values to the log.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output iterator.
+
+        Yields:
+            T: The output value.
+        """
         for chunk in output:
             # root run is handled in .astream_log()
             if run_id != self.root_id:
@@ -273,6 +300,14 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             yield chunk
 
     def include_run(self, run: Run) -> bool:
+        """Check if a Run should be included in the log.
+
+        Args:
+            run: The Run to check.
+
+        Returns:
+            bool: True if the run should be included, False otherwise.
+        """
         if run.id == self.root_id:
             return False
 
@@ -454,7 +489,7 @@ def _get_standardized_inputs(
     Returns:
         Valid inputs are only dict. By conventions, inputs always represented
         invocation using named arguments.
-        A None means that the input is not yet known!
+        None means that the input is not yet known!
     """
     if schema_format == "original":
         raise NotImplementedError(
