@@ -17,7 +17,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -1137,7 +1137,9 @@ def test_tool_call_input_tool_message_output() -> None:
         "type": "tool_call",
     }
     tool = _MockStructuredTool()
-    expected = ToolMessage("1 True {'img': 'base64string...'}", tool_call_id="123")
+    expected = ToolMessage(
+        "1 True {'img': 'base64string...'}", tool_call_id="123", name="structured_api"
+    )
     actual = tool.invoke(tool_call)
     assert actual == expected
 
@@ -1176,7 +1178,9 @@ def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
         "id": "123",
         "type": "tool_call",
     }
-    expected = ToolMessage("1 True", artifact=tool_call["args"], tool_call_id="123")
+    expected = ToolMessage(
+        "1 True", artifact=tool_call["args"], tool_call_id="123", name="structured_api"
+    )
     actual = tool.invoke(tool_call)
     assert actual == expected
 
@@ -1218,10 +1222,22 @@ def test_convert_from_runnable_dict() -> None:
     assert as_tool.name == "my tool"
     assert as_tool.description == "test description"
 
-    # Dict without typed input-- must supply arg types
+    # Dict without typed input-- must supply schema
     def g(x: Dict[str, Any]) -> str:
         return str(x["a"] * max(x["b"]))
 
+    # Specify via args_schema:
+    class GSchema(BaseModel):
+        """Apply a function to an integer and list of integers."""
+
+        a: int = Field(..., description="Integer")
+        b: List[int] = Field(..., description="List of ints")
+
+    runnable = RunnableLambda(g)
+    as_tool = runnable.as_tool(GSchema)
+    as_tool.invoke({"a": 3, "b": [1, 2]})
+
+    # Specify via arg_types:
     runnable = RunnableLambda(g)
     as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
     result = as_tool.invoke({"a": 3, "b": [1, 2]})
