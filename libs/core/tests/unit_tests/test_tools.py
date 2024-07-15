@@ -1307,7 +1307,7 @@ class fooSchema(BaseModel):
     """foo."""
 
     x: int
-    y: Annotated[str, InjectedToolArg()]
+    y: Annotated[str, "foobar comment", InjectedToolArg()]
 
 
 class InjectedToolWithSchema(BaseTool):
