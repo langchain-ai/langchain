@@ -319,10 +319,26 @@ class BaseChatOpenAI(BaseChatModel):
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+    presence_penalty: Optional[float] = None
+    """Penalizes repeated tokens."""
+    frequency_penalty: Optional[float] = None
+    """Penalizes repeated tokens according to frequency."""
+    seed: Optional[int] = None
+    """Seed for generation"""
+    logprobs: Optional[bool] = False
+    """Whether to return logprobs."""
+    top_logprobs: Optional[int] = None
+    """Number of most likely tokens to return at each token position, each with
+     an associated log probability. `logprobs` must be set to true 
+     if this parameter is used."""
+    logit_bias: Optional[Dict[int, int]] = None
+    """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+    top_p: Optional[float] = None
+    """Total probability mass of tokens to consider at each step."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
     tiktoken_model_name: Optional[str] = None
@@ -439,19 +455,27 @@ class BaseChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
+        exclude_if_none = {
+            "presence_penalty": self.presence_penalty,
+            "frequency_penalty": self.frequency_penalty,
+            "seed": self.seed,
+            "top_p": self.top_p,
+            "logprobs": self.logprobs,
+            "top_logprobs": self.top_logprobs,
+            "logit_bias": self.logit_bias,
+            "stop": self.stop or None,  # also exclude empty list for this
+            "max_tokens": self.max_tokens,
+            "extra_body": self.extra_body,
+        }
+
         params = {
             "model": self.model_name,
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            **{k: v for k, v in exclude_if_none.items() if v is not None},
             **self.model_kwargs,
         }
-        if self.max_tokens is not None:
-            params["max_tokens"] = self.max_tokens
-        if self.stop:
-            params["stop"] = self.stop
-        if self.extra_body is not None:
-            params["extra_body"] = self.extra_body
 
         return params
 

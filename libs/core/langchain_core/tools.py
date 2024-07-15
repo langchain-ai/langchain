@@ -589,7 +589,7 @@ class ChildTool(BaseTool):
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
-        output = _format_output(content, artifact, tool_call_id)
+        output = _format_output(content, artifact, tool_call_id, self.name)
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -681,7 +681,7 @@ class ChildTool(BaseTool):
             await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
-        output = _format_output(content, artifact, tool_call_id)
+        output = _format_output(content, artifact, tool_call_id, self.name)
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -1386,7 +1386,7 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, artifact: Any, tool_call_id: Optional[str]
+    content: Any, artifact: Any, tool_call_id: Optional[str], name: str
 ) -> Union[ToolMessage, Any]:
     if tool_call_id:
         # NOTE: This will fail to stringify lists which aren't actually content blocks
@@ -1398,7 +1398,9 @@ def _format_output(
             and isinstance(content[0], (str, dict))
         ):
             content = _stringify(content)
-        return ToolMessage(content, artifact=artifact, tool_call_id=tool_call_id)
+        return ToolMessage(
+            content, artifact=artifact, tool_call_id=tool_call_id, name=name
+        )
     else:
         return content
 
@@ -1437,11 +1439,15 @@ def _get_schema_from_runnable_and_arg_types(
 
 def convert_runnable_to_tool(
     runnable: Runnable,
+    args_schema: Optional[Type[BaseModel]] = None,
+    *,
     name: Optional[str] = None,
     description: Optional[str] = None,
     arg_types: Optional[Dict[str, Type]] = None,
 ) -> BaseTool:
     """Convert a Runnable into a BaseTool."""
+    if args_schema:
+        runnable = runnable.with_types(input_type=args_schema)
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
