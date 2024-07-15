@@ -127,7 +127,6 @@ _MESSAGES_TO_TRIM = [
     HumanMessage("This is a 4 token text.", id="third"),
     AIMessage("This is a 4 token text.", id="fourth"),
 ]
-
 _MESSAGES_TO_TRIM_COPY = [m.copy(deep=True) for m in _MESSAGES_TO_TRIM]
 
 
