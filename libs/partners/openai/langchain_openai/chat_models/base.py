@@ -514,7 +514,7 @@ class BaseChatOpenAI(BaseChatModel):
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         with self.client.with_raw_response.create(**payload) as raw_response:
             response = raw_response.parse()
-            for chunk in response:
+            for chunk_index, chunk in enumerate(response):
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
@@ -541,7 +541,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     generation_info = (
                         {"headers": raw_response.headers}
-                        if self.include_response_headers
+                        if self.include_response_headers and chunk_index == 0
                         else {}
                     )
                     if finish_reason := choice.get("finish_reason"):
@@ -656,7 +656,7 @@ class BaseChatOpenAI(BaseChatModel):
         raw_response = await self.async_client.with_raw_response.create(**payload)
         response = raw_response.parse()
         async with response:
-            async for chunk in response:
+            async for chunk_index, chunk in enumerate(response):
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
@@ -684,7 +684,11 @@ class BaseChatOpenAI(BaseChatModel):
                         choice["delta"],
                         default_chunk_class,
                     )
-                    generation_info = {}
+                    generation_info = (
+                        {"headers": raw_response.headers}
+                        if self.include_response_headers and chunk_index == 0
+                        else {}
+                    )
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
                         if model_name := chunk.get("model"):
