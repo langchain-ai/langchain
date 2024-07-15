@@ -281,6 +281,7 @@ class DatabricksVectorSearch(VectorStore):
         query: str,
         k: int = 4,
         filters: Optional[Any] = None,
+        *,
         query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -305,6 +306,7 @@ class DatabricksVectorSearch(VectorStore):
         query: str,
         k: int = 4,
         filters: Optional[Any] = None,
+        *,
         query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -356,6 +358,7 @@ class DatabricksVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filters: Optional[Any] = None,
+        *,
         query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -403,6 +406,7 @@ class DatabricksVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filters: Optional[Any] = None,
+        *,
         query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -468,6 +472,7 @@ class DatabricksVectorSearch(VectorStore):
         embedding: List[float],
         k: int = 4,
         filters: Optional[Any] = None,
+        *,
         query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -492,6 +497,7 @@ class DatabricksVectorSearch(VectorStore):
         embedding: List[float],
         k: int = 4,
         filters: Optional[Any] = None,
+        *,
         query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
