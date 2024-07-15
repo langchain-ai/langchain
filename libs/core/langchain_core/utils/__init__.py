@@ -16,6 +16,7 @@ from langchain_core.utils.input import (
 )
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.utils.loading import try_load_from_hub
+from langchain_core.utils.pydantic import pre_init
 from langchain_core.utils.strings import comma_list, stringify_dict, stringify_value
 from langchain_core.utils.utils import (
     build_extra_kwargs,
@@ -50,6 +51,7 @@ __all__ = [
     "stringify_dict",
     "comma_list",
     "stringify_value",
+    "pre_init",
     "batch_iterate",
     "abatch_iterate",
 ]
