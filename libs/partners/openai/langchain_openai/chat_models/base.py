@@ -709,9 +709,8 @@ class BaseChatOpenAI(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         raw_response = await self.async_client.with_raw_response.create(**payload)
         response = raw_response.parse()
-        headers = raw_response.headers
         return await run_in_executor(
-            None, self._create_chat_result, response, {"headers": headers}
+            None, self._create_chat_result, response, {"headers": raw_response.headers}
         )
 
     @property
