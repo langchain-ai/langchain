@@ -1760,7 +1760,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.18"
+version = "0.2.19"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -4561,4 +4561,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "14ebfabffa095e7619e9646bf56bc166d18c1c975b65e301bb6163c4e8eecaac"
+content-hash = "dbfb4729eead4be01e0cfb99e4a4a4969e1bf5c9cf7a752d8fdc53593808948c"
