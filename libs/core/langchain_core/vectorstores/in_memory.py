@@ -32,13 +32,14 @@ class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary.
 
     Uses numpy to compute cosine similarity for search.
-
-    Args:
-        embedding:  embedding function to use.
     """
 
     def __init__(self, embedding: Embeddings) -> None:
-        """Initialize with the given embedding function."""
+        """Initialize with the given embedding function.
+
+        Args:
+            embedding: embedding function to use.
+        """
         # TODO: would be nice to change to
         # Dict[str, Document] at some point (will be a breaking change)
         self.store: Dict[str, Dict[str, Any]] = {}
@@ -74,7 +75,14 @@ class InMemoryVectorStore(VectorStore):
         }
 
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
-        """Get documents by their ids."""
+        """Get documents by their ids.
+
+        Args:
+            ids: The ids of the documents to get.
+
+        Returns:
+            A list of Document objects.
+        """
         documents = []
 
         for doc_id in ids:
@@ -90,6 +98,14 @@ class InMemoryVectorStore(VectorStore):
         return documents
 
     async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        """Async get documents by their ids.
+
+        Args:
+            ids: The ids of the documents to get.
+
+        Returns:
+            A list of Document objects.
+        """
         return self.get_by_ids(ids)
 
     async def aadd_texts(
@@ -261,6 +277,16 @@ class InMemoryVectorStore(VectorStore):
     def load(
         cls, path: str, embedding: Embeddings, **kwargs: Any
     ) -> "InMemoryVectorStore":
+        """Load a vector store from a file.
+
+        Args:
+            path: The path to load the vector store from.
+            embedding: The embedding to use.
+            **kwargs: Additional arguments to pass to the constructor.
+
+        Returns:
+            A VectorStore object.
+        """
         _path: Path = Path(path)
         with _path.open("r") as f:
             store = load(json.load(f))
@@ -269,6 +295,11 @@ class InMemoryVectorStore(VectorStore):
         return vectorstore
 
     def dump(self, path: str) -> None:
+        """Dump the vector store to a file.
+
+        Args:
+            path: The path to dump the vector store to.
+        """
         _path: Path = Path(path)
         _path.parent.mkdir(exist_ok=True, parents=True)
         with _path.open("w") as f:
