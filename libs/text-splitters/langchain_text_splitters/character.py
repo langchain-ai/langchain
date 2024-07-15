@@ -345,7 +345,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             ]
         elif language == Language.ELIXIR:
             return [
-                # Split along method function and module definiton
+                # Split along method function and module definition
                 "\ndef ",
                 "\ndefp ",
                 "\ndefmodule ",
