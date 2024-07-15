@@ -1494,6 +1494,8 @@ def _get_type_hints(func: Callable) -> Optional[Dict[str, Type]]:
 
 def _get_runnable_config_param(func: Callable) -> Optional[str]:
     type_hints = _get_type_hints(func)
+    if not type_hints:
+        return None
     for name, type_ in type_hints.items():
         if type_ is RunnableConfig:
             return name
