@@ -1,4 +1,5 @@
 """Test OpenAI API wrapper."""
+
 from pathlib import Path
 from typing import Generator
 

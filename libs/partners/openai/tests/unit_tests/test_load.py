@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI, OpenAI
 
 
 def test_loads_openai_llm() -> None:
-    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8)
+    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8)  # type: ignore[call-arg]
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
 
@@ -16,7 +16,7 @@ def test_loads_openai_llm() -> None:
 
 
 def test_load_openai_llm() -> None:
-    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     llm_obj = dumpd(llm)
     llm2 = load(llm_obj, secrets_map={"OPENAI_API_KEY": "hello"})
 
@@ -26,7 +26,7 @@ def test_load_openai_llm() -> None:
 
 
 def test_loads_openai_chat() -> None:
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5, openai_api_key="hello")
+    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
 
@@ -37,7 +37,7 @@ def test_loads_openai_chat() -> None:
 
 
 def test_load_openai_chat() -> None:
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5, openai_api_key="hello")
+    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     llm_obj = dumpd(llm)
     llm2 = load(llm_obj, secrets_map={"OPENAI_API_KEY": "hello"})
 

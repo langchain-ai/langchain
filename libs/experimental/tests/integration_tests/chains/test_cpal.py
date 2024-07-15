@@ -81,7 +81,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
                 return prompt
 
         narrative = LLMMockData(
-            **{
+            **{  # type: ignore[arg-type, arg-type]
                 "question": (
                     "jan has three times the number of pets as marcia. "
                     "marcia has two more pets than cindy."
@@ -100,7 +100,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         )
 
         causal_model = LLMMockData(
-            **{
+            **{  # type: ignore[arg-type, arg-type]
                 "question": (
                     "jan has three times the number of pets as marcia. "
                     "marcia has two more pets than cindy."
@@ -137,7 +137,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         )
 
         intervention = LLMMockData(
-            **{
+            **{  # type: ignore[arg-type, arg-type]
                 "question": ("if cindy has ten pets"),
                 "completion": (
                     "{\n"
@@ -152,7 +152,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         )
 
         query = LLMMockData(
-            **{
+            **{  # type: ignore[arg-type, arg-type]
                 "question": ("how many pets does jan have? "),
                 "completion": (
                     "{\n"

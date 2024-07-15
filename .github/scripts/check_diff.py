@@ -1,11 +1,12 @@
+import glob
 import json
-import sys
 import os
-from typing import Dict, List, Set
-
+import re
+import sys
 import tomllib
 from collections import defaultdict
-import glob
+from typing import Dict, List, Set
+
 
 LANGCHAIN_DIRS = [
     "libs/core",
@@ -15,8 +16,13 @@ LANGCHAIN_DIRS = [
     "libs/experimental",
 ]
 
+
 def all_package_dirs() -> Set[str]:
-    return {"/".join(path.split("/")[:-1]) for path in glob.glob("./libs/**/pyproject.toml", recursive=True)}
+    return {
+        "/".join(path.split("/")[:-1]).lstrip("./")
+        for path in glob.glob("./libs/**/pyproject.toml", recursive=True)
+        if "libs/cli" not in path and "libs/standard-tests" not in path
+    }
 
 
 def dependents_graph() -> dict:
@@ -26,9 +32,9 @@ def dependents_graph() -> dict:
         if "template" in path:
             continue
         with open(path, "rb") as f:
-            pyproject = tomllib.load(f)['tool']['poetry']
+            pyproject = tomllib.load(f)["tool"]["poetry"]
         pkg_dir = "libs" + "/".join(path.split("libs")[1].split("/")[:-1])
-        for dep in pyproject['dependencies']:
+        for dep in pyproject["dependencies"]:
             if "langchain" in dep:
                 dependents[dep].add(pkg_dir)
     return dependents
@@ -45,6 +51,44 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
         updated.update(dependents[pkg])
         updated.add(dir_)
     return list(updated)
+
+
+def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
+    min_python = "3.8"
+    max_python = "3.12"
+
+    # custom logic for specific directories
+    if dir_ == "libs/partners/milvus":
+        # milvus poetry doesn't allow 3.12 because they
+        # declare deps in funny way
+        max_python = "3.11"
+
+    return [
+        {"working-directory": dir_, "python-version": min_python},
+        {"working-directory": dir_, "python-version": max_python},
+    ]
+
+
+def _get_configs_for_multi_dirs(
+    job: str, dirs_to_run: List[str], dependents: dict
+) -> List[Dict[str, str]]:
+    if job == "lint":
+        dirs = add_dependents(
+            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],
+            dependents,
+        )
+    elif job in ["test", "compile-integration-tests", "dependencies"]:
+        dirs = add_dependents(
+            dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+        )
+    elif job == "extended-tests":
+        dirs = list(dirs_to_run["extended-test"])
+    else:
+        raise ValueError(f"Unknown job: {job}")
+
+    return [
+        config for dir_ in dirs for config in _get_configs_for_single_dir(job, dir_)
+    ]
 
 
 if __name__ == "__main__":
@@ -120,14 +164,23 @@ if __name__ == "__main__":
 
     dependents = dependents_graph()
 
-    outputs = {
-        "dirs-to-lint": add_dependents(
-            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
-        ),
-        "dirs-to-test": add_dependents(dirs_to_run["test"] | dirs_to_run["extended-test"], dependents),
-        "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
-        "docs-edited": "true" if docs_edited else "",
+    # we now have dirs_by_job
+    # todo: clean this up
+
+    map_job_to_configs = {
+        job: _get_configs_for_multi_dirs(job, dirs_to_run, dependents)
+        for job in [
+            "lint",
+            "test",
+            "extended-tests",
+            "compile-integration-tests",
+            "dependencies",
+        ]
     }
-    for key, value in outputs.items():
+    map_job_to_configs["test-doc-imports"] = (
+        [{"python-version": "3.12"}] if docs_edited else []
+    )
+
+    for key, value in map_job_to_configs.items():
         json_output = json.dumps(value)
         print(f"{key}={json_output}")

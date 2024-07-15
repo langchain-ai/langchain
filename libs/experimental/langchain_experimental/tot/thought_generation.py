@@ -6,6 +6,7 @@ These strategies ensure that the language model generates diverse and
 non-repeating thoughts, which are crucial for problem-solving tasks that require
 exploration.
 """
+
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 

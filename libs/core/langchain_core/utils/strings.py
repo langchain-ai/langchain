@@ -36,5 +36,12 @@ def stringify_dict(data: dict) -> str:
 
 
 def comma_list(items: List[Any]) -> str:
-    """Convert a list to a comma-separated string."""
+    """Convert a list to a comma-separated string.
+
+    Args:
+        items: The list to convert.
+
+    Returns:
+        str: The comma-separated string.
+    """
     return ", ".join(str(item) for item in items)
