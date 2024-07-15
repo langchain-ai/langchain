@@ -367,6 +367,8 @@ class BaseChatOpenAI(BaseChatModel):
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
+    include_response_headers: bool = False
+    """Whether to include response headers in the output message response_metadata."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -537,7 +539,11 @@ class BaseChatOpenAI(BaseChatModel):
                     message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
-                    generation_info = {"headers": raw_response.headers}
+                    generation_info = (
+                        {"headers": raw_response.headers}
+                        if self.include_response_headers
+                        else {}
+                    )
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
                         if model_name := chunk.get("model"):
@@ -573,7 +579,14 @@ class BaseChatOpenAI(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         raw_response = self.client.with_raw_response.with_raw_response.create(**payload)
         response = raw_response.parse()
-        return self._create_chat_result(response, {"headers": raw_response.headers})
+        return self._create_chat_result(
+            response,
+            (
+                {"headers": raw_response.headers}
+                if self.include_response_headers
+                else None
+            ),
+        )
 
     def _get_request_payload(
         self,
@@ -710,7 +723,14 @@ class BaseChatOpenAI(BaseChatModel):
         raw_response = await self.async_client.with_raw_response.create(**payload)
         response = raw_response.parse()
         return await run_in_executor(
-            None, self._create_chat_result, response, {"headers": raw_response.headers}
+            None,
+            self._create_chat_result,
+            response,
+            (
+                {"headers": raw_response.headers}
+                if self.include_response_headers
+                else None
+            ),
         )
 
     @property
