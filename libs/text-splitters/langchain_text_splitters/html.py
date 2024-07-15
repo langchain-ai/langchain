@@ -71,7 +71,7 @@ class HTMLHeaderTextSplitter:
             for chunk in aggregated_chunks
         ]
 
-    def split_text_from_url(self, url: str, **kwargs) -> List[Document]:
+    def split_text_from_url(self, url: str, **kwargs: Any) -> List[Document]:
         """Split HTML from web URL
 
         Args:
