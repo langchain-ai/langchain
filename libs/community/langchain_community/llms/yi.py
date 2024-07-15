@@ -131,9 +131,3 @@ class Yi(YiCommon, LLM):
             text = enforce_stop_tokens(text, stop)
 
         return text
-if __name__ == '__main__':
-    import os
-
-    os.environ["YI_API_KEY"] = "70116f6e1e2947dda1d75c18c4f59280"
-    yi = Yi(model="yi-large", base_url="https://api.lingyiwanwu.com/v1")  # 使用国内API
-    yi.invoke("你好")
