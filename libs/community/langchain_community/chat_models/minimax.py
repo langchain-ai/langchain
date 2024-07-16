@@ -339,7 +339,7 @@ class MiniMaxChat(BaseChatModel):
              'model_name': 'abab6.5-chat',
              'finish_reason': 'stop'}
 
-    """  # noqa: E501conj
+    """  # noqa: E501
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
