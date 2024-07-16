@@ -15,7 +15,18 @@ from langchain_core.pydantic_v1 import SecretStr
 
 
 def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
-    """Validate specified keyword args are mutually exclusive."""
+    """Validate specified keyword args are mutually exclusive."
+
+    Args:
+        *arg_groups (Tuple[str, ...]): Groups of mutually exclusive keyword args.
+
+    Returns:
+        Callable: Decorator that validates the specified keyword args
+            are mutually exclusive
+
+    Raises:
+        ValueError: If more than one arg in a group is defined.
+    """
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -41,7 +52,14 @@ def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
 
 
 def raise_for_status_with_text(response: Response) -> None:
-    """Raise an error with the response text."""
+    """Raise an error with the response text.
+
+    Args:
+        response (Response): The response to check for errors.
+
+    Raises:
+        ValueError: If the response has an error status code.
+    """
     try:
         response.raise_for_status()
     except HTTPError as e:
@@ -51,6 +69,12 @@ def raise_for_status_with_text(response: Response) -> None:
 @contextlib.contextmanager
 def mock_now(dt_value):  # type: ignore
     """Context manager for mocking out datetime.now() in unit tests.
+
+    Args:
+        dt_value: The datetime value to use for datetime.now().
+
+    Yields:
+        datetime.datetime: The mocked datetime class.
 
     Example:
     with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
@@ -86,7 +110,21 @@ def guard_import(
     module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
 ) -> Any:
     """Dynamically import a module and raise an exception if the module is not
-    installed."""
+    installed.
+
+    Args:
+        module_name (str): The name of the module to import.
+        pip_name (str, optional): The name of the module to install with pip.
+            Defaults to None.
+        package (str, optional): The package to import the module from.
+            Defaults to None.
+
+    Returns:
+        Any: The imported module.
+
+    Raises:
+        ImportError: If the module is not installed.
+    """
     try:
         module = importlib.import_module(module_name, package)
     except (ImportError, ModuleNotFoundError):
@@ -105,7 +143,22 @@ def check_package_version(
     gt_version: Optional[str] = None,
     gte_version: Optional[str] = None,
 ) -> None:
-    """Check the version of a package."""
+    """Check the version of a package.
+
+    Args:
+        package (str): The name of the package.
+        lt_version (str, optional): The version must be less than this.
+            Defaults to None.
+        lte_version (str, optional): The version must be less than or equal to this.
+            Defaults to None.
+        gt_version (str, optional): The version must be greater than this.
+            Defaults to None.
+        gte_version (str, optional): The version must be greater than or equal to this.
+            Defaults to None.
+
+    Raises:
+        ValueError: If the package version does not meet the requirements.
+    """
     imported_version = parse(version(package))
     if lt_version is not None and imported_version >= parse(lt_version):
         raise ValueError(
@@ -133,7 +186,11 @@ def get_pydantic_field_names(pydantic_cls: Any) -> Set[str]:
     """Get field names, including aliases, for a pydantic class.
 
     Args:
-        pydantic_cls: Pydantic class."""
+        pydantic_cls: Pydantic class.
+
+    Returns:
+        Set[str]: Field names.
+    """
     all_required_field_names = set()
     for field in pydantic_cls.__fields__.values():
         all_required_field_names.add(field.name)
@@ -153,6 +210,13 @@ def build_extra_kwargs(
         extra_kwargs: Extra kwargs passed in by user.
         values: Values passed in by user.
         all_required_field_names: All required field names for the pydantic class.
+
+    Returns:
+        Dict[str, Any]: Extra kwargs.
+
+    Raises:
+        ValueError: If a field is specified in both values and extra_kwargs.
+        ValueError: If a field is specified in model_kwargs.
     """
     for field_name in list(values):
         if field_name in extra_kwargs:
@@ -176,7 +240,14 @@ def build_extra_kwargs(
 
 
 def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
-    """Convert a string to a SecretStr if needed."""
+    """Convert a string to a SecretStr if needed.
+
+    Args:
+        value (Union[SecretStr, str]): The value to convert.
+
+    Returns:
+        SecretStr: The SecretStr value.
+    """
     if isinstance(value, SecretStr):
         return value
     return SecretStr(value)

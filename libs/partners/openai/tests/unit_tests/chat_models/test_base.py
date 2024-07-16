@@ -117,6 +117,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
                 id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
+                type="tool_call",
             )
         ],
     )
@@ -151,6 +152,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 args="oops",
                 id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
                 error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
+                type="invalid_tool_call",
             )
         ],
         tool_calls=[
@@ -158,6 +160,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
                 id="call_abc123",
+                type="tool_call",
             )
         ],
     )
@@ -353,7 +356,10 @@ def test_get_num_tokens_from_messages() -> None:
         ),
         AIMessage("a nice bird"),
         AIMessage(
-            "", tool_calls=[ToolCall(id="foo", name="bar", args={"arg1": "arg1"})]
+            "",
+            tool_calls=[
+                ToolCall(id="foo", name="bar", args={"arg1": "arg1"}, type="tool_call")
+            ],
         ),
         AIMessage(
             "",
@@ -362,7 +368,10 @@ def test_get_num_tokens_from_messages() -> None:
             },
         ),
         AIMessage(
-            "text", tool_calls=[ToolCall(id="foo", name="bar", args={"arg1": "arg1"})]
+            "text",
+            tool_calls=[
+                ToolCall(id="foo", name="bar", args={"arg1": "arg1"}, type="tool_call")
+            ],
         ),
         ToolMessage("foobar", tool_call_id="foo"),
     ]
