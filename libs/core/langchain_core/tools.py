@@ -42,10 +42,11 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
     get_type_hints,
 )
 
-from typing_extensions import Annotated, cast, get_args, get_origin
+from typing_extensions import Annotated, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
