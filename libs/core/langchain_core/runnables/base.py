@@ -34,7 +34,7 @@ from typing import (
     overload,
 )
 
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Literal, get_args
 
 from langchain_core._api import beta_decorator
@@ -44,7 +44,6 @@ from langchain_core.load.serializable import (
     SerializedConstructor,
     SerializedNotImplemented,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
     _set_config_context,

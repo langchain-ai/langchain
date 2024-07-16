@@ -6,10 +6,9 @@ from io import BufferedReader, BytesIO
 from pathlib import PurePath
 from typing import Any, Generator, List, Literal, Mapping, Optional, Union, cast
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, root_validator
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field, root_validator
 
 PathLike = Union[str, PurePath]
 

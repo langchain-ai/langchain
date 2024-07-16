@@ -1,9 +1,8 @@
 from typing import Any, Dict, Optional
 
 import pytest
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, root_validator
 
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import (
     ConfigurableField,
     RunnableConfig,

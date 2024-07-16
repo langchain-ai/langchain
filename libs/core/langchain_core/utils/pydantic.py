@@ -3,7 +3,7 @@
 from functools import wraps
 from typing import Any, Callable, Dict, Type
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 
 def get_pydantic_major_version() -> int:

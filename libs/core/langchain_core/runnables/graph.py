@@ -21,7 +21,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType

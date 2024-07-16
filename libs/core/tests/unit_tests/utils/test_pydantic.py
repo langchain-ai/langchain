@@ -2,9 +2,8 @@
 
 from typing import Any, Dict, Optional
 
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.pydantic import pre_init
 
 

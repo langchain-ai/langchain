@@ -45,6 +45,15 @@ from typing import (
     get_type_hints,
 )
 
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    ValidationError,
+    create_model,
+    root_validator,
+    validate_arguments,
+)
 from typing_extensions import Annotated, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
@@ -65,15 +74,6 @@ from langchain_core.prompts import (
     PromptTemplate,
     aformat_document,
     format_document,
-)
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
-    Field,
-    ValidationError,
-    create_model,
-    root_validator,
-    validate_arguments,
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
