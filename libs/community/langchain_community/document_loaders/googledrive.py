@@ -53,7 +53,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     file_loader_kwargs: Dict["str", Any] = {}
     """The file loader kwargs to use."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
         if values.get("folder_id") and (
