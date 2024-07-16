@@ -47,6 +47,7 @@ from typing import (
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Extra,
     Field,
     ValidationError,
@@ -67,7 +68,6 @@ from langchain_core.callbacks import (
 from langchain_core.callbacks.manager import (
     Callbacks,
 )
-from langchain_core.load.serializable import Serializable
 from langchain_core.messages.tool import ToolCall, ToolMessage
 from langchain_core.prompts import (
     BasePromptTemplate,
@@ -403,12 +403,7 @@ class ChildTool(BaseTool):
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(Serializable.Config):
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def is_single_input(self) -> bool:
