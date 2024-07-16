@@ -8,8 +8,14 @@ from langchain_community.graph_vectorstores.extractors.link_extractor import (
 from langchain_community.graph_vectorstores.extractors.link_extractor_adapter import (
     LinkExtractorAdapter,
 )
+from langchain_community.graph_vectorstores.extractors.keybert_link_extractor import (
+    KeybertInput,
+    KeybertLinkExtractor,
+)
 
 __all__ = [
+    "KeybertInput",
+    "KeybertLinkExtractor",
     "LinkExtractor",
     "LinkExtractorAdapter",
     "HtmlInput",
