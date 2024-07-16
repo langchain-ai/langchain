@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, cast
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -12,11 +12,12 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from tenacity import (
     before_sleep_log,
     retry,
@@ -115,16 +116,43 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         Raises:
             ValueError: if the last message in the list is not from human.
         """
-        text = await acompletion_with_retry(self, messages=messages)
-        text = text if stop is None else enforce_stop_tokens(text, stop)
-        message = AIMessage(content=text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        async for text in acompletion_with_retry(self, messages=messages):
+            text = text if stop is None else enforce_stop_tokens(text, stop)
+            message = AIMessage(content=text)
+            return ChatResult(generations=[ChatGeneration(message=message)])
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        stream_resp = completion_with_retry(self, messages=messages, stream=True)
+        for data in stream_resp:
+            delta = data
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+            if run_manager:
+                run_manager.on_llm_new_token(delta, chunk=chunk)
+            yield chunk
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        async for delta in acompletion_with_retry(self, messages=messages, stream=True):
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+            if run_manager:
+                await run_manager.on_llm_new_token(delta, chunk=chunk)
+            yield chunk
 
 
-def _make_request(
-    self: ChatYandexGPT,
-    messages: List[BaseMessage],
-) -> str:
+def _generate_completion(
+    self: ChatYandexGPT, messages: List[BaseMessage], stream: bool = None
+):
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
@@ -166,15 +194,15 @@ def _make_request(
         completion_options=CompletionOptions(
             temperature=DoubleValue(value=self.temperature),
             max_tokens=Int64Value(value=self.max_tokens),
+            stream=stream,
         ),
         messages=[Message(**message) for message in message_history],
     )
     stub = TextGenerationServiceStub(channel)
-    res = stub.Completion(request, metadata=self._grpc_metadata)
-    return list(res)[0].alternatives[0].message.text
+    return stub.Completion(request, metadata=self._grpc_metadata)
 
 
-async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> str:
+async def _agenerate_completion(self, messages, stream=False):
     try:
         import asyncio
 
@@ -219,17 +247,20 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
     message_history = _parse_chat_history(messages)
     operation_api_url = "operation.api.cloud.yandex.net:443"
     channel_credentials = grpc.ssl_channel_credentials()
+
     async with grpc.aio.secure_channel(self.url, channel_credentials) as channel:
         request = CompletionRequest(
             model_uri=self.model_uri,
             completion_options=CompletionOptions(
                 temperature=DoubleValue(value=self.temperature),
                 max_tokens=Int64Value(value=self.max_tokens),
+                stream=stream,  # Use the stream parameter
             ),
             messages=[Message(**message) for message in message_history],
         )
         stub = TextGenerationAsyncServiceStub(channel)
         operation = await stub.Completion(request, metadata=self._grpc_metadata)
+
         async with grpc.aio.secure_channel(
             operation_api_url, channel_credentials
         ) as operation_channel:
@@ -242,9 +273,29 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
                     metadata=self._grpc_metadata,
                 )
 
-        completion_response = CompletionResponse()
-        operation.response.Unpack(completion_response)
-        return completion_response.alternatives[0].message.text
+            completion_response = CompletionResponse()
+            operation.response.Unpack(completion_response)
+
+            return completion_response
+
+
+def _make_request(
+    self: ChatYandexGPT,
+    messages: List[BaseMessage],
+    stream: bool = None,
+):
+    res = _generate_completion(self, messages, stream)
+    for chunk in res:
+        yield chunk.alternatives[0].message.text
+
+
+async def _amake_request(llm: ChatYandexGPT, stream: bool = None, **kwargs: Any) -> Any:
+    result = await _agenerate_completion(llm, stream=stream, **kwargs)
+    if not stream:
+        yield result.alternatives[0].message.text
+    else:
+        for alternative in result.alternatives:
+            yield alternative.message.text
 
 
 def _create_retry_decorator(llm: ChatYandexGPT) -> Callable[[Any], Any]:
@@ -278,6 +329,8 @@ async def acompletion_with_retry(llm: ChatYandexGPT, **kwargs: Any) -> Any:
 
     @retry_decorator
     async def _completion_with_retry(**_kwargs: Any) -> Any:
-        return await _amake_request(llm, **_kwargs)
+        async for result in _amake_request(llm, **_kwargs):
+            yield result
 
-    return await _completion_with_retry(**kwargs)
+    async for result in _completion_with_retry(**kwargs):
+        yield result
