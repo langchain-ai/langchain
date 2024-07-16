@@ -33,7 +33,7 @@ class TavilySearchAPIRetriever(BaseRetriever):
         try:
             try:
                 from tavily import TavilyClient
-            except TypeError:
+            except ImportError:
                 # Older of tavily used Client
                 from tavily import Client as TavilyClient
         except ImportError:
