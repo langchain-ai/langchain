@@ -177,12 +177,15 @@ class Serializable(BaseModel, ABC):
 
         secrets = dict()
         # Get latest values for kwargs if there is an attribute with same name
-        lc_kwargs = {
-            k: getattr(self, k, v)
-            for k, v in self
-            if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
-            and _is_field_useful(self, k, v)
-        }
+        lc_kwargs = {}
+        for k, v in self:
+            if not _is_field_useful(self, k, v):
+                continue
+            # Do nothing if the field is excluded
+            if k in self.__fields__ and self.__fields__[k].exclude:
+                continue
+
+            lc_kwargs[k] = getattr(self, k, v)
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
         for cls in [None, *self.__class__.mro()]:
@@ -255,7 +258,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     field = inst.__fields__.get(key)
     if not field:
         return False
-    return field.required is True or value or field.get_default() != value
+    return field.is_required() is True or value or field.get_default() != value
 
 
 def _replace_secrets(
