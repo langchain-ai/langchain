@@ -106,8 +106,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
             docs.extend(sub_docs)
             full_docs.append((_id, doc))
 
-        return docs, full_docs, 
-
+        return docs, full_docs
 
     def add_documents(
         self,
