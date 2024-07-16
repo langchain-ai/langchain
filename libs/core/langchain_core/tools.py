@@ -576,6 +576,7 @@ class ChildTool(BaseTool):
             self.tags,
             metadata,
             self.metadata,
+            parent=config.get("parent"),
         )
 
         run_manager = callback_manager.on_tool_start(
@@ -683,6 +684,7 @@ class ChildTool(BaseTool):
             self.tags,
             metadata,
             self.metadata,
+            parent=config.get("parent"),
         )
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},

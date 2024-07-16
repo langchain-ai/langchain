@@ -1545,6 +1545,7 @@ class CallbackManager(BaseCallbackManager):
         local_tags: Optional[List[str]] = None,
         inheritable_metadata: Optional[Dict[str, Any]] = None,
         local_metadata: Optional[Dict[str, Any]] = None,
+        *,
         parent: Optional[str] = None,
     ) -> CallbackManager:
         """Configure the callback manager.
@@ -1976,6 +1977,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         local_tags: Optional[List[str]] = None,
         inheritable_metadata: Optional[Dict[str, Any]] = None,
         local_metadata: Optional[Dict[str, Any]] = None,
+        *,
         parent: Optional[str] = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.

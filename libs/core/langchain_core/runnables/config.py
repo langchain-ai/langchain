@@ -462,6 +462,7 @@ def get_async_callback_manager_for_config(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        parent=config.get("parent"),
     )
 
 

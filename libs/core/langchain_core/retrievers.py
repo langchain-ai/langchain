@@ -201,6 +201,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             local_tags=self.tags,
             inheritable_metadata=config.get("metadata"),
             local_metadata=self.metadata,
+            parent=config.get("parent"),
         )
         run_manager = callback_manager.on_retriever_start(
             dumpd(self),
@@ -260,6 +261,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             local_tags=self.tags,
             inheritable_metadata=config.get("metadata"),
             local_metadata=self.metadata,
+            parent=config.get("parent"),
         )
         run_manager = await callback_manager.on_retriever_start(
             dumpd(self),
