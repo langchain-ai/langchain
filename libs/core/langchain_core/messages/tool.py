@@ -85,7 +85,7 @@ class ToolMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
 
-ToolMessage.update_forward_refs()
+ToolMessage.model_rebuild()
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):

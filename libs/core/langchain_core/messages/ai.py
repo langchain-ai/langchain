@@ -204,7 +204,7 @@ class AIMessage(BaseMessage):
         return (base.strip() + "\n" + "\n".join(lines)).strip()
 
 
-AIMessage.update_forward_refs()
+AIMessage.model_rebuild()
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):

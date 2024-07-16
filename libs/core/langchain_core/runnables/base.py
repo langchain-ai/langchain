@@ -5224,7 +5224,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             yield item
 
 
-RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
+RunnableBindingBase.model_rebuild()
 
 
 class RunnableBinding(RunnableBindingBase[Input, Output]):
