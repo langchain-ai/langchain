@@ -74,7 +74,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         documents: List[Document],
         ids: Optional[List[str]] = None,
         add_to_docstore: bool = True,
-    ) -> Tuple[List[Document], List[Document]]:
+    ) -> Tuple[List[Document], List[Tuple[str, Document]]]:
         if self.parent_splitter is not None:
             documents = self.parent_splitter.split_documents(documents)
         if ids is None:
