@@ -413,9 +413,7 @@ class ChildTool(BaseTool):
             if not _is_injected_arg_type(type_):
                 fields.append(name)
         return _create_subset_model(
-            full_schema.__name__,
-            full_schema,
-            fields,
+            self.name, full_schema, fields, fn_description=self.description
         )
 
     # --- Runnable ---
@@ -940,9 +938,20 @@ class StructuredTool(BaseTool):
         else:
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
-        description_ = description or source_function.__doc__
+        if args_schema is None and infer_schema:
+            # schema name is appended within function
+            args_schema = create_schema_from_function(
+                name,
+                source_function,
+                parse_docstring=parse_docstring,
+                error_on_invalid_docstring=error_on_invalid_docstring,
+                filter_args=_filter_schema_args(source_function),
+            )
+        description_ = description
+        if description is None and not parse_docstring:
+            description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
-            description_ = args_schema.__doc__
+            description_ = args_schema.__doc__ or None
         if description_ is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."
@@ -954,21 +963,11 @@ class StructuredTool(BaseTool):
         # Description example:
         # search_api(query: str) - Searches the API for the query.
         description_ = f"{description_.strip()}"
-        _args_schema = args_schema
-        if _args_schema is None and infer_schema:
-            # schema name is appended within function
-            _args_schema = create_schema_from_function(
-                name,
-                source_function,
-                parse_docstring=parse_docstring,
-                error_on_invalid_docstring=error_on_invalid_docstring,
-                filter_args=_filter_schema_args(source_function),
-            )
         return cls(
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,  # type: ignore[arg-type]
+            args_schema=args_schema,  # type: ignore[arg-type]
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
