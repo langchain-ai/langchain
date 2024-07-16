@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 # Third-party imports
 import numpy as np
@@ -192,81 +192,6 @@ class ApertureDB(VectorStore):
             self.utils.create_entity_index("_Descriptor", UNIQUEID_PROPERTY)
 
     @override
-    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
-        """Adds documents to the vectorstore with embeddings
-
-        Args:
-            documents: List of Document objects to add to the vectorstore.
-
-        Returns:
-            List of ids from adding the documents into the vectorstore.
-        """
-        from aperturedb.ParallelLoader import ParallelLoader
-
-        texts = [doc.page_content for doc in documents]
-        metadatas = [
-            doc.metadata if getattr(doc, "metadata", None) is not None else {}
-            for doc in documents
-        ]
-        embeddings = self.embedding_function.embed_documents(texts)
-        ids: List[str] = [
-            doc.id if hasattr(doc, "id") and doc.id is not None else str(uuid.uuid4())
-            for doc in documents
-        ]
-
-        data = []
-        for text, embedding, metadata, unique_id in zip(
-            texts, embeddings, metadatas, ids
-        ):
-            properties = {PROPERTY_PREFIX + k: v for k, v in metadata.items()}
-            properties[TEXT_PROPERTY] = text
-            properties[UNIQUEID_PROPERTY] = unique_id
-            command = {
-                "AddDescriptor": {
-                    "set": self.descriptor_set,
-                    "properties": properties,
-                }
-            }
-            query = [command]
-            blobs = [np.array(embedding, dtype=np.float32).tobytes()]
-            data.append((query, blobs))
-        loader = ParallelLoader(self.connection)
-        loader.ingest(data, batchsize=BATCHSIZE)
-        return ids
-
-    @override
-    def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        """Creates embeddings of texts, then adds each text object, its embedding and
-        associated metadata to aperturedb
-
-        Args:
-            texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
-
-        Returns:
-            List of ids from adding the texts into the vectorstore.
-        """
-        texts2: List[str] = list(texts)
-        if metadatas is not None:
-            assert len(texts2) == len(
-                metadatas
-            ), "Length of texts and metadatas should be the same"
-
-            docs = [
-                Document(page_content=text, metadata=metadata)
-                for text, metadata in zip(texts2, metadatas)
-            ]
-        else:
-            docs = [Document(page_content=text) for text in texts2]
-
-        return self.add_documents(docs)
-
-    @override
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete documents from the vectorstore by id.
 
@@ -288,6 +213,33 @@ class ApertureDB(VectorStore):
 
         result, _ = self.utils.execute(query)
         return result
+
+    @override
+    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        """Find documents in the vectorstore by id.
+
+        Args:
+            ids: List of ids to find in the vectorstore.
+
+        Returns:
+            documents: List of Document objects found in the vectorstore.
+        """
+        query = [
+            {
+                "FindDescriptor": {
+                    "set": self.descriptor_set,
+                    "constraints": {UNIQUEID_PROPERTY: ["in", ids]},
+                    "results": {"all_properties": True},
+                }
+            }
+        ]
+
+        results, _ = self.utils.execute(query)
+        docs = [
+            self._descriptor_to_document(d)
+            for d in results[0]["FindDescriptor"].get("entities", [])
+        ]
+        return docs
 
     @override
     def similarity_search(
@@ -513,6 +465,7 @@ class ApertureDB(VectorStore):
         """Insert or update items
 
         Updating documents is dependent on the documents' `id` attribute.
+
         Args:
             items: List of Document objects to upsert
 
@@ -522,10 +475,42 @@ class ApertureDB(VectorStore):
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
         # but we don't support changing the embedding of a descriptor.
-        ids: List[str] = [
+
+        from aperturedb.ParallelLoader import ParallelLoader
+
+        ids_to_delete: List[str] = [
             item.id for item in items if hasattr(item, "id") and item.id is not None
         ]
-        if ids:
-            self.delete(ids)
-        ids = self.add_documents(list(items))
+        if ids_to_delete:
+            self.delete(ids_to_delete)
+
+        texts = [doc.page_content for doc in items]
+        metadatas = [
+            doc.metadata if getattr(doc, "metadata", None) is not None else {}
+            for doc in items
+        ]
+        embeddings = self.embedding_function.embed_documents(texts)
+        ids: List[str] = [
+            doc.id if hasattr(doc, "id") and doc.id is not None else str(uuid.uuid4())
+            for doc in items
+        ]
+
+        data = []
+        for text, embedding, metadata, unique_id in zip(
+            texts, embeddings, metadatas, ids
+        ):
+            properties = {PROPERTY_PREFIX + k: v for k, v in metadata.items()}
+            properties[TEXT_PROPERTY] = text
+            properties[UNIQUEID_PROPERTY] = unique_id
+            command = {
+                "AddDescriptor": {
+                    "set": self.descriptor_set,
+                    "properties": properties,
+                }
+            }
+            query = [command]
+            blobs = [np.array(embedding, dtype=np.float32).tobytes()]
+            data.append((query, blobs))
+        loader = ParallelLoader(self.connection)
+        loader.ingest(data, batchsize=BATCHSIZE)
         return UpsertResponse(succeeded=ids, failed=[])
