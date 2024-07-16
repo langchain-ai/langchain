@@ -319,6 +319,9 @@ def test_openai_invoke() -> None:
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
 
+    # assert no response headers if include_response_headers is not set
+    assert "headers" not in result.response_metadata
+
 
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
@@ -671,3 +674,13 @@ def test_openai_proxy() -> None:
         assert proxy.scheme == b"http"
         assert proxy.host == b"localhost"
         assert proxy.port == 8080
+
+
+def test_openai_response_headers_invoke() -> None:
+    """Test ChatOpenAI response headers."""
+    chat_openai = ChatOpenAI(include_response_headers=True)
+    result = chat_openai.invoke("I'm Pickle Rick")
+    headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
