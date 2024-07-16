@@ -55,6 +55,7 @@ from pydantic import (
     root_validator,
     validate_arguments,
 )
+from pydantic.fields import FieldInfo
 from typing_extensions import Annotated, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
@@ -114,27 +115,23 @@ def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
 def _create_subset_model(
     name: str,
     model: Type[BaseModel],
-    field_names: list,
+    field_names: List[str],
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
-    """Create a pydantic model with only a subset of model's fields."""
+    """Create a pydantic model with a subset of the mdoels fields."""
+    descriptions_ = descriptions or {}
     fields = {}
-
     for field_name in field_names:
         field = model.__fields__[field_name]
-        t = (
-            # this isn't perfect but should work for most functions
-            field.outer_type_
-            if field.required and not field.allow_none
-            else Optional[field.outer_type_]
+        description = descriptions_.get(field_name, field.description)
+        fields[field_name] = (
+            field.annotation,
+            FieldInfo(description=description, default=field.default),
         )
-        if descriptions and field_name in descriptions:
-            field.field_info.description = descriptions[field_name]
-        fields[field_name] = (t, field.field_info)
-
     rtn = create_model(name, **fields)  # type: ignore
+
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
