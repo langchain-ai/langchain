@@ -1545,6 +1545,7 @@ class CallbackManager(BaseCallbackManager):
         local_tags: Optional[List[str]] = None,
         inheritable_metadata: Optional[Dict[str, Any]] = None,
         local_metadata: Optional[Dict[str, Any]] = None,
+        parent: Optional[str] = None,
     ) -> CallbackManager:
         """Configure the callback manager.
 
@@ -1562,6 +1563,8 @@ class CallbackManager(BaseCallbackManager):
                 metadata. Defaults to None.
             local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
                 Defaults to None.
+            parent (Optional[str], optional): The parent run's dotted order.
+                Defaults to None.
 
         Returns:
             CallbackManager: The configured callback manager.
@@ -1575,6 +1578,7 @@ class CallbackManager(BaseCallbackManager):
             local_tags,
             inheritable_metadata,
             local_metadata,
+            parent=parent,
         )
 
 
@@ -1972,6 +1976,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         local_tags: Optional[List[str]] = None,
         inheritable_metadata: Optional[Dict[str, Any]] = None,
         local_metadata: Optional[Dict[str, Any]] = None,
+        parent: Optional[str] = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
 
@@ -1989,6 +1994,8 @@ class AsyncCallbackManager(BaseCallbackManager):
                 metadata. Defaults to None.
             local_metadata (Optional[Dict[str, Any]], optional): The local metadata.
                 Defaults to None.
+            parent (Optional[str], optional): The parent run's dotted order.
+                Defaults to None.
 
         Returns:
             AsyncCallbackManager: The configured async callback manager.
@@ -2002,6 +2009,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             local_tags,
             inheritable_metadata,
             local_metadata,
+            parent,
         )
 
 
@@ -2092,6 +2100,7 @@ def _configure(
     local_tags: Optional[List[str]] = None,
     inheritable_metadata: Optional[Dict[str, Any]] = None,
     local_metadata: Optional[Dict[str, Any]] = None,
+    parent: Optional[str] = None,
 ) -> T:
     """Configure the callback manager.
 
@@ -2113,6 +2122,8 @@ def _configure(
     Returns:
         T: The configured callback manager.
     """
+    from langsmith.run_trees import RunTree
+
     from langchain_core.tracers.context import (
         _configure_hooks,
         _get_tracer_project,
@@ -2121,7 +2132,13 @@ def _configure(
     )
 
     run_tree = get_run_tree_context()
-    parent_run_id = None if run_tree is None else run_tree.id
+    if run_tree is not None:
+        parent_run_id = None if run_tree is None else run_tree.id
+    elif parent is not None:
+        run_tree = RunTree.from_dotted_order(parent)
+        parent_run_id = run_tree.id
+    else:
+        parent_run_id = None
     callback_manager = callback_manager_cls(handlers=[], parent_run_id=parent_run_id)
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:

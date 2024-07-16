@@ -104,6 +104,11 @@ class RunnableConfig(TypedDict, total=False):
         will be generated.
     """
 
+    parent: Optional[str]
+    """
+    The parent dotted order in the trace. If not provided, the parent will be inferred
+        from the tracing context."""
+
 
 var_child_runnable_config = ContextVar(
     "child_runnable_config", default=RunnableConfig()
@@ -144,6 +149,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         metadata={},
         callbacks=None,
         recursion_limit=25,
+        parent=None,
     )
     if var_config := var_child_runnable_config.get():
         empty.update(
@@ -435,6 +441,7 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        parent=config.get("parent"),
     )
 
 

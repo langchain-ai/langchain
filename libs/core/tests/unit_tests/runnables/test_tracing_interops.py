@@ -1,6 +1,8 @@
 import json
 import sys
+from typing import Optional
 from unittest.mock import MagicMock, patch
+import uuid
 
 import pytest
 from langsmith import Client, traceable
@@ -29,7 +31,15 @@ def _get_posts(client: Client) -> list:
     return posts
 
 
-def test_config_traceable_handoff() -> None:
+@pytest.mark.parametrize(
+    "dotted_order",
+    [
+        None,
+        "20240716T222505213101Z6bc70600-21d8-41d0-b54b-175f80b02130.20240716T222505315288Z180de013-f114-439a-86e2-ac15d1393f5a",
+        "20240716T222505213101Z6bc70600-21d8-41d0-b54b-175f80b02130",
+    ],
+)
+def test_config_traceable_handoff(dotted_order: Optional[str]) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
@@ -78,6 +88,8 @@ def test_config_traceable_handoff() -> None:
     trace_id = posts[0]["trace_id"]
     last_dotted_order = None
     parent_run_id = None
+    if dotted_order is not None:
+        parent_run_id = uuid.UUID(dotted_order.split(".")[-1].split("Z")[-1])
     for name in ordered_names:
         id_ = name_to_body[name]["id"]
         parent_run_id_ = name_to_body[name]["parent_run_id"]
