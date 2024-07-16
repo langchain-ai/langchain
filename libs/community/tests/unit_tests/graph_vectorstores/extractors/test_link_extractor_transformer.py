@@ -51,15 +51,13 @@ def test_one_extractor() -> None:
     doc1 = Document(TEXT1)
     doc2 = Document(TEXT2)
     results = transformer.transform_documents([doc1, doc2])
-    assert results[0] is doc1
-    assert results[1] is doc2
 
-    assert set(get_links(doc1)) == {
+    assert set(get_links(results[0])) == {
         Link.bidir(kind="fakekw", tag="a"),
         Link.bidir(kind="fakekw", tag="b"),
     }
 
-    assert set(get_links(doc2)) == {
+    assert set(get_links(results[1])) == {
         Link.bidir(kind="fakekw", tag="b"),
         Link.bidir(kind="fakekw", tag="c"),
     }
@@ -77,10 +75,8 @@ def test_multiple_extractors() -> None:
     doc2 = Document(TEXT2)
 
     results = transformer.transform_documents([doc1, doc2])
-    assert results[0] is doc1
-    assert results[1] is doc2
 
-    assert set(get_links(doc1)) == {
+    assert set(get_links(results[0])) == {
         Link.bidir(kind="fakekw", tag="a"),
         Link.bidir(kind="fakekw", tag="b"),
         Link.incoming(kind="fakehref", tag="http://text1"),
@@ -88,7 +84,7 @@ def test_multiple_extractors() -> None:
         Link.outgoing(kind="fakehref", tag="http://text3"),
     }
 
-    assert set(get_links(doc2)) == {
+    assert set(get_links(results[1])) == {
         Link.bidir(kind="fakekw", tag="b"),
         Link.bidir(kind="fakekw", tag="c"),
         Link.incoming(kind="fakehref", tag="http://text2"),
