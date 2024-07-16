@@ -39,11 +39,25 @@ NEO4J_USERNAME=<YOUR_NEO4J_USERNAME>
 NEO4J_PASSWORD=<YOUR_NEO4J_PASSWORD>
 ```
 
+Typically for a local Ollama installation:
+
+```shell
+export OLLAMA_BASE_URL="http://127.0.0.1:11434"
+```
+
 ## Populating with data
 
 If you want to populate the DB with an example movie dataset, you can run `python ingest.py`.
 The script import information about movies and their rating by users.
 Additionally, the script creates two [fulltext indices](https://neo4j.com/docs/cypher-manual/current/indexes-for-full-text-search/), which are used to map information from user input to the database.
+
+As an aternative, you can use the demo neo4j recommendations database:
+```shell
+export NEO4J_URI="neo4j+s://demo.neo4jlabs.com"
+export NEO4J_USERNAME="recommendations"
+export NEO4J_PASSWORD="recommendations"
+export NEO4J_DATABASE="recommendations"
+```
 
 ## Usage
 
@@ -65,9 +79,9 @@ If you want to add this to an existing project, you can just run:
 langchain app add neo4j-semantic-ollama
 ```
 
-And add the following code to your `server.py` file:
+And, from within the project, add the following code to your `app/server.py` file, replacing the `add_routes(app, NotImplemented)` section:
 ```python
-from neo4j_semantic_layer import agent_executor as neo4j_semantic_agent
+from neo4j_semantic_ollama import agent_executor as neo4j_semantic_agent
 
 add_routes(app, neo4j_semantic_agent, path="/neo4j-semantic-ollama")
 ```
@@ -83,7 +97,7 @@ export LANGCHAIN_API_KEY=<your-api-key>
 export LANGCHAIN_PROJECT=<your-project>  # if not specified, defaults to "default"
 ```
 
-If you are inside this directory, then you can spin up a LangServe instance directly by:
+If you are inside the top-level project directory, then you can spin up a LangServe instance directly by:
 
 ```shell
 langchain serve
