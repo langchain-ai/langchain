@@ -4,7 +4,6 @@ import pytest
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    ChatMessage,
     FunctionMessage,
     HumanMessage,
     HumanMessageChunk,
@@ -54,9 +53,9 @@ def test__convert_message_to_dict_ai() -> None:
 
 def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
-    with pytest.raises(TypeError) as e:
-        _convert_message_to_dict(message)
-    assert "Got unknown type" in str(e)
+    result = _convert_message_to_dict(message)
+    expected_output = {"role": "system", "content": "foo"}
+    assert result == expected_output
 
 
 def test__convert_message_to_dict_function() -> None:
@@ -83,7 +82,7 @@ def test__convert_dict_to_message_ai() -> None:
 def test__convert_dict_to_message_other_role() -> None:
     message_dict = {"role": "system", "content": "foo"}
     result = _convert_dict_to_message(message_dict)
-    expected_output = ChatMessage(role="system", content="foo")
+    expected_output = SystemMessage(content="foo")
     assert result == expected_output
 
 
@@ -134,3 +133,11 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
         cast(SecretStr, chat.baichuan_secret_key).get_secret_value()
         == "test-secret-key"
     )
+
+
+def test_chat_baichuan_with_base_url() -> None:
+    chat = ChatBaichuan(  # type: ignore[call-arg]
+        api_key="your-api-key",  # type: ignore[arg-type]
+        base_url="https://exmaple.com",  # type: ignore[arg-type]
+    )
+    assert chat.baichuan_api_base == "https://exmaple.com"
