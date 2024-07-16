@@ -101,19 +101,32 @@ def _convert_oci_tool_call_to_langchain(tool_call: Any) -> ToolCall:
 class Provider(ABC):
     @property
     @abstractmethod
-    def stop_sequence_key(self) -> str: ...
+    def stop_sequence_key(self) -> str:
+        ...
 
     @abstractmethod
-    def chat_response_to_text(self, response: Any) -> str: ...
+    def chat_response_to_text(self, response: Any) -> str:
+        ...
 
     @abstractmethod
-    def chat_stream_to_text(self, event_data: Dict) -> str: ...
+    def chat_stream_to_text(self, event_data: Dict) -> str:
+        ...
 
     @abstractmethod
-    def chat_generation_info(self, response: Any) -> Dict[str, Any]: ...
+    def is_chat_stream_end(self, event_data: Dict) -> bool:
+        ...
 
     @abstractmethod
-    def get_role(self, message: BaseMessage) -> str: ...
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
+        ...
+
+    @abstractmethod
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        ...
+
+    @abstractmethod
+    def get_role(self, message: BaseMessage) -> str:
+        ...
 
     @abstractmethod
     def messages_to_oci_params(self, messages: Any, **kwargs: Any) -> Dict[str, Any]:
@@ -150,10 +163,13 @@ class CohereProvider(Provider):
         return response.data.chat_response.text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        if "text" in event_data and "finishReason" not in event_data:
+        if "text" in event_data:
             return event_data["text"]
         else:
             return ""
+
+    def is_chat_stream_end(self, event_data: Dict) -> bool:
+        return "finishReason" in event_data
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
         generation_info: Dict[str, Any] = {
@@ -169,6 +185,30 @@ class CohereProvider(Provider):
             generation_info["tool_calls"] = _format_oci_tool_calls(
                 response.data.chat_response.tool_calls
             )
+
+        return generation_info
+
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        generation_info: Dict[str, Any] = {
+            "documents": event_data.get("documents"),
+            "citations": event_data.get("citations"),
+            "finish_reason": event_data.get("finishReason"),
+        }
+        if 'toolCalls' in event_data:
+            generation_info["tool_calls"] = []
+            for tool_call in event_data['toolCalls']:
+                generation_info["tool_calls"].append(
+                    {
+                        "id": uuid.uuid4().hex[:],
+                        "function": {
+                            "name": tool_call["name"],
+                            "arguments": json.dumps(tool_call["parameters"]),
+                        },
+                        "type": "function",
+                    }
+                )
+
+        generation_info =  {k: v for k, v in generation_info.items() if v is not None}
 
         return generation_info
 
@@ -351,15 +391,20 @@ class MetaProvider(Provider):
         return response.data.chat_response.choices[0].message.content[0].text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        if "message" in event_data:
-            return event_data["message"]["content"][0]["text"]
-        else:
-            return ""
+        return event_data["message"]["content"][0]["text"]
+        
+    def is_chat_stream_end(self, event_data: Dict) -> bool:
+        return "message" not in event_data
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
         return {
             "finish_reason": response.data.chat_response.choices[0].finish_reason,
             "time_created": str(response.data.chat_response.time_created),
+        }
+
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        return {
+            "finish_reason": event_data["finishReason"],
         }
 
     def get_role(self, message: BaseMessage) -> str:
@@ -504,8 +549,6 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
         oci_params = self._provider.messages_to_oci_params(messages, **kwargs)
 
-        oci_params["is_force_single_step"] = kwargs.get("is_force_single_step") or False
-
         oci_params["is_stream"] = stream  # self.is_stream
         _model_kwargs = self.model_kwargs or {}
 
@@ -646,8 +689,38 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         response = self.client.chat(request)
 
         for event in response.data.events():
-            delta = self._provider.chat_stream_to_text(json.loads(event.data))
-            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-            if run_manager:
-                run_manager.on_llm_new_token(delta, chunk=chunk)
-            yield chunk
+            event_data = json.loads(event.data)
+            if not self._provider.is_chat_stream_end(event_data): # still streaming
+                delta = self._provider.chat_stream_to_text(event_data)
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                if run_manager:
+                    run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
+            else: # stream end
+                generation_info = self._provider.chat_stream_generation_info(event_data)
+                tool_call_chunks = []
+                if tool_calls := generation_info.get("tool_calls"):
+                    content = self._provider.chat_stream_to_text(event_data)
+                    try:
+                        tool_call_chunks = [
+                            {
+                                "name": tool_call["function"].get("name"),
+                                "args": tool_call["function"].get("arguments"),
+                                "id": tool_call.get("id"),
+                                "index": tool_call.get("index"),
+                            }
+                            for tool_call in tool_calls
+                        ]
+                    except KeyError:
+                        pass
+                else:
+                    content = ""
+                message = AIMessageChunk(
+                    content=content,
+                    additional_kwargs=generation_info,
+                    tool_call_chunks=tool_call_chunks,
+                )
+                yield ChatGenerationChunk(
+                    message=message,
+                    generation_info=generation_info,
+                )
