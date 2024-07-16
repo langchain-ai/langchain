@@ -3,6 +3,7 @@
 import sys
 from itertools import cycle
 from typing import Any, AsyncIterator, Dict, List, Sequence, cast
+from typing import Optional as Optional
 
 import pytest
 from pydantic import BaseModel
@@ -1076,6 +1077,9 @@ class HardCodedRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         return self.documents
+
+
+HardCodedRetriever.model_rebuild()
 
 
 async def test_event_stream_with_retriever() -> None:

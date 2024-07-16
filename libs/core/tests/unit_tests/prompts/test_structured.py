@@ -1,6 +1,7 @@
 from functools import partial
 from inspect import isclass
 from typing import Any, Dict, Type, Union, cast
+from typing import Optional as Optional
 
 from pydantic import BaseModel
 
@@ -32,6 +33,9 @@ class FakeStructuredChatModel(FakeListChatModel):
     @property
     def _llm_type(self) -> str:
         return "fake-messages-list-chat-model"
+
+
+FakeStructuredChatModel.model_rebuild()
 
 
 def test_structured_prompt_pydantic() -> None:

@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Tuple
+from typing import Optional as Optional
 
 from pydantic import root_validator
 
@@ -107,3 +108,6 @@ class PipelinePromptTemplate(BasePromptTemplate):
     @property
     def _prompt_type(self) -> str:
         raise ValueError
+
+
+PipelinePromptTemplate.model_rebuild()

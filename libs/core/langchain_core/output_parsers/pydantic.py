@@ -1,5 +1,6 @@
 import json
 from typing import Generic, List, Type, TypeVar, Union
+from typing import Optional as Optional
 
 import pydantic  # pydantic: ignore
 
@@ -111,6 +112,9 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def OutputType(self) -> Type[TBaseModel]:
         """Return the pydantic model."""
         return self.pydantic_object
+
+
+PydanticOutputParser.model_rebuild()
 
 
 _PYDANTIC_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below.
