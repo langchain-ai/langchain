@@ -30,7 +30,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseConfig, BaseModel
+from pydantic import BaseModel, ConfigDict, RootModel
 from pydantic import create_model as _create_model_base
 from typing_extensions import TypeGuard
 
@@ -692,9 +692,7 @@ class _RootEventFilter:
         return include
 
 
-class _SchemaConfig(BaseConfig):
-    arbitrary_types_allowed = True
-    frozen = True
+_SchemaConfig = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
 
 def create_model(
@@ -710,6 +708,28 @@ def create_model(
     Returns:
         Type[BaseModel]: The created model.
     """
+
+    # Move this to caching path
+    if "__root__" in field_definitions:
+        if len(field_definitions) > 1:
+            raise NotImplementedError(
+                "When specifying __root__ no other "
+                f"fields should be provided. Got {field_definitions}"
+            )
+
+        arg = field_definitions["__root__"]
+        foo = _create_model_base(
+            __model_name,
+            __base__=RootModel,
+        )
+        return foo[arg]
+        #
+        # try:
+        # except TypeError:
+        #     foo = _create_model_base(
+        #         __model_name, __base__=RootModel, __config__=_SchemaConfig
+        #     )
+        #     return foo[arg]
     try:
         return _create_model_cached(__model_name, **field_definitions)
     except TypeError:
