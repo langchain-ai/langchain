@@ -13,9 +13,7 @@ from langchain_community.tools.connery.models import Action, Parameter
 
 
 class ConneryAction(BaseTool):
-    """
-    A LangChain Tool wrapping a Connery Action.
-    """
+    """Connery Action tool."""
 
     name: str
     description: str
@@ -65,7 +63,7 @@ class ConneryAction(BaseTool):
 
         return self.args_schema.schema_json(indent=2)
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_attributes(cls, values: dict) -> dict:
         """
         Validate the attributes of the ConneryAction class.

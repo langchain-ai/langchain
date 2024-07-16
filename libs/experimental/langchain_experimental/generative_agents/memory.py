@@ -224,9 +224,9 @@ class GenerativeAgentMemory(BaseMemory):
         """Fetch related memories."""
         if now is not None:
             with mock_now(now):
-                return self.memory_retriever.get_relevant_documents(observation)
+                return self.memory_retriever.invoke(observation)
         else:
-            return self.memory_retriever.get_relevant_documents(observation)
+            return self.memory_retriever.invoke(observation)
 
     def format_memories_detail(self, relevant_memories: List[Document]) -> str:
         content = []

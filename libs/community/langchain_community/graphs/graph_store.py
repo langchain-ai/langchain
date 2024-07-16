@@ -5,18 +5,18 @@ from langchain_community.graphs.graph_document import GraphDocument
 
 
 class GraphStore:
-    """An abstract class wrapper for graph operations."""
+    """Abstract class for graph operations."""
 
     @property
     @abstractmethod
     def get_schema(self) -> str:
-        """Returns the schema of the Graph database"""
+        """Return the schema of the Graph database"""
         pass
 
     @property
     @abstractmethod
     def get_structured_schema(self) -> Dict[str, Any]:
-        """Returns the schema of the Graph database"""
+        """Return the schema of the Graph database"""
         pass
 
     @abstractmethod
@@ -26,7 +26,7 @@ class GraphStore:
 
     @abstractmethod
     def refresh_schema(self) -> None:
-        """Refreshes the graph schema information."""
+        """Refresh the graph schema information."""
         pass
 
     @abstractmethod

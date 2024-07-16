@@ -18,6 +18,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     TypeVar,
     Union,
     cast,
@@ -109,6 +110,25 @@ var_child_runnable_config = ContextVar(
 )
 
 
+def _set_config_context(config: RunnableConfig) -> None:
+    """Set the child Runnable config + tracing context
+
+    Args:
+        config (RunnableConfig): The config to set.
+    """
+    from langsmith import (
+        RunTree,  # type: ignore
+        run_helpers,  # type: ignore
+    )
+
+    var_child_runnable_config.set(config)
+    if hasattr(RunTree, "from_runnable_config"):
+        # import _set_tracing_context, get_tracing_context
+        rt = RunTree.from_runnable_config(dict(config))
+        tc = run_helpers.get_tracing_context()
+        run_helpers._set_tracing_context({**tc, "parent": rt})
+
+
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     """Ensure that a config is a dict with all keys present.
 
@@ -124,7 +144,6 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         metadata={},
         callbacks=None,
         recursion_limit=25,
-        run_id=None,
     )
     if var_config := var_child_runnable_config.get():
         empty.update(
@@ -141,7 +160,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
 
 
 def get_config_list(
-    config: Optional[Union[RunnableConfig, List[RunnableConfig]]], length: int
+    config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]], length: int
 ) -> List[RunnableConfig]:
     """Get a list of configs from a single config or a list of configs.
 
@@ -161,13 +180,13 @@ def get_config_list(
     """
     if length < 0:
         raise ValueError(f"length must be >= 0, but got {length}")
-    if isinstance(config, list) and len(config) != length:
+    if isinstance(config, Sequence) and len(config) != length:
         raise ValueError(
             f"config must be a list of the same length as inputs, "
             f"but got {len(config)} configs for {length} inputs"
         )
 
-    if isinstance(config, list):
+    if isinstance(config, Sequence):
         return list(map(ensure_config, config))
     if length > 1 and isinstance(config, dict) and config.get("run_id") is not None:
         warnings.warn(
@@ -197,7 +216,6 @@ def patch_config(
 
     Args:
         config (Optional[RunnableConfig]): The config to patch.
-        copy_locals (bool, optional): Whether to copy locals. Defaults to False.
         callbacks (Optional[BaseCallbackManager], optional): The callbacks to set.
           Defaults to None.
         recursion_limit (Optional[int], optional): The recursion limit to set.
@@ -286,12 +304,12 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                         base["callbacks"] = mngr
                     else:
                         # base_callbacks is also a manager
-                        base["callbacks"] = base_callbacks.__class__(
+
+                        manager = base_callbacks.__class__(
                             parent_run_id=base_callbacks.parent_run_id
                             or these_callbacks.parent_run_id,
-                            handlers=base_callbacks.handlers + these_callbacks.handlers,
-                            inheritable_handlers=base_callbacks.inheritable_handlers
-                            + these_callbacks.inheritable_handlers,
+                            handlers=[],
+                            inheritable_handlers=[],
                             tags=list(set(base_callbacks.tags + these_callbacks.tags)),
                             inheritable_tags=list(
                                 set(
@@ -304,6 +322,20 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                                 **these_callbacks.metadata,
                             },
                         )
+
+                        handlers = base_callbacks.handlers + these_callbacks.handlers
+                        inheritable_handlers = (
+                            base_callbacks.inheritable_handlers
+                            + these_callbacks.inheritable_handlers
+                        )
+
+                        for handler in handlers:
+                            manager.add_handler(handler)
+
+                        for handler in inheritable_handlers:
+                            manager.add_handler(handler, inherit=True)
+
+                        base["callbacks"] = manager
             else:
                 base[key] = config[key] or base.get(key)  # type: ignore
     return base
@@ -329,9 +361,9 @@ def call_func_with_variable_args(
           Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output]]):
            The function to call.
         input (Input): The input to the function.
-        run_manager (CallbackManagerForChainRun): The run manager to
-          pass to the function.
         config (RunnableConfig): The config to pass to the function.
+        run_manager (CallbackManagerForChainRun): The run manager to
+          pass to the function. Defaults to None.
         **kwargs (Any): The keyword arguments to pass to the function.
 
     Returns:
@@ -362,7 +394,7 @@ def acall_func_with_variable_args(
     run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     **kwargs: Any,
 ) -> Awaitable[Output]:
-    """Call function that may optionally accept a run_manager and/or config.
+    """Async call function that may optionally accept a run_manager and/or config.
 
     Args:
         func (Union[Callable[[Input], Awaitable[Output]], Callable[[Input,
@@ -370,9 +402,9 @@ def acall_func_with_variable_args(
             AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]]]):
             The function to call.
         input (Input): The input to the function.
-        run_manager (AsyncCallbackManagerForChainRun): The run manager
-          to pass to the function.
         config (RunnableConfig): The config to pass to the function.
+        run_manager (AsyncCallbackManagerForChainRun): The run manager
+          to pass to the function. Defaults to None.
         **kwargs (Any): The keyword arguments to pass to the function.
 
     Returns:
@@ -460,6 +492,18 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         timeout: float | None = None,
         chunksize: int = 1,
     ) -> Iterator[T]:
+        """Map a function to multiple iterables.
+
+        Args:
+            fn (Callable[..., T]): The function to map.
+            *iterables (Iterable[Any]): The iterables to map over.
+            timeout (float | None, optional): The timeout for the map.
+                Defaults to None.
+            chunksize (int, optional): The chunksize for the map. Defaults to 1.
+
+        Returns:
+            Iterator[T]: The iterator for the mapped function.
+        """
         contexts = [copy_context() for _ in range(len(iterables[0]))]  # type: ignore[arg-type]
 
         def _wrapped_fn(*args: Any) -> T:
@@ -501,21 +545,32 @@ async def run_in_executor(
     """Run a function in an executor.
 
     Args:
-        executor (Executor): The executor.
+        executor_or_config: The executor or config to run in.
         func (Callable[P, Output]): The function.
         *args (Any): The positional arguments to the function.
         **kwargs (Any): The keyword arguments to the function.
 
     Returns:
         Output: The output of the function.
+
+    Raises:
+        RuntimeError: If the function raises a StopIteration.
     """
+
+    def wrapper() -> T:
+        try:
+            return func(*args, **kwargs)
+        except StopIteration as exc:
+            # StopIteration can't be set on an asyncio.Future
+            # it raises a TypeError and leaves the Future pending forever
+            # so we need to convert it to a RuntimeError
+            raise RuntimeError from exc
+
     if executor_or_config is None or isinstance(executor_or_config, dict):
         # Use default executor with context copied from current context
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            cast(Callable[..., T], partial(copy_context().run, func, *args, **kwargs)),
+            cast(Callable[..., T], partial(copy_context().run, wrapper)),
         )
 
-    return await asyncio.get_running_loop().run_in_executor(
-        executor_or_config, partial(func, **kwargs), *args
-    )
+    return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)

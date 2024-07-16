@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class EdenAiExplicitImageTool(EdenaiTool):
-
     """Tool that queries the Eden AI Explicit image detection.
 
     for api reference check edenai documentation:
@@ -23,9 +22,9 @@ class EdenAiExplicitImageTool(EdenaiTool):
 
     """
 
-    name = "edenai_image_explicit_content_detection"
+    name: str = "edenai_image_explicit_content_detection"
 
-    description = (
+    description: str = (
         "A wrapper around edenai Services Explicit image detection. "
         """Useful for when you have to extract Explicit Content from images.
         it detects adult only content in images, 
@@ -35,9 +34,9 @@ class EdenAiExplicitImageTool(EdenaiTool):
         "Input should be the string url of the image ."
     )
 
-    combine_available = True
-    feature = "image"
-    subfeature = "explicit_content"
+    combine_available: bool = True
+    feature: str = "image"
+    subfeature: str = "explicit_content"
 
     def _parse_json(self, json_data: dict) -> str:
         result_str = f"nsfw_likelihood: {json_data['nsfw_likelihood']}\n"

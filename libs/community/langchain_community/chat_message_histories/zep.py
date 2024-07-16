@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class SearchScope(str, Enum):
-    """Which documents to search. Messages or Summaries?"""
+    """Scope for the document search. Messages or Summaries?"""
 
     messages = "messages"
     """Search chat history messages."""
@@ -184,6 +184,38 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
 
         self.zep_client.memory.add_memory(self.session_id, zep_memory)
 
+    def add_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Append the messages to the Zep memory history"""
+        from zep_python import Memory, Message
+
+        zep_messages = [
+            Message(
+                content=message.content,
+                role=message.type,
+                metadata=message.additional_kwargs.get("metadata", None),
+            )
+            for message in messages
+        ]
+        zep_memory = Memory(messages=zep_messages)
+
+        self.zep_client.memory.add_memory(self.session_id, zep_memory)
+
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Append the messages to the Zep memory history asynchronously"""
+        from zep_python import Memory, Message
+
+        zep_messages = [
+            Message(
+                content=message.content,
+                role=message.type,
+                metadata=message.additional_kwargs.get("metadata", None),
+            )
+            for message in messages
+        ]
+        zep_memory = Memory(messages=zep_messages)
+
+        await self.zep_client.memory.aadd_memory(self.session_id, zep_memory)
+
     def search(
         self,
         query: str,
@@ -214,6 +246,18 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         """
         try:
             self.zep_client.memory.delete_memory(self.session_id)
+        except NotFoundError:
+            logger.warning(
+                f"Session {self.session_id} not found in Zep. Skipping delete."
+            )
+
+    async def aclear(self) -> None:
+        """Clear session memory from Zep asynchronously.
+        Note that Zep is long-term storage for memory and this is not advised
+        unless you have specific data retention requirements.
+        """
+        try:
+            await self.zep_client.memory.adelete_memory(self.session_id)
         except NotFoundError:
             logger.warning(
                 f"Session {self.session_id} not found in Zep. Skipping delete."

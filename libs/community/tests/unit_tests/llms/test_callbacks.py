@@ -1,4 +1,5 @@
 """Test LLM callbacks."""
+
 from langchain_core.messages import HumanMessage
 
 from langchain_community.chat_models.fake import FakeListChatModel
@@ -13,7 +14,7 @@ def test_llm_with_callbacks() -> None:
     """Test LLM callbacks."""
     handler = FakeCallbackHandler()
     llm = FakeListLLM(callbacks=[handler], verbose=True, responses=["foo"])
-    output = llm("foo")
+    output = llm.invoke("foo")
     assert output == "foo"
     assert handler.starts == 1
     assert handler.ends == 1
@@ -26,7 +27,7 @@ def test_chat_model_with_v1_callbacks() -> None:
     llm = FakeListChatModel(
         callbacks=[handler], verbose=True, responses=["fake response"]
     )
-    output = llm([HumanMessage(content="foo")])
+    output = llm.invoke([HumanMessage(content="foo")])
     assert output.content == "fake response"
     assert handler.starts == 1
     assert handler.ends == 1
@@ -41,7 +42,7 @@ def test_chat_model_with_v2_callbacks() -> None:
     llm = FakeListChatModel(
         callbacks=[handler], verbose=True, responses=["fake response"]
     )
-    output = llm([HumanMessage(content="foo")])
+    output = llm.invoke([HumanMessage(content="foo")])
     assert output.content == "fake response"
     assert handler.starts == 1
     assert handler.ends == 1

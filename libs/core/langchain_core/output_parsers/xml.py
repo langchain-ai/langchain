@@ -38,6 +38,10 @@ class _StreamingParser:
         Args:
             parser: Parser to use for XML parsing. Can be either 'defusedxml' or 'xml'.
               See documentation in XMLOutputParser for more information.
+
+        Raises:
+            ImportError: If defusedxml is not installed and the defusedxml
+                parser is requested.
         """
         if parser == "defusedxml":
             try:
@@ -66,6 +70,9 @@ class _StreamingParser:
 
         Yields:
             AddableDict: A dictionary representing the parsed XML element.
+
+        Raises:
+            xml.etree.ElementTree.ParseError: If the XML is not well-formed.
         """
         if isinstance(chunk, BaseMessage):
             # extract text
@@ -116,7 +123,13 @@ class _StreamingParser:
                 raise
 
     def close(self) -> None:
-        """Close the parser."""
+        """Close the parser.
+
+        This should be called after all chunks have been parsed.
+
+        Raises:
+            xml.etree.ElementTree.ParseError: If the XML is not well-formed.
+        """
         try:
             self.pull_parser.close()
         except xml.etree.ElementTree.ParseError:
@@ -153,9 +166,23 @@ class XMLOutputParser(BaseTransformOutputParser):
     """
 
     def get_format_instructions(self) -> str:
+        """Return the format instructions for the XML output."""
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> Dict[str, List[Any]]:
+    def parse(self, text: str) -> Dict[str, Union[str, List[Any]]]:
+        """Parse the output of an LLM call.
+
+        Args:
+            text: The output of an LLM call.
+
+        Returns:
+            A dictionary representing the parsed XML.
+
+        Raises:
+            OutputParserException: If the XML is not well-formed.
+            ImportError: If defusedxml is not installed and the defusedxml
+                parser is requested.
+        """
         # Try to find XML string within triple backticks
         # Imports are temporarily placed here to avoid issue with caching on CI
         # likely if you're reading this you can move them to the top of the file
@@ -207,9 +234,13 @@ class XMLOutputParser(BaseTransformOutputParser):
                 yield output
         streaming_parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> Dict[str, List[Any]]:
+    def _root_to_dict(self, root: ET.Element) -> Dict[str, Union[str, List[Any]]]:
         """Converts xml tree to python dictionary."""
-        result: Dict[str, List[Any]] = {root.tag: []}
+        if root.text and bool(re.search(r"\S", root.text)):
+            # If root text contains any non-whitespace character it
+            # returns {root.tag: root.text}
+            return {root.tag: root.text}
+        result: Dict = {root.tag: []}
         for child in root:
             if len(child) == 0:
                 result[root.tag].append({child.tag: child.text})
@@ -223,7 +254,15 @@ class XMLOutputParser(BaseTransformOutputParser):
 
 
 def nested_element(path: List[str], elem: ET.Element) -> Any:
-    """Get nested element from path."""
+    """Get nested element from path.
+
+    Args:
+        path: The path to the element.
+        elem: The element to extract.
+
+    Returns:
+        The nested element.
+    """
     if len(path) == 0:
         return AddableDict({elem.tag: elem.text})
     else:

@@ -1,4 +1,5 @@
 """Test Yuan2.0 API wrapper."""
+
 from langchain_core.outputs import LLMResult
 
 from langchain_community.llms import Yuan2
@@ -13,7 +14,7 @@ def test_yuan2_call_method() -> None:
         top_p=0.9,
         use_history=False,
     )
-    output = llm("写一段快速排序算法。")
+    output = llm.invoke("写一段快速排序算法。")
     assert isinstance(output, str)
 
 

@@ -16,10 +16,10 @@ from typing import (
     Union,
 )
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts import (
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.prompts import (
     BasePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -192,16 +192,13 @@ class Policy(Generic[TEvent], ABC):
         pass
 
     @abstractmethod
-    def predict(self, event: TEvent) -> Any:
-        ...
+    def predict(self, event: TEvent) -> Any: ...
 
     @abstractmethod
-    def learn(self, event: TEvent) -> None:
-        ...
+    def learn(self, event: TEvent) -> None: ...
 
     @abstractmethod
-    def log(self, event: TEvent) -> None:
-        ...
+    def log(self, event: TEvent) -> None: ...
 
     def save(self) -> None:
         pass
@@ -257,8 +254,7 @@ class Embedder(Generic[TEvent], ABC):
         pass
 
     @abstractmethod
-    def format(self, event: TEvent) -> str:
-        ...
+    def format(self, event: TEvent) -> str: ...
 
 
 class SelectionScorer(Generic[TEvent], ABC, BaseModel):
@@ -267,8 +263,7 @@ class SelectionScorer(Generic[TEvent], ABC, BaseModel):
     @abstractmethod
     def score_response(
         self, inputs: Dict[str, Any], llm_response: str, event: TEvent
-    ) -> float:
-        ...
+    ) -> float: ...
 
 
 class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
@@ -316,7 +311,7 @@ class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
                 [default_system_prompt, human_message_prompt]
             )
         values["prompt"] = prompt
-        values["llm_chain"] = LLMChain(llm=llm, prompt=prompt)
+        values["llm_chain"] = LLMChain(llm=llm, prompt=prompt)  # type: ignore[arg-type, arg-type]
         return values
 
     def score_response(
@@ -475,7 +470,7 @@ class RLChain(Chain, Generic[TEvent]):
     def save_progress(self) -> None:
         """
         This function should be called to save the state of the learned policy model.
-        """  # noqa: E501
+        """
         self.active_policy.save()
 
     def _validate_inputs(self, inputs: Dict[str, Any]) -> None:
@@ -495,26 +490,22 @@ class RLChain(Chain, Generic[TEvent]):
         return self.selection_scorer is not None and self.selection_scorer_activated
 
     @abstractmethod
-    def _call_before_predict(self, inputs: Dict[str, Any]) -> TEvent:
-        ...
+    def _call_before_predict(self, inputs: Dict[str, Any]) -> TEvent: ...
 
     @abstractmethod
     def _call_after_predict_before_llm(
         self, inputs: Dict[str, Any], event: TEvent, prediction: Any
-    ) -> Tuple[Dict[str, Any], TEvent]:
-        ...
+    ) -> Tuple[Dict[str, Any], TEvent]: ...
 
     @abstractmethod
     def _call_after_llm_before_scoring(
         self, llm_response: str, event: TEvent
-    ) -> Tuple[Dict[str, Any], TEvent]:
-        ...
+    ) -> Tuple[Dict[str, Any], TEvent]: ...
 
     @abstractmethod
     def _call_after_scoring_before_learning(
         self, event: TEvent, score: Optional[float]
-    ) -> TEvent:
-        ...
+    ) -> TEvent: ...
 
     def _call(
         self,

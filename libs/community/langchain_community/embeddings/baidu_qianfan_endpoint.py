@@ -4,8 +4,8 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     """`Baidu Qianfan Embeddings` embedding models."""
 
-    qianfan_ak: Optional[str] = None
+    qianfan_ak: Optional[SecretStr] = None
     """Qianfan application apikey"""
 
-    qianfan_sk: Optional[str] = None
+    qianfan_sk: Optional[SecretStr] = None
     """Qianfan application secretkey"""
 
     chunk_size: int = 16
@@ -48,7 +48,7 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """
         Validate whether qianfan_ak and qianfan_sk in the environment variables or

@@ -37,7 +37,7 @@ def test_embedchain_retriever(mock_add: Any, mock_search: Any) -> None:
     ]
     for text in texts:
         retriever.add_texts(text)
-    docs = retriever.get_relevant_documents("doc about john")
+    docs = retriever.invoke("doc about john")
     assert len(docs) == 1
     for doc in docs:
         assert isinstance(doc, Document)

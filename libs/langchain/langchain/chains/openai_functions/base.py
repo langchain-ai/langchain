@@ -1,4 +1,5 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
+
 from typing import (
     Any,
     Callable,
@@ -34,7 +35,7 @@ from langchain.chains.structured_output.base import (
 __all__ = [
     "get_openai_output_parser",
     "create_openai_fn_runnable",
-    "create_structured_output_runnable",
+    "create_structured_output_runnable",  # deprecated
     "create_openai_fn_chain",  # deprecated
     "create_structured_output_chain",  # deprecated
     "PYTHON_TO_JSON_TYPES",  # backwards compatibility
@@ -42,7 +43,7 @@ __all__ = [
 ]
 
 
-@deprecated(since="0.1.1", removal="0.2.0", alternative="create_openai_fn_runnable")
+@deprecated(since="0.1.1", removal="0.3.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
     functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
     llm: BaseLanguageModel,
@@ -52,7 +53,7 @@ def create_openai_fn_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLM chain that uses OpenAI functions.
 
     Args:
@@ -132,7 +133,7 @@ def create_openai_fn_chain(
     }
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
-    llm_chain = LLMChain(
+    llm_chain = LLMChain(  # type: ignore[misc]
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -144,7 +145,7 @@ def create_openai_fn_chain(
 
 
 @deprecated(
-    since="0.1.1", removal="0.2.0", alternative="create_structured_output_runnable"
+    since="0.1.1", removal="0.3.0", alternative="ChatOpenAI.with_structured_output"
 )
 def create_structured_output_chain(
     output_schema: Union[Dict[str, Any], Type[BaseModel]],
@@ -154,7 +155,7 @@ def create_structured_output_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLMChain that uses an OpenAI function to get a structured output.
 
     Args:

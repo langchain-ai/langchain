@@ -1,4 +1,5 @@
 """Test DeepSparse wrapper."""
+
 from langchain_community.llms import DeepSparse
 
 
@@ -11,7 +12,7 @@ def test_deepsparse_call() -> None:
         config=config,
     )
 
-    output = llm("def ")
+    output = llm.invoke("def ")
     assert isinstance(output, str)
     assert len(output) > 1
     assert output == "ids_to_names"

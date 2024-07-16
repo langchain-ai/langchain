@@ -1,5 +1,6 @@
 # flake8: noqa
 """Tools for interacting with Spark SQL."""
+
 from typing import Any, Dict, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
@@ -97,7 +98,7 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
             from langchain.chains.llm import LLMChain
 
             values["llm_chain"] = LLMChain(
-                llm=values.get("llm"),
+                llm=values.get("llm"),  # type: ignore[arg-type]
                 prompt=PromptTemplate(
                     template=QUERY_CHECKER, input_variables=["query"]
                 ),

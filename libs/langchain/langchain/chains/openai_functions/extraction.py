@@ -1,5 +1,6 @@
 from typing import Any, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import (
     JsonKeyOutputFunctionsParser,
@@ -43,6 +44,41 @@ Passage:
 """  # noqa: E501
 
 
+@deprecated(
+    since="0.1.14",
+    message=(
+        "LangChain has introduced a method called `with_structured_output` that"
+        "is available on ChatModels capable of tool calling."
+        "You can read more about the method here: "
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
+        "Please follow our extraction use case documentation for more guidelines"
+        "on how to do information extraction with LLMs."
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
+        "If you notice other issues, please provide "
+        "feedback here:"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
+    ),
+    removal="0.3.0",
+    alternative=(
+        """
+            from langchain_core.pydantic_v1 import BaseModel, Field
+            from langchain_anthropic import ChatAnthropic
+    
+            class Joke(BaseModel):
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke") 
+    
+            # Or any other chat model that supports tools.
+            # Please reference to to the documentation of structured_output
+            # to see an up to date list of which models support 
+            # with_structured_output.
+            model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+            structured_llm = model.with_structured_output(Joke)
+            structured_llm.invoke("Tell me a joke about cats. 
+                Make sure to call the Joke function.")
+            """
+    ),
+)
 def create_extraction_chain(
     schema: dict,
     llm: BaseLanguageModel,
@@ -78,6 +114,41 @@ def create_extraction_chain(
     return chain
 
 
+@deprecated(
+    since="0.1.14",
+    message=(
+        "LangChain has introduced a method called `with_structured_output` that"
+        "is available on ChatModels capable of tool calling."
+        "You can read more about the method here: "
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
+        "Please follow our extraction use case documentation for more guidelines"
+        "on how to do information extraction with LLMs."
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
+        "If you notice other issues, please provide "
+        "feedback here:"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
+    ),
+    removal="0.3.0",
+    alternative=(
+        """
+            from langchain_core.pydantic_v1 import BaseModel, Field
+            from langchain_anthropic import ChatAnthropic
+    
+            class Joke(BaseModel):
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke") 
+    
+            # Or any other chat model that supports tools.
+            # Please reference to to the documentation of structured_output
+            # to see an up to date list of which models support 
+            # with_structured_output.
+            model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+            structured_llm = model.with_structured_output(Joke)
+            structured_llm.invoke("Tell me a joke about cats. 
+                Make sure to call the Joke function.")
+            """
+    ),
+)
 def create_extraction_chain_pydantic(
     pydantic_schema: Any,
     llm: BaseLanguageModel,

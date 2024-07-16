@@ -59,7 +59,7 @@ class AutoGPT:
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
         chat_history_memory: Optional[BaseChatMessageHistory] = None,
     ) -> AutoGPT:
-        prompt = AutoGPTPrompt(
+        prompt = AutoGPTPrompt(  # type: ignore[call-arg, call-arg, call-arg, call-arg]
             ai_name=ai_name,
             ai_role=ai_role,
             tools=tools,
@@ -133,11 +133,11 @@ class AutoGPT:
                 f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "
             )
             if self.feedback_tool is not None:
-                feedback = f"\n{self.feedback_tool.run('Input: ')}"
+                feedback = f"{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
                     print("EXITING")  # noqa: T201
                     return "EXITING"
-                memory_to_add += feedback
+                memory_to_add += f"\n{feedback}"
 
             self.memory.add_documents([Document(page_content=memory_to_add)])
             self.chat_history_memory.add_message(SystemMessage(content=result))

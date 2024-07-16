@@ -1398,3 +1398,20 @@ table.sk-sponsor-table td {
 .highlight .vi { color: #bb60d5 } /* Name.Variable.Instance */
 .highlight .vm { color: #bb60d5 } /* Name.Variable.Magic */
 .highlight .il { color: #208050 } /* Literal.Number.Integer.Long */
+
+/** Custom styles overriding certain values */
+
+div.sk-sidebar-toc-wrapper {
+  width: unset;
+  overflow-x: auto;
+}
+
+div.sk-sidebar-toc-wrapper > [aria-label="rellinks"] {
+  position: sticky;
+  left: 0;
+}
+
+.navbar-nav .dropdown-menu {
+  max-height: 80vh;
+  overflow-y: auto;
+}

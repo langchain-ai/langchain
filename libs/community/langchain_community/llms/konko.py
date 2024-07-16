@@ -1,4 +1,5 @@
 """Wrapper around Konko AI's Completion API."""
+
 import logging
 import warnings
 from typing import Any, Dict, List, Optional
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class Konko(LLM):
-    """Wrapper around Konko AI models.
+    """Konko AI models.
 
     To use, you'll need an API key. This can be passed in as init param
     ``konko_api_key`` or set as environment variable ``KONKO_API_KEY``.
@@ -71,7 +72,7 @@ class Konko(LLM):
             import konko
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import konko python package. "
                 "Please install it with `pip install konko`."
             )

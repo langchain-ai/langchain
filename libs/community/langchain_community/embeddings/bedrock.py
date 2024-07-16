@@ -73,7 +73,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
 
@@ -99,7 +99,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -107,7 +107,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "Could not load credentials to authenticate with AWS client. "
                 "Please check that credentials in the specified "
-                "profile name are valid."
+                f"profile name are valid. Bedrock error: {e}"
             ) from e
 
         return values

@@ -16,8 +16,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +49,8 @@ class QianfanLLMEndpoint(LLM):
 
     client: Any
 
-    qianfan_ak: Optional[str] = None
-    qianfan_sk: Optional[str] = None
+    qianfan_ak: Optional[SecretStr] = None
+    qianfan_sk: Optional[SecretStr] = None
 
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
@@ -76,7 +76,7 @@ class QianfanLLMEndpoint(LLM):
     In the case of other model, passing these params will not affect the result.
     """
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
@@ -172,7 +172,7 @@ class QianfanLLMEndpoint(LLM):
 
         Example:
             .. code-block:: python
-                response = qianfan_model("Tell me a joke.")
+                response = qianfan_model.invoke("Tell me a joke.")
         """
         if self.streaming:
             completion = ""
