@@ -158,10 +158,10 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         safe_delete_database(cosmos_client)
 
     def test_from_documents_cosine_distance_with_filtering(
-            self,
-            cosmos_client: Any,
-            partition_key: Any,
-            azure_openai_embeddings: OpenAIEmbeddings,
+        self,
+        cosmos_client: Any,
+        partition_key: Any,
+        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -195,10 +195,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "where_clause": "WHERE c.metadata.a=1",
         }
         output = store.similarity_search(
-            "Dogs",
-            k=4,
-            pre_filter=pre_filter,
-            with_embedding=True
+            "Dogs", k=4, pre_filter=pre_filter, with_embedding=True
         )
 
         assert len(output) == 2
@@ -207,7 +204,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
 
         pre_filter = {
             "where_clause": "WHERE c.metadata.a=1",
-            "limit_offset_clause": "OFFSET 0 LIMIT 1"
+            "limit_offset_clause": "OFFSET 0 LIMIT 1",
         }
 
         output = store.similarity_search(

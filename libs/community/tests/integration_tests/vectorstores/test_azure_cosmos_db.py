@@ -905,8 +905,9 @@ class TestAzureCosmosDBVectorSearch:
         vectorstore.delete_index()
 
     def test_from_documents_cosine_distance_with_filtering(
-            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
-    ) -> None: """Test end to end construction and search."""
+        self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+    ) -> None:
+        """Test end to end construction and search."""
 
     documents = [
         Document(page_content="Dogs are tough.", metadata={"a": 5}),
@@ -931,8 +932,7 @@ class TestAzureCosmosDBVectorSearch:
     sleep(2)  # waits for the index to be set up
 
     vectorstore.create_filter_index(
-        property_to_filter="metadata.a",
-        index_name="idx_meta.a"
+        property_to_filter="metadata.a", index_name="idx_meta.a"
     )
 
     output = vectorstore.similarity_search(
@@ -941,11 +941,7 @@ class TestAzureCosmosDBVectorSearch:
         kind=kind,
         ef_search=ef_search,
         score_threshold=score_threshold,
-        pre_filter={
-            "metadata.a": {
-                "$eq": 5
-            }
-        },
+        pre_filter={"metadata.a": {"$eq": 5}},
         with_embedding=True,
     )
 
@@ -959,11 +955,7 @@ class TestAzureCosmosDBVectorSearch:
         kind=kind,
         ef_search=ef_search,
         score_threshold=score_threshold,
-        pre_filter={
-            "metadata.a": {
-                "$lte": 6
-            }
-        },
+        pre_filter={"metadata.a": {"$lte": 6}},
     )
 
     assert len(output) == 1
@@ -976,11 +968,7 @@ class TestAzureCosmosDBVectorSearch:
         kind=kind,
         ef_search=ef_search,
         score_threshold=score_threshold,
-        pre_filter={
-            "metadata.a": {
-                "$gte": 4
-            }
-        },
+        pre_filter={"metadata.a": {"$gte": 4}},
     )
 
     assert len(output) == 1
@@ -993,14 +981,7 @@ class TestAzureCosmosDBVectorSearch:
         kind=kind,
         ef_search=ef_search,
         score_threshold=score_threshold,
-        pre_filter={
-            "metadata.a": {
-                "$in": [
-                    4,
-                    5
-                ]
-            }
-        },
+        pre_filter={"metadata.a": {"$in": [4,5]}},
     )
 
     assert len(output) == 1
