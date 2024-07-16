@@ -21,12 +21,27 @@ PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 # How to type hint this?
 def pre_init(func: Callable) -> Any:
-    """Decorator to run a function before model initialization."""
+    """Decorator to run a function before model initialization.
+
+    Args:
+        func (Callable): The function to run before model initialization.
+
+    Returns:
+        Any: The decorated function.
+    """
 
     @root_validator(pre=True)
     @wraps(func)
     def wrapper(cls: Type[BaseModel], values: Dict[str, Any]) -> Dict[str, Any]:
-        """Decorator to run a function before model initialization."""
+        """Decorator to run a function before model initialization.
+
+        Args:
+            cls (Type[BaseModel]): The model class.
+            values (Dict[str, Any]): The values to initialize the model with.
+
+        Returns:
+            Dict[str, Any]: The values to initialize the model with.
+        """
         # Insert default values
         fields = cls.__fields__
         for name, field_info in fields.items():
