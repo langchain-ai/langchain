@@ -1,4 +1,4 @@
-from typing import Callable, List, Sequence, Tuple
+from typing import Callable, List, Optional, Sequence, Tuple
 
 from langchain_core.agents import AgentAction
 from langchain_core.language_models import BaseLanguageModel
@@ -6,6 +6,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain.callbacks.manager import CallbackManagerForChainRun
 
 from langchain.agents.format_scratchpad.tools import (
     format_to_tool_messages,
@@ -14,6 +15,10 @@ from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 
 MessageFormatter = Callable[[Sequence[Tuple[AgentAction, str]]], List[BaseMessage]]
 
+def _apply_callbacks(component, callbacks):
+    if callbacks:
+        return component.with_config(callbacks=callbacks)
+    return component
 
 def create_tool_calling_agent(
     llm: BaseLanguageModel,
@@ -21,8 +26,9 @@ def create_tool_calling_agent(
     prompt: ChatPromptTemplate,
     *,
     message_formatter: MessageFormatter = format_to_tool_messages,
+    callbacks: Optional[CallbackManagerForChainRun] = None,
 ) -> Runnable:
-    """Create an agent that uses tools.
+    """Create an agent that uses tools and supports callbacks.
 
     Args:
         llm: LLM to use as the agent.
@@ -31,6 +37,8 @@ def create_tool_calling_agent(
             input variables.
         message_formatter: Formatter function to convert (AgentAction, tool output)
             tuples into FunctionMessages.
+        callbacks: Optional CallbackManagerForChainRun to support tracing and other
+            callback functionalities during the agent's execution.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -96,13 +104,16 @@ def create_tool_calling_agent(
             "This function requires a .bind_tools method be implemented on the LLM.",
         )
     llm_with_tools = llm.bind_tools(tools)
+    llm_with_tools = _apply_callbacks(llm_with_tools, callbacks)
 
-    agent = (
-        RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: message_formatter(x["intermediate_steps"])
-        )
-        | prompt
-        | llm_with_tools
-        | ToolsAgentOutputParser()
+    runnable_passthrough = RunnablePassthrough.assign(
+        agent_scratchpad=lambda x: message_formatter(x["intermediate_steps"])
     )
+    runnable_passthrough = _apply_callbacks(runnable_passthrough, callbacks)
+
+    output_parser = ToolsAgentOutputParser()
+    output_parser = _apply_callbacks(output_parser, callbacks)
+
+    agent = runnable_passthrough | prompt | llm_with_tools | output_parser
+
     return agent
