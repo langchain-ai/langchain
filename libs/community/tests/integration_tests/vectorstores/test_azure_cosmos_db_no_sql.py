@@ -208,9 +208,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         }
 
         output = store.similarity_search(
-            "Dogs",
-            k=4,
-            pre_filter=pre_filter
+            "Dogs", k=4, pre_filter=pre_filter
         )
 
         assert len(output) == 1

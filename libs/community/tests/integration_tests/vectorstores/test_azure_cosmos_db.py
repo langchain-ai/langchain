@@ -981,7 +981,7 @@ class TestAzureCosmosDBVectorSearch:
         kind=kind,
         ef_search=ef_search,
         score_threshold=score_threshold,
-        pre_filter={"metadata.a": {"$in": [4,5]}},
+        pre_filter={"metadata.a": {"$in": [4, 5]}},
     )
 
     assert len(output) == 1
