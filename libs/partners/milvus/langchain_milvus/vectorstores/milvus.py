@@ -138,11 +138,10 @@ class Milvus(VectorStore):
         metadata_field (str): Name of the metadta field. Defaults to None.
             When metadata_field is specified,
             the document's metadata will store as json.
-        field_schema  (Optional[dict]): What is the dataType of fields,
+        metadata_schema  (Optional[dict]): What is the dataType of each metadata fields,
             Default is Varchar, Example of field schema dict is :-
-            [
-              {
-                "field_name": "column1",
+            {
+              "column1": {
                 "dtype": "DataType.ARRAY",
                 "kwargs": {
                   "element_type": "DataType.VARCHAR",
@@ -150,19 +149,17 @@ class Milvus(VectorStore):
                   "max_length": 1000
                 }
               },
-              {
-                "field_name": "column1",
+              "column2": {
                 "dtype": "DataType.ARRAY",
                 "kwargs": {
                   "element_type": "DataType.INT64",
                   "max_capacity": 50
                 }
               },
-              {
-                "field_name": "column1",
+              "column3": {
                 "dtype": "DataType.INT64"
               }
-            ]
+            }
 
 
 
@@ -235,7 +232,7 @@ class Milvus(VectorStore):
         replica_number: int = 1,
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
-        field_schema: Optional[dict[str, Any]] = None,
+        metadata_schema: Optional[dict[str, Any]] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -295,7 +292,7 @@ class Milvus(VectorStore):
         self.replica_number = replica_number
         self.timeout = timeout
         self.num_shards = num_shards
-        self.field_schema = field_schema
+        self.metadata_schema = metadata_schema
 
         # Create the connection to the server
         if connection_args is None:
@@ -428,10 +425,10 @@ class Milvus(VectorStore):
                     # Infer the corresponding datatype of the metadata
                     field_type = "dtype"
                     if (
-                        key in self.field_schema  # type: ignore
-                        and field_type in self.field_schema[key]  # type: ignore
+                        key in self.metadata_schema  # type: ignore
+                        and field_type in self.metadata_schema[key]  # type: ignore
                     ):
-                        dtype = self.field_schema[key]["dtype"]  # type: ignore
+                        dtype = self.metadata_schema[key]["dtype"]  # type: ignore
                     else:
                         dtype = infer_dtype_bydata(value)
 
@@ -451,7 +448,7 @@ class Milvus(VectorStore):
                             FieldSchema(key, DataType.VARCHAR, max_length=65_535)
                         )
                     elif dtype == DataType.ARRAY:
-                        kwargs = self.field_schema[key]["kwargs"]  # type: ignore
+                        kwargs = self.metadata_schema[key]["kwargs"]  # type: ignore
                         fields.append(
                             FieldSchema(name=key, dtype=DataType.ARRAY, **kwargs)
                         )
