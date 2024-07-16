@@ -43,12 +43,10 @@ from typing import (
     Type,
     Union,
     cast,
-    get_args,
-    get_origin,
     get_type_hints,
 )
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
