@@ -262,36 +262,36 @@ class MiniMaxChat(BaseChatModel):
                 },
                 id='run-c263b6f1-1736-4ece-a895-055c26b3436f-0'
             )
-            
+
     Tool calling:
         .. code-block:: python
-            
+
             from langchain_core.pydantic_v1 import BaseModel, Field
 
 
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
-            
+
                 location: str = Field(
                     ..., description="The city and state, e.g. San Francisco, CA"
                 )
-            
-            
+
+
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
-            
+
                 location: str = Field(
                     ..., description="The city and state, e.g. San Francisco, CA"
                 )
-            
+
             chat_with_tools = chat.bind_tools([GetWeather, GetPopulation])
             ai_msg = chat_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?"
             )
             ai_msg.tool_calls
-            
+
         .. code-block:: python
-        
+
             [
                 {
                     'name': 'GetWeather',
@@ -300,33 +300,33 @@ class MiniMaxChat(BaseChatModel):
                     'type': 'tool_call'
                 }
             ]
-            
+
     Structured output:
         .. code-block:: python
-        
+
             from typing import Optional
-            
+
             from langchain_core.pydantic_v1 import BaseModel, Field
-            
-            
+
+
             class Joke(BaseModel):
                 '''Joke to tell user.'''
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
                 rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
-                
-                
+
+
             structured_chat = chat.with_structured_output(Joke)
             structured_chat.invoke("Tell me a joke about cats")
-            
+
         .. code-block:: python
-        
+
             Joke(
-                setup='Why do cats have nine lives?', 
-                punchline='Because they are so cute and cuddly!', 
+                setup='Why do cats have nine lives?',
+                punchline='Because they are so cute and cuddly!',
                 rating=None
             )
-    
+
     Response metadata
         .. code-block:: python
 
