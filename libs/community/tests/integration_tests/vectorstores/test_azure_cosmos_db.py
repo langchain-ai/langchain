@@ -909,10 +909,10 @@ class TestAzureCosmosDBVectorSearch:
     ) -> None: """Test end to end construction and search."""
 
     documents = [
-        Document(page_content="Dogs are tough.", metadata={"a": 1}),
-        Document(page_content="Cats have fluff.", metadata={"b": 1}),
-        Document(page_content="What is a sandwich?", metadata={"c": 1}),
-        Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+        Document(page_content="Dogs are tough.", metadata={"a": 5}),
+        Document(page_content="Cats have fluff.", metadata={"b": 5}),
+        Document(page_content="What is a sandwich?", metadata={"c": 5}),
+        Document(page_content="That fence is purple.", metadata={"d": 5, "e": 10}),
     ]
 
     vectorstore = AzureCosmosDBVectorSearch.from_documents(

@@ -308,8 +308,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
 
     def create_filter_index(
         self,
-        property_to_filter: str = None,
-        index_name: str = None,
+        property_to_filter: str,
+        index_name: str,
     ) -> dict[str, Any]:
         command = {
             "createIndexes": self._collection.name,
@@ -470,7 +470,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         return docs
 
     def _get_pipeline_vector_ivf(
-        self, embeddings: List[float], k: int = 4, pre_filter: Optional[str] = None
+        self, embeddings: List[float], k: int = 4, pre_filter: Optional[Dict] = None
     ) -> List[dict[str, Any]]:
         params = {
             "vector": embeddings,
@@ -501,7 +501,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         embeddings: List[float],
         k: int = 4,
         ef_search: int = 40,
-        pre_filter: Optional[str] = None,
+        pre_filter: Optional[Dict] = None,
     ) -> List[dict[str, Any]]:
         params = {
             "vector": embeddings,

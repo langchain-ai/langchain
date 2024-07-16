@@ -342,13 +342,17 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
         # Retrieves the docs with similarity scores
+        pre_filter = {}
+        with_embedding = False
+        if kwargs["pre_filter"]:
+            pre_filter = kwargs["pre_filter"]
+        if kwargs["with_embedding"]:
+            with_embedding = kwargs["with_embedding"]
         docs = self._similarity_search_with_score(
             embeddings=embedding,
             k=fetch_k,
@@ -371,13 +375,17 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
         # compute the embeddings vector from the query string
+        pre_filter = {}
+        with_embedding = False
+        if kwargs["pre_filter"]:
+            pre_filter = kwargs["pre_filter"]
+        if kwargs["with_embedding"]:
+            with_embedding = kwargs["with_embedding"]
         embeddings = self._embedding.embed_query(query)
 
         docs = self.max_marginal_relevance_search_by_vector(
