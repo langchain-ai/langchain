@@ -223,8 +223,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def bulk_embed_and_insert_texts(
         self,
-        texts: List[str],
-        metadatas: List[Dict[str, Any]],
+        texts: Union[List[str], Iterable[str]],
+        metadatas: Union[List[dict], Generator[dict, Any, Any]],
         ids: Optional[List[str]] = None,
     ) -> List[str]:
         """Bulk insert single batch of texts, embeddings, and optionally ids.
@@ -234,7 +234,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         if not texts:
             return []
         # Compute embedding vectors
-        embeddings = self._embedding.embed_documents(texts)
+        embeddings = self._embedding.embed_documents(texts)  # type: ignore
         if ids:
             to_insert = [
                 {
@@ -258,7 +258,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         documents: List[Document],
         ids: Optional[List[str]] = None,
-        batch_size: Optional[int] = DEFAULT_INSERT_BATCH_SIZE,
+        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         **kwargs: Any,
     ) -> List[str]:
         """Add documents to the vectorstore.

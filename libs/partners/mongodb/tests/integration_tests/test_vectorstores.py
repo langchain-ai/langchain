@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from time import monotonic, sleep
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, Iterable, List, Optional, Union
 
 import pytest  # type: ignore[import-not-found]
 from bson import ObjectId
@@ -17,7 +17,8 @@ from pymongo.errors import OperationFailure
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.index import drop_vector_search_index
 from langchain_mongodb.utils import oid_to_str
-from tests.utils import ConsistentFakeEmbeddings
+
+from ..utils import ConsistentFakeEmbeddings
 
 INDEX_NAME = "langchain-test-index-vectorstores"
 INDEX_CREATION_NAME = "langchain-test-index-vectorstores-create-test"
@@ -34,8 +35,8 @@ INTERVAL = 0.5
 class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
     def bulk_embed_and_insert_texts(
         self,
-        texts: List[str],
-        metadatas: List[Dict[str, Any]],
+        texts: Union[List[str], Iterable[str]],
+        metadatas: Union[List[dict], Generator[dict, Any, Any]],
         ids: Optional[List[str]] = None,
     ) -> List:
         """Patched insert_texts that waits for data to be indexed before returning"""
@@ -296,7 +297,12 @@ class TestMongoDBAtlasVectorSearch:
         texts: List[str],
     ) -> None:
         """Tests API of add_texts, focussing on id treatment"""
-        metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
+        metadatas: List[Dict[str, Any]] = [
+            {"a": 1},
+            {"b": 1},
+            {"c": 1},
+            {"d": 1, "e": 2},
+        ]
 
         vectorstore = PatchedMongoDBAtlasVectorSearch(
             collection=collection, embedding=embeddings, index_name=INDEX_NAME
@@ -332,8 +338,8 @@ class TestMongoDBAtlasVectorSearch:
         out_ids = vectorstore.add_texts(texts=str_texts, ids=str_ids)
         assert set(out_ids) == set(str_ids)
         assert collection.count_documents({}) == 8
-        search_res = vectorstore.similarity_search("sandwich", k=8)
-        assert any(str_ids[0] in doc.metadata["_id"] for doc in search_res)
+        res = vectorstore.similarity_search("sandwich", k=8)
+        assert any(str_ids[0] in doc.metadata["_id"] for doc in res)
 
         # Case 5: Test adding in multiple batches
         batch_size = 2
