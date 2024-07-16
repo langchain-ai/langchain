@@ -48,6 +48,19 @@ from typing import (
 
 from typing_extensions import Annotated, get_args, get_origin
 
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Extra,
+    Field,
+    ValidationError,
+    create_model,
+    root_validator,
+    validate_arguments,
+)
+from pydantic.fields import FieldInfo
+from typing_extensions import Annotated, cast, get_args, get_origin
+
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -100,17 +113,19 @@ class SchemaAnnotationError(TypeError):
 def _is_annotated_type(typ: Type[Any]) -> bool:
     return get_origin(typ) is Annotated
 
-
-def _get_annotation_description(arg_type: Type) -> str | None:
+def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
-        for annotation in annotated_args[1:]:
-            if isinstance(annotation, str):
-                return annotation
+        arg_type = annotated_args[0]
+        if len(annotated_args) > 1:
+            for annotation in annotated_args[1:]:
+                if isinstance(annotation, str):
+                    return annotation
     return None
 
 
-def _create_subset_model(
+
+def _create_subset_model_v1(
     name: str,
     model: Type[BaseModel],
     field_names: list,
@@ -136,6 +151,30 @@ def _create_subset_model(
     rtn = create_model(name, **fields)  # type: ignore
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
+
+def _create_subset_model(
+    name: str,
+    model: Type[BaseModel],
+    field_names: List[str],
+    *,
+    descriptions: Optional[dict] = None,
+    fn_description: Optional[str] = None,
+) -> Type[BaseModel]:
+    """Create a pydantic model with a subset of the mdoels fields."""
+    descriptions_ = descriptions or {}
+    fields = {}
+    for field_name in field_names:
+        field = model.__fields__[field_name]
+        description = descriptions_.get(field_name, field.description)
+        fields[field_name] = (
+            field.annotation,
+            FieldInfo(description=description, default=field.default),
+        )
+    rtn = create_model(name, **fields)  # type: ignore
+
+    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    return rtn
+
 
 
 def _get_filtered_args(
