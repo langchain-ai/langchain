@@ -25,7 +25,7 @@ document.
 
 
 @pytest.mark.requires("keybert")
-def test_one_from_keywords():
+def test_one_from_keywords() -> None:
     extractor = KeybertLinkExtractor()
 
     results = extractor.extract_one(PAGE_1)
@@ -39,7 +39,7 @@ def test_one_from_keywords():
 
 
 @pytest.mark.requires("keybert")
-def test_many_from_keyphrases():
+def test_many_from_keyphrases() -> None:
     extractor = KeybertLinkExtractor(
         extract_keywords_kwargs={
             "keyphrase_ngram_range": (1, 2),

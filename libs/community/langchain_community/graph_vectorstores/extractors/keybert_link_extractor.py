@@ -51,6 +51,7 @@ class KeybertLinkExtractor(LinkExtractor[KeybertInput]):
         self,
         inputs: Iterable[KeybertInput],
     ) -> Iterable[Set[Link]]:
+        inputs = list(inputs)
         if len(inputs) == 1:
             # Even though we pass a list, if it contains one item, keybert will
             # flatten it. This means it's easier to just call the special case
