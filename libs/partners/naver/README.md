@@ -1,6 +1,6 @@
 # langchain-naver
 
-All functionality related to CLOVA X, the AI technology ecosystem of Naver and Naver Cloud, especially via [CLOVA Studio](https://clovastudio.ncloud.com/).
+All functionality related to `Naver` including HyperCLOVA X models, especially via `Naver Cloud` [CLOVA Studio](https://clovastudio.ncloud.com/).
 
 > [Naver](https://navercorp.com/) is a global technology company based in South Korea with cutting-edge technologies and a diverse business portfolio including search, commerce, fintech, content, cloud, and AI.
 
