@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 """Main entrypoint into package."""
+
 import warnings
 from importlib import metadata
 from typing import Any, Optional

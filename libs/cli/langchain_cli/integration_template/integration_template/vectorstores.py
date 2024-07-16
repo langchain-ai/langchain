@@ -1,4 +1,5 @@
 """__ModuleName__ vector stores."""
+
 from __future__ import annotations
 
 import asyncio

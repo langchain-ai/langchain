@@ -33,6 +33,9 @@ class O365Toolkit(BaseToolkit):
         are appropriate for your use case.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        account: Optional. The Office 365 account. Default is None.
     """
 
     account: Account = Field(default_factory=authenticate)
