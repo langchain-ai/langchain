@@ -25,6 +25,7 @@ fireworks-ai>=0.9.0,<0.10
 friendli-client>=1.2.4,<2
 geopandas>=0.13.1
 gitpython>=3.1.32,<4
+gliner>=0.2.7
 google-cloud-documentai>=2.20.1,<3
 gql>=3.4.1,<4
 gradientai>=1.4.0,<2
