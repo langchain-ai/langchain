@@ -46,6 +46,8 @@ from typing import (
     Union,
 )
 
+from pydantic import ConfigDict
+
 from langchain_core._api import beta
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
@@ -1120,11 +1122,7 @@ class VectorStoreRetriever(BaseRetriever):
         "similarity_score_threshold",
         "mmr",
     )
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def validate_search_type(cls, values: Dict) -> Dict:

@@ -18,6 +18,7 @@ from typing import (
 )
 
 import yaml
+from pydantic import ConfigDict
 
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
@@ -97,10 +98,7 @@ class BasePromptTemplate(
         Returns True."""
         return True
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def OutputType(self) -> Any:

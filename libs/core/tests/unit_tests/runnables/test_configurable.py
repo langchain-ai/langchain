@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 
 import pytest
+from pydantic import ConfigDict
 
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import (
@@ -13,9 +14,7 @@ from langchain_core.runnables import (
 class MyRunnable(RunnableSerializable[str, str]):
     my_property: str = Field(alias="my_property_alias")
     _my_hidden_property: str = ""
-
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @root_validator(pre=True)
     def my_error(cls, values: Dict[str, Any]) -> Dict[str, Any]:
