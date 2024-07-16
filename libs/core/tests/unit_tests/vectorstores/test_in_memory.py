@@ -1,14 +1,15 @@
 from pathlib import Path
 
 import pytest
-from langchain_standard_tests.integration_tests.vectorstores import (
-    AsyncReadWriteTestSuite,
-    ReadWriteTestSuite,
-)
 
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding
 from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_standard_tests.integration_tests.vectorstores import (
+    AsyncReadWriteTestSuite,
+    ReadWriteTestSuite,
+)
+from langchain_core.documents import Document
 from tests.unit_tests.stubs import AnyStr
 
 
@@ -22,6 +23,7 @@ class TestAsyncInMemoryReadWriteTestSuite(AsyncReadWriteTestSuite):
     @pytest.fixture
     async def vectorstore(self) -> InMemoryVectorStore:
         return InMemoryVectorStore(embedding=self.get_embeddings())
+
 
 
 async def test_inmemory() -> None:
@@ -40,6 +42,10 @@ async def test_inmemory() -> None:
 
     output2 = await store.asimilarity_search_with_score("bar", k=2)
     assert output2[0][1] > output2[1][1]
+
+async def test_foo() -> None:
+    d = Document(page_content="h", id=AnyStr())
+    raise ValueError(type(d.foo))
 
 
 async def test_add_by_ids() -> None:
