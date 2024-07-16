@@ -55,6 +55,7 @@ A developer platform that lets you debug, test, evaluate, and monitor LLM applic
     dark: useBaseUrl('/svg/langchain_stack_062024_dark.svg'),
   }}
   title="LangChain Framework Overview"
+  style={{ width: "100%" }}
 />
 
 ## LangChain Expression Language (LCEL)
@@ -521,7 +522,7 @@ Generally, when designing tools to be used by a chat model or LLM, it is importa
 
 For specifics on how to use tools, see the [relevant how-to guides here](/docs/how_to/#tools).
 
-To use an existing pre-built tool, see [here](docs/integrations/tools/) for a list of pre-built tools. 
+To use an existing pre-built tool, see [here](/docs/integrations/tools/) for a list of pre-built tools.
 
 ### Toolkits
 
@@ -821,7 +822,7 @@ We recommend this method as a starting point when working with structured output
 - If multiple underlying techniques are supported, you can supply a `method` parameter to
 [toggle which one is used](/docs/how_to/structured_output/#advanced-specifying-the-method-for-structuring-outputs).
 
-You may want or need to use other techiniques if:
+You may want or need to use other techniques if:
 
 - The chat model you are using does not support tool calling.
 - You are working with very complex schemas and the model is having trouble generating outputs that conform.
@@ -1022,7 +1023,7 @@ See our [blog post overview](https://blog.langchain.dev/query-construction/) and
 
 #### Indexing
 
-Fouth, consider the design of your document index. A simple and powerful idea is to **decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.** Indexing frequently uses embedding models with vector stores, which [compress the semantic information in documents to fixed-size vectors](/docs/concepts/#embedding-models).
+Fourth, consider the design of your document index. A simple and powerful idea is to **decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.** Indexing frequently uses embedding models with vector stores, which [compress the semantic information in documents to fixed-size vectors](/docs/concepts/#embedding-models).
 
 Many RAG approaches focus on splitting documents into chunks and retrieving some number based on similarity to an input question for the LLM. But chunk size and chunk number can be difficult to set and affect results if they do not provide full context for the LLM to answer a question. Furthermore, LLMs are increasingly capable of processing millions of tokens. 
 
@@ -1130,7 +1131,7 @@ Table columns:
 | Token    | [many classes](/docs/how_to/split_by_token/)                                                                                                                                  | Tokens                                                                                                          |               | Splits text on tokens. There exist a few different ways to measure tokens.                                                                                                                                                                                                   |
 | Character  | [CharacterTextSplitter](/docs/how_to/character_text_splitter/)                                                                                                                | A user defined character                                                                                        |               | Splits text based on a user defined character. One of the simpler methods.                                                                                                                                                                                                   |
 | Semantic Chunker (Experimental) | [SemanticChunker](/docs/how_to/semantic-chunker/)                                                                                                                             | Sentences                                                                                                       |               | First splits on sentences. Then combines ones next to each other if they are semantically similar enough. Taken from [Greg Kamradt](https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb) |
-| Integration: AI21 Semantic | [AI21SemanticTextSplitter](/docs/integrations/document_transformers/ai21_semantic_text_splitter/)                                                                                                                    |    ✅           | Identifies distinct topics that form coherent pieces of text and splits along those.                                                                                                                                                                                         |
+| Integration: AI21 Semantic | [AI21SemanticTextSplitter](/docs/integrations/document_transformers/ai21_semantic_text_splitter/)                                                                                                 |                  |    ✅           | Identifies distinct topics that form coherent pieces of text and splits along those.                                                                                                                                                                                         |
 
 ### Evaluation
 <span data-heading-keywords="evaluation,evaluate"></span>

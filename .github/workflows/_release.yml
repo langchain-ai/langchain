@@ -221,6 +221,11 @@ jobs:
         run: make tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Check for prerelease versions
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
+
       - name: Get minimum versions
         working-directory: ${{ inputs.working-directory }}
         id: min-version
