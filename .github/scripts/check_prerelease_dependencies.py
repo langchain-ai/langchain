@@ -6,7 +6,7 @@ if __name__ == "__main__":
     toml_file = sys.argv[1]
 
     # read toml file
-    with open(toml_path, "rb") as file:
+    with open(toml_file, "rb") as file:
         toml_data = tomllib.load(file)
 
     # see if we're releasing an rc
