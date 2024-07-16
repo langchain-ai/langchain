@@ -8,6 +8,17 @@ def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]
     dictionaries but has a value of None in 'left'. In such cases, the method uses the
     value from 'right' for that key in the merged dictionary.
 
+    Args:
+        left: The first dictionary to merge.
+        others: The other dictionaries to merge.
+
+    Returns:
+        The merged dictionary.
+
+    Raises:
+        TypeError: If the key exists in both dictionaries but has a different type.
+        TypeError: If the value has an unsupported type.
+
     Example:
         If left = {"function_call": {"arguments": None}} and
         right = {"function_call": {"arguments": "{\n"}}
@@ -46,7 +57,15 @@ def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]
 
 
 def merge_lists(left: Optional[List], *others: Optional[List]) -> Optional[List]:
-    """Add many lists, handling None."""
+    """Add many lists, handling None.
+
+    Args:
+        left: The first list to merge.
+        others: The other lists to merge.
+
+    Returns:
+        The merged list.
+    """
     merged = left.copy() if left is not None else None
     for other in others:
         if other is None:
@@ -75,6 +94,23 @@ def merge_lists(left: Optional[List], *others: Optional[List]) -> Optional[List]
 
 
 def merge_obj(left: Any, right: Any) -> Any:
+    """Merge two objects.
+
+    It handles specific scenarios where a key exists in both
+    dictionaries but has a value of None in 'left'. In such cases, the method uses the
+    value from 'right' for that key in the merged dictionary.
+
+    Args:
+        left: The first object to merge.
+        right: The other object to merge.
+
+    Returns:
+        The merged object.
+
+    Raises:
+        TypeError: If the key exists in both dictionaries but has a different type.
+        ValueError: If the two objects cannot be merged.
+    """
     if left is None or right is None:
         return left if left is not None else right
     elif type(left) is not type(right):

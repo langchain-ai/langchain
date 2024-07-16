@@ -98,6 +98,10 @@ def init_chat_model(
 
     Must have the integration package corresponding to the model provider installed.
 
+    .. versionadded:: 0.2.7
+
+    .. versionchanged:: 0.2.8
+
     Args:
         model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
         model_provider: The model provider. Supported model_provider values and the

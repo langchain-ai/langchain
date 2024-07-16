@@ -88,6 +88,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
         request_id=additional_kwargs["id"],
         object=additional_kwargs.get("object", ""),
         search_info=additional_kwargs.get("search_info", []),
+        usage=additional_kwargs.get("usage", None),
     )
 
     if additional_kwargs.get("function_call", {}):

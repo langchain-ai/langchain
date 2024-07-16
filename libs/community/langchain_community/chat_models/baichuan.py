@@ -22,6 +22,8 @@ from langchain_core.messages import (
     ChatMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
@@ -44,6 +46,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+    elif isinstance(message, SystemMessage):
+        message_dict = {"role": "system", "content": message.content}
     else:
         raise TypeError(f"Got unknown type {message}")
 
@@ -56,6 +60,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
         return AIMessage(content=_dict.get("content", "") or "")
+    elif role == "system":
+        return SystemMessage(content=_dict.get("content", ""))
     else:
         return ChatMessage(content=_dict["content"], role=role)
 
@@ -70,6 +76,8 @@ def _convert_delta_to_message_chunk(
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
@@ -113,7 +121,7 @@ class ChatBaichuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    baichuan_api_base: str = Field(default=DEFAULT_API_BASE)
+    baichuan_api_base: str = Field(default=DEFAULT_API_BASE, alias="base_url")
     """Baichuan custom endpoints"""
     baichuan_api_key: SecretStr = Field(alias="api_key")
     """Baichuan API Key"""
@@ -121,6 +129,8 @@ class ChatBaichuan(BaseChatModel):
     """[DEPRECATED, keeping it for for backward compatibility] Baichuan Secret Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
+    max_tokens: Optional[int] = None
+    """Maximum number of tokens to generate."""
     request_timeout: int = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
     model: str = "Baichuan2-Turbo-192K"
@@ -133,7 +143,8 @@ class ChatBaichuan(BaseChatModel):
     top_p: float = 0.85
     """What probability mass to use."""
     with_search_enhance: bool = False
-    """Whether to use search enhance, default is False."""
+    """[DEPRECATED, keeping it for for backward compatibility], 
+    Whether to use search enhance, default is False."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
 
@@ -193,8 +204,8 @@ class ChatBaichuan(BaseChatModel):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
-            "with_search_enhance": self.with_search_enhance,
             "stream": self.streaming,
+            "max_tokens": self.max_tokens,
         }
 
         return {**normal_params, **self.model_kwargs}
