@@ -918,7 +918,7 @@ class TestAzureCosmosDBVectorSearch:
 
     vectorstore = AzureCosmosDBVectorSearch.from_documents(
         documents,
-        embedding=azure_openai_embeddings,
+        azure_openai_embeddings,
         collection=collection,
         index_name=INDEX_NAME,
         application_name=application_name,

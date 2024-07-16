@@ -207,9 +207,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             "limit_offset_clause": "OFFSET 0 LIMIT 1",
         }
 
-        output = store.similarity_search(
-            "Dogs", k=4, pre_filter=pre_filter
-        )
+        output = store.similarity_search("Dogs", k=4, pre_filter=pre_filter)
 
         assert len(output) == 1
         assert output[0].page_content == "Dogs are tough."
