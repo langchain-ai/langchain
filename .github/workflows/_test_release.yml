@@ -7,14 +7,19 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+      dangerous-nonmaster-release:
+        required: false
+        type: boolean
+        default: false
+        description: "Release from a non-master branch (danger!)"
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.7.1"
   PYTHON_VERSION: "3.10"
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     runs-on: ubuntu-latest
 
     outputs:
@@ -48,7 +53,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Upload build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-dist
           path: ${{ inputs.working-directory }}/dist/
@@ -76,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: test-dist
           path: ${{ inputs.working-directory }}/dist/

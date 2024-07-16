@@ -25,17 +25,20 @@ extended_tests:
 	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 test_watch:
-	poetry run ptw --now . -- tests/unit_tests
+	poetry run ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --disable-warnings tests/unit_tests
+
+test_watch_extended:
+	poetry run ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 integration_tests:
 	poetry run pytest tests/integration_tests
 
-scheduled_tests:
-	poetry run pytest -m scheduled tests/integration_tests
-
 docker_tests:
 	docker build -t my-langchain-image:test .
 	docker run --rm my-langchain-image:test
+
+check_imports: $(shell find langchain -name '*.py')
+	poetry run python ./scripts/check_imports.py $^
 
 ######################
 # LINTING AND FORMATTING
@@ -43,19 +46,24 @@ docker_tests:
 
 # Define a variable for Python and notebook files.
 PYTHON_FILES=.
+MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain
+lint_tests: PYTHON_FILES=tests
+lint_tests: MYPY_CACHE=.mypy_cache_test
 
-lint lint_diff:
+lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
-	./scripts/check_imports.sh
-	poetry run ruff .
+	./scripts/lint_imports.sh
+	poetry run ruff check .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || poetry run mypy $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check --select I $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check --select I --fix $(PYTHON_FILES)
 
 spell_check:
 	poetry run codespell --toml pyproject.toml

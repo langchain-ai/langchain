@@ -1,10 +1,10 @@
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain.vectorstores import Redis
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Redis
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 from rag_redis.config import (
     EMBED_MODEL,
@@ -54,7 +54,7 @@ prompt = ChatPromptTemplate.from_template(template)
 
 
 # RAG Chain
-model = ChatOpenAI(model_name="gpt-3.5-turbo-16k")
+model = ChatOpenAI(model="gpt-3.5-turbo-16k")
 chain = (
     RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
     | prompt

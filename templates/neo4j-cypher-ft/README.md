@@ -9,6 +9,8 @@ The package utilizes a full-text index for efficient mapping of text values to d
 
 In the provided example, the full-text index is used to map names of people and movies from the user's query to corresponding database entries.
 
+![Workflow diagram showing the process from a user asking a question to generating an answer using the Neo4j knowledge graph and full-text index.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-ft/static/workflow.png "Neo4j Cypher Workflow Diagram")
+
 ## Environment Setup
 
 The following environment variables need to be set:
@@ -53,7 +55,7 @@ add_routes(app, neo4j_cypher_ft_chain, path="/neo4j-cypher-ft")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

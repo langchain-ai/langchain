@@ -51,6 +51,7 @@ class SudokuChecker(ToTChecker):
             return ThoughtValidity.INVALID
 
 
+@pytest.mark.requires("jinja2")
 def test_solve_sudoku(fake_llm_sudoku: FakeLLM) -> None:
     """Test simple question that should not need python."""
     tot_chain = ToTChain(
@@ -64,6 +65,7 @@ def test_solve_sudoku(fake_llm_sudoku: FakeLLM) -> None:
     assert output == sudoku_solution
 
 
+@pytest.mark.requires("jinja2")
 def test_solve_sudoku_k_too_small(fake_llm_sudoku: FakeLLM) -> None:
     """Test simple question that should not need python."""
     tot_chain = ToTChain(

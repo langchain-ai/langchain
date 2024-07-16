@@ -1,33 +1,23 @@
-"""Tool for the Golden API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.golden_query import GoldenQueryAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools.golden_query.tool import GoldenQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"GoldenQueryRun": "langchain_community.tools.golden_query.tool"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GoldenQueryRun(BaseTool):
-    """Tool that adds the capability to query using the Golden API and get back JSON."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "Golden-Query"
-    description: str = (
-        "A wrapper around Golden Query API."
-        " Useful for getting entities that match"
-        " a natural language query from Golden's Knowledge Base."
-        "\nExample queries:"
-        "\n- companies in nanotech"
-        "\n- list of cloud providers starting in 2019"
-        "\nInput should be the natural language query."
-        "\nOutput is a paginated list of results or an error object"
-        " in JSON format."
-    )
-    api_wrapper: GoldenQueryAPIWrapper
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Golden tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "GoldenQueryRun",
+]

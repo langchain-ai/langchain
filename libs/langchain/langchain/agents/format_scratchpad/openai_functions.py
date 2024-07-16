@@ -1,8 +1,8 @@
 import json
 from typing import List, Sequence, Tuple
 
-from langchain.schema.agent import AgentAction, AgentActionMessageLog
-from langchain.schema.messages import AIMessage, BaseMessage, FunctionMessage
+from langchain_core.agents import AgentAction, AgentActionMessageLog
+from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 
 
 def _convert_agent_action_to_messages(
@@ -16,7 +16,8 @@ def _convert_agent_action_to_messages(
         agent_action: Agent action to convert.
 
     Returns:
-        AIMessage that corresponds to the original tool invocation.
+        AIMessage or the previous messages plus a FunctionMessage that corresponds to
+            the original tool invocation
     """
     if isinstance(agent_action, AgentActionMessageLog):
         return list(agent_action.message_log) + [
@@ -31,10 +32,13 @@ def _create_function_message(
 ) -> FunctionMessage:
     """Convert agent action and observation into a function message.
     Args:
-        agent_action: the tool invocation request from the agent
-        observation: the result of the tool invocation
+        agent_action: the tool invocation request from the agent.
+        observation: the result of the tool invocation.
     Returns:
-        FunctionMessage that corresponds to the original tool invocation
+        FunctionMessage that corresponds to the original tool invocation.
+
+    Raises:
+        ValueError: if the observation cannot be converted to a string.
     """
     if not isinstance(observation, str):
         try:
@@ -49,14 +53,18 @@ def _create_function_message(
     )
 
 
-def format_to_openai_functions(
+def format_to_openai_function_messages(
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
 ) -> List[BaseMessage]:
-    """Format intermediate steps.
+    """Convert (AgentAction, tool output) tuples into FunctionMessages.
+
     Args:
         intermediate_steps: Steps the LLM has taken to date, along with observations
+
     Returns:
         list of messages to send to the LLM for the next prediction
+    Raises:
+        ValueError: if the observation cannot be converted to a string.
     """
     messages = []
 
@@ -64,3 +72,7 @@ def format_to_openai_functions(
         messages.extend(_convert_agent_action_to_messages(agent_action, observation))
 
     return messages
+
+
+# Backwards compatibility
+format_to_openai_functions = format_to_openai_function_messages

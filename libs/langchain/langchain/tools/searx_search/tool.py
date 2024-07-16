@@ -1,76 +1,27 @@
-"""Tool for the SearxNG search API."""
-from typing import Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
-from langchain.pydantic_v1 import Extra
-from langchain.tools.base import BaseTool, Field
-from langchain.utilities.searx_search import SearxSearchWrapper
+from langchain._api import create_importer
 
+if TYPE_CHECKING:
+    from langchain_community.tools import SearxSearchResults, SearxSearchRun
 
-class SearxSearchRun(BaseTool):
-    """Tool that queries a Searx instance."""
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "SearxSearchRun": "langchain_community.tools",
+    "SearxSearchResults": "langchain_community.tools",
+}
 
-    name: str = "searx_search"
-    description: str = (
-        "A meta search engine."
-        "Useful for when you need to answer questions about current events."
-        "Input should be a search query."
-    )
-    wrapper: SearxSearchWrapper
-    kwargs: dict = Field(default_factory=dict)
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return self.wrapper.run(query, **self.kwargs)
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        return await self.wrapper.arun(query, **self.kwargs)
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SearxSearchResults(BaseTool):
-    """Tool that queries a Searx instance and gets back json."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "Searx-Search-Results"
-    description: str = (
-        "A meta search engine."
-        "Useful for when you need to answer questions about current events."
-        "Input should be a search query. Output is a JSON array of the query results"
-    )
-    wrapper: SearxSearchWrapper
-    num_results: int = 4
-    kwargs: dict = Field(default_factory=dict)
 
-    class Config:
-        """Pydantic config."""
-
-        extra = Extra.allow
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return str(self.wrapper.results(query, self.num_results, **self.kwargs))
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        return (
-            await self.wrapper.aresults(query, self.num_results, **self.kwargs)
-        ).__str__()
+__all__ = [
+    "SearxSearchRun",
+    "SearxSearchResults",
+]

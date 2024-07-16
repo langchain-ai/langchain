@@ -1,50 +1,30 @@
-import hashlib
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
+from langchain._api import create_importer
 
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.embeddings import Embeddings
+if TYPE_CHECKING:
+    from langchain_community.embeddings import (
+        DeterministicFakeEmbedding,
+        FakeEmbeddings,
+    )
 
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "FakeEmbeddings": "langchain_community.embeddings",
+    "DeterministicFakeEmbedding": "langchain_community.embeddings",
+}
 
-class FakeEmbeddings(Embeddings, BaseModel):
-    """Fake embedding model."""
-
-    size: int
-    """The size of the embedding vector."""
-
-    def _get_embedding(self) -> List[float]:
-        return list(np.random.normal(size=self.size))
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self._get_embedding() for _ in texts]
-
-    def embed_query(self, text: str) -> List[float]:
-        return self._get_embedding()
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class DeterministicFakeEmbedding(Embeddings, BaseModel):
-    """
-    Fake embedding model that always returns
-    the same embedding vector for the same text.
-    """
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    size: int
-    """The size of the embedding vector."""
 
-    def _get_embedding(self, seed: int) -> List[float]:
-        # set the seed for the random generator
-        np.random.seed(seed)
-        return list(np.random.normal(size=self.size))
-
-    def _get_seed(self, text: str) -> int:
-        """
-        Get a seed for the random generator, using the hash of the text.
-        """
-        return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % 10**8
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self._get_embedding(seed=self._get_seed(_)) for _ in texts]
-
-    def embed_query(self, text: str) -> List[float]:
-        return self._get_embedding(seed=self._get_seed(text))
+__all__ = [
+    "FakeEmbeddings",
+    "DeterministicFakeEmbedding",
+]

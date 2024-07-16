@@ -1,4 +1,5 @@
 """Chain that interprets a prompt and executes python code to do math."""
+
 from __future__ import annotations
 
 import math
@@ -6,16 +7,17 @@ import re
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_math.prompt import PROMPT
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class LLMMathChain(Chain):
@@ -25,7 +27,7 @@ class LLMMathChain(Chain):
         .. code-block:: python
 
             from langchain.chains import LLMMathChain
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
     """
 
@@ -80,7 +82,7 @@ class LLMMathChain(Chain):
         return [self.output_key]
 
     def _evaluate_expression(self, expression: str) -> str:
-        import numexpr  # noqa: F401
+        import numexpr
 
         try:
             local_dict = {"pi": math.pi, "e": math.e}

@@ -1,23 +1,30 @@
 """Script for auto-generating api_reference.rst."""
+
 import importlib
 import inspect
+import os
+import sys
 import typing
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
+import toml
+import typing_extensions
+from langchain_core.runnables import Runnable, RunnableSerializable
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
 
-PKG_DIR = ROOT_DIR / "libs" / "langchain" / "langchain"
-EXP_DIR = ROOT_DIR / "libs" / "experimental" / "langchain_experimental"
-WRITE_FILE = HERE / "api_reference.rst"
-EXP_WRITE_FILE = HERE / "experimental_api_reference.rst"
-
-
-ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
+ClassKind = Literal[
+    "TypedDict",
+    "Regular",
+    "Pydantic",
+    "enum",
+    "RunnablePydantic",
+    "RunnableNonPydantic",
+]
 
 
 class ClassInfo(TypedDict):
@@ -71,8 +78,36 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             continue
 
         if inspect.isclass(type_):
-            if type(type_) == typing._TypedDictMeta:  # type: ignore
+            # The type of the class is used to select a template
+            # for the object when rendering the documentation.
+            # See `templates` directory for defined templates.
+            # This is a hacky solution to distinguish between different
+            # kinds of thing that we want to render.
+            if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
+            elif type(type_) is typing._TypedDictMeta:  # type: ignore
+                kind: ClassKind = "TypedDict"
+            elif (
+                issubclass(type_, Runnable)
+                and issubclass(type_, BaseModel)
+                and type_ is not Runnable
+            ):
+                # RunnableSerializable subclasses from Pydantic which
+                # for which we use autodoc_pydantic for rendering.
+                # We need to distinguish these from regular Pydantic
+                # classes so we can hide inherited Runnable methods
+                # and provide a link to the Runnable interface from
+                # the template.
+                kind = "RunnablePydantic"
+            elif (
+                issubclass(type_, Runnable)
+                and not issubclass(type_, BaseModel)
+                and type_ is not Runnable
+            ):
+                # These are not pydantic classes but are Runnable.
+                # We'll hide all the inherited methods from Runnable
+                # but use a regular class template to render.
+                kind = "RunnableNonPydantic"
             elif issubclass(type_, Enum):
                 kind = "enum"
             elif issubclass(type_, BaseModel):
@@ -130,11 +165,11 @@ def _load_package_modules(
     of the modules/packages are part of the package vs. 3rd party or built-in.
 
     Parameters:
-        package_directory: Path to the package directory.
-        submodule: Optional name of submodule to load.
+        package_directory (Union[str, Path]): Path to the package directory.
+        submodule (Optional[str]): Optional name of submodule to load.
 
     Returns:
-        list: A list of loaded module objects.
+        Dict[str, ModuleMembers]: A dictionary where keys are module names and values are ModuleMembers objects.
     """
     package_path = (
         Path(package_directory)
@@ -194,11 +229,15 @@ def _load_package_modules(
     return modules_by_namespace
 
 
-def _construct_doc(pkg: str, members_by_namespace: Dict[str, ModuleMembers]) -> str:
+def _construct_doc(
+    package_namespace: str,
+    members_by_namespace: Dict[str, ModuleMembers],
+    package_version: str,
+) -> str:
     """Construct the contents of the reference.rst file for the given package.
 
     Args:
-        pkg: The package name
+        package_namespace: The package top level namespace
         members_by_namespace: The members of the package, dict organized by top level
                               module contains a list of classes and functions
                               inside of the top level namespace.
@@ -208,7 +247,7 @@ def _construct_doc(pkg: str, members_by_namespace: Dict[str, ModuleMembers]) -> 
     """
     full_doc = f"""\
 =======================
-``{pkg}`` API Reference
+``{package_namespace}`` {package_version}
 =======================
 
 """
@@ -216,17 +255,17 @@ def _construct_doc(pkg: str, members_by_namespace: Dict[str, ModuleMembers]) -> 
 
     for module in namespaces:
         _members = members_by_namespace[module]
-        classes = _members["classes_"]
-        functions = _members["functions"]
+        classes = [el for el in _members["classes_"] if el["is_public"]]
+        functions = [el for el in _members["functions"] if el["is_public"]]
         if not (classes or functions):
             continue
-        section = f":mod:`{pkg}.{module}`"
+        section = f":mod:`{package_namespace}.{module}`"
         underline = "=" * (len(section) + 1)
         full_doc += f"""\
 {section}
 {underline}
 
-.. automodule:: {pkg}.{module}
+.. automodule:: {package_namespace}.{module}
     :no-members:
     :no-inherited-members:
 
@@ -236,22 +275,23 @@ def _construct_doc(pkg: str, members_by_namespace: Dict[str, ModuleMembers]) -> 
             full_doc += f"""\
 Classes
 --------------
-.. currentmodule:: {pkg}
+.. currentmodule:: {package_namespace}
 
 .. autosummary::
     :toctree: {module}
 """
 
             for class_ in sorted(classes, key=lambda c: c["qualified_name"]):
-                if not class_["is_public"]:
-                    continue
-
                 if class_["kind"] == "TypedDict":
                     template = "typeddict.rst"
                 elif class_["kind"] == "enum":
                     template = "enum.rst"
                 elif class_["kind"] == "Pydantic":
                     template = "pydantic.rst"
+                elif class_["kind"] == "RunnablePydantic":
+                    template = "runnable_pydantic.rst"
+                elif class_["kind"] == "RunnableNonPydantic":
+                    template = "runnable_non_pydantic.rst"
                 else:
                     template = "class.rst"
 
@@ -263,12 +303,12 @@ Classes
 """
 
         if functions:
-            _functions = [f["qualified_name"] for f in functions if f["is_public"]]
+            _functions = [f["qualified_name"] for f in functions]
             fstring = "\n    ".join(sorted(_functions))
             full_doc += f"""\
 Functions
 --------------
-.. currentmodule:: {pkg}
+.. currentmodule:: {package_namespace}
 
 .. autosummary::
     :toctree: {module}
@@ -280,47 +320,107 @@ Functions
     return full_doc
 
 
-def _document_langchain_experimental() -> None:
-    """Document the langchain_experimental package."""
-    # Generate experimental_api_reference.rst
-    exp_members = _load_package_modules(EXP_DIR)
-    exp_doc = ".. _experimental_api_reference:\n\n" + _construct_doc(
-        "langchain_experimental", exp_members
-    )
-    with open(EXP_WRITE_FILE, "w") as f:
-        f.write(exp_doc)
+def _build_rst_file(package_name: str = "langchain") -> None:
+    """Create a rst file for building of documentation.
+
+    Args:
+        package_name: Can be either "langchain" or "core" or "experimental".
+    """
+    package_dir = _package_dir(package_name)
+    package_members = _load_package_modules(package_dir)
+    package_version = _get_package_version(package_dir)
+    with open(_out_file_path(package_name), "w") as f:
+        f.write(
+            _doc_first_line(package_name)
+            + _construct_doc(
+                _package_namespace(package_name), package_members, package_version
+            )
+        )
 
 
-def _document_langchain_core() -> None:
-    """Document the main langchain package."""
-    # load top level module members
-    lc_members = _load_package_modules(PKG_DIR)
-
-    # Add additional packages
-    tools = _load_package_modules(PKG_DIR, "tools")
-    agents = _load_package_modules(PKG_DIR, "agents")
-    schema = _load_package_modules(PKG_DIR, "schema")
-
-    lc_members.update(
-        {
-            "agents.output_parsers": agents["output_parsers"],
-            "agents.format_scratchpad": agents["format_scratchpad"],
-            "tools.render": tools["render"],
-            "schema.runnable": schema["runnable"],
-        }
+def _package_namespace(package_name: str) -> str:
+    return (
+        package_name
+        if package_name == "langchain"
+        else f"langchain_{package_name.replace('-', '_')}"
     )
 
-    lc_doc = ".. _api_reference:\n\n" + _construct_doc("langchain", lc_members)
 
-    with open(WRITE_FILE, "w") as f:
-        f.write(lc_doc)
+def _package_dir(package_name: str = "langchain") -> Path:
+    """Return the path to the directory containing the documentation."""
+    if package_name in (
+        "langchain",
+        "experimental",
+        "community",
+        "core",
+        "cli",
+        "text-splitters",
+    ):
+        return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
+    else:
+        return (
+            ROOT_DIR
+            / "libs"
+            / "partners"
+            / package_name
+            / _package_namespace(package_name)
+        )
 
 
-def main() -> None:
-    """Generate the reference.rst file for each package."""
-    _document_langchain_core()
-    _document_langchain_experimental()
+def _get_package_version(package_dir: Path) -> str:
+    """Return the version of the package."""
+    try:
+        with open(package_dir.parent / "pyproject.toml", "r") as f:
+            pyproject = toml.load(f)
+    except FileNotFoundError as e:
+        print(
+            f"pyproject.toml not found in {package_dir.parent}.\n"
+            "You are either attempting to build a directory which is not a package or "
+            "the package is missing a pyproject.toml file which should be added."
+            "Aborting the build."
+        )
+        exit(1)
+    return pyproject["tool"]["poetry"]["version"]
+
+
+def _out_file_path(package_name: str) -> Path:
+    """Return the path to the file containing the documentation."""
+    return HERE / f"{package_name.replace('-', '_')}_api_reference.rst"
+
+
+def _doc_first_line(package_name: str) -> str:
+    """Return the path to the file containing the documentation."""
+    return f".. {package_name.replace('-', '_')}_api_reference:\n\n"
+
+
+def main(dirs: Optional[list] = None) -> None:
+    """Generate the api_reference.rst file for each package."""
+    print("Starting to build API reference files.")
+    if not dirs:
+        dirs = [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs")
+            if dir_ not in ("cli", "partners", "standard-tests")
+        ]
+        dirs += [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs" / "partners")
+            if os.path.isdir(ROOT_DIR / "libs" / "partners" / dir_)
+            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / "partners" / dir_)
+        ]
+    for dir_ in dirs:
+        # Skip any hidden directories
+        # Some of these could be present by mistake in the code base
+        # e.g., .pytest_cache from running tests from the wrong location.
+        if dir_.startswith("."):
+            print("Skipping dir:", dir_)
+            continue
+        else:
+            print("Building package:", dir_)
+            _build_rst_file(package_name=dir_)
+    print("API reference files built.")
 
 
 if __name__ == "__main__":
-    main()
+    dirs = sys.argv[1:] or None
+    main(dirs=dirs)

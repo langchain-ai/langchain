@@ -1,24 +1,23 @@
-from pathlib import Path
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import RoamLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"RoamLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class RoamLoader(BaseLoader):
-    """Load `Roam` files from a directory."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, path: str):
-        """Initialize with a path."""
-        self.file_path = path
 
-    def load(self) -> List[Document]:
-        """Load documents."""
-        ps = list(Path(self.file_path).glob("**/*.md"))
-        docs = []
-        for p in ps:
-            with open(p) as f:
-                text = f.read()
-            metadata = {"source": str(p)}
-            docs.append(Document(page_content=text, metadata=metadata))
-        return docs
+__all__ = [
+    "RoamLoader",
+]

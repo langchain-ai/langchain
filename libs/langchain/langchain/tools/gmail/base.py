@@ -1,36 +1,23 @@
-"""Base class for Gmail tools."""
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING
-
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.tools.gmail.utils import build_resource_service
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    # This is for linting and IDE typehints
-    from googleapiclient.discovery import Resource
-else:
-    try:
-        # We do this so pydantic can resolve the types when instantiating
-        from googleapiclient.discovery import Resource
-    except ImportError:
-        pass
+    from langchain_community.tools.gmail.base import GmailBaseTool
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"GmailBaseTool": "langchain_community.tools.gmail.base"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GmailBaseTool(BaseTool):
-    """Base class for Gmail tools."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    api_resource: Resource = Field(default_factory=build_resource_service)
 
-    @classmethod
-    def from_api_resource(cls, api_resource: Resource) -> "GmailBaseTool":
-        """Create a tool from an api resource.
-
-        Args:
-            api_resource: The api resource to use.
-
-        Returns:
-            A tool.
-        """
-        return cls(service=api_resource)
+__all__ = [
+    "GmailBaseTool",
+]

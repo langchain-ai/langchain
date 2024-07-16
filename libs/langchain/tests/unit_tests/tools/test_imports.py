@@ -1,4 +1,4 @@
-from langchain.tools import __all__
+from langchain import tools
 
 EXPECTED_ALL = [
     "AINAppOps",
@@ -13,6 +13,7 @@ EXPECTED_ALL = [
     "AzureCogsImageAnalysisTool",
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
+    "AzureCogsTextAnalyticsHealthTool",
     "BaseGraphQLTool",
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
@@ -67,6 +68,7 @@ EXPECTED_ALL = [
     "ListSparkSQLTool",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
     "O365CreateDraftMessage",
@@ -77,6 +79,7 @@ EXPECTED_ALL = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -89,11 +92,19 @@ EXPECTED_ALL = [
     "RequestsPostTool",
     "RequestsPutTool",
     "SceneXplainTool",
+    "SearchAPIRun",
+    "SearchAPIResults",
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
+    "SlackGetChannel",
+    "SlackGetMessage",
+    "SlackScheduleMessage",
+    "SlackSendMessage",
     "SleepTool",
+    "StackExchangeTool",
     "StdInInquireTool",
+    "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
@@ -106,11 +117,11 @@ EXPECTED_ALL = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "authenticate",
     "format_tool_to_openai_function",
     "tool",
+    "MerriamWebsterQueryRun",
 ]
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(tools.__all__) == set(EXPECTED_ALL)

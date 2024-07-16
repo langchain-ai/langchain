@@ -10,7 +10,7 @@ For more information on the LangSmith API, see the `LangSmith API documentation 
 .. code-block:: python
 
     from langsmith import Client
-    from langchain.chat_models import ChatOpenAI
+    from langchain_community.chat_models import ChatOpenAI
     from langchain.chains import LLMChain
     from langchain.smith import EvaluatorType, RunEvalConfig, run_on_dataset
 
@@ -50,7 +50,6 @@ For more information on the LangSmith API, see the `LangSmith API documentation 
 - ``InputFormatError``: Exception raised when the input format is incorrect.
 
 """  # noqa: E501
-
 
 from langchain.smith.evaluation.config import RunEvalConfig
 from langchain.smith.evaluation.runner_utils import (

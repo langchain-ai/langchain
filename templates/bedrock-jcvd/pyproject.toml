@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "bedrock-jcvd"
+version = "0.1.0"
+description = "LangChain template that behaves like JCVD using Anthropic's Claude on Amazon Bedrock"
+authors = ["JGalego <jgalego1990@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+uvicorn = "^0.23.2"
+langserve = {extras = ["server"], version = ">=0.0.30"}
+pydantic = "<2"
+boto3 = "^1.33.10"
+langchain = "^0.1"
+
+[tool.langserve]
+export_module = "bedrock_jcvd.chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["AWS"]
+tags = ["conversation"]
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

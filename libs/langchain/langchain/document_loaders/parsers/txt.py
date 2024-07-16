@@ -1,14 +1,23 @@
-"""Module for parsing text files.."""
-from typing import Iterator
+from typing import TYPE_CHECKING, Any
 
-from langchain.document_loaders.base import BaseBlobParser
-from langchain.document_loaders.blob_loaders import Blob
-from langchain.schema import Document
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders.parsers.txt import TextParser
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"TextParser": "langchain_community.document_loaders.parsers.txt"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class TextParser(BaseBlobParser):
-    """Parser for text blobs."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
-        """Lazily parse the blob."""
-        yield Document(page_content=blob.as_string(), metadata={"source": blob.source})
+
+__all__ = [
+    "TextParser",
+]

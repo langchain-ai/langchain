@@ -1,31 +1,29 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-import sys
-from typing import List
+from langchain._api import create_importer
 
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools.azure_cognitive_services import (
-    AzureCogsFormRecognizerTool,
-    AzureCogsImageAnalysisTool,
-    AzureCogsSpeech2TextTool,
-    AzureCogsText2SpeechTool,
-)
-from langchain.tools.base import BaseTool
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.azure_cognitive_services import (
+        AzureCognitiveServicesToolkit,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "AzureCognitiveServicesToolkit": (
+        "langchain_community.agent_toolkits.azure_cognitive_services"
+    )
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AzureCognitiveServicesToolkit(BaseToolkit):
-    """Toolkit for Azure Cognitive Services."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
 
-        tools: List[BaseTool] = [
-            AzureCogsFormRecognizerTool(),
-            AzureCogsSpeech2TextTool(),
-            AzureCogsText2SpeechTool(),
-        ]
-
-        # TODO: Remove check once azure-ai-vision supports MacOS.
-        if sys.platform.startswith("linux") or sys.platform.startswith("win"):
-            tools.append(AzureCogsImageAnalysisTool())
-        return tools
+__all__ = [
+    "AzureCognitiveServicesToolkit",
+]

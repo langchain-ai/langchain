@@ -1,43 +1,28 @@
-"""Tool for agent to sleep."""
-from asyncio import sleep as asleep
-from time import sleep
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.base import BaseTool
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.tools import SleepTool
+    from langchain_community.tools.sleep.tool import SleepInput
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "SleepInput": "langchain_community.tools.sleep.tool",
+    "SleepTool": "langchain_community.tools",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SleepInput(BaseModel):
-    """Input for CopyFileTool."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    sleep_time: int = Field(..., description="Time to sleep in seconds")
 
-
-class SleepTool(BaseTool):
-    """Tool that adds the capability to sleep."""
-
-    name: str = "sleep"
-    args_schema: Type[BaseModel] = SleepInput
-    description: str = "Make agent sleep for a specified number of seconds."
-
-    def _run(
-        self,
-        sleep_time: int,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Sleep tool."""
-        sleep(sleep_time)
-        return f"Agent slept for {sleep_time} seconds."
-
-    async def _arun(
-        self,
-        sleep_time: int,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the sleep tool asynchronously."""
-        await asleep(sleep_time)
-        return f"Agent slept for {sleep_time} seconds."
+__all__ = [
+    "SleepInput",
+    "SleepTool",
+]

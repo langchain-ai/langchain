@@ -1,27 +1,23 @@
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any
 
-from langchain.llms.openai import BaseOpenAI
-from langchain.pydantic_v1 import root_validator
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.llms import OpenLM
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"OpenLM": "langchain_community.llms"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class OpenLM(BaseOpenAI):
-    """OpenLM models."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    @property
-    def _invocation_params(self) -> Dict[str, Any]:
-        return {**{"model": self.model_name}, **super()._invocation_params}
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        try:
-            import openlm
-
-            values["client"] = openlm.Completion
-        except ImportError:
-            raise ImportError(
-                "Could not import openlm python package. "
-                "Please install it with `pip install openlm`."
-            )
-        if values["streaming"]:
-            raise ValueError("Streaming not supported with openlm")
-        return values
+__all__ = [
+    "OpenLM",
+]

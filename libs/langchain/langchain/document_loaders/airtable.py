@@ -1,39 +1,23 @@
-from typing import Iterator, List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import AirtableLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"AirtableLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AirtableLoader(BaseLoader):
-    """Load the `Airtable` tables."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, api_token: str, table_id: str, base_id: str):
-        """Initialize with API token and the IDs for table and base"""
-        self.api_token = api_token
-        """Airtable API token."""
-        self.table_id = table_id
-        """Airtable table ID."""
-        self.base_id = base_id
-        """Airtable base ID."""
 
-    def lazy_load(self) -> Iterator[Document]:
-        """Lazy load Documents from table."""
-
-        from pyairtable import Table
-
-        table = Table(self.api_token, self.base_id, self.table_id)
-        records = table.all()
-        for record in records:
-            # Need to convert record from dict to str
-            yield Document(
-                page_content=str(record),
-                metadata={
-                    "source": self.base_id + "_" + self.table_id,
-                    "base_id": self.base_id,
-                    "table_id": self.table_id,
-                },
-            )
-
-    def load(self) -> List[Document]:
-        """Load Documents from table."""
-        return list(self.lazy_load())
+__all__ = [
+    "AirtableLoader",
+]

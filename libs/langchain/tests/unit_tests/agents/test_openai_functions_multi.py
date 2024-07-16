@@ -1,13 +1,14 @@
 import json
 
 import pytest
+from langchain_core.agents import AgentFinish
+from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import AIMessage, SystemMessage
 
 from langchain.agents.openai_functions_multi_agent.base import (
     _FunctionsAgentAction,
     _parse_ai_message,
 )
-from langchain.schema import AgentFinish, OutputParserException
-from langchain.schema.messages import AIMessage, SystemMessage
 
 
 # Test: _parse_ai_message() function.

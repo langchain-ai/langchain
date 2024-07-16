@@ -1,27 +1,30 @@
-from typing import Any, List
+from typing import TYPE_CHECKING, Any
+
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.utilities.anthropic import (
+        get_num_tokens_anthropic,
+        get_token_ids_anthropic,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "get_num_tokens_anthropic": "langchain_community.utilities.anthropic",
+    "get_token_ids_anthropic": "langchain_community.utilities.anthropic",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-def _get_anthropic_client() -> Any:
-    try:
-        import anthropic
-    except ImportError:
-        raise ImportError(
-            "Could not import anthropic python package. "
-            "This is needed in order to accurately tokenize the text "
-            "for anthropic models. Please install it with `pip install anthropic`."
-        )
-    return anthropic.Anthropic()
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-def get_num_tokens_anthropic(text: str) -> int:
-    """Get the number of tokens in a string of text."""
-    client = _get_anthropic_client()
-    return client.count_tokens(text=text)
-
-
-def get_token_ids_anthropic(text: str) -> List[int]:
-    """Get the token ids for a string of text."""
-    client = _get_anthropic_client()
-    tokenizer = client.get_tokenizer()
-    encoded_text = tokenizer.encode(text)
-    return encoded_text.ids
+__all__ = [
+    "get_num_tokens_anthropic",
+    "get_token_ids_anthropic",
+]

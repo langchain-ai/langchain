@@ -1,11 +1,8 @@
 import os
 
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain.vectorstores import Vectara
+from langchain_community.vectorstores import Vectara
+from langchain_community.vectorstores.vectara import SummaryConfig, VectaraQueryConfig
+from langchain_core.pydantic_v1 import BaseModel
 
 if os.environ.get("VECTARA_CUSTOMER_ID", None) is None:
     raise Exception("Missing `VECTARA_CUSTOMER_ID` environment variable.")
@@ -14,31 +11,14 @@ if os.environ.get("VECTARA_CORPUS_ID", None) is None:
 if os.environ.get("VECTARA_API_KEY", None) is None:
     raise Exception("Missing `VECTARA_API_KEY` environment variable.")
 
-# If you want to ingest data then use this code.
-# Note that no document chunking is needed, as this is
-# done efficiently in the Vectara backend.
-#   loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-#   docs = loader.load()
-#   vec_store = Vectara.from_document(docs)
-#   retriever = vec_store.as_retriever()
-# Otherwise, if data is already loaded into Vectara then use this code:
-retriever = Vectara().as_retriever()
+# Setup the Vectara vectorstore with your Corpus ID and API Key
+vectara = Vectara()
 
-# RAG prompt
-template = """Answer the question based only on the following context:
-{context}
-Question: {question}
-"""
-prompt = ChatPromptTemplate.from_template(template)
+# Define the query configuration:
+summary_config = SummaryConfig(is_enabled=True, max_results=5, response_lang="eng")
+config = VectaraQueryConfig(k=10, lambda_val=0.005, summary_config=summary_config)
 
-# RAG
-model = ChatOpenAI()
-chain = (
-    RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
-    | prompt
-    | model
-    | StrOutputParser()
-)
+rag = Vectara().as_rag(config)
 
 
 # Add typing for input
@@ -46,4 +26,4 @@ class Question(BaseModel):
     __root__: str
 
 
-chain = chain.with_types(input_type=Question)
+chain = rag.with_types(input_type=Question)

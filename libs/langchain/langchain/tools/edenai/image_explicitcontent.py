@@ -1,67 +1,23 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-import logging
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.edenai.edenai_base_tool import EdenaiTool
+if TYPE_CHECKING:
+    from langchain_community.tools import EdenAiExplicitImageTool
 
-logger = logging.getLogger(__name__)
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"EdenAiExplicitImageTool": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class EdenAiExplicitImageTool(EdenaiTool):
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    """Tool that queries the Eden AI Explicit image detection.
 
-    for api reference check edenai documentation:
-    https://docs.edenai.co/reference/image_explicit_content_create.
-
-    To use, you should have
-    the environment variable ``EDENAI_API_KEY`` set with your API token.
-    You can find your token here: https://app.edenai.run/admin/account/settings
-
-    """
-
-    name = "edenai_image_explicit_content_detection"
-
-    description = (
-        "A wrapper around edenai Services Explicit image detection. "
-        """Useful for when you have to extract Explicit Content from images.
-        it detects adult only content in images, 
-        that is generally inappropriate for people under
-        the age of 18 and includes nudity, sexual activity,
-        pornography, violence, gore content, etc."""
-        "Input should be the string url of the image ."
-    )
-
-    combine_available = True
-    feature = "image"
-    subfeature = "explicit_content"
-
-    def _parse_json(self, json_data: dict) -> str:
-        result_str = f"nsfw_likelihood: {json_data['nsfw_likelihood']}\n"
-        for idx, found_obj in enumerate(json_data["items"]):
-            label = found_obj["label"].lower()
-            likelihood = found_obj["likelihood"]
-            result_str += f"{idx}: {label} likelihood {likelihood},\n"
-
-        return result_str[:-2]
-
-    def _parse_response(self, json_data: list) -> str:
-        if len(json_data) == 1:
-            result = self._parse_json(json_data[0])
-        else:
-            for entry in json_data:
-                if entry.get("provider") == "eden-ai":
-                    result = self._parse_json(entry)
-
-        return result
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        query_params = {"file_url": query, "attributes_as_list": False}
-        return self._call_eden_ai(query_params)
+__all__ = [
+    "EdenAiExplicitImageTool",
+]

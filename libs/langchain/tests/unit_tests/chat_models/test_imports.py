@@ -1,6 +1,7 @@
-from langchain.chat_models import __all__
+from langchain import chat_models
 
 EXPECTED_ALL = [
+    "init_chat_model",
     "ChatOpenAI",
     "BedrockChat",
     "AzureChatOpenAI",
@@ -9,7 +10,9 @@ EXPECTED_ALL = [
     "ChatEverlyAI",
     "ChatAnthropic",
     "ChatCohere",
+    "ChatDatabricks",
     "ChatGooglePalm",
+    "ChatMlflow",
     "ChatMLflowAIGateway",
     "ChatOllama",
     "ChatVertexAI",
@@ -28,8 +31,9 @@ EXPECTED_ALL = [
     "ChatBaichuan",
     "ChatHunyuan",
     "GigaChat",
+    "VolcEngineMaasChat",
 ]
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(chat_models.__all__) == set(EXPECTED_ALL)
