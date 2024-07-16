@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain"
-version = "0.2.7"
+version = "0.2.8"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -29,7 +29,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.12"
+langchain-core = "^0.2.19"
 langchain-text-splitters = "^0.2.0"
 langsmith = "^0.1.17"
 pydantic = ">=1,<3"
@@ -95,10 +95,6 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
-path = "../standard-tests"
-develop = true
-
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
@@ -126,6 +122,10 @@ mypy-protobuf = "^3.0.0"
 jupyter = "^1.0.0"
 playwright = "^1.28.0"
 setuptools = "^67.6.1"
+
+[tool.poetry.group.test.dependencies.langchain-standard-tests]
+path = "../standard-tests"
+develop = true
 
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../core"
