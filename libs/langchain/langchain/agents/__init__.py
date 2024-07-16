@@ -15,19 +15,20 @@ Agents select and use **Tools** and **Toolkits** for actions.
                               OpenAIFunctionsAgent
                               XMLAgent
                               Agent --> <name>Agent  # Examples: ZeroShotAgent, ChatAgent
-                                        
+
 
     BaseMultiActionAgent  --> OpenAIMultiFunctionsAgent
-    
-    
+
+
 **Main helpers:**
 
 .. code-block::
 
     AgentType, AgentExecutor, AgentOutputParser, AgentExecutorIterator,
     AgentAction, AgentFinish
-    
+
 """  # noqa: E501
+
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
