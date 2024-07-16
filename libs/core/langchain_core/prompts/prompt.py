@@ -213,17 +213,17 @@ class PromptTemplate(StringPromptTemplate):
     def from_file(
         cls,
         template_file: Union[str, Path],
-        encoding: Optional[str] = "utf-8",
         input_variables: Optional[List[str]] = None,
+        encoding: str = "utf-8",
         **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt from a file.
 
         Args:
             template_file: The path to the file containing the prompt template.
-            encoding: The encoding system for opening the template file.
             input_variables: [DEPRECATED] A list of variable names the final prompt
                 template will expect. Defaults to None.
+            encoding: The encoding system for opening the template file.
 
         input_variables is ignored as from_file now delegates to from_template().
 
