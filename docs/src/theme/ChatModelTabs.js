@@ -157,7 +157,7 @@ export default function ChatModelTabs(props) {
       apiKeyName: "NVIDIA_API_KEY",
       packageName: "langchain-nvidia-ai-endpoints",
       default: false,
-      shouldHide: hideNvidia,
+      shouldHide: false,
     },
     {
       value: "TogetherAI",
