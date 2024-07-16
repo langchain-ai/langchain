@@ -112,7 +112,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
                 input_tokens=usage.prompt_tokens,
                 output_tokens=usage.completion_tokens,
                 total_tokens=usage.total_tokens,
-            )
+            ),
         )
 
     return AIMessage(
@@ -591,7 +591,7 @@ class QianfanChatEndpoint(BaseChatModel):
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
-                        usage_metadata=msg.usage_metadata
+                        usage_metadata=msg.usage_metadata,
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -619,7 +619,7 @@ class QianfanChatEndpoint(BaseChatModel):
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
-                        usage_metadata=msg.usage_metadata
+                        usage_metadata=msg.usage_metadata,
                     ),
                     generation_info=msg.additional_kwargs,
                 )
