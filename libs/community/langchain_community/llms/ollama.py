@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Tuple,
     Mapping,
     Optional,
     Union,
@@ -142,7 +143,7 @@ class _OllamaCommon(BaseLanguageModel):
     tokens for authentication.
     """
 
-    auth: Callable | tuple | None = None
+    auth: Union[Callable, Tuple, None] = None
     """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
     Expects the same format, type and values as requests.request auth parameter."""
 
