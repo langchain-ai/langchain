@@ -1953,6 +1953,29 @@ class Qdrant(VectorStore):
         """
         return self.similarity_search_with_score(query, k, **kwargs)
 
+    @sync_call_fallback
+    async def _asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores in the range [0, 1].
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        return await self.asimilarity_search_with_score(query, k, **kwargs)
+
     @classmethod
     def _build_payloads(
         cls,
