@@ -1,6 +1,7 @@
-from langchain_community.graph_vectorstores.extractors import KeybertLinkExtractor
-from langchain_core.graph_vectorstores.links import Link
 import pytest
+from langchain_core.graph_vectorstores.links import Link
+
+from langchain_community.graph_vectorstores.extractors import KeybertLinkExtractor
 
 PAGE_1 = """
 Supervised learning is the machine learning task of learning a function that
@@ -21,6 +22,7 @@ KeyBERT is a minimal and easy-to-use keyword extraction technique that leverages
 BERT embeddings to create keywords and keyphrases that are most similar to a
 document.
 """
+
 
 @pytest.mark.requires("keybert")
 def test_one_from_keywords():

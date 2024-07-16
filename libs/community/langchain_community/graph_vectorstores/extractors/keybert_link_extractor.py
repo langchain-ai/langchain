@@ -1,9 +1,11 @@
 from typing import Any, Dict, Iterable, Optional, Set, Union
 
 from langchain_core.documents import Document
-
-from langchain_community.graph_vectorstores.extractors.link_extractor import LinkExtractor
 from langchain_core.graph_vectorstores.links import Link
+
+from langchain_community.graph_vectorstores.extractors.link_extractor import (
+    LinkExtractor,
+)
 
 # TypeAlias is not available in Python 2.9, we can't use that or the newer `type`.
 KeybertInput = Union[str, Document]
