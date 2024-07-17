@@ -199,7 +199,10 @@ def test_neo4jvector_with_metadatas_with_scores() -> None:
         password=password,
         pre_delete_collection=True,
     )
-    output = docsearch.similarity_search_with_score("foo", k=1)
+    output = [
+        (doc, round(score, 1))
+        for doc, score in docsearch.similarity_search_with_score("foo", k=1)
+    ]
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
     drop_vector_indexes(docsearch)
