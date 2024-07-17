@@ -213,3 +213,10 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
             logger.error("Error fetching messages: ", e)
 
         return messages_from_dict(message_items)
+
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError(
+            "Direct assignment to 'messages' is not allowed."
+            " Use the 'add_messages' instead."
+        )
