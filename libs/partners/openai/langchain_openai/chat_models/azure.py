@@ -522,7 +522,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """Name of the deployed OpenAI model, e.g. "gpt-4o", "gpt-3.5-turbo-0125", etc. 
     
     Distinct from the Azure deployment name, which is set by the Azure user.
-    Used for tracing and token counting.
+    Used for tracing and token counting. Does NOT affect completion.
     """
 
     @classmethod
