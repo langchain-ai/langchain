@@ -122,7 +122,73 @@ class DocumentIndexer(abc.ABC):
         .. versionadded:: ___version___
         """
 
-    async def aupsert(
+    @abc.abstractmethod
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> DeleteResponse:
+        """Delete by IDs or other criteria.
+
+        Calling delete without any input parameters should raise a ValueError!
+
+        Args:
+            ids: List of ids to delete.
+            kwargs: Additional keyword arguments. This is up to the implementation.
+                For example, can include an option to delete the entire index,
+                or else issue a non blocking delete etc.
+
+        Returns:
+            DeleteResponse: A response object that contains the list of IDs that were
+            successfully deleted and the list of IDs that failed to be deleted.
+        """
+
+    @abc.abstractmethod
+    def get(
+        self,
+        ids: Sequence[str],
+        /,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Get documents by id.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of IDs to get.
+            kwargs: Additional keyword arguments. These are up to the implementation.
+
+        Returns:
+            List[Document]: List of documents that were found.
+
+        .. versionadded:: ___version___
+        """
+
+
+@beta(message="Added in ___version___. The API is subject to change.")
+class AsyncDocumentIndexer(abc.ABC):
+    """An abstraction for indexing documents. Async Variant.
+
+    This indexing interface is designed to be a generic abstraction for storing and
+    querying documents that has an ID and metadata associated with it.
+
+    The interface is designed to be agnostic to the underlying implementation of the
+    indexing system.
+
+    The interface is designed to support the following operations:
+
+    1. Storing content in the index.
+    2. Retrieving content by ID.
+
+    .. versionadded:: ___version___
+    """
+
+    @abc.abstractmethod
+    async def upsert(
         self, items: Sequence[Document], /, **kwargs: Any
     ) -> UpsertResponse:
         """Add or update documents in the vectorstore. Async version of upsert.
@@ -154,23 +220,7 @@ class DocumentIndexer(abc.ABC):
         )
 
     @abc.abstractmethod
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> DeleteResponse:
-        """Delete by IDs or other criteria.
-
-        Calling delete without any input parameters should raise a ValueError!
-
-        Args:
-            ids: List of ids to delete.
-            kwargs: Additional keyword arguments. This is up to the implementation.
-                For example, can include an option to delete the entire index,
-                or else issue a non blocking delete etc.
-
-        Returns:
-            DeleteResponse: A response object that contains the list of IDs that were
-            successfully deleted and the list of IDs that failed to be deleted.
-        """
-
-    async def adelete(
+    async def delete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> DeleteResponse:
         """Delete by IDs or other criteria. Async variant.
@@ -186,15 +236,9 @@ class DocumentIndexer(abc.ABC):
             DeleteResponse: A response object that contains the list of IDs that were
             successfully deleted and the list of IDs that failed to be deleted.
         """
-        return await run_in_executor(
-            None,
-            self.delete,
-            ids,
-            **kwargs,
-        )
 
     @abc.abstractmethod
-    def get(
+    async def get(
         self,
         ids: Sequence[str],
         /,
@@ -221,40 +265,6 @@ class DocumentIndexer(abc.ABC):
 
         .. versionadded:: ___version___
         """
-
-    async def aget(
-        self,
-        ids: Sequence[str],
-        /,
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Get documents by id.
-
-        Fewer documents may be returned than requested if some IDs are not found or
-        if there are duplicated IDs.
-
-        Users should not assume that the order of the returned documents matches
-        the order of the input IDs. Instead, users should rely on the ID field of the
-        returned documents.
-
-        This method should **NOT** raise exceptions if no documents are found for
-        some IDs.
-
-        Args:
-            ids: List of IDs to get.
-            kwargs: Additional keyword arguments. These are up to the implementation.
-
-        Returns:
-            List[Document]: List of documents that were found.
-
-        .. versionadded:: ___version___
-        """
-        return await run_in_executor(
-            None,
-            self.get,
-            ids,
-            **kwargs,
-        )
 
 
 class RecordManager(ABC):

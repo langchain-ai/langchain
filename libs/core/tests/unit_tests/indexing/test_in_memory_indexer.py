@@ -4,14 +4,24 @@ from typing import Generator
 
 import pytest
 from langchain_standard_tests.integration_tests.indexer import (
-    BaseDocumentIndexerTestSuite,
+    AsyncDocumentIndexerTestSuite,
+    DocumentIndexerTestSuite,
 )
 
-from langchain_core.indexing import DocumentIndexer
-from langchain_core.indexing.in_memory import InMemoryIndexer
+from langchain_core.indexing import AsyncDocumentIndexer, DocumentIndexer
+from langchain_core.indexing.in_memory import (
+    AsyncInMemoryDocumentIndexer,
+    InMemoryDocumentIndexer,
+)
 
 
-class TestDocumentIndexerTestSuite(BaseDocumentIndexerTestSuite):
+class TestDocumentIndexerTestSuite(DocumentIndexerTestSuite):
     @pytest.fixture()
     def indexer(self) -> Generator[DocumentIndexer, None, None]:
-        return InMemoryIndexer()
+        yield InMemoryDocumentIndexer()
+
+
+class TestAsyncDocumentIndexerTestSuite(AsyncDocumentIndexerTestSuite):
+    @pytest.fixture()
+    async def indexer(self) -> Generator[AsyncDocumentIndexer, None, None]:
+        yield AsyncInMemoryDocumentIndexer()

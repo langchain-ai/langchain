@@ -6,7 +6,7 @@ from langchain_core.indexing import UpsertResponse
 from langchain_core.indexing.base import DeleteResponse, DocumentIndexer
 
 
-class InMemoryIndexer(DocumentIndexer):
+class InMemoryDocumentIndexer(DocumentIndexer):
     """In memory sync indexer."""
 
     def __init__(self, *, store: Optional[Dict[str, Document]] = None) -> None:
@@ -55,3 +55,27 @@ class InMemoryIndexer(DocumentIndexer):
                 found_documents.append(self.store[id_])
 
         return found_documents
+
+
+class AsyncInMemoryDocumentIndexer(DocumentIndexer):
+    """An in memory async indexer implementation."""
+
+    def __init__(self, *, store: Optional[Dict[str, Document]] = None) -> None:
+        """An in memory implementation of a document indexer."""
+        self.indexer = InMemoryDocumentIndexer(store=store)
+
+    async def upsert(
+        self, items: Sequence[Document], /, **kwargs: Any
+    ) -> UpsertResponse:
+        """Upsert items into the indexer."""
+        return self.indexer.upsert(items, **kwargs)
+
+    async def delete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> DeleteResponse:
+        """Delete by ID."""
+        return self.indexer.delete(ids, **kwargs)
+
+    async def get(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
+        """Get by ids."""
+        return self.indexer.get(ids, **kwargs)
