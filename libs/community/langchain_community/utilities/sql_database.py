@@ -1,4 +1,5 @@
 """SQLAlchemy wrapper around a database."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union

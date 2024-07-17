@@ -1,6 +1,7 @@
 """
 Develop integration packages for LangChain.
 """
+
 import re
 import shutil
 import subprocess
@@ -153,7 +154,10 @@ def create_doc(
     component_type: Annotated[
         str,
         typer.Option(
-            help=("The type of component. Currently only 'ChatModel', 'DocumentLoader' supported."),
+            help=(
+                "The type of component. Currently only 'ChatModel', 'DocumentLoader' "
+                "supported."
+            ),
         ),
     ] = "ChatModel",
     destination_dir: Annotated[
@@ -197,9 +201,14 @@ def create_doc(
 
     # copy over template from ../integration_template
     if component_type == "ChatModel":
-        docs_template = Path(__file__).parents[1] / "integration_template/docs/chat.ipynb"
+        docs_template = (
+            Path(__file__).parents[1] / "integration_template/docs/chat.ipynb"
+        )
     elif component_type == "DocumentLoader":
-        docs_template = Path(__file__).parents[1] / "integration_template/docs/document_loaders.ipynb"
+        docs_template = (
+            Path(__file__).parents[1]
+            / "integration_template/docs/document_loaders.ipynb"
+        )
     shutil.copy(docs_template, destination_path)
 
     # replacements in file

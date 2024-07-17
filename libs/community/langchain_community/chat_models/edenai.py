@@ -36,9 +36,11 @@ from langchain_core.messages import (
     InvalidToolCall,
     SystemMessage,
     ToolCall,
-    ToolCallChunk,
     ToolMessage,
 )
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -50,11 +52,10 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     SecretStr,
-    root_validator,
 )
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_community.utilities.requests import Requests
@@ -64,7 +65,7 @@ def _result_to_chunked_message(generated_result: ChatResult) -> ChatGenerationCh
     message = generated_result.generations[0].message
     if isinstance(message, AIMessage) and message.tool_calls is not None:
         tool_call_chunks = [
-            ToolCallChunk(
+            create_tool_call_chunk(
                 name=tool_call["name"],
                 args=json.dumps(tool_call["args"]),
                 id=tool_call["id"],
@@ -190,7 +191,7 @@ def _extract_tool_calls_from_edenai_response(
         for raw_tool_call in raw_tool_calls:
             try:
                 tool_calls.append(
-                    ToolCall(
+                    create_tool_call(
                         name=raw_tool_call["name"],
                         args=json.loads(raw_tool_call["arguments"]),
                         id=raw_tool_call["id"],
@@ -198,7 +199,7 @@ def _extract_tool_calls_from_edenai_response(
                 )
             except json.JSONDecodeError as exc:
                 invalid_tool_calls.append(
-                    InvalidToolCall(
+                    create_invalid_tool_call(
                         name=raw_tool_call.get("name"),
                         args=raw_tool_call.get("arguments"),
                         id=raw_tool_call.get("id"),
@@ -300,7 +301,7 @@ class ChatEdenAI(BaseChatModel):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["edenai_api_key"] = convert_to_secret_str(
