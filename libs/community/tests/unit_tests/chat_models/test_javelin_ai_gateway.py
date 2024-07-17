@@ -30,3 +30,17 @@ def test_api_key_masked_when_passed_via_constructor() -> None:
     assert str(llm.javelin_api_key) == "**********"
     assert "secret-api-key" not in repr(llm.javelin_api_key)
     assert "secret-api-key" not in repr(llm)
+
+
+@pytest.mark.requires("javelin_sdk")
+def test_api_key_alias() -> None:
+    for model in [
+        ChatJavelinAIGateway(
+            route="<javelin-ai-gateway-chat-route>",
+            javelin_api_key="secret-api-key",
+        ),
+        ChatJavelinAIGateway(
+            route="<javelin-ai-gateway-chat-route>", api_key="secret-api-key"
+        ),
+    ]:
+        assert str(model.javelin_api_key) == "**********"

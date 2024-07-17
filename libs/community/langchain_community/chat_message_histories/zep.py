@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class SearchScope(str, Enum):
-    """Which documents to search. Messages or Summaries?"""
+    """Scope for the document search. Messages or Summaries?"""
 
     messages = "messages"
     """Search chat history messages."""

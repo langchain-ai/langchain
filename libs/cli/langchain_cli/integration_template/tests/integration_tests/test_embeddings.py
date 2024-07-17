@@ -1,4 +1,5 @@
 """Test __ModuleName__ embeddings."""
+
 from __module_name__.embeddings import __ModuleName__Embeddings
 
 

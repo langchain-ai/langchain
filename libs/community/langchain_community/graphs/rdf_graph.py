@@ -146,7 +146,7 @@ class RdfGraph:
             import rdflib
             from rdflib.plugins.stores import sparqlstore
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import rdflib python package. "
                 "Please install it with `pip install rdflib`."
             )

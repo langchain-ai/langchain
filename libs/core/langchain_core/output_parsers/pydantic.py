@@ -57,13 +57,38 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> TBaseModel:
+        """Parse the result of an LLM call to a pydantic object.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects.
+                If True, the output will be a JSON object containing
+                all the keys that have been returned so far.
+                Defaults to False.
+
+        Returns:
+            The parsed pydantic object.
+        """
         json_object = super().parse_result(result)
         return self._parse_obj(json_object)
 
     def parse(self, text: str) -> TBaseModel:
+        """Parse the output of an LLM call to a pydantic object.
+
+        Args:
+            text: The output of the LLM call.
+
+        Returns:
+            The parsed pydantic object.
+        """
         return super().parse(text)
 
     def get_format_instructions(self) -> str:
+        """Return the format instructions for the JSON output.
+
+        Returns:
+            The format instructions for the JSON output.
+        """
         # Copy schema to avoid altering original Pydantic schema.
         schema = {k: v for k, v in self.pydantic_object.schema().items()}
 

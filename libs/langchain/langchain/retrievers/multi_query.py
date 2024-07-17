@@ -9,8 +9,10 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import Runnable
 
 from langchain.chains.llm import LLMChain
 
@@ -49,7 +51,7 @@ class MultiQueryRetriever(BaseRetriever):
     """
 
     retriever: BaseRetriever
-    llm_chain: LLMChain
+    llm_chain: Runnable
     verbose: bool = True
     parser_key: str = "lines"
     """DEPRECATED. parser_key is no longer used and should not be specified."""
@@ -61,7 +63,7 @@ class MultiQueryRetriever(BaseRetriever):
         cls,
         retriever: BaseRetriever,
         llm: BaseLanguageModel,
-        prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
+        prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
         parser_key: Optional[str] = None,
         include_original: bool = False,
     ) -> "MultiQueryRetriever":
@@ -77,7 +79,7 @@ class MultiQueryRetriever(BaseRetriever):
             MultiQueryRetriever
         """
         output_parser = LineListOutputParser()
-        llm_chain = LLMChain(llm=llm, prompt=prompt, output_parser=output_parser)
+        llm_chain = prompt | llm | output_parser
         return cls(
             retriever=retriever,
             llm_chain=llm_chain,
@@ -115,10 +117,13 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of LLM generated queries that are similar to the user input
         """
-        response = await self.llm_chain.acall(
-            inputs={"question": question}, callbacks=run_manager.get_child()
+        response = await self.llm_chain.ainvoke(
+            {"question": question}, config={"callbacks": run_manager.get_child()}
         )
-        lines = response["text"]
+        if isinstance(self.llm_chain, LLMChain):
+            lines = response["text"]
+        else:
+            lines = response
         if self.verbose:
             logger.info(f"Generated queries: {lines}")
         return lines
@@ -175,10 +180,13 @@ class MultiQueryRetriever(BaseRetriever):
         Returns:
             List of LLM generated queries that are similar to the user input
         """
-        response = self.llm_chain(
-            {"question": question}, callbacks=run_manager.get_child()
+        response = self.llm_chain.invoke(
+            {"question": question}, config={"callbacks": run_manager.get_child()}
         )
-        lines = response["text"]
+        if isinstance(self.llm_chain, LLMChain):
+            lines = response["text"]
+        else:
+            lines = response
         if self.verbose:
             logger.info(f"Generated queries: {lines}")
         return lines

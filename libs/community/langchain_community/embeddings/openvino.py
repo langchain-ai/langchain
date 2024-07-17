@@ -51,7 +51,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
         try:
             from optimum.intel.openvino import OVModelForFeatureExtraction
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import optimum-intel python package. "
                 "Please install it with: "
                 "pip install -U 'optimum[openvino,nncf]'"
@@ -60,7 +60,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
         try:
             from huggingface_hub import HfApi
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with: "
                 "`pip install -U huggingface_hub`."
@@ -210,9 +210,20 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             0, len(sentences), batch_size, desc="Batches", disable=not show_progress_bar
         ):
             sentences_batch = sentences_sorted[start_index : start_index + batch_size]
-            features = self.tokenizer(
-                sentences_batch, padding=True, truncation=True, return_tensors="pt"
-            )
+
+            length = self.ov_model.request.inputs[0].get_partial_shape()[1]
+            if length.is_dynamic:
+                features = self.tokenizer(
+                    sentences_batch, padding=True, truncation=True, return_tensors="pt"
+                )
+            else:
+                features = self.tokenizer(
+                    sentences_batch,
+                    padding="max_length",
+                    max_length=length.get_length(),
+                    truncation=True,
+                    return_tensors="pt",
+                )
 
             out_features = self.ov_model(**features)
             if mean_pooling:

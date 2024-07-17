@@ -132,7 +132,7 @@ class IpexLLM(LLM):
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import ipex-llm. "
                 "Please install `ipex-llm` properly following installation guides: "
                 "https://github.com/intel-analytics/ipex-llm?tab=readme-ov-file#install-ipex-llm."

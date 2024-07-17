@@ -496,7 +496,7 @@ class AzureMLOnlineEndpoint(BaseLLM, AzureMLBaseEndpoint):
                 timeout=120,
                 content_formatter=content_formatter,
             )
-    """  # noqa: E501
+    """
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

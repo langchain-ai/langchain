@@ -30,7 +30,7 @@ class RedditSearchAPIWrapper(BaseModel):
     reddit_client_secret: Optional[str]
     reddit_user_agent: Optional[str]
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the API ID, secret and user agent exists in environment
         and check that praw module is present.

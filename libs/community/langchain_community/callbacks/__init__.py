@@ -6,80 +6,85 @@
 
     BaseCallbackHandler --> <name>CallbackHandler  # Example: AimCallbackHandler
 """
+
 import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.callbacks.aim_callback import (
-        AimCallbackHandler,  # noqa: F401
+        AimCallbackHandler,
     )
     from langchain_community.callbacks.argilla_callback import (
-        ArgillaCallbackHandler,  # noqa: F401
+        ArgillaCallbackHandler,
     )
     from langchain_community.callbacks.arize_callback import (
-        ArizeCallbackHandler,  # noqa: F401
+        ArizeCallbackHandler,
     )
     from langchain_community.callbacks.arthur_callback import (
-        ArthurCallbackHandler,  # noqa: F401
+        ArthurCallbackHandler,
     )
     from langchain_community.callbacks.clearml_callback import (
-        ClearMLCallbackHandler,  # noqa: F401
+        ClearMLCallbackHandler,
     )
     from langchain_community.callbacks.comet_ml_callback import (
-        CometCallbackHandler,  # noqa: F401
+        CometCallbackHandler,
     )
     from langchain_community.callbacks.context_callback import (
-        ContextCallbackHandler,  # noqa: F401
+        ContextCallbackHandler,
     )
     from langchain_community.callbacks.fiddler_callback import (
-        FiddlerCallbackHandler,  # noqa: F401
+        FiddlerCallbackHandler,
     )
     from langchain_community.callbacks.flyte_callback import (
-        FlyteCallbackHandler,  # noqa: F401
+        FlyteCallbackHandler,
     )
     from langchain_community.callbacks.human import (
-        HumanApprovalCallbackHandler,  # noqa: F401
+        HumanApprovalCallbackHandler,
     )
     from langchain_community.callbacks.infino_callback import (
-        InfinoCallbackHandler,  # noqa: F401
+        InfinoCallbackHandler,
     )
     from langchain_community.callbacks.labelstudio_callback import (
-        LabelStudioCallbackHandler,  # noqa: F401
+        LabelStudioCallbackHandler,
     )
     from langchain_community.callbacks.llmonitor_callback import (
-        LLMonitorCallbackHandler,  # noqa: F401
+        LLMonitorCallbackHandler,
     )
-    from langchain_community.callbacks.manager import (  # noqa: F401
+    from langchain_community.callbacks.manager import (
         get_openai_callback,
         wandb_tracing_enabled,
     )
     from langchain_community.callbacks.mlflow_callback import (
-        MlflowCallbackHandler,  # noqa: F401
+        MlflowCallbackHandler,
     )
     from langchain_community.callbacks.openai_info import (
-        OpenAICallbackHandler,  # noqa: F401
+        OpenAICallbackHandler,
     )
     from langchain_community.callbacks.promptlayer_callback import (
-        PromptLayerCallbackHandler,  # noqa: F401
+        PromptLayerCallbackHandler,
     )
     from langchain_community.callbacks.sagemaker_callback import (
-        SageMakerCallbackHandler,  # noqa: F401
+        SageMakerCallbackHandler,
     )
-    from langchain_community.callbacks.streamlit import (  # noqa: F401
+    from langchain_community.callbacks.streamlit import (
         LLMThoughtLabeler,
         StreamlitCallbackHandler,
     )
     from langchain_community.callbacks.trubrics_callback import (
-        TrubricsCallbackHandler,  # noqa: F401
+        TrubricsCallbackHandler,
+    )
+    from langchain_community.callbacks.upstash_ratelimit_callback import (
+        UpstashRatelimitError,
+        UpstashRatelimitHandler,  # noqa: F401
     )
     from langchain_community.callbacks.uptrain_callback import (
-        UpTrainCallbackHandler,  # noqa: F401
+        UpTrainCallbackHandler,
     )
     from langchain_community.callbacks.wandb_callback import (
-        WandbCallbackHandler,  # noqa: F401
+        WandbCallbackHandler,
     )
     from langchain_community.callbacks.whylabs_callback import (
-        WhyLabsCallbackHandler,  # noqa: F401
+        WhyLabsCallbackHandler,
     )
 
 
@@ -104,6 +109,8 @@ _module_lookup = {
     "SageMakerCallbackHandler": "langchain_community.callbacks.sagemaker_callback",
     "StreamlitCallbackHandler": "langchain_community.callbacks.streamlit",
     "TrubricsCallbackHandler": "langchain_community.callbacks.trubrics_callback",
+    "UpstashRatelimitError": "langchain_community.callbacks.upstash_ratelimit_callback",
+    "UpstashRatelimitHandler": "langchain_community.callbacks.upstash_ratelimit_callback",  # noqa
     "UpTrainCallbackHandler": "langchain_community.callbacks.uptrain_callback",
     "WandbCallbackHandler": "langchain_community.callbacks.wandb_callback",
     "WhyLabsCallbackHandler": "langchain_community.callbacks.whylabs_callback",
@@ -140,6 +147,8 @@ __all__ = [
     "SageMakerCallbackHandler",
     "StreamlitCallbackHandler",
     "TrubricsCallbackHandler",
+    "UpstashRatelimitError",
+    "UpstashRatelimitHandler",
     "UpTrainCallbackHandler",
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",

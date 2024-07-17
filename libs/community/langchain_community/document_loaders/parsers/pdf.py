@@ -1,4 +1,5 @@
 """Module contains common parsers for PDFs."""
+
 from __future__ import annotations
 
 import warnings
@@ -98,7 +99,13 @@ class PyPDFParser(BaseBlobParser):
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
-        import pypdf
+        try:
+            import pypdf
+        except ImportError:
+            raise ImportError(
+                "`pypdf` package not found, please install it with "
+                "`pip install pypdf`"
+            )
 
         def _extract_text_from_page(page: "PageObject") -> str:
             """
@@ -165,7 +172,13 @@ class PDFMinerParser(BaseBlobParser):
         """Lazily parse the blob."""
 
         if not self.extract_images:
-            from pdfminer.high_level import extract_text
+            try:
+                from pdfminer.high_level import extract_text
+            except ImportError:
+                raise ImportError(
+                    "`pdfminer` package not found, please install it with "
+                    "`pip install pdfminer.six`"
+                )
 
             with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
                 if self.concatenate_pages:

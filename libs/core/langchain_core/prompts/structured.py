@@ -33,7 +33,10 @@ from langchain_core.runnables.base import (
 
 @beta()
 class StructuredPrompt(ChatPromptTemplate):
+    """Structured prompt template for a language model."""
+
     schema_: Union[Dict, Type[BaseModel]]
+    """Schema for the structured prompt."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -115,10 +118,19 @@ class StructuredPrompt(ChatPromptTemplate):
         if isinstance(other, BaseLanguageModel) or hasattr(
             other, "with_structured_output"
         ):
-            return RunnableSequence(self, other.with_structured_output(self.schema_))
+            try:
+                return RunnableSequence(
+                    self, other.with_structured_output(self.schema_)
+                )
+            except NotImplementedError as e:
+                raise NotImplementedError(
+                    "Structured prompts must be piped to a language model that "
+                    "implements with_structured_output."
+                ) from e
         else:
             raise NotImplementedError(
-                "Structured prompts need to be piped to a language model."
+                "Structured prompts must be piped to a language model that "
+                "implements with_structured_output."
             )
 
     def pipe(
@@ -126,6 +138,19 @@ class StructuredPrompt(ChatPromptTemplate):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Dict, Other]:
+        """Pipe the structured prompt to a language model.
+
+        Args:
+            others: The language model to pipe the structured prompt to.
+            name: The name of the pipeline. Defaults to None.
+
+        Returns:
+            A RunnableSequence object.
+
+        Raises:
+            NotImplementedError: If the first element of `others`
+            is not a language model.
+        """
         if (
             others
             and isinstance(others[0], BaseLanguageModel)

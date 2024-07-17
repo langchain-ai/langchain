@@ -1,7 +1,10 @@
+import base64
+import tempfile
 from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
+from syrupy import SnapshotAssertion
 
 from langchain_core._api.deprecation import (
     LangChainPendingDeprecationWarning,
@@ -26,6 +29,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
+from langchain_core.pydantic_v1 import ValidationError
 
 
 @pytest.fixture
@@ -97,6 +101,79 @@ def test_create_chat_prompt_template_from_template_partial() -> None:
     output_prompt = prompt.messages[0]
     assert isinstance(output_prompt, HumanMessagePromptTemplate)
     assert output_prompt.prompt == expected_prompt
+
+
+def test_create_system_message_prompt_template_from_template_partial() -> None:
+    """Create a system message prompt template with partials."""
+
+    graph_creator_content = """
+    Your instructions are:
+    {instructions}
+    History:
+    {history}
+    """
+    json_prompt_instructions: dict = {}
+    graph_analyst_template = SystemMessagePromptTemplate.from_template(
+        template=graph_creator_content,
+        input_variables=["history"],
+        partial_variables={"instructions": json_prompt_instructions},
+    )
+    assert graph_analyst_template.format(history="history") == SystemMessage(
+        content="\n    Your instructions are:\n  "
+        "  {}\n    History:\n    "
+        "history\n    "
+    )
+
+
+def test_create_system_message_prompt_list_template() -> None:
+    graph_creator_content1 = """
+    This is the prompt for the first test:
+    {variables}
+    """
+    graph_creator_content2 = """
+    This is the prompt for the second test:
+        {variables}
+        """
+    graph_analyst_template = SystemMessagePromptTemplate.from_template(
+        template=[graph_creator_content1, graph_creator_content2],
+        input_variables=["variables"],
+    )
+    assert graph_analyst_template.format(variables="foo") == SystemMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "\n    This is the prompt for the first test:\n    foo\n    ",
+            },
+            {
+                "type": "text",
+                "text": "\n    This is the prompt for "
+                "the second test:\n        foo\n        ",
+            },
+        ]
+    )
+
+
+def test_create_system_message_prompt_list_template_partial_variables_not_null() -> (
+    None
+):
+    graph_creator_content1 = """
+    This is the prompt for the first test:
+    {variables}
+    """
+    graph_creator_content2 = """
+    This is the prompt for the second test:
+        {variables}
+        """
+
+    try:
+        graph_analyst_template = SystemMessagePromptTemplate.from_template(
+            template=[graph_creator_content1, graph_creator_content2],
+            input_variables=["variables"],
+            partial_variables={"variables": "foo"},
+        )
+        graph_analyst_template.format(variables="foo")
+    except ValueError as e:
+        assert str(e) == "Partial variables are not supported for list of templates."
 
 
 def test_message_prompt_template_from_template_file() -> None:
@@ -486,6 +563,7 @@ async def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
 
 
 async def test_chat_tmpl_from_messages_multipart_image() -> None:
+    """Test multipart image URL formatting."""
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     template = ChatPromptTemplate.from_messages(
@@ -568,6 +646,65 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
     assert messages == expected
 
 
+async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
+    """Verify that we can pass `path` for an image as a variable."""
+    in_mem = "base64mem"
+    in_file_data = "base64file01"
+
+    with tempfile.NamedTemporaryFile(delete=True, suffix=".jpg") as temp_file:
+        temp_file.write(base64.b64decode(in_file_data))
+        temp_file.flush()
+
+        template = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are an AI assistant named {name}."),
+                (
+                    "human",
+                    [
+                        {"type": "text", "text": "What's in this image?"},
+                        {
+                            "type": "image_url",
+                            "image_url": "data:image/jpeg;base64,{in_mem}",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"path": "{file_path}"},
+                        },
+                    ],
+                ),
+            ]
+        )
+        expected = [
+            SystemMessage(content="You are an AI assistant named R2D2."),
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{in_mem}"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{in_file_data}"},
+                    },
+                ]
+            ),
+        ]
+        messages = template.format_messages(
+            name="R2D2",
+            in_mem=in_mem,
+            file_path=temp_file.name,
+        )
+        assert messages == expected
+
+        messages = await template.aformat_messages(
+            name="R2D2",
+            in_mem=in_mem,
+            file_path=temp_file.name,
+        )
+        assert messages == expected
+
+
 def test_messages_placeholder() -> None:
     prompt = MessagesPlaceholder("history")
     with pytest.raises(KeyError):
@@ -579,6 +716,21 @@ def test_messages_placeholder() -> None:
     ) == [
         SystemMessage(content="You are an AI assistant."),
         HumanMessage(content="Hello!"),
+    ]
+
+
+def test_messages_placeholder_with_max() -> None:
+    history = [
+        AIMessage(content="1"),
+        AIMessage(content="2"),
+        AIMessage(content="3"),
+    ]
+    prompt = MessagesPlaceholder("history")
+    assert prompt.format_messages(history=history) == history
+    prompt = MessagesPlaceholder("history", n_messages=2)
+    assert prompt.format_messages(history=history) == [
+        AIMessage(content="2"),
+        AIMessage(content="3"),
     ]
 
 
@@ -636,3 +788,21 @@ async def test_messages_prompt_accepts_list() -> None:
 
     with pytest.raises(TypeError):
         await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+
+
+def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
+    prompt_all_required = ChatPromptTemplate.from_messages(
+        messages=[MessagesPlaceholder("history", optional=False), ("user", "${input}")]
+    )
+    assert set(prompt_all_required.input_variables) == {"input", "history"}
+    assert prompt_all_required.optional_variables == []
+    with pytest.raises(ValidationError):
+        prompt_all_required.input_schema(input="")
+    assert prompt_all_required.input_schema.schema() == snapshot(name="required")
+    prompt_optional = ChatPromptTemplate.from_messages(
+        messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
+    )
+    # input variables only lists required variables
+    assert set(prompt_optional.input_variables) == {"input"}
+    prompt_optional.input_schema(input="")  # won't raise error
+    assert prompt_optional.input_schema.schema() == snapshot(name="partial")

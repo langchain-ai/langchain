@@ -50,16 +50,15 @@ Passage:
         "LangChain has introduced a method called `with_structured_output` that"
         "is available on ChatModels capable of tool calling."
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/"
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
         "Please follow our extraction use case documentation for more guidelines"
         "on how to do information extraction with LLMs."
-        "https://python.langchain.com/docs/use_cases/extraction/."
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "If you notice other issues, please provide "
         "feedback here:"
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -121,16 +120,15 @@ def create_extraction_chain(
         "LangChain has introduced a method called `with_structured_output` that"
         "is available on ChatModels capable of tool calling."
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/"
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
         "Please follow our extraction use case documentation for more guidelines"
         "on how to do information extraction with LLMs."
-        "https://python.langchain.com/docs/use_cases/extraction/."
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "If you notice other issues, please provide "
         "feedback here:"
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field

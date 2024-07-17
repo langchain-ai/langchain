@@ -28,7 +28,7 @@ def test_ddg_search_tool() -> None:
 @pytest.mark.skipif(not ddg_installed(), reason="requires duckduckgo-search package")
 def test_ddg_search_news_tool() -> None:
     keywords = "Tesla"
-    tool = DuckDuckGoSearchResults(source="news")
+    tool = DuckDuckGoSearchResults(source="news")  # type: ignore[call-arg]
     result = tool.invoke(keywords)
     print(result)  # noqa: T201
     assert len(result.split()) > 20

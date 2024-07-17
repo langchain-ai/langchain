@@ -1,4 +1,5 @@
 """Loader that uses unstructured to load files."""
+
 import collections
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -48,7 +49,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         try:
             import unstructured  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )

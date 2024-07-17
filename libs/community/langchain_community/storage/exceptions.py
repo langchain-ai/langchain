@@ -1,5 +1,3 @@
-from langchain_core.exceptions import LangChainException
+from langchain_core.stores import InvalidKeyException
 
-
-class InvalidKeyException(LangChainException):
-    """Raised when a key is invalid; e.g., uses incorrect characters."""
+__all__ = ["InvalidKeyException"]

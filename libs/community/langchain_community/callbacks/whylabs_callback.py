@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.utils import get_from_env
+from langchain_core.utils import get_from_env, guard_import
 
 if TYPE_CHECKING:
     from whylogs.api.logger.logger import Logger
@@ -27,22 +27,15 @@ def import_langkit(
     Returns:
         The imported langkit module.
     """
-    try:
-        import langkit  # noqa: F401
-        import langkit.regexes  # noqa: F401
-        import langkit.textstat  # noqa: F401
-
-        if sentiment:
-            import langkit.sentiment  # noqa: F401
-        if toxicity:
-            import langkit.toxicity  # noqa: F401
-        if themes:
-            import langkit.themes  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use the whylabs callback manager you need to have the `langkit` python "
-            "package installed. Please install it with `pip install langkit`."
-        )
+    langkit = guard_import("langkit")
+    guard_import("langkit.regexes")
+    guard_import("langkit.textstat")
+    if sentiment:
+        guard_import("langkit.sentiment")
+    if toxicity:
+        guard_import("langkit.toxicity")
+    if themes:
+        guard_import("langkit.themes")
     return langkit
 
 
@@ -161,10 +154,12 @@ class WhyLabsCallbackHandler(BaseCallbackHandler):
         # langkit library will import necessary whylogs libraries
         import_langkit(sentiment=sentiment, toxicity=toxicity, themes=themes)
 
-        import whylogs as why
-        from langkit.callback_handler import get_callback_instance
-        from whylogs.api.writer.whylabs import WhyLabsWriter
-        from whylogs.experimental.core.udf_schema import udf_schema
+        why = guard_import("whylogs")
+        get_callback_instance = guard_import(
+            "langkit.callback_handler"
+        ).get_callback_instance
+        WhyLabsWriter = guard_import("whylogs.api.writer.whylabs").WhyLabsWriter
+        udf_schema = guard_import("whylogs.experimental.core.udf_schema").udf_schema
 
         if logger is None:
             api_key = api_key or get_from_env("api_key", "WHYLABS_API_KEY")

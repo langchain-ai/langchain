@@ -1,4 +1,5 @@
 """Util that calls Lambda."""
+
 import json
 from typing import Any, Dict, Optional
 
@@ -34,7 +35,7 @@ class LambdaWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
 
@@ -47,8 +48,6 @@ class LambdaWrapper(BaseModel):
             )
 
         values["lambda_client"] = boto3.client("lambda")
-        values["function_name"] = values["function_name"]
-
         return values
 
     def run(self, query: str) -> str:
@@ -60,7 +59,7 @@ class LambdaWrapper(BaseModel):
             query: an input to passed to the lambda
                 function as the ``body`` of a JSON
                 object.
-        """  # noqa: E501
+        """
         res = self.lambda_client.invoke(
             FunctionName=self.function_name,
             InvocationType="RequestResponse",

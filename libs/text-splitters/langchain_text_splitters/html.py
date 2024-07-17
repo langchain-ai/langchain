@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import os
 import pathlib
 from io import BytesIO, StringIO
 from typing import Any, Dict, Iterable, List, Optional, Tuple, TypedDict, cast
@@ -72,13 +71,15 @@ class HTMLHeaderTextSplitter:
             for chunk in aggregated_chunks
         ]
 
-    def split_text_from_url(self, url: str) -> List[Document]:
+    def split_text_from_url(self, url: str, **kwargs: Any) -> List[Document]:
         """Split HTML from web URL
 
         Args:
             url: web URL
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the fetch url content request.
         """
-        r = requests.get(url)
+        r = requests.get(url, **kwargs)
         return self.split_text_from_file(BytesIO(r.content))
 
     def split_text(self, text: str) -> List[Document]:
@@ -173,7 +174,7 @@ class HTMLSectionSplitter:
     def __init__(
         self,
         headers_to_split_on: List[Tuple[str, str]],
-        xslt_path: str = "xsl/converting_to_header.xslt",
+        xslt_path: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Create a new HTMLSectionSplitter.
@@ -183,10 +184,17 @@ class HTMLSectionSplitter:
                 (arbitrary) keys for metadata. Allowed header values: h1, h2, h3, h4,
                 h5, h6 e.g. [("h1", "Header 1"), ("h2", "Header 2"].
             xslt_path: path to xslt file for document transformation.
+            Uses a default if not passed.
             Needed for html contents that using different format and layouts.
         """
         self.headers_to_split_on = dict(headers_to_split_on)
-        self.xslt_path = xslt_path
+
+        if xslt_path is None:
+            self.xslt_path = (
+                pathlib.Path(__file__).parent / "xsl/converting_to_header.xslt"
+            ).absolute()
+        else:
+            self.xslt_path = pathlib.Path(xslt_path).absolute()
         self.kwargs = kwargs
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
@@ -227,9 +235,7 @@ class HTMLSectionSplitter:
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(
-        self, html_doc: str
-    ) -> Dict[str, Dict[str, Optional[str]]]:
+    def split_html_by_headers(self, html_doc: str) -> List[Dict[str, Optional[str]]]:
         try:
             from bs4 import BeautifulSoup, PageElement  # type: ignore[import-untyped]
         except ImportError as e:
@@ -241,7 +247,7 @@ class HTMLSectionSplitter:
 
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
-        sections: Dict[str, Dict[str, Optional[str]]] = {}
+        sections: list[dict[str, str | None]] = []
 
         headers = soup.find_all(["body"] + headers)
 
@@ -263,10 +269,13 @@ class HTMLSectionSplitter:
             content = " ".join(section_content).strip()
 
             if content != "":
-                sections[current_header] = {
-                    "content": content,
-                    "tag_name": current_header_tag,
-                }
+                sections.append(
+                    {
+                        "header": current_header,
+                        "content": content,
+                        "tag_name": current_header_tag,
+                    }
+                )
 
         return sections
 
@@ -284,13 +293,7 @@ class HTMLSectionSplitter:
         parser = etree.HTMLParser()
         tree = etree.parse(StringIO(html_content), parser)
 
-        # document transformation for "structure-aware" chunking is handled with xsl.
-        # this is needed for htmls files that using different font sizes and layouts
-        # check to see if self.xslt_path is a relative path or absolute path
-        if not os.path.isabs(self.xslt_path):
-            xslt_path = pathlib.Path(__file__).parent / self.xslt_path
-
-        xslt_tree = etree.parse(xslt_path)
+        xslt_tree = etree.parse(self.xslt_path)
         transform = etree.XSLT(xslt_tree)
         result = transform(tree)
         return str(result)
@@ -307,12 +310,12 @@ class HTMLSectionSplitter:
 
         return [
             Document(
-                cast(str, sections[section_key]["content"]),
+                cast(str, section["content"]),
                 metadata={
-                    self.headers_to_split_on[
-                        str(sections[section_key]["tag_name"])
-                    ]: section_key
+                    self.headers_to_split_on[str(section["tag_name"])]: section[
+                        "header"
+                    ]
                 },
             )
-            for section_key in sections.keys()
+            for section in sections
         ]

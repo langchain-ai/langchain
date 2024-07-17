@@ -21,6 +21,7 @@ EXPECTED_ALL = [
     "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
+    "RemoveMessage",
     "convert_to_messages",
     "get_buffer_string",
     "merge_content",
@@ -28,6 +29,9 @@ EXPECTED_ALL = [
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
+    "filter_messages",
+    "merge_message_runs",
+    "trim_messages",
 ]
 
 

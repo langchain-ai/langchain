@@ -20,7 +20,7 @@ class ConneryService(BaseModel):
     runner_url: Optional[str] = None
     api_key: Optional[str] = None
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_attributes(cls, values: Dict) -> Dict:
         """
         Validate the attributes of the ConneryService class.

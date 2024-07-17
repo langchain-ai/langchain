@@ -1,4 +1,5 @@
 """Fake ChatModel for testing purposes."""
+
 import asyncio
 import re
 import time
@@ -17,8 +18,11 @@ class FakeMessagesListChatModel(BaseChatModel):
     """Fake ChatModel for testing purposes."""
 
     responses: List[BaseMessage]
+    """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
+    """Sleep time in seconds between responses."""
     i: int = 0
+    """Internally incremented after every model invocation."""
 
     def _generate(
         self,
@@ -43,10 +47,13 @@ class FakeMessagesListChatModel(BaseChatModel):
 class FakeListChatModel(SimpleChatModel):
     """Fake ChatModel for testing purposes."""
 
-    responses: List
+    responses: List[str]
+    """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
     i: int = 0
+    """List of responses to **cycle** through in order."""
     error_on_chunk_number: Optional[int] = None
+    """Internally incremented after every model invocation."""
 
     @property
     def _llm_type(self) -> str:
@@ -151,7 +158,7 @@ class FakeChatModel(SimpleChatModel):
 
 
 class GenericFakeChatModel(BaseChatModel):
-    """A generic fake chat model that can be used to test the chat model interface.
+    """Generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
     * Invokes on_llm_new_token to allow for testing of callback related code for new
@@ -288,7 +295,7 @@ class GenericFakeChatModel(BaseChatModel):
 
 
 class ParrotFakeChatModel(BaseChatModel):
-    """A generic fake chat model that can be used to test the chat model interface.
+    """Generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
     """

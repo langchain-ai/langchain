@@ -6,11 +6,16 @@ from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
     BaseOutputParser,
     JsonOutputParser,
+    PydanticOutputParser,
 )
 from langchain_core.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
     PydanticAttrOutputFunctionsParser,
     PydanticOutputFunctionsParser,
+)
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
 )
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
@@ -20,12 +25,6 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 
-from langchain.output_parsers import (
-    JsonOutputKeyToolsParser,
-    PydanticOutputParser,
-    PydanticToolsParser,
-)
-
 
 @deprecated(
     since="0.1.14",
@@ -33,16 +32,15 @@ from langchain.output_parsers import (
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/ "
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
         "Please follow our extraction use case documentation for more guidelines "
         "on how to do information extraction with LLMs. "
-        "https://python.langchain.com/docs/use_cases/extraction/. "
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "If you notice other issues, please provide "
         "feedback here: "
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -152,16 +150,15 @@ def create_openai_fn_runnable(
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/ "
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>."
         "Please follow our extraction use case documentation for more guidelines "
         "on how to do information extraction with LLMs. "
-        "https://python.langchain.com/docs/use_cases/extraction/. "
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "If you notice other issues, please provide "
         "feedback here: "
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -469,9 +466,9 @@ def _get_openai_tool_output_parser(
     first_tool_only: bool = False,
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
     if isinstance(tool, type) and issubclass(tool, BaseModel):
-        output_parser: Union[
-            BaseOutputParser, BaseGenerationOutputParser
-        ] = PydanticToolsParser(tools=[tool], first_tool_only=first_tool_only)
+        output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
+            PydanticToolsParser(tools=[tool], first_tool_only=first_tool_only)
+        )
     else:
         key_name = convert_to_openai_tool(tool)["function"]["name"]
         output_parser = JsonOutputKeyToolsParser(
@@ -503,9 +500,9 @@ def get_openai_output_parser(
             }
         else:
             pydantic_schema = functions[0]
-        output_parser: Union[
-            BaseOutputParser, BaseGenerationOutputParser
-        ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+        output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
+            PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+        )
     else:
         output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
     return output_parser
@@ -521,7 +518,7 @@ def _create_openai_json_runnable(
     """"""
     if isinstance(output_schema, type) and issubclass(output_schema, BaseModel):
         output_parser = output_parser or PydanticOutputParser(
-            pydantic_object=output_schema,
+            pydantic_object=output_schema,  # type: ignore
         )
         schema_as_dict = convert_to_openai_function(output_schema)["parameters"]
     else:

@@ -16,6 +16,7 @@ creating more responsive UX.
 
 This module contains schema and implementation of LangChain Runnables primitives.
 """
+
 from langchain_core.runnables.base import (
     Runnable,
     RunnableBinding,
@@ -36,6 +37,7 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.fallbacks import RunnableWithFallbacks
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.passthrough import (
     RunnableAssign,
     RunnablePassthrough,
@@ -78,6 +80,7 @@ __all__ = [
     "RunnablePick",
     "RunnableSequence",
     "RunnableWithFallbacks",
+    "RunnableWithMessageHistory",
     "get_config_list",
     "aadd",
     "add",

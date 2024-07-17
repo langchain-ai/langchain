@@ -1,4 +1,5 @@
 """Internal representation of a structured query language."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -9,10 +10,12 @@ from langchain_core.pydantic_v1 import BaseModel
 
 
 class Visitor(ABC):
-    """Defines interface for IR translation using visitor pattern."""
+    """Defines interface for IR translation using a visitor pattern."""
 
     allowed_comparators: Optional[Sequence[Comparator]] = None
+    """Allowed comparators for the visitor."""
     allowed_operators: Optional[Sequence[Operator]] = None
+    """Allowed operators for the visitor."""
 
     def _validate_func(self, func: Union[Operator, Comparator]) -> None:
         if isinstance(func, Operator) and self.allowed_operators is not None:
@@ -30,15 +33,27 @@ class Visitor(ABC):
 
     @abstractmethod
     def visit_operation(self, operation: Operation) -> Any:
-        """Translate an Operation."""
+        """Translate an Operation.
+
+        Args:
+            operation: Operation to translate.
+        """
 
     @abstractmethod
     def visit_comparison(self, comparison: Comparison) -> Any:
-        """Translate a Comparison."""
+        """Translate a Comparison.
+
+        Args:
+            comparison: Comparison to translate.
+        """
 
     @abstractmethod
     def visit_structured_query(self, structured_query: StructuredQuery) -> Any:
-        """Translate a StructuredQuery."""
+        """Translate a StructuredQuery.
+
+        Args:
+            structured_query: StructuredQuery to translate.
+        """
 
 
 def _to_snake_case(name: str) -> str:
@@ -59,10 +74,10 @@ class Expr(BaseModel):
         """Accept a visitor.
 
         Args:
-            visitor: visitor to accept
+            visitor: visitor to accept.
 
         Returns:
-            result of visiting
+            result of visiting.
         """
         return getattr(visitor, f"visit_{_to_snake_case(self.__class__.__name__)}")(
             self
@@ -93,11 +108,17 @@ class Comparator(str, Enum):
 
 
 class FilterDirective(Expr, ABC):
-    """A filtering expression."""
+    """Filtering expression."""
 
 
 class Comparison(FilterDirective):
-    """A comparison to a value."""
+    """Comparison to a value.
+
+    Parameters:
+        comparator: The comparator to use.
+        attribute: The attribute to compare.
+        value: The value to compare to.
+    """
 
     comparator: Comparator
     attribute: str
@@ -112,7 +133,12 @@ class Comparison(FilterDirective):
 
 
 class Operation(FilterDirective):
-    """A logical operation over other directives."""
+    """Logical operation over other directives.
+
+    Parameters:
+        operator: The operator to use.
+        arguments: The arguments to the operator.
+    """
 
     operator: Operator
     arguments: List[FilterDirective]
@@ -124,7 +150,7 @@ class Operation(FilterDirective):
 
 
 class StructuredQuery(Expr):
-    """A structured query."""
+    """Structured query."""
 
     query: str
     """Query string."""

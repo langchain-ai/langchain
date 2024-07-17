@@ -1,4 +1,5 @@
 """KonkoAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -22,8 +23,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.adapters.openai import (
     convert_message_to_dict,
@@ -84,7 +85,7 @@ class ChatKonko(ChatOpenAI):
     max_tokens: int = 20
     """Maximum number of tokens to generate."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["konko_api_key"] = convert_to_secret_str(
@@ -94,7 +95,7 @@ class ChatKonko(ChatOpenAI):
             import konko
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import konko python package. "
                 "Please install it with `pip install konko`."
             )
