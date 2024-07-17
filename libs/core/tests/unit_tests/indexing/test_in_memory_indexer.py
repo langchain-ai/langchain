@@ -3,12 +3,12 @@
 from typing import Generator
 
 import pytest
-
-from langchain_core.indexing import DocumentIndexer
-from langchain_core.indexing.in_memory import InMemoryIndexer
 from langchain_standard_tests.integration_tests.indexer import (
     BaseDocumentIndexerTestSuite,
 )
+
+from langchain_core.indexing import DocumentIndexer
+from langchain_core.indexing.in_memory import InMemoryIndexer
 
 
 class TestDocumentIndexerTestSuite(BaseDocumentIndexerTestSuite):

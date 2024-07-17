@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import time
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -10,7 +11,6 @@ from typing import (
     Sequence,
 )
 
-import time
 from typing_extensions import TypedDict
 
 from langchain_core._api import beta

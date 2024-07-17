@@ -1,9 +1,9 @@
 import uuid
-from typing import Dict, Optional, Sequence, Any, List
+from typing import Any, Dict, List, Optional, Sequence
 
 from langchain_core.documents import Document
 from langchain_core.indexing import UpsertResponse
-from langchain_core.indexing.base import DocumentIndexer, DeleteResponse
+from langchain_core.indexing.base import DeleteResponse, DocumentIndexer
 
 
 class InMemoryIndexer(DocumentIndexer):
