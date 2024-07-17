@@ -2,6 +2,8 @@
 
 import pytest
 
+from langchain_core.embeddings import FakeEmbeddings
+from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import (
     TokenTextSplitter,
 )
@@ -35,6 +37,28 @@ def test_token_text_splitter() -> None:
     output = splitter.split_text("abcdef" * 5)  # 10 token string
     expected_output = ["abcdefabcdefabc", "defabcdefabcdef"]
     assert output == expected_output
+
+
+def test_semantic_chunker() -> None:
+    """Test the split_text method of SemanticChunker."""
+    text = "This is a sentence. This is another sentence."
+    expected_chunks = [
+        "This ",
+        "is a ",
+        "sente",
+        "nce.",
+        "This ",
+        "is an",
+        "other",
+        " sent",
+        "ence."
+    ]
+
+    embeddings = FakeEmbeddings(size=1)
+    chunker = SemanticChunker(embeddings=embeddings, buffer_size=1, max_chunk_size=5)
+
+    result_chunks = chunker.split_text(text)
+    assert result_chunks == expected_chunks, f"Expected {expected_chunks} but got {result_chunks}"
 
 
 def test_token_text_splitter_overlap() -> None:

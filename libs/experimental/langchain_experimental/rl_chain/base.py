@@ -192,13 +192,16 @@ class Policy(Generic[TEvent], ABC):
         pass
 
     @abstractmethod
-    def predict(self, event: TEvent) -> Any: ...
+    def predict(self, event: TEvent) -> Any:
+        ...
 
     @abstractmethod
-    def learn(self, event: TEvent) -> None: ...
+    def learn(self, event: TEvent) -> None:
+        ...
 
     @abstractmethod
-    def log(self, event: TEvent) -> None: ...
+    def log(self, event: TEvent) -> None:
+        ...
 
     def save(self) -> None:
         pass
@@ -254,7 +257,8 @@ class Embedder(Generic[TEvent], ABC):
         pass
 
     @abstractmethod
-    def format(self, event: TEvent) -> str: ...
+    def format(self, event: TEvent) -> str:
+        ...
 
 
 class SelectionScorer(Generic[TEvent], ABC, BaseModel):
@@ -263,7 +267,8 @@ class SelectionScorer(Generic[TEvent], ABC, BaseModel):
     @abstractmethod
     def score_response(
         self, inputs: Dict[str, Any], llm_response: str, event: TEvent
-    ) -> float: ...
+    ) -> float:
+        ...
 
 
 class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
@@ -490,22 +495,26 @@ class RLChain(Chain, Generic[TEvent]):
         return self.selection_scorer is not None and self.selection_scorer_activated
 
     @abstractmethod
-    def _call_before_predict(self, inputs: Dict[str, Any]) -> TEvent: ...
+    def _call_before_predict(self, inputs: Dict[str, Any]) -> TEvent:
+        ...
 
     @abstractmethod
     def _call_after_predict_before_llm(
         self, inputs: Dict[str, Any], event: TEvent, prediction: Any
-    ) -> Tuple[Dict[str, Any], TEvent]: ...
+    ) -> Tuple[Dict[str, Any], TEvent]:
+        ...
 
     @abstractmethod
     def _call_after_llm_before_scoring(
         self, llm_response: str, event: TEvent
-    ) -> Tuple[Dict[str, Any], TEvent]: ...
+    ) -> Tuple[Dict[str, Any], TEvent]:
+        ...
 
     @abstractmethod
     def _call_after_scoring_before_learning(
         self, event: TEvent, score: Optional[float]
-    ) -> TEvent: ...
+    ) -> TEvent:
+        ...
 
     def _call(
         self,
