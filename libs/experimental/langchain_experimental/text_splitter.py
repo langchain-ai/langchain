@@ -268,7 +268,7 @@ class SemanticChunker(BaseDocumentTransformer):
             sentence = sentence_dict["sentence"]
             sentence_length = len(sentence)
 
-            while sentence_length > self.max_chunk_size:
+            while self.max_chunk_size and sentence_length > self.max_chunk_size:
                 sub_chunks.append(sentence[: self.max_chunk_size])
                 sentence = sentence[self.max_chunk_size :]
                 sentence_length = len(sentence)
