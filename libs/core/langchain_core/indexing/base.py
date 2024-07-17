@@ -212,12 +212,6 @@ class AsyncDocumentIndexer(abc.ABC):
 
         .. versionadded:: ___version___
         """
-        return await run_in_executor(
-            None,
-            self.upsert,
-            items,
-            **kwargs,
-        )
 
     @abc.abstractmethod
     async def delete(
