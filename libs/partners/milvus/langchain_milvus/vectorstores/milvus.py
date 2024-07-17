@@ -428,32 +428,34 @@ class Milvus(VectorStore):
                         key in self.metadata_schema  # type: ignore
                         and field_type in self.metadata_schema[key]  # type: ignore
                     ):
-                        dtype = self.metadata_schema[key]["dtype"]  # type: ignore
+                        kwargs = self.metadata_schema[key]["kwargs"]
+                        fields.append(
+                            FieldSchema(name=key, dtype=self.metadata_schema[key][field_type], **kwargs)
+                        )
                     else:
                         dtype = infer_dtype_bydata(value)
-
-                    # Datatype isn't compatible
-                    if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
-                        logger.error(
-                            (
-                                "Failure to create collection, "
-                                "unrecognized dtype for key: %s"
-                            ),
-                            key,
-                        )
-                        raise ValueError(f"Unrecognized datatype for {key}.")
-                    # Dataype is a string/varchar equivalent
-                    elif dtype == DataType.VARCHAR:
-                        fields.append(
-                            FieldSchema(key, DataType.VARCHAR, max_length=65_535)
-                        )
-                    elif dtype == DataType.ARRAY:
-                        kwargs = self.metadata_schema[key]["kwargs"]  # type: ignore
-                        fields.append(
-                            FieldSchema(name=key, dtype=DataType.ARRAY, **kwargs)
-                        )
-                    else:
-                        fields.append(FieldSchema(key, dtype))
+                        # Datatype isn't compatible
+                        if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
+                            logger.error(
+                                (
+                                    "Failure to create collection, "
+                                    "unrecognized dtype for key: %s"
+                                ),
+                                key,
+                            )
+                            raise ValueError(f"Unrecognized datatype for {key}.")
+                        # Dataype is a string/varchar equivalent
+                        elif dtype == DataType.VARCHAR:
+                            fields.append(
+                                FieldSchema(key, DataType.VARCHAR, max_length=65_535)
+                            )
+                        elif dtype == DataType.ARRAY:
+                            kwargs = self.metadata_schema[key]["kwargs"]  # type: ignore
+                            fields.append(
+                                FieldSchema(name=key, dtype=DataType.ARRAY, **kwargs)
+                            )
+                        else:
+                            fields.append(FieldSchema(key, dtype))
 
         # Create the text field
         fields.append(
