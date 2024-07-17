@@ -681,10 +681,10 @@ def test_hybrid_score_normalization() -> None:
     )
     # Remove deduplication part of the query
     rrf_query = (
-            _get_search_index_query(SearchType.HYBRID)
-            .rstrip("WITH node, max(score) AS score ORDER BY score DESC LIMIT $k")
-            .replace("UNION", "UNION ALL")
-            + "RETURN node.text AS text, score LIMIT 2"
+        _get_search_index_query(SearchType.HYBRID)
+        .rstrip("WITH node, max(score) AS score ORDER BY score DESC LIMIT $k")
+        .replace("UNION", "UNION ALL")
+        + "RETURN node.text AS text, score LIMIT 2"
     )
 
     output = docsearch.query(
@@ -707,7 +707,7 @@ def test_index_fetching() -> None:
     embeddings = FakeEmbeddings()
 
     def create_store(
-            node_label: str, index: str, text_properties: List[str]
+        node_label: str, index: str, text_properties: List[str]
     ) -> Neo4jVector:
         return Neo4jVector.from_existing_graph(
             embedding=embeddings,
@@ -793,7 +793,7 @@ def test_retrieval_dictionary() -> None:
 
     output = docsearch.similarity_search("Foo", k=1)
 
-    def parse_document(doc):
+    def parse_document(doc: Document) -> Any:
         return safe_load(doc.page_content)
 
     parsed_expected = [parse_document(doc) for doc in expected_output]
@@ -812,10 +812,10 @@ def test_metadata_filters_type1() -> None:
     )
     # We don't test type 5, because LIKE has very SQL specific examples
     for example in (
-            TYPE_1_FILTERING_TEST_CASES
-            + TYPE_2_FILTERING_TEST_CASES
-            + TYPE_3_FILTERING_TEST_CASES
-            + TYPE_4_FILTERING_TEST_CASES
+        TYPE_1_FILTERING_TEST_CASES
+        + TYPE_2_FILTERING_TEST_CASES
+        + TYPE_3_FILTERING_TEST_CASES
+        + TYPE_4_FILTERING_TEST_CASES
     ):
         filter_dict = cast(Dict[str, Any], example[0])
         output = docsearch.similarity_search("Foo", filter=filter_dict)
