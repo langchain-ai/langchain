@@ -1,9 +1,10 @@
 from __future__ import annotations
-import time
+
 import base64
 import itertools
 import json
 import logging
+import time
 import uuid
 from typing import (
     TYPE_CHECKING,
@@ -23,6 +24,7 @@ from typing import (
 )
 
 import numpy as np
+from azure.core.credentials import AccessToken, TokenCredential
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -33,8 +35,6 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
-from azure.core.credentials import TokenCredential
-from azure.core.credentials import AccessToken
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -71,6 +71,7 @@ FIELDS_METADATA = get_from_env(
 
 MAX_UPLOAD_BATCH_SIZE = 1000
 
+
 class BearerTokenCredential(TokenCredential):
     def __init__(self, token):
         self._token = token
@@ -81,10 +82,11 @@ class BearerTokenCredential(TokenCredential):
         expiry = int(time.time()) + 3600
         return AccessToken(self._token, expiry)
 
+
 def _get_search_client(
     endpoint: str,
     key: str,
-    azure_ad_access_token:  Optional[str],
+    azure_ad_access_token: Optional[str],
     index_name: str,
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
@@ -128,7 +130,7 @@ def _get_search_client(
         if azure_ad_access_token:
             credential = BearerTokenCredential(azure_ad_access_token)
         else:
-            credential = DefaultAzureCredential() 
+            credential = DefaultAzureCredential()
     elif key.upper() == "INTERACTIVE":
         credential = InteractiveBrowserCredential()
         credential.get_token("https://search.azure.com/.default")
