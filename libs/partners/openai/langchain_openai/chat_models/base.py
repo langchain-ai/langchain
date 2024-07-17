@@ -63,6 +63,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
@@ -244,12 +245,12 @@ def _convert_delta_to_message_chunk(
         additional_kwargs["tool_calls"] = raw_tool_calls
         try:
             tool_call_chunks = [
-                {
-                    "name": rtc["function"].get("name"),
-                    "args": rtc["function"].get("arguments"),
-                    "id": rtc.get("id"),
-                    "index": rtc["index"],
-                }
+                tool_call_chunk(
+                    name=rtc["function"].get("name"),
+                    args=rtc["function"].get("arguments"),
+                    id=rtc.get("id"),
+                    index=rtc["index"],
+                )
                 for rtc in raw_tool_calls
             ]
         except KeyError:
@@ -318,10 +319,26 @@ class BaseChatOpenAI(BaseChatModel):
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+    presence_penalty: Optional[float] = None
+    """Penalizes repeated tokens."""
+    frequency_penalty: Optional[float] = None
+    """Penalizes repeated tokens according to frequency."""
+    seed: Optional[int] = None
+    """Seed for generation"""
+    logprobs: Optional[bool] = False
+    """Whether to return logprobs."""
+    top_logprobs: Optional[int] = None
+    """Number of most likely tokens to return at each token position, each with
+     an associated log probability. `logprobs` must be set to true 
+     if this parameter is used."""
+    logit_bias: Optional[Dict[int, int]] = None
+    """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+    top_p: Optional[float] = None
+    """Total probability mass of tokens to consider at each step."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
     tiktoken_model_name: Optional[str] = None
@@ -350,6 +367,8 @@ class BaseChatOpenAI(BaseChatModel):
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
+    include_response_headers: bool = False
+    """Whether to include response headers in the output message response_metadata."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -438,19 +457,27 @@ class BaseChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
+        exclude_if_none = {
+            "presence_penalty": self.presence_penalty,
+            "frequency_penalty": self.frequency_penalty,
+            "seed": self.seed,
+            "top_p": self.top_p,
+            "logprobs": self.logprobs,
+            "top_logprobs": self.top_logprobs,
+            "logit_bias": self.logit_bias,
+            "stop": self.stop or None,  # also exclude empty list for this
+            "max_tokens": self.max_tokens,
+            "extra_body": self.extra_body,
+        }
+
         params = {
             "model": self.model_name,
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            **{k: v for k, v in exclude_if_none.items() if v is not None},
             **self.model_kwargs,
         }
-        if self.max_tokens is not None:
-            params["max_tokens"] = self.max_tokens
-        if self.stop:
-            params["stop"] = self.stop
-        if self.extra_body is not None:
-            params["extra_body"] = self.extra_body
 
         return params
 
@@ -485,7 +512,15 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        with self.client.create(**payload) as response:
+        if self.include_response_headers:
+            raw_response = self.client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            base_generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = self.client.create(**payload)
+            base_generation_info = {}
+        with response:
+            is_first_chunk = True
             for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
@@ -511,7 +546,7 @@ class BaseChatOpenAI(BaseChatModel):
                     message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
-                    generation_info = {}
+                    generation_info = {**base_generation_info} if is_first_chunk else {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
                         if model_name := chunk.get("model"):
@@ -530,6 +565,7 @@ class BaseChatOpenAI(BaseChatModel):
                     run_manager.on_llm_new_token(
                         generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
+                is_first_chunk = False
                 yield generation_chunk
 
     def _generate(
@@ -545,8 +581,14 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        response = self.client.create(**payload)
-        return self._create_chat_result(response)
+        if self.include_response_headers:
+            raw_response = self.client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = self.client.create(**payload)
+            generation_info = None
+        return self._create_chat_result(response, generation_info)
 
     def _get_request_payload(
         self,
@@ -565,7 +607,9 @@ class BaseChatOpenAI(BaseChatModel):
         }
 
     def _create_chat_result(
-        self, response: Union[dict, openai.BaseModel]
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[Dict] = None,
     ) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
@@ -587,7 +631,9 @@ class BaseChatOpenAI(BaseChatModel):
                     "output_tokens": token_usage.get("completion_tokens", 0),
                     "total_tokens": token_usage.get("total_tokens", 0),
                 }
-            generation_info = dict(finish_reason=res.get("finish_reason"))
+            generation_info = dict(
+                finish_reason=res.get("finish_reason"), **(generation_info or {})
+            )
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(message=message, generation_info=generation_info)
@@ -609,8 +655,15 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        response = await self.async_client.create(**payload)
+        if self.include_response_headers:
+            raw_response = self.async_client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            base_generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = self.async_client.create(**payload)
+            base_generation_info = {}
         async with response:
+            is_first_chunk = True
             async for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
@@ -639,7 +692,7 @@ class BaseChatOpenAI(BaseChatModel):
                         choice["delta"],
                         default_chunk_class,
                     )
-                    generation_info = {}
+                    generation_info = {**base_generation_info} if is_first_chunk else {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
                         if model_name := chunk.get("model"):
@@ -660,6 +713,7 @@ class BaseChatOpenAI(BaseChatModel):
                         chunk=generation_chunk,
                         logprobs=logprobs,
                     )
+                is_first_chunk = False
                 yield generation_chunk
 
     async def _agenerate(
@@ -675,8 +729,16 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        response = await self.async_client.create(**payload)
-        return await run_in_executor(None, self._create_chat_result, response)
+        if self.include_response_headers:
+            raw_response = await self.async_client.with_raw_response.create(**payload)
+            response = raw_response.parse()
+            generation_info = {"headers": dict(raw_response.headers)}
+        else:
+            response = await self.async_client.create(**payload)
+            generation_info = None
+        return await run_in_executor(
+            None, self._create_chat_result, response, generation_info
+        )
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

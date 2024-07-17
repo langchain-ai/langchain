@@ -61,7 +61,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
         # other forms of azure credentials.
         values["openai_api_key"] = (
-            values["openai_api_key"]
+            values.get("openai_api_key")
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
         )
@@ -75,7 +75,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
         values["openai_organization"] = (
-            values["openai_organization"]
+            values.get("openai_organization")
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
@@ -85,10 +85,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "OPENAI_PROXY",
             default="",
         )
-        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
+        values["azure_endpoint"] = values.get("azure_endpoint") or os.getenv(
             "AZURE_OPENAI_ENDPOINT"
         )
-        values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
+        values["azure_ad_token"] = values.get("azure_ad_token") or os.getenv(
             "AZURE_OPENAI_AD_TOKEN"
         )
         # Azure OpenAI embedding models allow a maximum of 16 texts

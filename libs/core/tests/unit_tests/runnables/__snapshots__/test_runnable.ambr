@@ -5577,6 +5577,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -5701,6 +5708,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -5725,8 +5739,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -5740,7 +5757,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -5752,6 +5769,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -5781,9 +5801,6 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
-          }),
-          'raw_output': dict({
-            'title': 'Raw Output',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -6237,6 +6254,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -6361,6 +6385,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -6385,8 +6416,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -6400,7 +6434,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -6412,6 +6446,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -6441,9 +6478,6 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
-          }),
-          'raw_output': dict({
-            'title': 'Raw Output',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -6834,6 +6868,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -6936,6 +6977,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -6960,8 +7008,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -6975,7 +7026,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -6987,6 +7038,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -7016,9 +7070,6 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
-          }),
-          'raw_output': dict({
-            'title': 'Raw Output',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -7444,6 +7495,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -7568,6 +7626,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -7592,8 +7657,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -7607,7 +7675,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -7619,6 +7687,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -7648,9 +7719,6 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
-          }),
-          'raw_output': dict({
-            'title': 'Raw Output',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -8068,6 +8136,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -8203,6 +8278,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -8227,8 +8309,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -8242,7 +8327,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -8254,6 +8339,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -8283,9 +8371,6 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
-          }),
-          'raw_output': dict({
-            'title': 'Raw Output',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -8683,6 +8768,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -8785,6 +8877,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -8809,8 +8908,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -8824,7 +8926,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -8836,6 +8938,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -8865,9 +8970,6 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
-          }),
-          'raw_output': dict({
-            'title': 'Raw Output',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -9238,6 +9340,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -9340,6 +9449,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -9364,8 +9480,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -9379,7 +9498,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -9391,6 +9510,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -9420,9 +9542,6 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
-          }),
-          'raw_output': dict({
-            'title': 'Raw Output',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -9880,6 +9999,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -10004,6 +10130,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -10028,8 +10161,11 @@
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
+          
           Example: A ToolMessage where only part of the tool output is sent to the model
-              and the full output is passed in to raw_output.
+              and the full output is passed in to artifact.
+          
+              .. versionadded:: 0.2.17
           
               .. code-block:: python
           
@@ -10043,7 +10179,7 @@
           
                   ToolMessage(
                       content=tool_output["stdout"],
-                      raw_output=tool_output,
+                      artifact=tool_output,
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
@@ -10055,6 +10191,9 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'artifact': dict({
+            'title': 'Artifact',
           }),
           'content': dict({
             'anyOf': list([
@@ -10084,9 +10223,6 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
-          }),
-          'raw_output': dict({
-            'title': 'Raw Output',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
