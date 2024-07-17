@@ -431,7 +431,9 @@ class Milvus(VectorStore):
                         kwargs = self.metadata_schema[key]["kwargs"]
                         fields.append(
                             FieldSchema(
-                                name=key, dtype=self.metadata_schema[key][field_type], **kwargs
+                                name=key,
+                                dtype=self.metadata_schema[key][field_type],
+                                **kwargs
                             )
                         )
                     else:
