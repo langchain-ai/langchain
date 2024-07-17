@@ -858,9 +858,7 @@ class Neo4jVector(VectorStore):
             f"'{self.embedding_node_property}', row.embedding) "
             f"SET c.`{self.text_node_property}` = row.text "
             "SET c += row.metadata "
-            "RETURN c "
             "} IN TRANSACTIONS OF 1000 ROWS "
-            "RETURN c "
         )
 
         parameters = {
