@@ -631,8 +631,11 @@ class BaseChatOpenAI(BaseChatModel):
                     "output_tokens": token_usage.get("completion_tokens", 0),
                     "total_tokens": token_usage.get("total_tokens", 0),
                 }
-            generation_info = dict(
-                finish_reason=res.get("finish_reason"), **(generation_info or {})
+            generation_info = generation_info or {}
+            generation_info["finish_reason"] = (
+                res.get("finish_reason")
+                if res.get("finish_reason") is not None
+                else generation_info.get("finish_reason")
             )
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -660,7 +663,7 @@ class BaseChatOpenAI(BaseChatModel):
             response = raw_response.parse()
             base_generation_info = {"headers": dict(raw_response.headers)}
         else:
-            response = self.async_client.create(**payload)
+            response = await self.async_client.create(**payload)
             base_generation_info = {}
         async with response:
             is_first_chunk = True
