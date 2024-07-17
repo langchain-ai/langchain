@@ -433,7 +433,7 @@ class Milvus(VectorStore):
                             FieldSchema(
                                 name=key,
                                 dtype=self.metadata_schema[key][field_type],
-                                **kwargs
+                                **kwargs,
                             )
                         )
                     else:
