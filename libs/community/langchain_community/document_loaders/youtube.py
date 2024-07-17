@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
-from xml.etree.ElementTree import ParseError
+from xml.etree.ElementTree import ParseError # OK: user-must-opt-in
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
