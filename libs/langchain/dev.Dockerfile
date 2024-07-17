@@ -50,6 +50,9 @@ COPY libs/core ../core
 # Copy the community library for installation
 COPY libs/community/ ../community/
 
+# Copy the standard tests for installation
+COPY libs/standard-tests/ ../standard-tests/
+
 # Copy the text-splitters library for installation
 COPY libs/text-splitters/ ../text-splitters/
 

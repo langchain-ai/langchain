@@ -1,6 +1,7 @@
 -e ../libs/core
 -e ../libs/langchain
 -e ../libs/community
+-e ../libs/standard-tests
 -e ../libs/experimental
 -e ../libs/text-splitters
 langchain-cohere

@@ -14,6 +14,7 @@ LANGCHAIN_DIRS = [
     "libs/text-splitters",
     "libs/langchain",
     "libs/community",
+    "libs/standard-tests",
     "libs/experimental",
 ]
 
