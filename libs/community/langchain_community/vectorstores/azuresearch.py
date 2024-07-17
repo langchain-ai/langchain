@@ -1382,6 +1382,7 @@ class AzureSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
+        azure_ad_access_token: Optional[str] = None,
         index_name: str = "langchain-index",
         fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
@@ -1390,6 +1391,7 @@ class AzureSearch(VectorStore):
         azure_search = cls(
             azure_search_endpoint,
             azure_search_key,
+            azure_ad_access_token,
             index_name,
             embedding,
             fields=fields,
@@ -1406,6 +1408,7 @@ class AzureSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
+        azure_ad_access_token: Optional[str] = None,
         index_name: str = "langchain-index",
         fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
@@ -1414,6 +1417,7 @@ class AzureSearch(VectorStore):
         azure_search = cls(
             azure_search_endpoint,
             azure_search_key,
+            azure_ad_access_token,
             index_name,
             embedding,
             fields=fields,
