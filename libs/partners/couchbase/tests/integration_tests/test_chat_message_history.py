@@ -9,13 +9,10 @@ import pytest
 from couchbase.auth import PasswordAuthenticator
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions
-from dotenv import load_dotenv
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain_couchbase.chat_message_histories import CouchbaseChatMessageHistory
-
-load_dotenv()
 
 CONNECTION_STRING = os.getenv("COUCHBASE_CONNECTION_STRING", "")
 BUCKET_NAME = os.getenv("COUCHBASE_BUCKET_NAME", "")
