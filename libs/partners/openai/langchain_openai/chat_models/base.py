@@ -660,7 +660,7 @@ class BaseChatOpenAI(BaseChatModel):
             response = raw_response.parse()
             base_generation_info = {"headers": dict(raw_response.headers)}
         else:
-            response = self.async_client.create(**payload)
+            response = await self.async_client.create(**payload)
             base_generation_info = {}
         async with response:
             is_first_chunk = True
