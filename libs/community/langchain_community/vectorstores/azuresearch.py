@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import time
 import base64
 import itertools
 import json
@@ -33,6 +33,8 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
+from azure.core.credentials import TokenCredential
+from azure.core.credentials import AccessToken
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -69,10 +71,20 @@ FIELDS_METADATA = get_from_env(
 
 MAX_UPLOAD_BATCH_SIZE = 1000
 
+class BearerTokenCredential(TokenCredential):
+    def __init__(self, token):
+        self._token = token
+
+    def get_token(self, *scopes, **kwargs):
+        # The AccessToken expects the token and its expiry time in seconds.
+        # Here we set the expiry to an hour from now.
+        expiry = int(time.time()) + 3600
+        return AccessToken(self._token, expiry)
 
 def _get_search_client(
     endpoint: str,
     key: str,
+    azure_ad_access_token:  Optional[str],
     index_name: str,
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
@@ -113,7 +125,10 @@ def _get_search_client(
     additional_search_client_options = additional_search_client_options or {}
     default_fields = default_fields or []
     if key is None:
-        credential = DefaultAzureCredential()
+        if azure_ad_access_token:
+            credential = BearerTokenCredential(azure_ad_access_token)
+        else:
+            credential = DefaultAzureCredential() 
     elif key.upper() == "INTERACTIVE":
         credential = InteractiveBrowserCredential()
         credential.get_token("https://search.azure.com/.default")
