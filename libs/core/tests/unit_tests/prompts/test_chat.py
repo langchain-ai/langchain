@@ -805,4 +805,4 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     # input variables only lists required variables
     assert set(prompt_optional.input_variables) == {"input"}
     prompt_optional.input_schema(input="")  # won't raise error
-    prompt_optional.input_schema.schema() == snapshot(name="partial")
+    assert prompt_optional.input_schema.schema() == snapshot(name="partial")
