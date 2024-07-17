@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-import time
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -11,6 +10,7 @@ from typing import (
     Sequence,
 )
 
+import time
 from typing_extensions import TypedDict
 
 from langchain_core._api import beta
@@ -52,21 +52,32 @@ class DeleteResponse(TypedDict, total=False):
     """
 
     num_deleted: int
-    """The number of items that were successfully deleted."""
-    num_failed: int
-    """The number of items that failed to be deleted."""
+    """The number of items that were successfully deleted.
+    
+    If returned, this should only include *actual* deletions.
+    
+    If the ID did not exist to begin with, 
+    it should not be included in this count.
+    """
+
     succeeded: Sequence[str]
     """The IDs that were successfully deleted.
     
-    Should not be returned when using delete_by_filter.
+    If returned, this should only include *actual* deletions.
+    
+    If the ID did not exist to begin with,
+    it should not be included in this list.
     """
+
     failed: Sequence[str]
     """The IDs that failed to be deleted.
     
-    Should not be returned when using delete_by_filter.
-    
-    Please note that deleting an ID that does not exist is **NOT** considered a failure.
+    Please note that deleting an ID that 
+    does not exist is **NOT** considered a failure.
     """
+
+    num_failed: int
+    """The number of items that failed to be deleted."""
 
 
 @beta(message="Added in ___version___. The API is subject to change.")
