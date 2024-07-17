@@ -478,6 +478,93 @@ class Chroma(VectorStore):
                 "Consider providing relevance_score_fn to Chroma constructor."
             )
 
+    def similarity_search_by_image(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return. Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+        Returns:
+            List of Images most similar to the provided image.
+            Each element in list is a Langchain Document Object.
+            The page content is b64 encoded image, metadata is default or
+            as defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
+    def similarity_search_by_image_with_relevance_score(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return.
+            Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+        Returns:
+            List[Tuple[Document, float]]: List of tuples containing documents similar
+            to the query image and their similarity scores.
+            0th element in each tuple is a Langchain Document Object.
+            The page content is b64 encoded img, metadata is default or defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector_with_relevance_scores(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],

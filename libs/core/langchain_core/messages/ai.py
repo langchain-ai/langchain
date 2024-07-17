@@ -15,11 +15,18 @@ from langchain_core.messages.tool import (
     default_tool_chunk_parser,
     default_tool_parser,
 )
+from langchain_core.messages.tool import (
+    invalid_tool_call as create_invalid_tool_call,
+)
+from langchain_core.messages.tool import (
+    tool_call as create_tool_call,
+)
+from langchain_core.messages.tool import (
+    tool_call_chunk as create_tool_call_chunk,
+)
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
-from langchain_core.utils.json import (
-    parse_partial_json,
-)
+from langchain_core.utils.json import parse_partial_json
 
 
 class UsageMetadata(TypedDict):
@@ -106,24 +113,55 @@ class AIMessage(BaseMessage):
 
     @root_validator(pre=True)
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
-        raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
-        tool_calls = (
-            values.get("tool_calls")
-            or values.get("invalid_tool_calls")
-            or values.get("tool_call_chunks")
+        check_additional_kwargs = not any(
+            values.get(k)
+            for k in ("tool_calls", "invalid_tool_calls", "tool_call_chunks")
         )
-        if raw_tool_calls and not tool_calls:
+        if check_additional_kwargs and (
+            raw_tool_calls := values.get("additional_kwargs", {}).get("tool_calls")
+        ):
             try:
                 if issubclass(cls, AIMessageChunk):  # type: ignore
                     values["tool_call_chunks"] = default_tool_chunk_parser(
                         raw_tool_calls
                     )
                 else:
-                    tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
-                    values["tool_calls"] = tool_calls
-                    values["invalid_tool_calls"] = invalid_tool_calls
+                    parsed_tool_calls, parsed_invalid_tool_calls = default_tool_parser(
+                        raw_tool_calls
+                    )
+                    values["tool_calls"] = parsed_tool_calls
+                    values["invalid_tool_calls"] = parsed_invalid_tool_calls
             except Exception:
                 pass
+
+        # Ensure "type" is properly set on all tool call-like dicts.
+        if tool_calls := values.get("tool_calls"):
+            updated: List = []
+            for tc in tool_calls:
+                updated.append(
+                    create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
+                )
+            values["tool_calls"] = updated
+        if invalid_tool_calls := values.get("invalid_tool_calls"):
+            updated = []
+            for tc in invalid_tool_calls:
+                updated.append(
+                    create_invalid_tool_call(
+                        **{k: v for k, v in tc.items() if k != "type"}
+                    )
+                )
+            values["invalid_tool_calls"] = updated
+
+        if tool_call_chunks := values.get("tool_call_chunks"):
+            updated = []
+            for tc in tool_call_chunks:
+                updated.append(
+                    create_tool_call_chunk(
+                        **{k: v for k, v in tc.items() if k != "type"}
+                    )
+                )
+            values["tool_call_chunks"] = updated
+
         return values
 
     def pretty_repr(self, html: bool = False) -> str:
@@ -216,7 +254,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         if not values["tool_call_chunks"]:
             if values["tool_calls"]:
                 values["tool_call_chunks"] = [
-                    ToolCallChunk(
+                    create_tool_call_chunk(
                         name=tc["name"],
                         args=json.dumps(tc["args"]),
                         id=tc["id"],
@@ -228,7 +266,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 tool_call_chunks = values.get("tool_call_chunks", [])
                 tool_call_chunks.extend(
                     [
-                        ToolCallChunk(
+                        create_tool_call_chunk(
                             name=tc["name"], args=tc["args"], id=tc["id"], index=None
                         )
                         for tc in values["invalid_tool_calls"]
@@ -244,7 +282,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
-                        ToolCall(
+                        create_tool_call(
                             name=chunk["name"] or "",
                             args=args_,
                             id=chunk["id"],
@@ -254,7 +292,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     raise ValueError("Malformed args.")
             except Exception:
                 invalid_tool_calls.append(
-                    InvalidToolCall(
+                    create_invalid_tool_call(
                         name=chunk["name"],
                         args=chunk["args"],
                         id=chunk["id"],
@@ -297,7 +335,7 @@ def add_ai_message_chunks(
         left.tool_call_chunks, *(o.tool_call_chunks for o in others)
     ):
         tool_call_chunks = [
-            ToolCallChunk(
+            create_tool_call_chunk(
                 name=rtc.get("name"),
                 args=rtc.get("args"),
                 index=rtc.get("index"),
