@@ -521,7 +521,7 @@ it's performing.
 A tool can take arbitrary arguments as input. At runtime, these arguments can be passed in either:
 
 1. As a dict of just the arguments,
-2. As a ToolCall, which contains the arguments along with other metadata like the tool call ID.
+2. As a `ToolCall`, which contains the arguments along with other metadata like the tool call ID.
 
 ```python
 tool = ...
@@ -536,7 +536,7 @@ tool.invoke(tool_call["args"])
 tool.invoke(tool_call)
 ```
 
-A tool also has access to the RunnableConfig that's passed into whatever chain the tool is a part of. This allows you to write tool logic that can be parameterized by the chain config.
+A tool also has access to the `RunnableConfig` that's passed into whatever chain the tool is a part of. This allows you to write tool logic that can be parameterized by the chain config.
 
 ```python
 config = {"configurable": {"tool_param_foo": ...}}
@@ -549,8 +549,8 @@ See the how-to guide for [passing in configs here](/docs/how_to/tool_configure/)
 
 The format of a tool's output depends on the format of the input. If a tool is called:
 
-1. With a dict of its arguments then it will produce an arbitrary output that we assume can be passed to a model as the `ToolMessage.content` field.
-2. A ToolCall then it will produce a `ToolMessage(content=..., ...)` where the tool output has already been assigned to the `ToolMessage.content` field.
+1. With a dict of its arguments then it will produce an arbitrary output that we assume can be passed to a model as the `ToolMessage.content` field,
+2. A `ToolCall` then it will produce a `ToolMessage(content=..., ...)` where the tool output has already been assigned to the `ToolMessage.content` field.
 
 ```python
 # 1. pass in args directly
@@ -564,16 +564,16 @@ tool.invoke(tool_call)
 # -> ToolMessage(content="tool result foobar...", tool_call_id=..., name="tool_name")
 ```
 
-A tool can also be defined to include an artifact when invoked with a ToolCall. An artifact is some element of the
+A tool can also be defined to include an artifact when invoked with a `ToolCall`. An artifact is some element of the
 tool's execution which is useful to return but shouldn't be sent to the model. The artifact can *only* be returned
-when the tool input is a ToolCall:
+when the tool input is a `ToolCall`:
 
 ```python
 tool_with_artifact.invoke(tool_call)
 # -> ToolMessage(content="tool result foobar...", tool_call_id=..., name="tool_name", artifact=...).
 ```
 
-Learn about [ToolMessage.artifact here](/docs/concepts/#toolmessage) and about [defining tools that return artifacts here](/docs/how_to/tool_artifacts/).
+Learn about [`ToolMessage.artifact` here](/docs/concepts/#toolmessage) and about [defining tools that return artifacts here](/docs/how_to/tool_artifacts/).
 
 #### Best practices
 
