@@ -73,10 +73,10 @@ MAX_UPLOAD_BATCH_SIZE = 1000
 
 
 class BearerTokenCredential(TokenCredential):
-    def __init__(self, token):
+    def __init__(self, token: str) -> None:
         self._token = token
 
-    def get_token(self, *scopes, **kwargs):
+    def get_token(self, *scopes: str, **kwargs: Any) -> AccessToken:
         # The AccessToken expects the token and its expiry time in seconds.
         # Here we set the expiry to an hour from now.
         expiry = int(time.time()) + 3600
