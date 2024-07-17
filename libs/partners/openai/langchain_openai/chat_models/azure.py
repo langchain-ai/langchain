@@ -95,6 +95,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
             var OPENAI_ORG_ID.
+        model: Optional[str]
+            The name of the underlying OpenAI model. This is used for tracing and token
+            counting. This does not affect completion.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -111,6 +114,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 timeout=None,
                 max_retries=2,
                 # organization="...",
+                # model="gpt-3.5-turbo-0125",
                 # other params...
             )
 
@@ -512,6 +516,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
     validate_base_url: bool = True
     """If legacy arg openai_api_base is passed in, try to infer if it is a base_url or 
         azure_endpoint and update client params accordingly.
+    """
+
+    model_name: Optional[str] = Field(default=None, alias="model")  # type: ignore[assignment]
+    """Name of the deployed OpenAI model, e.g. "gpt-4o", "gpt-3.5-turbo-0125", etc. 
+    
+    Distinct from the Azure deployment name, which is set by the Azure user.
+    Used for tracing and token counting.
     """
 
     @classmethod
@@ -923,7 +934,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "azure"
-        if self.deployment_name:
+        if self.model_name:
+            params["ls_model_name"] = self.model_name
+        elif self.deployment_name:
             params["ls_model_name"] = self.deployment_name
         return params
 
