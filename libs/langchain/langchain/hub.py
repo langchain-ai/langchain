@@ -10,11 +10,11 @@ from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
 
 if TYPE_CHECKING:
-    from langsmith import Client
-    from langchainhub import Client
+    from langchainhub import Client as LangChainHubClient
+    from langsmith import Client as LangSmithClient
 
 
-def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Client:
+def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Any:
     try:
         from langsmith import Client
     except ImportError:
@@ -99,11 +99,12 @@ def pull(
 
     # Then it's langsmith
     if hasattr(client, "pull_prompt"):
-        response = client.pull_prompt(owner_repo_commit, format="langchain")
+        response = client.pull_prompt(owner_repo_commit)
         return response
 
     # Then it's langchainhub
     if hasattr(client, "pull_repo"):
+        print("pulling from langchainhub")
         # >= 0.1.15
         res_dict = client.pull_repo(owner_repo_commit)
         obj = loads(json.dumps(res_dict["manifest"]))
