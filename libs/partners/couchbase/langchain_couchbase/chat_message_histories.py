@@ -178,7 +178,9 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         try:
             for i in range(0, len(messages_to_insert), batch_size):
                 batch = messages_to_insert[i : i + batch_size]
-                self._collection.insert_multi(batch[0])
+                # Convert list of dictionaries to a single dictionary to insert
+                insert_batch = {list(d.keys())[0]: list(d.values())[0] for d in batch}
+                self._collection.insert_multi(insert_batch)
         except Exception as e:
             logger.error("Error adding messages: ", e)
 
