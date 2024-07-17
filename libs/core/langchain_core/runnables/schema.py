@@ -159,7 +159,7 @@ class StandardStreamEvent(BaseStreamEvent):
 class CustomStreamEvent(BaseStreamEvent):
     """Custom stream event created by the user.
 
-    .. versionadded:: 0.2.14
+    .. versionadded:: 0.2.15
     """
 
     # Overwrite the event field to be more specific.
