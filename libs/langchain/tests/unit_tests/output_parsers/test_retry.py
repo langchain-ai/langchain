@@ -332,7 +332,7 @@ def test_retry_with_error_output_parser_parse_with_prompt_with_retry_chain(
             StringPromptValue(text="dummy"),
             DatetimeOutputParser(),
             NAIVE_RETRY_WITH_ERROR_PROMPT
-            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),  # noqa
+            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
         )
     ],
