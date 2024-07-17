@@ -57,7 +57,17 @@ def maximal_marginal_relevance(
     lambda_mult: float = 0.5,
     k: int = 4,
 ) -> List[int]:
-    """Calculate maximal marginal relevance."""
+    """Calculate maximal marginal relevance.
+
+    Args:
+        query_embedding: The query embedding.
+        embedding_list: The list of embeddings.
+        lambda_mult: The lambda multiplier. Defaults to 0.5.
+        k: The number of results to return. Defaults to 4.
+
+    Returns:
+        List[int]: The list of indices.
+    """
     if min(k, len(embedding_list)) <= 0:
         return []
     if query_embedding.ndim == 1:
@@ -99,7 +109,7 @@ class Milvus(VectorStore):
 
     IF USING L2/IP metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
 
-    Args:
+    Parameters:
         embedding_function (Embeddings): Function used to embed the text.
         collection_name (str): Which Milvus collection to use. Defaults to
             "LangChainCollection".

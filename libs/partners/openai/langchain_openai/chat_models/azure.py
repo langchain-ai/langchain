@@ -928,7 +928,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return params
 
     def _create_chat_result(
-        self, response: Union[dict, openai.BaseModel]
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[Dict] = None,
     ) -> ChatResult:
         if not isinstance(response, dict):
             response = response.model_dump()
@@ -938,7 +940,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "Azure has not provided the response due to a content filter "
                     "being triggered"
                 )
-        chat_result = super()._create_chat_result(response)
+        chat_result = super()._create_chat_result(response, generation_info)
 
         if "model" in response:
             model = response["model"]
