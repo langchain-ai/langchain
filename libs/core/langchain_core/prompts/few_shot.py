@@ -361,13 +361,13 @@ class FewShotChatMessagePromptTemplate(
     """A list of the names of the variables the prompt template will use
     to pass to the example_selector, if provided."""
 
+    example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
+    """The class to format each example."""
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return False
-
-    example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
-    """The class to format each example."""
 
     class Config:
         """Configuration for this pydantic object."""

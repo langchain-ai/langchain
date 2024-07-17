@@ -433,6 +433,30 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     assert messages == expected
 
 
+def test_few_shot_chat_message_prompt_template_infer_input_variables() -> None:
+    """Check that it can infer input variables if not provided."""
+    examples = [
+        {"input": "2+2", "output": "4"},
+        {"input": "2+3", "output": "5"},
+    ]
+    example_selector = AsIsSelector(examples)
+    example_prompt = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate.from_template("{input}"),
+            AIMessagePromptTemplate.from_template("{output}"),
+        ]
+    )
+
+    few_shot_prompt = FewShotChatMessagePromptTemplate(
+        example_prompt=example_prompt,
+        example_selector=example_selector,
+    )
+
+    # The prompt template does not have any inputs! They
+    # have already been filled in.
+    assert few_shot_prompt.input_variables == []
+
+
 class AsyncAsIsSelector(BaseExampleSelector):
     """An example selector for testing purposes.
 
