@@ -205,6 +205,8 @@ class SQLDatabase:
             default_host = context.browserHostName
         except ImportError:
             default_host = None
+        except AttributeError:    
+            default_host = None
 
         if host is None:
             host = get_from_env("host", "DATABRICKS_HOST", default_host)
