@@ -496,15 +496,12 @@ For specifics on how to use retrievers, see the [relevant how-to guides here](/d
 ### Tools
 <span data-heading-keywords="tool,tools"></span>
 
-Tools are interfaces that an agent, a chain, or a chat model / LLM can use to interact with the world.
-
-A tool consists of the following components:
+Tools are interfaces that a model can use to interact with the world. A tool consists of:
 
 1. The name of the tool
 2. A description of what the tool does
 3. JSON schema of what the inputs to the tool are
-4. The function to call
-5. Whether the result of a tool should be returned directly to the user (only relevant for agents)
+4. A function (and, optionally, an async variant of the function)
 
 The name, description and JSON schema are provided as context
 to the LLM, allowing the LLM to determine how to use the tool
