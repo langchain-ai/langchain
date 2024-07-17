@@ -333,7 +333,7 @@ class AzureSearch(VectorStore):
         self.client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
-            azure_ad_access_token, 
+            azure_ad_access_token,
             index_name,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
@@ -349,7 +349,7 @@ class AzureSearch(VectorStore):
         self.async_client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
-            azure_ad_access_token, 
+            azure_ad_access_token,
             index_name,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
