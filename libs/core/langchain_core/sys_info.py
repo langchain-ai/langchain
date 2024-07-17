@@ -6,7 +6,11 @@ from typing import Sequence
 
 
 def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
-    """Print information about the environment for debugging purposes."""
+    """Print information about the environment for debugging purposes.
+
+    Args:
+        additional_pkgs: Additional packages to include in the output.
+    """
     import pkgutil
     import platform
     import sys

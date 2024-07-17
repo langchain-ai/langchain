@@ -32,6 +32,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -65,7 +66,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {
             "role": "function",
             "content": message.content,
-            "name": message.name,
+            "name": message.name or message.additional_kwargs.get("name"),
         }
     else:
         raise TypeError(f"Got unknown type {message}")
@@ -88,6 +89,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
         request_id=additional_kwargs["id"],
         object=additional_kwargs.get("object", ""),
         search_info=additional_kwargs.get("search_info", []),
+        usage=additional_kwargs.get("usage", None),
     )
 
     if additional_kwargs.get("function_call", {}):
@@ -101,6 +103,17 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
                 "id": str(uuid.uuid4()),
             }
         ]
+
+    if usage := additional_kwargs.get("usage", None):
+        return AIMessage(
+            content=content,
+            additional_kwargs=msg_additional_kwargs,
+            usage_metadata=UsageMetadata(
+                input_tokens=usage.prompt_tokens,
+                output_tokens=usage.completion_tokens,
+                total_tokens=usage.total_tokens,
+            ),
+        )
 
     return AIMessage(
         content=content,
@@ -578,6 +591,7 @@ class QianfanChatEndpoint(BaseChatModel):
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
+                        usage_metadata=msg.usage_metadata,
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -605,6 +619,7 @@ class QianfanChatEndpoint(BaseChatModel):
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
+                        usage_metadata=msg.usage_metadata,
                     ),
                     generation_info=msg.additional_kwargs,
                 )

@@ -1,4 +1,5 @@
 """Test MLX Chat wrapper."""
+
 from importlib import import_module
 
 

@@ -122,7 +122,6 @@ jobs:
           fi
           {
             echo 'release-body<<EOF'
-            echo "# Release $TAG"
             echo $PREAMBLE
             echo
             git log --format="%s" "$PREV_TAG"..HEAD -- $WORKING_DIR
@@ -135,6 +134,7 @@ jobs:
       - release-notes
     uses:
       ./.github/workflows/_test_release.yml
+    permissions: write-all
     with:
       working-directory: ${{ inputs.working-directory }}
       dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
@@ -220,6 +220,11 @@ jobs:
       - name: Run unit tests
         run: make tests
         working-directory: ${{ inputs.working-directory }}
+
+      - name: Check for prerelease versions
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
 
       - name: Get minimum versions
         working-directory: ${{ inputs.working-directory }}

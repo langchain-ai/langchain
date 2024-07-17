@@ -71,13 +71,15 @@ class HTMLHeaderTextSplitter:
             for chunk in aggregated_chunks
         ]
 
-    def split_text_from_url(self, url: str) -> List[Document]:
+    def split_text_from_url(self, url: str, **kwargs: Any) -> List[Document]:
         """Split HTML from web URL
 
         Args:
             url: web URL
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the fetch url content request.
         """
-        r = requests.get(url)
+        r = requests.get(url, **kwargs)
         return self.split_text_from_file(BytesIO(r.content))
 
     def split_text(self, text: str) -> List[Document]:
