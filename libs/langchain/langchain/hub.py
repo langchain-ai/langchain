@@ -17,13 +17,13 @@ if TYPE_CHECKING:
 def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Client:
     try:
         from langsmith import Client
-    except ImportError as e:
+    except ImportError:
         try:
             from langchainhub import Client
         except ImportError as e:
             raise ImportError(
-                "Could not import langsmith or langchainhub (deprecated), please install with `pip install "
-                "langsmith`."
+                "Could not import langsmith or langchainhub (deprecated),"
+                "please install with `pip install langsmith`."
             ) from e
 
     # Client logic will also attempt to load URL/key from environment variables
@@ -99,7 +99,7 @@ def pull(
 
     # Then it's langsmith
     if hasattr(client, "pull_prompt"):
-        response = client.pull_prompt(owner_repo_commit)  # add format = 'langchain'
+        response = client.pull_prompt(owner_repo_commit, format="langchain")
         return response
 
     # Then it's langchainhub
