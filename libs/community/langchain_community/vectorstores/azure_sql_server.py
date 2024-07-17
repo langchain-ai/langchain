@@ -4,7 +4,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
 from sqlalchemy import Column, Uuid, bindparam, create_engine, text
-from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY
+from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
@@ -23,11 +23,18 @@ Base = declarative_base()  # type: Any
 _embedding_store: Any = None
 
 
-class AzureSQLServer_VectorStore(VectorStore):
-    """Azure SQL Server Vector Store.
+class SQLServer_VectorStore(VectorStore):
+    """SQL Server Vector Store.
 
     This class provides a vector store interface for adding texts and performing
-    similarity searches on the texts in Azure SQL Server.
+        similarity searches on the texts in SQL Server.
+
+    Args:
+        connection: Optional SQLServer connection.
+        connection_string: SQLServer connection string.
+        embedding_function: Any embedding function implementing
+            `langchain.embeddings.base.Embeddings` interface.
+        table_name: The name of the table to use for storing embeddings.
 
     """
 
@@ -39,7 +46,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         embedding_function: Embeddings,
         table_name: str,
     ) -> None:
-        """Initialize the Azure SQL Server vector store."""
+        """Initialize the SQL Server vector store."""
 
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -52,7 +59,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         return create_engine(url=self.connection_string, echo=True)
 
     def _create_table_if_not_exists(self) -> None:
-        logging.info("Creating table %s", self.table_name)
+        logging.info("Creating table %s", json.dumps(self.table_name))
         with Session(bind=self._bind) as session:
             Base.metadata.create_all(session.get_bind())
 
@@ -65,10 +72,11 @@ class AzureSQLServer_VectorStore(VectorStore):
             """This is the base model for SQL vector store."""
 
             __tablename__ = name
-            ID = Column(Uuid, primary_key=True, default=uuid.uuid4)
-            QUERYMETADATA = Column(JSON)
-            QUERY = Column(NVARCHAR)
-            VECTOR = Column(VARBINARY)
+            id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+            custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
+            query_metadata = Column(JSON, nullable=True)
+            query = Column(NVARCHAR("max"), nullable=False)
+            embeddings = Column(VARBINARY, nullable=False)
 
         _embedding_store = EmbeddingStore
         return _embedding_store
@@ -85,6 +93,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         metadatas: List[dict] | None = None,
         **kwargs: Any,
     ) -> VST:
+        """Return VectorStore initialized from texts and embeddings."""
         return super().from_texts(texts, embedding, metadatas, **kwargs)
 
     def similarity_search(
@@ -100,7 +109,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """Compute the embeddings for the input texts and store embeddings
-        in the vectorstore.
+            in the vectorstore.
 
         Args:
             texts: Iterable of strings to add into the vectorstore.
@@ -113,9 +122,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         """
 
         # Embed the texts passed in.
-        embedded_texts = self.embedding_function.embed_documents(
-            list(texts)
-        )  # List[List[float]]
+        embedded_texts = self.embedding_function.embed_documents(list(texts))
 
         # Insert the embedded texts in the vector store table.
         return self._insert_embeddings(texts, embedded_texts, metadatas, ids)
@@ -141,18 +148,25 @@ class AzureSQLServer_VectorStore(VectorStore):
             List of IDs generated from adding the texts into the vectorstore.
         """
 
-        if ids is None:
-            ids = [uuid.uuid4() for _ in texts]
-
         if metadatas is None:
             metadatas = [{} for _ in texts]
+
+        if ids is None:
+            ids = [metadata.pop("id", uuid.uuid4()) for metadata in metadatas]
 
         try:
             with Session(bind=self._bind) as session:
                 documents = []
-                for id, query, embedding, metadata in zip(
-                    ids, texts, embeddings, metadatas
-                ):
+                for idx, query in enumerate(texts):
+                    # For a query, if there is no corresponding ID, we generate a uuid and add it to the list of IDs to be returned.
+                    id = (
+                        ids[idx]
+                        if idx < len(ids)
+                        else ids.append(uuid.uuid4()) or ids[-1]
+                    )
+                    embedding = embeddings[idx]
+                    metadata = metadatas[idx] if idx < len(metadatas) else None
+
                     # Construct text, embedding, metadata as EmbeddingStore model
                     # to be inserted into the table.
                     sqlquery = text(
@@ -161,12 +175,15 @@ class AzureSQLServer_VectorStore(VectorStore):
                         bindparam(
                             "embeddingvalues",
                             json.dumps(embedding),
-                            literal_execute=True,
+                            literal_execute=True,  # render the value of the parameter into SQL statement at statement execution time
                         )
                     )
                     result = session.scalar(sqlquery)
                     embedding_store = self.EmbeddingStore(
-                        ID=id, QUERYMETADATA=metadata, QUERY=query, VECTOR=result
+                        custom_id=id,
+                        query_metadata=metadata,
+                        query=query,
+                        embeddings=result,
                     )
                     documents.append(embedding_store)
                 session.bulk_save_objects(documents)
