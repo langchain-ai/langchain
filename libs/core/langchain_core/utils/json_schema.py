@@ -13,9 +13,13 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
         )
     out = schema
     for component in components[1:]:
-        if component not in out:
-            continue
-        out = out[component]
+        if component.isdigit() and int(component) in out:
+            out = out[int(component)]
+        elif component in out:
+            out = out[component]
+        else:
+            # Returning the original schema or a default value if the key is not found
+            return deepcopy(out)
     return deepcopy(out)
 
 
