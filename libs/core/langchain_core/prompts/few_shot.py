@@ -277,6 +277,7 @@ class FewShotChatMessagePromptTemplate(
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(
+                input_variables=[],
                 examples=examples,
                 # This is a prompt template used to format each individual example.
                 example_prompt=example_prompt,
