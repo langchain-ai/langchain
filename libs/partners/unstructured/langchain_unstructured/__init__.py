@@ -1,9 +1,6 @@
 from importlib import metadata
 
-from langchain_unstructured.document_loaders import (
-    UnstructuredSDKFileIOLoader,
-    UnstructuredSDKFileLoader,
-)
+from langchain_unstructured.document_loaders import UnstructuredLoader
 
 try:
     __version__ = metadata.version(__package__)
@@ -13,7 +10,6 @@ except metadata.PackageNotFoundError:
 del metadata  # optional, avoids polluting the results of dir(__package__)
 
 __all__ = [
-    "UnstructuredSDKFileLoader",
-    "UnstructuredSDKFileIOLoader",
+    "UnstructuredLoader",
     "__version__",
 ]

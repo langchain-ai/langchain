@@ -12,34 +12,13 @@ And you should configure credentials by setting the following environment variab
 
 * TODO: fill this out
 
-## Chat Models
+## Loaders
 
-`ChatUnstructured` class exposes chat models from Unstructured.
-
-```python
-from langchain_unstructured import ChatUnstructured
-
-llm = ChatUnstructured()
-llm.invoke("Sing a ballad of LangChain.")
-```
-
-## Embeddings
-
-`UnstructuredEmbeddings` class exposes embeddings from Unstructured.
+The `UnstructuredLoader` class..
 
 ```python
-from langchain_unstructured import UnstructuredEmbeddings
+from langchain_unstructured import UnstructuredLoader
 
-embeddings = UnstructuredEmbeddings()
-embeddings.embed_query("What is the meaning of life?")
-```
-
-## LLMs
-`UnstructuredLLM` class exposes LLMs from Unstructured.
-
-```python
-from langchain_unstructured import UnstructuredLLM
-
-llm = UnstructuredLLM()
-llm.invoke("The meaning of life is")
+loader = UnstructuredLoader()
+...
 ```

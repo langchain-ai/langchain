@@ -1,290 +1,112 @@
-import os
-from contextlib import ExitStack
+import logging
 from pathlib import Path
 from typing import Any, Callable
 from unittest import mock
-from unittest.mock import ANY
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
 
-from langchain_unstructured import (
-    UnstructuredSDKFileIOLoader,
-    UnstructuredSDKFileLoader,
-)
-from langchain_unstructured.document_loaders import _get_content
+from unstructured.documents.elements import Text
 
-# EXAMPLE_DOCS_DIRECTORY = "libs/community/tests/integration_tests/examples"
+from langchain_unstructured import UnstructuredLoader
+
 EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent.parent.parent.parent / "community/tests/integration_tests/examples/")
 
 
-# -- UnstructuredSDKFileLoader -------------------------------
+# --- UnstructuredLoader._get_content() ---
 
 
-def test_api_file_loader_calls_get_elements_from_api(fake_json_response) -> None:
-    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
-    loader = UnstructuredSDKFileLoader(
-        file_path=file_path,
-        api_key="FAKE_API_KEY",
-        strategy="fast",
-    )
+def test_it_gets_content_from_file():
+    mock_file = Mock()
+    mock_file.read.return_value = b"content from file"
+    loader = UnstructuredLoader(file=mock_file, metadata_filename="fake.txt")
 
-    with mock.patch(
-        "langchain_unstructured.document_loaders._get_elements_from_api",
-        return_value=fake_json_response,
-    ) as mock_get_elements:
-        docs = loader.load()
+    content = loader._file_content
 
-    mock_get_elements.assert_called_once_with(
-        file_path=file_path,
-        api_key="FAKE_API_KEY",
-        api_url="https://api.unstructuredapp.io/general/v0/general",
-        strategy="fast",
-    )
-    assert docs[0].metadata.get("element_id") is not None
-    # check that the Document metadata contains all of the element metadata
-    assert all(
-        docs[0].metadata[k] == v
-        for k, v in fake_json_response[0].get("metadata").items()
-    )
+    assert content == b"content from file"
+    mock_file.read.assert_called_once()
 
 
-def test_api_file_loader_with_multiple_files_calls_get_elements_from_api(
-    fake_multiple_docs_json_response,
-) -> None:
-    file_paths = [
-        os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-        os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
-    ]
+@patch("builtins.open", new_callable=mock_open, read_data=b"content from file_path")
+def test_it_gets_content_from_file_path(mock_file: Mock):
+    loader = UnstructuredLoader(file_path="dummy_path")
 
-    loader = UnstructuredSDKFileLoader(
-        file_path=file_paths,
-        api_key="FAKE_API_KEY",
-        strategy="fast",
-    )
-    with mock.patch(
-        "langchain_unstructured.document_loaders._get_elements_from_api",
-        return_value=fake_multiple_docs_json_response,
-    ) as mock_get_elements:
-        docs = loader.load()
+    content = loader._file_content
 
-    mock_get_elements.assert_has_calls(
-        [
-            mock.call(
-                file_path=os.path.join(
-                    EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"
-                ),
-                api_key="FAKE_API_KEY",
-                api_url="https://api.unstructuredapp.io/general/v0/general",
-                strategy="fast",
-            ),
-            mock.call(
-                file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
-                api_key="FAKE_API_KEY",
-                api_url="https://api.unstructuredapp.io/general/v0/general",
-                strategy="fast",
-            ),
-        ]
-    )
-    assert mock_get_elements.call_count == 2
-    assert docs[0].metadata.get("filename") == "layout-parser-paper.pdf"
-    assert docs[-1].metadata.get("filename") == "whatsapp_chat.txt"
+    assert content == b"content from file_path"
+    mock_file.assert_called_once_with("dummy_path", "rb")
+    handle = mock_file()
+    handle.read.assert_called_once()
 
 
-def test_api_file_loader_ignores_mode(fake_json_response) -> None:
-    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
-    loader = UnstructuredSDKFileLoader(
-        file_path=file_path,
-        api_key="FAKE_API_KEY",
-        mode="single",
-        strategy="fast",
-    )
+def test_it_raises_value_error_without_file_or_file_path():
+    loader = UnstructuredLoader()
 
-    with mock.patch(
-        "langchain_unstructured.document_loaders._get_elements_from_api",
-        return_value=fake_json_response,
-    ) as mock_get_elements:
-        docs = loader.load()
+    with pytest.raises(ValueError) as e:
+        loader._file_content
 
-    mock_get_elements.assert_called_once_with(
-        file_path=file_path,
-        api_key="FAKE_API_KEY",
-        api_url="https://api.unstructuredapp.io/general/v0/general",
-        strategy="fast",
-    )
-    # check the document has not been chunked into a single object
-    assert (
-        docs[0].page_content
-        == "LayoutParser: A Uniﬁed Toolkit for Deep Learning Based"
-        " DocumentImage Analysis"
-    )
+    assert str(e.value) == "file or file_path must be defined."
 
 
-def test_api_file_loader_with_post_processors(
-    get_post_processor, fake_json_response
-) -> None:
-    """Test UnstructuredAPIFileLoader._post_proceess_elements."""
-    loader = UnstructuredSDKFileLoader(
-        file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-        api_key="FAKE_API_KEY",
-        post_processors=[get_post_processor],
-        strategy="fast",
-    )
-
-    with mock.patch(
-        "langchain_unstructured.document_loaders._get_elements_from_api",
-        return_value=fake_json_response,
-    ) as mock_get_elements:
-        docs = loader.load()
-
-    mock_get_elements.assert_called_once_with(
-        file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-        api_key="FAKE_API_KEY",
-        api_url="https://api.unstructuredapp.io/general/v0/general",
-        strategy="fast",
-    )
-    assert docs[0].page_content.endswith("THE END!")
-    assert all(
-        docs[0].metadata[k] == v
-        for k, v in fake_json_response[0].get("metadata").items()
-    )
+# --- UnstructuredLoader._elements_json ---
 
 
-# -- UnstructuredSDKFileIOLoader -------------------------------
-
-
-def test_api_file_io_loader_calls_get_elements_from_api(fake_json_response) -> None:
-    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
-
-    with open(file_path, "rb") as f:
-        loader = UnstructuredSDKFileIOLoader(
-            file=f,
-            api_key="FAKE_API_KEY",
-            metadata_filename=file_path,
-            strategy="fast",
-        )
-        with mock.patch(
-            "langchain_unstructured.document_loaders._get_elements_from_api",
-            return_value=fake_json_response,
-        ) as mock_get_elements:
-            docs = loader.load()
-
-    mock_get_elements.assert_called_once_with(
-        file=ANY,
-        file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-        api_key="FAKE_API_KEY",
-        api_url="https://api.unstructuredapp.io/general/v0/general",
-        strategy="fast",
-    )
-    assert docs[0].metadata.get("element_id") is not None
-    assert all(
-        docs[0].metadata[k] == v
-        for k, v in fake_json_response[0].get("metadata").items()
-    )
-
-
-def test_api_file_io_loader_with_multiple_files_calls_get_elements_from_api(
-    fake_multiple_docs_json_response,
-) -> None:
-    file_paths = [
-        os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-        os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
-    ]
-
-    with ExitStack() as stack:
-        files = [stack.enter_context(open(file_path, "rb")) for file_path in file_paths]
-        loader = UnstructuredSDKFileIOLoader(
-            file=files,  # type: ignore
-            api_key="FAKE_API_KEY",
-            metadata_filename=file_paths,
-            strategy="fast",
-        )
-        with mock.patch(
-            "langchain_unstructured.document_loaders._get_elements_from_api",
-            return_value=fake_multiple_docs_json_response,
-        ) as mock_get_elements:
-            docs = loader.load()
-
-    mock_get_elements.assert_has_calls(
-        [
-            mock.call(
-                file=ANY,
-                file_path=os.path.join(
-                    EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"
-                ),
-                api_key="FAKE_API_KEY",
-                api_url="https://api.unstructuredapp.io/general/v0/general",
-                strategy="fast",
-            ),
-            mock.call(
-                file=ANY,
-                file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
-                api_key="FAKE_API_KEY",
-                api_url="https://api.unstructuredapp.io/general/v0/general",
-                strategy="fast",
-            ),
-        ]
-    )
-    assert mock_get_elements.call_count == 2
-    assert docs[0].metadata.get("filename") == "layout-parser-paper.pdf"  # type: ignore
-    assert docs[-1].metadata.get("filename") == "whatsapp_chat.txt"  # type: ignore
-
-
-def test_api_file_io_loader_with_post_processors(
-    get_post_processor, fake_json_response
-) -> None:
-    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
-
-    with open(file_path, "rb") as f:
-        loader = UnstructuredSDKFileIOLoader(
-            file=f,
-            api_key="FAKE_API_KEY",
-            metadata_filename=file_path,
-            post_processors=[get_post_processor],
-            strategy="fast",
-        )
-        with mock.patch(
-            "langchain_unstructured.document_loaders._get_elements_from_api",
-            return_value=fake_json_response,
-        ) as mock_get_elements:
-            docs = loader.load()
-
-    mock_get_elements.assert_called_once_with(
-        file=ANY,
-        file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-        api_key="FAKE_API_KEY",
-        api_url="https://api.unstructuredapp.io/general/v0/general",
-        strategy="fast",
-    )
-    assert docs[0].page_content.endswith("THE END!")
-    assert all(
-        docs[0].metadata[k] == v
-        for k, v in fake_json_response[0].get("metadata").items()
-    )
-
-
-# -- _get_content() -------------------------------
-
-
-def test_get_content_from_file() -> None:
-    with open(
-        os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"), "rb"
-    ) as f:
-        content = _get_content(
-            file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-            file=f,
+def test_it_calls_elements_via_api_with_valid_args():
+    with patch.object(
+        UnstructuredLoader, '_elements_via_api', new_callable=mock.PropertyMock
+    ) as mock_elements_via_api:
+        mock_elements_via_api.return_value = [{"element": "data"}]
+        loader = UnstructuredLoader(
+            # Minimum required args for self._elements_via_api to be called:
+            partition_via_api=True, api_key="some_key"
         )
 
-    assert isinstance(content, bytes)
-    assert content[:50] == b"%PDF-1.5\n%\x8f\n47 0 obj\n<< /Filter /FlateDecode /Leng"
+        result = loader._elements_json
+
+    mock_elements_via_api.assert_called_once()
+    assert result == [{"element": "data"}]
 
 
-def test_get_content_from_file_path() -> None:
-    content = _get_content(
-        file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
-    )
+@patch.object(UnstructuredLoader, '_convert_elements_to_dicts')
+def test_it_partitions_locally_by_default(mock_convert_elements_to_dicts: Mock):
+    mock_convert_elements_to_dicts.return_value = [{}]
+    with patch.object(
+        UnstructuredLoader, '_elements_via_local', new_callable=mock.PropertyMock
+    ) as mock_elements_via_local:
+        mock_elements_via_local.return_value = [{}]
+        # Minimum required args for self._elements_via_api to be called:
+        loader = UnstructuredLoader()
 
-    assert isinstance(content, bytes)
-    assert content[:50] == b"%PDF-1.5\n%\x8f\n47 0 obj\n<< /Filter /FlateDecode /Leng"
+        result = loader._elements_json
+
+    mock_elements_via_local.assert_called_once_with()
+    mock_convert_elements_to_dicts.assert_called_once_with([{}])
+    assert result == [{}]
+
+
+def test_it_partitions_locally_and_logs_warning_with_partition_via_api_False(
+        caplog: pytest.LogCaptureFixture
+    ):
+    with patch.object(UnstructuredLoader, '_elements_via_local') as mock_get_elements_locally:
+        mock_get_elements_locally.return_value = [Text("Mock text element.")]
+        loader = UnstructuredLoader(partition_via_api=False, api_key="some_key")
+
+        with caplog.at_level(logging.WARNING):
+            loader._elements_json
+
+        assert len(caplog.records) == 1
+        assert caplog.records[0].levelname == "WARNING"
+        assert caplog.records[0].message == \
+            "Partitioning locally even though api_key is defined since partition_via_api=False."
+
+
+def test_it_raises_value_error_with_partition_via_api_True_and_no_api_key():
+    loader = UnstructuredLoader(partition_via_api=True, api_key=None)
+
+    with pytest.raises(ValueError) as e:
+        loader._elements_json
+
+    assert str(e.value) == "If partitioning via the API, api_key must be defined."
 
 
 # -- fixtures -------------------------------
