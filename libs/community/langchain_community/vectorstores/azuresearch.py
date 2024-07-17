@@ -126,6 +126,13 @@ def _get_search_client(
 
     additional_search_client_options = additional_search_client_options or {}
     default_fields = default_fields or []
+    credential: Union[
+        AzureKeyCredential,
+        TokenCredential,
+        InteractiveBrowserCredential,
+        BearerTokenCredential,
+    ]
+
     if key is None:
         if azure_ad_access_token:
             credential = BearerTokenCredential(azure_ad_access_token)
