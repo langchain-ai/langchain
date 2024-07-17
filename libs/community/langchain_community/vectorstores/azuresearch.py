@@ -263,6 +263,7 @@ class AzureSearch(VectorStore):
         self,
         azure_search_endpoint: str,
         azure_search_key: str,
+        azure_ad_access_token: Optional[str],
         index_name: str,
         embedding_function: Union[Callable, Embeddings],
         search_type: str = "hybrid",
@@ -332,6 +333,7 @@ class AzureSearch(VectorStore):
         self.client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
+            azure_ad_access_token, 
             index_name,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
@@ -347,6 +349,7 @@ class AzureSearch(VectorStore):
         self.async_client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
+            azure_ad_access_token, 
             index_name,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
