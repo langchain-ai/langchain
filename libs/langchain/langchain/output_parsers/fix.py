@@ -29,7 +29,7 @@ class OutputFixingParser(BaseOutputParser[T]):
 
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
-    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains  # noqa: E501
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Union[
         RunnableSerializable[OutputFixingParserRetryChainInput, str], Any
     ]
@@ -82,13 +82,13 @@ class OutputFixingParser(BaseOutputParser[T]):
                         try:
                             completion = self.retry_chain.invoke(
                                 dict(
-                                    instructions=self.parser.get_format_instructions(),  # noqa: E501
+                                    instructions=self.parser.get_format_instructions(),
                                     completion=completion,
                                     error=repr(e),
                                 )
                             )
                         except (NotImplementedError, AttributeError):
-                            # Case: self.parser does not have get_format_instructions  # noqa: E501
+                            # Case: self.parser does not have get_format_instructions
                             completion = self.retry_chain.invoke(
                                 dict(
                                     completion=completion,
@@ -111,7 +111,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                     retries += 1
                     if self.legacy and hasattr(self.retry_chain, "arun"):
                         completion = await self.retry_chain.arun(
-                            instructions=self.parser.get_format_instructions(),  # noqa: E501
+                            instructions=self.parser.get_format_instructions(),
                             completion=completion,
                             error=repr(e),
                         )
@@ -119,13 +119,13 @@ class OutputFixingParser(BaseOutputParser[T]):
                         try:
                             completion = await self.retry_chain.ainvoke(
                                 dict(
-                                    instructions=self.parser.get_format_instructions(),  # noqa: E501
+                                    instructions=self.parser.get_format_instructions(),
                                     completion=completion,
                                     error=repr(e),
                                 )
                             )
                         except (NotImplementedError, AttributeError):
-                            # Case: self.parser does not have get_format_instructions  # noqa: E501
+                            # Case: self.parser does not have get_format_instructions
                             completion = await self.retry_chain.ainvoke(
                                 dict(
                                     completion=completion,

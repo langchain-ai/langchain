@@ -29,7 +29,7 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
         return "parsed"
 
 
-class SuccessfulParseAfterRetriesWithGetFormatInstructions(SuccessfulParseAfterRetries):  # noqa
+class SuccessfulParseAfterRetriesWithGetFormatInstructions(SuccessfulParseAfterRetries):
     def get_format_instructions(self) -> str:
         return "instructions"
 
@@ -125,8 +125,10 @@ async def test_output_fixing_parser_aparse_fail() -> None:
         DatetimeOutputParser(),
     ],
 )
-def test_output_fixing_parser_output_type(base_parser: BaseOutputParser) -> None:  # noqa: E501
-    parser = OutputFixingParser(parser=base_parser, retry_chain=RunnablePassthrough())  # noqa: E501
+def test_output_fixing_parser_output_type(
+    base_parser: BaseOutputParser,
+) -> None:
+    parser = OutputFixingParser(parser=base_parser, retry_chain=RunnablePassthrough())
     assert parser.OutputType is base_parser.OutputType
 
 
@@ -136,7 +138,7 @@ def test_output_fixing_parser_output_type(base_parser: BaseOutputParser) -> None
         (
             "2024/07/08",
             DatetimeOutputParser(),
-            NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),  # noqa
+            NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
         ),
         (
@@ -163,7 +165,7 @@ def test_output_fixing_parser_parse_with_retry_chain(
     invoke_spy = mocker.spy(retry_chain, "invoke")
     # NOTE: get_format_instructions of some parsers behave randomly
     instructions = base_parser.get_format_instructions()
-    object.__setattr__(base_parser, "get_format_instructions", lambda: instructions)  # noqa
+    object.__setattr__(base_parser, "get_format_instructions", lambda: instructions)
     # test
     parser = OutputFixingParser(
         parser=base_parser,
@@ -186,7 +188,7 @@ def test_output_fixing_parser_parse_with_retry_chain(
         (
             "2024/07/08",
             DatetimeOutputParser(),
-            NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),  # noqa
+            NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
         ),
         (
@@ -213,7 +215,7 @@ async def test_output_fixing_parser_aparse_with_retry_chain(
     ainvoke_spy = mocker.spy(retry_chain, "ainvoke")
     # NOTE: get_format_instructions of some parsers behave randomly
     instructions = base_parser.get_format_instructions()
-    object.__setattr__(base_parser, "get_format_instructions", lambda: instructions)  # noqa
+    object.__setattr__(base_parser, "get_format_instructions", lambda: instructions)
     # test
     parser = OutputFixingParser(
         parser=base_parser,

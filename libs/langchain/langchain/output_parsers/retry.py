@@ -55,8 +55,8 @@ class RetryOutputParser(BaseOutputParser[T]):
 
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
-    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains  # noqa: E501
-    retry_chain: Union[RunnableSerializable[RetryOutputParserRetryChainInput, str], Any]  # noqa: E501
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
+    retry_chain: Union[RunnableSerializable[RetryOutputParserRetryChainInput, str], Any]
     """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
     max_retries: int = 1
     """The maximum number of times to retry the parse."""
@@ -185,7 +185,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
 
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
-    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains  # noqa: E501
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Union[
         RunnableSerializable[RetryWithErrorOutputParserRetryChainInput, str], Any
     ]
@@ -217,7 +217,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         chain = prompt | llm
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
-    def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:  # noqa: E501
+    def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
         retries = 0
 
         while retries <= self.max_retries:

@@ -23,9 +23,7 @@ T = TypeVar("T")
 
 class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     parse_count: int = 0  # Number of times parse has been called
-    attemp_count_before_success: (
-        int  # Number of times to fail before succeeding  # noqa
-    )
+    attemp_count_before_success: int  # Number of times to fail before succeeding
     error_msg: str = "error"
 
     def parse(self, *args: Any, **kwargs: Any) -> str:
@@ -44,7 +42,7 @@ def test_retry_output_parser_parse_with_prompt() -> None:
         max_retries=n,  # n times to retry, that is, (n+1) times call
         legacy=False,
     )
-    actual = parser.parse_with_prompt("completion", StringPromptValue(text="dummy"))  # noqa: E501
+    actual = parser.parse_with_prompt("completion", StringPromptValue(text="dummy"))
     assert actual == "parsed"
     assert base_parser.parse_count == n + 1
 
@@ -89,7 +87,7 @@ async def test_retry_output_parser_aparse_with_prompt_fail() -> None:
         legacy=False,
     )
     with pytest.raises(OutputParserException):
-        await parser.aparse_with_prompt("completion", StringPromptValue(text="dummy"))  # noqa: E501
+        await parser.aparse_with_prompt("completion", StringPromptValue(text="dummy"))
     assert base_parser.parse_count == n
 
 
@@ -128,7 +126,7 @@ def test_retry_with_error_output_parser_parse_with_prompt() -> None:
         max_retries=n,  # n times to retry, that is, (n+1) times call
         legacy=False,
     )
-    actual = parser.parse_with_prompt("completion", StringPromptValue(text="dummy"))  # noqa: E501
+    actual = parser.parse_with_prompt("completion", StringPromptValue(text="dummy"))
     assert actual == "parsed"
     assert base_parser.parse_count == n + 1
 
@@ -163,7 +161,7 @@ async def test_retry_with_error_output_parser_aparse_with_prompt() -> None:
     assert base_parser.parse_count == n + 1
 
 
-async def test_retry_with_error_output_parser_aparse_with_prompt_fail() -> None:  # noqa: E501
+async def test_retry_with_error_output_parser_aparse_with_prompt_fail() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
     parser = RetryWithErrorOutputParser(
@@ -173,7 +171,7 @@ async def test_retry_with_error_output_parser_aparse_with_prompt_fail() -> None:
         legacy=False,
     )
     with pytest.raises(OutputParserException):
-        await parser.aparse_with_prompt("completion", StringPromptValue(text="dummy"))  # noqa: E501
+        await parser.aparse_with_prompt("completion", StringPromptValue(text="dummy"))
     assert base_parser.parse_count == n
 
 
@@ -213,7 +211,7 @@ def test_retry_with_error_output_parser_parse_is_not_implemented() -> None:
             StringPromptValue(text="dummy"),
             DatetimeOutputParser(),
             NAIVE_RETRY_PROMPT
-            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),  # noqa
+            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
         )
     ],
@@ -253,7 +251,7 @@ def test_retry_output_parser_parse_with_prompt_with_retry_chain(
             StringPromptValue(text="dummy"),
             DatetimeOutputParser(),
             NAIVE_RETRY_PROMPT
-            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),  # noqa
+            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
         )
     ],
@@ -293,7 +291,7 @@ async def test_retry_output_parser_aparse_with_prompt_with_retry_chain(
             StringPromptValue(text="dummy"),
             DatetimeOutputParser(),
             NAIVE_RETRY_WITH_ERROR_PROMPT
-            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),  # noqa
+            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
             dt(2024, 7, 8),
         )
     ],
