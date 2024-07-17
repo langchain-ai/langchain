@@ -10,8 +10,7 @@ from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
 
 if TYPE_CHECKING:
-    from langchainhub import Client as LangChainHubClient
-    from langsmith import Client as LangSmithClient
+    from langchainhub import Client
 
 
 def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Any:
@@ -104,7 +103,6 @@ def pull(
 
     # Then it's langchainhub
     if hasattr(client, "pull_repo"):
-        print("pulling from langchainhub")
         # >= 0.1.15
         res_dict = client.pull_repo(owner_repo_commit)
         obj = loads(json.dumps(res_dict["manifest"]))
