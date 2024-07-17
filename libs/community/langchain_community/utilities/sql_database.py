@@ -203,9 +203,7 @@ class SQLDatabase:
 
             context = get_context()
             default_host = context.browserHostName
-        except ImportError:
-            default_host = None
-        except AttributeError:    
+        except (ImportError, AttributeError):
             default_host = None
 
         if host is None:
