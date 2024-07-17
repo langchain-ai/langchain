@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, List, Sequence
 
 from couchbase.cluster import Cluster
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -197,7 +197,7 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
             logger.error("Error clearing cache: ", e)
 
     @property
-    def messages(self) -> Sequence[BaseMessage]:
+    def messages(self) -> List[BaseMessage]:
         """Get all messages in the cache associated with the session_id"""
         fetch_query = (
             f"SELECT {self._message_key} FROM `{self._collection_name}` "
