@@ -425,8 +425,8 @@ class Milvus(VectorStore):
                     # Infer the corresponding datatype of the metadata
                     field_type = "dtype"
                     if (
-                        key in self.metadata_schema
-                        and field_type in self.metadata_schema[key]
+                        key in self.metadata_schema  # type: ignore
+                        and field_type in self.metadata_schema[key]  # type: ignore
                     ):
                         kwargs = self.metadata_schema[key]["kwargs"]  # type: ignore
                         fields.append(
