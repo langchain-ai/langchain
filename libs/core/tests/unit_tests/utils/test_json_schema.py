@@ -191,7 +191,7 @@ def test_dereference_refs_string_ref() -> None:
     schema = {
         "type": "object",
         "properties": {
-            "error_400": {"$ref": "#/$defs/'400'"},
+            "error_400": {"$ref": "#/$defs/400"},
         },
         "$defs": {
             "400": {
