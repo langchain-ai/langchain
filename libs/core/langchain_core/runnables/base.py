@@ -1065,10 +1065,13 @@ class Runnable(Generic[Input, Output], ABC):
 
         A custom event has following format:
 
-        | Attribute | Type | Description                                                                                              |
-        |-----------|------|----------------------------------------------------------------------------------------------------------|
-        | name      | str  | A user defined name for the event.                                                                       |
-        | data      | Any  | The data associated with the event. This can be anything, though we suggest making it JSON serializable. |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | Attribute | Type | Description                                                                                               |
+        +===========+======+===========================================================================================================+
+        | name      | str  | A user defined name for the event.                                                                        |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | data      | Any  | The data associated with the event. This can be anything, though we suggest making it JSON serializable.  |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
 
         Here are declarations associated with the standard events shown above:
 
