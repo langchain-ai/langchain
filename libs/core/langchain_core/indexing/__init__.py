@@ -16,8 +16,8 @@ from langchain_core.indexing.base import (
 
 __all__ = [
     "aindex",
-    "DocumentIndexer",
     "AsyncDocumentIndexer",
+    "DocumentIndexer",
     "index",
     "IndexingResult",
     "InMemoryRecordManager",

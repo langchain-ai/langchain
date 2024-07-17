@@ -6,6 +6,7 @@ def test_all() -> None:
     assert __all__ == sorted(__all__, key=str.lower)
     assert set(__all__) == {
         "aindex",
+        "AsyncDocumentIndexer",
         "DocumentIndexer",
         "index",
         "IndexingResult",
