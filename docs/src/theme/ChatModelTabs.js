@@ -151,8 +151,8 @@ export default function ChatModelTabs(props) {
       shouldHide: hideMistral,
     },
     {
-      value: "Nvidia",
-      label: "Nvidia",
+      value: "NVIDIA",
+      label: "NVIDIA",
       text: `from langchain import ChatNVIDIA\n\n${llmVarName} = ChatNVIDIA(${nvidiaParamsOrDefault})`,
       apiKeyName: "NVIDIA_API_KEY",
       packageName: "langchain-nvidia-ai-endpoints",
