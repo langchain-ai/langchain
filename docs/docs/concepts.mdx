@@ -530,7 +530,7 @@ A tool also has access to the RunnableConfig that's passed into whatever chain t
 
 If a tool is called directly with its arguments `tool.invoke({...})` then it will produce an arbitrary output that we assume can be passed to a model as the `ToolMessage.content` field.
 
-If a tool is called with a Toolcall `tool.invoke(ToolCall(args={...}, ...))` then it will produce a `ToolMessage(content=..., ...)` where the tool output has already been assigned to the `ToolMessage.content` field.
+If a tool is called with a ToolCall `tool.invoke(ToolCall(args={...}, ...))` then it will produce a `ToolMessage(content=..., ...)` where the tool output has already been assigned to the `ToolMessage.content` field.
 
 A tool can also be defined to include an artifact when invoked with a ToolCall: `tool.invoke(Toolcall(args={...}, ...)) -> ToolMessage(content=..., artifact=..., ...)`.
 Learn about [ToolMessage.artifact here](/docs/concepts/#toolmessage) and about [defining tools that return artifacts here](/docs/how_to/tool_artifacts/).
