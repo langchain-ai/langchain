@@ -13,6 +13,7 @@ model = os.getenv("OPENAI_EMBEDDINGS_ENGINE_DOC", "text-embedding-ada-002")
 # Vector store settings
 vector_store_address: str = os.getenv("AZURE_SEARCH_ENDPOINT", "")
 vector_store_password: str = os.getenv("AZURE_SEARCH_ADMIN_KEY", "")
+access_token: str = os.getenv("AZURE_SEARCH_ACCESS_TOKEN", "")
 index_name: str = "embeddings-vector-store-test"
 
 
@@ -25,6 +26,7 @@ def similarity_search_test() -> None:
     vector_store: AzureSearch = AzureSearch(
         azure_search_endpoint=vector_store_address,
         azure_search_key=vector_store_password,
+        azure_ad_access_token=access_token,
         index_name=index_name,
         embedding_function=embeddings.embed_query,
     )
@@ -68,6 +70,7 @@ def test_semantic_hybrid_search() -> None:
     vector_store: AzureSearch = AzureSearch(
         azure_search_endpoint=vector_store_address,
         azure_search_key=vector_store_password,
+        azure_ad_access_token=access_token,
         index_name=index_name,
         embedding_function=embeddings.embed_query,
         semantic_configuration_name="default",
