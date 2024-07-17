@@ -430,7 +430,9 @@ class Milvus(VectorStore):
                     ):
                         kwargs = self.metadata_schema[key]["kwargs"]
                         fields.append(
-                            FieldSchema(name=key, dtype=self.metadata_schema[key][field_type], **kwargs)
+                            FieldSchema(
+                                name=key, dtype=self.metadata_schema[key][field_type], **kwargs
+                            )
                         )
                     else:
                         dtype = infer_dtype_bydata(value)
