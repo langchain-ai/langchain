@@ -2150,6 +2150,7 @@ class Runnable(Generic[Input, Output], ABC):
     @beta_decorator.beta(message="This API is in beta and may change in the future.")
     def as_tool(
         self,
+        args_schema: Optional[Type[BaseModel]] = None,
         *,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -2161,9 +2162,11 @@ class Runnable(Generic[Input, Output], ABC):
         ``args_schema`` from a Runnable. Where possible, schemas are inferred
         from ``runnable.get_input_schema``. Alternatively (e.g., if the
         Runnable takes a dict as input and the specific dict keys are not typed),
-        pass ``arg_types`` to specify the required arguments.
+        the schema can be specified directly with ``args_schema``. You can also
+        pass ``arg_types`` to just specify the required arguments and their types.
 
         Args:
+            args_schema: The schema for the tool. Defaults to None.
             name: The name of the tool. Defaults to None.
             description: The description of the tool. Defaults to None.
             arg_types: A dictionary of argument names to types. Defaults to None.
@@ -2190,7 +2193,28 @@ class Runnable(Generic[Input, Output], ABC):
             as_tool = runnable.as_tool()
             as_tool.invoke({"a": 3, "b": [1, 2]})
 
-        ``dict`` input, specifying schema:
+        ``dict`` input, specifying schema via ``args_schema``:
+
+        .. code-block:: python
+
+            from typing import Any, Dict, List
+            from langchain_core.pydantic_v1 import BaseModel, Field
+            from langchain_core.runnables import RunnableLambda
+
+            def f(x: Dict[str, Any]) -> str:
+                return str(x["a"] * max(x["b"]))
+
+            class FSchema(BaseModel):
+                \"\"\"Apply a function to an integer and list of integers.\"\"\"
+
+                a: int = Field(..., description="Integer")
+                b: List[int] = Field(..., description="List of ints")
+
+            runnable = RunnableLambda(f)
+            as_tool = runnable.as_tool(FSchema)
+            as_tool.invoke({"a": 3, "b": [1, 2]})
+
+        ``dict`` input, specifying schema via ``arg_types``:
 
         .. code-block:: python
 
@@ -2226,7 +2250,11 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain_core.tools import convert_runnable_to_tool
 
         return convert_runnable_to_tool(
-            self, name=name, description=description, arg_types=arg_types
+            self,
+            args_schema=args_schema,
+            name=name,
+            description=description,
+            arg_types=arg_types,
         )
 
 
