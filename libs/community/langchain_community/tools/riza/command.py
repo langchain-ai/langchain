@@ -31,7 +31,7 @@ class ExecPython(BaseTool):
 
     client: Any = None
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         try:
             from rizaio import Riza
         except ImportError as e:
@@ -72,7 +72,7 @@ class ExecJavaScript(BaseTool):
 
     client: Any = None
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         try:
             from rizaio import Riza
         except ImportError as e:
