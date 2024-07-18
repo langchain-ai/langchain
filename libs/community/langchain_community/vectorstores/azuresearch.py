@@ -71,17 +71,6 @@ FIELDS_METADATA = get_from_env(
 MAX_UPLOAD_BATCH_SIZE = 1000
 
 
-class BearerTokenCredential(TokenCredential):
-    def __init__(self, token: str) -> None:
-        self._token = token
-
-    def get_token(self, *scopes: str, **kwargs: Any) -> AccessToken:
-        # The AccessToken expects the token and its expiry time in seconds.
-        # Here we set the expiry to an hour from now.
-        expiry = int(time.time()) + 3600
-        return AccessToken(self._token, expiry)
-
-
 def _get_search_client(
     endpoint: str,
     key: str,
@@ -101,7 +90,7 @@ def _get_search_client(
     async_: bool = False,
     additional_search_client_options: Optional[Dict[str, Any]] = None,
 ) -> Union[SearchClient, AsyncSearchClient]:
-    from azure.core.credentials import AzureKeyCredential
+    from azure.core.credentials import AccessToken, AzureKeyCredential, TokenCredential
     from azure.core.exceptions import ResourceNotFoundError
     from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
     from azure.search.documents import SearchClient
@@ -125,16 +114,16 @@ def _get_search_client(
 
     additional_search_client_options = additional_search_client_options or {}
     default_fields = default_fields or []
-    credential: Union[
-        AzureKeyCredential,
-        TokenCredential,
-        InteractiveBrowserCredential,
-        BearerTokenCredential,
-    ]
+    credential: Union[AzureKeyCredential, TokenCredential, InteractiveBrowserCredential]
 
     if key is None:
         if azure_ad_access_token:
-            credential = BearerTokenCredential(azure_ad_access_token)
+            credential = TokenCredential(
+                lambda *scopes, **kwargs: AccessToken(
+                    azure_ad_access_token, int(time.time()) + 3600
+                )
+            )
+
         else:
             credential = DefaultAzureCredential()
     elif key.upper() == "INTERACTIVE":
