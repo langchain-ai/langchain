@@ -15,6 +15,7 @@ from typing import (
     Union,
     cast,
 )
+from uuid import uuid4
 
 import ollama
 from langchain_core.callbacks import (
@@ -29,10 +30,17 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
-    ToolMessage,
     ToolCall,
+    ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
@@ -56,6 +64,24 @@ def _get_usage_metadata_from_generation_info(
             total_tokens=input_tokens + output_tokens,
         )
     return None
+
+
+def _get_tool_calls_from_response(
+    response: Mapping[str, Any],
+) -> List[ToolCall]:
+    """Get tool calls from ollama response."""
+    tool_calls = []
+    if "message" in response:
+        if "tool_calls" in response["message"]:
+            for tc in response["message"]["tool_calls"]:
+                tool_calls.append(
+                    tool_call(
+                        id=str(uuid4()),
+                        name=tc["function"]["name"],
+                        args=tc["function"]["arguments"],
+                    )
+                )
+    return tool_calls
 
 
 def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
@@ -423,20 +449,22 @@ class ChatOllama(BaseChatModel):
         if "tools" in kwargs:
             # tools not supported by sdk yet.
             print(kwargs["tools"])
-            yield from ollama._client._request_stream(
+            req = {
+                "model": params["model"],
+                "messages": ollama_messages,
+                "stream": False,
+                "format": params["format"],
+                "options": Options(**params["options"]),
+                "keep_alive": params["keep_alive"],
+                "tools": kwargs["tools"],
+            }
+            it = ollama._client._request_stream(
                 "POST",
                 "/api/chat",
-                json={
-                    "model": params["model"],
-                    "messages": ollama_messages,
-                    "stream": True,
-                    "format": params["format"],
-                    "options": Options(**params["options"]),
-                    "keep_alive": params["keep_alive"],
-                    "tools": kwargs["tools"],
-                },
-                stream=True,
+                json=req,
+                stream=False,
             )
+            yield it
         else:
             yield from ollama.chat(
                 model=params["model"],
@@ -469,6 +497,7 @@ class ChatOllama(BaseChatModel):
                         usage_metadata=_get_usage_metadata_from_generation_info(
                             stream_resp
                         ),
+                        tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -511,6 +540,7 @@ class ChatOllama(BaseChatModel):
                         usage_metadata=_get_usage_metadata_from_generation_info(
                             stream_resp
                         ),
+                        tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -560,9 +590,8 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=_get_usage_metadata_from_generation_info(
-                    generation_info
-                ),
+                usage_metadata=final_chunk.message.usage_metadata,
+                tool_calls=final_chunk.message.tool_calls,
             ),
             generation_info=generation_info,
         )
@@ -588,6 +617,7 @@ class ChatOllama(BaseChatModel):
                         usage_metadata=_get_usage_metadata_from_generation_info(
                             stream_resp
                         ),
+                        tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -620,6 +650,7 @@ class ChatOllama(BaseChatModel):
                         usage_metadata=_get_usage_metadata_from_generation_info(
                             stream_resp
                         ),
+                        tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -646,9 +677,8 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=_get_usage_metadata_from_generation_info(
-                    generation_info
-                ),
+                usage_metadata=final_chunk.message.usage_metadata,
+                tool_calls=final_chunk.message.tool_calls,
             ),
             generation_info=generation_info,
         )
