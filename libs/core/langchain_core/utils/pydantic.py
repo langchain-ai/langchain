@@ -139,12 +139,8 @@ def _create_subset_model_v1(
     fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
-    if PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import create_model  # pydantic: ignore
-    else:
-        from pydantic import (  # type: ignore[no-redef] # pydantic: ignore
-            create_model,
-        )
+    from langchain_core.pydantic_v1 import create_model
+
     fields = {}
 
     for field_name in field_names:
