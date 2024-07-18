@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, List, Literal, Optional, Type
 
 import pytest
@@ -6,6 +6,8 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
+
+from langchain_standard_tests.base import BaseStandardTests
 
 
 class Person(BaseModel):
@@ -26,7 +28,7 @@ def my_adder(a: int, b: int) -> int:
     return a + b
 
 
-class ChatModelTests(ABC):
+class ChatModelTests(BaseStandardTests):
     @property
     @abstractmethod
     def chat_model_class(self) -> Type[BaseChatModel]:
