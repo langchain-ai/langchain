@@ -69,8 +69,14 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         Returns:
             The parsed pydantic object.
         """
-        json_object = super().parse_result(result)
-        return self._parse_obj(json_object)
+        try:
+            json_object = super().parse_result(result)
+            return self._parse_obj(json_object)
+        except OutputParserException as e:
+            if partial:
+                print("meh", result)
+                return None
+            raise e
 
     def parse(self, text: str) -> TBaseModel:
         """Parse the output of an LLM call to a pydantic object.
