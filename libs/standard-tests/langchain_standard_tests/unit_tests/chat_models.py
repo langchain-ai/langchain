@@ -4,10 +4,18 @@ from typing import Any, List, Literal, Optional, Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
 
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
+
+
+class Person(BaseModel):  # Used by some dependent tests. Should be depreacated.
+    """Record attributes of a person."""
+
+    name: str = Field(..., description="The name of the person.")
+    age: int = Field(..., description="The age of the person.")
 
 
 def generate_schema_pydantic_v1_from_2() -> Any:
@@ -16,26 +24,26 @@ def generate_schema_pydantic_v1_from_2() -> Any:
         raise AssertionError("This function is only compatible with Pydantic v2.")
     from pydantic.v1 import BaseModel, Field
 
-    class Person(BaseModel):
+    class PersonB(BaseModel):
         """Record attributes of a person."""
 
         name: str = Field(..., description="The name of the person.")
         age: int = Field(..., description="The age of the person.")
 
-    return Person
+    return PersonB
 
 
 def generate_schema_pydantic() -> Any:
     """Works with either pydantic 1 or 2"""
     from pydantic import BaseModel, Field
 
-    class Person(BaseModel):
+    class PersonA(BaseModel):
         """Record attributes of a person."""
 
         name: str = Field(..., description="The name of the person.")
         age: int = Field(..., description="The age of the person.")
 
-    return Person
+    return PersonA
 
 
 TEST_PYDANTIC_MODELS = [generate_schema_pydantic()]
