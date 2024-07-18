@@ -175,11 +175,20 @@ class TavilySearchAPIWrapper(BaseModel):
     def clean_results(self, results: List[Dict]) -> List[Dict]:
         """Clean results from Tavily Search API."""
         clean_results = []
-        for result in results:
-            clean_results.append(
-                {
-                    "url": result["url"],
-                    "content": result["content"],
-                }
-            )
+        for idx, result in enumerate(results['results']):
+            result_dict = {
+                "url": result["url"],
+                "content": result["content"]
+            }
+
+            if results["answer"] is not None:
+                result_dict["answer"] = results["answer"]
+            
+            if results["images"] != []:
+                result_dict["image"] = results["images"][idx]
+
+            if result["raw_content"] is not None:
+                result_dict["raw_content"] = result["raw_content"]
+            
+            clean_results.append(result_dict)
         return clean_results
