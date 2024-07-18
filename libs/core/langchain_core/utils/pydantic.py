@@ -1,8 +1,11 @@
 """Utilities for tests."""
 
+from __future__ import annotations
+
 import inspect
+import textwrap
 from functools import wraps
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -50,22 +53,6 @@ def is_basemodel_subclass(cls: Type) -> bool:
     else:
         raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
     return False
-
-
-def _get_any_base_model_type_annotation() -> Any:
-    """Get the type annotation for any Pydantic BaseModel subclass."""
-    if PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel
-        from pydantic.v1 import BaseModel as BaseModelV1
-
-        return Union[BaseModel, BaseModelV1]
-    else:
-        from pydantic import BaseModel as BaseModelV1Proper
-
-        return BaseModelV1Proper
-
-
-AnyBaseModel = _get_any_base_model_type_annotation()
 
 
 def is_basemodel_instance(obj: Any) -> bool:
@@ -141,3 +128,110 @@ def pre_init(func: Callable) -> Any:
         return func(cls, values)
 
     return wrapper
+
+
+def _create_subset_model_v1(
+    name: str,
+    model: Type[BaseModel],
+    field_names: list,
+    *,
+    descriptions: Optional[dict] = None,
+    fn_description: Optional[str] = None,
+) -> Type[BaseModel]:
+    """Create a pydantic model with only a subset of model's fields."""
+    if PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import create_model  # pydantic: ignore
+    else:
+        from pydantic import (  # type: ignore[no-redef] # pydantic: ignore
+            create_model,
+        )
+    fields = {}
+
+    for field_name in field_names:
+        field = model.__fields__[field_name]
+        t = (
+            # this isn't perfect but should work for most functions
+            field.outer_type_
+            if field.required and not field.allow_none
+            else Optional[field.outer_type_]
+        )
+        if descriptions and field_name in descriptions:
+            field.field_info.description = descriptions[field_name]
+        fields[field_name] = (t, field.field_info)
+
+    rtn = create_model(name, **fields)  # type: ignore
+    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    return rtn
+
+
+def _create_subset_model_2(
+    name: str,
+    model: Type[BaseModel],
+    field_names: List[str],
+    *,
+    descriptions: Optional[dict] = None,
+    fn_description: Optional[str] = None,
+) -> Type[BaseModel]:
+    """Create a pydantic model with a subset of the model fields."""
+    from pydantic import create_model  # pydantic: ignore
+    from pydantic.fields import FieldInfo  # pydantic: ignore
+
+    descriptions_ = descriptions or {}
+    fields = {}
+    for field_name in field_names:
+        field = model.model_fields[field_name]  # type: ignore
+        description = descriptions_.get(field_name, field.description)
+        fields[field_name] = (
+            field.annotation,
+            FieldInfo(description=description, default=field.default),
+        )
+    rtn = create_model(name, **fields)  # type: ignore
+
+    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    return rtn
+
+
+# Private functionality to create a subset model that's compatible across
+# different versions of pydantic.
+# Handles pydantic versions 1.x and 2.x. including v1 of pydantic in 2.x.
+# However, can't find a way to type hint this.
+def _create_subset_model(
+    name: str,
+    model: Type[BaseModel],
+    field_names: List[str],
+    *,
+    descriptions: Optional[dict] = None,
+    fn_description: Optional[str] = None,
+) -> Type[BaseModel]:
+    """Create subset model using the same pydantic version as the input model."""
+    if PYDANTIC_MAJOR_VERSION == 1:
+        return _create_subset_model_v1(
+            name,
+            model,
+            field_names,
+            descriptions=descriptions,
+            fn_description=fn_description,
+        )
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+
+        if issubclass(model, BaseModelV1):
+            return _create_subset_model_v1(
+                name,
+                model,
+                field_names,
+                descriptions=descriptions,
+                fn_description=fn_description,
+            )
+        else:
+            return _create_subset_model_2(
+                name,
+                model,
+                field_names,
+                descriptions=descriptions,
+                fn_description=fn_description,
+            )
+    else:
+        raise NotImplementedError(
+            f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        )

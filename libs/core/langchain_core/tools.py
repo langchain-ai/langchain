@@ -91,8 +91,7 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.runnables.utils import accepts_context
 from langchain_core.utils.pydantic import (
-    PYDANTIC_MAJOR_VERSION,
-    AnyBaseModel,
+    _create_subset_model,
     is_basemodel_subclass,
 )
 
@@ -114,109 +113,6 @@ def _get_annotation_description(arg_type: Type) -> str | None:
             if isinstance(annotation, str):
                 return annotation
     return None
-
-
-def _create_subset_model_v1(
-    name: str,
-    model: Type[BaseModel],
-    field_names: list,
-    *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
-    """Create a pydantic model with only a subset of model's fields."""
-    if PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import create_model  # pydantic: ignore
-    else:
-        from pydantic import (  # type: ignore[no-redef] # pydantic: ignore
-            create_model,
-        )
-    fields = {}
-
-    for field_name in field_names:
-        field = model.__fields__[field_name]
-        t = (
-            # this isn't perfect but should work for most functions
-            field.outer_type_
-            if field.required and not field.allow_none
-            else Optional[field.outer_type_]
-        )
-        if descriptions and field_name in descriptions:
-            field.field_info.description = descriptions[field_name]
-        fields[field_name] = (t, field.field_info)
-
-    rtn = create_model(name, **fields)  # type: ignore
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
-    return rtn
-
-
-def _create_subset_model_2(
-    name: str,
-    model: Type[BaseModel],
-    field_names: List[str],
-    *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
-    """Create a pydantic model with a subset of the model fields."""
-    from pydantic import create_model  # pydantic: ignore
-    from pydantic.fields import FieldInfo  # pydantic: ignore
-
-    descriptions_ = descriptions or {}
-    fields = {}
-    for field_name in field_names:
-        field = model.model_fields[field_name]  # type: ignore
-        description = descriptions_.get(field_name, field.description)
-        fields[field_name] = (
-            field.annotation,
-            FieldInfo(description=description, default=field.default),
-        )
-    rtn = create_model(name, **fields)  # type: ignore
-
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
-    return rtn
-
-
-def _create_subset_model(
-    name: str,
-    model: Type[AnyBaseModel],
-    field_names: List[str],
-    *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
-) -> Type[AnyBaseModel]:
-    """Create subset model using the same pydantic version as the input model."""
-    if PYDANTIC_MAJOR_VERSION == 1:
-        return _create_subset_model_v1(
-            name,
-            model,
-            field_names,
-            descriptions=descriptions,
-            fn_description=fn_description,
-        )
-    elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
-
-        if issubclass(model, BaseModelV1):
-            return _create_subset_model_v1(
-                name,
-                model,
-                field_names,
-                descriptions=descriptions,
-                fn_description=fn_description,
-            )
-        else:
-            return _create_subset_model_2(
-                name,
-                model,
-                field_names,
-                descriptions=descriptions,
-                fn_description=fn_description,
-            )
-    else:
-        raise NotImplementedError(
-            f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
-        )
 
 
 def _get_filtered_args(
@@ -438,7 +334,7 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[BaseModel] = None
+    args_schema: Optional[Type[BaseModel]] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     """Whether to return the tool's output directly. 

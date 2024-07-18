@@ -31,10 +31,10 @@ from langchain_core.tools import (
     StructuredTool,
     Tool,
     ToolException,
-    _create_subset_model,
     tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.pydantic import _create_subset_model
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
@@ -1496,7 +1496,10 @@ def test_args_schema_explicitly_typed() -> None:
         b: str
 
     class SomeTool(BaseTool):
-        args_schema: Type[BaseModel] = Foo
+        # type ignoring here since we're allowing overriding a type
+        # signature of pydantic.v1.BaseModel with pydantic.BaseModel
+        # for pydantic 2!
+        args_schema: Type[BaseModel] = Foo  # type: ignore[assignment]
 
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
