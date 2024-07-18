@@ -333,10 +333,7 @@ class ChatOllama(BaseChatModel):
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
 
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            stop = self.stop
+        stop = stop if stop is not None else self.stop
 
         params = self._default_params
 
@@ -363,10 +360,7 @@ class ChatOllama(BaseChatModel):
     ) -> Iterator[Union[Mapping[str, Any], str]]:
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
 
-        if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
-        elif self.stop is not None:
-            stop = self.stop
+        stop = stop if stop is not None else self.stop
 
         params = self._default_params
 
@@ -395,6 +389,16 @@ class ChatOllama(BaseChatModel):
         final_chunk = None
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                input_tokens = stream_resp.get("prompt_eval_count")
+                output_tokens = stream_resp.get("eval_count")
+                if input_tokens is not None and output_tokens is not None:
+                    usage_metadata = UsageMetadata(
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        total_tokens=input_tokens + output_tokens,
+                    )
+                else:
+                    usage_metadata = None
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=(
@@ -402,7 +406,8 @@ class ChatOllama(BaseChatModel):
                             if "message" in stream_resp
                             and "content" in stream_resp["message"]
                             else ""
-                        )
+                        ),
+                        usage_metadata=usage_metadata,
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -434,6 +439,16 @@ class ChatOllama(BaseChatModel):
         final_chunk = None
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                input_tokens = stream_resp.get("prompt_eval_count")
+                output_tokens = stream_resp.get("eval_count")
+                if input_tokens is not None and output_tokens is not None:
+                    usage_metadata = UsageMetadata(
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        total_tokens=input_tokens + output_tokens,
+                    )
+                else:
+                    usage_metadata = None
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=(
@@ -441,7 +456,8 @@ class ChatOllama(BaseChatModel):
                             if "message" in stream_resp
                             and "content" in stream_resp["message"]
                             else ""
-                        )
+                        ),
+                        usage_metadata=usage_metadata,
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -487,9 +503,23 @@ class ChatOllama(BaseChatModel):
         final_chunk = self._chat_stream_with_aggregation(
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
+        generation_info = final_chunk.generation_info
+        input_tokens = generation_info.get("prompt_eval_count")
+        output_tokens = generation_info.get("eval_count")
+        if input_tokens is not None and output_tokens is not None:
+            usage_metadata = UsageMetadata(
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=input_tokens + output_tokens,
+            )
+        else:
+            usage_metadata = None
         chat_generation = ChatGeneration(
-            message=AIMessage(content=final_chunk.text),
-            generation_info=final_chunk.generation_info,
+            message=AIMessage(
+                content=final_chunk.text,
+                usage_metadata=usage_metadata,
+            ),
+            generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
 
@@ -502,6 +532,16 @@ class ChatOllama(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                input_tokens = stream_resp.get("prompt_eval_count")
+                output_tokens = stream_resp.get("eval_count")
+                if input_tokens is not None and output_tokens is not None:
+                    usage_metadata = UsageMetadata(
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        total_tokens=input_tokens + output_tokens,
+                    )
+                else:
+                    usage_metadata = None
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=(
@@ -509,7 +549,8 @@ class ChatOllama(BaseChatModel):
                             if "message" in stream_resp
                             and "content" in stream_resp["message"]
                             else ""
-                        )
+                        ),
+                        usage_metadata=usage_metadata,
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -531,6 +572,16 @@ class ChatOllama(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                input_tokens = stream_resp.get("prompt_eval_count")
+                output_tokens = stream_resp.get("eval_count")
+                if input_tokens is not None and output_tokens is not None:
+                    usage_metadata = UsageMetadata(
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        total_tokens=input_tokens + output_tokens,
+                    )
+                else:
+                    usage_metadata = None
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=(
@@ -538,7 +589,8 @@ class ChatOllama(BaseChatModel):
                             if "message" in stream_resp
                             and "content" in stream_resp["message"]
                             else ""
-                        )
+                        ),
+                        usage_metadata=usage_metadata,
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -561,9 +613,23 @@ class ChatOllama(BaseChatModel):
         final_chunk = await self._achat_stream_with_aggregation(
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
+        generation_info = final_chunk.generation_info
+        input_tokens = generation_info.get("prompt_eval_count")
+        output_tokens = generation_info.get("eval_count")
+        if input_tokens is not None and output_tokens is not None:
+            usage_metadata = UsageMetadata(
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=input_tokens + output_tokens,
+            )
+        else:
+            usage_metadata = None
         chat_generation = ChatGeneration(
-            message=AIMessage(content=final_chunk.text),
-            generation_info=final_chunk.generation_info,
+            message=AIMessage(
+                content=final_chunk.text,
+                usage_metadata=usage_metadata,
+            ),
+            generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
 
