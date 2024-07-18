@@ -16,6 +16,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
 
     from langchain_core.language_models import BaseLanguageModel
+    from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
 
 AnyMessage = Union[
@@ -284,7 +286,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
 
 
 def convert_to_messages(
-    messages: Sequence[MessageLikeRepresentation],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
 ) -> List[BaseMessage]:
     """Convert a sequence of messages to a list of messages.
 
@@ -294,6 +296,11 @@ def convert_to_messages(
     Returns:
         List of messages (BaseMessages).
     """
+    # Import here to avoid circular imports
+    from langchain_core.prompt_values import PromptValue
+
+    if isinstance(messages, PromptValue):
+        return messages.to_messages()
     return [_convert_to_message(m) for m in messages]
 
 
@@ -329,7 +336,7 @@ def _runnable_support(func: Callable) -> Callable:
 
 @_runnable_support
 def filter_messages(
-    messages: Sequence[MessageLikeRepresentation],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
@@ -417,7 +424,7 @@ def filter_messages(
 
 @_runnable_support
 def merge_message_runs(
-    messages: Sequence[MessageLikeRepresentation],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
 ) -> List[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
@@ -451,12 +458,12 @@ def merge_message_runs(
                 HumanMessage("wait your favorite food", id="bar",),
                 AIMessage(
                     "my favorite colo",
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": 2}, id="123")],
+                    tool_calls=[ToolCall(name="blah_tool", args={"x": 2}, id="123", type="tool_call")],
                     id="baz",
                 ),
                 AIMessage(
                     [{"type": "text", "text": "my favorite dish is lasagna"}],
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": -10}, id="456")],
+                    tool_calls=[ToolCall(name="blah_tool", args={"x": -10}, id="456", type="tool_call")],
                     id="blur",
                 ),
             ]
@@ -474,8 +481,8 @@ def merge_message_runs(
                         {"type": "text", "text": "my favorite dish is lasagna"}
                     ],
                     tool_calls=[
-                        ToolCall({"name": "blah_tool", "args": {"x": 2}, "id": "123"),
-                        ToolCall({"name": "blah_tool", "args": {"x": -10}, "id": "456")
+                        ToolCall({"name": "blah_tool", "args": {"x": 2}, "id": "123", "type": "tool_call"}),
+                        ToolCall({"name": "blah_tool", "args": {"x": -10}, "id": "456", "type": "tool_call"})
                     ]
                     id="baz"
                 ),
@@ -506,7 +513,7 @@ def merge_message_runs(
 
 @_runnable_support
 def trim_messages(
-    messages: Sequence[MessageLikeRepresentation],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
     max_tokens: int,
     token_counter: Union[
