@@ -35,7 +35,6 @@ from langchain_core.tools import (
     tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
@@ -1422,24 +1421,24 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
 
 def generate_models() -> List[Any]:
     """Generate a list of base models depending on the pydantic version."""
-    from pydantic import BaseModel as BaseModelProper
+    from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 
-    class Foo(BaseModelProper):
+    class FooProper(BaseModelProper):
         a: int
         b: str
 
-    return [Foo]
+    return [FooProper]
 
 
 def generate_backwards_compatible_v1() -> List[Any]:
     """Generate a model with pydantic 2 from the v1 namespace."""
-    from pydantic.v1 import BaseModel as BaseModelV1
+    from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
 
-    class Foo(BaseModelV1):
+    class FooV1Namespace(BaseModelV1):
         a: int
         b: str
 
-    return [Foo]
+    return [FooV1Namespace]
 
 
 # This generates a list of models that can be used for testing that our APIs
@@ -1457,6 +1456,24 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
 
     tool = SomeTool(
         name="some_tool", description="some description", args_schema=pydantic_model
+    )
+
+    assert tool.tool_call_schema
+
+
+@pytest.mark.parametrize("pydantic_model", TEST_MODELS)
+def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
+    # Check with whatever pydantic model is passed in and not via v1 namespace
+    from pydantic import BaseModel, Field # pydantic: ignore
+
+    class SomeTool(BaseTool):
+        args_schema: Type[BaseModel] = Field(default=pydantic_model)
+
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(
+        name="some_tool", description="some description"
     )
 
     assert tool.tool_call_schema

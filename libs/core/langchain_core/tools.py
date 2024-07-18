@@ -360,11 +360,6 @@ def create_schema_from_function(
         A pydantic model with the same arguments as the function.
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
-
-    from pydantic import (
-        validate_arguments,
-    )
-
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
     inferred_model = validated.model  # type: ignore
     filter_args = filter_args if filter_args is not None else FILTERED_ARGS
@@ -482,7 +477,7 @@ class ChildTool(BaseTool):
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool."""
-        if "args_schema" in kwargs:
+        if "args_schema" in kwargs and kwargs["args_schema"] is not None:
             if not is_basemodel_subclass(kwargs["args_schema"]):
                 raise SchemaAnnotationError(
                     f"args_schema must be a subclass of pydantic BaseModel. "

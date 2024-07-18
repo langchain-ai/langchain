@@ -34,16 +34,16 @@ def is_basemodel_subclass(cls: Type) -> bool:
         return False
 
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1
+        from pydantic import BaseModel as BaseModelV1Proper
 
-        if issubclass(cls, BaseModelV1):
+        if issubclass(cls, BaseModelV1Proper):
             return True
     elif PYDANTIC_MAJOR_VERSION == 2:
         from pydantic import BaseModel as BaseModelV2
+        from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(cls, BaseModelV2):
             return True
-        from pydantic.v1 import BaseModel as BaseModelV1
 
         if issubclass(cls, BaseModelV1):
             return True
@@ -60,9 +60,9 @@ def _get_any_base_model_type_annotation(cls: Type) -> Any:
 
         return Union[BaseModel, BaseModelV1]
     else:
-        from pydantic import BaseModel
+        from pydantic import BaseModel as BaseModelV1Proper
 
-        return BaseModel
+        return BaseModelV1Proper
 
 
 AnyBaseModel = _get_any_base_model_type_annotation(BaseModel)
