@@ -9,6 +9,7 @@ MIN_VERSION_LIBS = [
     "langchain-community",
     "langchain",
     "langchain-text-splitters",
+    "SQLAlchemy",
 ]
 
 

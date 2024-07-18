@@ -62,13 +62,20 @@ class BaseMemory(Serializable, ABC):
         """Return key-value pairs given the text input to the chain.
 
         Args:
-            inputs: The inputs to the chain."""
+            inputs: The inputs to the chain.
+
+        Returns:
+            A dictionary of key-value pairs.
+        """
 
     async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Async return key-value pairs given the text input to the chain.
 
         Args:
             inputs: The inputs to the chain.
+
+        Returns:
+            A dictionary of key-value pairs.
         """
         return await run_in_executor(None, self.load_memory_variables, inputs)
 

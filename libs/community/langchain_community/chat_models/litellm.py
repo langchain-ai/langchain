@@ -48,10 +48,10 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 logger = logging.getLogger(__name__)
@@ -249,7 +249,7 @@ class ChatLiteLLM(BaseChatModel):
 
         return _completion_with_retry(**kwargs)
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         try:
