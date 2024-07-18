@@ -109,9 +109,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             content=content,
             additional_kwargs=msg_additional_kwargs,
             usage_metadata=UsageMetadata(
-                input_tokens=usage.prompt_tokens,
-                output_tokens=usage.completion_tokens,
-                total_tokens=usage.total_tokens,
+                input_tokens=usage.get("prompt_tokens", 0),
+                output_tokens=usage.get("completion_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0),
             ),
         )
 
