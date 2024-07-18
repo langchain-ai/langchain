@@ -57,7 +57,7 @@ def test_FileLoader_with_post_processor(get_post_processor) -> None:
 
 # -- The lazy_load method responsible for handling 'mode' is shared through
 # inheritance from the UnstructuredBaseLoader class, so these tests only have to
-# be done for one of the classes. --
+# be done for one of the implementation classes. --
 def test_FileLoader_paged_mode() -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredFileLoader(

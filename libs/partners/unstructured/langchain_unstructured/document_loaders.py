@@ -102,7 +102,7 @@ class UnstructuredLoader(BaseLoader):
         self.client = client
         self.retry_config = retry_config
         self.server = server
-        self.server_url = url
+        self.url = url
         self.url_params = url_params
         
     def lazy_load(self) -> Iterator[Document]:
@@ -193,7 +193,7 @@ class UnstructuredLoader(BaseLoader):
             client=self.client,
             retry_config=self.retry_config,
             server=self.server,
-            server_url=self.server_url,
+            server_url=self.url,
             url_params=self.url_params,
         )
     
