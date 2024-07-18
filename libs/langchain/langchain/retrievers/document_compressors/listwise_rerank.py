@@ -1,7 +1,6 @@
 """Filter that uses an LLM to rerank documents listwise and select top-k."""
 
-import logging
-from typing import Any, Dict, List, Optional, Sequence, TypedDict
+from typing import Any, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
@@ -9,13 +8,6 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
-
-logger = logging.getLogger(__name__)
-
-
-class _CompressorInput(TypedDict):
-    documents: Sequence[Document]
-    query: str
 
 
 _default_system_tmpl = """{context}
