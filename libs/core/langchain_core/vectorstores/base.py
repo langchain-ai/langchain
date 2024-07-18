@@ -91,6 +91,10 @@ class VectorStore(ABC):
 
         Returns:
             List of ids from adding the texts into the vectorstore.
+
+        Raises:
+            ValueError: If the number of metadatas does not match the number of texts.
+            ValueError: If the number of ids does not match the number of texts.
         """
         if type(self).upsert != VectorStore.upsert:
             # Import document in local scope to avoid circular imports
@@ -145,7 +149,12 @@ class VectorStore(ABC):
                 kwargs should only include parameters that are common to all
                 documents. (e.g., timeout for indexing, retry policy, etc.)
                 kwargs should not include ids to avoid ambiguous semantics.
-                Instead the ID should be provided as part of the Document object.
+                Instead, the ID should be provided as part of the Document object.
+
+        Yields:
+            UpsertResponse: A response object that contains the list of IDs that were
+            successfully added or updated in the vectorstore and the list of IDs that
+            failed to be added or updated.
 
         .. versionadded:: 0.2.11
         """
@@ -244,6 +253,11 @@ class VectorStore(ABC):
                 kwargs should not include ids to avoid ambiguous semantics.
                 Instead the ID should be provided as part of the Document object.
 
+        Yields:
+            UpsertResponse: A response object that contains the list of IDs that were
+            successfully added or updated in the vectorstore and the list of IDs that
+            failed to be added or updated.
+
         .. versionadded:: 0.2.11
         """
         async for batch in abatch_iterate(batch_size, items):
@@ -292,7 +306,7 @@ class VectorStore(ABC):
         """Delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete.
+            ids: List of ids to delete. If None, delete all. Default is None.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
@@ -332,7 +346,7 @@ class VectorStore(ABC):
 
     # Implementations should override this method to provide an async native version.
     async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
-        """Get documents by their IDs.
+        """Async get documents by their IDs.
 
         The returned documents are expected to have the ID field set to the ID of the
         document in the vector store.
@@ -360,10 +374,10 @@ class VectorStore(ABC):
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
-        """Delete by vector ID or other criteria.
+        """Async delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete.
+            ids: List of ids to delete. If None, delete all. Default is None.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
@@ -378,15 +392,20 @@ class VectorStore(ABC):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Async run more texts through the embeddings and add to the vectorstore.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+                Default is None.
             **kwargs: vectorstore specific parameters.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
+
+        Raises:
+            ValueError: If the number of metadatas does not match the number of texts.
+            ValueError: If the number of ids does not match the number of texts.
         """
         if type(self).aupsert != VectorStore.aupsert:
             # Import document in local scope to avoid circular imports
@@ -435,6 +454,9 @@ class VectorStore(ABC):
 
         Returns:
             List of IDs of the added texts.
+
+        Raises:
+            ValueError: If the number of ids does not match the number of documents.
         """
         if type(self).upsert != VectorStore.upsert:
             from langchain_core.documents import Document
@@ -471,13 +493,18 @@ class VectorStore(ABC):
     async def aadd_documents(
         self, documents: List[Document], **kwargs: Any
     ) -> List[str]:
-        """Run more documents through the embeddings and add to the vectorstore.
+        """Async run more documents through the embeddings and add to
+        the vectorstore.
 
         Args:
             documents: Documents to add to the vectorstore.
+            kwargs: Additional keyword arguments.
 
         Returns:
             List of IDs of the added texts.
+
+        Raises:
+            ValueError: If the number of IDs does not match the number of documents.
         """
         # If either upsert or aupsert has been implemented, we delegate to them!
         if (
@@ -516,13 +543,20 @@ class VectorStore(ABC):
         return await self.aadd_texts(texts, metadatas, **kwargs)
 
     def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
-        """Return docs most similar to query using specified search type.
+        """Return docs most similar to query using a specified search type.
 
         Args:
             query: Input text
             search_type: Type of search to perform. Can be "similarity",
                 "mmr", or "similarity_score_threshold".
             **kwargs: Arguments to pass to the search method.
+
+        Returns:
+            List of Documents most similar to the query.
+
+        Raises:
+            ValueError: If search_type is not one of "similarity",
+                "mmr", or "similarity_score_threshold".
         """
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
@@ -536,19 +570,27 @@ class VectorStore(ABC):
         else:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Expected "
-                "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
+                "search_type to be 'similarity', 'similarity_score_threshold'"
+                " or 'mmr'."
             )
 
     async def asearch(
         self, query: str, search_type: str, **kwargs: Any
     ) -> List[Document]:
-        """Return docs most similar to query using specified search type.
+        """Async return docs most similar to query using a specified search type.
 
         Args:
             query: Input text.
             search_type: Type of search to perform. Can be "similarity",
                 "mmr", or "similarity_score_threshold".
             **kwargs: Arguments to pass to the search method.
+
+        Returns:
+            List of Documents most similar to the query.
+
+        Raises:
+            ValueError: If search_type is not one of "similarity",
+                "mmr", or "similarity_score_threshold".
         """
         if search_type == "similarity":
             return await self.asimilarity_search(query, **kwargs)
@@ -574,6 +616,7 @@ class VectorStore(ABC):
         Args:
             query: Input text.
             k: Number of Documents to return. Defaults to 4.
+            **kwargs: Arguments to pass to the search method.
 
         Returns:
             List of Documents most similar to the query.
@@ -589,7 +632,7 @@ class VectorStore(ABC):
         #  others are not!)
         # - embedding dimensionality
         # - etc.
-        # This function converts the euclidean norm of normalized embeddings
+        # This function converts the Euclidean norm of normalized embeddings
         # (0 is most similar, sqrt(2) most dissimilar)
         # to a similarity function (0 to 1)
         return 1.0 - distance / math.sqrt(2)
@@ -617,7 +660,7 @@ class VectorStore(ABC):
         - embedding dimensionality
         - etc.
 
-        Vectorstores should define their own selection based method of relevance.
+        Vectorstores should define their own selection-based method of relevance.
         """
         raise NotImplementedError
 
@@ -626,18 +669,26 @@ class VectorStore(ABC):
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance.
 
+        Args:
+            *args: Arguments to pass to the search method.
+            **kwargs: Arguments to pass to the search method.
+
         Returns:
-            List of Tuples of (doc, similarity_score)
+            List of Tuples of (doc, similarity_score).
         """
         raise NotImplementedError
 
     async def asimilarity_search_with_score(
         self, *args: Any, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        """Run similarity search with distance.
+        """Async run similarity search with distance.
+
+        Args:
+            *args: Arguments to pass to the search method.
+            **kwargs: Arguments to pass to the search method.
 
         Returns:
-            List of Tuples of (doc, similarity_score)
+            List of Tuples of (doc, similarity_score).
         """
 
         # This is a temporary workaround to make the similarity search
@@ -716,10 +767,10 @@ class VectorStore(ABC):
             k: Number of Documents to return. Defaults to 4.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
-                    filter the resulting set of retrieved docs
+                    filter the resulting set of retrieved docs.
 
         Returns:
-            List of Tuples of (doc, similarity_score)
+            List of Tuples of (doc, similarity_score).
         """
         score_threshold = kwargs.pop("score_threshold", None)
 
@@ -754,7 +805,7 @@ class VectorStore(ABC):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores in the range [0, 1].
+        """Async return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
 
@@ -798,11 +849,12 @@ class VectorStore(ABC):
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        """Return docs most similar to query.
+        """Async return docs most similar to query.
 
         Args:
             query: Input text.
             k: Number of Documents to return. Defaults to 4.
+            **kwargs: Arguments to pass to the search method.
 
         Returns:
             List of Documents most similar to the query.
@@ -821,6 +873,7 @@ class VectorStore(ABC):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            **kwargs: Arguments to pass to the search method.
 
         Returns:
             List of Documents most similar to the query vector.
@@ -830,11 +883,12 @@ class VectorStore(ABC):
     async def asimilarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        """Return docs most similar to embedding vector.
+        """Async return docs most similar to embedding vector.
 
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            **kwargs: Arguments to pass to the search method.
 
         Returns:
             List of Documents most similar to the query vector.
@@ -864,10 +918,13 @@ class VectorStore(ABC):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                Default is 20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            **kwargs: Arguments to pass to the search method.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -881,7 +938,7 @@ class VectorStore(ABC):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
+        """Async return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -890,10 +947,12 @@ class VectorStore(ABC):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                Default is 20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -928,10 +987,13 @@ class VectorStore(ABC):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                Default is 20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            **kwargs: Arguments to pass to the search method.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -945,7 +1007,7 @@ class VectorStore(ABC):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance.
+        """Async return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
@@ -954,10 +1016,13 @@ class VectorStore(ABC):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                Default is 20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            **kwargs: Arguments to pass to the search method.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -983,6 +1048,10 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            VectorStore: VectorStore initialized from documents and embeddings.
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -995,11 +1064,15 @@ class VectorStore(ABC):
         embedding: Embeddings,
         **kwargs: Any,
     ) -> VST:
-        """Return VectorStore initialized from documents and embeddings.
+        """Async return VectorStore initialized from documents and embeddings.
 
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            VectorStore: VectorStore initialized from documents and embeddings.
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -1018,8 +1091,13 @@ class VectorStore(ABC):
 
         Args:
             texts: Texts to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
             embedding: Embedding function to use.
+            metadatas: Optional list of metadatas associated with the texts.
+                Default is None.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            VectorStore: VectorStore initialized from texts and embeddings.
         """
 
     @classmethod
@@ -1030,12 +1108,17 @@ class VectorStore(ABC):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> VST:
-        """Return VectorStore initialized from texts and embeddings.
+        """Async return VectorStore initialized from texts and embeddings.
 
         Args:
             texts: Texts to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
             embedding: Embedding function to use.
+            metadatas: Optional list of metadatas associated with the texts.
+                Default is None.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            VectorStore: VectorStore initialized from texts and embeddings.
         """
         return await run_in_executor(
             None, cls.from_texts, texts, embedding, metadatas, **kwargs
@@ -1052,19 +1135,22 @@ class VectorStore(ABC):
         """Return VectorStoreRetriever initialized from this VectorStore.
 
         Args:
-            search_type (Optional[str]): Defines the type of search that
-                the Retriever should perform.
-                Can be "similarity" (default), "mmr", or
-                "similarity_score_threshold".
-            search_kwargs (Optional[Dict]): Keyword arguments to pass to the
-                search function. Can include things like:
-                    k: Amount of documents to return (Default: 4)
-                    score_threshold: Minimum relevance threshold
-                        for similarity_score_threshold
-                    fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
-                    lambda_mult: Diversity of results returned by MMR;
-                        1 for minimum diversity and 0 for maximum. (Default: 0.5)
-                    filter: Filter by document metadata
+            **kwargs: Keyword arguments to pass to the search function.
+                Can include:
+                search_type (Optional[str]): Defines the type of search that
+                    the Retriever should perform.
+                    Can be "similarity" (default), "mmr", or
+                    "similarity_score_threshold".
+                search_kwargs (Optional[Dict]): Keyword arguments to pass to the
+                    search function. Can include things like:
+                        k: Amount of documents to return (Default: 4)
+                        score_threshold: Minimum relevance threshold
+                            for similarity_score_threshold
+                        fetch_k: Amount of documents to pass to MMR algorithm
+                            (Default: 20)
+                        lambda_mult: Diversity of results returned by MMR;
+                            1 for minimum diversity and 0 for maximum. (Default: 0.5)
+                        filter: Filter by document metadata
 
         Returns:
             VectorStoreRetriever: Retriever class for VectorStore.
@@ -1128,7 +1214,18 @@ class VectorStoreRetriever(BaseRetriever):
 
     @root_validator(pre=True)
     def validate_search_type(cls, values: Dict) -> Dict:
-        """Validate search type."""
+        """Validate search type.
+
+        Args:
+            values: Values to validate.
+
+        Returns:
+            Values: Validated values.
+
+        Raises:
+            ValueError: If search_type is not one of the allowed search types.
+            ValueError: If score_threshold is not specified with a float value(0~1)
+        """
         search_type = values.get("search_type", "similarity")
         if search_type not in cls.allowed_search_types:
             raise ValueError(
@@ -1191,6 +1288,7 @@ class VectorStoreRetriever(BaseRetriever):
 
         Args:
             documents: Documents to add to the vectorstore.
+            **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
             List of IDs of the added texts.
@@ -1200,10 +1298,11 @@ class VectorStoreRetriever(BaseRetriever):
     async def aadd_documents(
         self, documents: List[Document], **kwargs: Any
     ) -> List[str]:
-        """Add documents to the vectorstore.
+        """Async add documents to the vectorstore.
 
         Args:
             documents: Documents to add to the vectorstore.
+            **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
             List of IDs of the added texts.
