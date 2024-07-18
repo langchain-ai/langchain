@@ -42,20 +42,10 @@ from typing import (
     Tuple,
     Type,
     Union,
-    cast,
     get_type_hints,
 )
 
-from typing_extensions import Annotated, get_args, get_origin
-
 from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Extra,
-    Field,
-    ValidationError,
-    create_model,
-    root_validator,
     validate_arguments,
 )
 from pydantic.fields import FieldInfo
@@ -102,6 +92,7 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -113,6 +104,7 @@ class SchemaAnnotationError(TypeError):
 def _is_annotated_type(typ: Type[Any]) -> bool:
     return get_origin(typ) is Annotated
 
+
 def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
@@ -122,7 +114,6 @@ def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
                 if isinstance(annotation, str):
                     return annotation
     return None
-
 
 
 def _create_subset_model_v1(
@@ -152,7 +143,8 @@ def _create_subset_model_v1(
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
-def _create_subset_model(
+
+def _create_subset_model_2(
     name: str,
     model: Type[BaseModel],
     field_names: List[str],
@@ -175,6 +167,47 @@ def _create_subset_model(
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
+
+def _create_subset_model(
+    name: str,
+    model: Type[BaseModel],
+    field_names: List[str],
+    *,
+    descriptions: Optional[dict] = None,
+    fn_description: Optional[str] = None,
+) -> Type[BaseModel]:
+    """Create subset model using the same pydantic version as the input model."""
+    if PYDANTIC_MAJOR_VERSION == 1:
+        return _create_subset_model_v1(
+            name,
+            model,
+            field_names,
+            descriptions=descriptions,
+            fn_description=fn_description,
+        )
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import BaseModel as BaseModelV1
+
+        if issubclass(model, BaseModelV1):
+            return _create_subset_model_v1(
+                name,
+                model,
+                field_names,
+                descriptions=descriptions,
+                fn_description=fn_description,
+            )
+        else:
+            return _create_subset_model_2(
+                name,
+                model,
+                field_names,
+                descriptions=descriptions,
+                fn_description=fn_description,
+            )
+    else:
+        raise NotImplementedError(
+            f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        )
 
 
 def _get_filtered_args(
