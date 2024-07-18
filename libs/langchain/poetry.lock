@@ -1786,7 +1786,7 @@ url = "../core"
 name = "langchain-openai"
 version = "0.1.16"
 description = "An integration package connecting OpenAI and LangChain"
-optional = false
+optional = true
 python-versions = ">=3.8.1,<4.0"
 files = []
 develop = true
