@@ -131,6 +131,8 @@ class GraphIndexCreator(BaseModel):
                 "Please install langchain to use this functionality. "
                 "You can install it with `pip install langchain`."
             )
+        # Determin BaseLanguageModel class name. If ChatVertexAI
+        # is the BaseLanguageModel, then use the Vertex AI specific prompt
         llm_class_name = self.llm.__class__.__name__
         if llm_class_name == "ChatVertexAI":
             chain = VERTEXAI_KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT | self.llm.bind(

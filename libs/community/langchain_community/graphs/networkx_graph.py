@@ -40,7 +40,7 @@ def parse_triples(knowledge_str: str) -> List[KnowledgeTriple]:
     return results
 
 def parse_json_triples(knowledge_str: str) -> List[KnowledgeTriple]:
-    """Parse knowledge triples from the knowledge string."""
+    """Parse knowledge triples from a json string."""
     try:
         knowledge_dict = json.loads(knowledge_str)
     except:
