@@ -1,7 +1,7 @@
 """
 Class for a conversation memory buffer with older messages stored in a vectorstore .
 
-This implementats a conversation memory in which the messages are stored in a memory
+This implements a conversation memory in which the messages are stored in a memory
 buffer up to a specified token limit. When the limit is exceeded, older messages are
 saved to a vectorstore backing database. The vectorstore can be made persistent across
 sessions.
