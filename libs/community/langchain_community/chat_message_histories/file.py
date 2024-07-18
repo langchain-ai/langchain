@@ -16,7 +16,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
         file_path: str,
         *,
         encoding: Optional[str] = None,
-        ensure_ascii: bool = True
+        ensure_ascii: bool = True,
     ) -> None:
         """Initialize the file path for the chat history.
         Args:
@@ -31,8 +31,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
         if not self.file_path.exists():
             self.file_path.touch()
             self.file_path.write_text(
-                json.dumps([], ensure_ascii=self.ensure_ascii),
-                encoding=self.encoding
+                json.dumps([], ensure_ascii=self.ensure_ascii), encoding=self.encoding
             )
 
     @property
@@ -47,13 +46,11 @@ class FileChatMessageHistory(BaseChatMessageHistory):
         messages = messages_to_dict(self.messages)
         messages.append(messages_to_dict([message])[0])
         self.file_path.write_text(
-            json.dumps(messages, ensure_ascii=self.ensure_ascii),
-            encoding=self.encoding
+            json.dumps(messages, ensure_ascii=self.ensure_ascii), encoding=self.encoding
         )
 
     def clear(self) -> None:
         """Clear session memory from the local file"""
         self.file_path.write_text(
-            json.dumps([], ensure_ascii=self.ensure_ascii),
-            encoding=self.encoding
+            json.dumps([], ensure_ascii=self.ensure_ascii), encoding=self.encoding
         )
