@@ -70,10 +70,7 @@ def test_pydantic_output_parser_stream() -> None:
         name: str
         age: int
 
-    def invoke_llm(input: Any) -> str:
-        return '{"name": "King Louis XVI", "age": 38}'
-
-    def streaming_llm(input: Any) -> Iterable[str]:
+    def llm(input: Any) -> Iterable[str]:
         yield from [
             "{",
             '"name": "',
@@ -85,8 +82,9 @@ def test_pydantic_output_parser_stream() -> None:
         ]
 
     parser = PydanticOutputParser(pydantic_object=Person)
-    assert (invoke_llm | parser).invoke({}) == Person(name="King Louis XVI", age=38)
-    stream_result = list((streaming_llm | parser).stream({}))
+    chain = llm | parser
+    assert chain.invoke({}) == Person(name="King Louis XVI", age=38)
+    stream_result = list(chain.stream({}))
     assert stream_result == [
         Person(name="King Louis XVI", age=3),
         Person(name="King Louis XVI", age=38),
