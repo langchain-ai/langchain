@@ -13,9 +13,10 @@ from langchain_community.graph_vectorstores.extractors.link_extractor_adapter im
 # TypeAlias is not available in Python 3.9, we can't use that or the newer `type`.
 HierarchyInput = List[str]
 
-_PARENT_PREFIX: str = "p:"
-_CHILD_PREFIX: str = "c:"
-_SIBLING_PREFIX: str = "s:"
+_PARENT: str = "p:"
+_CHILD: str = "c:"
+_SIBLING: str = "s:"
+
 
 class HierarchyLinkExtractor(LinkExtractor[HierarchyInput]):
     def __init__(
@@ -85,21 +86,21 @@ class HierarchyLinkExtractor(LinkExtractor[HierarchyInput]):
         links = set()
         if self._parent_links:
             # This is linked from everything with this parent path.
-            links.add(Link.incoming(kind=self._kind, tag=_PARENT_PREFIX + this_path))
+            links.add(Link.incoming(kind=self._kind, tag=_PARENT + this_path))
         if self._child_links:
             # This is linked to every child with this as it's "parent" path.
-            links.add(Link.outgoing(kind=self._kind, tag=_CHILD_PREFIX + this_path))
+            links.add(Link.outgoing(kind=self._kind, tag=_CHILD + this_path))
 
         if len(input) >= 1:
             parent_path = "/".join(input[0:-1])
             if self._parent_links and len(input) > 1:
                 # This is linked to the nodes with the given parent path.
-                links.add(Link.outgoing(kind=self._kind, tag=_PARENT_PREFIX + parent_path))
+                links.add(Link.outgoing(kind=self._kind, tag=_PARENT + parent_path))
             if self._child_links and len(input) > 1:
                 # This is linked from every node with the given parent path.
-                links.add(Link.incoming(kind=self._kind, tag=_CHILD_PREFIX + parent_path))
+                links.add(Link.incoming(kind=self._kind, tag=_CHILD + parent_path))
             if self._sibling_links:
                 # This is a sibling of everything with the same parent.
-                links.add(Link.bidir(kind=self._kind, tag=_SIBLING_PREFIX + parent_path))
+                links.add(Link.bidir(kind=self._kind, tag=_SIBLING + parent_path))
 
         return links
