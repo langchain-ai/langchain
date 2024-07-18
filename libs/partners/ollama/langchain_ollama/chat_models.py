@@ -3,6 +3,7 @@
 from typing import (
     Any,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -10,6 +11,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
@@ -19,6 +21,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
@@ -26,15 +29,22 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
+    ToolCall,
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from ollama import AsyncClient, Message, Options
 
 
 def _get_usage_metadata_from_generation_info(
     generation_info: Optional[Mapping[str, Any]],
 ) -> Optional[UsageMetadata]:
+    """Get usage metadata from ollama generation info mapping."""
     if generation_info is None:
         return None
     input_tokens: Optional[int] = generation_info.get("prompt_eval_count")
@@ -46,6 +56,17 @@ def _get_usage_metadata_from_generation_info(
             total_tokens=input_tokens + output_tokens,
         )
     return None
+
+
+def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+    return {
+        "type": "function",
+        "id": tool_call["id"],
+        "function": {
+            "name": tool_call["name"],
+            "arguments": tool_call["args"],
+        },
+    }
 
 
 class ChatOllama(BaseChatModel):
@@ -283,12 +304,25 @@ class ChatOllama(BaseChatModel):
         ollama_messages: List = []
         for message in messages:
             role = ""
+            tool_call_id: Optional[str] = None
+            tool_calls: Optional[List[Dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
                 role = "user"
             elif isinstance(message, AIMessage):
                 role = "assistant"
+                tool_calls = (
+                    [
+                        _lc_tool_call_to_openai_tool_call(tool_call)
+                        for tool_call in message.tool_calls
+                    ]
+                    if message.tool_calls
+                    else None
+                )
             elif isinstance(message, SystemMessage):
                 role = "system"
+            elif isinstance(message, ToolMessage):
+                role = "tool"
+                tool_call_id = message.tool_call_id
             else:
                 raise ValueError("Received unsupported message type for Ollama.")
 
@@ -329,14 +363,16 @@ class ChatOllama(BaseChatModel):
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
-
-            ollama_messages.append(
-                {
-                    "role": role,
-                    "content": content,
-                    "images": images,
-                }
-            )
+            msg = {
+                "role": role,
+                "content": content,
+                "images": images,
+            }
+            if tool_call_id:
+                msg["tool_call_id"] = tool_call_id
+            if tool_calls:
+                msg["tool_calls"] = tool_calls
+            ollama_messages.append(msg)
 
         return ollama_messages
 
@@ -384,14 +420,32 @@ class ChatOllama(BaseChatModel):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        yield from ollama.chat(
-            model=params["model"],
-            messages=ollama_messages,
-            stream=True,
-            options=Options(**params["options"]),
-            keep_alive=params["keep_alive"],
-            format=params["format"],
-        )
+        if "tools" in kwargs:
+            # tools not supported by sdk yet.
+            print(kwargs["tools"])
+            yield from ollama._client._request_stream(
+                "POST",
+                "/api/chat",
+                json={
+                    "model": params["model"],
+                    "messages": ollama_messages,
+                    "stream": True,
+                    "format": params["format"],
+                    "options": Options(**params["options"]),
+                    "keep_alive": params["keep_alive"],
+                    "tools": kwargs["tools"],
+                },
+                stream=True,
+            )
+        else:
+            yield from ollama.chat(
+                model=params["model"],
+                messages=ollama_messages,
+                stream=True,
+                options=Options(**params["options"]),
+                keep_alive=params["keep_alive"],
+                format=params["format"],
+            )
 
     def _chat_stream_with_aggregation(
         self,
@@ -600,78 +654,67 @@ class ChatOllama(BaseChatModel):
         )
         return ChatResult(generations=[chat_generation])
 
-    # TODO: Work in progress for binding tools
-    """ 
-    def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        **kwargs: Any,    
-    ):
-        if self.model != "mistral:v0.3":
-            raise ValueError(f"Binding tools is not available for model {self.model}")
-        else:
-            tool_prompt = "[AVAILABLE_TOOLS]["
-            for tool in tools:
-                tool_prompt += json.dumps(convert_to_openai_tool(tool)) + ","
-            tool_prompt = tool_prompt[:-1]
-            tool_prompt += "][/AVAILABLE_TOOLS]"
+    # def with_structured_output(
+    #     self,
+    #     schema: Union[Dict, Type[BaseModel]] = None,
+    #     *,
+    #     method: Literal["function_calling", "json_mode"] = "function_calling",
+    #     include_raw: bool = False,
+    #     **kwargs: Any,
+    # ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    #     if kwargs:
+    #         raise ValueError(f"Received unsupported arguments {kwargs}")
+    #     is_pydantic_schema = _is_pydantic_class(schema)
+    #     if method == "function_calling":
+    #         if schema is None:
+    #             raise ValueError(
+    #                 "schema must be specified when method is 'function_calling'. "
+    #                 "Received None."
+    #             )
+    #         llm = self.bind_tools([schema])
+    #         if is_pydantic_schema:
+    #             output_parser: OutputParserLike = PydanticToolsParser(
+    #                 tools=[schema], first_tool_only=True
+    #             )
+    #         else:
+    #             key_name = convert_to_openai_tool(schema)["function"]["name"]
+    #             output_parser = JsonOutputKeyToolsParser(
+    #                 key_name=key_name, first_tool_only=True
+    #             )
+    #     elif method == "json_mode":
+    #         llm = self.bind(format="json")
+    #         output_parser = (
+    #             PydanticOutputParser(pydantic_object=schema)
+    #             if is_pydantic_schema
+    #             else JsonOutputParser()
+    #         )
+    #     else:
+    #         raise ValueError(
+    #             f"Unrecognized method argument. Expected one of 'function_calling' or "
+    #             f"'json_mode'. Received: '{method}'"
+    #         )
 
-            return self.bind(tool_prompt=tool_prompt)
-
-    def with_structured_output(
-        self,
-        schema: Union[Dict, Type[BaseModel]] = None,
-        *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
-        include_raw: bool = False,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = _is_pydantic_class(schema)
-        if method == "function_calling":
-            if schema is None:
-                raise ValueError(
-                    "schema must be specified when method is 'function_calling'. "
-                    "Received None."
-                )
-            llm = self.bind_tools([schema])
-            if is_pydantic_schema:
-                output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
-                )
-            else:
-                key_name = convert_to_openai_tool(schema)["function"]["name"]
-                output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, first_tool_only=True
-                )
-        elif method == "json_mode":
-            llm = self.bind(format="json")
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
-        else:
-            raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
-            )
-
-        if include_raw:
-            parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
-            )
-            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
-            parser_with_fallback = parser_assign.with_fallbacks(
-                [parser_none], exception_key="parsing_error"
-            )
-            return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm #| output_parser
-    """
+    #     if include_raw:
+    #         parser_assign = RunnablePassthrough.assign(
+    #             parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+    #         )
+    #         parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+    #         parser_with_fallback = parser_assign.with_fallbacks(
+    #             [parser_none], exception_key="parsing_error"
+    #         )
+    #         return RunnableMap(raw=llm) | parser_with_fallback
+    #     else:
+    #         return llm | output_parser
 
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "chat-ollama"
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)
