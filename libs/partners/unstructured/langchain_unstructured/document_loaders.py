@@ -6,7 +6,7 @@ from abc import ABC
 import json
 import logging
 from pathlib import Path
-from typing import IO, Any, Callable, Iterator, TYPE_CHECKING, Optional
+from typing import IO, Any, Callable, Iterator, TYPE_CHECKING, Optional, Sequence, cast
 
 # from langchain_community.document_loaders.unstructured import UnstructuredBaseLoader
 from langchain_core.document_loaders.base import BaseLoader
@@ -22,6 +22,88 @@ if TYPE_CHECKING:
 
 
 class UnstructuredLoader(BaseLoader):
+
+    def __init__(
+        self,
+        *,
+        file: Optional[IO[bytes] | Sequence[IO[bytes]]] = None,
+        file_path: Optional[str | Path | Sequence[str | Path]] = None,
+        partition_via_api: bool = False,
+        post_processors: Optional[list[Callable[[str], str]]] = None,
+        # SDK parameters
+        api_key: Optional[str] = None,
+        client: Optional[requests.Session] = None,
+        retry_config: Optional[RetryConfig] = None,
+        server: Optional[str] = None,
+        url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
+        url_params: Optional[dict[str, str]] = None,
+        **unstructured_kwargs: Any,
+    ):
+        """Initialize loader."""
+        self.file = file
+        self.file_path = file_path
+        self.partition_via_api = partition_via_api
+        self.post_processors = post_processors
+        self.unstructured_kwargs = unstructured_kwargs
+        # SDK parameters
+        self.api_key = api_key
+        self.client = client
+        self.retry_config = retry_config
+        self.server = server
+        self.url = url
+        self.url_params = url_params
+
+
+    def lazy_load(self) -> Iterator[list[Document]]:
+        if isinstance(self.file, Sequence):
+            for f in self.file:
+                yield UnstructuredBaseLoader(
+                    file=f,
+                    partition_via_api=self.partition_via_api,
+                    post_processors=self.post_processors,
+                    unstructured_kwargs=self.unstructured_kwargs,
+                    # SDK parameters
+                    api_key=self.api_key,
+                    client=self.client,
+                    retry_config=self.retry_config,
+                    server=self.server,
+                    url=self.url,
+                    url_params=self.url_params,
+                ).load()
+            return
+        if isinstance(self.file_path, Sequence):
+            for f in self.file_path:
+                yield UnstructuredBaseLoader(
+                    file_path=f,
+                    partition_via_api=self.partition_via_api,
+                    post_processors=self.post_processors,
+                    unstructured_kwargs=self.unstructured_kwargs,
+                    # SDK parameters
+                    api_key=self.api_key,
+                    client=self.client,
+                    retry_config=self.retry_config,
+                    server=self.server,
+                    url=self.url,
+                    url_params=self.url_params,
+                ).load()
+            return
+        yield UnstructuredBaseLoader(
+                file=self.file,
+                file_path=self.file_path,
+                partition_via_api=self.partition_via_api,
+                post_processors=self.post_processors,
+                unstructured_kwargs=self.unstructured_kwargs,
+                # SDK parameters
+                api_key=self.api_key,
+                client=self.client,
+                retry_config=self.retry_config,
+                server=self.server,
+                url=self.url,
+                url_params=self.url_params,
+            ).load()
+
+
+class UnstructuredBaseLoader(BaseLoader):
     """Unstructured document loader.
 
     Partition and load files using either the `unstructured-client` sdk and the
@@ -118,7 +200,7 @@ class UnstructuredLoader(BaseLoader):
                 {"category": element.get("category") or element.get("type")}
             )
             metadata.update({"element_id": element.get("element_id")})
-            yield Document(page_content=element.get("text"), metadata=metadata) # type: ignore
+            yield Document(page_content=cast(str, element.get("text")), metadata=metadata)
 
     @lazyproperty
     def _elements_json(self) -> list[dict[str, Any]]:
