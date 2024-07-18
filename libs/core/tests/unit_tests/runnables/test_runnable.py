@@ -1271,7 +1271,11 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
 
     assert (
         fakew.with_config(tags=["a-tag"]).invoke(
-            "hello", {"configurable": {"hello": "there"}, "metadata": {"bye": "now"}}
+            "hello",
+            {
+                "configurable": {"hello": "there", "__secret_key": "nahnah"},
+                "metadata": {"bye": "now"},
+            },
         )
         == 5
     )
