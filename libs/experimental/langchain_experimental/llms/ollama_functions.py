@@ -1,4 +1,3 @@
-from langchain_core.pydantic_v1 import _issubclass_base_model, _isinstance_base_model
 import json
 import uuid
 from operator import itemgetter
@@ -35,7 +34,11 @@ from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    _isinstance_base_model,
+    _issubclass_base_model,
+)
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough

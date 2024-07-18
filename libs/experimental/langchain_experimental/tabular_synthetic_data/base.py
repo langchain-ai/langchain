@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -65,7 +65,9 @@ class SyntheticDataGenerator(BaseModel):
         list."""
         if self.template and self.template.examples:
             if _isinstance_base_model(example):
-                formatted_example = self._format_dict_to_string(example.dict())
+                formatted_example = self._format_dict_to_string(
+                    cast(BaseModel, example).dict()
+                )
             elif isinstance(example, dict):
                 formatted_example = self._format_dict_to_string(example)
             else:
