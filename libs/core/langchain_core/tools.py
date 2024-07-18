@@ -42,11 +42,10 @@ from typing import (
     Tuple,
     Type,
     Union,
-    cast,
     get_type_hints,
 )
 
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -89,6 +88,10 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
+from langchain_core.utils.pydantic import (
+    _create_subset_model,
+    is_basemodel_subclass,
+)
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -108,34 +111,6 @@ def _get_annotation_description(arg_type: Type) -> str | None:
             if isinstance(annotation, str):
                 return annotation
     return None
-
-
-def _create_subset_model(
-    name: str,
-    model: Type[BaseModel],
-    field_names: list,
-    *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
-    """Create a pydantic model with only a subset of model's fields."""
-    fields = {}
-
-    for field_name in field_names:
-        field = model.__fields__[field_name]
-        t = (
-            # this isn't perfect but should work for most functions
-            field.outer_type_
-            if field.required and not field.allow_none
-            else Optional[field.outer_type_]
-        )
-        if descriptions and field_name in descriptions:
-            field.field_info.description = descriptions[field_name]
-        fields[field_name] = (t, field.field_info)
-
-    rtn = create_model(name, **fields)  # type: ignore
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
-    return rtn
 
 
 def _get_filtered_args(
@@ -402,6 +377,16 @@ class ChildTool(BaseTool):
     ToolMessage. If "content_and_artifact" then the output is expected to be a 
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the tool."""
+        if "args_schema" in kwargs and kwargs["args_schema"] is not None:
+            if not is_basemodel_subclass(kwargs["args_schema"]):
+                raise TypeError(
+                    f"args_schema must be a subclass of pydantic BaseModel. "
+                    f"Got: {kwargs['args_schema']}."
+                )
+        super().__init__(**kwargs)
 
     class Config(Serializable.Config):
         """Configuration for this pydantic object."""
