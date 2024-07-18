@@ -71,11 +71,9 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     ValidationError,
+    create_model,
     root_validator,
     validate_arguments,
-)
-from langchain_core.pydantic_v1 import (
-    create_model as create_model_v1,
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
@@ -384,7 +382,7 @@ class ChildTool(BaseTool):
         """Initialize the tool."""
         if "args_schema" in kwargs and kwargs["args_schema"] is not None:
             if not is_basemodel_subclass(kwargs["args_schema"]):
-                raise SchemaAnnotationError(
+                raise TypeError(
                     f"args_schema must be a subclass of pydantic BaseModel. "
                     f"Got: {kwargs['args_schema']}."
                 )
@@ -1544,7 +1542,7 @@ def _get_schema_from_runnable_and_arg_types(
                 f"arg_types into `.as_tool` to specify. {str(e)}"
             )
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
-    return create_model_v1(name, **fields)  # type: ignore
+    return create_model(name, **fields)  # type: ignore
 
 
 def convert_runnable_to_tool(
