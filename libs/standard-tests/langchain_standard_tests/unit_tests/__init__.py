@@ -1,6 +1,5 @@
+# ruff: noqa: E402
 import pytest
-
-from langchain_standard_tests.unit_tests.chat_models import ChatModelUnitTests
 
 # Rewrite assert statements for test suite so that implementations can
 # see the full error message from failed asserts.
@@ -12,5 +11,6 @@ modules = [
 for module in modules:
     pytest.register_assert_rewrite(f"langchain_standard_tests.unit_tests.{module}")
 
+from langchain_standard_tests.unit_tests.chat_models import ChatModelUnitTests
 
 __all__ = ["ChatModelUnitTests"]
