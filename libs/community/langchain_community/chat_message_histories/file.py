@@ -14,6 +14,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
         file_path: str,
+        *,
         encoding: Optional[str] = None,
         ensure_ascii: bool = True
     ) -> None:
