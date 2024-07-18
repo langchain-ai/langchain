@@ -211,9 +211,7 @@ class VDMS(VectorStore):
             raise ValueError(p_str)
 
     def _embed_video(self, paths: List[str], **kwargs: Any) -> List[List[float]]:
-        if self.embedding is not None and callable(
-            getattr(self.embedding, "embed_video", None)
-        ):
+        if self.embedding is not None and hasattr(self.embedding, "embed_video"):
             return self.embedding.embed_video(paths=paths, **kwargs)
         else:
             raise ValueError(
@@ -221,9 +219,7 @@ class VDMS(VectorStore):
             )
 
     def _embed_image(self, uris: List[str]) -> List[List[float]]:
-        if self.embedding is not None and callable(
-            getattr(self.embedding, "embed_image", None)
-        ):
+        if self.embedding is not None and hasattr(self.embedding, "embed_image"):
             return self.embedding.embed_image(uris=uris)
         else:
             raise ValueError(
@@ -264,15 +260,15 @@ class VDMS(VectorStore):
 
     def _similarity_search_with_relevance_scores(
         self,
-        query: Union[str, List[str]],
+        query: str,
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
-        # if self.override_relevance_score_fn is None:
-        #     kwargs["normalize_distance"] = True
+        if self.override_relevance_score_fn is None:
+            kwargs["normalize_distance"] = True
         docs_and_scores = self.similarity_search_with_score(
             query=query,
             k=k,
@@ -776,14 +772,19 @@ class VDMS(VectorStore):
                 self._embed_query("This is a sample sentence.")
             )
         elif self.embedding is not None and (
-            callable(getattr(self.embedding, "embed_image", None))
-            or callable(getattr(self.embedding, "embed_video", None))
+            hasattr(self.embedding, "embed_image")
+            or hasattr(self.embedding, "embed_video")
         ):
-            try:
-                self.embedding_dimension = (
-                    self.embedding.model.token_embedding.embedding_dim
-                )
-            except ValueError:
+            if hasattr(self.embedding, "model"):
+                try:
+                    self.embedding_dimension = (
+                        self.embedding.model.token_embedding.embedding_dim
+                    )
+                except ValueError:
+                    raise ValueError(
+                        "Embedding dimension needed. Please define embedding_dimensions"
+                    )
+            else:
                 raise ValueError(
                     "Embedding dimension needed. Please define embedding_dimensions"
                 )
@@ -1071,7 +1072,7 @@ class VDMS(VectorStore):
 
     def max_marginal_relevance_search(
         self,
-        query: Union[str, List[str]] = None,
+        query: str,
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
@@ -1083,8 +1084,7 @@ class VDMS(VectorStore):
         among selected documents.
 
         Args:
-            query: Query to look up. For text, specify str but for image or
-                   video, specify list of str.
+            query (str): Query to look up. Text or path for image or video.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
@@ -1102,20 +1102,13 @@ class VDMS(VectorStore):
             )
 
         # embedding_vector: List[float] = self._embed_query(query)
-        if (
-            isinstance(query, str)
-            and not os.path.isfile(query)
-            and hasattr(self.embedding, "embed_query")
-        ):
-            embedding_vector: List[float] = self._embed_query(query)
-        elif os.path.isfile(query[0]) and callable(
-            getattr(self.embedding, "embed_image", None)
-        ):
-            embedding_vector: List[float] = self._embed_image(query)
-        elif os.path.isfile(query[0]) and callable(
-            getattr(self.embedding, "embed_video", None)
-        ):
-            embedding_vector: List[float] = self._embed_video(query)
+        embedding_vector: List[float]
+        if not os.path.isfile(query) and hasattr(self.embedding, "embed_query"):
+            embedding_vector = self._embed_query(query)
+        elif os.path.isfile(query) and hasattr(self.embedding, "embed_image"):
+            embedding_vector = self._embed_image(uris=[query])[0]
+        elif os.path.isfile(query) and hasattr(self.embedding, "embed_video"):
+            embedding_vector = self._embed_video(paths=[query])[0]
         else:
             error_msg = f"Could not generate embedding for query '{query}'."
             error_msg += "If using path for image or video, verify embedding model "
@@ -1188,7 +1181,7 @@ class VDMS(VectorStore):
 
     def max_marginal_relevance_search_with_score(
         self,
-        query: Union[str, List[str]],
+        query: str,
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
@@ -1200,8 +1193,7 @@ class VDMS(VectorStore):
         among selected documents.
 
         Args:
-            query: Query to look up. For text, specify str but for image or
-                   video, specify list of str.
+            query (str): Query to look up. Text or path for image or video.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
@@ -1218,20 +1210,12 @@ class VDMS(VectorStore):
                 "For MMR search, you must specify an embedding function on" "creation."
             )
 
-        if (
-            isinstance(query, str)
-            and not os.path.isfile(query)
-            and hasattr(self.embedding, "embed_query")
-        ):
+        if not os.path.isfile(query) and hasattr(self.embedding, "embed_query"):
             embedding = self._embed_query(query)
-        elif os.path.isfile(query[0]) and callable(
-            getattr(self.embedding, "embed_image", None)
-        ):
-            embedding = self._embed_image(query)
-        elif os.path.isfile(query[0]) and callable(
-            getattr(self.embedding, "embed_video", None)
-        ):
-            embedding = self._embed_video(query)
+        elif os.path.isfile(query) and hasattr(self.embedding, "embed_image"):
+            embedding = self._embed_image(uris=[query])[0]
+        elif os.path.isfile(query) and hasattr(self.embedding, "embed_video"):
+            embedding = self._embed_video(paths=[query])[0]
         else:
             error_msg = f"Could not generate embedding for query '{query}'."
             error_msg += "If using path for image or video, verify embedding model "
@@ -1345,7 +1329,7 @@ class VDMS(VectorStore):
 
     def similarity_search(
         self,
-        query: Union[str, List[str]] = None,
+        query: str,
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, List]] = None,
@@ -1354,8 +1338,7 @@ class VDMS(VectorStore):
         """Run similarity search with VDMS.
 
         Args:
-            query: Query to look up. For text, specify str but for image or
-                   video, specify list of str.
+            query (str): Query to look up. Text or path for image or video.
             k (int): Number of results to return. Defaults to 3.
             fetch_k (int): Number of candidates to fetch for knn (>= k).
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
@@ -1397,7 +1380,7 @@ class VDMS(VectorStore):
 
     def similarity_search_with_score(
         self,
-        query: Union[str, List[str]],
+        query: str,
         k: int = DEFAULT_K,
         fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, List]] = None,
@@ -1406,8 +1389,7 @@ class VDMS(VectorStore):
         """Run similarity search with VDMS with distance.
 
         Args:
-            query: Query to look up. For text, specify str but for image or
-                   video, specify list of str.
+            query (str): Query to look up. Text or path for image or video.
             k (int): Number of results to return. Defaults to 3.
             fetch_k (int): Number of candidates to fetch for knn (>= k).
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
@@ -1420,20 +1402,12 @@ class VDMS(VectorStore):
         if self.embedding is None:
             raise ValueError("Must provide embedding function")
         else:
-            if (
-                isinstance(query, str)
-                and not os.path.isfile(query)
-                and hasattr(self.embedding, "embed_query")
-            ):
+            if not os.path.isfile(query) and hasattr(self.embedding, "embed_query"):
                 query_embedding: List[float] = self._embed_query(query)
-            elif os.path.isfile(query[0]) and callable(
-                getattr(self.embedding, "embed_image", None)
-            ):
-                query_embedding: List[float] = self._embed_image(query)
-            elif os.path.isfile(query[0]) and callable(
-                getattr(self.embedding, "embed_video", None)
-            ):
-                query_embedding: List[float] = self._embed_video(query)
+            elif os.path.isfile(query) and hasattr(self.embedding, "embed_image"):
+                query_embedding = self._embed_image(uris=[query])[0]
+            elif os.path.isfile(query) and hasattr(self.embedding, "embed_video"):
+                query_embedding = self._embed_video(paths=[query])[0]
             else:
                 error_msg = f"Could not generate embedding for query '{query}'."
                 error_msg += "If using path for image or video, verify embedding model "
@@ -1469,8 +1443,7 @@ class VDMS(VectorStore):
 
         Returns:
             List[Tuple[Document, float]]: List of documents most similar to
-            the query text and cosine distance in float for each.
-            Lower score represents more similarity.
+            the query text. Lower score represents more similarity.
         """
 
         # kwargs["normalize_distance"] = True
