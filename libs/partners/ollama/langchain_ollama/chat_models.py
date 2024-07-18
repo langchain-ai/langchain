@@ -35,12 +35,6 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
-from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-    make_invalid_tool_call,
-    parse_tool_call,
-)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
@@ -450,7 +444,6 @@ class ChatOllama(BaseChatModel):
         params["options"]["stop"] = stop
         if "tools" in kwargs:
             # tools not supported by sdk yet.
-            print(kwargs["tools"])
             req = {
                 "model": params["model"],
                 "messages": ollama_messages,
@@ -466,7 +459,7 @@ class ChatOllama(BaseChatModel):
                 json=req,
                 stream=False,
             )
-            yield it
+            yield cast(Mapping[str, Any], it)
         else:
             yield from ollama.chat(
                 model=params["model"],
@@ -592,8 +585,8 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=final_chunk.message.usage_metadata,
-                tool_calls=final_chunk.message.tool_calls,
+                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
             ),
             generation_info=generation_info,
         )
@@ -679,64 +672,12 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=final_chunk.message.usage_metadata,
-                tool_calls=final_chunk.message.tool_calls,
+                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
             ),
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
-
-    # def with_structured_output(
-    #     self,
-    #     schema: Union[Dict, Type[BaseModel]] = None,
-    #     *,
-    #     method: Literal["function_calling", "json_mode"] = "function_calling",
-    #     include_raw: bool = False,
-    #     **kwargs: Any,
-    # ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-    #     if kwargs:
-    #         raise ValueError(f"Received unsupported arguments {kwargs}")
-    #     is_pydantic_schema = _is_pydantic_class(schema)
-    #     if method == "function_calling":
-    #         if schema is None:
-    #             raise ValueError(
-    #                 "schema must be specified when method is 'function_calling'. "
-    #                 "Received None."
-    #             )
-    #         llm = self.bind_tools([schema])
-    #         if is_pydantic_schema:
-    #             output_parser: OutputParserLike = PydanticToolsParser(
-    #                 tools=[schema], first_tool_only=True
-    #             )
-    #         else:
-    #             key_name = convert_to_openai_tool(schema)["function"]["name"]
-    #             output_parser = JsonOutputKeyToolsParser(
-    #                 key_name=key_name, first_tool_only=True
-    #             )
-    #     elif method == "json_mode":
-    #         llm = self.bind(format="json")
-    #         output_parser = (
-    #             PydanticOutputParser(pydantic_object=schema)
-    #             if is_pydantic_schema
-    #             else JsonOutputParser()
-    #         )
-    #     else:
-    #         raise ValueError(
-    #             f"Unrecognized method argument. Expected one of 'function_calling' or "
-    #             f"'json_mode'. Received: '{method}'"
-    #         )
-
-    #     if include_raw:
-    #         parser_assign = RunnablePassthrough.assign(
-    #             parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
-    #         )
-    #         parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
-    #         parser_with_fallback = parser_assign.with_fallbacks(
-    #             [parser_none], exception_key="parsing_error"
-    #         )
-    #         return RunnableMap(raw=llm) | parser_with_fallback
-    #     else:
-    #         return llm | output_parser
 
     @property
     def _llm_type(self) -> str:
