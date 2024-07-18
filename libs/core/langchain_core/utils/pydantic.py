@@ -164,7 +164,7 @@ def _create_subset_model_v1(
     return rtn
 
 
-def _create_subset_model_2(
+def _create_subset_model_v2(
     name: str,
     model: Type[BaseModel],
     field_names: List[str],
@@ -224,7 +224,7 @@ def _create_subset_model(
                 fn_description=fn_description,
             )
         else:
-            return _create_subset_model_2(
+            return _create_subset_model_v2(
                 name,
                 model,
                 field_names,
