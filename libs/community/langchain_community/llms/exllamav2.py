@@ -27,7 +27,6 @@ class ExLlamaV2(LLM):
     #TODO:
     - Add loras support
     - Add support for custom settings
-    - Add support for custom stop sequences
     """
 
     client: Any
@@ -78,7 +77,7 @@ class ExLlamaV2(LLM):
                 ExLlamaV2Tokenizer,
             )
             from exllamav2.generator import (
-                ExLlamaV2BaseGenerator,
+                ExLlamaV2DynamicGenerator,
                 ExLlamaV2StreamingGenerator,
             )
         except ImportError:
@@ -116,7 +115,7 @@ class ExLlamaV2(LLM):
         if values["streaming"]:
             generator = ExLlamaV2StreamingGenerator(model, exllama_cache, tokenizer)
         else:
-            generator = ExLlamaV2BaseGenerator(model, exllama_cache, tokenizer)
+            generator = ExLlamaV2DynamicGenerator(model, exllama_cache, tokenizer)
 
         # Configure the model and generator
         values["stop_sequences"] = [x.strip().lower() for x in values["stop_sequences"]]
@@ -153,6 +152,10 @@ class ExLlamaV2(LLM):
     ) -> str:
         generator = self.generator
 
+        if stop is None:
+            stop = []
+        stop_conditions = self.stop_sequences + stop
+
         if self.streaming:
             combined_text_output = ""
             for chunk in self._stream(
@@ -161,10 +164,11 @@ class ExLlamaV2(LLM):
                 combined_text_output += str(chunk)
             return combined_text_output
         else:
-            output = generator.generate_simple(
+            output = generator.generate(
                 prompt=prompt,
                 gen_settings=self.settings,
-                num_tokens=self.max_new_tokens,
+                max_new_tokens=self.max_new_tokens,
+                stop_conditions=stop_conditions
             )
             # subtract subtext from output
             output = output[len(prompt) :]
@@ -178,8 +182,13 @@ class ExLlamaV2(LLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         input_ids = self.tokenizer.encode(prompt)
+
+        if stop is None:
+            stop = []
+        stop_conditions = self.stop_sequences + stop
+
         self.generator.warmup()
-        self.generator.set_stop_conditions([])
+        self.generator.set_stop_conditions(stop_conditions)
         self.generator.begin_stream(input_ids, self.settings)
 
         generated_tokens = 0
