@@ -45,10 +45,6 @@ from typing import (
     get_type_hints,
 )
 
-from pydantic import (
-    validate_arguments,
-)
-from pydantic.fields import FieldInfo
 from typing_extensions import Annotated, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
@@ -92,7 +88,11 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_core.utils.pydantic import (
+    PYDANTIC_MAJOR_VERSION,
+    AnyBaseModel,
+    is_basemodel_subclass,
+)
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -105,14 +105,12 @@ def _is_annotated_type(typ: Type[Any]) -> bool:
     return get_origin(typ) is Annotated
 
 
-def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
+def _get_annotation_description(arg_type: Type) -> str | None:
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
-        arg_type = annotated_args[0]
-        if len(annotated_args) > 1:
-            for annotation in annotated_args[1:]:
-                if isinstance(annotation, str):
-                    return annotation
+        for annotation in annotated_args[1:]:
+            if isinstance(annotation, str):
+                return annotation
     return None
 
 
@@ -152,7 +150,9 @@ def _create_subset_model_2(
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
-    """Create a pydantic model with a subset of the mdoels fields."""
+    """Create a pydantic model with a subset of the model fields."""
+    from pydantic.fields import FieldInfo  # pydantic: ignore
+
     descriptions_ = descriptions or {}
     fields = {}
     for field_name in field_names:
@@ -170,12 +170,12 @@ def _create_subset_model_2(
 
 def _create_subset_model(
     name: str,
-    model: Type[BaseModel],
+    model: Type[AnyBaseModel],
     field_names: List[str],
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
+) -> Type[AnyBaseModel]:
     """Create subset model using the same pydantic version as the input model."""
     if PYDANTIC_MAJOR_VERSION == 1:
         return _create_subset_model_v1(
@@ -360,6 +360,11 @@ def create_schema_from_function(
         A pydantic model with the same arguments as the function.
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
+
+    from pydantic import (
+        validate_arguments,
+    )
+
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
     inferred_model = validated.model  # type: ignore
     filter_args = filter_args if filter_args is not None else FILTERED_ARGS
@@ -429,7 +434,7 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[Type[BaseModel]] = None
+    args_schema: Optional[Type[AnyBaseModel]] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     """Whether to return the tool's output directly. 
@@ -474,6 +479,16 @@ class ChildTool(BaseTool):
     ToolMessage. If "content_and_artifact" then the output is expected to be a 
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the tool."""
+        if "args_schema" in kwargs:
+            if not is_basemodel_subclass(kwargs["args_schema"]):
+                raise SchemaAnnotationError(
+                    f"args_schema must be a subclass of pydantic BaseModel. "
+                    f"Got: {kwargs['args_schema']}."
+                )
+        super().__init__(**kwargs)
 
     class Config(Serializable.Config):
         """Configuration for this pydantic object."""

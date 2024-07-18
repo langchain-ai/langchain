@@ -1420,75 +1420,43 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     }
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION == 2, reason="Only for pydantic v1")
-def test_args_schema_as_pydantic() -> None:
-    """Test args schema with pydantic v1 model."""
-    from pydantic import BaseModel
+def generate_models() -> List[Any]:
+    """Generate a list of base models depending on the pydantic version."""
+    from pydantic import BaseModel as BaseModelProper
 
-    class Foo(BaseModel):
+    class Foo(BaseModelProper):
         a: int
         b: str
 
-    class SomeTool(BaseTool):
-        name: str = "some_tool"
-        args_schema: Type[BaseModel] = Foo
-        description: str = "A Structured Tool"
+    return [Foo]
 
+
+def generate_backwards_compatible_v1() -> List[Any]:
+    """Generate a model with pydantic 2 from the v1 namespace."""
+    from pydantic.v1 import BaseModel as BaseModelV1
+
+    class Foo(BaseModelV1):
+        a: int
+        b: str
+
+    return [Foo]
+
+
+# This generates a list of models that can be used for testing that our APIs
+# behave well with either pydantic 1 proper,
+# pydantic v1 from pydantic 2,
+# or pydantic 2 proper.
+TEST_MODELS = generate_models() + generate_backwards_compatible_v1()
+
+
+@pytest.mark.parametrize("pydantic_model", TEST_MODELS)
+def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
+    class SomeTool(BaseTool):
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
 
     tool = SomeTool(
-        name="some_tool",
-        args_schema=Foo,
-        description="A Structured Tool",
+        name="some_tool", description="some description", args_schema=pydantic_model
     )
 
-
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION == 1, reason="Only for pydantic 2")
-def test_args_schema_as_pydantic_2_as_v1() -> None:
-    """Test args schema with pydantic v1 model from pydantic 2."""
-    from pydantic.v1 import BaseModel
-
-    class Foo(BaseModel):
-        a: int
-        b: str
-
-    class SomeTool(BaseTool):
-        name: str = "some_tool"
-        args_schema: Type[BaseModel] = Foo
-        description: str = "A Structured Tool"
-
-        def _run(self, *args: Any, **kwargs: Any) -> str:
-            return "foo"
-
-    tool = SomeTool(
-        name="some_tool",
-        args_schema=Foo,
-        description="A Structured Tool",
-    )
-    assert tool.tool_call_schema == {}
-
-
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION == 1, reason="Only for pydantic 2")
-def test_args_schema_as_pydantic_2_as_2() -> None:
-    """Check working with pydantic 2 proper."""
-    from pydantic import BaseModel
-
-    class Foo(BaseModel):
-        a: int
-        b: str
-
-    class SomeTool(BaseTool):
-        name: str = "some_tool"
-        args_schema: Type[BaseModel] = Foo
-        description: str = "A Structured Tool"
-
-        def _run(self, *args: Any, **kwargs: Any) -> str:
-            return "foo"
-
-    tool = SomeTool(
-        name="some_tool",
-        args_schema=Foo,
-        description="A Structured Tool",
-    )
-    assert tool.tool_call_schema == {}
+    assert tool.tool_call_schema

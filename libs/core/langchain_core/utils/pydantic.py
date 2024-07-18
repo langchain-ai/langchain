@@ -1,7 +1,8 @@
 """Utilities for tests."""
 
+import inspect
 from functools import wraps
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Dict, Type, Union
 
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -17,6 +18,82 @@ def get_pydantic_major_version() -> int:
 
 
 PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
+
+
+def is_basemodel_subclass(cls: Type) -> bool:
+    """Check if the given class is a subclass of Pydantic BaseModel.
+
+    Check if the given class is a subclass of any of the following:
+
+    * pydantic.BaseModel in Pydantic 1.x
+    * pydantic.BaseModel in Pydantic 2.x
+    * pydantic.v1.BaseModel in Pydantic 2.x
+    """
+    # Before we can use issubclass on the cls we need to check if it is a class
+    if not inspect.isclass(cls):
+        return False
+
+    if PYDANTIC_MAJOR_VERSION == 1:
+        from pydantic import BaseModel as BaseModelV1
+
+        if issubclass(cls, BaseModelV1):
+            return True
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic import BaseModel as BaseModelV2
+
+        if issubclass(cls, BaseModelV2):
+            return True
+        from pydantic.v1 import BaseModel as BaseModelV1
+
+        if issubclass(cls, BaseModelV1):
+            return True
+    else:
+        raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+    return False
+
+
+def _get_any_base_model_type_annotation(cls: Type) -> Any:
+    """Get the type annotation for any Pydantic BaseModel subclass."""
+    if PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic import BaseModel
+        from pydantic.v1 import BaseModel as BaseModelV1
+
+        return Union[BaseModel, BaseModelV1]
+    else:
+        from pydantic import BaseModel
+
+        return BaseModel
+
+
+AnyBaseModel = _get_any_base_model_type_annotation(BaseModel)
+
+
+def is_basemodel_instance(obj: Any) -> bool:
+    """Check if the given class is an instance of Pydantic BaseModel.
+
+    Check if the given class is an instance of any of the following:
+
+    * pydantic.BaseModel in Pydantic 1.x
+    * pydantic.BaseModel in Pydantic 2.x
+    * pydantic.v1.BaseModel in Pydantic 2.x
+    """
+    if PYDANTIC_MAJOR_VERSION == 1:
+        from pydantic import BaseModel as BaseModelV1
+
+        if isinstance(obj, BaseModelV1):
+            return True
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic import BaseModel as BaseModelV2
+
+        if isinstance(obj, BaseModelV2):
+            return True
+        from pydantic.v1 import BaseModel as BaseModelV1
+
+        if isinstance(obj, BaseModelV1):
+            return True
+    else:
+        raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+    return False
 
 
 # How to type hint this?
