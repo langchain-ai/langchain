@@ -17,7 +17,7 @@ def test_cloudflare_workersai_call() -> None:
         api_token="my_api_token",
         model="@cf/meta/llama-2-7b-chat-int8",
     )
-    output = llm("What is 2 + 2?")
+    output = llm.invoke("What is 2 + 2?")
 
     assert output == "4"
 

@@ -23,7 +23,7 @@ parsed_data = [
 ]
 parsed_data[1]
 
-embeddings = CohereEmbeddings()
+embeddings = CohereEmbeddings(model="embed-english-v3.0")
 
 docsearch = Chroma.from_texts(
     [x["title"] for x in parsed_data], embeddings, metadatas=parsed_data
@@ -44,6 +44,6 @@ PROMPT = PromptTemplate(
 )
 
 book_rec_chain = {
-    "input_documents": lambda x: docsearch.get_relevant_documents(x["message"]),
+    "input_documents": lambda x: docsearch.invoke(x["message"]),
     "message": lambda x: x["message"],
 } | load_qa_chain(chat, chain_type="stuff", prompt=PROMPT)

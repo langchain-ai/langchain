@@ -35,7 +35,7 @@ class GoogleLensAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["serp_api_key"] = convert_to_secret_str(
@@ -65,7 +65,10 @@ class GoogleLensAPIWrapper(BaseModel):
             return "Google Lens search failed"
 
         xs = ""
-        if len(responseValue["knowledge_graph"]) > 0:
+        if (
+            "knowledge_graph" in responseValue
+            and len(responseValue["knowledge_graph"]) > 0
+        ):
             subject = responseValue["knowledge_graph"][0]
             xs += f"Subject:{subject['title']}({subject['subtitle']})\n"
             xs += f"Link to subject:{subject['link']}\n\n"
@@ -74,10 +77,11 @@ class GoogleLensAPIWrapper(BaseModel):
             xs += f"Title: {image['title']}\n"
             xs += f"Source({image['source']}): {image['link']}\n"
             xs += f"Image: {image['thumbnail']}\n\n"
-        xs += (
-            "Reverse Image Search"
-            + f"Link: {responseValue['reverse_image_search']['link']}\n"
-        )
+        if "reverse_image_search" in responseValue:
+            xs += (
+                "Reverse Image Search"
+                + f"Link: {responseValue['reverse_image_search']['link']}\n"
+            )
         print(xs)  # noqa: T201
 
         docs = [xs]

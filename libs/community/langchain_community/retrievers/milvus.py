@@ -1,4 +1,5 @@
 """Milvus Retriever"""
+
 import warnings
 from typing import Any, Dict, List, Optional
 
@@ -59,7 +60,7 @@ class MilvusRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
-        return self.retriever.get_relevant_documents(
+        return self.retriever.invoke(
             query, run_manager=run_manager.get_child(), **kwargs
         )
 

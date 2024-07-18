@@ -16,9 +16,9 @@ from langchain_community.chat_models.yuan2 import (
 
 @pytest.mark.requires("openai")
 def test_yuan2_model_param() -> None:
-    chat = ChatYuan2(model="foo")
+    chat = ChatYuan2(model="foo")  # type: ignore[call-arg]
     assert chat.model_name == "foo"
-    chat = ChatYuan2(model_name="foo")
+    chat = ChatYuan2(model_name="foo")  # type: ignore[call-arg]
     assert chat.model_name == "foo"
 
 

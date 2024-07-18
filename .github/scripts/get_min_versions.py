@@ -9,17 +9,21 @@ MIN_VERSION_LIBS = [
     "langchain-community",
     "langchain",
     "langchain-text-splitters",
+    "SQLAlchemy",
 ]
 
 
 def get_min_version(version: str) -> str:
+    # base regex for x.x.x with cases for rc/post/etc
+    # valid strings: https://peps.python.org/pep-0440/#public-version-identifiers
+    vstring = r"\d+(?:\.\d+){0,2}(?:(?:a|b|rc|\.post|\.dev)\d+)?"
     # case ^x.x.x
-    _match = re.match(r"^\^(\d+(?:\.\d+){0,2})$", version)
+    _match = re.match(f"^\\^({vstring})$", version)
     if _match:
         return _match.group(1)
 
     # case >=x.x.x,<y.y.y
-    _match = re.match(r"^>=(\d+(?:\.\d+){0,2}),<(\d+(?:\.\d+){0,2})$", version)
+    _match = re.match(f"^>=({vstring}),<({vstring})$", version)
     if _match:
         _min = _match.group(1)
         _max = _match.group(2)
@@ -27,7 +31,7 @@ def get_min_version(version: str) -> str:
         return _min
 
     # case x.x.x
-    _match = re.match(r"^(\d+(?:\.\d+){0,2})$", version)
+    _match = re.match(f"^({vstring})$", version)
     if _match:
         return _match.group(1)
 
@@ -52,6 +56,9 @@ def get_min_version_from_toml(toml_path: str):
             # Get the version string
             version_string = dependencies[lib]
 
+            if isinstance(version_string, dict):
+                version_string = version_string["version"]
+
             # Use parse_version to get the minimum supported version from version_string
             min_version = get_min_version(version_string)
 
@@ -68,6 +75,4 @@ if __name__ == "__main__":
     # Call the function to get the minimum versions
     min_versions = get_min_version_from_toml(toml_file)
 
-    print(
-        " ".join([f"{lib}=={version}" for lib, version in min_versions.items()])
-    )  # noqa: T201
+    print(" ".join([f"{lib}=={version}" for lib, version in min_versions.items()]))

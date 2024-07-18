@@ -1,16 +1,17 @@
 ---
 sidebar_position: 5
 ---
+
 # Contribute Integrations
 
-To begin, make sure you have all the dependencies outlined in guide on [Contributing Code](./code).
+To begin, make sure you have all the dependencies outlined in guide on [Contributing Code](/docs/contributing/code/).
 
 There are a few different places you can contribute integrations for LangChain:
 
 - **Community**: For lighter-weight integrations that are primarily maintained by LangChain and the Open Source Community.
 - **Partner Packages**: For independent packages that are co-maintained by LangChain and a partner.
 
-For the most part, new integrations should be added to the Community package. Partner packages require more maintenance as separate packages, so please confirm with the LangChain team before creating a new partner package.
+For the most part, **new integrations should be added to the Community package**. Partner packages require more maintenance as separate packages, so please confirm with the LangChain team before creating a new partner package.
 
 In the following sections, we'll walk through how to contribute to each of these packages from a fake company, `Parrot Link AI`.
 
@@ -58,6 +59,10 @@ And add documentation to:
 - `docs/docs/integrations/chat/parrot_link.ipynb`
 
 ## Partner package in LangChain repo
+
+:::caution
+Before starting a **partner** package, please confirm your intent with the LangChain team. Partner packages require more maintenance as separate packages, so we will close PRs that add new partner packages without prior discussion. See the above section for how to add a community integration.
+:::
 
 Partner packages can be hosted in the `LangChain` monorepo or in an external repo.
 
@@ -133,7 +138,7 @@ By default, this will include stubs for a Chat Model, an LLM, and/or a Vector St
 
 Some basic tests are presented in the `tests/` directory. You should add more tests to cover your package's functionality.
 
-For information on running and implementing tests, see the [Testing guide](./testing).
+For information on running and implementing tests, see the [Testing guide](/docs/contributing/testing/).
 
 ### Write documentation
 
@@ -190,12 +195,9 @@ Maintainer steps (Contributors should **not** do these):
 
 ## Partner package in external repo
 
-If you are creating a partner package in an external repo, you should follow the same steps as above, 
-but you will need to set up your own CI/CD and package management.
+Partner packages in external repos must be coordinated between the LangChain team and
+the partner organization to ensure that they are maintained and updated.
 
-Name your package as `langchain-{partner}-{integration}`.
-
-Still, you have to create the `libs/partners/{partner}-{integration}` folder in the `LangChain` monorepo
-and add a `README.md` file with a link to the external repo. 
-See this [example](https://github.com/langchain-ai/langchain/tree/master/libs/partners/google-genai).
-This allows keeping track of all the partner packages in the `LangChain` documentation.
+If you're interested in creating a partner package in an external repo, please start
+with one in the LangChain repo, and then reach out to the LangChain team to discuss
+how to move it to an external repo.

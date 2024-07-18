@@ -1,4 +1,5 @@
 """Base interface for loading large language model APIs."""
+
 import json
 from pathlib import Path
 from typing import Any, Union
@@ -34,6 +35,7 @@ def load_llm_from_config(config: dict, **kwargs: Any) -> BaseLLM:
 
 
 def load_llm(file: Union[str, Path], **kwargs: Any) -> BaseLLM:
+    """Load LLM from a file."""
     # Convert file to Path object.
     if isinstance(file, str):
         file_path = Path(file)

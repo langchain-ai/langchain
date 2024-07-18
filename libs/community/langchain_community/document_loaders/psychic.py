@@ -20,7 +20,7 @@ class PsychicLoader(BaseLoader):
         """
 
         try:
-            from psychicapi import ConnectorId, Psychic  # noqa: F401
+            from psychicapi import ConnectorId, Psychic
         except ImportError:
             raise ImportError(
                 "`psychicapi` package not found, please run `pip install psychicapi`"

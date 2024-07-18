@@ -3,8 +3,8 @@
 from collections import deque
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.vectorstores import VectorStore
 
@@ -215,7 +215,7 @@ class BabyAGI(Chain, BaseModel):  # type: ignore[misc]
             execution_chain: Chain = TaskExecutionChain.from_llm(llm, verbose=verbose)
         else:
             execution_chain = task_execution_chain
-        return cls(
+        return cls(  # type: ignore[call-arg, call-arg, call-arg, call-arg]
             task_creation_chain=task_creation_chain,
             task_prioritization_chain=task_prioritization_chain,
             execution_chain=execution_chain,

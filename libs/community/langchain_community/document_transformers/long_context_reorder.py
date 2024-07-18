@@ -1,4 +1,5 @@
 """Reorder documents"""
+
 from typing import Any, List, Sequence
 
 from langchain_core.documents import BaseDocumentTransformer, Document
@@ -21,7 +22,9 @@ def _litm_reordering(documents: List[Document]) -> List[Document]:
 
 
 class LongContextReorder(BaseDocumentTransformer, BaseModel):
-    """Lost in the middle:
+    """Reorder long context.
+
+    Lost in the middle:
     Performance degrades when models must access relevant information
     in the middle of long contexts.
     See: https://arxiv.org/abs//2307.03172"""
@@ -40,4 +43,4 @@ class LongContextReorder(BaseDocumentTransformer, BaseModel):
     async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
-        raise NotImplementedError
+        return _litm_reordering(list(documents))

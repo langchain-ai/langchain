@@ -1,4 +1,6 @@
 """Test SingleStoreDB functionality."""
+
+import math
 import os
 import tempfile
 from typing import List
@@ -67,9 +69,74 @@ class RandomEmbeddings(Embeddings):
         return [np.random.rand(100).tolist() for _ in uris]
 
 
+class IncrementalEmbeddings(Embeddings):
+    """Fake embeddings with incremental vectors. For testing purposes."""
+
+    def __init__(self) -> None:
+        self.counter = 0
+
+    def set_counter(self, counter: int) -> None:
+        self.counter = counter
+
+    def embed_query(self, text: str) -> List[float]:
+        self.counter += 1
+        return [
+            math.cos(self.counter * math.pi / 10),
+            math.sin(self.counter * math.pi / 10),
+        ]
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.embed_query(text) for text in texts]
+
+
 @pytest.fixture
 def texts() -> List[str]:
     return ["foo", "bar", "baz"]
+
+
+@pytest.fixture
+def snow_rain_docs() -> List[Document]:
+    return [
+        Document(
+            page_content="""In the parched desert, a sudden rainstorm brought relief,
+            as the droplets danced upon the thirsty earth, rejuvenating the landscape
+            with the sweet scent of petrichor.""",
+            metadata={"count": "1", "category": "rain", "group": "a"},
+        ),
+        Document(
+            page_content="""Amidst the bustling cityscape, the rain fell relentlessly,
+            creating a symphony of pitter-patter on the pavement, while umbrellas
+            bloomed like colorful flowers in a sea of gray.""",
+            metadata={"count": "2", "category": "rain", "group": "a"},
+        ),
+        Document(
+            page_content="""High in the mountains, the rain transformed into a delicate
+            mist, enveloping the peaks in a mystical veil, where each droplet seemed to
+            whisper secrets to the ancient rocks below.""",
+            metadata={"count": "3", "category": "rain", "group": "b"},
+        ),
+        Document(
+            page_content="""Blanketing the countryside in a soft, pristine layer, the
+            snowfall painted a serene tableau, muffling the world in a tranquil hush
+            as delicate flakes settled upon the branches of trees like nature's own 
+            lacework.""",
+            metadata={"count": "1", "category": "snow", "group": "b"},
+        ),
+        Document(
+            page_content="""In the urban landscape, snow descended, transforming
+            bustling streets into a winter wonderland, where the laughter of
+            children echoed amidst the flurry of snowballs and the twinkle of
+            holiday lights.""",
+            metadata={"count": "2", "category": "snow", "group": "a"},
+        ),
+        Document(
+            page_content="""Atop the rugged peaks, snow fell with an unyielding
+            intensity, sculpting the landscape into a pristine alpine paradise,
+            where the frozen crystals shimmered under the moonlight, casting a
+            spell of enchantment over the wilderness below.""",
+            metadata={"count": "3", "category": "snow", "group": "a"},
+        ),
+    ]
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -85,7 +152,7 @@ def test_singlestoredb(texts: List[str]) -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == TEST_SINGLE_RESULT
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -102,7 +169,7 @@ def test_singlestoredb_new_vector(texts: List[str]) -> None:
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
     assert output == TEST_RESULT
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -120,7 +187,7 @@ def test_singlestoredb_euclidean_distance(texts: List[str]) -> None:
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
     assert output == TEST_RESULT
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -140,7 +207,7 @@ def test_singlestoredb_vector_index_1(texts: List[str]) -> None:
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
     assert output == TEST_RESULT
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -160,7 +227,7 @@ def test_singlestoredb_vector_index_2(texts: List[str]) -> None:
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=1)
     output[0].page_content == "foo"
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -180,7 +247,7 @@ def test_singlestoredb_vector_index_large() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output[0].page_content == "foo"
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -202,7 +269,7 @@ def test_singlestoredb_from_existing(texts: List[str]) -> None:
     )
     output = docsearch2.similarity_search("foo", k=1)
     assert output == TEST_SINGLE_RESULT
-    drop(table_name)
+    docsearch2.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -219,7 +286,7 @@ def test_singlestoredb_from_documents(texts: List[str]) -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == TEST_SINGLE_WITH_METADATA_RESULT
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -242,7 +309,7 @@ def test_singlestoredb_add_texts_to_existing(texts: List[str]) -> None:
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
     assert output == TEST_RESULT
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -262,7 +329,7 @@ def test_singlestoredb_filter_metadata(texts: List[str]) -> None:
     )
     output = docsearch.similarity_search("foo", k=1, filter={"index": 2})
     assert output == [Document(page_content="baz", metadata={"index": 2})]
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -285,7 +352,7 @@ def test_singlestoredb_filter_metadata_2(texts: List[str]) -> None:
     assert output == [
         Document(page_content="foo", metadata={"index": 0, "category": "budget"})
     ]
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -310,7 +377,7 @@ def test_singlestoredb_filter_metadata_3(texts: List[str]) -> None:
     assert output == [
         Document(page_content="bar", metadata={"index": 1, "category": "budget"})
     ]
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -331,7 +398,7 @@ def test_singlestoredb_filter_metadata_4(texts: List[str]) -> None:
     )
     output = docsearch.similarity_search("foo", k=1, filter={"category": "vacation"})
     assert output == []
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -370,7 +437,7 @@ def test_singlestoredb_filter_metadata_5(texts: List[str]) -> None:
             },
         )
     ]
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -401,7 +468,7 @@ def test_singlestoredb_filter_metadata_6(texts: List[str]) -> None:
             metadata={"index": 1, "category": "budget", "is_good": True},
         )
     ]
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -432,7 +499,7 @@ def test_singlestoredb_filter_metadata_7(texts: List[str]) -> None:
             metadata={"index": 2, "category": "budget", "score": 2.5},
         )
     ]
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -447,7 +514,7 @@ def test_singlestoredb_as_retriever(texts: List[str]) -> None:
         host=TEST_SINGLESTOREDB_URL,
     )
     retriever = docsearch.as_retriever(search_kwargs={"k": 2})
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == [
         Document(
             page_content="foo",
@@ -456,7 +523,7 @@ def test_singlestoredb_as_retriever(texts: List[str]) -> None:
             page_content="bar",
         ),
     ]
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -479,7 +546,7 @@ def test_singlestoredb_add_image(texts: List[str]) -> None:
     docsearch.add_images(temp_files)
     output = docsearch.similarity_search("foo", k=1)
     assert output[0].page_content in temp_files
-    drop(table_name)
+    docsearch.drop()
 
 
 @pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
@@ -504,4 +571,230 @@ def test_singestoredb_add_image2() -> None:
     docsearch.add_images(image_uris)
     output = docsearch.similarity_search("horse", k=1)
     assert "horse" in output[0].page_content
+    docsearch.drop()
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_text_only_search(snow_rain_docs: List[Document]) -> None:
+    table_name = "test_singlestoredb_text_only_search"
     drop(table_name)
+    docsearch = SingleStoreDB(
+        RandomEmbeddings(),
+        table_name=table_name,
+        use_full_text_search=True,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    docsearch.add_documents(snow_rain_docs)
+    output = docsearch.similarity_search(
+        "rainstorm in parched desert",
+        k=3,
+        filter={"count": "1"},
+        search_strategy=SingleStoreDB.SearchStrategy.TEXT_ONLY,
+    )
+    assert len(output) == 2
+    assert (
+        "In the parched desert, a sudden rainstorm brought relief,"
+        in output[0].page_content
+    )
+    assert (
+        "Blanketing the countryside in a soft, pristine layer" in output[1].page_content
+    )
+
+    output = docsearch.similarity_search(
+        "snowfall in countryside",
+        k=3,
+        search_strategy=SingleStoreDB.SearchStrategy.TEXT_ONLY,
+    )
+    assert len(output) == 3
+    assert (
+        "Blanketing the countryside in a soft, pristine layer,"
+        in output[0].page_content
+    )
+    docsearch.drop()
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_filter_by_text_search(snow_rain_docs: List[Document]) -> None:
+    table_name = "test_singlestoredb_filter_by_text_search"
+    drop(table_name)
+    embeddings = IncrementalEmbeddings()
+    docsearch = SingleStoreDB.from_documents(
+        snow_rain_docs,
+        embeddings,
+        table_name=table_name,
+        use_full_text_search=True,
+        use_vector_index=True,
+        vector_size=2,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    output = docsearch.similarity_search(
+        "rainstorm in parched desert",
+        k=1,
+        search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_TEXT,
+        filter_threshold=0,
+    )
+    assert len(output) == 1
+    assert (
+        "In the parched desert, a sudden rainstorm brought relief"
+        in output[0].page_content
+    )
+    drop(table_name)
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_filter_by_vector_search1(snow_rain_docs: List[Document]) -> None:
+    table_name = "test_singlestoredb_filter_by_vector_search1"
+    drop(table_name)
+    embeddings = IncrementalEmbeddings()
+    docsearch = SingleStoreDB.from_documents(
+        snow_rain_docs,
+        embeddings,
+        table_name=table_name,
+        use_full_text_search=True,
+        use_vector_index=True,
+        vector_size=2,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    output = docsearch.similarity_search(
+        "rainstorm in parched desert, rain",
+        k=1,
+        filter={"category": "rain"},
+        search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR,
+        filter_threshold=-0.2,
+    )
+    assert len(output) == 1
+    assert (
+        "High in the mountains, the rain transformed into a delicate"
+        in output[0].page_content
+    )
+    docsearch.drop()
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_filter_by_vector_search2(snow_rain_docs: List[Document]) -> None:
+    table_name = "test_singlestoredb_filter_by_vector_search2"
+    drop(table_name)
+    embeddings = IncrementalEmbeddings()
+    docsearch = SingleStoreDB.from_documents(
+        snow_rain_docs,
+        embeddings,
+        distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
+        table_name=table_name,
+        use_full_text_search=True,
+        use_vector_index=True,
+        vector_size=2,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    output = docsearch.similarity_search(
+        "rainstorm in parched desert, rain",
+        k=1,
+        filter={"group": "a"},
+        search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR,
+        filter_threshold=1.5,
+    )
+    assert len(output) == 1
+    assert (
+        "Amidst the bustling cityscape, the rain fell relentlessly"
+        in output[0].page_content
+    )
+    docsearch.drop()
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_weighted_sum_search_unsupported_strategy(
+    snow_rain_docs: List[Document],
+) -> None:
+    table_name = "test_singlestoredb_waighted_sum_search_unsupported_strategy"
+    drop(table_name)
+    embeddings = IncrementalEmbeddings()
+    docsearch = SingleStoreDB.from_documents(
+        snow_rain_docs,
+        embeddings,
+        table_name=table_name,
+        use_full_text_search=True,
+        use_vector_index=True,
+        vector_size=2,
+        host=TEST_SINGLESTOREDB_URL,
+        distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
+    )
+    try:
+        docsearch.similarity_search(
+            "rainstorm in parched desert, rain",
+            k=1,
+            search_strategy=SingleStoreDB.SearchStrategy.WEIGHTED_SUM,
+        )
+    except ValueError as e:
+        assert "Search strategy WEIGHTED_SUM is not" in str(e)
+    docsearch.drop()
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_singlestoredb_weighted_sum_search(snow_rain_docs: List[Document]) -> None:
+    table_name = "test_singlestoredb_waighted_sum_search"
+    drop(table_name)
+    embeddings = IncrementalEmbeddings()
+    docsearch = SingleStoreDB.from_documents(
+        snow_rain_docs,
+        embeddings,
+        table_name=table_name,
+        use_full_text_search=True,
+        use_vector_index=True,
+        vector_size=2,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    output = docsearch.similarity_search(
+        "rainstorm in parched desert, rain",
+        k=1,
+        search_strategy=SingleStoreDB.SearchStrategy.WEIGHTED_SUM,
+        filter={"category": "snow"},
+    )
+    assert len(output) == 1
+    assert (
+        "Atop the rugged peaks, snow fell with an unyielding" in output[0].page_content
+    )
+    docsearch.drop()
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_insert(snow_rain_docs: List[Document]) -> None:
+    table_name = "test_singlestoredb_insert"
+    drop(table_name)
+    embeddings = IncrementalEmbeddings()
+    docsearch = SingleStoreDB(
+        embeddings,
+        table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    ids = docsearch.add_documents(snow_rain_docs, return_ids=True)
+    assert len(ids) == len(snow_rain_docs)
+    for i, id1 in enumerate(ids):
+        for j, id2 in enumerate(ids):
+            if i != j:
+                assert id1 != id2
+    docsearch.drop()
+
+
+@pytest.mark.skipif(not singlestoredb_installed, reason="singlestoredb not installed")
+def test_delete(snow_rain_docs: List[Document]) -> None:
+    table_name = "test_singlestoredb_delete"
+    drop(table_name)
+    embeddings = IncrementalEmbeddings()
+    docsearch = SingleStoreDB(
+        embeddings,
+        table_name=table_name,
+        host=TEST_SINGLESTOREDB_URL,
+    )
+    ids = docsearch.add_documents(snow_rain_docs, return_ids=True)
+    output = docsearch.similarity_search(
+        "rainstorm in parched desert",
+        k=3,
+        filter={"count": "1"},
+    )
+    assert len(output) == 2
+    docsearch.delete(ids)
+    output = docsearch.similarity_search(
+        "rainstorm in parched desert",
+        k=3,
+    )
+    assert len(output) == 0
+    docsearch.drop()

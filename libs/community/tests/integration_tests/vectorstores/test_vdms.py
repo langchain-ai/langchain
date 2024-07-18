@@ -1,4 +1,5 @@
 """Test VDMS functionality."""
+
 from __future__ import annotations
 
 import logging
@@ -37,7 +38,7 @@ def vdms_client() -> vdms.vdms:
 @pytest.mark.requires("vdms")
 def test_init_from_client(vdms_client: vdms.vdms) -> None:
     embedding_function = FakeEmbeddings()
-    _ = VDMS(
+    _ = VDMS(  # type: ignore[call-arg]
         embedding_function=embedding_function,
         client=vdms_client,
     )
@@ -331,7 +332,7 @@ def test_with_relevance_score(vdms_client: vdms.vdms) -> None:
 def test_add_documents_no_metadata(vdms_client: vdms.vdms) -> None:
     collection_name = "test_add_documents_no_metadata"
     embedding_function = FakeEmbeddings()
-    db = VDMS(
+    db = VDMS(  # type: ignore[call-arg]
         collection_name=collection_name,
         embedding_function=embedding_function,
         client=vdms_client,
@@ -343,7 +344,7 @@ def test_add_documents_no_metadata(vdms_client: vdms.vdms) -> None:
 def test_add_documents_mixed_metadata(vdms_client: vdms.vdms) -> None:
     collection_name = "test_add_documents_mixed_metadata"
     embedding_function = FakeEmbeddings()
-    db = VDMS(
+    db = VDMS(  # type: ignore[call-arg]
         collection_name=collection_name,
         embedding_function=embedding_function,
         client=vdms_client,

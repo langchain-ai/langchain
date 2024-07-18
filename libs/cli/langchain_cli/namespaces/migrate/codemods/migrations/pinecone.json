@@ -1,0 +1,10 @@
+[
+  [
+    "langchain_community.vectorstores.pinecone.Pinecone",
+    "langchain_pinecone.Pinecone"
+  ],
+  [
+    "langchain_community.vectorstores.Pinecone",
+    "langchain_pinecone.Pinecone"
+  ]
+]

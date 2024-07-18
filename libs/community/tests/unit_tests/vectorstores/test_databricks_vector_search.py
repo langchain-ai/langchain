@@ -167,6 +167,12 @@ EXAMPLE_SEARCH_RESPONSE_WITH_EMBEDDING = {
     "next_page_token": "",
 }
 
+ALL_QUERY_TYPES = [
+    None,
+    "ANN",
+    "HYBRID",
+]
+
 
 def mock_index(index_details: dict) -> MagicMock:
     from databricks.vector_search.client import VectorSearchIndex
@@ -219,7 +225,7 @@ def test_init_direct_access_index() -> None:
 @pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_fail_no_index() -> None:
     with pytest.raises(TypeError):
-        DatabricksVectorSearch()
+        DatabricksVectorSearch()  # type: ignore[call-arg]
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
@@ -420,7 +426,7 @@ def test_add_texts_with_metadata() -> None:
                 DEFAULT_PRIMARY_KEY: id_,
                 DEFAULT_TEXT_COLUMN: text,
                 DEFAULT_VECTOR_COLUMN: vector,
-                **metadata,
+                **metadata,  # type: ignore[arg-type]
             }
             for text, vector, id_, metadata in zip(
                 fake_texts, vectors, added_ids, metadatas
@@ -475,8 +481,10 @@ def test_delete_fail_no_ids() -> None:
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
-@pytest.mark.parametrize("index_details", ALL_INDEXES)
-def test_similarity_search(index_details: dict) -> None:
+@pytest.mark.parametrize(
+    "index_details, query_type", itertools.product(ALL_INDEXES, ALL_QUERY_TYPES)
+)
+def test_similarity_search(index_details: dict, query_type: Optional[str]) -> None:
     index = mock_index(index_details)
     index.similarity_search.return_value = EXAMPLE_SEARCH_RESPONSE
     vectorsearch = default_databricks_vector_search(index)
@@ -484,7 +492,9 @@ def test_similarity_search(index_details: dict) -> None:
     filters = {"some filter": True}
     limit = 7
 
-    search_result = vectorsearch.similarity_search(query, k=limit, filters=filters)
+    search_result = vectorsearch.similarity_search(
+        query, k=limit, filters=filters, query_type=query_type
+    )
     if index_details == DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS:
         index.similarity_search.assert_called_once_with(
             columns=[DEFAULT_PRIMARY_KEY, DEFAULT_TEXT_COLUMN],
@@ -492,6 +502,7 @@ def test_similarity_search(index_details: dict) -> None:
             query_vector=None,
             filters=filters,
             num_results=limit,
+            query_type=query_type,
         )
     else:
         index.similarity_search.assert_called_once_with(
@@ -500,6 +511,7 @@ def test_similarity_search(index_details: dict) -> None:
             query_vector=DEFAULT_EMBEDDING_MODEL.embed_query(query),
             filters=filters,
             num_results=limit,
+            query_type=query_type,
         )
     assert len(search_result) == len(fake_texts)
     assert sorted([d.page_content for d in search_result]) == sorted(fake_texts)
@@ -567,7 +579,7 @@ def test_mmr_parameters(index_details: dict) -> None:
                 "filters": filters,
             },
         )
-        search_result = retriever.get_relevant_documents(query)
+        search_result = retriever.invoke(query)
 
     mock_mmr.assert_called_once()
     assert mock_mmr.call_args[1]["lambda_mult"] == lambda_mult
@@ -593,7 +605,7 @@ def test_similarity_score_threshold(index_details: dict, threshold: float) -> No
         search_type="similarity_score_threshold",
         search_kwargs={"k": limit, "score_threshold": threshold},
     )
-    search_result = retriever.get_relevant_documents(query)
+    search_result = retriever.invoke(query)
     if uniform_response_score >= threshold:
         assert len(search_result) == len(fake_texts)
     else:
@@ -620,6 +632,7 @@ def test_similarity_search_by_vector(index_details: dict) -> None:
         query_vector=query_embedding,
         filters=filters,
         num_results=limit,
+        query_type=None,
     )
     assert len(search_result) == len(fake_texts)
     assert sorted([d.page_content for d in search_result]) == sorted(fake_texts)

@@ -1,10 +1,17 @@
 """Util that calls Google Search."""
+
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
+@deprecated(
+    since="0.0.33",
+    removal="0.3.0",
+    alternative_import="langchain_google_community.GoogleSearchAPIWrapper",
+)
 class GoogleSearchAPIWrapper(BaseModel):
     """Wrapper for Google Search API.
 
@@ -62,7 +69,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         res = cse.list(q=search_term, cx=self.google_cse_id, **kwargs).execute()
         return res.get("items", [])
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         google_api_key = get_from_dict_or_env(

@@ -37,6 +37,6 @@ class TestSVMRetriever:
             documents=input_docs, embeddings=FakeEmbeddings(size=100)
         )
         query = "Have anything?"
-        output_docs = svm_retriever.get_relevant_documents(query=query)
+        output_docs = svm_retriever.invoke(query)
         for doc in output_docs:
             assert "foo" in doc.metadata

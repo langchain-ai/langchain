@@ -20,7 +20,7 @@ def test_chat_wasm_service() -> None:
     messages = [system_message, user_message]
 
     # chat with wasm-chat service
-    response = chat(messages)
+    response = chat.invoke(messages)
 
     # check response
     assert isinstance(response, AIMessage)

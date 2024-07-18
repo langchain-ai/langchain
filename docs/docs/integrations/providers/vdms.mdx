@@ -41,7 +41,7 @@ docs = text_splitter.split_documents(documents)
 
 from langchain_community.vectorstores import VDMS
 from langchain_community.vectorstores.vdms import VDMS_Client
-from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 client = VDMS_Client("localhost", 55555)
 vectorstore = VDMS.from_documents(

@@ -1,5 +1,6 @@
 # flake8: noqa
 """Global values and configuration that apply to all of LangChain."""
+
 import warnings
 from typing import TYPE_CHECKING, Optional
 
@@ -17,7 +18,11 @@ _llm_cache: Optional["BaseCache"] = None
 
 
 def set_verbose(value: bool) -> None:
-    """Set a new value for the `verbose` global setting."""
+    """Set a new value for the `verbose` global setting.
+
+    Args:
+        value: The new value for the `verbose` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -45,7 +50,11 @@ def set_verbose(value: bool) -> None:
 
 
 def get_verbose() -> bool:
-    """Get the value of the `verbose` global setting."""
+    """Get the value of the `verbose` global setting.
+
+    Returns:
+        The value of the `verbose` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -78,7 +87,11 @@ def get_verbose() -> bool:
 
 
 def set_debug(value: bool) -> None:
-    """Set a new value for the `debug` global setting."""
+    """Set a new value for the `debug` global setting.
+
+    Args:
+        value: The new value for the `debug` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -104,7 +117,11 @@ def set_debug(value: bool) -> None:
 
 
 def get_debug() -> bool:
-    """Get the value of the `debug` global setting."""
+    """Get the value of the `debug` global setting.
+
+    Returns:
+        The value of the `debug` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -135,7 +152,11 @@ def get_debug() -> bool:
 
 
 def set_llm_cache(value: Optional["BaseCache"]) -> None:
-    """Set a new LLM cache, overwriting the previous value, if any."""
+    """Set a new LLM cache, overwriting the previous value, if any.
+
+    Args:
+        value: The new LLM cache to use. If `None`, the LLM cache is disabled.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -163,7 +184,11 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
 
 
 def get_llm_cache() -> "BaseCache":
-    """Get the value of the `llm_cache` global setting."""
+    """Get the value of the `llm_cache` global setting.
+
+    Returns:
+        The value of the `llm_cache` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 

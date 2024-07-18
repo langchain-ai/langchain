@@ -93,3 +93,9 @@ def test_yaml_output_parser_fail() -> None:
         assert "Failed to parse TestModel from completion" in str(e)
     else:
         assert False, "Expected OutputParserException"
+
+
+def test_yaml_output_parser_output_type() -> None:
+    """Test YamlOutputParser OutputType."""
+    yaml_parser = YamlOutputParser(pydantic_object=TestModel)
+    assert yaml_parser.OutputType is TestModel

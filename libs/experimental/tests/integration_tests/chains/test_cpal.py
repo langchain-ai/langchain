@@ -7,8 +7,8 @@ from unittest import mock
 
 import pytest
 from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts.prompt import PromptTemplate
 from langchain_community.llms import OpenAI
+from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain_experimental import pydantic_v1 as pydantic
 from langchain_experimental.cpal.base import (
@@ -81,7 +81,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
                 return prompt
 
         narrative = LLMMockData(
-            **{
+            **{  # type: ignore[arg-type, arg-type]
                 "question": (
                     "jan has three times the number of pets as marcia. "
                     "marcia has two more pets than cindy."
@@ -100,7 +100,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         )
 
         causal_model = LLMMockData(
-            **{
+            **{  # type: ignore[arg-type, arg-type]
                 "question": (
                     "jan has three times the number of pets as marcia. "
                     "marcia has two more pets than cindy."
@@ -137,7 +137,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         )
 
         intervention = LLMMockData(
-            **{
+            **{  # type: ignore[arg-type, arg-type]
                 "question": ("if cindy has ten pets"),
                 "completion": (
                     "{\n"
@@ -152,7 +152,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         )
 
         query = LLMMockData(
-            **{
+            **{  # type: ignore[arg-type, arg-type]
                 "question": ("how many pets does jan have? "),
                 "completion": (
                     "{\n"
@@ -261,7 +261,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
         expected_output = {
             "chain_answer": None,
             "chain_data": QueryModel(
-                narrative_input="how many pets does jan have? ",
+                question="how many pets does jan have? ",
                 llm_error_msg="",
                 expression="SELECT name, value FROM df WHERE name = 'jan'",
             ),

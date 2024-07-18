@@ -6,6 +6,7 @@ A test key can be found at https://api.together.xyz/settings/api-keys
 
 You'll then need to set TOGETHER_API_KEY environment variable to your api key.
 """
+
 import pytest as pytest
 
 from langchain_community.llms import Together
@@ -18,7 +19,7 @@ def test_together_call() -> None:
         temperature=0.2,
         max_tokens=250,
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "together"
     assert isinstance(output, str)

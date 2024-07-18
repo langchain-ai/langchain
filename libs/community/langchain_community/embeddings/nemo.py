@@ -6,8 +6,10 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import pre_init
 
 
 def is_endpoint_live(url: str, headers: Optional[dict], payload: Any) -> bool:
@@ -41,12 +43,23 @@ def is_endpoint_live(url: str, headers: Optional[dict], payload: Any) -> bool:
         raise Exception(f"Error querying the endpoint: {e}")
 
 
+@deprecated(
+    since="0.0.37",
+    removal="0.2.0",
+    message=(
+        "Directly instantiating a NeMoEmbeddings from langchain-community is "
+        "deprecated. Please use langchain-nvidia-ai-endpoints NVIDIAEmbeddings "
+        "interface."
+    ),
+)
 class NeMoEmbeddings(BaseModel, Embeddings):
+    """NeMo embedding models."""
+
     batch_size: int = 16
     model: str = "NV-Embed-QA-003"
     api_endpoint_url: str = "http://localhost:8088/v1/embeddings"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the end point is alive using the values that are provided."""
 

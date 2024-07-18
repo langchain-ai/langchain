@@ -1,4 +1,5 @@
 """Chain that takes in an input and produces an action and action input."""
+
 from __future__ import annotations
 
 import asyncio
@@ -76,7 +77,7 @@ class BaseSingleActionAgent(BaseModel):
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -91,11 +92,11 @@ class BaseSingleActionAgent(BaseModel):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """Async given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -117,7 +118,20 @@ class BaseSingleActionAgent(BaseModel):
         intermediate_steps: List[Tuple[AgentAction, str]],
         **kwargs: Any,
     ) -> AgentFinish:
-        """Return response when agent has been stopped due to max iterations."""
+        """Return response when agent has been stopped due to max iterations.
+
+        Args:
+            early_stopping_method: Method to use for early stopping.
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations.
+            **kwargs: User inputs.
+
+        Returns:
+            AgentFinish: Agent finish object.
+
+        Raises:
+            ValueError: If `early_stopping_method` is not supported.
+        """
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
@@ -136,15 +150,30 @@ class BaseSingleActionAgent(BaseModel):
         callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
+        """Construct an agent from an LLM and tools.
+
+        Args:
+            llm: Language model to use.
+            tools: Tools to use.
+            callback_manager: Callback manager to use.
+            **kwargs: Additional arguments.
+
+        Returns:
+            BaseSingleActionAgent: Agent object.
+        """
         raise NotImplementedError
 
     @property
     def _agent_type(self) -> str:
-        """Return Identifier of agent type."""
+        """Return Identifier of an agent type."""
         raise NotImplementedError
 
     def dict(self, **kwargs: Any) -> Dict:
-        """Return dictionary representation of agent."""
+        """Return dictionary representation of agent.
+
+        Returns:
+            Dict: Dictionary representation of agent.
+        """
         _dict = super().dict()
         try:
             _type = self._agent_type
@@ -192,6 +221,7 @@ class BaseSingleActionAgent(BaseModel):
             raise ValueError(f"{save_path} must be json or yaml")
 
     def tool_run_logging_kwargs(self) -> Dict:
+        """Return logging kwargs for tool run."""
         return {}
 
 
@@ -204,6 +234,11 @@ class BaseMultiActionAgent(BaseModel):
         return ["output"]
 
     def get_allowed_tools(self) -> Optional[List[str]]:
+        """Get allowed tools.
+
+        Returns:
+            Optional[List[str]]: Allowed tools.
+        """
         return None
 
     @abstractmethod
@@ -232,7 +267,7 @@ class BaseMultiActionAgent(BaseModel):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[List[AgentAction], AgentFinish]:
-        """Given input, decided what to do.
+        """Async given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
@@ -258,7 +293,20 @@ class BaseMultiActionAgent(BaseModel):
         intermediate_steps: List[Tuple[AgentAction, str]],
         **kwargs: Any,
     ) -> AgentFinish:
-        """Return response when agent has been stopped due to max iterations."""
+        """Return response when agent has been stopped due to max iterations.
+
+        Args:
+            early_stopping_method: Method to use for early stopping.
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations.
+            **kwargs: User inputs.
+
+        Returns:
+            AgentFinish: Agent finish object.
+
+        Raises:
+            ValueError: If `early_stopping_method` is not supported.
+        """
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish({"output": "Agent stopped due to max iterations."}, "")
@@ -269,7 +317,7 @@ class BaseMultiActionAgent(BaseModel):
 
     @property
     def _agent_type(self) -> str:
-        """Return Identifier of agent type."""
+        """Return Identifier of an agent type."""
         raise NotImplementedError
 
     def dict(self, **kwargs: Any) -> Dict:
@@ -286,6 +334,10 @@ class BaseMultiActionAgent(BaseModel):
 
         Args:
             file_path: Path to file to save the agent to.
+
+        Raises:
+            NotImplementedError: If agent does not support saving.
+            ValueError: If file_path is not json or yaml.
 
         Example:
         .. code-block:: python
@@ -317,6 +369,8 @@ class BaseMultiActionAgent(BaseModel):
             raise ValueError(f"{save_path} must be json or yaml")
 
     def tool_run_logging_kwargs(self) -> Dict:
+        """Return logging kwargs for tool run."""
+
         return {}
 
 
@@ -331,26 +385,37 @@ class AgentOutputParser(BaseOutputParser[Union[AgentAction, AgentFinish]]):
 class MultiActionAgentOutputParser(
     BaseOutputParser[Union[List[AgentAction], AgentFinish]]
 ):
-    """Base class for parsing agent output into agent actions/finish."""
+    """Base class for parsing agent output into agent actions/finish.
+
+    This is used for agents that can return multiple actions.
+    """
 
     @abstractmethod
     def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
-        """Parse text into agent actions/finish."""
+        """Parse text into agent actions/finish.
+
+        Args:
+            text: Text to parse.
+
+        Returns:
+            Union[List[AgentAction], AgentFinish]:
+                List of agent actions or agent finish.
+        """
 
 
 class RunnableAgent(BaseSingleActionAgent):
-    """Agent powered by runnables."""
+    """Agent powered by Runnables."""
 
     runnable: Runnable[dict, Union[AgentAction, AgentFinish]]
     """Runnable to call to get agent action."""
     input_keys_arg: List[str] = []
     return_keys_arg: List[str] = []
     stream_runnable: bool = True
-    """Whether to stream from the runnable or not. 
+    """Whether to stream from the runnable or not.
 
-    If True then underlying LLM is invoked in a streaming fashion to make it possible 
-        to get access to the individual LLM tokens when using stream_log with the Agent 
-        Executor. If False then LLM is invoked in a non-streaming fashion and 
+    If True then underlying LLM is invoked in a streaming fashion to make it possible
+        to get access to the individual LLM tokens when using stream_log with the Agent
+        Executor. If False then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -366,6 +431,7 @@ class RunnableAgent(BaseSingleActionAgent):
 
     @property
     def input_keys(self) -> List[str]:
+        """Return the input keys."""
         return self.input_keys_arg
 
     def plan(
@@ -413,13 +479,13 @@ class RunnableAgent(BaseSingleActionAgent):
         AgentAction,
         AgentFinish,
     ]:
-        """Based on past history and current inputs, decide what to do.
+        """Async based on past history and current inputs, decide what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
-            **kwargs: User inputs
+            **kwargs: User inputs.
 
         Returns:
             Action specifying what tool to use.
@@ -448,18 +514,18 @@ class RunnableAgent(BaseSingleActionAgent):
 
 
 class RunnableMultiActionAgent(BaseMultiActionAgent):
-    """Agent powered by runnables."""
+    """Agent powered by Runnables."""
 
     runnable: Runnable[dict, Union[List[AgentAction], AgentFinish]]
     """Runnable to call to get agent actions."""
     input_keys_arg: List[str] = []
     return_keys_arg: List[str] = []
     stream_runnable: bool = True
-    """Whether to stream from the runnable or not. 
-    
-    If True then underlying LLM is invoked in a streaming fashion to make it possible 
-        to get access to the individual LLM tokens when using stream_log with the Agent 
-        Executor. If False then LLM is invoked in a non-streaming fashion and 
+    """Whether to stream from the runnable or not.
+
+    If True then underlying LLM is invoked in a streaming fashion to make it possible
+        to get access to the individual LLM tokens when using stream_log with the Agent
+        Executor. If False then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -530,11 +596,11 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         List[AgentAction],
         AgentFinish,
     ]:
-        """Based on past history and current inputs, decide what to do.
+        """Async based on past history and current inputs, decide what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -571,7 +637,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.2.0",
+    removal="0.3.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
@@ -629,11 +695,11 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """Async given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -649,6 +715,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         return self.output_parser.parse(output)
 
     def tool_run_logging_kwargs(self) -> Dict:
+        """Return logging kwargs for tool run."""
         return {
             "llm_prefix": "",
             "observation_prefix": "" if len(self.stop) == 0 else self.stop[0],
@@ -661,19 +728,22 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.2.0",
+    removal="0.3.0",
 )
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
 
-    This is driven by an LLMChain. The prompt in the LLMChain MUST include
+    This is driven by a LLMChain. The prompt in the LLMChain MUST include
     a variable called "agent_scratchpad" where the agent can put its
     intermediary work.
     """
 
     llm_chain: LLMChain
+    """LLMChain to use for agent."""
     output_parser: AgentOutputParser
+    """Output parser to use for agent."""
     allowed_tools: Optional[List[str]] = None
+    """Allowed tools for the agent. If None, all tools are allowed."""
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of agent."""
@@ -682,14 +752,23 @@ class Agent(BaseSingleActionAgent):
         return _dict
 
     def get_allowed_tools(self) -> Optional[List[str]]:
+        """Get allowed tools."""
         return self.allowed_tools
 
     @property
     def return_values(self) -> List[str]:
+        """Return values of the agent."""
         return ["output"]
 
     def _fix_text(self, text: str) -> str:
-        """Fix the text."""
+        """Fix the text.
+
+        Args:
+            text: Text to fix.
+
+        Returns:
+            str: Fixed text.
+        """
         raise ValueError("fix_text not implemented for this agent.")
 
     @property
@@ -719,7 +798,7 @@ class Agent(BaseSingleActionAgent):
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -736,11 +815,11 @@ class Agent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[AgentAction, AgentFinish]:
-        """Given input, decided what to do.
+        """Async given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
             callbacks: Callbacks to run.
             **kwargs: User inputs.
 
@@ -755,7 +834,16 @@ class Agent(BaseSingleActionAgent):
     def get_full_inputs(
         self, intermediate_steps: List[Tuple[AgentAction, str]], **kwargs: Any
     ) -> Dict[str, Any]:
-        """Create the full inputs for the LLMChain from intermediate steps."""
+        """Create the full inputs for the LLMChain from intermediate steps.
+
+        Args:
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations.
+            **kwargs: User inputs.
+
+        Returns:
+            Dict[str, Any]: Full inputs for the LLMChain.
+        """
         thoughts = self._construct_scratchpad(intermediate_steps)
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
         full_inputs = {**kwargs, **new_inputs}
@@ -769,9 +857,20 @@ class Agent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_prompt(cls, values: Dict) -> Dict:
-        """Validate that prompt matches format."""
+        """Validate that prompt matches format.
+
+        Args:
+            values: Values to validate.
+
+        Returns:
+            Dict: Validated values.
+
+        Raises:
+            ValueError: If `agent_scratchpad` is not in prompt.input_variables
+             and prompt is not a FewShotPromptTemplate or a PromptTemplate.
+        """
         prompt = values["llm_chain"].prompt
         if "agent_scratchpad" not in prompt.input_variables:
             logger.warning(
@@ -800,11 +899,23 @@ class Agent(BaseSingleActionAgent):
     @classmethod
     @abstractmethod
     def create_prompt(cls, tools: Sequence[BaseTool]) -> BasePromptTemplate:
-        """Create a prompt for this class."""
+        """Create a prompt for this class.
+
+        Args:
+            tools: Tools to use.
+
+        Returns:
+            BasePromptTemplate: Prompt template.
+        """
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
-        """Validate that appropriate tools are passed in."""
+        """Validate that appropriate tools are passed in.
+
+        Args:
+            tools: Tools to use.
+        """
+
         pass
 
     @classmethod
@@ -821,7 +932,18 @@ class Agent(BaseSingleActionAgent):
         output_parser: Optional[AgentOutputParser] = None,
         **kwargs: Any,
     ) -> Agent:
-        """Construct an agent from an LLM and tools."""
+        """Construct an agent from an LLM and tools.
+
+        Args:
+            llm: Language model to use.
+            tools: Tools to use.
+            callback_manager: Callback manager to use.
+            output_parser: Output parser to use.
+            **kwargs: Additional arguments.
+
+        Returns:
+            Agent: Agent object.
+        """
         cls._validate_tools(tools)
         llm_chain = LLMChain(
             llm=llm,
@@ -843,7 +965,20 @@ class Agent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         **kwargs: Any,
     ) -> AgentFinish:
-        """Return response when agent has been stopped due to max iterations."""
+        """Return response when agent has been stopped due to max iterations.
+
+        Args:
+            early_stopping_method: Method to use for early stopping.
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations.
+            **kwargs: User inputs.
+
+        Returns:
+            AgentFinish: Agent finish object.
+
+        Raises:
+            ValueError: If `early_stopping_method` is not in ['force', 'generate'].
+        """
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
@@ -880,6 +1015,7 @@ class Agent(BaseSingleActionAgent):
             )
 
     def tool_run_logging_kwargs(self) -> Dict:
+        """Return logging kwargs for tool run."""
         return {
             "llm_prefix": self.llm_prefix,
             "observation_prefix": self.observation_prefix,
@@ -926,7 +1062,7 @@ class AgentExecutor(Chain):
     max_iterations: Optional[int] = 15
     """The maximum number of steps to take before ending the execution
     loop.
-    
+
     Setting to 'None' could lead to an infinite loop."""
     max_execution_time: Optional[float] = None
     """The maximum amount of wall clock time to spend in the execution
@@ -938,13 +1074,13 @@ class AgentExecutor(Chain):
 
     `"force"` returns a string saying that it stopped because it met a
         time or iteration limit.
-    
+
     `"generate"` calls the agent's LLM Chain one final time to generate
         a final answer based on the previous steps.
     """
-    handle_parsing_errors: Union[
-        bool, str, Callable[[OutputParserException], str]
-    ] = False
+    handle_parsing_errors: Union[bool, str, Callable[[OutputParserException], str]] = (
+        False
+    )
     """How to handle errors raised by the agent's output parser.
     Defaults to `False`, which raises the error.
     If `true`, the error will be sent back to the LLM as an observation.
@@ -956,6 +1092,9 @@ class AgentExecutor(Chain):
     trim_intermediate_steps: Union[
         int, Callable[[List[Tuple[AgentAction, str]]], List[Tuple[AgentAction, str]]]
     ] = -1
+    """How to trim the intermediate steps before returning them.
+    Defaults to -1, which means no trimming.
+    """
 
     @classmethod
     def from_agent_and_tools(
@@ -965,7 +1104,17 @@ class AgentExecutor(Chain):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> AgentExecutor:
-        """Create from agent and tools."""
+        """Create from agent and tools.
+
+        Args:
+            agent: Agent to use.
+            tools: Tools to use.
+            callbacks: Callbacks to use.
+            **kwargs: Additional arguments.
+
+        Returns:
+            AgentExecutor: Agent executor object.
+        """
         return cls(
             agent=agent,
             tools=tools,
@@ -973,9 +1122,19 @@ class AgentExecutor(Chain):
             **kwargs,
         )
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_tools(cls, values: Dict) -> Dict:
-        """Validate that tools are compatible with agent."""
+        """Validate that tools are compatible with agent.
+
+        Args:
+            values: Values to validate.
+
+        Returns:
+            Dict: Validated values.
+
+        Raises:
+            ValueError: If allowed tools are different than provided tools.
+        """
         agent = values["agent"]
         tools = values["tools"]
         allowed_tools = agent.get_allowed_tools()
@@ -987,9 +1146,19 @@ class AgentExecutor(Chain):
                 )
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_return_direct_tool(cls, values: Dict) -> Dict:
-        """Validate that tools are compatible with agent."""
+        """Validate that tools are compatible with agent.
+
+        Args:
+            values: Values to validate.
+
+        Returns:
+            Dict: Validated values.
+
+        Raises:
+            ValueError: If tools that have `return_direct=True` are not allowed.
+        """
         agent = values["agent"]
         tools = values["tools"]
         if isinstance(agent, BaseMultiActionAgent):
@@ -1003,9 +1172,16 @@ class AgentExecutor(Chain):
 
     @root_validator(pre=True)
     def validate_runnable_agent(cls, values: Dict) -> Dict:
-        """Convert runnable to agent if passed in."""
-        agent = values["agent"]
-        if isinstance(agent, Runnable):
+        """Convert runnable to agent if passed in.
+
+        Args:
+            values: Values to validate.
+
+        Returns:
+            Dict: Validated values.
+        """
+        agent = values.get("agent")
+        if agent and isinstance(agent, Runnable):
             try:
                 output_type = agent.OutputType
             except Exception as _:
@@ -1025,7 +1201,14 @@ class AgentExecutor(Chain):
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:
-        """Raise error - saving not supported for Agent Executors."""
+        """Raise error - saving not supported for Agent Executors.
+
+        Args:
+            file_path: Path to save to.
+
+        Raises:
+            ValueError: Saving not supported for agent executors.
+        """
         raise ValueError(
             "Saving not supported for agent executors. "
             "If you are trying to save the agent, please use the "
@@ -1033,7 +1216,11 @@ class AgentExecutor(Chain):
         )
 
     def save_agent(self, file_path: Union[Path, str]) -> None:
-        """Save the underlying agent."""
+        """Save the underlying agent.
+
+        Args:
+            file_path: Path to save to.
+        """
         return self.agent.save(file_path)
 
     def iter(
@@ -1044,7 +1231,17 @@ class AgentExecutor(Chain):
         include_run_info: bool = False,
         async_: bool = False,  # arg kept for backwards compat, but ignored
     ) -> AgentExecutorIterator:
-        """Enables iteration over steps taken to reach final output."""
+        """Enables iteration over steps taken to reach final output.
+
+        Args:
+            inputs: Inputs to the agent.
+            callbacks: Callbacks to run.
+            include_run_info: Whether to include run info.
+            async_: Whether to run async. (Ignored)
+
+        Returns:
+            AgentExecutorIterator: Agent executor iterator object.
+        """
         return AgentExecutorIterator(
             self,
             inputs,
@@ -1073,7 +1270,14 @@ class AgentExecutor(Chain):
             return self.agent.return_values
 
     def lookup_tool(self, name: str) -> BaseTool:
-        """Lookup tool by name."""
+        """Lookup tool by name.
+
+        Args:
+            name: Name of tool.
+
+        Returns:
+            BaseTool: Tool object.
+        """
         return {tool.name: tool for tool in self.tools}[name]
 
     def _should_continue(self, iterations: int, time_elapsed: float) -> bool:
@@ -1462,7 +1666,7 @@ class AgentExecutor(Chain):
         inputs: Dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
-        """Run text through and get agent response."""
+        """Async run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
@@ -1556,7 +1760,16 @@ class AgentExecutor(Chain):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[AddableDict]:
-        """Enables streaming over steps taken to reach final output."""
+        """Enables streaming over steps taken to reach final output.
+
+        Args:
+            input: Input to the agent.
+            config: Config to use.
+            **kwargs: Additional arguments.
+
+        Yields:
+            AddableDict: Addable dictionary.
+        """
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,
@@ -1565,6 +1778,7 @@ class AgentExecutor(Chain):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.get("run_id"),
             yield_actions=True,
             **kwargs,
         )
@@ -1577,7 +1791,17 @@ class AgentExecutor(Chain):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> AsyncIterator[AddableDict]:
-        """Enables streaming over steps taken to reach final output."""
+        """Async enables streaming over steps taken to reach final output.
+
+        Args:
+            input: Input to the agent.
+            config: Config to use.
+            **kwargs: Additional arguments.
+
+        Yields:
+            AddableDict: Addable dictionary.
+        """
+
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,
@@ -1586,6 +1810,7 @@ class AgentExecutor(Chain):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.get("run_id"),
             yield_actions=True,
             **kwargs,
         )

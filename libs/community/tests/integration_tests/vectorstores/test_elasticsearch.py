@@ -49,7 +49,7 @@ class TestElasticsearch:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
 
     @pytest.fixture(scope="class", autouse=True)
-    def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:
+    def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:  # type: ignore[return]
         # Running this integration test with Elastic Cloud
         # Required for in-stack inference testing (ELSER + model_id)
         from elasticsearch import Elasticsearch
@@ -808,7 +808,7 @@ class TestElasticsearch:
             search_type="similarity_score_threshold",
             search_kwargs={"score_threshold": similarity_of_second_ranked},
         )
-        output = retriever.get_relevant_documents(query=query_string)
+        output = retriever.invoke(query_string)
 
         assert output == [
             top3[0][0],

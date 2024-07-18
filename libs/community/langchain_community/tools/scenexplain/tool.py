@@ -1,4 +1,5 @@
 """Tool for the SceneXplain API."""
+
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -23,7 +24,7 @@ class SceneXplainTool(BaseTool):
         "for an image. The input can be an image file of any format, and "
         "the output will be a text description that covers every detail of the image."
     )
-    api_wrapper: SceneXplainAPIWrapper = Field(default_factory=SceneXplainAPIWrapper)
+    api_wrapper: SceneXplainAPIWrapper = Field(default_factory=SceneXplainAPIWrapper)  # type: ignore[arg-type]
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None

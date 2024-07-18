@@ -131,20 +131,20 @@ def test_add_texts(retriever: QdrantSparseVectorRetriever) -> None:
     assert retriever.client.count(retriever.collection_name, exact=True).count == 6
 
 
-def test_get_relevant_documents(retriever: QdrantSparseVectorRetriever) -> None:
+def test_invoke(retriever: QdrantSparseVectorRetriever) -> None:
     retriever.add_texts(["Hai there!", "Hello world!", "Foo bar baz!"])
 
     expected = [Document(page_content="Hai there!")]
 
     retriever.k = 1
-    results = retriever.get_relevant_documents("Hai there!")
+    results = retriever.invoke("Hai there!")
 
     assert len(results) == retriever.k
     assert results == expected
-    assert retriever.get_relevant_documents("Hai there!") == expected
+    assert retriever.invoke("Hai there!") == expected
 
 
-def test_get_relevant_documents_with_filter(
+def test_invoke_with_filter(
     retriever: QdrantSparseVectorRetriever,
 ) -> None:
     from qdrant_client import models
@@ -165,6 +165,6 @@ def test_get_relevant_documents_with_filter(
             )
         ]
     )
-    results = retriever.get_relevant_documents("Some query")
+    results = retriever.invoke("Some query")
 
     assert results[0] == Document(page_content="Hello world!", metadata={"value": 2})

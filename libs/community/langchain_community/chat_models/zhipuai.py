@@ -42,6 +42,17 @@ ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
 @contextmanager
 def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
+    """Context manager for connecting to an SSE stream.
+
+    Args:
+        client: The HTTP client.
+        method: The HTTP method.
+        url: The URL.
+        **kwargs: Additional keyword arguments.
+
+    Yields:
+        The event source.
+    """
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -52,6 +63,17 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
 async def aconnect_sse(
     client: Any, method: str, url: str, **kwargs: Any
 ) -> AsyncIterator:
+    """Async context manager for connecting to an SSE stream.
+
+    Args:
+        client: The HTTP client.
+        method: The HTTP method.
+        url: The URL.
+        **kwargs: Additional keyword arguments.
+
+    Yields:
+        The event source.
+    """
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
@@ -59,7 +81,9 @@ async def aconnect_sse(
 
 
 def _get_jwt_token(api_key: str) -> str:
-    """Gets JWT token for ZhipuAI API, see 'https://open.bigmodel.cn/dev/api#nosdk'.
+    """Gets JWT token for ZhipuAI API.
+
+    See 'https://open.bigmodel.cn/dev/api#nosdk'.
 
     Args:
         api_key: The API key for ZhipuAI API.
@@ -101,7 +125,7 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
         if tool_calls is not None:
             additional_kwargs["tool_calls"] = tool_calls
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    return ChatMessage(role=role, content=content)
+    return ChatMessage(role=role, content=content)  # type: ignore[arg-type]
 
 
 def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
@@ -144,28 +168,134 @@ def _convert_delta_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     if role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
-    return default_class(content=content)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
+    return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _truncate_params(payload: Dict[str, Any]) -> None:
+    """Truncate temperature and top_p parameters between [0.01, 0.99].
+
+    ZhipuAI only support temperature / top_p between (0, 1) open interval,
+    so we truncate them to [0.01, 0.99].
+    """
+    temperature = payload.get("temperature")
+    top_p = payload.get("top_p")
+    if temperature is not None:
+        payload["temperature"] = max(0.01, min(0.99, temperature))
+    if top_p is not None:
+        payload["top_p"] = max(0.01, min(0.99, top_p))
 
 
 class ChatZhipuAI(BaseChatModel):
-    """
-    `ZhipuAI` large language chat models API.
+    """ZhipuAI chat model integration.
 
-    To use, you should have the ``PyJWT`` python package installed.
+    Setup:
+        Install ``PyJWT`` and set environment variable ``ZHIPUAI_API_KEY``
 
-    Example:
-    .. code-block:: python
+        .. code-block:: bash
 
-    from langchain_community.chat_models import ChatZhipuAI
+            pip install pyjwt
+            export ZHIPUAI_API_KEY="your-api-key"
 
-    zhipuai_chat = ChatZhipuAI(
-        temperature=0.5,
-        api_key="your-api-key",
-        model="glm-4"
-    )
+    Key init args — completion params:
+        model: Optional[str]
+            Name of OpenAI model to use.
+        temperature: float
+            Sampling temperature.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
 
-    """
+    Key init args — client params:
+        api_key: Optional[str]
+        ZhipuAI API key. If not passed in will be read from env var ZHIPUAI_API_KEY.
+        api_base: Optional[str]
+        Base URL for API requests.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatZhipuAI
+
+            zhipuai_chat = ChatZhipuAI(
+                temperature=0.5,
+                api_key="your-api-key",
+                model="glm-4",
+                # api_base="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            zhipuai_chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content='I enjoy programming.', response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 23, 'total_tokens': 29}, 'model_name': 'glm-4', 'finish_reason': 'stop'}, id='run-c5d9af91-55c6-470e-9545-02b2fa0d7f9d-0')
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in zhipuai_chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-4df71729-618f-4e2b-a4ff-884682723082'
+            content=' enjoy' id='run-4df71729-618f-4e2b-a4ff-884682723082'
+            content=' programming' id='run-4df71729-618f-4e2b-a4ff-884682723082'
+            content='.' id='run-4df71729-618f-4e2b-a4ff-884682723082'
+            content='' response_metadata={'finish_reason': 'stop'} id='run-4df71729-618f-4e2b-a4ff-884682723082'
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block::
+
+            AIMessageChunk(content='I enjoy programming.', response_metadata={'finish_reason': 'stop'}, id='run-20b05040-a0b4-4715-8fdc-b39dba9bfb53')
+
+    Async:
+        .. code-block:: python
+
+            await zhipuai_chat.ainvoke(messages)
+
+            # stream:
+            # async for chunk in zhipuai_chat.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await zhipuai_chat.abatch([messages])
+
+        .. code-block:: python
+
+            [AIMessage(content='I enjoy programming.', response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 23, 'total_tokens': 29}, 'model_name': 'glm-4', 'finish_reason': 'stop'}, id='run-ba06af9d-4baa-40b2-9298-be9c62aa0849-0')]
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = zhipuai_chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {'token_usage': {'completion_tokens': 6,
+              'prompt_tokens': 23,
+              'total_tokens': 29},
+              'model_name': 'glm-4',
+              'finish_reason': 'stop'}
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -213,7 +343,7 @@ class ChatZhipuAI(BaseChatModel):
     model_name: Optional[str] = Field(default="glm-4", alias="model")
     """
     Model name to use, see 'https://open.bigmodel.cn/dev/api#language'.
-    or you can use any finetune model of glm series.
+    Alternatively, you can use any fine-tuned model from the GLM series.
     """
 
     temperature: float = 0.95
@@ -247,10 +377,10 @@ class ChatZhipuAI(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["zhipuai_api_key"] = get_from_dict_or_env(
-            values, "zhipuai_api_key", "ZHIPUAI_API_KEY"
+            values, ["zhipuai_api_key", "api_key"], "ZHIPUAI_API_KEY"
         )
         values["zhipuai_api_base"] = get_from_dict_or_env(
             values, "zhipuai_api_base", "ZHIPUAI_API_BASE", default=ZHIPUAI_API_BASE
@@ -309,14 +439,15 @@ class ChatZhipuAI(BaseChatModel):
             "messages": message_dicts,
             "stream": False,
         }
+        _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
         }
         import httpx
 
-        with httpx.Client(headers=headers) as client:
-            response = client.post(self.zhipuai_api_base, json=payload)
+        with httpx.Client(headers=headers, timeout=60) as client:
+            response = client.post(self.zhipuai_api_base, json=payload)  # type: ignore[arg-type]
             response.raise_for_status()
         return self._create_chat_result(response.json())
 
@@ -334,6 +465,7 @@ class ChatZhipuAI(BaseChatModel):
             raise ValueError("Did not find zhipu_api_base.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
+        _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
@@ -342,7 +474,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         import httpx
 
-        with httpx.Client(headers=headers) as client:
+        with httpx.Client(headers=headers, timeout=60) as client:
             with connect_sse(
                 client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
@@ -364,9 +496,10 @@ class ChatZhipuAI(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
+
                     if finish_reason is not None:
                         break
 
@@ -394,14 +527,15 @@ class ChatZhipuAI(BaseChatModel):
             "messages": message_dicts,
             "stream": False,
         }
+        _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
         }
         import httpx
 
-        async with httpx.AsyncClient(headers=headers) as client:
-            response = await client.post(self.zhipuai_api_base, json=payload)
+        async with httpx.AsyncClient(headers=headers, timeout=60) as client:
+            response = await client.post(self.zhipuai_api_base, json=payload)  # type: ignore[arg-type]
             response.raise_for_status()
         return self._create_chat_result(response.json())
 
@@ -418,6 +552,7 @@ class ChatZhipuAI(BaseChatModel):
             raise ValueError("Did not find zhipu_api_base.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
+        _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
@@ -426,7 +561,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         import httpx
 
-        async with httpx.AsyncClient(headers=headers) as client:
+        async with httpx.AsyncClient(headers=headers, timeout=60) as client:
             async with aconnect_sse(
                 client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
@@ -448,8 +583,9 @@ class ChatZhipuAI(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
+
                     if finish_reason is not None:
                         break

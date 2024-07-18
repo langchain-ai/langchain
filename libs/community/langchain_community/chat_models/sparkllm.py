@@ -43,6 +43,9 @@ from langchain_core.utils import (
 
 logger = logging.getLogger(__name__)
 
+SPARK_API_URL = "wss://spark-api.xf-yun.com/v3.5/chat"
+SPARK_LLM_DOMAIN = "generalv3.5"
+
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
@@ -85,11 +88,11 @@ def _convert_delta_to_message_chunk(
     elif msg_role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=msg_content, role=msg_role)
     else:
-        return default_class(content=msg_content)
+        return default_class(content=msg_content)  # type: ignore[call-arg]
 
 
 class ChatSparkLLM(BaseChatModel):
-    """Wrapper around iFlyTek's Spark large language model.
+    """iFlyTek Spark large language model.
 
     To use, you should pass `app_id`, `api_key`, `api_secret`
     as a named parameter to the constructor OR set environment
@@ -108,7 +111,7 @@ class ChatSparkLLM(BaseChatModel):
     Extra infos:
         1. Get app_id, api_key, api_secret from the iFlyTek Open Platform Console:
             https://console.xfyun.cn/services/bm35
-        2. By default, iFlyTek Spark LLM V3.0 is invoked.
+        2. By default, iFlyTek Spark LLM V3.5 is invoked.
             If you need to invoke other versions, please configure the corresponding
             parameters(spark_api_url and spark_llm_domain) according to the document:
             https://www.xfyun.cn/doc/spark/Web.html
@@ -134,17 +137,36 @@ class ChatSparkLLM(BaseChatModel):
         }
 
     client: Any = None  #: :meta private:
-    spark_app_id: Optional[str] = None
-    spark_api_key: Optional[str] = None
-    spark_api_secret: Optional[str] = None
-    spark_api_url: Optional[str] = None
-    spark_llm_domain: Optional[str] = None
+    spark_app_id: Optional[str] = Field(default=None, alias="app_id")
+    """Automatically inferred from env var `IFLYTEK_SPARK_APP_ID` 
+        if not provided."""
+    spark_api_key: Optional[str] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `IFLYTEK_SPARK_API_KEY` 
+        if not provided."""
+    spark_api_secret: Optional[str] = Field(default=None, alias="api_secret")
+    """Automatically inferred from env var `IFLYTEK_SPARK_API_SECRET` 
+        if not provided."""
+    spark_api_url: Optional[str] = Field(default=None, alias="api_url")
+    """Base URL path for API requests, leave blank if not using a proxy or service 
+        emulator."""
+    spark_llm_domain: Optional[str] = Field(default=None, alias="model")
+    """Model name to use."""
     spark_user_id: str = "lc_user"
     streaming: bool = False
-    request_timeout: int = 30
-    temperature: float = 0.5
+    """Whether to stream the results or not."""
+    request_timeout: int = Field(30, alias="timeout")
+    """request timeout for chat http requests"""
+    temperature: float = Field(default=0.5)
+    """What sampling temperature to use."""
     top_k: int = 4
+    """What search sampling control to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Holds any model parameters valid for API call not explicitly specified."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -173,38 +195,44 @@ class ChatSparkLLM(BaseChatModel):
 
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
-            "spark_app_id",
+            ["spark_app_id", "app_id"],
             "IFLYTEK_SPARK_APP_ID",
         )
         values["spark_api_key"] = get_from_dict_or_env(
             values,
-            "spark_api_key",
+            ["spark_api_key", "api_key"],
             "IFLYTEK_SPARK_API_KEY",
         )
         values["spark_api_secret"] = get_from_dict_or_env(
             values,
-            "spark_api_secret",
+            ["spark_api_secret", "api_secret"],
             "IFLYTEK_SPARK_API_SECRET",
         )
         values["spark_api_url"] = get_from_dict_or_env(
             values,
             "spark_api_url",
             "IFLYTEK_SPARK_API_URL",
-            "wss://spark-api.xf-yun.com/v3.1/chat",
+            SPARK_API_URL,
         )
         values["spark_llm_domain"] = get_from_dict_or_env(
             values,
             "spark_llm_domain",
             "IFLYTEK_SPARK_LLM_DOMAIN",
-            "generalv3",
+            SPARK_LLM_DOMAIN,
         )
+
         # put extra params into model_kwargs
-        values["model_kwargs"]["temperature"] = values["temperature"] or cls.temperature
-        values["model_kwargs"]["top_k"] = values["top_k"] or cls.top_k
+        default_values = {
+            name: field.default
+            for name, field in cls.__fields__.items()
+            if field.default is not None
+        }
+        values["model_kwargs"]["temperature"] = default_values.get("temperature")
+        values["model_kwargs"]["top_k"] = default_values.get("top_k")
 
         values["client"] = _SparkLLMClient(
             app_id=values["spark_app_id"],
@@ -302,12 +330,10 @@ class _SparkLLMClient:
                 "Please install it with `pip install websocket-client`."
             )
 
-        self.api_url = (
-            "wss://spark-api.xf-yun.com/v3.1/chat" if not api_url else api_url
-        )
+        self.api_url = SPARK_API_URL if not api_url else api_url
         self.app_id = app_id
         self.model_kwargs = model_kwargs
-        self.spark_domain = spark_domain or "generalv3"
+        self.spark_domain = spark_domain or SPARK_LLM_DOMAIN
         self.queue: Queue[Dict] = Queue()
         self.blocking_message = {"content": "", "role": "assistant"}
         self.api_key = api_key
@@ -377,10 +403,10 @@ class _SparkLLMClient:
             on_close=self.on_close,
             on_open=self.on_open,
         )
-        ws.messages = messages
-        ws.user_id = user_id
-        ws.model_kwargs = self.model_kwargs if model_kwargs is None else model_kwargs
-        ws.streaming = streaming
+        ws.messages = messages  # type: ignore[attr-defined]
+        ws.user_id = user_id  # type: ignore[attr-defined]
+        ws.model_kwargs = self.model_kwargs if model_kwargs is None else model_kwargs  # type: ignore[attr-defined]
+        ws.streaming = streaming  # type: ignore[attr-defined]
         ws.run_forever()
 
     def arun(
