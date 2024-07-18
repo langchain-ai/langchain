@@ -71,9 +71,11 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     ValidationError,
-    create_model,
     root_validator,
     validate_arguments,
+)
+from langchain_core.pydantic_v1 import (
+    create_model as create_model_v1,
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
@@ -124,9 +126,11 @@ def _create_subset_model_v1(
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     if PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import create_model
+        from pydantic.v1 import create_model  # pydantic: ignore
     else:
-        from pydantic import create_model
+        from pydantic import (  # type: ignore[no-redef] # pydantic: ignore
+            create_model,
+        )
     fields = {}
 
     for field_name in field_names:
@@ -155,13 +159,13 @@ def _create_subset_model_2(
     fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
+    from pydantic import create_model  # pydantic: ignore
     from pydantic.fields import FieldInfo  # pydantic: ignore
-    from pydantic import create_model
 
     descriptions_ = descriptions or {}
     fields = {}
     for field_name in field_names:
-        field = model.__fields__[field_name]
+        field = model.model_fields[field_name]  # type: ignore
         description = descriptions_.get(field_name, field.description)
         fields[field_name] = (
             field.annotation,
@@ -191,7 +195,7 @@ def _create_subset_model(
             fn_description=fn_description,
         )
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import BaseModel as BaseModelV1
+        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
 
         if issubclass(model, BaseModelV1):
             return _create_subset_model_v1(
@@ -434,7 +438,7 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[Any] = None
+    args_schema: Optional[AnyBaseModel] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     """Whether to return the tool's output directly. 
@@ -1644,7 +1648,7 @@ def _get_schema_from_runnable_and_arg_types(
                 f"arg_types into `.as_tool` to specify. {str(e)}"
             )
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
-    return create_model(name, **fields)  # type: ignore
+    return create_model_v1(name, **fields)  # type: ignore
 
 
 def convert_runnable_to_tool(

@@ -83,9 +83,9 @@ def test_with_aliases() -> None:
 def test_is_basemodel_subclass() -> None:
     """Test pydantic."""
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV1Proper  # pydantic: ignore
 
-        assert is_basemodel_subclass(BaseModelV1)
+        assert is_basemodel_subclass(BaseModelV1Proper)
     elif PYDANTIC_MAJOR_VERSION == 2:
         from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
         from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
@@ -100,12 +100,12 @@ def test_is_basemodel_subclass() -> None:
 def test_is_basemodel_instance() -> None:
     """Test pydantic."""
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1  # pydantic: ignore
+        from pydantic import BaseModel as BaseModelV1Proper  # pydantic: ignore
 
-        class Foo(BaseModelV1):
+        class FooV1(BaseModelV1Proper):
             x: int
 
-        assert is_basemodel_instance(Foo(x=5))
+        assert is_basemodel_instance(FooV1(x=5))
     elif PYDANTIC_MAJOR_VERSION == 2:
         from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
         from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore

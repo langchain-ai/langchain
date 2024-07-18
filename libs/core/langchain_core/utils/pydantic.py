@@ -78,16 +78,16 @@ def is_basemodel_instance(obj: Any) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
     """
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1
+        from pydantic import BaseModel as BaseModelV1Proper
 
-        if isinstance(obj, BaseModelV1):
+        if isinstance(obj, BaseModelV1Proper):
             return True
     elif PYDANTIC_MAJOR_VERSION == 2:
         from pydantic import BaseModel as BaseModelV2
+        from pydantic.v1 import BaseModel as BaseModelV1
 
         if isinstance(obj, BaseModelV2):
             return True
-        from pydantic.v1 import BaseModel as BaseModelV1
 
         if isinstance(obj, BaseModelV1):
             return True

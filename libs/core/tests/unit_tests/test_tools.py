@@ -1458,22 +1458,66 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         name="some_tool", description="some description", args_schema=pydantic_model
     )
 
-    assert tool.tool_call_schema
+    assert tool.get_input_schema().schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": pydantic_model.__name__,
+        "type": "object",
+    }
+
+    assert tool.tool_call_schema.schema() == {
+        "description": "some description",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "some_tool",
+        "type": "object",
+    }
 
 
-@pytest.mark.parametrize("pydantic_model", TEST_MODELS)
-def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
+def test_args_schema_explicitly_typed() -> None:
+    """This should test that one can type the args schema as a pydantic model.
+
+    Please note that this will test using pydantic 2 even though BaseTool
+    is a pydantic 1 model!
+    """
     # Check with whatever pydantic model is passed in and not via v1 namespace
-    from pydantic import BaseModel, Field # pydantic: ignore
+    from pydantic import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        a: int
+        b: str
 
     class SomeTool(BaseTool):
-        args_schema: Type[BaseModel] = Field(default=pydantic_model)
+        args_schema: Type[BaseModel] = Foo
 
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
 
-    tool = SomeTool(
-        name="some_tool", description="some description"
-    )
+    tool = SomeTool(name="some_tool", description="some description")
 
-    assert tool.tool_call_schema
+    assert tool.get_input_schema().schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "Foo",
+        "type": "object",
+    }
+
+    assert tool.tool_call_schema.schema() == {
+        "description": "some description",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "some_tool",
+        "type": "object",
+    }
