@@ -236,7 +236,7 @@ This is where information like log-probs and token usage may be stored.
 These represent a decision from an language model to call a tool. They are included as part of an `AIMessage` output.
 They can be accessed from there with the `.tool_calls` property.
 
-This property returns a list of `ToolCall`s. A `ToolCall` is just a dictionary with the following arguments:
+This property returns a list of `ToolCall`s. A `ToolCall` is a dictionary with the following arguments:
 
 - `name`: The name of the tool that should be called.
 - `args`: The arguments to that tool.
