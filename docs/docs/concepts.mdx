@@ -524,7 +524,6 @@ ai_msg = llm_with_tools.invoke("do xyz...")  # AIMessage(tool_calls=[ToolCall(..
 The `AIMessage` returned from the model MAY have `tool_calls` associated with it.
 Read [this guide](/docs/concepts/#aimessage) for more information on what the response type may look like.
 
-Once the tools are chosen, you will usually want to invoke them and then pass the results back to the
 Once the chosen tools are invoked, the results can be passed back to the model so that it can complete whatever task
 it's performing.
 There are generally two different ways to invoke the tool and pass back the response
