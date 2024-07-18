@@ -72,7 +72,7 @@ class SQLStore(BaseStore[str, bytes]):
             from langchain_rag.storage import SQLStore
 
             # Instantiate the SQLStore with the root path
-            sql_store = SQLStore(namespace="test", db_url="sqllite://:memory:")
+            sql_store = SQLStore(namespace="test", db_url="sqlite://:memory:")
 
             # Set values for keys
             sql_store.mset([("key1", b"value1"), ("key2", b"value2")])

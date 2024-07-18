@@ -1,4 +1,5 @@
 """Utils for interacting with the Semantic Scholar API."""
+
 import logging
 from typing import Any, Dict, Optional
 
@@ -50,7 +51,7 @@ class SemanticScholarAPIWrapper(BaseModel):
         "externalIds",
     ]
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
@@ -79,7 +80,7 @@ class SemanticScholarAPIWrapper(BaseModel):
                 f"Published year: {getattr(item, 'year', None)}\n"
                 f"Title: {getattr(item, 'title', None)}\n"
                 f"Authors: {authors}\n"
-                f"Astract: {getattr(item, 'abstract', None)}\n"
+                f"Abstract: {getattr(item, 'abstract', None)}\n"
             )
 
         if documents:

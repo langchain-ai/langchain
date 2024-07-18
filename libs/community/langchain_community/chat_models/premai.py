@@ -40,9 +40,8 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     SecretStr,
-    root_validator,
 )
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 if TYPE_CHECKING:
     from premai.api.chat_completions.v1_chat_completions_create import (
@@ -249,7 +248,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @pre_init
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate that the package is installed and that the API token is valid"""
         try:

@@ -1,4 +1,5 @@
 """Test XMLOutputParser"""
+
 import importlib
 from typing import AsyncIterator, Iterable
 

@@ -26,7 +26,7 @@ DEPLOYMENT_NAME = os.environ.get(
 
 
 def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
-    return AzureChatOpenAI(
+    return AzureChatOpenAI(  # type: ignore[call-arg, call-arg, call-arg]
         deployment_name=DEPLOYMENT_NAME,
         openai_api_version=OPENAI_API_VERSION,
         azure_endpoint=OPENAI_API_BASE,

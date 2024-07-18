@@ -1,4 +1,5 @@
 """Anyscale Endpoints chat wrapper. Relies heavily on ChatOpenAI."""
+
 from __future__ import annotations
 
 import logging
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
-DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
+DEFAULT_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 
 class ChatAnyscale(ChatOpenAI):

@@ -1,4 +1,5 @@
 """SQLAlchemy wrapper around a database."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
@@ -202,7 +203,7 @@ class SQLDatabase:
 
             context = get_context()
             default_host = context.browserHostName
-        except ImportError:
+        except (ImportError, AttributeError):
             default_host = None
 
         if host is None:

@@ -60,7 +60,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             List of scores, one for each pair.
         """
         scores = self.client.predict(text_pairs)
-        # Somes models e.g bert-multilingual-passage-reranking-msmarco
+        # Some models e.g bert-multilingual-passage-reranking-msmarco
         # gives two score not_relevant and relevant as compare with the query.
         if len(scores.shape) > 1:  # we are going to get the relevant scores
             scores = map(lambda x: x[1], scores)
