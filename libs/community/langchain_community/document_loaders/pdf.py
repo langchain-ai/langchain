@@ -171,6 +171,9 @@ class PyPDFLoader(BasePDFLoader):
         password: Optional[Union[str, bytes]] = None,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
+        *,
+        extraction_mode: str = "plain",
+        extraction_kwargs: Optional[Dict] = None,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -180,7 +183,12 @@ class PyPDFLoader(BasePDFLoader):
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         super().__init__(file_path, headers=headers)
-        self.parser = PyPDFParser(password=password, extract_images=extract_images)
+        self.parser = PyPDFParser(
+            password=password,
+            extract_images=extract_images,
+            extraction_mode=extraction_mode,
+            extraction_kwargs=extraction_kwargs,
+        )
 
     def lazy_load(
         self,
