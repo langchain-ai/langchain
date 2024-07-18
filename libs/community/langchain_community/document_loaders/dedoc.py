@@ -1,3 +1,6 @@
+import html
+import json
+import os
 from abc import ABC, abstractmethod
 from typing import (
     Dict,
@@ -253,6 +256,7 @@ class DedocBaseLoader(BaseLoader, ABC):
             table_html += "<tr>\n"
             for cell in row:
                 cell_text = "\n".join(line["text"] for line in cell["lines"])
+                cell_text = html.escape(cell_text)
                 table_html += "<td"
                 if cell["invisible"]:
                     table_html += ' style="display: none" '
@@ -399,9 +403,6 @@ class DedocAPIFileLoader(DedocBaseLoader):
         self, url: str, file_path: str, parameters: dict
     ) -> Dict[str, Union[list, dict, str]]:
         """Send POST-request to `dedoc` API and return the results"""
-        import json
-        import os
-
         import requests
 
         file_name = os.path.basename(file_path)
