@@ -7,7 +7,7 @@ from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )
 
-# TypeAlias is not available in Python 2.9, we can't use that or the newer `type`.
+# TypeAlias is not available in Python 3.9, we can't use that or the newer `type`.
 KeybertInput = Union[str, Document]
 
 
@@ -19,12 +19,19 @@ class KeybertLinkExtractor(LinkExtractor[KeybertInput]):
         embedding_model: str = "all-MiniLM-L6-v2",
         extract_keywords_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        """Extract keywords using Keybert.
+        """Extract keywords using KeyBERT <https://maartengr.github.io/KeyBERT/>.
+
+        Example:
+
+            .. code-block: python
+                extractor = KeybertLinkExtractor()
+
+                results = extractor.extract_one(PAGE_1)
 
         Args:
             kind: Kind of links to produce with this extractor.
-            embedding_model: Name of the embedding model to use with Keybert.
-            extract_keywords_kwargs: Keyword arguments to pass to Keybert's
+            embedding_model: Name of the embedding model to use with KeyBERT.
+            extract_keywords_kwargs: Keyword arguments to pass to KeyBERT's
                 `extract_keywords` method.
         """
         try:
