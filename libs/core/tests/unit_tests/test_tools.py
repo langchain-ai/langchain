@@ -31,10 +31,10 @@ from langchain_core.tools import (
     StructuredTool,
     Tool,
     ToolException,
-    _create_subset_model,
     tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.pydantic import _create_subset_model
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
@@ -1416,4 +1416,113 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
             "properties": {"x": {"type": "integer", "description": "abc"}},
             "required": ["x"],
         },
+    }
+
+
+def generate_models() -> List[Any]:
+    """Generate a list of base models depending on the pydantic version."""
+    from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
+
+    class FooProper(BaseModelProper):
+        a: int
+        b: str
+
+    return [FooProper]
+
+
+def generate_backwards_compatible_v1() -> List[Any]:
+    """Generate a model with pydantic 2 from the v1 namespace."""
+    from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+
+    class FooV1Namespace(BaseModelV1):
+        a: int
+        b: str
+
+    return [FooV1Namespace]
+
+
+# This generates a list of models that can be used for testing that our APIs
+# behave well with either pydantic 1 proper,
+# pydantic v1 from pydantic 2,
+# or pydantic 2 proper.
+TEST_MODELS = generate_models() + generate_backwards_compatible_v1()
+
+
+@pytest.mark.parametrize("pydantic_model", TEST_MODELS)
+def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
+    class SomeTool(BaseTool):
+        args_schema: Type[pydantic_model] = pydantic_model
+
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(
+        name="some_tool", description="some description", args_schema=pydantic_model
+    )
+
+    assert tool.get_input_schema().schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": pydantic_model.__name__,
+        "type": "object",
+    }
+
+    assert tool.tool_call_schema.schema() == {
+        "description": "some description",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "some_tool",
+        "type": "object",
+    }
+
+
+def test_args_schema_explicitly_typed() -> None:
+    """This should test that one can type the args schema as a pydantic model.
+
+    Please note that this will test using pydantic 2 even though BaseTool
+    is a pydantic 1 model!
+    """
+    # Check with whatever pydantic model is passed in and not via v1 namespace
+    from pydantic import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        a: int
+        b: str
+
+    class SomeTool(BaseTool):
+        # type ignoring here since we're allowing overriding a type
+        # signature of pydantic.v1.BaseModel with pydantic.BaseModel
+        # for pydantic 2!
+        args_schema: Type[BaseModel] = Foo  # type: ignore[assignment]
+
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(name="some_tool", description="some description")
+
+    assert tool.get_input_schema().schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "Foo",
+        "type": "object",
+    }
+
+    assert tool.tool_call_schema.schema() == {
+        "description": "some description",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "some_tool",
+        "type": "object",
     }
