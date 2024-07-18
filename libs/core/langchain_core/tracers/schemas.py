@@ -112,7 +112,15 @@ class ToolRun(BaseRun):
 
 
 class Run(BaseRunV2):
-    """Run schema for the V2 API in the Tracer."""
+    """Run schema for the V2 API in the Tracer.
+
+    Parameters:
+        child_runs: The child runs.
+        tags: The tags. Default is an empty list.
+        events: The events. Default is an empty list.
+        trace_id: The trace ID. Default is None.
+        dotted_order: The dotted order.
+    """
 
     child_runs: List[Run] = Field(default_factory=list)
     tags: Optional[List[str]] = Field(default_factory=list)
