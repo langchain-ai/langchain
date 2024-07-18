@@ -338,6 +338,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.org_mode import (
         UnstructuredOrgModeLoader,
     )
+    from langchain_community.document_loaders.parquet import (
+        ParquetLoader,
+    )
     from langchain_community.document_loaders.pdf import (
         AmazonTextractPDFLoader,
         MathpixPDFLoader,
@@ -634,6 +637,7 @@ _module_lookup = {
     "OracleDocLoader": "langchain_community.document_loaders.oracleai",
     "OracleTextSplitter": "langchain_community.document_loaders.oracleai",
     "OutlookMessageLoader": "langchain_community.document_loaders.email",
+    "ParquetLoader": "langchain_community.document_loaders.parquet",
     "PDFMinerLoader": "langchain_community.document_loaders.pdf",
     "PDFMinerPDFasHTMLLoader": "langchain_community.document_loaders.pdf",
     "PDFPlumberLoader": "langchain_community.document_loaders.pdf",
@@ -835,6 +839,7 @@ __all__ = [
     "OracleDocLoader",
     "OracleTextSplitter",
     "OutlookMessageLoader",
+    "ParquetLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
     "PDFPlumberLoader",
