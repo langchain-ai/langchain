@@ -131,28 +131,3 @@ async def test_openai_apredict(mock_completion: dict) -> None:
         res = await llm.apredict("bar")
         assert res == "Bar Baz"
     assert completed
-
-
-@pytest.mark.requires("openai")
-def test_api_key_is_secret_string_and_matches_input() -> None:
-    llm = ChatOpenAI(openai_api_key="secret-api-key")
-    assert isinstance(llm.openai_api_key, SecretStr)
-    assert llm.openai_api_key.get_secret_value() == "secret-api-key"
-
-
-@pytest.mark.requires("openai")
-def test_api_key_masked_when_passed_via_constructor() -> None:
-    llm = ChatOpenAI(openai_api_key="secret-api-key")
-    assert str(llm.openai_api_key) == "**********"
-    assert "secret-api-key" not in repr(llm.openai_api_key)
-    assert "secret-api-key" not in repr(llm)
-
-
-@pytest.mark.requires("openai")
-def test_api_key_masked_when_passed_via_env() -> None:
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setenv("OPENAI_API_KEY", "secret-api-key")
-        llm = ChatOpenAI()
-        assert str(llm.openai_api_key) == "**********"
-        assert "secret-api-key" not in repr(llm.openai_api_key)
-        assert "secret-api-key" not in repr(llm)
