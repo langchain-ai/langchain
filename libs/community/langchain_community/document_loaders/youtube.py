@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
-from xml.etree.ElementTree import ParseError  # OK: user-must-opt-in
+from xml.etree.ElementTree import ParseError  # OK: trusted-source
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
@@ -29,8 +29,8 @@ class GoogleApiClient:
     As the google api expects credentials you need to set up a google account and
     register your Service. "https://developers.google.com/docs/api/quickstart/python"
 
-    Note that parsing of the transcripts relies on the standard xml library but the
-    input is viewed as trusted in this case.
+    *Security Note*: Note that parsing of the transcripts relies on the standard
+        xml library but the input is viewed as trusted in this case.
 
 
     Example:
