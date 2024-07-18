@@ -2,7 +2,6 @@
 
 import inspect
 import json
-import sys
 import textwrap
 from datetime import datetime
 from enum import Enum
@@ -10,6 +9,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import pytest
+import sys
 from typing_extensions import Annotated, TypedDict
 
 from langchain_core.callbacks import (
@@ -35,6 +35,7 @@ from langchain_core.tools import (
     tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
@@ -1417,3 +1418,77 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
             "required": ["x"],
         },
     }
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION == 2, reason="Only for pydantic v1")
+def test_args_schema_as_pydantic() -> None:
+    """Test args schema with pydantic v1 model."""
+    from pydantic import BaseModel
+
+    class Foo(BaseModel):
+        a: int
+        b: str
+
+    class SomeTool(BaseTool):
+        name: str = "some_tool"
+        args_schema: Type[BaseModel] = Foo
+        description: str = "A Structured Tool"
+
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(
+        name="some_tool",
+        args_schema=Foo,
+        description="A Structured Tool",
+    )
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION == 1, reason="Only for pydantic 2")
+def test_args_schema_as_pydantic_2_as_v1() -> None:
+    """Test args schema with pydantic v1 model from pydantic 2."""
+    from pydantic.v1 import BaseModel
+
+    class Foo(BaseModel):
+        a: int
+        b: str
+
+    class SomeTool(BaseTool):
+        name: str = "some_tool"
+        args_schema: Type[BaseModel] = Foo
+        description: str = "A Structured Tool"
+
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(
+        name="some_tool",
+        args_schema=Foo,
+        description="A Structured Tool",
+    )
+    assert tool.tool_call_schema == {}
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION == 1, reason="Only for pydantic 2")
+def test_args_schema_as_pydantic_2_as_2() -> None:
+    """Check working with pydantic 2 proper."""
+    from pydantic import BaseModel
+
+    class Foo(BaseModel):
+        a: int
+        b: str
+
+    class SomeTool(BaseTool):
+        name: str = "some_tool"
+        args_schema: Type[BaseModel] = Foo
+        description: str = "A Structured Tool"
+
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(
+        name="some_tool",
+        args_schema=Foo,
+        description="A Structured Tool",
+    )
+    assert tool.tool_call_schema == {}
