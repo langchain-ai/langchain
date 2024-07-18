@@ -360,6 +360,8 @@ class ChatOllama(BaseChatModel):
                 for content_part in cast(List[Dict], message.content):
                     if content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
+                    elif content_part.get("type") == "tool_use":
+                        continue
                     elif content_part.get("type") == "image_url":
                         image_url = None
                         temp_image_url = content_part.get("image_url")
