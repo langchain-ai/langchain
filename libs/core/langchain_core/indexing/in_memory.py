@@ -23,9 +23,9 @@ class InMemoryDocumentIndexer(DocumentIndexer):
 
         for item in items:
             if item.id is None:
-                id_ = uuid.uuid4()
+                id_ = str(uuid.uuid4())
                 item_ = item.copy()
-                item_.id = str(id_)
+                item_.id = id_
             else:
                 item_ = item
                 id_ = item.id
