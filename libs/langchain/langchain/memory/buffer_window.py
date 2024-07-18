@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Union
 
-from langchain.memory.chat_memory import BaseChatMemory
 from langchain_core.messages import BaseMessage, get_buffer_string
+
+from langchain.memory.chat_memory import BaseChatMemory
 
 
 class ConversationBufferWindowMemory(BaseChatMemory):
@@ -21,7 +22,7 @@ class ConversationBufferWindowMemory(BaseChatMemory):
     @property
     def buffer_as_str(self) -> str:
         """Exposes the buffer as a string in case return_messages is False."""
-        messages = self.chat_memory.messages[-self.k * 2:] if self.k > 0 else []
+        messages = self.chat_memory.messages[-self.k * 2 :] if self.k > 0 else []
         return get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
@@ -31,7 +32,7 @@ class ConversationBufferWindowMemory(BaseChatMemory):
     @property
     def buffer_as_messages(self) -> List[BaseMessage]:
         """Exposes the buffer as a list of messages in case return_messages is True."""
-        return self.chat_memory.messages[-self.k * 2:] if self.k > 0 else []
+        return self.chat_memory.messages[-self.k * 2 :] if self.k > 0 else []
 
     @property
     def memory_variables(self) -> List[str]:
