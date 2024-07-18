@@ -33,7 +33,7 @@ def test_up_only() -> None:
 
 
 def test_up_and_down() -> None:
-    extractor = HierarchyLinkExtractor(down_links=True)
+    extractor = HierarchyLinkExtractor(child_links=True)
 
     assert extractor.extract_one(PATH_1) == {
         # Path1 links up to Root/H1
@@ -66,7 +66,7 @@ def test_up_and_down() -> None:
 
 
 def test_sibling() -> None:
-    extractor = HierarchyLinkExtractor(sibling_links=True, up_links=False)
+    extractor = HierarchyLinkExtractor(sibling_links=True, parent_links=False)
 
     assert extractor.extract_one(PATH_1) == {
         # Path1 links with anything else in Root/H1
