@@ -66,6 +66,7 @@ class ParquetLoader(BaseLoader):
         self.content_columns = (
             [content_columns] if isinstance(content_columns, str) else content_columns
         )
+        
         if metadata_columns:
             self.metadata_columns = (
                 [metadata_columns]
@@ -116,7 +117,7 @@ class ParquetLoader(BaseLoader):
                 # Create metadata from other columns
                 if self.metadata_columns:
                     metadata = {
-                        col: row[col] for col in row if col in self.metadata_columns
+                        col: row[col] for col in row if col in self.metadata_columns if col in row
                     }
                 else:
                     metadata = {
