@@ -438,7 +438,7 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[AnyBaseModel] = None
+    args_schema: Optional[BaseModel] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     """Whether to return the tool's output directly. 

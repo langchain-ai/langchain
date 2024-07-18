@@ -1451,6 +1451,8 @@ TEST_MODELS = generate_models() + generate_backwards_compatible_v1()
 @pytest.mark.parametrize("pydantic_model", TEST_MODELS)
 def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     class SomeTool(BaseTool):
+        args_schema: Type[pydantic_model] = pydantic_model
+
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
 

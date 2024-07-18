@@ -51,23 +51,6 @@ def is_basemodel_subclass(cls: Type) -> bool:
         raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
     return False
 
-
-def _get_any_base_model_type_annotation(cls: Type) -> Any:
-    """Get the type annotation for any Pydantic BaseModel subclass."""
-    if PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel
-        from pydantic.v1 import BaseModel as BaseModelV1
-
-        return Union[BaseModel, BaseModelV1]
-    else:
-        from pydantic import BaseModel as BaseModelV1Proper
-
-        return BaseModelV1Proper
-
-
-AnyBaseModel = _get_any_base_model_type_annotation(BaseModel)
-
-
 def is_basemodel_instance(obj: Any) -> bool:
     """Check if the given class is an instance of Pydantic BaseModel.
 
