@@ -11,7 +11,7 @@ from langchain_core.tools import tool
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-class Person(BaseModel):  # Used by some dependent tests. Should be depreacated.
+class Person(BaseModel):  # Used by some dependent tests. Should be deprecated.
     """Record attributes of a person."""
 
     name: str = Field(..., description="The name of the person.")
