@@ -15,7 +15,6 @@ from typing_extensions import TypedDict
 
 from langchain_core._api import beta
 from langchain_core.documents.base import Document
-from langchain_core.runnables import run_in_executor
 
 
 class UpsertResponse(TypedDict):
