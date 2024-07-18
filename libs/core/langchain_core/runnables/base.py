@@ -43,7 +43,7 @@ from langchain_core.load.serializable import (
     SerializedConstructor,
     SerializedNotImplemented,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, _issubclass_base_model
 from langchain_core.runnables.config import (
     RunnableConfig,
     _set_config_context,
@@ -300,7 +300,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.InputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if inspect.isclass(root_type) and _issubclass_base_model(root_type):
             return root_type
 
         return create_model(
@@ -332,7 +332,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.OutputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if inspect.isclass(root_type) and _issubclass_base_model(root_type):
             return root_type
 
         return create_model(

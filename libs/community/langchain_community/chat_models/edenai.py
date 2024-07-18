@@ -52,6 +52,7 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     SecretStr,
+    _issubclass_base_model,
 )
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
@@ -443,7 +444,7 @@ class ChatEdenAI(BaseChatModel):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         llm = self.bind_tools([schema], tool_choice="required")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and _issubclass_base_model(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )

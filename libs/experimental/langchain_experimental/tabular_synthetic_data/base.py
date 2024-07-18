@@ -6,6 +6,7 @@ from langchain.chains.llm import LLMChain
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
+from langchain_core.pydantic_v1 import _isinstance_base_model
 
 
 class SyntheticDataGenerator(BaseModel):
@@ -63,7 +64,7 @@ class SyntheticDataGenerator(BaseModel):
         """Prevents duplicates by adding previously generated examples to the few shot
         list."""
         if self.template and self.template.examples:
-            if isinstance(example, BaseModel):
+            if _isinstance_base_model(example):
                 formatted_example = self._format_dict_to_string(example.dict())
             elif isinstance(example, dict):
                 formatted_example = self._format_dict_to_string(example)

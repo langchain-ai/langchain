@@ -1,3 +1,4 @@
+from langchain_core.pydantic_v1 import _issubclass_base_model, _isinstance_base_model
 import json
 import uuid
 from operator import itemgetter
@@ -75,12 +76,8 @@ _DictOrPydantic = Union[Dict, _BM]
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and (
-        issubclass(obj, BaseModel) or BaseModel in obj.__bases__
+        _issubclass_base_model(obj) or BaseModel in obj.__bases__
     )
-
-
-def _is_pydantic_object(obj: Any) -> bool:
-    return isinstance(obj, BaseModel)
 
 
 def convert_to_ollama_tool(tool: Any) -> Dict:
@@ -93,7 +90,7 @@ def convert_to_ollama_tool(tool: Any) -> Dict:
         schema = tool.tool_call_schema.schema()
         name = tool.get_name()
         description = tool.description
-    elif _is_pydantic_object(tool):
+    elif _isinstance_base_model(tool):
         schema = tool.get_input_schema().schema()
         name = tool.get_name()
         description = tool.description
