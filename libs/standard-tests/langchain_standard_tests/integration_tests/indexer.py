@@ -6,8 +6,9 @@ from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Generator
 
 import pytest
+
 from langchain_core.documents import Document
-from langchain_core.indexing import DocumentIndexer
+from langchain_core.indexing import DocumentIndexer, AsyncDocumentIndexer
 
 
 class DocumentIndexerTestSuite(ABC):
@@ -211,7 +212,7 @@ class AsyncDocumentIndexerTestSuite(ABC):
 
     @abstractmethod
     @pytest.fixture
-    async def indexer(self) -> AsyncGenerator[DocumentIndexer, None]:
+    async def indexer(self) -> AsyncGenerator[AsyncDocumentIndexer, None]:
         """Get the indexer."""
 
     async def test_upsert_documents_has_no_ids(self, indexer: DocumentIndexer) -> None:

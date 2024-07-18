@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 from langchain_core.documents import Document
 from langchain_core.indexing import UpsertResponse
@@ -31,7 +31,7 @@ class InMemoryDocumentIndexer(DocumentIndexer):
                 id_ = item.id
 
             self.store[id_] = item_
-            ok_ids.append(item_.id)
+            ok_ids.append(cast(str, item_.id))
 
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
