@@ -391,3 +391,21 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                         verbose=self.verbose,
                     )
                 yield chunk
+
+    def load_model(
+        self,
+        **kwargs: Any,
+    ) -> bool:
+        return self._load_model(
+            f"{self.base_url}/api/chat",
+            **kwargs,
+        )
+
+    async def aload_model(
+        self,
+        **kwargs: Any,
+    ) -> bool:
+        return self._aload_model(
+            f"{self.base_url}/api/chat",
+            **kwargs,
+        )

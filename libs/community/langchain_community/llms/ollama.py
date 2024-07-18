@@ -1,8 +1,9 @@
 import json
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Union
 
-import aiohttp
 import requests
+from aiohttp import ClientSession
+from requests.models import Request
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -196,6 +197,39 @@ class _OllamaCommon(BaseLanguageModel):
         ):
             yield item
 
+    def _make_request(
+        self,
+        api_url: str,
+        headers: Any,
+        payload: Any,
+        stream: bool = True,
+    ) -> Request:
+        response = requests.post(
+            url=api_url,
+            headers=headers,
+            json=payload,
+            stream=stream,
+            timeout=self.timeout,
+        )
+        return response
+
+    async def _amake_request(
+        self,
+        session: ClientSession,
+        api_url: str,
+        headers: Any,
+        payload: Any,
+        stream: bool = True,
+    ) -> Request:
+        response = session.post(
+            url=api_url,
+            headers=headers,
+            json=payload,
+            stream=stream,
+            timeout=self.timeout,
+        )
+        return response
+
     def _create_stream(
         self,
         api_url: str,
@@ -231,15 +265,14 @@ class _OllamaCommon(BaseLanguageModel):
                 "images": payload.get("images", []),
                 **params,
             }
-        response = requests.post(
-            url=api_url,
-            headers={
+        response = self._make_request(
+            api_url,
+            {
                 "Content-Type": "application/json",
                 **(self.headers if isinstance(self.headers, dict) else {}),
             },
-            json=request_payload,
+            request_payload,
             stream=True,
-            timeout=self.timeout,
         )
         response.encoding = "utf-8"
         if response.status_code != 200:
@@ -293,15 +326,16 @@ class _OllamaCommon(BaseLanguageModel):
                 **params,
             }
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url=api_url,
-                headers={
+        async with ClientSession() as session:
+            async with self._amake_request(
+                session,
+                api_url,
+                {
                     "Content-Type": "application/json",
                     **(self.headers if isinstance(self.headers, dict) else {}),
                 },
-                json=request_payload,
-                timeout=self.timeout,
+                request_payload,
+                stream=True,
             ) as response:
                 if response.status != 200:
                     if response.status == 404:
@@ -316,6 +350,83 @@ class _OllamaCommon(BaseLanguageModel):
                         )
                 async for line in response.content:
                     yield line.decode("utf-8")
+
+    def _load_model(
+        self,
+        api_url: str,
+        **kwargs: Any,
+    ) -> bool:
+        params = {
+            "model": self.model,
+            "keep_alive": self.keep_alive,
+        }
+
+        for key in ("model", "keep_alive"):
+            if key in kwargs:
+                params[key] = kwargs[key]
+
+        response = self._make_request(
+            api_url,
+            {
+                "Content-Type": "application/json",
+                **(self.headers if isinstance(self.headers, dict) else {}),
+            },
+            params,
+            stream=False,
+        )
+        response.encoding = "utf-8"
+        if response.status_code != 200:
+            if response.status_code == 404:
+                raise OllamaEndpointNotFoundError(
+                    "Ollama call failed with status code 404. "
+                    "Maybe your model is not found "
+                    f"and you should pull the model with `ollama pull {self.model}`."
+                )
+            else:
+                optional_detail = response.text
+                raise ValueError(
+                    f"Ollama call failed with status code {response.status_code}."
+                    f" Details: {optional_detail}"
+                )
+        return response.json().get("done", False)
+
+    async def _aload_model(
+        self,
+        api_url: str,
+        **kwargs: Any,
+    ) -> bool:
+        params = {
+            "model": self.model,
+            "keep_alive": self.keep_alive,
+        }
+
+        for key in ("model", "keep_alive"):
+            if key in kwargs:
+                params[key] = kwargs[key]
+
+        async with ClientSession() as session:
+            async with self._amake_request(
+                session,
+                api_url,
+                {
+                    "Content-Type": "application/json",
+                    **(self.headers if isinstance(self.headers, dict) else {}),
+                },
+                params,
+                stream=False,
+            ) as response:
+                if response.status != 200:
+                    if response.status == 404:
+                        raise OllamaEndpointNotFoundError(
+                            "Ollama call failed with status code 404."
+                        )
+                    else:
+                        optional_detail = response.text
+                        raise ValueError(
+                            f"Ollama call failed with status code {response.status}."
+                            f" Details: {optional_detail}"
+                        )
+                return response.json().get("done", False)
 
     def _stream_with_aggregation(
         self,
@@ -486,3 +597,21 @@ class Ollama(BaseLLM, _OllamaCommon):
                         verbose=self.verbose,
                     )
                 yield chunk
+
+    def load_model(
+        self,
+        **kwargs: Any,
+    ) -> bool:
+        return self._load_model(
+            f"{self.base_url}/api/chat",
+            **kwargs,
+        )
+
+    async def aload_model(
+        self,
+        **kwargs: Any,
+    ) -> bool:
+        return self._aload_model(
+            f"{self.base_url}/api/chat",
+            **kwargs,
+        )
