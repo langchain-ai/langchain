@@ -26,6 +26,14 @@ logger = logging.getLogger(__name__)
 
 
 def condense_zep_memory_into_human_message(zep_memory: Memory) -> BaseMessage:
+    """Condense Zep memory into a human message.
+
+    Args:
+        zep_memory: The Zep memory object.
+
+    Returns:
+        BaseMessage: The human message.
+    """
     prompt = ""
     if zep_memory.facts:
         prompt = "\n".join(zep_memory.facts)
@@ -37,6 +45,16 @@ def condense_zep_memory_into_human_message(zep_memory: Memory) -> BaseMessage:
 
 
 def get_zep_message_role_type(role: str) -> RoleType:
+    """Get the Zep role type from the role string.
+
+    Args:
+        role: The role string. One of "human", "ai", "system",
+        "function", "tool".
+
+    Returns:
+        RoleType: The Zep role type. One of "user", "assistant",
+        "system", "function", "tool".
+    """
     if role == "human":
         return "user"
     elif role == "ai":

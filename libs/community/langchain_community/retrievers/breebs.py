@@ -18,7 +18,7 @@ class BreebsRetriever(BaseRetriever):
     """
 
     breeb_key: str
-    url = "https://breebs.promptbreeders.com/knowledge"
+    url: str = "https://breebs.promptbreeders.com/knowledge"
 
     def __init__(self, breeb_key: str):
         super().__init__(breeb_key=breeb_key)  # type: ignore[call-arg]

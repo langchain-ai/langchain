@@ -60,3 +60,7 @@ class YamlOutputParser(BaseOutputParser[T]):
     @property
     def _type(self) -> str:
         return "yaml"
+
+    @property
+    def OutputType(self) -> Type[T]:
+        return self.pydantic_object

@@ -220,7 +220,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 data = MessageToJson(
                     pb,
                     preserving_proto_field_name=True,
-                    including_default_value_fields=True,
+                    including_default_value_fields=True,  # type: ignore
                 )
                 self._results[matching_id]["data"] = data
 

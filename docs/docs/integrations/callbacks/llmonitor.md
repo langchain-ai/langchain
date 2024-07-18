@@ -110,7 +110,7 @@ with identify("user-123"):
     llm.invoke("Tell me a joke")
 
 with identify("user-456", user_props={"email": "user456@test.com"}):
-    agen.run("Who is Leo DiCaprio's girlfriend?")
+    agent.run("Who is Leo DiCaprio's girlfriend?")
 ```
 ## Support
 

@@ -22,9 +22,9 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
 
     """
 
-    name = "edenai_invoice_parsing"
+    name: str = "edenai_invoice_parsing"
 
-    description = (
+    description: str = (
         "A wrapper around edenai Services invoice parsing. "
         """Useful for when you have to extract information from 
         an image it enables to take invoices 
@@ -39,8 +39,8 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
     language of the image passed to the model.
     """
 
-    feature = "ocr"
-    subfeature = "invoice_parser"
+    feature: str = "ocr"
+    subfeature: str = "invoice_parser"
 
     def _parse_response(self, response: list) -> str:
         formatted_list: list = []

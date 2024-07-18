@@ -418,9 +418,9 @@ def _compact_module_full_name(doc_path: str) -> str:
     module = doc_path.split("#")[1].replace("module-", "")
     if module.count(".") > 2:
         # langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI
-        # -> langchain_community.llms...OCIModelDeploymentTGI
+        # -> langchain_community...OCIModelDeploymentTGI
         module_parts = module.split(".")
-        module = f"{module_parts[0]}.{module_parts[1]}...{module_parts[-1]}"
+        module = f"{module_parts[0]}...{module_parts[-1]}"
     return module
 
 
@@ -515,17 +515,22 @@ def log_results(arxiv_id2type2key2urls):
 def generate_arxiv_references_page(file_name: Path, papers: list[ArxivPaper]) -> None:
     with open(file_name, "w") as f:
         # Write the table headers
-        f.write("""# arXiv
+        f.write(
+            """# arXiv
             
 LangChain implements the latest research in the field of Natural Language Processing.
 This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
  Templates, and Cookbooks.
 
+From the opposite direction, scientists use LangChain in research and reference LangChain in the research papers. 
+Here you find [such papers](https://arxiv.org/search/?query=langchain&searchtype=all&source=header).
+
 ## Summary
 
 | arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation|
 |------------------|---------|-------------------|------------------------|
-""")
+"""
+        )
         for paper in papers:
             refs = []
             if paper.referencing_doc2url:
@@ -595,7 +600,8 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
                     if el
                 ]
             )
-            f.write(f"""
+            f.write(
+                f"""
 ## {paper.title}
 
 - **arXiv id:** {paper.arxiv_id}
@@ -608,7 +614,8 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
 {refs}
 
 **Abstract:** {paper.abstract}
-                """)
+                """
+            )
 
     logger.warning(f"Created the {file_name} file with {len(papers)} arXiv references.")
 

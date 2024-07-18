@@ -35,10 +35,8 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
 
         X = np.array(X, dtype=np.float32)
         Y = np.array(Y, dtype=np.float32)
-        Z = 1 - simd.cdist(X, Y, metric="cosine")
-        if isinstance(Z, float):
-            return np.array([Z])
-        return np.array(Z)
+        Z = 1 - np.array(simd.cdist(X, Y, metric="cosine"))
+        return Z
     except ImportError:
         logger.debug(
             "Unable to import simsimd, defaulting to NumPy implementation. If you want "
@@ -59,7 +57,17 @@ def maximal_marginal_relevance(
     lambda_mult: float = 0.5,
     k: int = 4,
 ) -> List[int]:
-    """Calculate maximal marginal relevance."""
+    """Calculate maximal marginal relevance.
+
+    Args:
+        query_embedding: The query embedding.
+        embedding_list: The list of embeddings.
+        lambda_mult: The lambda multiplier. Defaults to 0.5.
+        k: The number of results to return. Defaults to 4.
+
+    Returns:
+        List[int]: The list of indices.
+    """
     if min(k, len(embedding_list)) <= 0:
         return []
     if query_embedding.ndim == 1:
@@ -101,7 +109,7 @@ class Milvus(VectorStore):
 
     IF USING L2/IP metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
 
-    Args:
+    Parameters:
         embedding_function (Embeddings): Function used to embed the text.
         collection_name (str): Which Milvus collection to use. Defaults to
             "LangChainCollection".
@@ -1086,6 +1094,35 @@ class Milvus(VectorStore):
             metadata=data.pop(self._metadata_field) if self._metadata_field else data,
         )
 
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        # TODO: Handle the case where the user doesn't provide ids on the Collection
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return self.add_texts(texts, metadatas, **kwargs)
+
+    async def aadd_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return await self.aadd_texts(texts, metadatas, **kwargs)
+
     def get_pks(self, expr: str, **kwargs: Any) -> List[int] | None:
         """Get primary keys with expression
 
@@ -1112,7 +1149,7 @@ class Milvus(VectorStore):
         pks = [item.get(self._primary_field) for item in query_result]
         return pks
 
-    def upsert(
+    def upsert(  # type: ignore
         self,
         ids: Optional[List[str]] = None,
         documents: List[Document] | None = None,

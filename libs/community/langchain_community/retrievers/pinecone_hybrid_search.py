@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.utils import pre_init
 
 
 def hash_text(text: str) -> str:
@@ -136,7 +137,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             namespace=namespace,
         )
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:
@@ -152,7 +153,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         return values
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         from pinecone_text.hybrid import hybrid_convex_scale
 
@@ -169,6 +170,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             top_k=self.top_k,
             include_metadata=True,
             namespace=self.namespace,
+            **kwargs,
         )
         final_result = []
         for res in result["matches"]:

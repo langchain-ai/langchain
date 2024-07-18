@@ -25,16 +25,18 @@ os.environ["ANTHROPIC_API_KEY"] = "foo"
 def test_initialization() -> None:
     """Test chat model initialization."""
     for model in [
-        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),  # type: ignore[arg-type]
+        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
         ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
             model="claude-instant-1.2",
             anthropic_api_key="xyz",
             default_request_timeout=2,
+            base_url="https://api.anthropic.com",
         ),
     ]:
         assert model.model == "claude-instant-1.2"
         assert cast(SecretStr, model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
+        assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
 @pytest.mark.requires("anthropic")
@@ -138,7 +140,19 @@ def test__merge_messages() -> None:
             ]
         ),
         ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
-        ToolMessage("blah output", tool_call_id="2"),  # type: ignore[misc]
+        ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "fake_image_data",
+                    },
+                },
+            ],
+            tool_call_id="2",
+        ),  # type: ignore[misc]
         HumanMessage("next thing"),  # type: ignore[misc]
     ]
     expected = [
@@ -167,10 +181,44 @@ def test__merge_messages() -> None:
         HumanMessage(  # type: ignore[misc]
             [
                 {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
-                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
+                {
+                    "type": "tool_result",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": "fake_image_data",
+                            },
+                        },
+                    ],
+                    "tool_use_id": "2",
+                },
                 {"type": "text", "text": "next thing"},
             ]
         ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test tool message case
+    messages = [
+        ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
+        ToolMessage(  # type: ignore[misc]
+            content=[
+                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"}
+            ],
+            tool_call_id="2",
+        ),
+    ]
+    expected = [
+        HumanMessage(  # type: ignore[misc]
+            [
+                {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
+                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
+            ]
+        )
     ]
     actual = _merge_messages(messages)
     assert expected == actual

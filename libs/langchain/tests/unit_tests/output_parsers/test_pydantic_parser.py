@@ -60,6 +60,7 @@ def test_pydantic_output_parser() -> None:
     result = pydantic_parser.parse(DEF_RESULT)
     print("parse_result:", result)  # noqa: T201
     assert DEF_EXPECTED_RESULT == result
+    assert pydantic_parser.OutputType is TestModel
 
 
 def test_pydantic_output_parser_fail() -> None:
@@ -87,9 +88,7 @@ def test_pydantic_output_parser_type_inference() -> None:
 
     # Ignoring mypy error that appears in python 3.8, but not 3.11.
     # This seems to be functionally correct, so we'll ignore the error.
-    pydantic_parser = PydanticOutputParser(
-        pydantic_object=SampleModel  # type: ignore[var-annotated]
-    )
+    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)  # type: ignore
     schema = pydantic_parser.get_output_schema().schema()
 
     assert schema == {

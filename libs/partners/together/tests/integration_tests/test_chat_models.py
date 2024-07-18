@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
 from langchain_together import ChatTogether
@@ -8,7 +8,7 @@ def test_chat_together_model() -> None:
     """Test ChatTogether wrapper handles model_name."""
     chat = ChatTogether(model="foo")
     assert chat.model_name == "foo"
-    chat = ChatTogether(model_name="bar")
+    chat = ChatTogether(model_name="bar")  # type: ignore[call-arg]
     assert chat.model_name == "bar"
 
 
@@ -54,17 +54,17 @@ def test_chat_together_invalid_streaming_params() -> None:
 def test_chat_together_extra_kwargs() -> None:
     """Test extra kwargs to chat together."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatTogether(foo=3, max_tokens=10)
+    llm = ChatTogether(foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatTogether(foo=3, model_kwargs={"bar": 2})
+    llm = ChatTogether(foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
-        ChatTogether(foo=3, model_kwargs={"foo": 2})
+        ChatTogether(foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
 
     # Test that if explicit param is specified in kwargs it errors
     with pytest.raises(ValueError):

@@ -31,6 +31,9 @@ if TYPE_CHECKING:
     from langchain_community.storage.redis import (
         RedisStore,
     )
+    from langchain_community.storage.sql import (
+        SQLStore,
+    )
     from langchain_community.storage.upstash_redis import (
         UpstashRedisByteStore,
         UpstashRedisStore,
@@ -42,6 +45,7 @@ __all__ = [
     "CassandraByteStore",
     "MongoDBStore",
     "RedisStore",
+    "SQLStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
 ]
@@ -52,6 +56,7 @@ _module_lookup = {
     "CassandraByteStore": "langchain_community.storage.cassandra",
     "MongoDBStore": "langchain_community.storage.mongodb",
     "RedisStore": "langchain_community.storage.redis",
+    "SQLStore": "langchain_community.storage.sql",
     "UpstashRedisByteStore": "langchain_community.storage.upstash_redis",
     "UpstashRedisStore": "langchain_community.storage.upstash_redis",
 }

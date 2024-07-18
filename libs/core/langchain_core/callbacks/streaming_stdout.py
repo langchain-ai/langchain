@@ -1,4 +1,5 @@
 """Callback Handler streams to stdout on new llm token."""
+
 from __future__ import annotations
 
 import sys
@@ -18,7 +19,13 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
-        """Run when LLM starts running."""
+        """Run when LLM starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized LLM.
+            prompts (List[str]): The prompts to run.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_chat_model_start(
         self,
@@ -26,47 +33,115 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         messages: List[List[BaseMessage]],
         **kwargs: Any,
     ) -> None:
-        """Run when LLM starts running."""
+        """Run when LLM starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized LLM.
+            messages (List[List[BaseMessage]]): The messages to run.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        """Run on new LLM token. Only available when streaming is enabled."""
+        """Run on new LLM token. Only available when streaming is enabled.
+
+        Args:
+            token (str): The new token.
+            **kwargs (Any): Additional keyword arguments.
+        """
         sys.stdout.write(token)
         sys.stdout.flush()
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Run when LLM ends running."""
+        """Run when LLM ends running.
+
+        Args:
+            response (LLMResult): The response from the LLM.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
-        """Run when LLM errors."""
+        """Run when LLM errors.
+
+        Args:
+            error (BaseException): The error that occurred.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_chain_start(
         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
     ) -> None:
-        """Run when chain starts running."""
+        """Run when a chain starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized chain.
+            inputs (Dict[str, Any]): The inputs to the chain.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
-        """Run when chain ends running."""
+        """Run when a chain ends running.
+
+        Args:
+            outputs (Dict[str, Any]): The outputs of the chain.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
-        """Run when chain errors."""
+        """Run when chain errors.
+
+        Args:
+            error (BaseException): The error that occurred.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
-        """Run when tool starts running."""
+        """Run when the tool starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized tool.
+            input_str (str): The input string.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
-        """Run on agent action."""
+        """Run on agent action.
+
+        Args:
+            action (AgentAction): The agent action.
+            **kwargs (Any): Additional keyword arguments.
+        """
         pass
 
     def on_tool_end(self, output: Any, **kwargs: Any) -> None:
-        """Run when tool ends running."""
+        """Run when tool ends running.
+
+        Args:
+            output (Any): The output of the tool.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
-        """Run when tool errors."""
+        """Run when tool errors.
+
+        Args:
+            error (BaseException): The error that occurred.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_text(self, text: str, **kwargs: Any) -> None:
-        """Run on arbitrary text."""
+        """Run on an arbitrary text.
+
+        Args:
+            text (str): The text to print.
+            **kwargs (Any): Additional keyword arguments.
+        """
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
-        """Run on agent end."""
+        """Run on the agent end.
+
+        Args:
+            finish (AgentFinish): The agent finish.
+            **kwargs (Any): Additional keyword arguments.
+        """

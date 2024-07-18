@@ -1,4 +1,5 @@
 """Agent for working with xorbits objects."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
@@ -29,9 +30,45 @@ def create_xorbits_agent(
     max_execution_time: Optional[float] = None,
     early_stopping_method: str = "force",
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    allow_dangerous_code: bool = False,
     **kwargs: Dict[str, Any],
 ) -> AgentExecutor:
-    """Construct a xorbits agent from an LLM and dataframe."""
+    """Construct a xorbits agent from an LLM and dataframe.
+
+    Security Notice:
+        This agent relies on access to a python repl tool which can execute
+        arbitrary code. This can be dangerous and requires a specially sandboxed
+        environment to be safely used. Failure to run this code in a properly
+        sandboxed environment can lead to arbitrary code execution vulnerabilities,
+        which can lead to data breaches, data loss, or other security incidents.
+
+        Do not use this code with untrusted inputs, with elevated permissions,
+        or without consulting your security team about proper sandboxing!
+
+        You must opt in to use this functionality by setting allow_dangerous_code=True.
+
+    Args:
+        allow_dangerous_code: bool, default False
+            This agent relies on access to a python repl tool which can execute
+            arbitrary code. This can be dangerous and requires a specially sandboxed
+            environment to be safely used.
+            Failure to properly sandbox this class can lead to arbitrary code execution
+            vulnerabilities, which can lead to data breaches, data loss, or
+            other security incidents.
+            You must opt in to use this functionality by setting
+            allow_dangerous_code=True.
+    """
+    if not allow_dangerous_code:
+        raise ValueError(
+            "This agent relies on access to a python repl tool which can execute "
+            "arbitrary code. This can be dangerous and requires a specially sandboxed "
+            "environment to be safely used. Please read the security notice in the "
+            "doc-string of this function. You must opt-in to use this functionality "
+            "by setting allow_dangerous_code=True."
+            "For general security guidelines, please see: "
+            "https://python.langchain.com/v0.2/docs/security/"
+        )
+
     try:
         from xorbits import numpy as np
         from xorbits import pandas as pd
@@ -72,11 +109,11 @@ def create_xorbits_agent(
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(
+    agent = ZeroShotAgent(  # type: ignore[call-arg]
         llm_chain=llm_chain,
         allowed_tools=tool_names,
         callback_manager=callback_manager,
-        **kwargs,
+        **kwargs,  # type: ignore[arg-type]
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,

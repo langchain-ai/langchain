@@ -23,7 +23,7 @@ class EdenAiTextToSpeechTool(EdenaiTool):
 
     """
 
-    name = "edenai_text_to_speech"
+    name: str = "edenai_text_to_speech"
     description = (
         "A wrapper around edenai Services text to speech."
         "Useful for when you need to convert text to speech."
@@ -65,7 +65,7 @@ class EdenAiTextToSpeechTool(EdenaiTool):
             )
         return v
 
-    @root_validator
+    @root_validator(pre=True)
     def check_voice_models_key_is_provider_name(cls, values: dict) -> dict:
         for key in values.get("voice_models", {}).keys():
             if key not in values.get("providers", []):

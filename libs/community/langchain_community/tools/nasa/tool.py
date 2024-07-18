@@ -1,5 +1,5 @@
 """
-This tool allows agents to interact with the NASA API, specifically 
+This tool allows agents to interact with the NASA API, specifically
 the the NASA Image & Video Library and Exoplanet
 """
 
