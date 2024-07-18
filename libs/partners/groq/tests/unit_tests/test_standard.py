@@ -2,7 +2,6 @@
 
 from typing import Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import RunnableBinding
 from langchain_standard_tests.unit_tests.chat_models import (  # type: ignore[import-not-found]
@@ -19,6 +18,10 @@ class TestGroqStandard(ChatModelUnitTests):
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatGroq
 
-    @pytest.mark.xfail(reason="Groq does not support tool_choice='any'")
     def test_bind_tool_pydantic(self, model: BaseChatModel) -> None:
-        super().test_bind_tool_pydantic(model)
+        """Does not currently support tool_choice='any'."""
+        if not self.has_tool_calling:
+            return
+
+        tool_model = model.bind_tools([Person, Person.schema(), my_adder_tool])
+        assert isinstance(tool_model, RunnableBinding)

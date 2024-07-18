@@ -1,15 +1,13 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Generator, Generic, Tuple, TypeVar
 
 import pytest
 from langchain_core.stores import BaseStore
 
-from langchain_standard_tests.base import BaseStandardTests
-
 V = TypeVar("V")
 
 
-class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
+class BaseStoreSyncTests(ABC, Generic[V]):
     """Test suite for checking the key-value API of a BaseStore.
 
     This test suite verifies the basic key-value API of a BaseStore.
@@ -140,7 +138,7 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert sorted(kv_store.yield_keys(prefix="foo")) == ["foo"]
 
 
-class BaseStoreAsyncTests(BaseStandardTests):
+class BaseStoreAsyncTests(ABC):
     """Test suite for checking the key-value API of a BaseStore.
 
     This test suite verifies the basic key-value API of a BaseStore.
