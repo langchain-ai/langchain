@@ -110,7 +110,7 @@ class TavilySearchAPIWrapper(BaseModel):
             include_raw_content=include_raw_content,
             include_images=include_images,
         )
-        return self.clean_results(raw_search_results["results"])
+        return self.clean_results(raw_search_results)
 
     async def raw_results_async(
         self,
@@ -170,7 +170,7 @@ class TavilySearchAPIWrapper(BaseModel):
             include_raw_content=include_raw_content,
             include_images=include_images,
         )
-        return self.clean_results(results_json["results"])
+        return self.clean_results(results_json)
 
     def clean_results(self, results: List[Dict]) -> List[Dict]:
         """Clean results from Tavily Search API."""
