@@ -40,9 +40,27 @@ class BaseStandardTests(ABC):
         deleted_tests = base_tests - running_tests
         assert not deleted_tests, f"Standard tests deleted: {deleted_tests}"
 
-        overriden_tests = [
+        overridden_tests = [
             method
             for method in running_tests
             if getattr(self.__class__, method) is not getattr(comparison_class, method)
         ]
-        assert not overriden_tests, f"Standard tests overridden: {overriden_tests}"
+
+        def is_xfail(method: str) -> bool:
+            m = getattr(self.__class__, method)
+            if not hasattr(m, "pytestmark"):
+                return False
+            marks = m.pytestmark
+            return any(
+                mark.name == "xfail" and mark.kwargs.get("reason") for mark in marks
+            )
+
+        overridden_not_xfail = [
+            method for method in overridden_tests if not is_xfail(method)
+        ]
+        assert not overridden_not_xfail, (
+            "Standard tests overridden without "
+            f'@pytest.mark.xfail(reason="..."): {overridden_not_xfail}\n'
+            "Note: reason is required to explain why the standard test has an expected "
+            "failure."
+        )
