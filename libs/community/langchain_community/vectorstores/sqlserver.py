@@ -29,13 +29,6 @@ class SQLServer_VectorStore(VectorStore):
     This class provides a vector store interface for adding texts and performing
         similarity searches on the texts in SQL Server.
 
-    Args:
-        connection: Optional SQLServer connection.
-        connection_string: SQLServer connection string.
-        embedding_function: Any embedding function implementing
-            `langchain.embeddings.base.Embeddings` interface.
-        table_name: The name of the table to use for storing embeddings.
-
     """
 
     def __init__(
@@ -46,7 +39,16 @@ class SQLServer_VectorStore(VectorStore):
         embedding_function: Embeddings,
         table_name: str,
     ) -> None:
-        """Initialize the SQL Server vector store."""
+        """Initialize the SQL Server vector store.
+
+        Args:
+            connection: Optional SQLServer connection.
+            connection_string: SQLServer connection string.
+            embedding_function: Any embedding function implementing
+                `langchain.embeddings.base.Embeddings` interface.
+            table_name: The name of the table to use for storing embeddings.
+
+        """
 
         self.connection_string = connection_string
         self.embedding_function = embedding_function
@@ -59,7 +61,7 @@ class SQLServer_VectorStore(VectorStore):
         return create_engine(url=self.connection_string, echo=True)
 
     def _create_table_if_not_exists(self) -> None:
-        logging.info("Creating table %s", json.dumps(self.table_name))
+        logging.info("Creating table %s", self.table_name)
         with Session(bind=self._bind) as session:
             Base.metadata.create_all(session.get_bind())
 

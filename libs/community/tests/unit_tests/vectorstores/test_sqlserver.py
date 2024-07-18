@@ -62,6 +62,32 @@ def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(store) ->
     assert len(result) == len(texts)
 
 
+def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
+    store,
+) -> None:
+    """Test that when length of given id is less than length of texts, random ids are created."""
+    texts = [
+        "Good review",
+        "new books",
+        "table",
+        "Sunglasses are a form of protective eyewear.",
+        "It's a new year.",
+    ]
+
+    # List of ids is 3 and is less than len(texts) which is 5.
+    metadatas = [
+        {"id": 1, "soure": "book review", "length": 11},
+        {"id": 2, "source": "random texts", "length": 9},
+        {"source": "household list", "length": 5},
+        {"id": 6, "source": "newspaper page", "length": 44},
+        {"source": "random texts", "length": 16},
+    ]
+    result = store.add_texts(texts, metadatas)
+
+    # Length of ids returned by add_texts function should be equal to length of texts.
+    assert len(result) == len(texts)
+
+
 def test_add_document_with_sqlserver(store) -> None:
     """Test that when add_document function is used, it integerates well with the add_text function in SQLServer Vector Store."""
     docs = [
