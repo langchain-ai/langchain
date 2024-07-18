@@ -36,13 +36,12 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    _isinstance_base_model,
-    _issubclass_base_model,
 )
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.pydantic import _isinstance_base_model, _issubclass_base_model
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 

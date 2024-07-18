@@ -6,7 +6,7 @@ from langchain.chains.llm import LLMChain
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
-from langchain_core.pydantic_v1 import _isinstance_base_model
+from langchain_core.utils.pydantic import _isinstance_base_model
 
 
 class SyntheticDataGenerator(BaseModel):

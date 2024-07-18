@@ -43,7 +43,7 @@ from langchain_core.load.serializable import (
     SerializedConstructor,
     SerializedNotImplemented,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, _issubclass_base_model
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
     _set_config_context,
@@ -82,6 +82,7 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
+from langchain_core.utils.pydantic import _issubclass_base_model
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (

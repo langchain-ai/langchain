@@ -3,7 +3,11 @@
 from functools import wraps
 from typing import Any, Callable, Dict, Type
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import (
+    _PYDANTIC_MAJOR_VERSION,
+    BaseModel,
+    root_validator,
+)
 
 
 def get_pydantic_major_version() -> int:
@@ -64,3 +68,25 @@ def pre_init(func: Callable) -> Any:
         return func(cls, values)
 
     return wrapper
+
+
+def _issubclass_base_model(type_: Type) -> bool:
+    from pydantic import BaseModel
+
+    if _PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import BaseModel as BaseModelV1
+
+        return issubclass(type_, (BaseModel, BaseModelV1))
+    else:
+        return issubclass(type_, BaseModel)
+
+
+def _isinstance_base_model(obj: Any) -> bool:
+    from pydantic import BaseModel
+
+    if _PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import BaseModel as BaseModelV1
+
+        return isinstance(obj, (BaseModel, BaseModelV1))
+    else:
+        return isinstance(obj, BaseModel)

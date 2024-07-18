@@ -67,13 +67,13 @@ from langchain_core.pydantic_v1 import (
     BaseModel,
     Field,
     SecretStr,
-    _issubclass_base_model,
     root_validator,
 )
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import _issubclass_base_model
 
 logger = logging.getLogger(__name__)
 

@@ -6,8 +6,9 @@ from langchain_core.language_models import FakeListChatModel
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts.structured import StructuredPrompt
-from langchain_core.pydantic_v1 import BaseModel, _issubclass_base_model
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableLambda
+from langchain_core.utils.pydantic import _issubclass_base_model
 
 
 def _fake_runnable(

@@ -54,7 +54,6 @@ from langchain_core.pydantic_v1 import (
     BaseModel,
     Field,
     SecretStr,
-    _issubclass_base_model,
     root_validator,
 )
 from langchain_core.runnables import (
@@ -69,6 +68,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import _issubclass_base_model
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 

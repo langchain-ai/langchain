@@ -52,12 +52,12 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     SecretStr,
-    _issubclass_base_model,
 )
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import _issubclass_base_model
 
 from langchain_community.utilities.requests import Requests
 

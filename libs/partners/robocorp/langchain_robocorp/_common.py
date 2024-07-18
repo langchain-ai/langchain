@@ -5,10 +5,10 @@ from typing import Any, Dict, List, Set, Tuple, Union, cast
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Field,
-    _isinstance_base_model,
     create_model,
 )
 from langchain_core.utils.json_schema import dereference_refs
+from langchain_core.utils.pydantic import _isinstance_base_model
 
 
 @dataclass(frozen=True)

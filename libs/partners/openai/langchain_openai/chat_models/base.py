@@ -73,13 +73,7 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    SecretStr,
-    _issubclass_base_model,
-    root_validator,
-)
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
@@ -92,6 +86,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from langchain_core.utils.pydantic import _issubclass_base_model
 from langchain_core.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
