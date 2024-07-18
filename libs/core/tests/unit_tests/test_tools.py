@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import sys
 import textwrap
 from datetime import datetime
 from enum import Enum
@@ -9,7 +10,6 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import pytest
-import sys
 from typing_extensions import Annotated, TypedDict
 
 from langchain_core.callbacks import (
