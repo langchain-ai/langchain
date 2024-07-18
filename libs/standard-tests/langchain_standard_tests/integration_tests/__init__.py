@@ -15,22 +15,10 @@ for module in modules:
         f"langchain_standard_tests.integration_tests.{module}"
     )
 
-from langchain_standard_tests.integration_tests.base_store import (
-    BaseStoreAsyncTests,
-    BaseStoreSyncTests,
-)
-from langchain_standard_tests.integration_tests.cache import (
-    AsyncCacheTestSuite,
-    SyncCacheTestSuite,
-)
 from langchain_standard_tests.integration_tests.chat_models import (
     ChatModelIntegrationTests,
 )
 
 __all__ = [
-    "AsyncCacheTestSuite",
-    "BaseStoreAsyncTests",
-    "BaseStoreSyncTests",
     "ChatModelIntegrationTests",
-    "SyncCacheTestSuite",
 ]
