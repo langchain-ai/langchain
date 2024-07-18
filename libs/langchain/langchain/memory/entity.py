@@ -15,7 +15,6 @@ from langchain.memory.prompt import (
     ENTITY_SUMMARIZATION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
-from langchain.utilities.redis import get_client
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +181,14 @@ class RedisEntityStore(BaseEntityStore):
         super().__init__(*args, **kwargs)
 
         try:
+            from langchain_community.utilities.redis import get_client
+        except ImportError:
+            raise ImportError(
+                "Could not import langchain_community.utilities.redis.get_client. "
+                "Please install it with `pip install langchain-community`."
+            )
+
+        try:
             self.redis_client = get_client(redis_url=url, decode_responses=True)
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
@@ -236,6 +243,12 @@ class SQLiteEntityStore(BaseEntityStore):
 
     session_id: str = "default"
     table_name: str = "memory_store"
+    conn: Any = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def __init__(
         self,

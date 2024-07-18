@@ -1,20 +1,23 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import List
+from langchain._api import create_importer
 
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools import BaseTool
-from langchain.tools.json.tool import JsonGetValueTool, JsonListKeysTool, JsonSpec
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.json.toolkit import JsonToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"JsonToolkit": "langchain_community.agent_toolkits.json.toolkit"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class JsonToolkit(BaseToolkit):
-    """Toolkit for interacting with a JSON spec."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    spec: JsonSpec
 
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return [
-            JsonListKeysTool(spec=self.spec),
-            JsonGetValueTool(spec=self.spec),
-        ]
+__all__ = [
+    "JsonToolkit",
+]

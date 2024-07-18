@@ -1,14 +1,15 @@
 """Chain for question-answering with self-verification."""
+
 from __future__ import annotations
 
 import warnings
 from typing import Any, Dict, List, Optional
 
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Extra, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.prompt import (
@@ -54,7 +55,7 @@ def _load_question_to_checked_assertions_chain(
         revised_answer_chain,
     ]
     question_to_checked_assertions_chain = SequentialChain(
-        chains=chains,
+        chains=chains,  # type: ignore[arg-type]
         input_variables=["question"],
         output_variables=["revised_statement"],
         verbose=True,
@@ -68,7 +69,7 @@ class LLMCheckerChain(Chain):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from langchain.chains import LLMCheckerChain
             llm = OpenAI(temperature=0.7)
             checker_chain = LLMCheckerChain.from_llm(llm)
@@ -118,9 +119,9 @@ class LLMCheckerChain(Chain):
                         values.get("revised_answer_prompt", REVISED_ANSWER_PROMPT),
                     )
                 )
-                values[
-                    "question_to_checked_assertions_chain"
-                ] = question_to_checked_assertions_chain
+                values["question_to_checked_assertions_chain"] = (
+                    question_to_checked_assertions_chain
+                )
         return values
 
     @property

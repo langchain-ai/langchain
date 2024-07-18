@@ -1,4 +1,4 @@
-from langchain.agents import __all__
+from langchain import agents
 
 EXPECTED_ALL = [
     "Agent",
@@ -35,8 +35,16 @@ EXPECTED_ALL = [
     "load_tools",
     "tool",
     "XMLAgent",
+    "create_openai_functions_agent",
+    "create_xml_agent",
+    "create_react_agent",
+    "create_openai_tools_agent",
+    "create_self_ask_with_search_agent",
+    "create_json_chat_agent",
+    "create_structured_chat_agent",
+    "create_tool_calling_agent",
 ]
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(agents.__all__) == set(EXPECTED_ALL)

@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "gemini-functions-agent"
+version = "0.1.0"
+description = "Agent using Gemini function calling to execute functions, including search"
+authors = ["Harrison Chase"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+langchain = "^0.1"
+tavily-python = "^0.1.9"
+langchain-google-genai = ">=0.0.8,<0.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "gemini_functions_agent"
+export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["Google", "Tavily"]
+tags = ["search", "agents", "function-calling"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,20 +1,23 @@
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.utilities.outline import OutlineAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.retrievers import OutlineRetriever
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"OutlineRetriever": "langchain_community.retrievers"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class OutlineRetriever(BaseRetriever, OutlineAPIWrapper):
-    """Retriever for Outline API.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    It wraps run() to get_relevant_documents().
-    It uses all OutlineAPIWrapper arguments without any change.
-    """
 
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        return self.run(query=query)
+__all__ = [
+    "OutlineRetriever",
+]

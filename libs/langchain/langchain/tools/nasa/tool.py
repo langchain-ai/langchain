@@ -1,28 +1,23 @@
-"""
-This tool allows agents to interact with the NASA API, specifically 
-the the NASA Image & Video Library and Exoplanet
-"""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.nasa import NasaAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import NasaAction
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"NasaAction": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class NasaAction(BaseTool):
-    """Tool that queries the Atlassian Jira API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    api_wrapper: NasaAPIWrapper = Field(default_factory=NasaAPIWrapper)
-    mode: str
-    name: str = ""
-    description: str = ""
 
-    def _run(
-        self,
-        instructions: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the NASA API to run an operation."""
-        return self.api_wrapper.run(self.mode, instructions)
+__all__ = [
+    "NasaAction",
+]

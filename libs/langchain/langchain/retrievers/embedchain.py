@@ -1,72 +1,23 @@
-"""Wrapper around Embedchain Retriever."""
+from typing import TYPE_CHECKING, Any
 
-from __future__ import annotations
+from langchain._api import create_importer
 
-from typing import Any, Iterable, List, Optional
+if TYPE_CHECKING:
+    from langchain_community.retrievers import EmbedchainRetriever
 
-from langchain_core.documents import Document
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"EmbedchainRetriever": "langchain_community.retrievers"}
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class EmbedchainRetriever(BaseRetriever):
-    """`Embedchain` retriever."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    client: Any
-    """Embedchain Pipeline."""
 
-    @classmethod
-    def create(cls, yaml_path: Optional[str] = None) -> EmbedchainRetriever:
-        """
-        Create a EmbedchainRetriever from a YAML configuration file.
-
-        Args:
-            yaml_path: Path to the YAML configuration file. If not provided,
-                       a default configuration is used.
-
-        Returns:
-            An instance of EmbedchainRetriever.
-
-        """
-        from embedchain import Pipeline
-
-        # Create an Embedchain Pipeline instance
-        if yaml_path:
-            client = Pipeline.from_config(yaml_path=yaml_path)
-        else:
-            client = Pipeline()
-        return cls(client=client)
-
-    def add_texts(
-        self,
-        texts: Iterable[str],
-    ) -> List[str]:
-        """Run more texts through the embeddings and add to the retriever.
-
-        Args:
-            texts: Iterable of strings/URLs to add to the retriever.
-
-        Returns:
-            List of ids from adding the texts into the retriever.
-        """
-        ids = []
-        for text in texts:
-            _id = self.client.add(text)
-            ids.append(_id)
-        return ids
-
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        res = self.client.search(query)
-
-        docs = []
-        for r in res:
-            docs.append(
-                Document(
-                    page_content=r["context"],
-                    metadata={"source": r["source"], "document_id": r["document_id"]},
-                )
-            )
-        return docs
+__all__ = [
+    "EmbedchainRetriever",
+]

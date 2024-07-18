@@ -6,6 +6,8 @@ EXPECTED_ALL = [
     "convert_to_secret_str",
     "formatter",
     "get_bolded_text",
+    "abatch_iterate",
+    "batch_iterate",
     "get_color_mapping",
     "get_colored_text",
     "get_pydantic_field_names",
@@ -16,6 +18,13 @@ EXPECTED_ALL = [
     "xor_args",
     "try_load_from_hub",
     "build_extra_kwargs",
+    "image",
+    "get_from_dict_or_env",
+    "get_from_env",
+    "stringify_dict",
+    "comma_list",
+    "stringify_value",
+    "pre_init",
 ]
 
 

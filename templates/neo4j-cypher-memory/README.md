@@ -7,7 +7,7 @@ Additionally, it features a conversational memory module that stores the dialogu
 The conversation memory is uniquely maintained for each user session, ensuring personalized interactions.
 To facilitate this, please supply both the `user_id` and `session_id` when using the conversation chain.
 
-![Workflow diagram](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-memory/static/workflow.png)
+![Workflow diagram illustrating the process of a user asking a question, generating a Cypher query, retrieving conversational history, executing the query on a Neo4j database, generating an answer, and storing conversational memory.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-memory/static/workflow.png "Neo4j Cypher Memory Workflow Diagram")
 
 ## Environment Setup
 
@@ -64,7 +64,7 @@ add_routes(app, neo4j_cypher_memory_chain, path="/neo4j-cypher-memory")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

@@ -19,560 +19,171 @@ and retrieve the data that are 'most similar' to the embedded query.
     Embeddings, Document
 """  # noqa: E501
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.vectorstores import VectorStore
 
+from langchain._api import create_importer
 
-def _import_alibaba_cloud_open_search() -> Any:
-    from langchain.vectorstores.alibabacloud_opensearch import AlibabaCloudOpenSearch
-
-    return AlibabaCloudOpenSearch
-
-
-def _import_alibaba_cloud_open_search_settings() -> Any:
-    from langchain.vectorstores.alibabacloud_opensearch import (
+if TYPE_CHECKING:
+    from langchain_community.vectorstores import (
+        FAISS,
+        AlibabaCloudOpenSearch,
         AlibabaCloudOpenSearchSettings,
+        AnalyticDB,
+        Annoy,
+        AstraDB,
+        AtlasDB,
+        AwaDB,
+        AzureCosmosDBVectorSearch,
+        AzureSearch,
+        Bagel,
+        Cassandra,
+        Chroma,
+        Clarifai,
+        Clickhouse,
+        ClickhouseSettings,
+        DashVector,
+        DatabricksVectorSearch,
+        DeepLake,
+        Dingo,
+        DocArrayHnswSearch,
+        DocArrayInMemorySearch,
+        DuckDB,
+        EcloudESVectorStore,
+        ElasticKnnSearch,
+        ElasticsearchStore,
+        ElasticVectorSearch,
+        Epsilla,
+        Hologres,
+        LanceDB,
+        LLMRails,
+        Marqo,
+        MatchingEngine,
+        Meilisearch,
+        Milvus,
+        MomentoVectorIndex,
+        MongoDBAtlasVectorSearch,
+        MyScale,
+        MyScaleSettings,
+        Neo4jVector,
+        NeuralDBClientVectorStore,
+        NeuralDBVectorStore,
+        OpenSearchVectorSearch,
+        PGEmbedding,
+        PGVector,
+        Pinecone,
+        Qdrant,
+        Redis,
+        Rockset,
+        ScaNN,
+        SemaDB,
+        SingleStoreDB,
+        SKLearnVectorStore,
+        SQLiteVSS,
+        StarRocks,
+        SupabaseVectorStore,
+        Tair,
+        TencentVectorDB,
+        Tigris,
+        TileDB,
+        TimescaleVector,
+        Typesense,
+        USearch,
+        Vald,
+        Vearch,
+        Vectara,
+        VespaStore,
+        Weaviate,
+        Yellowbrick,
+        ZepVectorStore,
+        Zilliz,
     )
 
-    return AlibabaCloudOpenSearchSettings
-
-
-def _import_azure_cosmos_db() -> Any:
-    from langchain.vectorstores.azure_cosmos_db import AzureCosmosDBVectorSearch
-
-    return AzureCosmosDBVectorSearch
-
-
-def _import_elastic_knn_search() -> Any:
-    from langchain.vectorstores.elastic_vector_search import ElasticKnnSearch
-
-    return ElasticKnnSearch
-
-
-def _import_elastic_vector_search() -> Any:
-    from langchain.vectorstores.elastic_vector_search import ElasticVectorSearch
-
-    return ElasticVectorSearch
-
-
-def _import_analyticdb() -> Any:
-    from langchain.vectorstores.analyticdb import AnalyticDB
-
-    return AnalyticDB
-
-
-def _import_annoy() -> Any:
-    from langchain.vectorstores.annoy import Annoy
-
-    return Annoy
-
-
-def _import_atlas() -> Any:
-    from langchain.vectorstores.atlas import AtlasDB
-
-    return AtlasDB
-
-
-def _import_awadb() -> Any:
-    from langchain.vectorstores.awadb import AwaDB
-
-    return AwaDB
-
-
-def _import_azuresearch() -> Any:
-    from langchain.vectorstores.azuresearch import AzureSearch
-
-    return AzureSearch
-
-
-def _import_bageldb() -> Any:
-    from langchain.vectorstores.bageldb import Bagel
-
-    return Bagel
-
-
-def _import_baiducloud_vector_search() -> Any:
-    from langchain.vectorstores.baiducloud_vector_search import BESVectorStore
-
-    return BESVectorStore
-
-
-def _import_cassandra() -> Any:
-    from langchain.vectorstores.cassandra import Cassandra
-
-    return Cassandra
-
-
-def _import_astradb() -> Any:
-    from langchain.vectorstores.astradb import AstraDB
-
-    return AstraDB
-
-
-def _import_chroma() -> Any:
-    from langchain.vectorstores.chroma import Chroma
-
-    return Chroma
-
-
-def _import_clarifai() -> Any:
-    from langchain.vectorstores.clarifai import Clarifai
-
-    return Clarifai
-
-
-def _import_clickhouse() -> Any:
-    from langchain.vectorstores.clickhouse import Clickhouse
-
-    return Clickhouse
-
-
-def _import_clickhouse_settings() -> Any:
-    from langchain.vectorstores.clickhouse import ClickhouseSettings
-
-    return ClickhouseSettings
-
-
-def _import_dashvector() -> Any:
-    from langchain.vectorstores.dashvector import DashVector
-
-    return DashVector
-
-
-def _import_databricks_vector_search() -> Any:
-    from langchain.vectorstores.databricks_vector_search import DatabricksVectorSearch
-
-    return DatabricksVectorSearch
-
-
-def _import_deeplake() -> Any:
-    from langchain.vectorstores.deeplake import DeepLake
-
-    return DeepLake
-
-
-def _import_dingo() -> Any:
-    from langchain.vectorstores.dingo import Dingo
-
-    return Dingo
-
-
-def _import_docarray_hnsw() -> Any:
-    from langchain.vectorstores.docarray import DocArrayHnswSearch
-
-    return DocArrayHnswSearch
-
-
-def _import_docarray_inmemory() -> Any:
-    from langchain.vectorstores.docarray import DocArrayInMemorySearch
-
-    return DocArrayInMemorySearch
-
-
-def _import_elasticsearch() -> Any:
-    from langchain.vectorstores.elasticsearch import ElasticsearchStore
-
-    return ElasticsearchStore
-
-
-def _import_epsilla() -> Any:
-    from langchain.vectorstores.epsilla import Epsilla
-
-    return Epsilla
-
-
-def _import_faiss() -> Any:
-    from langchain.vectorstores.faiss import FAISS
-
-    return FAISS
-
-
-def _import_hologres() -> Any:
-    from langchain.vectorstores.hologres import Hologres
-
-    return Hologres
-
-
-def _import_lancedb() -> Any:
-    from langchain.vectorstores.lancedb import LanceDB
-
-    return LanceDB
-
-
-def _import_llm_rails() -> Any:
-    from langchain.vectorstores.llm_rails import LLMRails
-
-    return LLMRails
-
-
-def _import_marqo() -> Any:
-    from langchain.vectorstores.marqo import Marqo
-
-    return Marqo
-
-
-def _import_matching_engine() -> Any:
-    from langchain.vectorstores.matching_engine import MatchingEngine
-
-    return MatchingEngine
-
-
-def _import_meilisearch() -> Any:
-    from langchain.vectorstores.meilisearch import Meilisearch
-
-    return Meilisearch
-
-
-def _import_milvus() -> Any:
-    from langchain.vectorstores.milvus import Milvus
-
-    return Milvus
-
-
-def _import_momento_vector_index() -> Any:
-    from langchain.vectorstores.momento_vector_index import MomentoVectorIndex
-
-    return MomentoVectorIndex
-
-
-def _import_mongodb_atlas() -> Any:
-    from langchain.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
-
-    return MongoDBAtlasVectorSearch
-
-
-def _import_myscale() -> Any:
-    from langchain.vectorstores.myscale import MyScale
-
-    return MyScale
-
-
-def _import_myscale_settings() -> Any:
-    from langchain.vectorstores.myscale import MyScaleSettings
-
-    return MyScaleSettings
-
-
-def _import_neo4j_vector() -> Any:
-    from langchain.vectorstores.neo4j_vector import Neo4jVector
-
-    return Neo4jVector
-
-
-def _import_opensearch_vector_search() -> Any:
-    from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
-
-    return OpenSearchVectorSearch
-
-
-def _import_pgembedding() -> Any:
-    from langchain.vectorstores.pgembedding import PGEmbedding
-
-    return PGEmbedding
-
-
-def _import_pgvector() -> Any:
-    from langchain.vectorstores.pgvector import PGVector
-
-    return PGVector
-
-
-def _import_pinecone() -> Any:
-    from langchain.vectorstores.pinecone import Pinecone
-
-    return Pinecone
-
-
-def _import_qdrant() -> Any:
-    from langchain.vectorstores.qdrant import Qdrant
-
-    return Qdrant
-
-
-def _import_redis() -> Any:
-    from langchain.vectorstores.redis import Redis
-
-    return Redis
-
-
-def _import_rocksetdb() -> Any:
-    from langchain.vectorstores.rocksetdb import Rockset
-
-    return Rockset
-
-
-def _import_vespa() -> Any:
-    from langchain.vectorstores.vespa import VespaStore
-
-    return VespaStore
-
-
-def _import_scann() -> Any:
-    from langchain.vectorstores.scann import ScaNN
-
-    return ScaNN
-
-
-def _import_semadb() -> Any:
-    from langchain.vectorstores.semadb import SemaDB
-
-    return SemaDB
-
-
-def _import_singlestoredb() -> Any:
-    from langchain.vectorstores.singlestoredb import SingleStoreDB
-
-    return SingleStoreDB
-
-
-def _import_sklearn() -> Any:
-    from langchain.vectorstores.sklearn import SKLearnVectorStore
-
-    return SKLearnVectorStore
-
-
-def _import_sqlitevss() -> Any:
-    from langchain.vectorstores.sqlitevss import SQLiteVSS
-
-    return SQLiteVSS
-
-
-def _import_starrocks() -> Any:
-    from langchain.vectorstores.starrocks import StarRocks
-
-    return StarRocks
-
-
-def _import_supabase() -> Any:
-    from langchain.vectorstores.supabase import SupabaseVectorStore
-
-    return SupabaseVectorStore
-
-
-def _import_tair() -> Any:
-    from langchain.vectorstores.tair import Tair
-
-    return Tair
-
-
-def _import_tencentvectordb() -> Any:
-    from langchain.vectorstores.tencentvectordb import TencentVectorDB
-
-    return TencentVectorDB
-
-
-def _import_tiledb() -> Any:
-    from langchain.vectorstores.tiledb import TileDB
-
-    return TileDB
-
-
-def _import_tigris() -> Any:
-    from langchain.vectorstores.tigris import Tigris
-
-    return Tigris
-
-
-def _import_timescalevector() -> Any:
-    from langchain.vectorstores.timescalevector import TimescaleVector
-
-    return TimescaleVector
-
-
-def _import_typesense() -> Any:
-    from langchain.vectorstores.typesense import Typesense
-
-    return Typesense
-
-
-def _import_usearch() -> Any:
-    from langchain.vectorstores.usearch import USearch
-
-    return USearch
-
-
-def _import_vald() -> Any:
-    from langchain.vectorstores.vald import Vald
-
-    return Vald
-
-
-def _import_vearch() -> Any:
-    from langchain.vectorstores.vearch import Vearch
-
-    return Vearch
-
-
-def _import_vectara() -> Any:
-    from langchain.vectorstores.vectara import Vectara
-
-    return Vectara
-
-
-def _import_weaviate() -> Any:
-    from langchain.vectorstores.weaviate import Weaviate
-
-    return Weaviate
-
-
-def _import_yellowbrick() -> Any:
-    from langchain.vectorstores.yellowbrick import Yellowbrick
-
-    return Yellowbrick
-
-
-def _import_zep() -> Any:
-    from langchain.vectorstores.zep import ZepVectorStore
-
-    return ZepVectorStore
-
-
-def _import_zilliz() -> Any:
-    from langchain.vectorstores.zilliz import Zilliz
-
-    return Zilliz
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "AlibabaCloudOpenSearch": "langchain_community.vectorstores",
+    "AlibabaCloudOpenSearchSettings": "langchain_community.vectorstores",
+    "AnalyticDB": "langchain_community.vectorstores",
+    "Annoy": "langchain_community.vectorstores",
+    "AstraDB": "langchain_community.vectorstores",
+    "AtlasDB": "langchain_community.vectorstores",
+    "AwaDB": "langchain_community.vectorstores",
+    "AzureCosmosDBVectorSearch": "langchain_community.vectorstores",
+    "AzureSearch": "langchain_community.vectorstores",
+    "Bagel": "langchain_community.vectorstores",
+    "Cassandra": "langchain_community.vectorstores",
+    "Chroma": "langchain_community.vectorstores",
+    "Clarifai": "langchain_community.vectorstores",
+    "Clickhouse": "langchain_community.vectorstores",
+    "ClickhouseSettings": "langchain_community.vectorstores",
+    "DashVector": "langchain_community.vectorstores",
+    "DatabricksVectorSearch": "langchain_community.vectorstores",
+    "DeepLake": "langchain_community.vectorstores",
+    "Dingo": "langchain_community.vectorstores",
+    "DocArrayHnswSearch": "langchain_community.vectorstores",
+    "DocArrayInMemorySearch": "langchain_community.vectorstores",
+    "DuckDB": "langchain_community.vectorstores",
+    "EcloudESVectorStore": "langchain_community.vectorstores",
+    "ElasticKnnSearch": "langchain_community.vectorstores",
+    "ElasticsearchStore": "langchain_community.vectorstores",
+    "ElasticVectorSearch": "langchain_community.vectorstores",
+    "Epsilla": "langchain_community.vectorstores",
+    "FAISS": "langchain_community.vectorstores",
+    "Hologres": "langchain_community.vectorstores",
+    "LanceDB": "langchain_community.vectorstores",
+    "LLMRails": "langchain_community.vectorstores",
+    "Marqo": "langchain_community.vectorstores",
+    "MatchingEngine": "langchain_community.vectorstores",
+    "Meilisearch": "langchain_community.vectorstores",
+    "Milvus": "langchain_community.vectorstores",
+    "MomentoVectorIndex": "langchain_community.vectorstores",
+    "MongoDBAtlasVectorSearch": "langchain_community.vectorstores",
+    "MyScale": "langchain_community.vectorstores",
+    "MyScaleSettings": "langchain_community.vectorstores",
+    "Neo4jVector": "langchain_community.vectorstores",
+    "NeuralDBClientVectorStore": "langchain_community.vectorstores",
+    "NeuralDBVectorStore": "langchain_community.vectorstores",
+    "NEuralDBVectorStore": "langchain_community.vectorstores",
+    "OpenSearchVectorSearch": "langchain_community.vectorstores",
+    "PGEmbedding": "langchain_community.vectorstores",
+    "PGVector": "langchain_community.vectorstores",
+    "Pinecone": "langchain_community.vectorstores",
+    "Qdrant": "langchain_community.vectorstores",
+    "Redis": "langchain_community.vectorstores",
+    "Rockset": "langchain_community.vectorstores",
+    "ScaNN": "langchain_community.vectorstores",
+    "SemaDB": "langchain_community.vectorstores",
+    "SingleStoreDB": "langchain_community.vectorstores",
+    "SKLearnVectorStore": "langchain_community.vectorstores",
+    "SQLiteVSS": "langchain_community.vectorstores",
+    "StarRocks": "langchain_community.vectorstores",
+    "SupabaseVectorStore": "langchain_community.vectorstores",
+    "Tair": "langchain_community.vectorstores",
+    "TencentVectorDB": "langchain_community.vectorstores",
+    "Tigris": "langchain_community.vectorstores",
+    "TileDB": "langchain_community.vectorstores",
+    "TimescaleVector": "langchain_community.vectorstores",
+    "Typesense": "langchain_community.vectorstores",
+    "USearch": "langchain_community.vectorstores",
+    "Vald": "langchain_community.vectorstores",
+    "Vearch": "langchain_community.vectorstores",
+    "Vectara": "langchain_community.vectorstores",
+    "VespaStore": "langchain_community.vectorstores",
+    "Weaviate": "langchain_community.vectorstores",
+    "Yellowbrick": "langchain_community.vectorstores",
+    "ZepVectorStore": "langchain_community.vectorstores",
+    "Zilliz": "langchain_community.vectorstores",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
-    if name == "AnalyticDB":
-        return _import_analyticdb()
-    elif name == "AlibabaCloudOpenSearch":
-        return _import_alibaba_cloud_open_search()
-    elif name == "AlibabaCloudOpenSearchSettings":
-        return _import_alibaba_cloud_open_search_settings()
-    elif name == "AzureCosmosDBVectorSearch":
-        return _import_azure_cosmos_db()
-    elif name == "ElasticKnnSearch":
-        return _import_elastic_knn_search()
-    elif name == "ElasticVectorSearch":
-        return _import_elastic_vector_search()
-    elif name == "Annoy":
-        return _import_annoy()
-    elif name == "AtlasDB":
-        return _import_atlas()
-    elif name == "AwaDB":
-        return _import_awadb()
-    elif name == "AzureSearch":
-        return _import_azuresearch()
-    elif name == "Bagel":
-        return _import_bageldb()
-    elif name == "BESVectorStore":
-        return _import_baiducloud_vector_search()
-    elif name == "Cassandra":
-        return _import_cassandra()
-    elif name == "AstraDB":
-        return _import_astradb()
-    elif name == "Chroma":
-        return _import_chroma()
-    elif name == "Clarifai":
-        return _import_clarifai()
-    elif name == "ClickhouseSettings":
-        return _import_clickhouse_settings()
-    elif name == "Clickhouse":
-        return _import_clickhouse()
-    elif name == "DashVector":
-        return _import_dashvector()
-    elif name == "DatabricksVectorSearch":
-        return _import_databricks_vector_search()
-    elif name == "DeepLake":
-        return _import_deeplake()
-    elif name == "Dingo":
-        return _import_dingo()
-    elif name == "DocArrayInMemorySearch":
-        return _import_docarray_inmemory()
-    elif name == "DocArrayHnswSearch":
-        return _import_docarray_hnsw()
-    elif name == "ElasticsearchStore":
-        return _import_elasticsearch()
-    elif name == "Epsilla":
-        return _import_epsilla()
-    elif name == "FAISS":
-        return _import_faiss()
-    elif name == "Hologres":
-        return _import_hologres()
-    elif name == "LanceDB":
-        return _import_lancedb()
-    elif name == "LLMRails":
-        return _import_llm_rails()
-    elif name == "Marqo":
-        return _import_marqo()
-    elif name == "MatchingEngine":
-        return _import_matching_engine()
-    elif name == "Meilisearch":
-        return _import_meilisearch()
-    elif name == "Milvus":
-        return _import_milvus()
-    elif name == "MomentoVectorIndex":
-        return _import_momento_vector_index()
-    elif name == "MongoDBAtlasVectorSearch":
-        return _import_mongodb_atlas()
-    elif name == "MyScaleSettings":
-        return _import_myscale_settings()
-    elif name == "MyScale":
-        return _import_myscale()
-    elif name == "Neo4jVector":
-        return _import_neo4j_vector()
-    elif name == "OpenSearchVectorSearch":
-        return _import_opensearch_vector_search()
-    elif name == "PGEmbedding":
-        return _import_pgembedding()
-    elif name == "PGVector":
-        return _import_pgvector()
-    elif name == "Pinecone":
-        return _import_pinecone()
-    elif name == "Qdrant":
-        return _import_qdrant()
-    elif name == "Redis":
-        return _import_redis()
-    elif name == "Rockset":
-        return _import_rocksetdb()
-    elif name == "ScaNN":
-        return _import_scann()
-    elif name == "SemaDB":
-        return _import_semadb()
-    elif name == "SingleStoreDB":
-        return _import_singlestoredb()
-    elif name == "SKLearnVectorStore":
-        return _import_sklearn()
-    elif name == "SQLiteVSS":
-        return _import_sqlitevss()
-    elif name == "StarRocks":
-        return _import_starrocks()
-    elif name == "SupabaseVectorStore":
-        return _import_supabase()
-    elif name == "Tair":
-        return _import_tair()
-    elif name == "TencentVectorDB":
-        return _import_tencentvectordb()
-    elif name == "TileDB":
-        return _import_tiledb()
-    elif name == "Tigris":
-        return _import_tigris()
-    elif name == "TimescaleVector":
-        return _import_timescalevector()
-    elif name == "Typesense":
-        return _import_typesense()
-    elif name == "USearch":
-        return _import_usearch()
-    elif name == "Vald":
-        return _import_vald()
-    elif name == "Vearch":
-        return _import_vearch()
-    elif name == "Vectara":
-        return _import_vectara()
-    elif name == "Weaviate":
-        return _import_weaviate()
-    elif name == "Yellowbrick":
-        return _import_yellowbrick()
-    elif name == "ZepVectorStore":
-        return _import_zep()
-    elif name == "Zilliz":
-        return _import_zilliz()
-    elif name == "VespaStore":
-        return _import_vespa()
-    else:
-        raise AttributeError(f"Could not find: {name}")
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
 __all__ = [
@@ -580,12 +191,13 @@ __all__ = [
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
+    "AstraDB",
     "AtlasDB",
     "AwaDB",
+    "AzureCosmosDBVectorSearch",
     "AzureSearch",
     "Bagel",
     "Cassandra",
-    "AstraDB",
     "Chroma",
     "Clarifai",
     "Clickhouse",
@@ -596,9 +208,11 @@ __all__ = [
     "Dingo",
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
+    "DuckDB",
+    "EcloudESVectorStore",
     "ElasticKnnSearch",
-    "ElasticVectorSearch",
     "ElasticsearchStore",
+    "ElasticVectorSearch",
     "Epsilla",
     "FAISS",
     "Hologres",
@@ -613,6 +227,8 @@ __all__ = [
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
+    "NeuralDBClientVectorStore",
+    "NeuralDBVectorStore",
     "OpenSearchVectorSearch",
     "PGEmbedding",
     "PGVector",
@@ -620,28 +236,27 @@ __all__ = [
     "Qdrant",
     "Redis",
     "Rockset",
-    "SKLearnVectorStore",
     "ScaNN",
     "SemaDB",
     "SingleStoreDB",
+    "SKLearnVectorStore",
     "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
     "Tair",
-    "TileDB",
+    "TencentVectorDB",
     "Tigris",
+    "TileDB",
     "TimescaleVector",
     "Typesense",
     "USearch",
     "Vald",
     "Vearch",
     "Vectara",
+    "VectorStore",
     "VespaStore",
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
     "Zilliz",
-    "TencentVectorDB",
-    "AzureCosmosDBVectorSearch",
-    "VectorStore",
 ]

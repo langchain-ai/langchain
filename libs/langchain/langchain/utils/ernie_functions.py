@@ -1,51 +1,36 @@
-from typing import Literal, Optional, Type, TypedDict
+from typing import TYPE_CHECKING, Any
 
-from langchain.pydantic_v1 import BaseModel
-from langchain.utils.json_schema import dereference_refs
+from langchain._api import create_importer
 
-
-class FunctionDescription(TypedDict):
-    """Representation of a callable function to the Ernie API."""
-
-    name: str
-    """The name of the function."""
-    description: str
-    """A description of the function."""
-    parameters: dict
-    """The parameters of the function."""
-
-
-class ToolDescription(TypedDict):
-    """Representation of a callable function to the Ernie API."""
-
-    type: Literal["function"]
-    function: FunctionDescription
-
-
-def convert_pydantic_to_ernie_function(
-    model: Type[BaseModel],
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-) -> FunctionDescription:
-    """Converts a Pydantic model to a function description for the Ernie API."""
-    schema = dereference_refs(model.schema())
-    schema.pop("definitions", None)
-    return {
-        "name": name or schema["title"],
-        "description": description or schema["description"],
-        "parameters": schema,
-    }
-
-
-def convert_pydantic_to_ernie_tool(
-    model: Type[BaseModel],
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-) -> ToolDescription:
-    """Converts a Pydantic model to a function description for the Ernie API."""
-    function = convert_pydantic_to_ernie_function(
-        model, name=name, description=description
+if TYPE_CHECKING:
+    from langchain_community.utils.ernie_functions import (
+        FunctionDescription,
+        ToolDescription,
+        convert_pydantic_to_ernie_function,
+        convert_pydantic_to_ernie_tool,
     )
-    return {"type": "function", "function": function}
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "FunctionDescription": "langchain_community.utils.ernie_functions",
+    "ToolDescription": "langchain_community.utils.ernie_functions",
+    "convert_pydantic_to_ernie_function": "langchain_community.utils.ernie_functions",
+    "convert_pydantic_to_ernie_tool": "langchain_community.utils.ernie_functions",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "FunctionDescription",
+    "ToolDescription",
+    "convert_pydantic_to_ernie_function",
+    "convert_pydantic_to_ernie_tool",
+]

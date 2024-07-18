@@ -1,46 +1,23 @@
-import logging
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Any
 
-from langchain.chat_models.mlflow import ChatMlflow
+from langchain._api import create_importer
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from langchain_community.chat_models.databricks import ChatDatabricks
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"ChatDatabricks": "langchain_community.chat_models.databricks"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class ChatDatabricks(ChatMlflow):
-    """`Databricks` chat models API.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    To use, you should have the ``mlflow`` python package installed.
-    For more information, see https://mlflow.org/docs/latest/llms/deployments/databricks.html.
 
-    Example:
-        .. code-block:: python
-
-            from langchain.chat_models import ChatDatabricks
-
-            chat = ChatDatabricks(
-                target_uri="databricks",
-                endpoint="chat",
-                temperature-0.1,
-            )
-    """
-
-    target_uri: str = "databricks"
-    """The target URI to use. Defaults to ``databricks``."""
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of chat model."""
-        return "databricks-chat"
-
-    @property
-    def _mlflow_extras(self) -> str:
-        return ""
-
-    def _validate_uri(self) -> None:
-        if self.target_uri == "databricks":
-            return
-
-        if urlparse(self.target_uri).scheme != "databricks":
-            raise ValueError(
-                "Invalid target URI. The target URI must be a valid databricks URI."
-            )
+__all__ = [
+    "ChatDatabricks",
+]

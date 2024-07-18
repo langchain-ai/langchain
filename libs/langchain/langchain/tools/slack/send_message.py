@@ -1,41 +1,28 @@
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.slack.base import SlackBaseTool
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.tools import SlackSendMessage
+    from langchain_community.tools.slack.send_message import SendMessageSchema
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "SendMessageSchema": "langchain_community.tools.slack.send_message",
+    "SlackSendMessage": "langchain_community.tools",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SendMessageSchema(BaseModel):
-    """Input for SendMessageTool."""
-
-    message: str = Field(
-        ...,
-        description="The message to be sent.",
-    )
-    channel: str = Field(
-        ...,
-        description="The channel, private group, or IM channel to send message to.",
-    )
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-class SlackSendMessage(SlackBaseTool):
-    """Tool for sending a message in Slack."""
-
-    name: str = "send_message"
-    description: str = (
-        "Use this tool to send a message with the provided message fields."
-    )
-    args_schema: Type[SendMessageSchema] = SendMessageSchema
-
-    def _run(
-        self,
-        message: str,
-        channel: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        try:
-            result = self.client.chat_postMessage(channel=channel, text=message)
-            output = "Message sent: " + str(result)
-            return output
-        except Exception as e:
-            return "Error creating conversation: {}".format(e)
+__all__ = [
+    "SendMessageSchema",
+    "SlackSendMessage",
+]

@@ -1,43 +1,23 @@
-from typing import Iterator, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.unstructured import UnstructuredFileIOLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import AzureAIDataLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"AzureAIDataLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AzureAIDataLoader(BaseLoader):
-    """Load from Azure AI Data."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, url: str, glob: Optional[str] = None):
-        """Initialize with URL to a data asset or storage location
-        ."""
-        self.url = url
-        """URL to the data asset or storage location."""
-        self.glob_pattern = glob
-        """Optional glob pattern to select files. Defaults to None."""
 
-    def load(self) -> List[Document]:
-        """Load documents."""
-        return list(self.lazy_load())
-
-    def lazy_load(self) -> Iterator[Document]:
-        """A lazy loader for Documents."""
-        try:
-            from azureml.fsspec import AzureMachineLearningFileSystem
-        except ImportError as exc:
-            raise ImportError(
-                "Could not import azureml-fspec package."
-                "Please install it with `pip install azureml-fsspec`."
-            ) from exc
-
-        fs = AzureMachineLearningFileSystem(self.url)
-
-        if self.glob_pattern:
-            remote_paths_list = fs.glob(self.glob_pattern)
-        else:
-            remote_paths_list = fs.ls()
-
-        for remote_path in remote_paths_list:
-            with fs.open(remote_path) as f:
-                loader = UnstructuredFileIOLoader(file=f)
-                yield from loader.load()
+__all__ = [
+    "AzureAIDataLoader",
+]

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import List, Tuple
 
-from langchain.schema import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser
 
 from langchain_experimental.pydantic_v1 import BaseModel, Field
 
@@ -40,7 +40,7 @@ class BaseStepContainer(BaseModel):
 
 
 class ListStepContainer(BaseStepContainer):
-    """List step container."""
+    """Container for List of steps."""
 
     steps: List[Tuple[Step, StepResponse]] = Field(default_factory=list)
     """The steps."""

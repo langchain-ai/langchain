@@ -1,28 +1,23 @@
-"""Tool for the Wikipedia API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.stackexchange import StackExchangeAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import StackExchangeTool
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"StackExchangeTool": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class StackExchangeTool(BaseTool):
-    """Tool that uses StackExchange"""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "StackExchange"
-    description: str = (
-        "A wrapper around StackExchange. "
-        "Useful for when you need to answer specific programming questions"
-        "code excerpts, code examples and solutions"
-        "Input should be a fully formed question."
-    )
-    api_wrapper: StackExchangeAPIWrapper
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Stack Exchange tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "StackExchangeTool",
+]

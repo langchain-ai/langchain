@@ -1,41 +1,28 @@
-import json
-import logging
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.slack.base import SlackBaseTool
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.tools import SlackGetMessage
+    from langchain_community.tools.slack.get_message import SlackGetMessageSchema
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "SlackGetMessageSchema": "langchain_community.tools.slack.get_message",
+    "SlackGetMessage": "langchain_community.tools",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SlackGetMessageSchema(BaseModel):
-    """Input schema for SlackGetMessages."""
-
-    channel_id: str = Field(
-        ...,
-        description="The channel id, private group, or IM channel to send message to.",
-    )
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-class SlackGetMessage(SlackBaseTool):
-    name: str = "get_messages"
-    description: str = "Use this tool to get messages from a channel."
-
-    args_schema: Type[SlackGetMessageSchema] = SlackGetMessageSchema
-
-    def _run(
-        self,
-        channel_id: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        logging.getLogger(__name__)
-        try:
-            result = self.client.conversations_history(channel=channel_id)
-            messages = result["messages"]
-            filtered_messages = [
-                {key: message[key] for key in ("user", "text", "ts")}
-                for message in messages
-                if "user" in message and "text" in message and "ts" in message
-            ]
-            return json.dumps(filtered_messages)
-        except Exception as e:
-            return "Error creating conversation: {}".format(e)
+__all__ = [
+    "SlackGetMessageSchema",
+    "SlackGetMessage",
+]

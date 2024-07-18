@@ -1,29 +1,23 @@
-"""Tool for Steam Web API"""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.steam import SteamWebAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import SteamWebAPIQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"SteamWebAPIQueryRun": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SteamWebAPIQueryRun(BaseTool):
-    """Tool that searches the Steam Web API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    mode: str
-    name: str = "Steam"
-    description: str = (
-        "A wrapper around Steam Web API."
-        "Steam Tool is useful for fetching User profiles and stats, Game data and more!"
-        "Input should be the User or Game you want to query."
-    )
 
-    api_wrapper: SteamWebAPIWrapper
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Steam-WebAPI tool."""
-        return self.api_wrapper.run(self.mode, query)
+__all__ = [
+    "SteamWebAPIQueryRun",
+]

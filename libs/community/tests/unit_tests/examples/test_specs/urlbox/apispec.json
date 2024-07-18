@@ -1,0 +1,368 @@
+{
+   "openapi": "3.1.0",
+   "info": {
+      "title": "Urlbox API",
+      "description": "A plugin that allows the user to capture screenshots of a web page from a URL or HTML using ChatGPT.",
+      "version": "v1"
+   },
+   "servers": [
+      {
+         "url": "https://api.urlbox.io"
+      }
+   ],
+   "paths": {
+      "/v1/render/sync": {
+         "post": {
+            "summary": "Render a URL as an image or video",
+            "operationId": "renderSync",
+            "security": [
+               {
+                  "SecretKey": []
+               }
+            ],
+            "requestBody": {
+               "required": true,
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "$ref": "#/components/schemas/RenderRequest"
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "Successful operation",
+                  "headers": {
+                     "x-renders-used": {
+                        "schema": {
+                           "type": "integer"
+                        },
+                        "description": "The number of renders used"
+                     },
+                     "x-renders-allowed": {
+                        "schema": {
+                           "type": "integer"
+                        },
+                        "description": "The number of renders allowed"
+                     },
+                     "x-renders-reset": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "The date and time when the render count will reset"
+                     },
+                     "x-urlbox-cache-status": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "The cache status of the response"
+                     },
+                     "x-urlbox-cachekey": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "The cache key used by URLBox"
+                     },
+                     "x-urlbox-requestid": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "The request ID assigned by URLBox"
+                     },
+                     "x-urlbox-acceptedby": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "The server that accepted the request"
+                     },
+                     "x-urlbox-renderedby": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "The server that rendered the response"
+                     }
+                  },
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/RenderResponse"
+                        }
+                     }
+                  }
+               },
+               "307": {
+                  "description": "Temporary Redirect",
+                  "headers": {
+                     "Location": {
+                        "schema": {
+                           "type": "string",
+                           "format": "uri",
+                           "description": "The URL to follow for the long running request"
+                        }
+                     }
+                  },
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/RedirectResponse"
+                        },
+                        "example": {
+                           "message": "Please follow the redirect to continue your long running request",
+                           "location": "https://api.urlbox.io/v1/redirect/BQxxwO98uwkSsuJf/1dca9bae-c49d-42d3-8282-89450afb7e73/1"
+                        }
+                     }
+                  }
+               },
+               "400": {
+                  "description": "Bad request",
+                  "headers": {
+                     "x-urlbox-error-message": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "An error message describing the reason the request failed"
+                     }
+                  },
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                           "error": {
+                              "message": "Api Key does not exist",
+                              "code": "ApiKeyNotFound"
+                           }
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Unauthorized",
+                  "headers": {
+                     "x-urlbox-error-message": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "An error message describing the reason the request failed"
+                     }
+                  },
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                           "error": {
+                              "message": "Api Key does not exist",
+                              "code": "ApiKeyNotFound"
+                           }
+                        }
+                     }
+                  }
+               },
+               "500": {
+                  "description": "Internal server error",
+                  "headers": {
+                     "x-urlbox-error-message": {
+                        "schema": {
+                           "type": "string"
+                        },
+                        "description": "An error message describing the reason the request failed"
+                     }
+                  },
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "example": {
+                           "error": {
+                              "message": "Something went wrong rendering that",
+                              "code": "ApiKeyNotFound"
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   },
+   "components": {
+      "schemas": {
+         "RenderRequest": {
+            "type": "object",
+            "oneOf": [
+               {
+                  "required": [
+                     "url"
+                  ]
+               },
+               {
+                  "required": [
+                     "html"
+                  ]
+               }
+            ],
+            "properties": {
+               "format": {
+                  "type": "string",
+                  "description": "The format of the rendered output",
+                  "enum": [
+                     "png",
+                     "jpg",
+                     "pdf",
+                     "svg",
+                     "mp4",
+                     "webp",
+                     "webm",
+                     "html"
+                  ]
+               },
+               "url": {
+                  "type": "string",
+                  "description": "The URL to render as an image or video"
+               },
+               "html": {
+                  "type": "string",
+                  "description": "The raw HTML to render as an image or video"
+               },
+               "width": {
+                  "type": "integer",
+                  "description": "The viewport width of the rendered output"
+               },
+               "height": {
+                  "type": "integer",
+                  "description": "The viewport height of the rendered output"
+               },
+               "block_ads": {
+                  "type": "boolean",
+                  "description": "Whether to block ads on the rendered page"
+               },
+               "hide_cookie_banners": {
+                  "type": "boolean",
+                  "description": "Whether to hide cookie banners on the rendered page"
+               },
+               "click_accept": {
+                  "type": "boolean",
+                  "description": "Whether to automatically click accept buttons on the rendered page"
+               },
+               "gpu": {
+                  "type": "boolean",
+                  "description": "Whether to enable GPU rendering"
+               },
+               "retina": {
+                  "type": "boolean",
+                  "description": "Whether to render the image in retina quality"
+               },
+               "thumb_width": {
+                  "type": "integer",
+                  "description": "The width of the thumbnail image"
+               },
+               "thumb_height": {
+                  "type": "integer",
+                  "description": "The height of the thumbnail image"
+               },
+               "full_page": {
+                  "type": "boolean",
+                  "description": "Whether to capture the full page"
+               },
+               "selector": {
+                  "type": "string",
+                  "description": "The CSS selector of an element you would like to capture"
+               },
+               "delay": {
+                  "type": "string",
+                  "description": "The amount of milliseconds to delay before taking a screenshot"
+               },
+               "wait_until": {
+                  "type": "string",
+                  "description": "When",
+                  "enum": [
+                     "requestsfinished",
+                     "mostrequestsfinished",
+                     "loaded",
+                     "domloaded"
+                  ]
+               },
+               "metadata": {
+                  "type": "boolean",
+                  "description": "Whether to return metadata about the URL"
+               },
+               "wait_for": {
+                  "type": "string",
+                  "description": "CSS selector of an element to wait to be present in the web page before rendering"
+               },
+               "wait_to_leave": {
+                  "type": "string",
+                  "description": "CSS selector of an element, such as a loading spinner, to wait to leave the web page before rendering"
+               }
+            }
+         },
+         "RenderResponse": {
+            "type": "object",
+            "properties": {
+               "renderUrl": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "The URL where the rendered output is stored"
+               },
+               "size": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "The size of the rendered output in bytes"
+               }
+            }
+         },
+         "ErrorResponse": {
+            "type": "object",
+            "properties": {
+               "error": {
+                  "type": "object",
+                  "properties": {
+                     "message": {
+                        "type": "string",
+                        "description": "A human-readable error message"
+                     },
+                     "code": {
+                        "type": "string",
+                        "description": "A machine-readable error code"
+                     }
+                  }
+               }
+            },
+            "required": [
+               "error"
+            ]
+         },
+         "RedirectResponse": {
+            "type": "object",
+            "properties": {
+               "message": {
+                  "type": "string",
+                  "description": "A human-readable message indicating the need to follow the redirect"
+               },
+               "location": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "The URL to follow for the long running request"
+               }
+            },
+            "required": [
+               "message",
+               "location"
+            ]
+         }
+      },
+      "securitySchemes": {
+         "SecretKey": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "The Urlbox API uses your secret API key to authenticate. To find your secret key, login to the Urlbox dashboard at https://urlbox.io/dashboard."
+         }
+      }
+   }
+}

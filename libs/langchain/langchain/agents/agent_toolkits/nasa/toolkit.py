@@ -1,57 +1,23 @@
-from typing import Dict, List
+from typing import TYPE_CHECKING, Any
 
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools import BaseTool
-from langchain.tools.nasa.prompt import (
-    NASA_CAPTIONS_PROMPT,
-    NASA_MANIFEST_PROMPT,
-    NASA_METADATA_PROMPT,
-    NASA_SEARCH_PROMPT,
-)
-from langchain.tools.nasa.tool import NasaAction
-from langchain.utilities.nasa import NasaAPIWrapper
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.nasa.toolkit import NasaToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"NasaToolkit": "langchain_community.agent_toolkits.nasa.toolkit"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class NasaToolkit(BaseToolkit):
-    """Nasa Toolkit."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    tools: List[BaseTool] = []
 
-    @classmethod
-    def from_nasa_api_wrapper(cls, nasa_api_wrapper: NasaAPIWrapper) -> "NasaToolkit":
-        operations: List[Dict] = [
-            {
-                "mode": "search_media",
-                "name": "Search NASA Image and Video Library media",
-                "description": NASA_SEARCH_PROMPT,
-            },
-            {
-                "mode": "get_media_metadata_manifest",
-                "name": "Get NASA Image and Video Library media metadata manifest",
-                "description": NASA_MANIFEST_PROMPT,
-            },
-            {
-                "mode": "get_media_metadata_location",
-                "name": "Get NASA Image and Video Library media metadata location",
-                "description": NASA_METADATA_PROMPT,
-            },
-            {
-                "mode": "get_video_captions_location",
-                "name": "Get NASA Image and Video Library video captions location",
-                "description": NASA_CAPTIONS_PROMPT,
-            },
-        ]
-        tools = [
-            NasaAction(
-                name=action["name"],
-                description=action["description"],
-                mode=action["mode"],
-                api_wrapper=nasa_api_wrapper,
-            )
-            for action in operations
-        ]
-        return cls(tools=tools)
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return self.tools
+__all__ = [
+    "NasaToolkit",
+]

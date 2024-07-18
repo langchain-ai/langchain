@@ -1,35 +1,25 @@
-"""Module includes a registry of default parser configurations."""
-from langchain.document_loaders.base import BaseBlobParser
-from langchain.document_loaders.parsers.generic import MimeTypeBasedParser
-from langchain.document_loaders.parsers.msword import MsWordParser
-from langchain.document_loaders.parsers.pdf import PyMuPDFParser
-from langchain.document_loaders.parsers.txt import TextParser
+from typing import TYPE_CHECKING, Any
 
+from langchain._api import create_importer
 
-def _get_default_parser() -> BaseBlobParser:
-    """Get default mime-type based parser."""
-    return MimeTypeBasedParser(
-        handlers={
-            "application/pdf": PyMuPDFParser(),
-            "text/plain": TextParser(),
-            "application/msword": MsWordParser(),
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (
-                MsWordParser()
-            ),
-        },
-        fallback_parser=None,
-    )
+if TYPE_CHECKING:
+    from langchain_community.document_loaders.parsers.registry import get_parser
 
-
-_REGISTRY = {
-    "default": _get_default_parser,
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "get_parser": "langchain_community.document_loaders.parsers.registry"
 }
 
-# PUBLIC API
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-def get_parser(parser_name: str) -> BaseBlobParser:
-    """Get a parser by parser name."""
-    if parser_name not in _REGISTRY:
-        raise ValueError(f"Unknown parser combination: {parser_name}")
-    return _REGISTRY[parser_name]()
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "get_parser",
+]

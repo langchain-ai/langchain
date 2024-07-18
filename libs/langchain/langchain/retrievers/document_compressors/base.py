@@ -1,36 +1,12 @@
-import asyncio
-from abc import ABC, abstractmethod
 from inspect import signature
 from typing import List, Optional, Sequence, Union
 
-from langchain_core.documents import BaseDocumentTransformer, Document
-from langchain_core.pydantic_v1 import BaseModel
-
-from langchain.callbacks.manager import Callbacks
-
-
-class BaseDocumentCompressor(BaseModel, ABC):
-    """Base class for document compressors."""
-
-    @abstractmethod
-    def compress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        """Compress retrieved documents given the query context."""
-
-    async def acompress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
-    ) -> Sequence[Document]:
-        """Compress retrieved documents given the query context."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self.compress_documents, documents, query, callbacks
-        )
+from langchain_core.callbacks.manager import Callbacks
+from langchain_core.documents import (
+    BaseDocumentCompressor,
+    BaseDocumentTransformer,
+    Document,
+)
 
 
 class DocumentCompressorPipeline(BaseDocumentCompressor):

@@ -3,13 +3,13 @@ import os
 from pathlib import Path
 
 import requests
-from langchain.llms import LlamaCpp
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
-from langchain.utilities import SQLDatabase
+from langchain_community.llms import LlamaCpp
+from langchain_community.utilities import SQLDatabase
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
 # File name and URL
 file_name = "mistral-7b-instruct-v0.1.Q4_K_M.gguf"

@@ -1,48 +1,23 @@
-"""Steam Toolkit."""
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools import BaseTool
-from langchain.tools.steam.prompt import (
-    STEAM_GET_GAMES_DETAILS,
-    STEAM_GET_RECOMMENDED_GAMES,
-)
-from langchain.tools.steam.tool import SteamWebAPIQueryRun
-from langchain.utilities.steam import SteamWebAPIWrapper
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.steam.toolkit import SteamToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"SteamToolkit": "langchain_community.agent_toolkits.steam.toolkit"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SteamToolkit(BaseToolkit):
-    """Steam Toolkit."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    tools: List[BaseTool] = []
 
-    @classmethod
-    def from_steam_api_wrapper(
-        cls, steam_api_wrapper: SteamWebAPIWrapper
-    ) -> "SteamToolkit":
-        operations: List[dict] = [
-            {
-                "mode": "get_games_details",
-                "name": "Get Games Details",
-                "description": STEAM_GET_GAMES_DETAILS,
-            },
-            {
-                "mode": "get_recommended_games",
-                "name": "Get Recommended Games",
-                "description": STEAM_GET_RECOMMENDED_GAMES,
-            },
-        ]
-        tools = [
-            SteamWebAPIQueryRun(
-                name=action["name"],
-                description=action["description"],
-                mode=action["mode"],
-                api_wrapper=steam_api_wrapper,
-            )
-            for action in operations
-        ]
-        return cls(tools=tools)
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return self.tools
+__all__ = [
+    "SteamToolkit",
+]

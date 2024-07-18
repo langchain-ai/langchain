@@ -1,17 +1,19 @@
 """Vector SQL Database Chain Retriever"""
+
 from typing import Any, Dict, List
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 
 from langchain_experimental.sql.vector_sql import VectorSQLDatabaseChain
 
 
 class VectorSQLDatabaseChainRetriever(BaseRetriever):
-    """Retriever that uses SQLDatabase as Retriever"""
+    """Retriever that uses Vector SQL Database."""
 
     sql_db_chain: VectorSQLDatabaseChain
     """SQL Database Chain"""

@@ -1,33 +1,25 @@
-"""MultiOn agent."""
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import List
+from langchain._api import create_importer
 
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools import BaseTool
-from langchain.tools.multion.close_session import MultionCloseSession
-from langchain.tools.multion.create_session import MultionCreateSession
-from langchain.tools.multion.update_session import MultionUpdateSession
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.multion.toolkit import MultionToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "MultionToolkit": "langchain_community.agent_toolkits.multion.toolkit"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class MultionToolkit(BaseToolkit):
-    """Toolkit for interacting with the Browser Agent.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    **Security Note**: This toolkit contains tools that interact with the
-        user's browser via the multion API which grants an agent
-        access to the user's browser.
 
-        Please review the documentation for the multion API to understand
-        the security implications of using this toolkit.
-
-        See https://python.langchain.com/docs/security for more information.
-    """
-
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return [MultionCreateSession(), MultionUpdateSession(), MultionCloseSession()]
+__all__ = [
+    "MultionToolkit",
+]

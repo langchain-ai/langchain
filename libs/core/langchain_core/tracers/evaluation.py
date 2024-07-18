@@ -1,4 +1,5 @@
 """A tracer that runs evaluators over completed runs."""
+
 from __future__ import annotations
 
 import logging
@@ -31,7 +32,7 @@ def wait_for_all_evaluators() -> None:
 
 
 class EvaluatorCallbackHandler(BaseTracer):
-    """A tracer that runs a run evaluator whenever a run is persisted.
+    """Tracer that runs a run evaluator whenever a run is persisted.
 
     Parameters
     ----------
@@ -64,7 +65,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         The LangSmith project name to be organize eval chain runs under.
     """
 
-    name = "evaluator_callback_handler"
+    name: str = "evaluator_callback_handler"
 
     def __init__(
         self,
@@ -103,7 +104,7 @@ class EvaluatorCallbackHandler(BaseTracer):
     def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
         """Evaluate the run in the project.
 
-        Parameters
+        Args:
         ----------
         run : Run
             The run to be evaluated.
@@ -199,7 +200,7 @@ class EvaluatorCallbackHandler(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
 
-        Parameters
+        Args:
         ----------
         run : Run
             The run to be evaluated.

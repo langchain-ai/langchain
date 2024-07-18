@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-import logging
-from contextlib import contextmanager
-from contextvars import ContextVar
-from typing import (
-    Generator,
-    Optional,
-)
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
@@ -34,96 +28,62 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.tracers.context import (
     collect_runs,
-    register_configure_hook,
     tracing_enabled,
     tracing_v2_enabled,
 )
 from langchain_core.utils.env import env_var_is_set
 
-from langchain.callbacks.openai_info import OpenAICallbackHandler
-from langchain.callbacks.tracers.wandb import WandbTracer
+from langchain._api import create_importer
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from langchain_community.callbacks.manager import (
+        get_openai_callback,
+        wandb_tracing_enabled,
+    )
 
-openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
-    "openai_callback", default=None
-)
-wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # noqa: E501
-    "tracing_wandb_callback", default=None
-)
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "get_openai_callback": "langchain_community.callbacks.manager",
+    "wandb_tracing_enabled": "langchain_community.callbacks.manager",
+}
 
-register_configure_hook(openai_callback_var, True)
-register_configure_hook(
-    wandb_tracing_callback_var, True, WandbTracer, "LANGCHAIN_WANDB_TRACING"
-)
-
-
-@contextmanager
-def get_openai_callback() -> Generator[OpenAICallbackHandler, None, None]:
-    """Get the OpenAI callback handler in a context manager.
-    which conveniently exposes token and cost information.
-
-    Returns:
-        OpenAICallbackHandler: The OpenAI callback handler.
-
-    Example:
-        >>> with get_openai_callback() as cb:
-        ...     # Use the OpenAI callback handler
-    """
-    cb = OpenAICallbackHandler()
-    openai_callback_var.set(cb)
-    yield cb
-    openai_callback_var.set(None)
+_import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-@contextmanager
-def wandb_tracing_enabled(
-    session_name: str = "default",
-) -> Generator[None, None, None]:
-    """Get the WandbTracer in a context manager.
-
-    Args:
-        session_name (str, optional): The name of the session.
-            Defaults to "default".
-
-    Returns:
-        None
-
-    Example:
-        >>> with wandb_tracing_enabled() as session:
-        ...     # Use the WandbTracer session
-    """
-    cb = WandbTracer()
-    wandb_tracing_callback_var.set(cb)
-    yield None
-    wandb_tracing_callback_var.set(None)
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
 __all__ = [
-    "BaseRunManager",
-    "RunManager",
-    "ParentRunManager",
-    "AsyncRunManager",
-    "AsyncParentRunManager",
-    "CallbackManagerForLLMRun",
-    "AsyncCallbackManagerForLLMRun",
-    "CallbackManagerForChainRun",
+    "ahandle_event",
+    "AsyncCallbackManagerForChainGroup",
     "AsyncCallbackManagerForChainRun",
-    "CallbackManagerForToolRun",
-    "AsyncCallbackManagerForToolRun",
-    "CallbackManagerForRetrieverRun",
+    "AsyncCallbackManagerForLLMRun",
     "AsyncCallbackManagerForRetrieverRun",
+    "AsyncCallbackManagerForToolRun",
+    "AsyncParentRunManager",
+    "AsyncRunManager",
+    "atrace_as_chain_group",
+    "BaseRunManager",
     "CallbackManager",
     "CallbackManagerForChainGroup",
+    "CallbackManagerForChainRun",
+    "CallbackManagerForLLMRun",
+    "CallbackManagerForRetrieverRun",
+    "CallbackManagerForToolRun",
+    "Callbacks",
     "AsyncCallbackManager",
-    "AsyncCallbackManagerForChainGroup",
+    "collect_runs",
+    "env_var_is_set",
+    "get_openai_callback",
+    "handle_event",
+    "ParentRunManager",
+    "RunManager",
+    "trace_as_chain_group",
     "tracing_enabled",
     "tracing_v2_enabled",
-    "collect_runs",
-    "atrace_as_chain_group",
-    "trace_as_chain_group",
-    "handle_event",
-    "ahandle_event",
-    "Callbacks",
-    "env_var_is_set",
+    "wandb_tracing_enabled",
 ]

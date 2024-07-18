@@ -1,4 +1,4 @@
-from langchain.graphs import __all__
+from langchain import graphs
 
 EXPECTED_ALL = [
     "MemgraphGraph",
@@ -15,4 +15,4 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(graphs.__all__) == set(EXPECTED_ALL)

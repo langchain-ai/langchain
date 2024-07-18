@@ -1,18 +1,23 @@
-"""Base class for Slack tools."""
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING
-
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.tools.slack.utils import login
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from slack_sdk import WebClient
+    from langchain_community.tools.slack.base import SlackBaseTool
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"SlackBaseTool": "langchain_community.tools.slack.base"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SlackBaseTool(BaseTool):
-    """Base class for Slack tools."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    client: WebClient = Field(default_factory=login)
-    """The WebClient object."""
+
+__all__ = [
+    "SlackBaseTool",
+]

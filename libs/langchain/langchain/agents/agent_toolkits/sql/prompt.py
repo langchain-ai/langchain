@@ -1,23 +1,29 @@
-# flake8: noqa
+from typing import TYPE_CHECKING, Any
 
-SQL_PREFIX = """You are an agent designed to interact with a SQL database.
-Given an input question, create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
-Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most {top_k} results.
-You can order the results by a relevant column to return the most interesting examples in the database.
-Never query for all the columns from a specific table, only ask for the relevant columns given the question.
-You have access to tools for interacting with the database.
-Only use the below tools. Only use the information returned by the below tools to construct your final answer.
-You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
+from langchain._api import create_importer
 
-DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.sql.prompt import (
+        SQL_FUNCTIONS_SUFFIX,
+        SQL_PREFIX,
+        SQL_SUFFIX,
+    )
 
-If the question does not seem related to the database, just return "I don't know" as the answer.
-"""
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "SQL_PREFIX": "langchain_community.agent_toolkits.sql.prompt",
+    "SQL_SUFFIX": "langchain_community.agent_toolkits.sql.prompt",
+    "SQL_FUNCTIONS_SUFFIX": "langchain_community.agent_toolkits.sql.prompt",
+}
 
-SQL_SUFFIX = """Begin!
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
-Question: {input}
-Thought: I should look at the tables in the database to see what I can query.  Then I should query the schema of the most relevant tables.
-{agent_scratchpad}"""
 
-SQL_FUNCTIONS_SUFFIX = """I should look at the tables in the database to see what I can query.  Then I should query the schema of the most relevant tables."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = ["SQL_PREFIX", "SQL_SUFFIX", "SQL_FUNCTIONS_SUFFIX"]

@@ -1,19 +1,33 @@
 # TruLens
 
+>[TruLens](https://trulens.org) is an [open-source](https://github.com/truera/trulens) package that provides instrumentation and evaluation tools for large language model (LLM) based applications.
+
 This page covers how to use [TruLens](https://trulens.org) to evaluate and track LLM apps built on langchain.
 
-## What is TruLens?
 
-TruLens is an [open-source](https://github.com/truera/trulens) package that provides instrumentation and evaluation tools for large language model (LLM) based applications.
+## Installation and Setup
 
-## Quick start
+Install the `trulens-eval` python package.
 
-Once you've created your LLM chain, you can use TruLens for evaluation and tracking. TruLens has a number of [out-of-the-box Feedback Functions](https://www.trulens.org/trulens_eval/feedback_functions/), and is also an extensible framework for LLM evaluation.
+```bash
+pip install trulens-eval
+```
+
+## Quickstart
+
+See the integration details in the [TruLens documentation](https://www.trulens.org/trulens_eval/getting_started/quickstarts/langchain_quickstart/).
+
+### Tracking
+
+Once you've created your LLM chain, you can use TruLens for evaluation and tracking. 
+TruLens has a number of [out-of-the-box Feedback Functions](https://www.trulens.org/trulens_eval/evaluation/feedback_functions/), 
+and is also an extensible framework for LLM evaluation.
+
+Create the feedback functions:
 
 ```python
-# create a feedback function
+from trulens_eval.feedback import Feedback, Huggingface, 
 
-from trulens_eval.feedback import Feedback, Huggingface, OpenAI
 # Initialize HuggingFace-based feedback function collection class:
 hugs = Huggingface()
 openai = OpenAI()
@@ -29,12 +43,19 @@ qa_relevance = Feedback(openai.relevance).on_input_output()
 
 # Toxicity of input
 toxicity = Feedback(openai.toxicity).on_input()
-
 ```
 
-After you've set up Feedback Function(s) for evaluating your LLM, you can wrap your application with TruChain to get detailed tracing, logging and evaluation of your LLM app.
+### Chains
+
+After you've set up Feedback Function(s) for evaluating your LLM, you can wrap your application with 
+TruChain to get detailed tracing, logging and evaluation of your LLM app.
+
+Note: See code for the `chain` creation is in 
+the [TruLens documentation](https://www.trulens.org/trulens_eval/getting_started/quickstarts/langchain_quickstart/).
 
 ```python
+from trulens_eval import TruChain
+
 # wrap your chain with TruChain
 truchain = TruChain(
     chain,
@@ -45,11 +66,16 @@ truchain = TruChain(
 truchain("que hora es?")
 ```
 
+### Evaluation
+
 Now you can explore your LLM-based application!
 
 Doing so will help you understand how your LLM application is performing at a glance. As you iterate new versions of your LLM application, you can compare their performance across all of the different quality metrics you've set up. You'll also be able to view evaluations at a record level, and explore the chain metadata for each record.
 
 ```python
+from trulens_eval import Tru
+
+tru = Tru()
 tru.run_dashboard() # open a Streamlit app to explore
 ```
 

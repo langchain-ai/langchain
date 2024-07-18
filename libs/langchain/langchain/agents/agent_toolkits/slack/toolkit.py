@@ -1,35 +1,23 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING, List
-
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.pydantic_v1 import Field
-from langchain.tools import BaseTool
-from langchain.tools.slack.get_channel import SlackGetChannel
-from langchain.tools.slack.get_message import SlackGetMessage
-from langchain.tools.slack.schedule_message import SlackScheduleMessage
-from langchain.tools.slack.send_message import SlackSendMessage
-from langchain.tools.slack.utils import login
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from slack_sdk import WebClient
+    from langchain_community.agent_toolkits.slack.toolkit import SlackToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"SlackToolkit": "langchain_community.agent_toolkits.slack.toolkit"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SlackToolkit(BaseToolkit):
-    """Toolkit for interacting with Slack."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    client: WebClient = Field(default_factory=login)
 
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return [
-            SlackGetChannel(),
-            SlackGetMessage(),
-            SlackScheduleMessage(),
-            SlackSendMessage(),
-        ]
+__all__ = [
+    "SlackToolkit",
+]

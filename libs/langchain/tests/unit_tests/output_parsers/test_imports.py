@@ -1,4 +1,4 @@
-from langchain.output_parsers import __all__
+from langchain import output_parsers
 
 EXPECTED_ALL = [
     "BooleanOutputParser",
@@ -23,8 +23,9 @@ EXPECTED_ALL = [
     "JsonOutputToolsParser",
     "PydanticToolsParser",
     "JsonOutputKeyToolsParser",
+    "YamlOutputParser",
 ]
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(output_parsers.__all__) == set(EXPECTED_ALL)

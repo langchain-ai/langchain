@@ -1,10 +1,10 @@
 import uuid
-from typing import List, Optional
+from typing import Any, List, Optional, Sequence
 
 from langchain_core.documents import Document
+from langchain_text_splitters import TextSplitter
 
 from langchain.retrievers import MultiVectorRetriever
-from langchain.text_splitter import TextSplitter
 
 
 class ParentDocumentRetriever(MultiVectorRetriever):
@@ -31,17 +31,16 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
         .. code-block:: python
 
-            # Imports
-            from langchain.vectorstores import Chroma
-            from langchain.embeddings import OpenAIEmbeddings
-            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            from langchain_community.embeddings import OpenAIEmbeddings
+            from langchain_community.vectorstores import Chroma
+            from langchain_text_splitters import RecursiveCharacterTextSplitter
             from langchain.storage import InMemoryStore
 
             # This text splitter is used to create the parent documents
-            parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
+            parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, add_start_index=True)
             # This text splitter is used to create the child documents
             # It should create documents smaller than the parent
-            child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+            child_splitter = RecursiveCharacterTextSplitter(chunk_size=400, add_start_index=True)
             # The vectorstore to use to index the child chunks
             vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
             # The storage layer for the parent documents
@@ -54,7 +53,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 child_splitter=child_splitter,
                 parent_splitter=parent_splitter,
             )
-    """
+    """  # noqa: E501
 
     child_splitter: TextSplitter
     """The text splitter to use to create child documents."""
@@ -65,18 +64,24 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
 
+    child_metadata_fields: Optional[Sequence[str]] = None
+    """Metadata fields to leave in child documents. If None, leave all parent document 
+        metadata.
+    """
+
     def add_documents(
         self,
         documents: List[Document],
         ids: Optional[List[str]] = None,
         add_to_docstore: bool = True,
+        **kwargs: Any,
     ) -> None:
         """Adds documents to the docstore and vectorstores.
 
         Args:
             documents: List of documents to add
             ids: Optional list of ids for documents. If provided should be the same
-                length as the list of documents. Can provided if parent documents
+                length as the list of documents. Can be provided if parent documents
                 are already in the document store and you don't want to re-add
                 to the docstore. If not provided, random UUIDs will be used as
                 ids.
@@ -106,10 +111,15 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         for i, doc in enumerate(documents):
             _id = doc_ids[i]
             sub_docs = self.child_splitter.split_documents([doc])
+            if self.child_metadata_fields is not None:
+                for _doc in sub_docs:
+                    _doc.metadata = {
+                        k: _doc.metadata[k] for k in self.child_metadata_fields
+                    }
             for _doc in sub_docs:
                 _doc.metadata[self.id_key] = _id
             docs.extend(sub_docs)
             full_docs.append((_id, doc))
-        self.vectorstore.add_documents(docs)
+        self.vectorstore.add_documents(docs, **kwargs)
         if add_to_docstore:
             self.docstore.mset(full_docs)

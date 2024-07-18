@@ -1,4 +1,4 @@
-from langchain.chains import __all__
+from langchain import chains
 
 EXPECTED_ALL = [
     "APIChain",
@@ -13,6 +13,7 @@ EXPECTED_ALL = [
     "GraphCypherQAChain",
     "GraphQAChain",
     "GraphSparqlQAChain",
+    "OntotextGraphDBQAChain",
     "HugeGraphQAChain",
     "HypotheticalDocumentEmbedder",
     "KuzuQAChain",
@@ -31,6 +32,7 @@ EXPECTED_ALL = [
     "NatBotChain",
     "NebulaGraphQAChain",
     "NeptuneOpenCypherQAChain",
+    "NeptuneSparqlQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
     "QAGenerationChain",
@@ -56,8 +58,12 @@ EXPECTED_ALL = [
     "generate_example",
     "load_chain",
     "create_sql_query_chain",
+    "create_history_aware_retriever",
+    "create_retrieval_chain",
+    "load_summarize_chain",
+    "create_structured_output_runnable",
 ]
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(chains.__all__) == set(EXPECTED_ALL)

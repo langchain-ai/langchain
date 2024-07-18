@@ -1,4 +1,5 @@
 """LLM Chain for generating examples for question answering."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -21,6 +22,10 @@ class QAGenerateChain(LLMChain):
 
     output_parser: BaseLLMOutputParser = Field(default=_QA_OUTPUT_PARSER)
     output_key: str = "qa_pairs"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> QAGenerateChain:

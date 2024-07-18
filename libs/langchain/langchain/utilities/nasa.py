@@ -1,52 +1,23 @@
-"""Util that calls several NASA APIs."""
-import json
+from typing import TYPE_CHECKING, Any
 
-import requests
+from langchain._api import create_importer
 
-from langchain.pydantic_v1 import BaseModel
+if TYPE_CHECKING:
+    from langchain_community.utilities import NasaAPIWrapper
 
-IMAGE_AND_VIDEO_LIBRARY_URL = "https://images-api.nasa.gov"
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"NasaAPIWrapper": "langchain_community.utilities"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class NasaAPIWrapper(BaseModel):
-    def get_media(self, query: str) -> str:
-        params = json.loads(query)
-        if params.get("q"):
-            queryText = params["q"]
-            params.pop("q")
-        else:
-            queryText = ""
-        response = requests.get(
-            IMAGE_AND_VIDEO_LIBRARY_URL + "/search?q=" + queryText, params=params
-        )
-        data = response.json()
-        return data
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def get_media_metadata_manifest(self, query: str) -> str:
-        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/asset/" + query)
-        return response.json()
 
-    def get_media_metadata_location(self, query: str) -> str:
-        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/metadata/" + query)
-        return response.json()
-
-    def get_video_captions_location(self, query: str) -> str:
-        response = requests.get(IMAGE_AND_VIDEO_LIBRARY_URL + "/captions/" + query)
-        return response.json()
-
-    def run(self, mode: str, query: str) -> str:
-        if mode == "search_media":
-            output = self.get_media(query)
-        elif mode == "get_media_metadata_manifest":
-            output = self.get_media_metadata_manifest(query)
-        elif mode == "get_media_metadata_location":
-            output = self.get_media_metadata_location(query)
-        elif mode == "get_video_captions_location":
-            output = self.get_video_captions_location(query)
-        else:
-            output = f"ModeError: Got unexpected mode {mode}."
-
-        try:
-            return json.dumps(output)
-        except Exception:
-            return str(output)
+__all__ = [
+    "NasaAPIWrapper",
+]

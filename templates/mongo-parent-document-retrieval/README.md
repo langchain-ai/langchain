@@ -50,7 +50,7 @@ add_routes(app, mongo_parent_document_retrieval_chain, path="/mongo-parent-docum
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 
@@ -97,17 +97,17 @@ We will first follow the standard MongoDB Atlas setup instructions [here](https:
 2. Create a new project (if not already done)
 3. Locate your MongoDB URI.
 
-This can be done by going to the deployement overview page and connecting to you database
+This can be done by going to the deployment overview page and connecting to you database
 
-![connect.png](_images/connect.png)
+![Screenshot highlighting the 'Connect' button in MongoDB Atlas.](_images/connect.png "MongoDB Atlas Connect Button")
 
 We then look at the drivers available
 
-![driver.png](_images/driver.png)
+![Screenshot showing the MongoDB Atlas drivers section for connecting to the database.](_images/driver.png "MongoDB Atlas Drivers Section")
 
 Among which we will see our URI listed
 
-![uri.png](_images/uri.png)
+![Screenshot displaying the MongoDB Atlas URI in the connection instructions.](_images/uri.png "MongoDB Atlas URI Display")
 
 Let's then set that as an environment variable locally:
 

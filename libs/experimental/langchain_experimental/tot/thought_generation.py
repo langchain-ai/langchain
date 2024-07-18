@@ -6,14 +6,15 @@ These strategies ensure that the language model generates diverse and
 non-repeating thoughts, which are crucial for problem-solving tasks that require
 exploration.
 """
+
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
+from langchain_core.prompts.base import BasePromptTemplate
 
 from langchain_experimental.pydantic_v1 import Field
-from langchain_experimental.tot.prompts import COT_PROMPT, PROPOSE_PROMPT
+from langchain_experimental.tot.prompts import get_cot_prompt, get_propose_prompt
 
 
 class BaseThoughtGenerationStrategy(LLMChain):
@@ -39,14 +40,14 @@ class BaseThoughtGenerationStrategy(LLMChain):
 
 class SampleCoTStrategy(BaseThoughtGenerationStrategy):
     """
-    Sample thoughts from a Chain-of-Thought (CoT) prompt.
+    Sample strategy from a Chain-of-Thought (CoT) prompt.
 
     This strategy works better when the thought space is rich, such as when each
     thought is a paragraph. Independent and identically distributed samples
     lead to diversity, which helps to avoid repetition.
     """
 
-    prompt: BasePromptTemplate = COT_PROMPT
+    prompt: BasePromptTemplate = Field(default_factory=get_cot_prompt)
 
     def next_thought(
         self,
@@ -62,14 +63,14 @@ class SampleCoTStrategy(BaseThoughtGenerationStrategy):
 
 class ProposePromptStrategy(BaseThoughtGenerationStrategy):
     """
-    Propose thoughts sequentially using a "propose prompt".
+    Strategy that is sequentially using a "propose prompt".
 
     This strategy works better when the thought space is more constrained, such
     as when each thought is just a word or a line. Proposing different thoughts
     in the same prompt completion helps to avoid duplication.
     """
 
-    prompt: BasePromptTemplate = PROPOSE_PROMPT
+    prompt: BasePromptTemplate = Field(default_factory=get_propose_prompt)
     tot_memory: Dict[Tuple[str, ...], List[str]] = Field(default_factory=dict)
 
     def next_thought(

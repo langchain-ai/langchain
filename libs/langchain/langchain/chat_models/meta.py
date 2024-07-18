@@ -1,29 +1,25 @@
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.schema.messages import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain._api import create_importer
 
+if TYPE_CHECKING:
+    from langchain_community.chat_models.meta import convert_messages_to_prompt_llama
 
-def _convert_one_message_to_text_llama(message: BaseMessage) -> str:
-    if isinstance(message, ChatMessage):
-        message_text = f"\n\n{message.role.capitalize()}: {message.content}"
-    elif isinstance(message, HumanMessage):
-        message_text = f"[INST] {message.content} [/INST]"
-    elif isinstance(message, AIMessage):
-        message_text = f"{message.content}"
-    elif isinstance(message, SystemMessage):
-        message_text = f"<<SYS>> {message.content} <</SYS>>"
-    else:
-        raise ValueError(f"Got unknown type {message}")
-    return message_text
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "convert_messages_to_prompt_llama": "langchain_community.chat_models.meta"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-def convert_messages_to_prompt_llama(messages: List[BaseMessage]) -> str:
-    return "\n".join(
-        [_convert_one_message_to_text_llama(message) for message in messages]
-    )
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "convert_messages_to_prompt_llama",
+]
