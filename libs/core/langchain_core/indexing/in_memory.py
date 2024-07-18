@@ -3,7 +3,11 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from langchain_core.documents import Document
 from langchain_core.indexing import UpsertResponse
-from langchain_core.indexing.base import DeleteResponse, DocumentIndexer
+from langchain_core.indexing.base import (
+    AsyncDocumentIndexer,
+    DeleteResponse,
+    DocumentIndexer,
+)
 
 
 class InMemoryDocumentIndexer(DocumentIndexer):
@@ -24,8 +28,9 @@ class InMemoryDocumentIndexer(DocumentIndexer):
                 item_.id = str(id_)
             else:
                 item_ = item
+                id_ = item.id
 
-            self.store[item_.id] = item_
+            self.store[id_] = item_
             ok_ids.append(item_.id)
 
         return UpsertResponse(succeeded=ok_ids, failed=[])
@@ -57,7 +62,7 @@ class InMemoryDocumentIndexer(DocumentIndexer):
         return found_documents
 
 
-class AsyncInMemoryDocumentIndexer(DocumentIndexer):
+class AsyncInMemoryDocumentIndexer(AsyncDocumentIndexer):
     """An in memory async indexer implementation."""
 
     def __init__(self, *, store: Optional[Dict[str, Document]] = None) -> None:
