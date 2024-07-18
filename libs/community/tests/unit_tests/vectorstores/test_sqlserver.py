@@ -37,7 +37,7 @@ def test_sqlserver_add_texts(store) -> None:
 
 
 def test_sqlserver_add_texts_when_no_metadata_is_provided(store) -> None:
-    """Test that when user calls the add_texts function without providing metadata, the embedded text still get added to the vectore store."""
+    """Test that when user calls the add_texts function without providing metadata, the embedded text still get added to the vector store."""
     texts = [
         "Good review",
         "new books",
