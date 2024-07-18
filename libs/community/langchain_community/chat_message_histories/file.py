@@ -22,7 +22,7 @@ class FileChatMessageHistory(BaseChatMessageHistory):
         Args:
             file_path: The path to the local file to store the chat history.
             encoding: The encoding to use for file operations. Defaults to None.
-            ensure_ascii: If True, ensure that all non-ASCII characters are escaped in JSON output. Defaults to True.
+            ensure_ascii: If True, escape non-ASCII chars in JSON output. Defaults to True.
         """
         self.file_path = Path(file_path)
         self.encoding = encoding
