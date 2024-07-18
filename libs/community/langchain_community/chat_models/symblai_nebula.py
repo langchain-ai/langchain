@@ -91,7 +91,7 @@ class ChatNebula(BaseChatModel):
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["nebula_api_key"] = convert_to_secret_str(
