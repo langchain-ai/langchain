@@ -1,11 +1,10 @@
 from typing import Tuple
 
 import pytest
-from langchain_standard_tests.integration_tests import (
+from langchain_standard_tests.integration_tests.base_store import (
     BaseStoreAsyncTests,
     BaseStoreSyncTests,
 )
-from langchain_standard_tests.integration_tests.base_store import V
 
 from langchain_core.stores import InMemoryStore
 
@@ -17,7 +16,7 @@ class TestSyncInMemoryStore(BaseStoreSyncTests):
         return InMemoryStore()
 
     @pytest.fixture
-    def three_values(self) -> Tuple[V, V, V]:
+    def three_values(self) -> Tuple[str, str, str]:  # type: ignore
         return "value1", "value2", "value3"
 
 
@@ -27,7 +26,7 @@ class TestAsyncInMemoryStore(BaseStoreAsyncTests):
         return InMemoryStore()
 
     @pytest.fixture
-    def three_values(self) -> Tuple[V, V, V]:
+    def three_values(self) -> Tuple[str, str, str]:  # type: ignore
         return "value1", "value2", "value3"
 
 
