@@ -67,6 +67,7 @@ def add_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> None:
         else:
             links_in_metadata.append(link)
 
+
 def copy_with_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> Document:
     """Return a document with the given links added.
 
@@ -85,9 +86,9 @@ def copy_with_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> Docum
             new_links.add(link)
 
     return Document(
-        page_content = doc.page_content,
-        metadata = {
+        page_content=doc.page_content,
+        metadata={
             **doc.metadata,
             METADATA_LINKS_KEY: list(new_links),
-        }
+        },
     )
