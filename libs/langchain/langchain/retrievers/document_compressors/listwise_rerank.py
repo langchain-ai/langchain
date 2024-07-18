@@ -9,7 +9,6 @@ from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 
-
 _default_system_tmpl = """{context}
 
 Sort the Documents by their relevance to the Query."""
