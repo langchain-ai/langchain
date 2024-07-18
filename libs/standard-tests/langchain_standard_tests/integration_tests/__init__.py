@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import pytest
 
 # Rewrite assert statements for test suite so that implementations can
