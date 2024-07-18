@@ -601,7 +601,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
                 tools=[schema], first_tool_only=True
             )
         else:
-            key_name = self._provider.convert_to_oci_tool(schema)["name"]
+            key_name = getattr(self._provider.convert_to_oci_tool(schema), "name")
             output_parser = JsonOutputKeyToolsParser(
                 key_name=key_name, first_tool_only=True
             )
