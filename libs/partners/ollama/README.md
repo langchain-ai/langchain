@@ -8,9 +8,8 @@ This package contains the LangChain integration with Ollama
 pip install -U langchain-ollama
 ```
 
-And you should configure credentials by setting the following environment variables:
-
-* TODO: fill this out
+You will also need to run the Ollama server locally. 
+You can download it [here](https://ollama.com/download).
 
 ## Chat Models
 
@@ -19,7 +18,7 @@ And you should configure credentials by setting the following environment variab
 ```python
 from langchain_ollama import ChatOllama
 
-llm = ChatOllama()
+llm = ChatOllama(model="llama3")
 llm.invoke("Sing a ballad of LangChain.")
 ```
 
@@ -30,7 +29,7 @@ llm.invoke("Sing a ballad of LangChain.")
 ```python
 from langchain_ollama import OllamaEmbeddings
 
-embeddings = OllamaEmbeddings()
+embeddings = OllamaEmbeddings(model="llama3")
 embeddings.embed_query("What is the meaning of life?")
 ```
 
