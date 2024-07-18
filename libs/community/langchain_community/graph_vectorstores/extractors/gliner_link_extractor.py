@@ -7,11 +7,13 @@ from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )
 
-# TypeAlias is not available in Python 2.9, we can't use that or the newer `type`.
+# TypeAlias is not available in Python 3.9, we can't use that or the newer `type`.
 GLiNERInput = Union[str, Document]
 
 
 class GLiNERLinkExtractor(LinkExtractor[GLiNERInput]):
+    """Link documents with common named entities using GLiNER <https://github.com/urchade/GLiNER>."""
+
     def __init__(
         self,
         labels: List[str],
@@ -22,9 +24,17 @@ class GLiNERLinkExtractor(LinkExtractor[GLiNERInput]):
     ):
         """Extract keywords using GLiNER.
 
+        Example:
+
+            .. code_block: python
+                extractor = GLiNERLinkExtractor(
+                    labels=["Person", "Award", "Date", "Competitions", "Teams"]
+                )
+                results = extractor.extract_one("some long text...")
+
         Args:
-            kind: Kind of links to produce with this extractor.
             labels: List of kinds of entities to extract.
+            kind: Kind of links to produce with this extractor.
             model: GLiNER model to use.
             extract_kwargs: Keyword arguments to pass to GLiNER.
         """
