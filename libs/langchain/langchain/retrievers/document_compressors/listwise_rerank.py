@@ -45,7 +45,36 @@ def _parse_ranking(results: dict) -> List[Document]:
 class LLMListwiseRerank(BaseDocumentCompressor):
     """Document compressor that uses `Zero-Shot Listwise Document Reranking`.
 
-    Source: https://arxiv.org/pdf/2305.02156.pdf
+    Adapted from: https://arxiv.org/pdf/2305.02156.pdf
+
+    ``LLMListwiseRerank`` uses a language model to rerank a list of documents based on
+    their relevance to a query.
+
+    **NOTE**: requires that underlying model implement ``with_structured_output``.
+
+    Example usage:
+        .. code-block:: python
+
+            from langchain.retrievers.document_compressors.listwise_rerank import (
+                LLMListwiseRerank,
+            )
+            from langchain_core.documents import Document
+            from langchain_openai import ChatOpenAI
+
+            documents = [
+                Document("Sally is my friend from school"),
+                Document("Steve is my friend from home"),
+                Document("I didn't always like yogurt"),
+                Document("I wonder why it's called football"),
+                Document("Where's waldo"),
+            ]
+
+            reranker = LLMListwiseRerank.from_llm(
+                llm=ChatOpenAI(model="gpt-3.5-turbo"), top_n=3
+            )
+            compressed_docs = reranker.compress_documents(documents, "Who is steve")
+            assert len(compressed_docs) == 3
+            assert "Steve" in compressed_docs[0].page_content
     """
 
     reranker: Runnable[Dict, List[Document]]
