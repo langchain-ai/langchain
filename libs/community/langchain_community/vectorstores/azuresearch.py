@@ -24,7 +24,6 @@ from typing import (
 )
 
 import numpy as np
-from azure.core.credentials import AccessToken, TokenCredential
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
