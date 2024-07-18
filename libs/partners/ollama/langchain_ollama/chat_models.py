@@ -1,4 +1,5 @@
 """Ollama chat models."""
+
 from typing import (
     Any,
     AsyncIterator,
@@ -18,7 +19,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -26,6 +27,8 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from ollama import AsyncClient, Message, Options
 
@@ -394,13 +397,16 @@ class ChatOllama(BaseChatModel):
             if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=stream_resp["message"]["content"]
-                        if "message" in stream_resp
-                        else ""
+                        content=(
+                            stream_resp["message"]["content"]
+                            if "message" in stream_resp
+                            and "content" in stream_resp["message"]
+                            else ""
+                        )
                     ),
-                    generation_info=dict(stream_resp)
-                    if stream_resp.get("done") is True
-                    else None,
+                    generation_info=(
+                        dict(stream_resp) if stream_resp.get("done") is True else None
+                    ),
                 )
                 if final_chunk is None:
                     final_chunk = chunk
@@ -430,13 +436,16 @@ class ChatOllama(BaseChatModel):
             if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=stream_resp["message"]["content"]
-                        if "message" in stream_resp
-                        else ""
+                        content=(
+                            stream_resp["message"]["content"]
+                            if "message" in stream_resp
+                            and "content" in stream_resp["message"]
+                            else ""
+                        )
                     ),
-                    generation_info=dict(stream_resp)
-                    if stream_resp.get("done") is True
-                    else None,
+                    generation_info=(
+                        dict(stream_resp) if stream_resp.get("done") is True else None
+                    ),
                 )
                 if final_chunk is None:
                     final_chunk = chunk
@@ -452,6 +461,21 @@ class ChatOllama(BaseChatModel):
             raise ValueError("No data received from Ollama stream.")
 
         return final_chunk
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="ollama",
+            ls_model_name=self.model,
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_stop := stop or params.get("stop", None) or self.stop:
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
 
     def _generate(
         self,
@@ -480,13 +504,16 @@ class ChatOllama(BaseChatModel):
             if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=stream_resp["message"]["content"]
-                        if "message" in stream_resp
-                        else ""
+                        content=(
+                            stream_resp["message"]["content"]
+                            if "message" in stream_resp
+                            and "content" in stream_resp["message"]
+                            else ""
+                        )
                     ),
-                    generation_info=dict(stream_resp)
-                    if stream_resp.get("done") is True
-                    else None,
+                    generation_info=(
+                        dict(stream_resp) if stream_resp.get("done") is True else None
+                    ),
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(
@@ -506,13 +533,16 @@ class ChatOllama(BaseChatModel):
             if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=stream_resp["message"]["content"]
-                        if "message" in stream_resp
-                        else ""
+                        content=(
+                            stream_resp["message"]["content"]
+                            if "message" in stream_resp
+                            and "content" in stream_resp["message"]
+                            else ""
+                        )
                     ),
-                    generation_info=dict(stream_resp)
-                    if stream_resp.get("done") is True
-                    else None,
+                    generation_info=(
+                        dict(stream_resp) if stream_resp.get("done") is True else None
+                    ),
                 )
                 if run_manager:
                     await run_manager.on_llm_new_token(

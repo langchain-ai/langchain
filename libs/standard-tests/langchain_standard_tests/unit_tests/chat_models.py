@@ -29,8 +29,7 @@ def my_adder(a: int, b: int) -> int:
 class ChatModelTests(ABC):
     @property
     @abstractmethod
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        ...
+    def chat_model_class(self) -> Type[BaseChatModel]: ...
 
     @property
     def chat_model_params(self) -> dict:
@@ -42,7 +41,7 @@ class ChatModelTests(ABC):
             "temperature": 0,
             "max_tokens": 100,
             "timeout": 60,
-            "stop": [],
+            "stop": None,
             "max_retries": 2,
         }
 

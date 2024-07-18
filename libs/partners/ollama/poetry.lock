@@ -316,6 +316,24 @@ type = "directory"
 url = "../../core"
 
 [[package]]
+name = "langchain-standard-tests"
+version = "0.1.1"
+description = "Standard tests for LangChain implementations"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+httpx = "^0.27.0"
+langchain-core = ">=0.1.40,<0.3"
+pytest = ">=7,<9"
+
+[package.source]
+type = "directory"
+url = "../../standard-tests"
+
+[[package]]
 name = "langsmith"
 version = "0.1.83"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
@@ -857,4 +875,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e121224bfacaf511f9739816f44cd8097187995f7dfd1b5f62c32248a11074e8"
+content-hash = "78624a23eb16328d66fce601544bd721281c256a92e3052e49585a2fae9e329c"
