@@ -747,8 +747,9 @@ class DedocPDFLoader(DedocBaseLoader):
     Note that `__init__` method supports dedoc_kwargs that differ from ones of
         DedocBaseLoader.
 
-    dedoc_kwargs: parameters used for document parsing via `dedoc`
-        (https://dedoc.readthedocs.io/en/latest/parameters/pdf_handling.html).
+    Parameters used for document parsing via `dedoc`
+        (https://dedoc.readthedocs.io/en/latest/parameters/pdf_handling.html):
+
         with_attachments: enable attached files extraction
         recursion_deep_attachments: recursion level for attached files extraction,
             works only when with_attachments==True

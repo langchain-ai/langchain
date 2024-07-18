@@ -35,9 +35,21 @@ class DedocBaseLoader(BaseLoader, ABC):
     def __init__(
         self,
         file_path: str,
+        *,
         split: str = "document",
         with_tables: bool = True,
-        **dedoc_kwargs: Union[str, bool],
+        with_attachments: Union[str, bool] = False,
+        recursion_deep_attachments: int = 10,
+        pdf_with_text_layer: str = "auto_tabby",
+        language: str = "rus+eng",
+        pages: str = ":",
+        is_one_column_document: str = "auto",
+        document_orientation: str = "auto",
+        need_header_footer_analysis: Union[str, bool] = False,
+        need_binarization: Union[str, bool] = False,
+        need_pdf_table_analysis: Union[str, bool] = True,
+        delimiter: Optional[str] = None,
+        encoding: Optional[str] = None,
     ) -> None:
         """
         Initialize with file path and parsing parameters.
@@ -56,8 +68,9 @@ class DedocBaseLoader(BaseLoader, ABC):
             with_tables: add tables to the result - each table is returned as a single
                 langchain Document object
 
-            dedoc_kwargs: parameters used for document parsing via `dedoc`
-                (https://dedoc.readthedocs.io/en/latest/parameters/parameters.html).
+            Parameters used for document parsing via `dedoc`
+                (https://dedoc.readthedocs.io/en/latest/parameters/parameters.html):
+
                 with_attachments: enable attached files extraction
                 recursion_deep_attachments: recursion level for attached files
                     extraction, works only when with_attachments==True
@@ -84,6 +97,11 @@ class DedocBaseLoader(BaseLoader, ABC):
                 delimiter: column separator for CSV, TSV files
                 encoding: encoding of TXT, CSV, TSV
         """
+        self.parsing_parameters = {
+            key: value
+            for key, value in locals().items()
+            if key not in {"self", "file_path", "split", "with_tables"}
+        }
         self.valid_split_values = {"document", "page", "node", "line"}
         if split not in self.valid_split_values:
             raise ValueError(
@@ -91,18 +109,12 @@ class DedocBaseLoader(BaseLoader, ABC):
                 f"`{self.valid_split_values}`"
             )
         self.split = split
-
         self.with_tables = with_tables
         self.file_path = file_path
-        with_attachments = str(dedoc_kwargs.get("with_attachments", "false")).lower()
-        self.parsing_parameters = {
-            **dedoc_kwargs,
-            **{
-                "structure_type": "tree" if self.split == "node" else "linear",
-                "document_type": "other",
-                "need_content_analysis": with_attachments,
-            },
-        }
+
+        structure_type = "tree" if self.split == "node" else "linear"
+        self.parsing_parameters["structure_type"] = structure_type
+        self.parsing_parameters["need_content_analysis"] = with_attachments
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazily load documents."""
@@ -334,10 +346,22 @@ class DedocAPIFileLoader(DedocBaseLoader):
     def __init__(
         self,
         file_path: str,
+        *,
         url: str = "http://0.0.0.0:1231",
         split: str = "document",
         with_tables: bool = True,
-        **dedoc_kwargs: Union[str, bool],
+        with_attachments: Union[str, bool] = False,
+        recursion_deep_attachments: int = 10,
+        pdf_with_text_layer: str = "auto_tabby",
+        language: str = "rus+eng",
+        pages: str = ":",
+        is_one_column_document: str = "auto",
+        document_orientation: str = "auto",
+        need_header_footer_analysis: Union[str, bool] = False,
+        need_binarization: Union[str, bool] = False,
+        need_pdf_table_analysis: Union[str, bool] = True,
+        delimiter: Optional[str] = None,
+        encoding: Optional[str] = None,
     ) -> None:
         """Initialize with file path, API url and parsing parameters.
 
@@ -355,8 +379,9 @@ class DedocAPIFileLoader(DedocBaseLoader):
             with_tables: add tables to the result - each table is returned as a single
                 langchain Document object
 
-            dedoc_kwargs: parameters used for document parsing via `dedoc`
-                (https://dedoc.readthedocs.io/en/latest/parameters/parameters.html).
+            Parameters used for document parsing via `dedoc`
+                (https://dedoc.readthedocs.io/en/latest/parameters/parameters.html):
+
                 with_attachments: enable attached files extraction
                 recursion_deep_attachments: recursion level for attached files
                     extraction, works only when with_attachments==True
@@ -384,7 +409,21 @@ class DedocAPIFileLoader(DedocBaseLoader):
                 encoding: encoding of TXT, CSV, TSV
         """
         super().__init__(
-            file_path=file_path, split=split, with_tables=with_tables, **dedoc_kwargs
+            file_path=file_path,
+            split=split,
+            with_tables=with_tables,
+            with_attachments=with_attachments,
+            recursion_deep_attachments=recursion_deep_attachments,
+            pdf_with_text_layer=pdf_with_text_layer,
+            language=language,
+            pages=pages,
+            is_one_column_document=is_one_column_document,
+            document_orientation=document_orientation,
+            need_header_footer_analysis=need_header_footer_analysis,
+            need_binarization=need_binarization,
+            need_pdf_table_analysis=need_pdf_table_analysis,
+            delimiter=delimiter,
+            encoding=encoding,
         )
         self.url = url
         self.parsing_parameters["return_format"] = "json"
