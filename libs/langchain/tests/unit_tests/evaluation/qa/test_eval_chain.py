@@ -62,7 +62,7 @@ def test_load_criteria_evaluator() -> None:
     # Patch the env with an openai-api-key
     with patch.dict(os.environ, {"OPENAI_API_KEY": "foo"}):
         # Check it can load using a string arg (even if that's not how it's typed)
-        load_evaluator("criteria") # type: ignore
+        load_evaluator("criteria")  # type: ignore
 
 
 @pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
