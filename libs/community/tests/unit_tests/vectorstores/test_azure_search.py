@@ -136,6 +136,8 @@ def create_vector_store(
 
 
 @pytest.mark.requires("azure.search.documents")
+@pytest.mark.requires("azure-identity")
+@pytest.mark.requires("azure-core")
 def test_init_existing_index() -> None:
     from azure.search.documents.indexes import SearchIndexClient
 
