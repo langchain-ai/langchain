@@ -123,6 +123,10 @@ def _create_subset_model_v1(
     fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
+    if PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import create_model
+    else:
+        from pydantic import create_model
     fields = {}
 
     for field_name in field_names:
@@ -152,6 +156,7 @@ def _create_subset_model_2(
 ) -> Type[BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
     from pydantic.fields import FieldInfo  # pydantic: ignore
+    from pydantic import create_model
 
     descriptions_ = descriptions or {}
     fields = {}
@@ -429,7 +434,7 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[Type[AnyBaseModel]] = None
+    args_schema: Optional[Any] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     """Whether to return the tool's output directly. 
