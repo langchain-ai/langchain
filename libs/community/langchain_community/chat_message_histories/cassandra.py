@@ -32,6 +32,7 @@ def _rows_to_messages(rows: Iterable[RowType]) -> List[BaseMessage]:
 
 class CassandraChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that is backed by Cassandra."""
+
     def __init__(
         self,
         session_id: str,
@@ -42,7 +43,8 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         *,
         setup_mode: SetupMode = SetupMode.SYNC,
     ) -> None:
-        """Initialize a new instance of CassandraChatMessageHistory.
+        """
+        Initialize a new instance of CassandraChatMessageHistory.
 
         Args:
             session_id: arbitrary key that is used to store the messages
