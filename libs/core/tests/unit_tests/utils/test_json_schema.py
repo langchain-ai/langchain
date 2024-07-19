@@ -136,12 +136,8 @@ def test_dereference_refs_missing_ref() -> None:
         },
         "$defs": {},
     }
-    # Since _retrieve_ref no longer raises KeyError, this test should be adjusted.
-    try:
+    with pytest.raises(KeyError):
         dereference_refs(schema)
-        assert True  # If no exception is raised, test passes
-    except KeyError:
-        pytest.fail("KeyError should not be raised")
 
 
 def test_dereference_refs_remote_ref() -> None:

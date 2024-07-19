@@ -18,8 +18,7 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
         elif component.isdigit() and int(component) in out:
             out = out[int(component)]
         else:
-            # Returning the original schema or a default value if the key is not found
-            return deepcopy(out)
+            raise KeyError(f"Reference '{path}' not found.")
     return deepcopy(out)
 
 
