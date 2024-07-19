@@ -1059,7 +1059,21 @@ class Runnable(Generic[Input, Output], ABC):
         | on_prompt_end        | [template_name]  |                                 | {"question": "hello"}                         | ChatPromptValue(messages: [SystemMessage, ...]) |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
 
-        Here are declarations associated with the events shown above:
+        In addition to the standard events, users can also dispatch custom events (see example below).
+
+        Custom events will be only be surfaced with in the `v2` version of the API!
+
+        A custom event has following format:
+
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | Attribute | Type | Description                                                                                               |
+        +===========+======+===========================================================================================================+
+        | name      | str  | A user defined name for the event.                                                                        |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | data      | Any  | The data associated with the event. This can be anything, though we suggest making it JSON serializable.  |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+
+        Here are declarations associated with the standard events shown above:
 
         `format_docs`:
 
@@ -1130,6 +1144,40 @@ class Runnable(Generic[Input, Output], ABC):
                 },
             ]
 
+
+        Example: Dispatch Custom Event
+
+        .. code-block:: python
+
+            from langchain_core.callbacks.manager import (
+                adispatch_custom_event,
+            )
+            from langchain_core.runnables import RunnableLambda, RunnableConfig
+            import asyncio
+
+
+            async def slow_thing(some_input: str, config: RunnableConfig) -> str:
+                \"\"\"Do something that takes a long time.\"\"\"
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                await adispatch_custom_event(
+                    "progress_event",
+                    {"message": "Finished step 1 of 3"},
+                    config=config # Must be included for python < 3.10
+                )
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                await adispatch_custom_event(
+                    "progress_event",
+                    {"message": "Finished step 2 of 3"},
+                    config=config # Must be included for python < 3.10
+                )
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                return "Done"
+
+            slow_thing = RunnableLambda(slow_thing)
+
+            async for event in slow_thing.astream_events("some_input", version="v2"):
+                print(event)
+
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable.
@@ -1138,6 +1186,7 @@ class Runnable(Generic[Input, Output], ABC):
                      `v1` is for backwards compatibility and will be deprecated
                      in 0.4.0.
                      No default will be assigned until the API is stabilized.
+                     custom events will only be surfaced in `v2`.
             include_names: Only include events from runnables with matching names.
             include_types: Only include events from runnables with matching types.
             include_tags: Only include events from runnables with matching tags.
