@@ -8,8 +8,8 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
-    TBaseModel,
     PydanticBaseModel,
+    TBaseModel,
 )
 
 
