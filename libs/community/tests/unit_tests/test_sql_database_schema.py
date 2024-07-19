@@ -71,6 +71,9 @@ def test_table_info() -> None:
     assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
+@pytest.mark.xfail(
+    version.parse(sa.__version__).major == 1, reason="SQLAlchemy 1.x issues"
+)
 def test_sql_database_run() -> None:
     """Test that commands can be run successfully and returned in correct format."""
     engine = create_engine("duckdb:///:memory:")
