@@ -89,6 +89,8 @@ requests-mock = "^1.11.0"
 codespell = "^2.2.0"
 
 [tool.poetry.group.test_integration.dependencies]
+pytest-vcr = "^1.0.2"
+vcrpy = "^6"
 
 
 [tool.poetry.group.lint.dependencies]
