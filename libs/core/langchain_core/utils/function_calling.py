@@ -28,7 +28,7 @@ from langchain_core.messages import (
 )
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.json_schema import dereference_refs
-from langchain_core.utils.pydantic import _issubclass_base_model
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.tools import BaseTool
@@ -273,7 +273,7 @@ def convert_to_openai_function(
             "description": function.pop("description"),
             "parameters": function,
         }
-    elif isinstance(function, type) and _issubclass_base_model(function):
+    elif isinstance(function, type) and is_basemodel_subclass(function):
         return cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
         return cast(Dict, format_tool_to_openai_function(function))

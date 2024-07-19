@@ -8,13 +8,13 @@ from langchain_core.load.load import loads
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableLambda
-from langchain_core.utils.pydantic import _issubclass_base_model
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
     schema: Union[Dict, Type[BaseModel]], _: Any
 ) -> Union[BaseModel, Dict]:
-    if isclass(schema) and _issubclass_base_model(schema):
+    if isclass(schema) and is_basemodel_subclass(schema):
         return schema(name="yo", value=42)
     else:
         params = cast(Dict, schema)["parameters"]

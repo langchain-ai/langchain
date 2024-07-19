@@ -22,7 +22,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.utils.pydantic import _issubclass_base_model
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
@@ -230,7 +230,7 @@ def node_data_json(
                 "name": node_data_str(node.id, node.data),
             },
         }
-    elif inspect.isclass(node.data) and _issubclass_base_model(node.data):
+    elif inspect.isclass(node.data) and is_basemodel_subclass(node.data):
         json = (
             {
                 "type": "schema",

@@ -64,7 +64,7 @@ from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.pydantic import _issubclass_base_model
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
@@ -1167,7 +1167,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 "with_structured_output is not implemented for this model."
             )
         llm = self.bind_tools([schema], tool_choice="any")
-        if isinstance(schema, type) and _issubclass_base_model(schema):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
