@@ -292,17 +292,21 @@ def _create_api_controller_agent(
         )
     if "DELETE" in allowed_operations:
         delete_llm_chain = LLMChain(llm=llm, prompt=PARSING_DELETE_PROMPT)
-        RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
-            requests_wrapper=requests_wrapper,
-            llm_chain=delete_llm_chain,
-            allow_dangerous_requests=allow_dangerous_requests,
+        tools.append(
+            RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=delete_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
         )
     if "PATCH" in allowed_operations:
         patch_llm_chain = LLMChain(llm=llm, prompt=PARSING_PATCH_PROMPT)
-        RequestsPatchToolWithParsing(  # type: ignore[call-arg]
-            requests_wrapper=requests_wrapper,
-            llm_chain=patch_llm_chain,
-            allow_dangerous_requests=allow_dangerous_requests,
+        tools.append(
+            RequestsPatchToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=patch_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
         )
     if not tools:
         raise ValueError("Tools not found")
