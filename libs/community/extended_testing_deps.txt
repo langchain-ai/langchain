@@ -38,6 +38,7 @@ javelin-sdk>=0.1.8,<0.2
 jinja2>=3,<4
 jq>=1.4.1,<2
 jsonschema>1
+keybert>=0.8.5
 lxml>=4.9.3,<6.0
 markdownify>=0.11.6,<0.12
 motor>=3.3.1,<4

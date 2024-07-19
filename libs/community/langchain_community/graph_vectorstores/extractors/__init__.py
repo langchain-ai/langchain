@@ -6,6 +6,10 @@ from langchain_community.graph_vectorstores.extractors.hierarchy_link_extractor 
     HierarchyInput,
     HierarchyLinkExtractor,
 )
+from langchain_community.graph_vectorstores.extractors.keybert_link_extractor import (
+    KeybertInput,
+    KeybertLinkExtractor,
+)
 
 from .html_link_extractor import (
     HtmlInput,
@@ -28,7 +32,11 @@ __all__ = [
     "HierarchyLinkExtractor",
     "HtmlInput",
     "HtmlLinkExtractor",
+    "KeybertInput",
+    "KeybertLinkExtractor",
     "LinkExtractor",
+    "LinkExtractor",
+    "LinkExtractorAdapter",
     "LinkExtractorAdapter",
     "LinkExtractorTransformer",
 ]
