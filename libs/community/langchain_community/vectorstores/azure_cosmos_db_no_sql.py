@@ -290,7 +290,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         parameters = [
             {"name": "@limit", "value": k},
             {"name": "@embeddingKey", "value": self._embedding_key},
-            {"name": "@embeddings", "value": embeddings}
+            {"name": "@embeddings", "value": embeddings},
         ]
 
         docs_and_scores = []
