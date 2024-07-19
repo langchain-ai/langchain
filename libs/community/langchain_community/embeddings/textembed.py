@@ -339,7 +339,7 @@ class AsyncOpenAITextEmbedEmbeddingClient:
         perm_texts_batched = self._batch(perm_texts)
 
         async with aiohttp.ClientSession(
-            trust_env=True, connector=aiohttp.TCPConnector(limit=32)
+            connector=aiohttp.TCPConnector(limit=32)
         ) as session:
             embeddings_batch_perm = await asyncio.gather(
                 *[
