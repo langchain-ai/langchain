@@ -695,8 +695,8 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
     """
 
-    endpoint_spec: Literal["/generate", "/v1/completions"] = "/generate"
-    """Endpoint spec."""
+    api: Literal["/generate", "/v1/completions"] = "/generate"
+    """Api spec."""
 
     frequency_penalty: float = 0.0
     """Penalizes repeated tokens according to frequency. Between 0 and 1."""
@@ -744,7 +744,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
                 "stop": self.stop,
                 **self.model_kwargs,
             }
-            if self.endpoint_spec == "/v1/completions"
+            if self.api == "/v1/completions"
             else {
                 "best_of": self.best_of,
                 "max_new_tokens": self.max_tokens,
@@ -765,7 +765,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"endpoint": self.endpoint, "endpoint_spec": self.endpoint_spec},
+            **{"endpoint": self.endpoint, "endpoint_spec": self.api},
             **self._default_params,
         }
 
