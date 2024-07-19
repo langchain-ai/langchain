@@ -8,7 +8,6 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type
 
 from langchain_core.pydantic_v1 import (
-    _PYDANTIC_MAJOR_VERSION,
     BaseModel,
     root_validator,
 )
