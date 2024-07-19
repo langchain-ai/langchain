@@ -22,7 +22,6 @@ and retrieve the data that are 'most similar' to the embedded query.
 from __future__ import annotations
 
 import logging
-import math
 import warnings
 from abc import ABC, abstractmethod
 from itertools import cycle
