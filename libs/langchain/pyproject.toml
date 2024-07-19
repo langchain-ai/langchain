@@ -106,7 +106,7 @@ cassio = "^0.1.0"
 langchainhub = "^0.1.16"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
+ruff = "^0.5.3"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"

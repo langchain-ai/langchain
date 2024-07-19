@@ -25,10 +25,9 @@ python = ">=3.8.1,<4.0"
 langchain-core = ">=0.1.52,<0.3"
 qdrant-client = "^1.10.1"
 pydantic = "^2.7.4"
-fastembed = { version = "^0.3.3", python = ">=3.8.1,<3.13", optional = true}
 
 [tool.poetry.extras]
-fastembed = [ "fastembed"]
+fastembed = [ "fastembed",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
@@ -37,6 +36,11 @@ omit = [ "tests/*",]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
 markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
+
+[tool.poetry.dependencies.fastembed]
+version = "^0.3.3"
+python = ">=3.8.1,<3.13"
+optional = true
 
 [tool.poetry.group.test]
 optional = true
@@ -68,7 +72,7 @@ codespell = "^2.2.0"
 [tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
+ruff = "^0.5.3"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"

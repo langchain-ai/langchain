@@ -76,7 +76,7 @@ python = ">=3.12"
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
+ruff = "^0.5.3"
 
 [tool.poetry.group.test_integration.dependencies]
 httpx = "^0.27.0"

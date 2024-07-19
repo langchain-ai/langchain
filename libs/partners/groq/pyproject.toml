@@ -19,7 +19,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.2.17,<0.3"	
+langchain-core = ">=0.2.17,<0.3"
 groq = ">=0.4.1,<1"
 
 [tool.ruff.lint]
@@ -59,7 +59,7 @@ pytest-asyncio = "^0.21.1"
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
+ruff = "^0.5.3"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"

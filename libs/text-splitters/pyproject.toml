@@ -45,7 +45,7 @@ optional = true
 optional = true
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
+ruff = "^0.5.3"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"

@@ -72,7 +72,7 @@ python-dotenv = "^1.0.1"
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
+ruff = "^0.5.3"
 python-dotenv = "^1.0.1"
 pytest = "^7.3.0"
 
