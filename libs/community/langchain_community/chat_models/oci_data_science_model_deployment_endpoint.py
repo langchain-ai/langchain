@@ -1,49 +1,33 @@
-# Copyright (c) 2024 Oracle and/or its affiliates.
+import json
+import logging
+from operator import itemgetter
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Type,
+    Union,
+)
 
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+import aiohttp
+import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage, AIMessageChunk
-from langchain_community.adapters.openai import (
-    convert_dict_to_message,
-    convert_message_to_dict,
-)
-from operator import itemgetter
-from langchain_core.tools import BaseTool
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Iterator,
-    AsyncIterator,
-    Union,
-    Sequence,
-    Callable,
-    Type,
-    Literal,
-)
-from langchain_core.runnables import Runnable
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_community.chat_models.openai import _convert_delta_to_message_chunk
-import requests
-from langchain_core.language_models.llms import create_base_retry_decorator
-import json
-from langchain_community.utilities.requests import Requests
-import aiohttp
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.utils.function_calling import (
-    convert_to_openai_tool,
-)
+from langchain_core.language_models.llms import create_base_retry_decorator
+from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -51,10 +35,18 @@ from langchain_core.output_parsers import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
-from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_from_dict_or_env,
 )
+
+from langchain_community.adapters.openai import (
+    convert_dict_to_message,
+    convert_message_to_dict,
+)
+from langchain_community.chat_models.openai import _convert_delta_to_message_chunk
+from langchain_community.utilities.requests import Requests
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_TIME_OUT = 300
 DEFAULT_CONTENT_TYPE_JSON = "application/json"
@@ -76,7 +68,6 @@ class ServerError(Exception):
 def _create_retry_decorator(
     llm,
     *,
-    max_retries: int = 1,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
@@ -84,7 +75,7 @@ def _create_retry_decorator(
     """Create a retry decorator."""
     errors = [requests.exceptions.ConnectTimeout, TokenExpiredError]
     decorator = create_base_retry_decorator(
-        error_types=errors, max_retries=max_retries, run_manager=run_manager
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
     return decorator
 
@@ -114,7 +105,8 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content='Bonjour le monde!', response_metadata={'token_usage': {'prompt_tokens': 40, 'total_tokens': 50, 'completion_tokens': 10}, 'model_name': 'odsc-llm', 'system_fingerprint': '', 'finish_reason': 'stop'}, id='run-cbed62da-e1b3-4abd-9df3-ec89d69ca012-0')
+            AIMessage(
+                content='Bonjour le monde!',response_metadata={'token_usage': {'prompt_tokens': 40, 'total_tokens': 50, 'completion_tokens': 10},'model_name': 'odsc-llm','system_fingerprint': '','finish_reason': 'stop'},id='run-cbed62da-e1b3-4abd-9df3-ec89d69ca012-0')
 
     Streaming:
         .. code-block:: python
@@ -165,11 +157,11 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
         .. code-block:: python
 
-            Joke(setup='Why did the cat get stuck in the tree?', punchline='Because it was chasing its tail!')
+            Joke(setup='Why did the cat get stuck in the tree?',punchline='Because it was chasing its tail!')
 
         See ``ChatOCIModelDeploymentEndpoint.with_structured_output()`` for more.
 
-    """
+    """  # noqa: E501
 
     auth: dict = Field(default_factory=dict, exclude=True)
     """ADS auth dictionary for OCI authentication:
@@ -335,7 +327,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
                 chunk_iter = chat.stream(messages)
 
-        """
+        """  # noqa: E501
         requests_kwargs = kwargs.pop("requests_kwargs", {})
         self.streaming = True
         params = self._invocation_params(stop, **kwargs)
@@ -359,7 +351,8 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Asynchronously call out to OCI Data Science Model Deployment endpoint on given messages.
+        """Asynchronously call out to OCI Data Science Model Deployment
+        endpoint on given messages.
 
         Args:
             messages (List[BaseMessage]):
@@ -391,7 +384,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
                 resp = await chat.ainvoke(messages)
 
-        """
+        """  # noqa: E501
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
             stream_iter = self._astream(
@@ -416,7 +409,8 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        """Asynchronously streaming OCI Data Science Model Deployment endpoint on given messages.
+        """Asynchronously streaming OCI Data Science Model Deployment
+        endpoint on given messages.
 
         Args:
             messages (List[BaseMessage]):
@@ -448,7 +442,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
                 chunk_iter = await chat.astream(messages)
 
-        """
+        """  # noqa: E501
         requests_kwargs = kwargs.pop("requests_kwargs", {})
         self.streaming = True
         params = self._invocation_params(stop, **kwargs)
@@ -463,79 +457,11 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
 
-    def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
-        ] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind tool-like objects to this chat model.
-
-        Assumes model is compatible with OpenAI tool-calling API.
-
-        Args:
-            tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
-            tool_choice: Which tool to require the model to call.
-                Options are:
-                name of the tool (str): calls corresponding tool;
-                "auto": automatically selects a tool (including no tool);
-                "none": does not call a tool;
-                "any" or "required": force at least one tool to be called;
-                True: forces tool call (requires `tools` be length 1);
-                False: no effect;
-
-                or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
-        """
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if tool_choice:
-            if isinstance(tool_choice, str):
-                # tool_choice is a tool/function name
-                if tool_choice not in ("auto", "none", "any", "required"):
-                    tool_choice = {
-                        "type": "function",
-                        "function": {"name": tool_choice},
-                    }
-                # 'any' is not natively supported by OpenAI API.
-                # We support 'any' since other models use this instead of 'required'.
-                if tool_choice == "any":
-                    tool_choice = "required"
-            elif isinstance(tool_choice, bool):
-                tool_choice = "required"
-            elif isinstance(tool_choice, dict):
-                tool_names = [
-                    formatted_tool["function"]["name"]
-                    for formatted_tool in formatted_tools
-                ]
-                if not any(
-                    tool_name == tool_choice["function"]["name"]
-                    for tool_name in tool_names
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice} was specified, but the only "
-                        f"provided tools were {tool_names}."
-                    )
-            else:
-                raise ValueError(
-                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
-                    f"Received: {tool_choice}"
-                )
-            kwargs["tool_choice"] = tool_choice
-        return super().bind(tools=formatted_tools, **kwargs)
-
     def with_structured_output(
         self,
         schema: Optional[Union[Dict, Type[BaseModel]]] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal["json_mode"] = "json_mode",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
@@ -548,12 +474,10 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
                 attributes will be validated, whereas with a dict they will not be. If
                 `method` is "function_calling" and `schema` is a dict, then the dict
                 must match the OpenAI function-calling spec.
-            method: The method for steering model generation, either "function_calling"
-                or "json_mode". If "function_calling" then the schema will be converted
-                to a OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then JSON mode will be
-                used. Note that if using "json_mode" then you must include instructions
-                for formatting the output into the desired schema into the model call.
+            method: The method for steering model generation, currently only support
+                for "json_mode". If "json_mode" then JSON mode will be used. Note that
+                if using "json_mode" then you must include instructions for formatting
+                the output into the desired schema into the model call.
             include_raw: If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
@@ -581,9 +505,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
-        if method == "function_calling":
-            raise NotImplementedError("Currently only supprot `json_mode`.")
-        elif method == "json_mode":
+        if method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
@@ -592,8 +514,8 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             )
         else:
             raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                f"Unrecognized method argument. Expected `json_mode`."
+                f"Received: `{method}`."
             )
 
         if include_raw:
@@ -618,8 +540,10 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         """Construct and return the headers for a request.
 
         Args:
-            is_async (bool, optional): Indicates if the request is asynchronous. Defaults to `False`.
-            body (optional): The request body to be included in the headers if the request is asynchronous.
+            is_async (bool, optional): Indicates if the request is asynchronous.
+                Defaults to `False`.
+            body (optional): The request body to be included in the headers if
+                the request is asynchronous.
 
         Returns:
             Dict: A dictionary containing the appropriate headers for the request.
@@ -679,6 +603,11 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             except TokenExpiredError as e:
                 raise e
             except Exception as err:
+                logger.debug(
+                    f"Requests payload: {data}. Requests arguments: "
+                    f"url={self.endpoint},timeout={request_timeout},stream={stream}."
+                    f"Additional request kwargs={kwargs}."
+                )
                 raise ValueError(
                     f"Error occurs by inference endpoint: {str(err)}"
                 ) from err
@@ -720,6 +649,11 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             except TokenExpiredError as e:
                 raise e
             except Exception as err:
+                logger.debug(
+                    f"Requests payload: `{data}`. "
+                    f"Stream mode={stream}. "
+                    f"Requests kwargs: url={self.endpoint}, timeout={request_timeout}."
+                )
                 raise ValueError(
                     f"Error occurs by inference endpoint: {str(err)}"
                 ) from err
@@ -753,7 +687,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
                 raise TokenExpiredError() from http_err
             else:
                 raise ServerError(
-                    f"Server error: {str(http_err)}. Message: {response.text}"
+                    f"Server error: {str(http_err)}. \nMessage: {response.text}"
                 ) from http_err
 
     def _parse_stream(self, lines: Iterator[bytes]) -> Iterator[str]:
@@ -815,16 +749,17 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     def _handle_sse_line(
         self, line: str, default_chunk_cls: AIMessageChunk
     ) -> ChatGenerationChunk:
-        """Handle a single Server-Sent Events (SSE) line and process it into a chat generation chunk.
+        """Handle a single Server-Sent Events (SSE) line and process it into
+        a chat generation chunk.
 
         Args:
             line (str): A single line from the SSE stream in string format.
-            default_chunk_cls (AIMessageChunk): The default class for message chunks to be used
-                during the processing of the stream response.
+            default_chunk_cls (AIMessageChunk): The default class for message
+                chunks to be used during the processing of the stream response.
 
         Returns:
-            ChatGenerationChunk: The processed chat generation chunk. If an error occurs, an empty
-                `ChatGenerationChunk` is returned.
+            ChatGenerationChunk: The processed chat generation chunk. If an error
+                occurs, an empty `ChatGenerationChunk` is returned.
         """
         try:
             obj = json.loads(line)
@@ -839,10 +774,12 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
         """Asynchronously iterate over server-sent events (SSE).
 
         Args:
-            async_cntx_mgr: An asynchronous context manager that yields a client response object.
+            async_cntx_mgr: An asynchronous context manager that yields a client
+                response object.
 
         Yields:
-            AsyncIterator[Dict]: An asynchronous iterator that yields parsed server-sent event lines as dictionaries.
+            AsyncIterator[Dict]: An asynchronous iterator that yields parsed server-sent
+                event lines as dictionaries.
         """
         async with async_cntx_mgr as client_resp:
             self._check_response(client_resp)
@@ -862,17 +799,18 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             return True
         return False
 
-    # The following methods can be overwrite by subclass to satisfied
-    # custom need for request's payload and handle response.
     def _construct_json_body(self, messages: list, params: dict) -> dict:
         """Constructs the request body as a dictionary (JSON).
 
         Args:
-            messages (list): A list of message objects to be included in the request body.
-            params (dict): A dictionary of additional parameters to be included in the request body.
+            messages (list): A list of message objects to be included in the
+                request body.
+            params (dict): A dictionary of additional parameters to be included
+                in the request body.
 
         Returns:
-            dict: A dictionary representing the JSON request body, including converted messages and additional parameters.
+            dict: A dictionary representing the JSON request body, including
+                converted messages and additional parameters.
 
         """
         return {
@@ -887,15 +825,17 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
         Args:
             response_json (dict): The JSON response from the streaming endpoint.
-            default_chunk_cls (type, optional): The default class to use for creating message chunks.
-                Defaults to `AIMessageChunk`.
+            default_chunk_cls (type, optional): The default class to use for
+                creating message chunks. Defaults to `AIMessageChunk`.
 
         Returns:
-            ChatGenerationChunk: An object containing the processed message chunk and any relevant
-                generation information such as finish reason and usage.
+            ChatGenerationChunk: An object containing the processed message
+                chunk and any relevant generation information such as finish
+                reason and usage.
 
         Raises:
-            ValueError: If the response JSON is not well-formed or does not contain the expected structure.
+            ValueError: If the response JSON is not well-formed or does not
+                contain the expected structure.
         """
         try:
             choice = response_json["choices"][0]
@@ -927,10 +867,12 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             response_json (dict): The JSON response from the chat model endpoint.
 
         Returns:
-            ChatResult: An object containing the list of `ChatGeneration` objects and additional LLM output information.
+            ChatResult: An object containing the list of `ChatGeneration` objects
+            and additional LLM output information.
 
         Raises:
-            ValueError: If the response JSON is not well-formed or does not contain the expected structure.
+            ValueError: If the response JSON is not well-formed or does not
+            contain the expected structure.
 
         """
         generations = []
@@ -965,39 +907,101 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
 
 class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
-    """OCI large language chat models deployed with vLLM"""
+    """OCI large language chat models deployed with vLLM.
 
-    # TODO: add docstring
+    To use, you must provide the model HTTP endpoint from your deployed
+    model, e.g. https://<MD_OCID>/predict.
 
-    # openai supported parameters
+    To authenticate, `oracle-ads` has been used to automatically load
+    credentials: https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
+
+    Make sure to have the required policies to access the OCI Data
+    Science Model Deployment endpoint. See:
+    https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm#model_dep_policies_auth__predict-endpoint
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatOCIModelDeploymentEndpointVLLM
+
+            oci_md = ChatOCIModelDeploymentEndpointVLLM(
+                endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict"
+            )
+
+    """  # noqa: E501
+
     frequency_penalty: float = 0.0
-    logit_bias: Optional[dict] = None
-    logprobs: Optional[int] = None
+    """Penalizes repeated tokens according to frequency. Between 0 and 1."""
+
+    logit_bias: Optional[Dict[str, float]] = None
+    """Adjust the probability of specific tokens being generated."""
+
     max_tokens: Optional[int] = 256
+    """The maximum number of tokens to generate in the completion."""
+
     n: int = 1
+    """Number of output sequences to return for the given prompt."""
+
     presence_penalty: float = 0.0
-    seed: Optional[int] = None
+    """Penalizes repeated tokens. Between 0 and 1."""
+
     temperature: float = 0.2
-    top_logprobs: Optional[int] = None
+    """What sampling temperature to use."""
+
     top_p: float = 1.0
-    user: Optional[str] = None
+    """Total probability mass of tokens to consider at each step."""
 
-    # vllm extra support
     best_of: Optional[int] = None
-    use_beam_search: Optional[bool] = False
-    top_k: Optional[int] = -1
-    min_p: Optional[float] = 0.0
-    repetition_penalty: Optional[float] = 1.0
-    length_penalty: Optional[float] = 1.0
-    early_stopping: Optional[bool] = False
-    ignore_eos: Optional[bool] = False
-    min_tokens: Optional[int] = 0
-    stop_token_ids: Optional[List[int]] = Field(default_factory=list)
-    skip_special_tokens: Optional[bool] = True
-    spaces_between_special_tokens: Optional[bool] = True
+    """Generates best_of completions server-side and returns the "best"
+    (the one with the highest log probability per token).
+    """
 
-    # additonal if needed
-    model_kwargs: Optional[dict] = None
+    use_beam_search: Optional[bool] = False
+    """Whether to use beam search instead of sampling."""
+
+    top_k: Optional[int] = -1
+    """Number of most likely tokens to consider at each step."""
+
+    min_p: Optional[float] = 0.0
+    """Float that represents the minimum probability for a token to be considered. 
+    Must be in [0,1]. 0 to disable this."""
+
+    repetition_penalty: Optional[float] = 1.0
+    """Float that penalizes new tokens based on their frequency in the
+    generated text. Values > 1 encourage the model to use new tokens."""
+
+    length_penalty: Optional[float] = 1.0
+    """Float that penalizes sequences based on their length. Used only
+    when `use_beam_search` is True."""
+
+    early_stopping: Optional[bool] = False
+    """Controls the stopping condition for beam search. It accepts the
+    following values: `True`, where the generation stops as soon as there
+    are `best_of` complete candidates; `False`, where a heuristic is applied
+    to the generation stops when it is very unlikely to find better candidates;
+    `never`, where the beam search procedure only stops where there cannot be
+    better candidates (canonical beam search algorithm)."""
+
+    ignore_eos: Optional[bool] = False
+    """Whether to ignore the EOS token and continue generating tokens after
+    the EOS token is generated."""
+
+    min_tokens: Optional[int] = 0
+    """Minimum number of tokens to generate per output sequence before 
+    EOS or stop_token_ids can be generated"""
+
+    stop_token_ids: Optional[List[int]] = None
+    """List of tokens that stop the generation when they are generated.
+    The returned output will contain the stop tokens unless the stop tokens
+    are special tokens."""
+
+    skip_special_tokens: Optional[bool] = True
+    """Whether to skip special tokens in the output. Defaults to True."""
+
+    spaces_between_special_tokens: Optional[bool] = True
+    """Whether to add spaces between special tokens in the output.
+    Defaults to True."""
 
     @property
     def _llm_type(self) -> str:
@@ -1017,7 +1021,7 @@ class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
                 value = getattr(self, attr_name)
                 if value is not None:
                     params.update({attr_name: value})
-            except:
+            except Exception:
                 pass
 
         params.update(**self.model_kwargs)
@@ -1039,14 +1043,11 @@ class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
             "n",
             "presence_penalty",
             "repetition_penalty",
-            "seed",
             "skip_special_tokens",
             "spaces_between_special_tokens",
             "stop_token_ids",
             "temperature",
             "top_k",
-            "top_logprobs",
             "top_p",
             "use_beam_search",
-            "user",
         ]
