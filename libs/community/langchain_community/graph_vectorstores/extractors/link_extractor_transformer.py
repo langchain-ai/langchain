@@ -38,6 +38,6 @@ class LinkExtractorTransformer(BaseDocumentTransformer):
         links_per_document = zip(*links_per_extractor)
 
         return [
-            copy_with_links(document, links)
+            copy_with_links(document, *links)
             for document, links in zip(documents, links_per_document)
         ]
