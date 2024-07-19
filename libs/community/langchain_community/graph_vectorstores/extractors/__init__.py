@@ -26,9 +26,9 @@ __all__ = [
     "GLiNERLinkExtractor",
     "HierarchyInput",
     "HierarchyLinkExtractor",
-    "LinkExtractorTransformer",
     "HtmlInput",
     "HtmlLinkExtractor",
     "LinkExtractor",
     "LinkExtractorAdapter",
+    "LinkExtractorTransformer",
 ]
