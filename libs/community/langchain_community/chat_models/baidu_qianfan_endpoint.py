@@ -32,6 +32,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -88,6 +89,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
         request_id=additional_kwargs["id"],
         object=additional_kwargs.get("object", ""),
         search_info=additional_kwargs.get("search_info", []),
+        usage=additional_kwargs.get("usage", None),
     )
 
     if additional_kwargs.get("function_call", {}):
@@ -101,6 +103,17 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
                 "id": str(uuid.uuid4()),
             }
         ]
+
+    if usage := additional_kwargs.get("usage", None):
+        return AIMessage(
+            content=content,
+            additional_kwargs=msg_additional_kwargs,
+            usage_metadata=UsageMetadata(
+                input_tokens=usage.get("prompt_tokens", 0),
+                output_tokens=usage.get("completion_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0),
+            ),
+        )
 
     return AIMessage(
         content=content,
@@ -578,6 +591,7 @@ class QianfanChatEndpoint(BaseChatModel):
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
+                        usage_metadata=msg.usage_metadata,
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -605,6 +619,7 @@ class QianfanChatEndpoint(BaseChatModel):
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
+                        usage_metadata=msg.usage_metadata,
                     ),
                     generation_info=msg.additional_kwargs,
                 )

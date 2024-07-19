@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-qdrant"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting Qdrant and LangChain"
 authors = []
 readme = "README.md"
