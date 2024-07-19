@@ -89,6 +89,7 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.runnables.utils import accepts_context
 from langchain_core.utils.pydantic import (
+    PydanticBaseModel,
     _create_subset_model,
     is_basemodel_subclass,
 )
@@ -332,7 +333,7 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[Union[Any, BaseModel]] = None
+    args_schema: Optional[PydanticBaseModel] = None
     """Pydantic model class to validate and parse the tool's input arguments.
     
     Args schema should be either: 
@@ -340,9 +341,6 @@ class ChildTool(BaseTool):
     - A subclass of pydantic.BaseModel.
     or 
     - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
-    
-    This is typed as Any to prevent validation using pydantic v1 which will not
-    be able to validate pydantic v2 models.
     """
     return_direct: bool = False
     """Whether to return the tool's output directly. 
@@ -901,7 +899,7 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: Type[BaseModel] = Field(..., description="The tool schema.")
+    args_schema: Type[PydanticBaseModel] = Field(..., description="The tool schema.")
     """The input arguments' schema."""
     func: Optional[Callable[..., Any]]
     """The function to run when the tool is called."""
