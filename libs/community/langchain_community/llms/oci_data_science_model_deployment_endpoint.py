@@ -439,6 +439,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
                 response = oci_md.invoke("Tell me a joke.")
                 response = oci_md.generate(["Tell me a joke."])
         """
+        prompts = [prompts] if isinstance(prompts, str) else prompts
         generations: List[List[Generation]] = []
         params = self._invocation_params(stop, **kwargs)
         for prompt in prompts:
@@ -481,6 +482,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
                 response = await oci_md.ainvoke("Tell me a joke.")
                 response = await oci_md.agenerate(["Tell me a joke."])
         """  # noqa: E501
+        prompts = [prompts] if isinstance(prompts, str) else prompts
         generations: List[List[Generation]] = []
         params = self._invocation_params(stop, **kwargs)
         for prompt in prompts:
