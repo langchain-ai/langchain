@@ -172,7 +172,7 @@ class BaseOCIModelDeployment(Serializable):
                     f"url={self.endpoint},timeout={request_timeout},stream={stream}. "
                     f"Additional request kwargs={kwargs}."
                 )
-                raise ValueError(
+                raise RuntimeError(
                     f"Error occurs by inference endpoint: {str(err)}"
                 ) from err
 
@@ -218,7 +218,7 @@ class BaseOCIModelDeployment(Serializable):
                     f"Stream mode={stream}. "
                     f"Requests kwargs: url={self.endpoint}, timeout={request_timeout}."
                 )
-                raise ValueError(
+                raise RuntimeError(
                     f"Error occurs by inference endpoint: {str(err)}"
                 ) from err
 
