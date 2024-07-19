@@ -2341,7 +2341,7 @@ async def adispatch_custom_event(
         LangChain from automatically propagating the config object on the user's
         behalf.
 
-    .. versionadded:: 0.2.14
+    .. versionadded:: 0.2.15
     """
     from langchain_core.runnables.config import (
         ensure_config,
@@ -2410,7 +2410,7 @@ def dispatch_custom_event(
             foo_ = RunnableLambda(foo)
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
-    .. versionadded:: 0.2.14
+    .. versionadded:: 0.2.15
     """
     from langchain_core.runnables.config import (
         ensure_config,

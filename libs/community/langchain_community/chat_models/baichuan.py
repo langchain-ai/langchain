@@ -106,10 +106,145 @@ async def aconnect_httpx_sse(
 
 
 class ChatBaichuan(BaseChatModel):
-    """Baichuan chat models API by Baichuan Intelligent Technology.
+    """Baichuan chat model integration.
 
-    For more information, see https://platform.baichuan-ai.com/docs/api
-    """
+    Setup:
+        To use, you should have the environment variable``BAICHUAN_API_KEY`` set with
+    your API KEY.
+
+        .. code-block:: bash
+
+            export BAICHUAN_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: Optional[str]
+            Name of Baichuan model to use.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        streaming: Optional[bool]
+            Whether to stream the results or not.
+        temperature: Optional[float]
+            Sampling temperature.
+        top_p: Optional[float]
+            What probability mass to use.
+        top_k: Optional[int]
+            What search sampling control to use.
+
+    Key init args — client params:
+        api_key: Optional[str]
+            MiniMax API key. If not passed in will be read from env var BAICHUAN_API_KEY.
+        base_url: Optional[str]
+            Base URL for API requests.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatBaichuan
+
+            chat = ChatBaichuan(
+                api_key=api_key,
+                model='Baichuan4',
+                # temperature=...,
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'token_usage': {
+                        'prompt_tokens': 93,
+                        'completion_tokens': 5,
+                        'total_tokens': 98
+                    },
+                    'model': 'Baichuan4'
+                },
+                id='run-944ff552-6a93-44cf-a861-4e4d849746f9-0'
+            )
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-f99fcd6f-dd31-46d5-be8f-0b6a22bf77d8'
+            content=' enjoy programming.' id='run-f99fcd6f-dd31-46d5-be8f-0b6a22bf77d8
+
+        .. code-block:: python
+
+            stream = chat.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(
+                content='I like programming.',
+                id='run-74689970-dc31-461d-b729-3b6aa93508d2'
+            )
+
+    Async:
+        .. code-block:: python
+
+            await chat.ainvoke(messages)
+
+            # stream
+            # async for chunk in chat.astream(messages):
+            #     print(chunk)
+
+            # batch
+            # await chat.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'token_usage': {
+                        'prompt_tokens': 93,
+                        'completion_tokens': 5,
+                        'total_tokens': 98
+                    },
+                    'model': 'Baichuan4'
+                },
+                id='run-952509ed-9154-4ff9-b187-e616d7ddfbba-0'
+            )
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {
+                'token_usage': {
+                    'prompt_tokens': 93,
+                    'completion_tokens': 5,
+                    'total_tokens': 98
+                },
+                'model': 'Baichuan4'
+            }
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
