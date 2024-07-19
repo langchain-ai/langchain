@@ -36,7 +36,7 @@ def test_call_tgi(mocker: MockerFixture) -> None:
         responses.POST,
         endpoint,
         json={
-            "choices": [{"index": 0, "text": "This is a completion."}],
+            "generated_text": "This is a completion.",
         },
         status=200,
     )

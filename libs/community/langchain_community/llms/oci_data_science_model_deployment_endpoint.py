@@ -1,6 +1,16 @@
 import json
 import logging
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
 import aiohttp
 import requests
@@ -362,6 +372,11 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
     p: float = 0.75
     """Total probability mass of tokens to consider at each step."""
 
+    best_of: int = 1
+    """Generates best_of completions server-side and returns the "best"
+    (the one with the highest log probability per token).
+    """
+
     stop: Optional[List[str]] = None
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
@@ -597,9 +612,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
             if not isinstance(choice, dict):
                 raise TypeError("Endpoint response is not well formed.")
         except (KeyError, IndexError, TypeError) as e:
-            raise ValueError(
-                "Error while formatting response payload for chat model of type"
-            ) from e
+            raise ValueError("Error while formatting response payload.") from e
 
         return GenerationChunk(text=choice.get("text", ""))
 
@@ -624,9 +637,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
             if not isinstance(choices, list):
                 raise TypeError("Endpoint response is not well formed.")
         except (KeyError, TypeError) as e:
-            raise ValueError(
-                "Error while formatting response payload for chat model of type"
-            ) from e
+            raise ValueError("Error while formatting response payload.") from e
 
         for choice in choices:
             gen = Generation(
@@ -684,6 +695,9 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
     """
 
+    endpoint_spec: Literal["/generate", "/v1/completions"] = "/generate"
+    """Endpoint spec."""
+
     frequency_penalty: float = 0.0
     """Penalizes repeated tokens according to frequency. Between 0 and 1."""
 
@@ -696,6 +710,19 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     suffix: Optional[str] = None
     """The text to append to the prompt. """
 
+    do_sample: bool = True
+    """If set to True, this parameter enables decoding strategies such as
+    multi-nominal sampling, beam-search multi-nominal sampling, Top-K
+    sampling and Top-p sampling.
+    """
+
+    watermark = True
+    """Watermarking with `A Watermark for Large Language Models <https://arxiv.org/abs/2301.10226>`_.
+    Defaults to True."""
+
+    return_full_text = False
+    """Whether to prepend the prompt to the generated text. Defaults to False."""
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
@@ -704,18 +731,67 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for invoking OCI model deployment TGI endpoint."""
+        return (
+            {
+                "model": self.model,  # can be any
+                "frequency_penalty": self.frequency_penalty,
+                "max_tokens": self.max_tokens,
+                "repetition_penalty": self.repetition_penalty,
+                "temperature": self.temperature,
+                "top_p": self.p,
+                "seed": self.seed,
+                "suffix": self.suffix,
+                "stop": self.stop,
+                **self.model_kwargs,
+            }
+            if self.endpoint_spec == "/v1/completions"
+            else {
+                "best_of": self.best_of,
+                "max_new_tokens": self.max_tokens,
+                "temperature": self.temperature,
+                "top_k": (
+                    self.k if self.k > 0 else None
+                ),  # `top_k` must be strictly positive'
+                "top_p": self.p,
+                "do_sample": self.do_sample,
+                "return_full_text": self.return_full_text,
+                "watermark": self.watermark,
+                "stop": self.stop,
+                **self.model_kwargs,
+            }
+        )
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
         return {
-            "model": self.model,  # can be any
-            "frequency_penalty": self.frequency_penalty,
-            "max_tokens": self.max_tokens,
-            "repetition_penalty": self.repetition_penalty,
-            "temperature": self.temperature,
-            "top_p": self.p,
-            "seed": self.seed,
-            "suffix": self.suffix,
-            "stop": self.stop,
-            **self.model_kwargs,
+            **{"endpoint": self.endpoint, "endpoint_spec": self.endpoint_spec},
+            **self._default_params,
         }
+
+    def _construct_json_body(self, prompt: str, params: dict) -> dict:
+        """Construct request payload."""
+        if self.endpoint_spec == "/v1/completions":
+            return super()._construct_json_body(prompt, params)
+
+        return {
+            "inputs": prompt,
+            "parameters": params,
+        }
+
+    def _process_response(self, response_json: dict) -> List[Generation]:
+        """Formats response."""
+        if self.endpoint_spec == "/v1/completions":
+            return super()._process_response(response_json)
+
+        try:
+            text = response_json["generated_text"]
+        except KeyError as e:
+            raise ValueError(
+                f"Error while formatting response payload.response_json={response_json}"
+            ) from e
+
+        return [Generation(text=text)]
 
 
 class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
@@ -741,11 +817,6 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
                 model="odsc-llm"
             )
 
-    """
-
-    best_of: int = 1
-    """Generates best_of completions server-side and returns the "best"
-    (the one with the highest log probability per token).
     """
 
     n: int = 1
