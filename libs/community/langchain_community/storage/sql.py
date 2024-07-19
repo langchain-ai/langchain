@@ -18,6 +18,7 @@ from typing import (
 from langchain_core.stores import BaseStore
 from sqlalchemy import (
     LargeBinary,
+    Text,
     and_,
     create_engine,
     delete,
@@ -66,7 +67,7 @@ except ImportError:
     # dummy for sqlalchemy < 2
     from sqlalchemy import Column
 
-    class LangchainKeyValueStores(Base):  # type: ignore[valid-type,misc]
+    class LangchainKeyValueStores(Base):  # type: ignore[valid-type,misc,no-redef]
         """Table used to save values."""
 
         # ATTENTION:
@@ -75,10 +76,8 @@ except ImportError:
         # users do not experience data loss.
         __tablename__ = "langchain_key_value_stores"
 
-        namespace: Mapped[str] = Column(
-            str, primary_key=True, index=True, nullable=False
-        )
-        key: str = mapped_column(str, primary_key=True, index=True, nullable=False)
+        namespace = Column(Text(), primary_key=True, index=True, nullable=False)
+        key = Column(Text(), primary_key=True, index=True, nullable=False)
         value = mapped_column(LargeBinary, index=False, nullable=False)
 
 
@@ -163,7 +162,9 @@ class SQLStore(BaseStore[str, bytes]):
 
     def create_schema(self) -> None:
         Base.metadata.create_all(self.engine)  # problem in sqlalchemy v1
-        # sqlalchemy.exc.CompileError: (in table 'langchain_key_value_stores', column 'namespace'): Can't generate DDL for NullType(); did you forget to specify a type on this Column?
+        # sqlalchemy.exc.CompileError: (in table 'langchain_key_value_stores',
+        # column 'namespace'): Can't generate DDL for NullType(); did you forget
+        # to specify a type on this Column?
 
     async def acreate_schema(self) -> None:
         assert isinstance(self.engine, AsyncEngine)
