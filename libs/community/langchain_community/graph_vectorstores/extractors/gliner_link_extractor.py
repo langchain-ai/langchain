@@ -26,7 +26,8 @@ class GLiNERLinkExtractor(LinkExtractor[GLiNERInput]):
 
         Example:
 
-            .. code_block: python
+            .. code-block:: python
+
                 extractor = GLiNERLinkExtractor(
                     labels=["Person", "Award", "Date", "Competitions", "Teams"]
                 )
