@@ -214,12 +214,14 @@ class AsyncDocumentIndexerTestSuite(ABC):
     async def indexer(self) -> AsyncGenerator[AsyncDocumentIndexer, None]:
         """Get the indexer."""
 
-    async def test_upsert_documents_has_no_ids(self, indexer: DocumentIndexer) -> None:
+    async def test_upsert_documents_has_no_ids(
+        self, indexer: AsyncDocumentIndexer
+    ) -> None:
         """Verify that there is not parameter called ids in upsert"""
         signature = inspect.signature(indexer.upsert)
         assert "ids" not in signature.parameters
 
-    async def test_upsert_no_ids(self, indexer: DocumentIndexer) -> None:
+    async def test_upsert_no_ids(self, indexer: AsyncDocumentIndexer) -> None:
         """Upsert works with documents that do not have IDs.
 
         At the moment, the ID field in documents is optional.
@@ -250,7 +252,7 @@ class AsyncDocumentIndexerTestSuite(ABC):
                 page_content="bar", metadata={"id": 2}, id=ids[1]
             )
 
-    async def test_upsert_some_ids(self, indexer: DocumentIndexer) -> None:
+    async def test_upsert_some_ids(self, indexer: AsyncDocumentIndexer) -> None:
         """Test an upsert where some docs have ids and some dont."""
         foo_uuid = str(uuid.UUID(int=7))
         documents = [
@@ -276,7 +278,7 @@ class AsyncDocumentIndexerTestSuite(ABC):
                 Document(page_content="foo", metadata={"id": 1}, id=foo_uuid),
             ]
 
-    async def test_upsert_overwrites(self, indexer: DocumentIndexer) -> None:
+    async def test_upsert_overwrites(self, indexer: AsyncDocumentIndexer) -> None:
         """Test that upsert overwrites existing content."""
         foo_uuid = str(uuid.UUID(int=7))
         documents = [
@@ -299,7 +301,7 @@ class AsyncDocumentIndexerTestSuite(ABC):
             Document(page_content="foo2", metadata={"meow": 2}, id=foo_uuid)
         ]
 
-    async def test_delete_missing_docs(self, indexer: DocumentIndexer) -> None:
+    async def test_delete_missing_docs(self, indexer: AsyncDocumentIndexer) -> None:
         """Verify that we can delete docs that aren't there."""
         assert await indexer.get(["1"]) == []  # Should be empty.
 
@@ -319,7 +321,7 @@ class AsyncDocumentIndexerTestSuite(ABC):
             # Nothing should have failed
             assert delete_response["failed"] == []
 
-    async def test_delete_semantics(self, indexer: DocumentIndexer) -> None:
+    async def test_delete_semantics(self, indexer: AsyncDocumentIndexer) -> None:
         """Test deletion of content has appropriate semantics."""
         # Let's index a document first.
         foo_uuid = str(uuid.UUID(int=7))
@@ -345,7 +347,7 @@ class AsyncDocumentIndexerTestSuite(ABC):
             # Nothing should have failed
             assert delete_response["failed"] == []
 
-    async def test_bulk_delete(self, indexer: DocumentIndexer) -> None:
+    async def test_bulk_delete(self, indexer: AsyncDocumentIndexer) -> None:
         """Test that we can delete several documents at once."""
         documents = [
             Document(id="1", page_content="foo", metadata={"id": 1}),
@@ -359,17 +361,17 @@ class AsyncDocumentIndexerTestSuite(ABC):
             Document(page_content="baz", metadata={"id": 3}, id="3")
         ]
 
-    async def test_delete_no_args(self, indexer: DocumentIndexer) -> None:
+    async def test_delete_no_args(self, indexer: AsyncDocumentIndexer) -> None:
         """Test delete with no args raises ValueError."""
         with pytest.raises(ValueError):
             await indexer.delete()
 
-    async def test_delete_missing_content(self, indexer: DocumentIndexer) -> None:
+    async def test_delete_missing_content(self, indexer: AsyncDocumentIndexer) -> None:
         """Deleting missing content should not raise an exception."""
         await indexer.delete(["1"])
         await indexer.delete(["1", "2", "3"])
 
-    async def test_get_with_missing_ids(self, indexer: DocumentIndexer) -> None:
+    async def test_get_with_missing_ids(self, indexer: AsyncDocumentIndexer) -> None:
         """Test get with missing IDs."""
         documents = [
             Document(id="1", page_content="foo", metadata={"id": 1}),
@@ -387,7 +389,7 @@ class AsyncDocumentIndexerTestSuite(ABC):
             Document(page_content="bar", metadata={"id": 2}, id="2"),
         ]
 
-    async def test_get_missing(self, indexer: DocumentIndexer) -> None:
+    async def test_get_missing(self, indexer: AsyncDocumentIndexer) -> None:
         """Test get by IDs with missing IDs."""
         # This should not raise an exception
         documents = await indexer.get(["1", "2", "3"])
