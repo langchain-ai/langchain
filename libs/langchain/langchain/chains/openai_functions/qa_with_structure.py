@@ -10,7 +10,7 @@ from langchain_core.output_parsers.openai_functions import (
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.utils.pydantic import _issubclass_base_model
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs
@@ -46,7 +46,7 @@ def create_qa_with_structure_chain(
 
     """
     if output_parser == "pydantic":
-        if not (isinstance(schema, type) and _issubclass_base_model(schema)):
+        if not (isinstance(schema, type) and is_basemodel_subclass(schema)):
             raise ValueError(
                 "Must provide a pydantic class for schema when output_parser is "
                 "'pydantic'."
@@ -61,7 +61,7 @@ def create_qa_with_structure_chain(
             f"Got unexpected output_parser: {output_parser}. "
             f"Should be one of `pydantic` or `base`."
         )
-    if isinstance(schema, type) and _issubclass_base_model(schema):
+    if isinstance(schema, type) and is_basemodel_subclass(schema):
         schema_dict = cast(dict, schema.schema())
     else:
         schema_dict = cast(dict, schema)

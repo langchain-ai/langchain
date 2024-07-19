@@ -24,7 +24,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
-from langchain_core.utils.pydantic import _issubclass_base_model
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 @deprecated(
@@ -466,7 +466,7 @@ def _get_openai_tool_output_parser(
     *,
     first_tool_only: bool = False,
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
-    if isinstance(tool, type) and _issubclass_base_model(tool):
+    if isinstance(tool, type) and is_basemodel_subclass(tool):
         output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
             PydanticToolsParser(tools=[tool], first_tool_only=first_tool_only)
         )
@@ -494,7 +494,7 @@ def get_openai_output_parser(
             not a Pydantic class, then the output parser will automatically extract
             only the function arguments and not the function name.
     """
-    if isinstance(functions[0], type) and _issubclass_base_model(functions[0]):
+    if isinstance(functions[0], type) and is_basemodel_subclass(functions[0]):
         if len(functions) > 1:
             pydantic_schema: Union[Dict, Type[BaseModel]] = {
                 convert_to_openai_function(fn)["name"]: fn for fn in functions
@@ -517,7 +517,7 @@ def _create_openai_json_runnable(
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
 ) -> Runnable:
     """"""
-    if isinstance(output_schema, type) and _issubclass_base_model(output_schema):
+    if isinstance(output_schema, type) and is_basemodel_subclass(output_schema):
         output_parser = output_parser or PydanticOutputParser(
             pydantic_object=output_schema,  # type: ignore
         )
