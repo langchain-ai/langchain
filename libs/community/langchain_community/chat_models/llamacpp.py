@@ -54,7 +54,7 @@ from langchain_core.pydantic_v1 import (
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.pydantic import _issubclass_base_model
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 class ChatLlamaCpp(BaseChatModel):
@@ -530,7 +530,7 @@ class ChatLlamaCpp(BaseChatModel):
 
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and _issubclass_base_model(schema)
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         if schema is None:
             raise ValueError(
                 "schema must be specified when method is 'function_calling'. "

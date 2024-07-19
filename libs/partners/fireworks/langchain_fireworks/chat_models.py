@@ -86,7 +86,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
-from langchain_core.utils.pydantic import _issubclass_base_model
+from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
@@ -944,7 +944,7 @@ class ChatFireworks(BaseChatModel):
 
 
 def _is_pydantic_class(obj: Any) -> bool:
-    return isinstance(obj, type) and _issubclass_base_model(obj)
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
 def _lc_tool_call_to_fireworks_tool_call(tool_call: ToolCall) -> dict:

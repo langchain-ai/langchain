@@ -41,7 +41,7 @@ from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils.pydantic import _isinstance_base_model, _issubclass_base_model
+from langchain_core.utils.pydantic import _isinstance_base_model, is_basemodel_subclass
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
@@ -78,7 +78,7 @@ _DictOrPydantic = Union[Dict, _BM]
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and (
-        _issubclass_base_model(obj) or BaseModel in obj.__bases__
+        is_basemodel_subclass(obj) or BaseModel in obj.__bases__
     )
 
 
