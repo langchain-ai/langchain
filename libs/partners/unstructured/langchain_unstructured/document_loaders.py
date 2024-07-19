@@ -22,89 +22,7 @@ if TYPE_CHECKING:
 
 
 class UnstructuredLoader(BaseLoader):
-
-    def __init__(
-        self,
-        *,
-        file: Optional[IO[bytes] | Sequence[IO[bytes]]] = None,
-        file_path: Optional[str | Path | Sequence[str | Path]] = None,
-        partition_via_api: bool = False,
-        post_processors: Optional[list[Callable[[str], str]]] = None,
-        # SDK parameters
-        api_key: Optional[str] = None,
-        client: Optional[requests.Session] = None,
-        retry_config: Optional[RetryConfig] = None,
-        server: Optional[str] = None,
-        url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
-        url_params: Optional[dict[str, str]] = None,
-        **unstructured_kwargs: Any,
-    ):
-        """Initialize loader."""
-        self.file = file
-        self.file_path = file_path
-        self.partition_via_api = partition_via_api
-        self.post_processors = post_processors
-        self.unstructured_kwargs = unstructured_kwargs
-        # SDK parameters
-        self.api_key = api_key
-        self.client = client
-        self.retry_config = retry_config
-        self.server = server
-        self.url = url
-        self.url_params = url_params
-
-
-    def lazy_load(self) -> Iterator[list[Document]]:
-        if isinstance(self.file, Sequence):
-            for f in self.file:
-                yield UnstructuredBaseLoader(
-                    file=f,
-                    partition_via_api=self.partition_via_api,
-                    post_processors=self.post_processors,
-                    unstructured_kwargs=self.unstructured_kwargs,
-                    # SDK parameters
-                    api_key=self.api_key,
-                    client=self.client,
-                    retry_config=self.retry_config,
-                    server=self.server,
-                    url=self.url,
-                    url_params=self.url_params,
-                ).load()
-            return
-        if isinstance(self.file_path, Sequence):
-            for f in self.file_path:
-                yield UnstructuredBaseLoader(
-                    file_path=f,
-                    partition_via_api=self.partition_via_api,
-                    post_processors=self.post_processors,
-                    unstructured_kwargs=self.unstructured_kwargs,
-                    # SDK parameters
-                    api_key=self.api_key,
-                    client=self.client,
-                    retry_config=self.retry_config,
-                    server=self.server,
-                    url=self.url,
-                    url_params=self.url_params,
-                ).load()
-            return
-        yield UnstructuredBaseLoader(
-                file=self.file,
-                file_path=self.file_path,
-                partition_via_api=self.partition_via_api,
-                post_processors=self.post_processors,
-                unstructured_kwargs=self.unstructured_kwargs,
-                # SDK parameters
-                api_key=self.api_key,
-                client=self.client,
-                retry_config=self.retry_config,
-                server=self.server,
-                url=self.url,
-                url_params=self.url_params,
-            ).load()
-
-
-class UnstructuredBaseLoader(BaseLoader):
-    """Unstructured document loader.
+    """Unstructured document loader interface.
 
     Partition and load files using either the `unstructured-client` sdk and the
     Unstructured API or locally using the `unstructured` library.
@@ -155,6 +73,79 @@ class UnstructuredBaseLoader(BaseLoader):
     https://docs.unstructured.io/api-reference/api-services/overview
     https://docs.unstructured.io/open-source/core-functionality/partitioning
     https://docs.unstructured.io/open-source/core-functionality/chunking
+    """
+
+    def __init__(
+        self,
+        *,
+        file: Optional[IO[bytes] | Sequence[IO[bytes]]] = None,
+        file_path: Optional[str | Path | Sequence[str | Path]] = None,
+        partition_via_api: bool = False,
+        post_processors: Optional[list[Callable[[str], str]]] = None,
+        # SDK parameters
+        api_key: Optional[str] = None,
+        client: Optional[requests.Session] = None,
+        retry_config: Optional[RetryConfig] = None,
+        server: Optional[str] = None,
+        url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
+        url_params: Optional[dict[str, str]] = None,
+        **unstructured_kwargs: Any,
+    ):
+        """Initialize loader."""
+        self.file = file
+        self.file_path = file_path
+        self.partition_via_api = partition_via_api
+        self.post_processors = post_processors
+        # SDK parameters
+        self.api_key = api_key
+        self.client = client
+        self.retry_config = retry_config
+        self.server = server
+        self.url = url
+        self.url_params = url_params
+        self.unstructured_kwargs = unstructured_kwargs
+
+
+    def lazy_load(self) -> Iterator[list[Document]]:
+        """Load file(s) to the _UnstructuredBaseLoader."""
+
+        def load_file(
+            f: Optional[IO[bytes]] = None, f_path: Optional[str | Path] = None
+        ) -> list[Document]:
+            """Load an individual file to the _UnstructuredBaseLoader."""
+            return _UnstructuredBaseLoader(
+                file=f,
+                file_path=f_path,
+                partition_via_api=self.partition_via_api,
+                post_processors=self.post_processors,
+                # SDK parameters
+                api_key=self.api_key,
+                client=self.client,
+                retry_config=self.retry_config,
+                server=self.server,
+                url=self.url,
+                url_params=self.url_params,
+                **self.unstructured_kwargs,
+            ).load()
+
+        if isinstance(self.file, Sequence):
+            for f in self.file:
+                yield load_file(f=f)
+            return
+        
+        if isinstance(self.file_path, Sequence):
+            for f_path in self.file_path:
+                yield load_file(f_path=f_path)
+            return
+        
+        yield load_file(f=self.file, f_path=self.file_path)
+
+
+class _UnstructuredBaseLoader(BaseLoader):
+    """Provides loader functionality for individual document/file objects.
+    
+    Encapsulates partitioning individual file objects (file or file_path) either
+    locally or via the Unstructured API.
     """
 
     def __init__(
@@ -245,10 +236,9 @@ class UnstructuredBaseLoader(BaseLoader):
         response = client.general.partition(req)
         if response.status_code == 200:
             return json.loads(response.raw_response.text)
-        else:
-            raise ValueError(
-                f"Receive unexpected status code {response.status_code} from the API.",
-            )
+        raise ValueError(
+            f"Receive unexpected status code {response.status_code} from the API.",
+        )
     
     @lazyproperty
     def _file_content(self) -> bytes:
@@ -258,8 +248,7 @@ class UnstructuredBaseLoader(BaseLoader):
         elif self.file_path:
             with open(self.file_path, "rb") as f:
                 return f.read()
-        else:
-            raise ValueError("file or file_path must be defined.")
+        raise ValueError("file or file_path must be defined.")
 
     @lazyproperty
     def _sdk_client(self):
