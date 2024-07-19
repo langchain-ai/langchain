@@ -1,10 +1,11 @@
 from typing import Any, Dict, Iterable, Optional, Set, Union
 
+from langchain_core.documents import Document
+from langchain_core.graph_vectorstores.links import Link
+
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )
-from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.links import Link
 
 KeybertInput = Union[str, Document]
 
