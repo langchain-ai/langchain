@@ -635,7 +635,7 @@ class VectorStore(ABC):
         # This function converts the Euclidean norm of normalized embeddings
         # (0 is most similar, sqrt(2) most dissimilar)
         # to a similarity function (0 to 1)
-        return 1.0 - distance / math.sqrt(2)
+        return 1.0 / (1.0 + distance)
 
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
