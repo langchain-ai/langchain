@@ -740,6 +740,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
                 "temperature": self.temperature,
                 "top_p": self.p,
                 "seed": self.seed,
+                "stream": self.streaming,
                 "suffix": self.suffix,
                 "stop": self.stop,
                 **self.model_kwargs,
@@ -771,7 +772,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
     def _construct_json_body(self, prompt: str, params: dict) -> dict:
         """Construct request payload."""
-        if self.endpoint_spec == "/v1/completions":
+        if self.api == "/v1/completions":
             return super()._construct_json_body(prompt, params)
 
         return {
@@ -781,7 +782,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
     def _process_response(self, response_json: dict) -> List[Generation]:
         """Formats response."""
-        if self.endpoint_spec == "/v1/completions":
+        if self.api == "/v1/completions":
             return super()._process_response(response_json)
 
         try:
@@ -859,6 +860,7 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             "n": self.n,
             "presence_penalty": self.presence_penalty,
             "stop": self.stop,
+            "stream": self.streaming,
             "temperature": self.temperature,
             "top_k": self.k,
             "top_p": self.p,
