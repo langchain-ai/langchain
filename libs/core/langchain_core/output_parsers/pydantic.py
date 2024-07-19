@@ -1,14 +1,12 @@
 import json
-from typing import Generic, List, Type, TypeVar
+from typing import Generic, List, Type
 
 import pydantic  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PydanticBaseModel
-
-TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, TBaseModel
 
 
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):

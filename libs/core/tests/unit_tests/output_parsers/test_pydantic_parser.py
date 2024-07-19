@@ -6,9 +6,9 @@ import pytest
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import ParrotFakeChatModel
 from langchain_core.output_parsers.json import JsonOutputParser
-from langchain_core.output_parsers.pydantic import PydanticOutputParser, TBaseModel
+from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, TBaseModel
 
 V1BaseModel = pydantic.BaseModel
 if PYDANTIC_MAJOR_VERSION == 2:

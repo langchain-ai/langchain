@@ -89,7 +89,7 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.runnables.utils import accepts_context
 from langchain_core.utils.pydantic import (
-    PydanticBaseModel,
+    TypeBaseModel,
     _create_subset_model,
     is_basemodel_subclass,
 )
@@ -333,7 +333,7 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[PydanticBaseModel] = None
+    args_schema: Optional[TypeBaseModel] = None
     """Pydantic model class to validate and parse the tool's input arguments.
     
     Args schema should be either: 
@@ -436,7 +436,8 @@ class ChildTool(BaseTool):
             The input schema for the tool.
         """
         if self.args_schema is not None:
-            return self.args_schema
+            # We need to fix the typing to account for the floating BaseModel
+            return self.args_schema  # type: ignore
         else:
             return create_schema_from_function(self.name, self._run)
 
@@ -899,7 +900,7 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: Type[PydanticBaseModel] = Field(..., description="The tool schema.")
+    args_schema: TypeBaseModel = Field(..., description="The tool schema.")
     """The input arguments' schema."""
     func: Optional[Callable[..., Any]]
     """The function to run when the tool is called."""

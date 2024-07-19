@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import textwrap
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 import pydantic  # pydantic: ignore
 
@@ -17,14 +17,20 @@ from langchain_core.pydantic_v1 import (
     root_validator,
 )
 
-if PYDANTIC_MAJOR_VERSION < 2:
+if PYDANTIC_MAJOR_VERSION == 1:
     PydanticBaseModel = pydantic.BaseModel
-
-else:
+    TypeBaseModel = Type[BaseModel]
+elif PYDANTIC_MAJOR_VERSION == 2:
     from pydantic.v1 import BaseModel  # pydantic: ignore
 
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
+    TypeBaseModel = Union[Type[BaseModel], Type[pydantic.BaseModel]]  # type: ignore
+else:
+    raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+
+
+TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
 def is_basemodel_subclass(cls: Type) -> bool:

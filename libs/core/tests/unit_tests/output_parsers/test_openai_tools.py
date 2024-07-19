@@ -538,7 +538,9 @@ def test_parse_with_different_pydantic_2_v1() -> None:
         temperature: int
         forecast: str
 
-    parser = PydanticToolsParser(tools=[Forecast])
+    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # both v1 and v2 in the same codebase.
+    parser = PydanticToolsParser(tools=[Forecast])  # type: ignore[list-item]
     message = AIMessage(
         content="",
         tool_calls=[
@@ -571,7 +573,9 @@ def test_parse_with_different_pydantic_2_proper() -> None:
         temperature: int
         forecast: str
 
-    parser = PydanticToolsParser(tools=[Forecast])
+    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # both v1 and v2 in the same codebase.
+    parser = PydanticToolsParser(tools=[Forecast])  # type: ignore[list-item]
     message = AIMessage(
         content="",
         tool_calls=[
@@ -604,7 +608,9 @@ def test_parse_with_different_pydantic_1_proper() -> None:
         temperature: int
         forecast: str
 
-    parser = PydanticToolsParser(tools=[Forecast])
+    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # both v1 and v2 in the same codebase.
+    parser = PydanticToolsParser(tools=[Forecast])  # type: ignore[list-item]
     message = AIMessage(
         content="",
         tool_calls=[
