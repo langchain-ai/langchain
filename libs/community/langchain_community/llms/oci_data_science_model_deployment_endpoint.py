@@ -169,7 +169,7 @@ class BaseOCIModelDeployment(Serializable):
             except Exception as err:
                 logger.debug(
                     f"Requests payload: {data}. Requests arguments: "
-                    f"url={self.endpoint},timeout={request_timeout},stream={stream}."
+                    f"url={self.endpoint},timeout={request_timeout},stream={stream}. "
                     f"Additional request kwargs={kwargs}."
                 )
                 raise ValueError(
@@ -249,10 +249,10 @@ class BaseOCIModelDeployment(Serializable):
             )
             if status_code == 401 and self._refresh_signer():
                 raise TokenExpiredError() from http_err
-            else:
-                raise ServerError(
-                    f"Server error: {str(http_err)}. \nMessage: {response.text}"
-                ) from http_err
+
+            raise ServerError(
+                f"Server error: {str(http_err)}. \nMessage: {response.text}"
+            ) from http_err
 
     def _parse_stream(self, lines: Iterator[bytes]) -> Iterator[str]:
         """Parse a stream of byte lines and yield parsed string lines.
@@ -306,7 +306,7 @@ class BaseOCIModelDeployment(Serializable):
             if "[DONE]" in line:
                 return None
 
-            if line.startswith("data:"):
+            if line.lower().startswith("data:"):
                 return line[5:].lstrip()
         return None
 
