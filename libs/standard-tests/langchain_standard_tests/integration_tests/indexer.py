@@ -6,9 +6,8 @@ from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Generator
 
 import pytest
-
 from langchain_core.documents import Document
-from langchain_core.indexing import DocumentIndexer, AsyncDocumentIndexer
+from langchain_core.indexing import AsyncDocumentIndexer, DocumentIndexer
 
 
 class DocumentIndexerTestSuite(ABC):
