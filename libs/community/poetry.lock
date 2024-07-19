@@ -2146,7 +2146,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.2.20"
+version = "0.2.22"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -5759,4 +5759,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "432e9be25dd09ad35f57892d2333931c22050152dab6c2f979f0933c7e3df5b0"
+content-hash = "7755e46a5239dc88c52f49ac337d573090728fc8a3b1f3465fcd4a9f18c5aaec"
