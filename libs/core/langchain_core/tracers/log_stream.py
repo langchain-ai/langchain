@@ -102,7 +102,7 @@ class RunLogPatch:
         self.ops = list(ops)
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        if type(other) == RunLogPatch:
+        if type(other) is RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(None, copy.deepcopy(ops))
             return RunLog(*ops, state=state)
@@ -132,7 +132,7 @@ class RunLog(RunLogPatch):
         self.state = state
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        if type(other) == RunLogPatch:
+        if type(other) is RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(self.state, other.ops)
             return RunLog(*ops, state=state)
