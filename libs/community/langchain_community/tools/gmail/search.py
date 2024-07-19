@@ -118,10 +118,10 @@ class GmailSearch(GmailBaseTool):
                     "body": body,
                     "subject": subject,
                     "sender": sender,
-                    "from": email_msg['From'],
-                    "date": email_msg['Date'],
-                    "to": email_msg['To'],
-                    "cc": email_msg['Cc'],
+                    "from": email_msg["From"],
+                    "date": email_msg["Date"],
+                    "to": email_msg["To"],
+                    "cc": email_msg["Cc"],
                 }
             )
         return results
