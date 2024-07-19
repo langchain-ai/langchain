@@ -22,6 +22,7 @@ class TestDocumentIndexerTestSuite(DocumentIndexerTestSuite):
 
 
 class TestAsyncDocumentIndexerTestSuite(AsyncDocumentIndexerTestSuite):
+    # Something funky is going on with mypy and async pytest fixture
     @pytest.fixture()
-    async def indexer(self) -> AsyncGenerator[AsyncDocumentIndexer, None]:
+    async def indexer(self) -> AsyncGenerator[AsyncDocumentIndexer, None]:  # type: ignore
         yield AsyncInMemoryDocumentIndexer()
