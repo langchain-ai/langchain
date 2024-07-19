@@ -271,28 +271,34 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
         # If limit_offset_clause is not specified, add TOP clause
         if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
-            query += "TOP {} ".format(k)
+            query += "TOP @limit "
 
         query += (
             "c.id, c.{}, c.text, c.metadata, "
-            "VectorDistance(c.{}, {}) AS SimilarityScore FROM c"
-        ).format(self._embedding_key, self._embedding_key, embeddings)
+            "VectorDistance(c.@embeddingKey, @embeddings) AS SimilarityScore FROM c"
+        )
 
         # Add where_clause if specified
         if pre_filter is not None and pre_filter.get("where_clause") is not None:
             query += " {}".format(pre_filter["where_clause"])
 
-        query += " ORDER BY VectorDistance(c.{}, {})".format(
-            self._embedding_key, embeddings
-        )
+        query += " ORDER BY VectorDistance(c.@embeddingKey, @embeddings)"
 
         # Add limit_offset_clause if specified
         if pre_filter is not None and pre_filter.get("limit_offset_clause") is not None:
             query += " {}".format(pre_filter["limit_offset_clause"])
+        parameters = [
+            {"name": "@limit", "value": k},
+            {"name": "@embeddingKey", "value": self._embedding_key},
+            {"name": "@embeddings", "value": embeddings}
+        ]
 
         docs_and_scores = []
+
         items = list(
-            self._container.query_items(query=query, enable_cross_partition_query=True)
+            self._container.query_items(
+                query=query, parameters=parameters, enable_cross_partition_query=True
+            )
         )
         for item in items:
             text = item["text"]
