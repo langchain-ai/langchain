@@ -132,6 +132,8 @@ class App(BaseModel):
     """Framework details of the app."""
     plugin_version: str
     """Plugin version used for the app."""
+    client_version: Framework
+    """Client version used for the app."""
 
 
 class Doc(BaseModel):

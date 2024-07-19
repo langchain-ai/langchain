@@ -3,6 +3,7 @@
 import logging
 import os
 import uuid
+from importlib.metadata import version
 from typing import Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
@@ -20,6 +21,7 @@ from langchain_community.utilities.pebblo import (
     get_loader_type,
     get_runtime,
     get_source_size,
+    Framework,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,16 +35,16 @@ class PebbloSafeLoader(BaseLoader):
     _discover_sent: bool = False
 
     def __init__(
-        self,
-        langchain_loader: BaseLoader,
-        name: str,
-        owner: str = "",
-        description: str = "",
-        api_key: Optional[str] = None,
-        load_semantic: bool = False,
-        classifier_url: Optional[str] = None,
-        *,
-        classifier_location: str = "local",
+            self,
+            langchain_loader: BaseLoader,
+            name: str,
+            owner: str = "",
+            description: str = "",
+            api_key: Optional[str] = None,
+            load_semantic: bool = False,
+            classifier_url: Optional[str] = None,
+            *,
+            classifier_location: str = "local",
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -175,6 +177,10 @@ class PebbloSafeLoader(BaseLoader):
             runtime=runtime,
             framework=framework,
             plugin_version=PLUGIN_VERSION,
+            client_version=Framework(
+                name="langchain_community",
+                version=version("langchain_community"),
+            ),
         )
         return app
 

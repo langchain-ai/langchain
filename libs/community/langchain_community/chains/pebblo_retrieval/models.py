@@ -123,6 +123,7 @@ class App(BaseModel):
     framework: Framework
     chains: List[ChainInfo]
     plugin_version: str
+    client_version: Framework
 
 
 class Context(BaseModel):
