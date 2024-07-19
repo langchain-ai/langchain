@@ -1,4 +1,5 @@
 """Test OCI Data Science Model Deployment Endpoint."""
+
 import pytest
 import responses
 from pytest_mock import MockerFixture
@@ -35,7 +36,7 @@ def test_call_tgi(mocker: MockerFixture) -> None:
         responses.POST,
         endpoint,
         json={
-            "generated_text": "This is a completion.",
+            "choices": [{"index": 0, "text": "This is a completion."}],
         },
         status=200,
     )
