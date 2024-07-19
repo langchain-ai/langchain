@@ -392,7 +392,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.11"
+version = "0.2.17"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1050,4 +1050,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "00a5670024e30cfb11ff8270b2e3c612e8a5840c6e4ad95316063bd32071d484"
+content-hash = "261382a5211f85660d9a410238e610c1c8f0c965514cc69ac008f477e4eda575"
