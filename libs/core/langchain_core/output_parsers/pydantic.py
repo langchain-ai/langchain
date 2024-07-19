@@ -6,7 +6,11 @@ import pydantic  # pydantic: ignore
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, TBaseModel
+from langchain_core.utils.pydantic import (
+    PYDANTIC_MAJOR_VERSION,
+    TBaseModel,
+    PydanticBaseModel,
+)
 
 
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
@@ -111,3 +115,10 @@ Here is the output schema:
 ```
 {schema}
 ```"""  # noqa: E501
+
+# Re-exporting types for backwards compatibility
+__all__ = [
+    "PydanticBaseModel",
+    "PydanticOutputParser",
+    "TBaseModel",
+]
