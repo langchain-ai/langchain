@@ -10,12 +10,23 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 import pydantic  # pydantic: ignore
 
 from langchain_core.pydantic_v1 import (
-    _PYDANTIC_MAJOR_VERSION as PYDANTIC_MAJOR_VERSION,
-)
-from langchain_core.pydantic_v1 import (
     BaseModel,
     root_validator,
 )
+
+
+def get_pydantic_major_version() -> int:
+    """Get the major version of Pydantic."""
+    try:
+        import pydantic
+
+        return int(pydantic.__version__.split(".")[0])
+    except ImportError:
+        return 0
+
+
+PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
+
 
 if PYDANTIC_MAJOR_VERSION == 1:
     PydanticBaseModel = pydantic.BaseModel
