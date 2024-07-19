@@ -1,28 +1,25 @@
-"""Tool for the Google Trends"""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.google_trends import GoogleTrendsAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools.google_trends.tool import GoogleTrendsQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "GoogleTrendsQueryRun": "langchain_community.tools.google_trends.tool"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GoogleTrendsQueryRun(BaseTool):
-    """Tool that queries the Google trends API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "google_trends"
-    description: str = (
-        "A wrapper around Google Trends Search. "
-        "Useful for when you need to get information about"
-        "google search trends from Google Trends"
-        "Input should be a search query."
-    )
-    api_wrapper: GoogleTrendsAPIWrapper
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "GoogleTrendsQueryRun",
+]

@@ -1,58 +1,27 @@
-from abc import abstractmethod
-from typing import Any, Optional, Protocol, Sequence, runtime_checkable
+from typing import TYPE_CHECKING, Any
 
-from langchain_core.pydantic_v1 import Field
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
-from langchain.llms.gradient_ai import TrainResult
-from langchain.tools.base import BaseTool
+if TYPE_CHECKING:
+    from langchain_community.tools.memorize.tool import Memorize, TrainableLLM
 
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "TrainableLLM": "langchain_community.tools.memorize.tool",
+    "Memorize": "langchain_community.tools.memorize.tool",
+}
 
-@runtime_checkable
-class TrainableLLM(Protocol):
-    @abstractmethod
-    def train_unsupervised(
-        self,
-        inputs: Sequence[str],
-        **kwargs: Any,
-    ) -> TrainResult:
-        ...
-
-    @abstractmethod
-    async def atrain_unsupervised(
-        self,
-        inputs: Sequence[str],
-        **kwargs: Any,
-    ) -> TrainResult:
-        ...
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class Memorize(BaseTool):
-    name: str = "Memorize"
-    description: str = (
-        "Useful whenever you observed novel information "
-        "from previous conversation history, "
-        "i.e., another tool's action outputs or human comments. "
-        "The action input should include observed information in detail, "
-        "then the tool will fine-tune yourself to remember it."
-    )
-    llm: TrainableLLM = Field()
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def _run(
-        self,
-        information_to_learn: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        train_result = self.llm.train_unsupervised((information_to_learn,))
-        return f"Train complete. Loss: {train_result['loss']}"
 
-    async def _arun(
-        self,
-        information_to_learn: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        train_result = await self.llm.atrain_unsupervised((information_to_learn,))
-        return f"Train complete. Loss: {train_result['loss']}"
+__all__ = [
+    "TrainableLLM",
+    "Memorize",
+]

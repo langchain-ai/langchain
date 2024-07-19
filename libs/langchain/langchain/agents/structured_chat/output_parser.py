@@ -20,10 +20,15 @@ logger = logging.getLogger(__name__)
 class StructuredChatOutputParser(AgentOutputParser):
     """Output parser for the structured chat agent."""
 
+    format_instructions: str = FORMAT_INSTRUCTIONS
+    """Default formatting instructions"""
+
     pattern = re.compile(r"```(?:json\s+)?(\W.*?)```", re.DOTALL)
+    """Regex pattern to parse the output."""
 
     def get_format_instructions(self) -> str:
-        return FORMAT_INSTRUCTIONS
+        """Returns formatting instructions for the given output parser."""
+        return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
@@ -64,9 +69,9 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
             if self.output_fixing_parser is not None:
-                parsed_obj: Union[
-                    AgentAction, AgentFinish
-                ] = self.output_fixing_parser.parse(text)
+                parsed_obj: Union[AgentAction, AgentFinish] = (
+                    self.output_fixing_parser.parse(text)
+                )
             else:
                 parsed_obj = self.base_parser.parse(text)
             return parsed_obj

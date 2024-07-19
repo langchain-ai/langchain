@@ -1,37 +1,28 @@
-"""Tool for the Arxiv API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional, Type
+from langchain._api import create_importer
 
-from langchain_core.pydantic_v1 import BaseModel, Field
+if TYPE_CHECKING:
+    from langchain_community.tools import ArxivQueryRun
+    from langchain_community.tools.arxiv.tool import ArxivInput
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.arxiv import ArxivAPIWrapper
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "ArxivInput": "langchain_community.tools.arxiv.tool",
+    "ArxivQueryRun": "langchain_community.tools",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class ArxivInput(BaseModel):
-    query: str = Field(description="search query to look up")
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-class ArxivQueryRun(BaseTool):
-    """Tool that searches the Arxiv API."""
-
-    name: str = "arxiv"
-    description: str = (
-        "A wrapper around Arxiv.org "
-        "Useful for when you need to answer questions about Physics, Mathematics, "
-        "Computer Science, Quantitative Biology, Quantitative Finance, Statistics, "
-        "Electrical Engineering, and Economics "
-        "from scientific articles on arxiv.org. "
-        "Input should be a search query."
-    )
-    api_wrapper: ArxivAPIWrapper = Field(default_factory=ArxivAPIWrapper)
-    args_schema: Type[BaseModel] = ArxivInput
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Arxiv tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "ArxivInput",
+    "ArxivQueryRun",
+]

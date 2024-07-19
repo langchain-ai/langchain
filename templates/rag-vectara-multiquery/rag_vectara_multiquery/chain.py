@@ -1,12 +1,12 @@
 import os
 
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain.vectorstores import Vectara
+from langchain_community.vectorstores import Vectara
+from langchain_community.vectorstores.vectara import SummaryConfig, VectaraQueryConfig
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai.chat_models import ChatOpenAI
 
 if os.environ.get("VECTARA_CUSTOMER_ID", None) is None:
     raise Exception("Missing `VECTARA_CUSTOMER_ID` environment variable.")
@@ -15,35 +15,26 @@ if os.environ.get("VECTARA_CORPUS_ID", None) is None:
 if os.environ.get("VECTARA_API_KEY", None) is None:
     raise Exception("Missing `VECTARA_API_KEY` environment variable.")
 
-# If you want to ingest data then use this code.
-# Note that no document chunking is needed, as this is
-# done efficiently in the Vectara backend.
-# Note: you will need to install beautifulsoup4 to ingest
 
-# from langchain.document_loaders import WebBaseLoader
-# from langchain.embeddings import OpenAIEmbeddings
-# loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
-# docs = loader.load()
-# vec_store = Vectara.from_documents(docs, embedding=OpenAIEmbeddings())
-# retriever = vec_store.as_retriever()
+# Setup the Vectara retriever with your Corpus ID and API Key
+vectara = Vectara()
 
-# Otherwise, if data is already loaded into Vectara then use this code:
+# Define the query configuration:
+summary_config = SummaryConfig(is_enabled=True, max_results=5, response_lang="eng")
+config = VectaraQueryConfig(k=10, lambda_val=0.005, summary_config=summary_config)
+
+# Setup the Multi-query retriever
 llm = ChatOpenAI(temperature=0)
-retriever = MultiQueryRetriever.from_llm(retriever=Vectara().as_retriever(), llm=llm)
+retriever = MultiQueryRetriever.from_llm(
+    retriever=vectara.as_retriever(config=config), llm=llm
+)
 
-# RAG prompt
-template = """Answer the question based only on the following context:
-{context}
-Question: {question}
-"""
-prompt = ChatPromptTemplate.from_template(template)
-
-# RAG
-model = ChatOpenAI()
+# Setup RAG pipeline with multi-query.
+# We extract the summary from the RAG output, which is the last document in the list.
+# Note that if you want to extract the citation information, you can use res[:-1]]
 chain = (
     RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
-    | prompt
-    | model
+    | (lambda res: res[-1])
     | StrOutputParser()
 )
 

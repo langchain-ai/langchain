@@ -1,4 +1,4 @@
-from langchain.memory import __all__
+from langchain import memory
 
 EXPECTED_ALL = [
     "AstraDBChatMessageHistory",
@@ -13,6 +13,7 @@ EXPECTED_ALL = [
     "ConversationSummaryBufferMemory",
     "ConversationSummaryMemory",
     "ConversationTokenBufferMemory",
+    "ConversationVectorStoreTokenBufferMemory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
     "ElasticsearchChatMessageHistory",
@@ -40,4 +41,4 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(memory.__all__) == set(EXPECTED_ALL)

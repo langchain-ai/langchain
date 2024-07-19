@@ -1,28 +1,23 @@
-"""Tool for the Google Lens"""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.google_lens import GoogleLensAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools.google_lens.tool import GoogleLensQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"GoogleLensQueryRun": "langchain_community.tools.google_lens.tool"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GoogleLensQueryRun(BaseTool):
-    """Tool that queries the Google Lens API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "google_Lens"
-    description: str = (
-        "A wrapper around Google Lens Search. "
-        "Useful for when you need to get information related"
-        "to an image from Google Lens"
-        "Input should be a url to an image."
-    )
-    api_wrapper: GoogleLensAPIWrapper
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "GoogleLensQueryRun",
+]

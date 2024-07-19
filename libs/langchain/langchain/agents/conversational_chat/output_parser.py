@@ -4,19 +4,22 @@ from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
+from langchain_core.utils.json import parse_json_markdown
 
 from langchain.agents import AgentOutputParser
 from langchain.agents.conversational_chat.prompt import FORMAT_INSTRUCTIONS
-from langchain.output_parsers.json import parse_json_markdown
 
 
 # Define a class that parses output for conversational agents
 class ConvoOutputParser(AgentOutputParser):
     """Output parser for the conversational agent."""
 
+    format_instructions: str = FORMAT_INSTRUCTIONS
+    """Default formatting instructions"""
+
     def get_format_instructions(self) -> str:
         """Returns formatting instructions for the given output parser."""
-        return FORMAT_INSTRUCTIONS
+        return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         """Attempts to parse the given text into an AgentAction or AgentFinish.

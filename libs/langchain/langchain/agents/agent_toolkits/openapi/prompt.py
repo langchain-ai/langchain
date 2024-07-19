@@ -1,29 +1,29 @@
-# flake8: noqa
+from typing import TYPE_CHECKING, Any
 
-OPENAPI_PREFIX = """You are an agent designed to answer questions by making web requests to an API given the openapi spec.
+from langchain._api import create_importer
 
-If the question does not seem related to the API, return I don't know. Do not make up an answer.
-Only use information provided by the tools to construct your response.
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.openapi.prompt import (
+        DESCRIPTION,
+        OPENAPI_PREFIX,
+        OPENAPI_SUFFIX,
+    )
 
-First, find the base URL needed to make the request.
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "DESCRIPTION": "langchain_community.agent_toolkits.openapi.prompt",
+    "OPENAPI_PREFIX": "langchain_community.agent_toolkits.openapi.prompt",
+    "OPENAPI_SUFFIX": "langchain_community.agent_toolkits.openapi.prompt",
+}
 
-Second, find the relevant paths needed to answer the question. Take note that, sometimes, you might need to make more than one request to more than one path to answer the question.
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
-Third, find the required parameters needed to make the request. For GET requests, these are usually URL parameters and for POST requests, these are request body parameters.
 
-Fourth, make the requests needed to answer the question. Ensure that you are sending the correct parameters to the request by checking which parameters are required. For parameters with a fixed set of values, please use the spec to look at which values are allowed.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-Use the exact parameter names as listed in the spec, do not make up any names or abbreviate the names of parameters.
-If you get a not found error, ensure that you are using a path that actually exists in the spec.
-"""
-OPENAPI_SUFFIX = """Begin!
 
-Question: {input}
-Thought: I should explore the spec to find the base url for the API.
-{agent_scratchpad}"""
-
-DESCRIPTION = """Can be used to answer questions about the openapi spec for the API. Always use this tool before trying to make a request. 
-Example inputs to this tool: 
-    'What are the required query parameters for a GET request to the /bar endpoint?`
-    'What are the required parameters in the request body for a POST request to the /foo endpoint?'
-Always give this tool a specific question."""
+__all__ = ["OPENAPI_PREFIX", "OPENAPI_SUFFIX", "DESCRIPTION"]

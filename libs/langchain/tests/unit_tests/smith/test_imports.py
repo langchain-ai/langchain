@@ -1,12 +1,11 @@
-from langchain.smith import __all__
+from langchain import smith
 
 EXPECTED_ALL = [
     "arun_on_dataset",
     "run_on_dataset",
-    "ChoicesOutputParser",
     "RunEvalConfig",
 ]
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(smith.__all__) == set(EXPECTED_ALL)

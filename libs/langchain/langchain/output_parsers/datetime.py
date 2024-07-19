@@ -4,8 +4,7 @@ from typing import List
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
-
-from langchain.utils import comma_list
+from langchain_core.utils import comma_list
 
 
 def _generate_random_datetime_strings(
@@ -39,8 +38,12 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
 
     def get_format_instructions(self) -> str:
         examples = comma_list(_generate_random_datetime_strings(self.format))
-        return f"""Write a datetime string that matches the 
-            following pattern: "{self.format}". Examples: {examples}"""
+        return (
+            f"Write a datetime string that matches the "
+            f"following pattern: '{self.format}'.\n\n"
+            f"Examples: {examples}\n\n"
+            f"Return ONLY this string, no other words!"
+        )
 
     def parse(self, response: str) -> datetime:
         try:

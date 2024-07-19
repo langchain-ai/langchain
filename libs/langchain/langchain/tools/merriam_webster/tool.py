@@ -1,27 +1,23 @@
-"""Tool for the Merriam-Webster API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.merriam_webster import MerriamWebsterAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import MerriamWebsterQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"MerriamWebsterQueryRun": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class MerriamWebsterQueryRun(BaseTool):
-    """Tool that searches the Merriam-Webster API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "MerriamWebster"
-    description: str = (
-        "A wrapper around Merriam-Webster. "
-        "Useful for when you need to get the definition of a word."
-        "Input should be the word you want the definition of."
-    )
-    api_wrapper: MerriamWebsterAPIWrapper
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Merriam-Webster tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "MerriamWebsterQueryRun",
+]

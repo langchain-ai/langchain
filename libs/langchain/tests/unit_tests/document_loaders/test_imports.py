@@ -1,4 +1,4 @@
-from langchain.document_loaders import __all__
+from langchain import document_loaders
 
 EXPECTED_ALL = [
     "AcreomLoader",
@@ -22,6 +22,7 @@ EXPECTED_ALL = [
     "ArxivLoader",
     "AssemblyAIAudioTranscriptLoader",
     "AsyncHtmlLoader",
+    "AzureAIDataLoader",
     "AzureBlobStorageContainerLoader",
     "AzureBlobStorageFileLoader",
     "BSHTMLLoader",
@@ -40,6 +41,7 @@ EXPECTED_ALL = [
     "CollegeConfidentialLoader",
     "ConcurrentLoader",
     "ConfluenceLoader",
+    "CouchbaseLoader",
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
@@ -51,8 +53,6 @@ EXPECTED_ALL = [
     "Docx2txtLoader",
     "DropboxLoader",
     "DuckDBLoader",
-    "EmbaasBlobLoader",
-    "EmbaasLoader",
     "EtherscanLoader",
     "EverNoteLoader",
     "FacebookChatLoader",
@@ -62,6 +62,7 @@ EXPECTED_ALL = [
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
+    "GithubFileLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
@@ -169,8 +170,9 @@ EXPECTED_ALL = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "YuqueLoader",
 ]
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(document_loaders.__all__) == set(EXPECTED_ALL)

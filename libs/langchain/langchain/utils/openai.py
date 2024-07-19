@@ -1,10 +1,23 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from importlib.metadata import version
+from langchain._api import create_importer
 
-from packaging.version import parse
+if TYPE_CHECKING:
+    from langchain_community.utils.openai import is_openai_v1
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"is_openai_v1": "langchain_community.utils.openai"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-def is_openai_v1() -> bool:
-    _version = parse(version("openai"))
-    return _version.major >= 1
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "is_openai_v1",
+]

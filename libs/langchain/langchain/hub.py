@@ -1,10 +1,13 @@
 """Interface with the LangChain Hub."""
+
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
+from langchain_core.prompts import BasePromptTemplate
 
 if TYPE_CHECKING:
     from langchainhub import Client
@@ -34,7 +37,7 @@ def push(
     new_repo_description: str = "",
 ) -> str:
     """
-    Pushes an object to the hub and returns the URL it can be viewed at in a browser.
+    Push an object to the hub and returns the URL it can be viewed at in a browser.
 
     :param repo_full_name: The full name of the repo to push to in the format of
         `owner/repo`.
@@ -68,7 +71,7 @@ def pull(
     api_key: Optional[str] = None,
 ) -> Any:
     """
-    Pulls an object from the hub and returns it as a LangChain object.
+    Pull an object from the hub and returns it as a LangChain object.
 
     :param owner_repo_commit: The full name of the repo to pull from in the format of
         `owner/repo:commit_hash`.
@@ -77,5 +80,19 @@ def pull(
     :param api_key: The API key to use to authenticate with the LangChain Hub API.
     """
     client = _get_client(api_url=api_url, api_key=api_key)
+
+    if hasattr(client, "pull_repo"):
+        # >= 0.1.15
+        res_dict = client.pull_repo(owner_repo_commit)
+        obj = loads(json.dumps(res_dict["manifest"]))
+        if isinstance(obj, BasePromptTemplate):
+            if obj.metadata is None:
+                obj.metadata = {}
+            obj.metadata["lc_hub_owner"] = res_dict["owner"]
+            obj.metadata["lc_hub_repo"] = res_dict["repo"]
+            obj.metadata["lc_hub_commit_hash"] = res_dict["commit_hash"]
+        return obj
+
+    # Then it's < 0.1.15
     resp: str = client.pull(owner_repo_commit)
     return loads(resp)

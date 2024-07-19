@@ -4,20 +4,24 @@ from operator import itemgetter
 from typing import List, Optional, Tuple
 
 from dotenv import find_dotenv, load_dotenv
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AIMessage, HumanMessage, format_document
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import (
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores.timescalevector import TimescaleVector
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    format_document,
+)
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import (
     RunnableBranch,
     RunnableLambda,
-    RunnableMap,
+    RunnableParallel,
     RunnablePassthrough,
 )
-from langchain.vectorstores.timescalevector import TimescaleVector
-from pydantic import BaseModel, Field
 
 from .load_sample_dataset import load_ts_git_dataset
 
@@ -136,7 +140,7 @@ def get_retriever_with_metadata(x):
 
 _retriever = RunnableLambda(get_retriever_with_metadata)
 
-_inputs = RunnableMap(
+_inputs = RunnableParallel(
     {
         "question": lambda x: x["question"],
         "chat_history": lambda x: _format_chat_history(x["chat_history"]),
@@ -147,12 +151,16 @@ _inputs = RunnableMap(
 )
 
 _datetime_to_string = RunnablePassthrough.assign(
-    start_date=lambda x: x.get("start_date", None).isoformat()
-    if x.get("start_date", None) is not None
-    else None,
-    end_date=lambda x: x.get("end_date", None).isoformat()
-    if x.get("end_date", None) is not None
-    else None,
+    start_date=lambda x: (
+        x.get("start_date", None).isoformat()
+        if x.get("start_date", None) is not None
+        else None
+    ),
+    end_date=lambda x: (
+        x.get("end_date", None).isoformat()
+        if x.get("end_date", None) is not None
+        else None
+    ),
 ).with_types(input_type=ChatHistory)
 
 chain = (

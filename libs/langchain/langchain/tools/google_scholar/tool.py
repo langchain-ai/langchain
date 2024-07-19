@@ -1,28 +1,25 @@
-"""Tool for the Google Scholar"""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.google_scholar import GoogleScholarAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools.google_scholar.tool import GoogleScholarQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "GoogleScholarQueryRun": "langchain_community.tools.google_scholar.tool"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GoogleScholarQueryRun(BaseTool):
-    """Tool that queries the Google search API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "google_scholar"
-    description: str = (
-        "A wrapper around Google Scholar Search. "
-        "Useful for when you need to get information about"
-        "research papers from Google Scholar"
-        "Input should be a search query."
-    )
-    api_wrapper: GoogleScholarAPIWrapper
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "GoogleScholarQueryRun",
+]

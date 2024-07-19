@@ -2,14 +2,12 @@ from typing import Iterator, List
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.output_parsers.openai_functions import PydanticOutputFunctionsParser
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs
-from langchain.output_parsers.openai_functions import (
-    PydanticOutputFunctionsParser,
-)
 
 
 class FactWithEvidence(BaseModel):
@@ -97,7 +95,7 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
             )
         ),
     ]
-    prompt = ChatPromptTemplate(messages=messages)
+    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
 
     chain = LLMChain(
         llm=llm,

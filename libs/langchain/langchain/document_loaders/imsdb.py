@@ -1,16 +1,23 @@
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain_core.documents import Document
+from langchain._api import create_importer
 
-from langchain.document_loaders.web_base import WebBaseLoader
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import IMSDbLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"IMSDbLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class IMSDbLoader(WebBaseLoader):
-    """Load `IMSDb` webpages."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def load(self) -> List[Document]:
-        """Load webpage."""
-        soup = self.scrape()
-        text = soup.select_one("td[class='scrtext']").text
-        metadata = {"source": self.web_path}
-        return [Document(page_content=text, metadata=metadata)]
+
+__all__ = [
+    "IMSDbLoader",
+]

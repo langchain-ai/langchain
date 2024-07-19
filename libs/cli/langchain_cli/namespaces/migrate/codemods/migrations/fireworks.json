@@ -1,0 +1,18 @@
+[
+  [
+    "langchain_community.llms.fireworks.Fireworks",
+    "langchain_fireworks.Fireworks"
+  ],
+  [
+    "langchain_community.chat_models.fireworks.ChatFireworks",
+    "langchain_fireworks.ChatFireworks"
+  ],
+  [
+    "langchain_community.llms.Fireworks",
+    "langchain_fireworks.Fireworks"
+  ],
+  [
+    "langchain_community.chat_models.ChatFireworks",
+    "langchain_fireworks.ChatFireworks"
+  ]
+]

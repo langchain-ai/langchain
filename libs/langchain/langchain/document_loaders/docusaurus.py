@@ -1,49 +1,23 @@
-"""Load Documents from Docusarus Documentation"""
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.document_loaders.sitemap import SitemapLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import DocusaurusLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"DocusaurusLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class DocusaurusLoader(SitemapLoader):
-    """
-    Loader that leverages the SitemapLoader to loop through the generated pages of a
-    Docusaurus Documentation website and extracts the content by looking for specific
-    HTML tags. By default, the parser searches for the main content of the Docusaurus
-    page, which is normally the <article>. You also have the option to define your own
-    custom HTML tags by providing them as a list, for example: ["div", ".main", "a"].
-    """
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(
-        self,
-        url: str,
-        custom_html_tags: Optional[List[str]] = None,
-        **kwargs: Any,
-    ):
-        """
-        Initialize DocusaurusLoader
-        Args:
-            url: The base URL of the Docusaurus website.
-            custom_html_tags: Optional custom html tags to extract content from pages.
-            kwargs: Additional args to extend the underlying SitemapLoader, for example:
-                filter_urls, blocksize, meta_function, is_local, continue_on_failure
-        """
-        if not kwargs.get("is_local"):
-            url = f"{url}/sitemap.xml"
 
-        self.custom_html_tags = custom_html_tags or ["main article"]
-
-        super().__init__(
-            url,
-            parsing_function=kwargs.get("parsing_function") or self._parsing_function,
-            **kwargs,
-        )
-
-    def _parsing_function(self, content: Any) -> str:
-        """Parses specific elements from a Docusarus page."""
-        relevant_elements = content.select(",".join(self.custom_html_tags))
-
-        for element in relevant_elements:
-            if element not in relevant_elements:
-                element.decompose()
-
-        return str(content.get_text())
+__all__ = [
+    "DocusaurusLoader",
+]

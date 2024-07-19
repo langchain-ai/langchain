@@ -17,120 +17,79 @@ The Chain interface makes it easy to create apps that are:
     Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
 """
 
-from langchain.chains.api.base import APIChain
-from langchain.chains.api.openapi.chain import OpenAPIEndpointChain
-from langchain.chains.combine_documents.base import AnalyzeDocumentChain
-from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
-from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
-from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
-from langchain.chains.combine_documents.refine import RefineDocumentsChain
-from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.constitutional_ai.base import ConstitutionalChain
-from langchain.chains.conversation.base import ConversationChain
-from langchain.chains.conversational_retrieval.base import (
-    ChatVectorDBChain,
-    ConversationalRetrievalChain,
-)
-from langchain.chains.example_generator import generate_example
-from langchain.chains.flare.base import FlareChain
-from langchain.chains.graph_qa.arangodb import ArangoGraphQAChain
-from langchain.chains.graph_qa.base import GraphQAChain
-from langchain.chains.graph_qa.cypher import GraphCypherQAChain
-from langchain.chains.graph_qa.falkordb import FalkorDBQAChain
-from langchain.chains.graph_qa.hugegraph import HugeGraphQAChain
-from langchain.chains.graph_qa.kuzu import KuzuQAChain
-from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
-from langchain.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
-from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
-from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
-from langchain.chains.llm import LLMChain
-from langchain.chains.llm_checker.base import LLMCheckerChain
-from langchain.chains.llm_math.base import LLMMathChain
-from langchain.chains.llm_requests import LLMRequestsChain
-from langchain.chains.llm_summarization_checker.base import LLMSummarizationCheckerChain
-from langchain.chains.loading import load_chain
-from langchain.chains.mapreduce import MapReduceChain
-from langchain.chains.moderation import OpenAIModerationChain
-from langchain.chains.natbot.base import NatBotChain
-from langchain.chains.openai_functions import (
-    create_citation_fuzzy_match_chain,
-    create_extraction_chain,
-    create_extraction_chain_pydantic,
-    create_qa_with_sources_chain,
-    create_qa_with_structure_chain,
-    create_tagging_chain,
-    create_tagging_chain_pydantic,
-)
-from langchain.chains.qa_generation.base import QAGenerationChain
-from langchain.chains.qa_with_sources.base import QAWithSourcesChain
-from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
-from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
-from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
-from langchain.chains.router import (
-    LLMRouterChain,
-    MultiPromptChain,
-    MultiRetrievalQAChain,
-    MultiRouteChain,
-    RouterChain,
-)
-from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
-from langchain.chains.sql_database.query import create_sql_query_chain
-from langchain.chains.transform import TransformChain
+from typing import Any
 
-__all__ = [
-    "APIChain",
-    "AnalyzeDocumentChain",
-    "ArangoGraphQAChain",
-    "ChatVectorDBChain",
-    "ConstitutionalChain",
-    "ConversationChain",
-    "ConversationalRetrievalChain",
-    "FalkorDBQAChain",
-    "FlareChain",
-    "GraphCypherQAChain",
-    "GraphQAChain",
-    "GraphSparqlQAChain",
-    "HugeGraphQAChain",
-    "HypotheticalDocumentEmbedder",
-    "KuzuQAChain",
-    "LLMChain",
-    "LLMCheckerChain",
-    "LLMMathChain",
-    "LLMRequestsChain",
-    "LLMRouterChain",
-    "LLMSummarizationCheckerChain",
-    "MapReduceChain",
-    "MapReduceDocumentsChain",
-    "MapRerankDocumentsChain",
-    "MultiPromptChain",
-    "MultiRetrievalQAChain",
-    "MultiRouteChain",
-    "NatBotChain",
-    "NebulaGraphQAChain",
-    "NeptuneOpenCypherQAChain",
-    "OpenAIModerationChain",
-    "OpenAPIEndpointChain",
-    "QAGenerationChain",
-    "QAWithSourcesChain",
-    "ReduceDocumentsChain",
-    "RefineDocumentsChain",
-    "RetrievalQA",
-    "RetrievalQAWithSourcesChain",
-    "RouterChain",
-    "SequentialChain",
-    "SimpleSequentialChain",
-    "StuffDocumentsChain",
-    "TransformChain",
-    "VectorDBQA",
-    "VectorDBQAWithSourcesChain",
-    "create_citation_fuzzy_match_chain",
-    "create_extraction_chain",
-    "create_extraction_chain_pydantic",
-    "create_qa_with_sources_chain",
-    "create_qa_with_structure_chain",
-    "create_tagging_chain",
-    "create_tagging_chain_pydantic",
-    "generate_example",
-    "load_chain",
-    "create_sql_query_chain",
-]
+from langchain._api import create_importer
+
+_module_lookup = {
+    "APIChain": "langchain.chains.api.base",
+    "OpenAPIEndpointChain": "langchain_community.chains.openapi.chain",
+    "AnalyzeDocumentChain": "langchain.chains.combine_documents.base",
+    "MapReduceDocumentsChain": "langchain.chains.combine_documents.map_reduce",
+    "MapRerankDocumentsChain": "langchain.chains.combine_documents.map_rerank",
+    "ReduceDocumentsChain": "langchain.chains.combine_documents.reduce",
+    "RefineDocumentsChain": "langchain.chains.combine_documents.refine",
+    "StuffDocumentsChain": "langchain.chains.combine_documents.stuff",
+    "ConstitutionalChain": "langchain.chains.constitutional_ai.base",
+    "ConversationChain": "langchain.chains.conversation.base",
+    "ChatVectorDBChain": "langchain.chains.conversational_retrieval.base",
+    "ConversationalRetrievalChain": "langchain.chains.conversational_retrieval.base",
+    "generate_example": "langchain.chains.example_generator",
+    "FlareChain": "langchain.chains.flare.base",
+    "ArangoGraphQAChain": "langchain_community.chains.graph_qa.arangodb",
+    "GraphQAChain": "langchain_community.chains.graph_qa.base",
+    "GraphCypherQAChain": "langchain_community.chains.graph_qa.cypher",
+    "FalkorDBQAChain": "langchain_community.chains.graph_qa.falkordb",
+    "HugeGraphQAChain": "langchain_community.chains.graph_qa.hugegraph",
+    "KuzuQAChain": "langchain_community.chains.graph_qa.kuzu",
+    "NebulaGraphQAChain": "langchain_community.chains.graph_qa.nebulagraph",
+    "NeptuneOpenCypherQAChain": "langchain_community.chains.graph_qa.neptune_cypher",
+    "NeptuneSparqlQAChain": "langchain_community.chains.graph_qa.neptune_sparql",
+    "OntotextGraphDBQAChain": "langchain_community.chains.graph_qa.ontotext_graphdb",
+    "GraphSparqlQAChain": "langchain_community.chains.graph_qa.sparql",
+    "create_history_aware_retriever": "langchain.chains.history_aware_retriever",
+    "HypotheticalDocumentEmbedder": "langchain.chains.hyde.base",
+    "LLMChain": "langchain.chains.llm",
+    "LLMCheckerChain": "langchain.chains.llm_checker.base",
+    "LLMMathChain": "langchain.chains.llm_math.base",
+    "LLMRequestsChain": "langchain_community.chains.llm_requests",
+    "LLMSummarizationCheckerChain": "langchain.chains.llm_summarization_checker.base",
+    "load_chain": "langchain.chains.loading",
+    "MapReduceChain": "langchain.chains.mapreduce",
+    "OpenAIModerationChain": "langchain.chains.moderation",
+    "NatBotChain": "langchain.chains.natbot.base",
+    "create_citation_fuzzy_match_chain": "langchain.chains.openai_functions",
+    "create_extraction_chain": "langchain.chains.openai_functions",
+    "create_extraction_chain_pydantic": "langchain.chains.openai_functions",
+    "create_qa_with_sources_chain": "langchain.chains.openai_functions",
+    "create_qa_with_structure_chain": "langchain.chains.openai_functions",
+    "create_tagging_chain": "langchain.chains.openai_functions",
+    "create_tagging_chain_pydantic": "langchain.chains.openai_functions",
+    "QAGenerationChain": "langchain.chains.qa_generation.base",
+    "QAWithSourcesChain": "langchain.chains.qa_with_sources.base",
+    "RetrievalQAWithSourcesChain": "langchain.chains.qa_with_sources.retrieval",
+    "VectorDBQAWithSourcesChain": "langchain.chains.qa_with_sources.vector_db",
+    "create_retrieval_chain": "langchain.chains.retrieval",
+    "RetrievalQA": "langchain.chains.retrieval_qa.base",
+    "VectorDBQA": "langchain.chains.retrieval_qa.base",
+    "LLMRouterChain": "langchain.chains.router",
+    "MultiPromptChain": "langchain.chains.router",
+    "MultiRetrievalQAChain": "langchain.chains.router",
+    "MultiRouteChain": "langchain.chains.router",
+    "RouterChain": "langchain.chains.router",
+    "SequentialChain": "langchain.chains.sequential",
+    "SimpleSequentialChain": "langchain.chains.sequential",
+    "create_sql_query_chain": "langchain.chains.sql_database.query",
+    "create_structured_output_runnable": "langchain.chains.structured_output",
+    "load_summarize_chain": "langchain.chains.summarize",
+    "TransformChain": "langchain.chains.transform",
+}
+
+importer = create_importer(__package__, module_lookup=_module_lookup)
+
+
+def __getattr__(name: str) -> Any:
+    return importer(name)
+
+
+__all__ = list(_module_lookup.keys())

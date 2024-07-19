@@ -7,12 +7,20 @@ This Template performs RAG using [OpenSearch](https://python.langchain.com/docs/
 Set the following environment variables. 
 
 - `OPENAI_API_KEY` -  To access OpenAI Embeddings and Models.
+
+And optionally set the OpenSearch ones if not using defaults:
+
 - `OPENSEARCH_URL` - URL of the hosted OpenSearch Instance
 - `OPENSEARCH_USERNAME` - User name for the OpenSearch instance
 - `OPENSEARCH_PASSWORD` - Password for the OpenSearch instance
 - `OPENSEARCH_INDEX_NAME` - Name of the index 
 
-Note: To load dummy index named `langchain-test` with dummy documents, use `dummy_index_setup.py` script in the folder
+To run the default OpenSearch instance in docker, you can use the command
+```shell
+docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" --name opensearch-node -d opensearchproject/opensearch:latest
+```
+
+Note: To load dummy index named `langchain-test` with dummy documents, run `python dummy_index_setup.py` in the package
 
 ## Usage
 
@@ -43,7 +51,7 @@ add_routes(app, rag_opensearch_chain, path="/rag-opensearch")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

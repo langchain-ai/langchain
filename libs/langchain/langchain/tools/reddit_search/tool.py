@@ -1,63 +1,27 @@
-"""Tool for the Reddit search API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional, Type
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.reddit_search import RedditSearchAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import RedditSearchRun, RedditSearchSchema
 
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "RedditSearchSchema": "langchain_community.tools",
+    "RedditSearchRun": "langchain_community.tools",
+}
 
-class RedditSearchSchema(BaseModel):
-    """Input for Reddit search."""
-
-    query: str = Field(
-        description="should be query string that post title should \
-        contain, or '*' if anything is allowed."
-    )
-    sort: str = Field(
-        description='should be sort method, which is one of: "relevance" \
-        , "hot", "top", "new", or "comments".'
-    )
-    time_filter: str = Field(
-        description='should be time period to filter by, which is \
-        one of "all", "day", "hour", "month", "week", or "year"'
-    )
-    subreddit: str = Field(
-        description='should be name of subreddit, like "all" for \
-        r/all'
-    )
-    limit: str = Field(
-        description="a positive integer indicating the maximum number \
-        of results to return"
-    )
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class RedditSearchRun(BaseTool):
-    """Tool that queries for posts on a subreddit."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "reddit_search"
-    description: str = (
-        "A tool that searches for posts on Reddit."
-        "Useful when you need to know post information on a subreddit."
-    )
-    api_wrapper: RedditSearchAPIWrapper = Field(default_factory=RedditSearchAPIWrapper)
-    args_schema: Type[BaseModel] = RedditSearchSchema
 
-    def _run(
-        self,
-        query: str,
-        sort: str,
-        time_filter: str,
-        subreddit: str,
-        limit: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return self.api_wrapper.run(
-            query=query,
-            sort=sort,
-            time_filter=time_filter,
-            subreddit=subreddit,
-            limit=int(limit),
-        )
+__all__ = [
+    "RedditSearchSchema",
+    "RedditSearchRun",
+]

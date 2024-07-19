@@ -6,9 +6,6 @@ EXPECTED_ALL = [
     "StructuredTool",
     "Tool",
     "ToolException",
-    "_SchemaConfig",
-    "_create_subset_model",
-    "_get_filtered_args",
     "create_schema_from_function",
     "tool",
 ]

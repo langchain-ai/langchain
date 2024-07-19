@@ -26,7 +26,7 @@ pip install pyowm
 There exists a OpenWeatherMapAPIWrapper utility which wraps this API. To import this utility:
 
 ```python
-from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
+from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
 ```
 
 For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/openweathermap).
@@ -41,4 +41,4 @@ from langchain.agents import load_tools
 tools = load_tools(["openweathermap-api"])
 ```
 
-For more information on tools, see [this page](/docs/modules/agents/tools/).
+For more information on tools, see [this page](/docs/how_to/tools_builtin).

@@ -14,16 +14,30 @@ class ConvoOutputParser(AgentOutputParser):
     ai_prefix: str = "AI"
     """Prefix to use before AI output."""
 
+    format_instructions: str = FORMAT_INSTRUCTIONS
+    """Default formatting instructions"""
+
     def get_format_instructions(self) -> str:
-        return FORMAT_INSTRUCTIONS
+        """Returns formatting instructions for the given output parser."""
+        return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        """Parse the output from the agent into
+        an AgentAction or AgentFinish object.
+
+        Args:
+            text: The text to parse.
+
+        Returns:
+            An AgentAction or AgentFinish object.
+        """
+
         if f"{self.ai_prefix}:" in text:
             return AgentFinish(
                 {"output": text.split(f"{self.ai_prefix}:")[-1].strip()}, text
             )
-        regex = r"Action: (.*?)[\n]*Action Input: (.*)"
-        match = re.search(regex, text)
+        regex = r"Action: (.*?)[\n]*Action Input: ([\s\S]*)"
+        match = re.search(regex, text, re.DOTALL)
         if not match:
             raise OutputParserException(f"Could not parse LLM output: `{text}`")
         action = match.group(1)

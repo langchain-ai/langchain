@@ -1,28 +1,25 @@
-"""Tool for the Google Finance"""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.google_finance import GoogleFinanceAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools.google_finance.tool import GoogleFinanceQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "GoogleFinanceQueryRun": "langchain_community.tools.google_finance.tool"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GoogleFinanceQueryRun(BaseTool):
-    """Tool that queries the Google Finance API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "google_finance"
-    description: str = (
-        "A wrapper around Google Finance Search. "
-        "Useful for when you need to get information about"
-        "google search Finance from Google Finance"
-        "Input should be a search query."
-    )
-    api_wrapper: GoogleFinanceAPIWrapper
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "GoogleFinanceQueryRun",
+]

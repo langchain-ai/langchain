@@ -1,4 +1,4 @@
-from langchain.utilities import __all__
+from langchain import utilities
 
 EXPECTED_ALL = [
     "AlphaVantageAPIWrapper",
@@ -23,12 +23,12 @@ EXPECTED_ALL = [
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
     "MetaphorSearchAPIWrapper",
+    "NasaAPIWrapper",
     "OpenWeatherMapAPIWrapper",
     "OutlineAPIWrapper",
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
-    "PythonREPL",
     "Requests",
     "RequestsWrapper",
     "SQLDatabase",
@@ -38,6 +38,7 @@ EXPECTED_ALL = [
     "SerpAPIWrapper",
     "SparkSQL",
     "StackExchangeAPIWrapper",
+    "SteamWebAPIWrapper",
     "TensorflowDatasets",
     "TextRequestsWrapper",
     "TwilioAPIWrapper",
@@ -49,4 +50,4 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(utilities.__all__) == set(EXPECTED_ALL)
