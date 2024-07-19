@@ -30,7 +30,9 @@ class HierarchyLinkExtractor(LinkExtractor[HierarchyInput]):
         """Extract links from a document hierarchy.
 
         Example:
-            .. code_block: python
+
+            .. code-block:: python
+
                 # Given three paths (in this case, within the "Root" document):
                 h1 = ["Root", "H1"]
                 h1a = ["Root", "H1", "a"]
