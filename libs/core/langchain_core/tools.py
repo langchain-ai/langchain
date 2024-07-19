@@ -436,8 +436,7 @@ class ChildTool(BaseTool):
             The input schema for the tool.
         """
         if self.args_schema is not None:
-            # We need to fix the typing to account for the floating BaseModel
-            return self.args_schema  # type: ignore
+            return self.args_schema
         else:
             return create_schema_from_function(self.name, self._run)
 
