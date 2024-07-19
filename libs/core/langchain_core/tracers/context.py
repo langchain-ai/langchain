@@ -21,7 +21,6 @@ from langsmith.run_helpers import get_run_tree_context
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from langchain_core.tracers.schemas import TracerSessionV1
-from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
     from langsmith import Client as LangSmithClient
@@ -69,8 +68,8 @@ def tracing_v2_enabled(
         client (LangSmithClient, optional): The client of the langsmith.
             Defaults to None.
 
-    Returns:
-        None
+    Yields:
+        LangChainTracer: The LangChain tracer.
 
     Example:
         >>> with tracing_v2_enabled():
@@ -101,7 +100,7 @@ def tracing_v2_enabled(
 def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
     """Collect all run traces in context.
 
-    Returns:
+    Yields:
         run_collector.RunCollectorCallbackHandler: The run collector callback handler.
 
     Example:
@@ -145,13 +144,9 @@ def _get_trace_callbacks(
 
 
 def _tracing_v2_is_enabled() -> bool:
-    return (
-        env_var_is_set("LANGCHAIN_TRACING_V2")
-        or env_var_is_set("LANGSMITH_TRACING")
-        or env_var_is_set("LANGSMITH_TRACING_V2")
-        or tracing_v2_callback_var.get() is not None
-        or get_run_tree_context() is not None
-    )
+    if tracing_v2_callback_var.get() is not None:
+        return True
+    return ls_utils.tracing_is_enabled()
 
 
 def _get_tracer_project() -> str:

@@ -493,7 +493,13 @@ class ScaNN(VectorStore):
 
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
-            docstore, index_to_docstore_id = pickle.load(f)
+            (
+                docstore,
+                index_to_docstore_id,
+            ) = pickle.load(  # ignore[pickle]: explicit-opt-in
+                f
+            )
+
         return cls(embedding, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:

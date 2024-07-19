@@ -48,7 +48,7 @@ def test_pydantic_parser_chaining(
     chain = prompt | model | parser
 
     res = chain.invoke({})
-    assert type(res) == pydantic_object
+    assert type(res) is pydantic_object
     assert res.f_or_c == "C"
     assert res.temperature == 20
     assert res.forecast == "Sunny"

@@ -28,7 +28,12 @@ from langchain_core.outputs import (
     GenerationChunk,
     LLMResult,
 )
-from langchain_core.runnables.schema import EventData, StreamEvent
+from langchain_core.runnables.schema import (
+    CustomStreamEvent,
+    EventData,
+    StandardStreamEvent,
+    StreamEvent,
+)
 from langchain_core.runnables.utils import (
     Input,
     Output,
@@ -37,7 +42,7 @@ from langchain_core.runnables.utils import (
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.log_stream import LogEntry
 from langchain_core.tracers.memory_stream import _MemoryStream
-from langchain_core.utils.aiter import py_anext
+from langchain_core.utils.aiter import aclosing, py_anext
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -47,13 +52,25 @@ logger = logging.getLogger(__name__)
 
 
 class RunInfo(TypedDict):
-    """Information about a run."""
+    """Information about a run.
+
+    This is used to keep track of the metadata associated with a run.
+
+    Parameters:
+        name: The name of the run.
+        tags: The tags associated with the run.
+        metadata: The metadata associated with the run.
+        run_type: The type of the run.
+        inputs: The inputs to the run.
+        parent_run_id: The ID of the parent run.
+    """
 
     name: str
     tags: List[str]
     metadata: Dict[str, Any]
     run_type: str
     inputs: NotRequired[Any]
+    parent_run_id: Optional[UUID]
 
 
 def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
@@ -87,7 +104,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Initialize the tracer."""
         super().__init__(*args, **kwargs)
         # Map of run ID to run info.
+        # the entry corresponding to a given run id is cleaned
+        # up when each corresponding run ends.
         self.run_map: Dict[UUID, RunInfo] = {}
+        # The callback event that corresponds to the end of a parent run
+        # may be invoked BEFORE the callback event that corresponds to the end
+        # of a child run, which results in clean up of run_map.
+        # So we keep track of the mapping between children and parent run IDs
+        # in a separate container. This container is GCed when the tracer is GCed.
+        self.parent_map: Dict[UUID, Optional[UUID]] = {}
+
         self.is_tapped: Dict[UUID, Any] = {}
 
         # Filter which events will be sent over the queue.
@@ -105,6 +131,24 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
+    def _get_parent_ids(self, run_id: UUID) -> List[str]:
+        """Get the parent IDs of a run (non-recursively) cast to strings."""
+        parent_ids = []
+
+        while parent_id := self.parent_map.get(run_id):
+            str_parent_id = str(parent_id)
+            if str_parent_id in parent_ids:
+                raise AssertionError(
+                    f"Parent ID {parent_id} is already in the parent_ids list. "
+                    f"This should never happen."
+                )
+            parent_ids.append(str_parent_id)
+            run_id = parent_id
+
+        # Return the parent IDs in reverse order, so that the first
+        # parent ID is the root and the last ID is the immediate parent.
+        return parent_ids[::-1]
+
     def _send(self, event: StreamEvent, event_type: str) -> None:
         """Send an event to the stream."""
         if self.root_event_filter.include_event(event, event_type):
@@ -117,7 +161,19 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
-        """Tap the output aiter."""
+        """Tap the output aiter.
+
+        This method is used to tap the output of a Runnable that produces
+        an async iterator. It is used to generate stream events for the
+        output of the Runnable.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output of the Runnable.
+
+        Yields:
+            T: The output of the Runnable.
+        """
         sentinel = object()
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
@@ -133,13 +189,14 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event: StreamEvent = {
+            event: StandardStreamEvent = {
                 "event": f"on_{run_info['run_type']}_stream",
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
                 "data": {},
+                "parent_ids": self._get_parent_ids(run_id),
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
             yield cast(T, first)
@@ -158,7 +215,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap the output aiter."""
+        """Tap the output aiter.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output of the Runnable.
+
+        Yields:
+            T: The output of the Runnable.
+        """
         sentinel = object()
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
@@ -174,13 +239,14 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event: StreamEvent = {
+            event: StandardStreamEvent = {
                 "event": f"on_{run_info['run_type']}_stream",
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
                 "data": {},
+                "parent_ids": self._get_parent_ids(run_id),
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
             yield cast(T, first)
@@ -198,6 +264,35 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             for chunk in output:
                 yield chunk
 
+    def _write_run_start_info(
+        self,
+        run_id: UUID,
+        *,
+        tags: Optional[List[str]],
+        metadata: Optional[Dict[str, Any]],
+        parent_run_id: Optional[UUID],
+        name_: str,
+        run_type: str,
+        **kwargs: Any,
+    ) -> None:
+        """Update the run info."""
+        info: RunInfo = {
+            "tags": tags or [],
+            "metadata": metadata or {},
+            "name": name_,
+            "run_type": run_type,
+            "parent_run_id": parent_run_id,
+        }
+
+        if "inputs" in kwargs:
+            # Handle inputs in a special case to allow inputs to be an
+            # optionally provided and distinguish between missing value
+            # vs. None value.
+            info["inputs"] = kwargs["inputs"]
+
+        self.run_map[run_id] = info
+        self.parent_map[run_id] = parent_run_id
+
     async def on_chat_model_start(
         self,
         serialized: Dict[str, Any],
@@ -213,13 +308,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for an LLM run."""
         name_ = _assign_name(name, serialized)
         run_type = "chat_model"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"messages": messages},
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"messages": messages},
+        )
 
         self._send(
             {
@@ -231,6 +329,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -250,13 +349,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for an LLM run."""
         name_ = _assign_name(name, serialized)
         run_type = "llm"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"prompts": prompts},
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"prompts": prompts},
+        )
 
         self._send(
             {
@@ -270,9 +372,32 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
+
+    async def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Generate a custom astream event."""
+        event = CustomStreamEvent(
+            event="on_custom_event",
+            run_id=str(run_id),
+            name=name,
+            tags=tags or [],
+            metadata=metadata or {},
+            data=data,
+            parent_ids=self._get_parent_ids(run_id),
+        )
+        self._send(event, name)
 
     async def on_llm_new_token(
         self,
@@ -285,7 +410,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         run_info = self.run_map.get(run_id)
-
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
         if run_info is None:
@@ -319,6 +443,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -371,6 +496,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -391,12 +517,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for a chain run."""
         name_ = _assign_name(name, serialized)
         run_type_ = run_type or "chain"
-        run_info: RunInfo = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type_,
-        }
 
         data: EventData = {}
 
@@ -404,9 +524,17 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # cases.
         if inputs != {"input": ""}:
             data["input"] = inputs
-            run_info["inputs"] = inputs
+            kwargs["inputs"] = inputs
 
-        self.run_map[run_id] = run_info
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type_,
+            **kwargs,
+        )
 
         self._send(
             {
@@ -416,6 +544,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type_,
         )
@@ -449,6 +578,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -468,13 +598,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Start a trace for a tool run."""
         name_ = _assign_name(name, serialized)
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": "tool",
-            "inputs": inputs,
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type="tool",
+            inputs=inputs,
+        )
 
         self._send(
             {
@@ -486,6 +619,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             "tool",
         )
@@ -511,6 +645,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             "tool",
         )
@@ -530,13 +665,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Run when Retriever starts running."""
         name_ = _assign_name(name, serialized)
         run_type = "retriever"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"query": query},
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"query": query},
+        )
 
         self._send(
             {
@@ -550,6 +688,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -571,6 +710,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -596,7 +736,7 @@ async def _astream_events_implementation_v1(
     exclude_types: Optional[Sequence[str]] = None,
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
-) -> AsyncIterator[StreamEvent]:
+) -> AsyncIterator[StandardStreamEvent]:
     from langchain_core.runnables import ensure_config
     from langchain_core.runnables.utils import _RootEventFilter
     from langchain_core.tracers.log_stream import (
@@ -651,7 +791,7 @@ async def _astream_events_implementation_v1(
             encountered_start_event = True
             state = run_log.state.copy()
 
-            event = StreamEvent(
+            event = StandardStreamEvent(
                 event=f"on_{state['type']}_start",
                 run_id=state["id"],
                 name=root_name,
@@ -660,6 +800,7 @@ async def _astream_events_implementation_v1(
                 data={
                     "input": input,
                 },
+                parent_ids=[],  # Not supported in v1
             )
 
             if _root_event_filter.include_event(event, state["type"]):
@@ -715,13 +856,14 @@ async def _astream_events_implementation_v1(
                 # And this avoids duplicates as well!
                 log_entry["streamed_output"] = []
 
-            yield StreamEvent(
+            yield StandardStreamEvent(
                 event=f"on_{log_entry['type']}_{event_type}",
                 name=log_entry["name"],
                 run_id=log_entry["id"],
                 tags=log_entry["tags"],
                 metadata=log_entry["metadata"],
                 data=data,
+                parent_ids=[],  #  Not supported in v1
             )
 
         # Finally, we take care of the streaming output from the root chain
@@ -740,13 +882,14 @@ async def _astream_events_implementation_v1(
             # Clean up the stream, we don't need it anymore.
             state["streamed_output"] = []
 
-            event = StreamEvent(
+            event = StandardStreamEvent(
                 event=f"on_{state['type']}_stream",
                 run_id=state["id"],
                 tags=root_tags,
                 metadata=root_metadata,
                 name=root_name,
                 data=data,
+                parent_ids=[],  # Not supported in v1
             )
             if _root_event_filter.include_event(event, state["type"]):
                 yield event
@@ -754,7 +897,7 @@ async def _astream_events_implementation_v1(
     state = run_log.state
 
     # Finally yield the end event for the root runnable.
-    event = StreamEvent(
+    event = StandardStreamEvent(
         event=f"on_{state['type']}_end",
         name=root_name,
         run_id=state["id"],
@@ -763,6 +906,7 @@ async def _astream_events_implementation_v1(
         data={
             "output": state["final_output"],
         },
+        parent_ids=[],  # Not supported in v1
     )
     if _root_event_filter.include_event(event, state["type"]):
         yield event
@@ -780,7 +924,7 @@ async def _astream_events_implementation_v2(
     exclude_types: Optional[Sequence[str]] = None,
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
-) -> AsyncIterator[StreamEvent]:
+) -> AsyncIterator[StandardStreamEvent]:
     """Implementation of the astream events API for V2 runnables."""
     from langchain_core.callbacks.base import BaseCallbackManager
     from langchain_core.runnables import ensure_config
@@ -817,11 +961,10 @@ async def _astream_events_implementation_v2(
     async def consume_astream() -> None:
         try:
             # if astream also calls tap_output_aiter this will be a no-op
-            async for _ in event_streamer.tap_output_aiter(
-                run_id, runnable.astream(input, config, **kwargs)
-            ):
-                # All the content will be picked up
-                pass
+            async with aclosing(runnable.astream(input, config, **kwargs)) as stream:
+                async for _ in event_streamer.tap_output_aiter(run_id, stream):
+                    # All the content will be picked up
+                    pass
         finally:
             await event_streamer.send_stream.aclose()
 
@@ -855,7 +998,9 @@ async def _astream_events_implementation_v2(
 
             yield event
     finally:
-        # Wait for the runnable to finish, if not cancelled (eg. by break)
+        # Cancel the task if it's still running
+        task.cancel()
+        # Await it anyway, to run any cleanup code, and propagate any exceptions
         try:
             await task
         except asyncio.CancelledError:

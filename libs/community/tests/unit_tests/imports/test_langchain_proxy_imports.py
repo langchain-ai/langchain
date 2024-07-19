@@ -20,5 +20,6 @@ def test_vectorstores() -> None:
             "AlibabaCloudOpenSearchSettings",
             "ClickhouseSettings",
             "MyScaleSettings",
+            "AzureCosmosDBVectorSearch",
         ]:
             assert issubclass(getattr(vectorstores, cls), VectorStore)

@@ -86,3 +86,38 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         for i in included_idxs:
             stateful_documents[i].state["query_similarity_score"] = similarity[i]
         return [stateful_documents[i] for i in included_idxs]
+
+    async def acompress_documents(
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
+    ) -> Sequence[Document]:
+        """Filter documents based on similarity of their embeddings to the query."""
+        try:
+            from langchain_community.document_transformers.embeddings_redundant_filter import (  # noqa: E501
+                _aget_embeddings_from_stateful_docs,
+                get_stateful_documents,
+            )
+        except ImportError:
+            raise ImportError(
+                "To use please install langchain-community "
+                "with `pip install langchain-community`."
+            )
+        stateful_documents = get_stateful_documents(documents)
+        embedded_documents = await _aget_embeddings_from_stateful_docs(
+            self.embeddings, stateful_documents
+        )
+        embedded_query = await self.embeddings.aembed_query(query)
+        similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
+        included_idxs = np.arange(len(embedded_documents))
+        if self.k is not None:
+            included_idxs = np.argsort(similarity)[::-1][: self.k]
+        if self.similarity_threshold is not None:
+            similar_enough = np.where(
+                similarity[included_idxs] > self.similarity_threshold
+            )
+            included_idxs = included_idxs[similar_enough]
+        for i in included_idxs:
+            stateful_documents[i].state["query_similarity_score"] = similarity[i]
+        return [stateful_documents[i] for i in included_idxs]

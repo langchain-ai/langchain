@@ -95,6 +95,13 @@ def test_serializable_mapping() -> None:
             "structured",
             "StructuredPrompt",
         ),
+        # This is not exported from langchain, only langchain_core
+        ("langchain", "schema", "messages", "RemoveMessage"): (
+            "langchain_core",
+            "messages",
+            "modifier",
+            "RemoveMessage",
+        ),
     }
     serializable_modules = import_all_modules("langchain")
 

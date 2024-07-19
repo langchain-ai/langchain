@@ -28,6 +28,9 @@ class ClickupToolkit(BaseToolkit):
         data associated with this service.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
     """
 
     tools: List[BaseTool] = []
@@ -36,6 +39,14 @@ class ClickupToolkit(BaseToolkit):
     def from_clickup_api_wrapper(
         cls, clickup_api_wrapper: ClickupAPIWrapper
     ) -> "ClickupToolkit":
+        """Create a ClickupToolkit from a ClickupAPIWrapper.
+
+        Args:
+            clickup_api_wrapper: ClickupAPIWrapper. The Clickup API wrapper.
+
+        Returns:
+            ClickupToolkit. The Clickup toolkit.
+        """
         operations: List[Dict] = [
             {
                 "mode": "get_task",
