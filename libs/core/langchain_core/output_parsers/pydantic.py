@@ -1,7 +1,7 @@
 import json
 from typing import Generic, List, Type, TypeVar
 
-import pydantic
+import pydantic  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser

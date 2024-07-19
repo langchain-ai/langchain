@@ -13,7 +13,7 @@ from langchain_core.messages.tool import (
 )
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import ValidationError
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import PydanticBaseModel
 
