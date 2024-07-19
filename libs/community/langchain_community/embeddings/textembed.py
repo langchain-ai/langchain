@@ -1,13 +1,13 @@
 """
 TextEmbed: Embedding Inference Server
 
-TextEmbed provides a high-throughput, low-latency solution for serving embeddings. 
-It supports various sentence-transformer models. 
-Now, it includes the ability to deploy image embedding models. 
+TextEmbed provides a high-throughput, low-latency solution for serving embeddings.
+It supports various sentence-transformer models.
+Now, it includes the ability to deploy image embedding models.
 TextEmbed offers flexibility and scalability for diverse applications.
 
 TextEmbed is maintained by Keval Dekivadiya and is licensed under the Apache-2.0 license.
-"""
+"""  # noqa: E501
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -45,7 +45,7 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
             )
 
     For more information: https://github.com/kevaldekivadiya2415/textembed/blob/main/docs/setup.md
-    """
+    """  # noqa: E501
 
     model: str
     """Underlying TextEmbed model id."""
@@ -145,7 +145,7 @@ class AsyncOpenAITextEmbedEmbeddingClient:
         api_key (str): The API key for authenticating with the TextEmbed API.
         aiosession (Optional[aiohttp.ClientSession]): The aiohttp session for async requests.
         _batch_size (int): Maximum batch size for a single request.
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -174,7 +174,7 @@ class AsyncOpenAITextEmbedEmbeddingClient:
 
         Returns:
             Tuple[List[str], Callable]: Sorted texts and a function to restore original order.
-        """
+        """  # noqa: E501
         if len(texts) == 1:
             return texts, lambda t: t
         length_sorted_idx = np.argsort([-sorter(sen) for sen in texts])
@@ -315,7 +315,7 @@ class AsyncOpenAITextEmbedEmbeddingClient:
         Raises:
             Exception: If the response status is not 200.
         """
-        async with session.post(**kwargs) as response:
+        async with session.post(**kwargs) as response:  # type: ignore
             if response.status != 200:
                 raise Exception(
                     f"TextEmbed responded with an unexpected status message "
