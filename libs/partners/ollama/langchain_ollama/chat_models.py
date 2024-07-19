@@ -218,6 +218,29 @@ class ChatOllama(BaseChatModel):
         .. code-block:: python
 
             '{"location": "Pune, India", "time_of_day": "morning"}'
+
+    Tool Calling:
+        .. warning::
+            Ollama currently does not support streaming for tools
+
+        .. code-block:: python
+
+            from langchain_ollama import ChatOllama
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class Multiply(BaseModel):
+                a: int = Field(..., description="First integer")
+                b: int = Field(..., description="Second integer")
+            
+            ans = await chat.invoke("What is 45*67")
+            ans.tool_calls
+        
+        .. code-block:: python
+
+            [{'name': 'Multiply',
+            'args': {'a': 45, 'b': 67},
+            'id': '420c3f3b-df10-4188-945f-eb3abdb40622',
+            'type': 'tool_call'}]
     """  # noqa: E501
 
     model: str = "llama2"
@@ -415,15 +438,26 @@ class ChatOllama(BaseChatModel):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        async for part in await AsyncClient().chat(
-            model=params["model"],
-            messages=ollama_messages,
-            stream=True,
-            options=Options(**params["options"]),
-            keep_alive=params["keep_alive"],
-            format=params["format"],
-        ):  # type:ignore
-            yield part
+        if "tools" in kwargs:
+            yield await AsyncClient().chat(
+                model=params["model"],
+                messages=ollama_messages,
+                stream=False,
+                options=Options(**params["options"]),
+                keep_alive=params["keep_alive"],
+                format=params["format"],
+                tools=kwargs['tools']
+            ) # type:ignore
+        else:
+            async for part in await AsyncClient().chat(
+                model=params["model"],
+                messages=ollama_messages,
+                stream=True,
+                options=Options(**params["options"]),
+                keep_alive=params["keep_alive"],
+                format=params["format"],
+            ):  # type:ignore
+                yield part
 
     def _create_chat_stream(
         self,
@@ -443,23 +477,15 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            # tools not supported by sdk yet.
-            req = {
-                "model": params["model"],
-                "messages": ollama_messages,
-                "stream": False,
-                "format": params["format"],
-                "options": Options(**params["options"]),
-                "keep_alive": params["keep_alive"],
-                "tools": kwargs["tools"],
-            }
-            it = ollama._client._request_stream(
-                "POST",
-                "/api/chat",
-                json=req,
+            yield ollama.chat(
+                model=params["model"],
+                messages=ollama_messages,
                 stream=False,
+                options=Options(**params["options"]),
+                keep_alive=params["keep_alive"],
+                format=params["format"],
+                tools=kwargs['tools']
             )
-            yield cast(Mapping[str, Any], it)
         else:
             yield from ollama.chat(
                 model=params["model"],
