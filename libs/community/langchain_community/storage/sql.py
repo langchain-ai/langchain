@@ -78,7 +78,7 @@ except ImportError:
 
         namespace = Column(Text(), primary_key=True, index=True, nullable=False)
         key = Column(Text(), primary_key=True, index=True, nullable=False)
-        value = mapped_column(LargeBinary, index=False, nullable=False)
+        value = Column(LargeBinary, index=False, nullable=False)
 
 
 def items_equal(x: Any, y: Any) -> bool:
