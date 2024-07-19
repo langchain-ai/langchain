@@ -362,11 +362,6 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
     p: float = 0.75
     """Total probability mass of tokens to consider at each step."""
 
-    best_of: int = 1
-    """Generates best_of completions server-side and returns the "best"
-    (the one with the highest log probability per token).
-    """
-
     stop: Optional[List[str]] = None
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
@@ -587,10 +582,12 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
             **params,
         }
 
-    def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
+    def _invocation_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> dict:
         """Combines the invocation parameters with default parameters."""
         params = self._default_params
-        params["stop"] = stop or params.get("stop", None)
+        params["stop"] = stop or params.get("stop", [])
         return {**params, **kwargs}
 
     def _process_stream_response(self, response_json: dict) -> GenerationChunk:
@@ -687,18 +684,17 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
     """
 
-    do_sample: bool = True
-    """If set to True, this parameter enables decoding strategies such as
-    multi-nominal sampling, beam-search multi-nominal sampling, Top-K
-    sampling and Top-p sampling.
-    """
+    frequency_penalty: float = 0.0
+    """Penalizes repeated tokens according to frequency. Between 0 and 1."""
 
-    watermark = True
-    """Watermarking with `A Watermark for Large Language Models <https://arxiv.org/abs/2301.10226>`_.
-    Defaults to True."""
+    seed: Optional[int] = None
+    """Random sampling seed"""
 
-    return_full_text = False
-    """Whether to prepend the prompt to the generated text. Defaults to False."""
+    repetition_penalty: Optional[float] = None
+    """The parameter for repetition penalty. 1.0 means no penalty."""
+
+    suffix: Optional[str] = None
+    """The text to append to the prompt. """
 
     @property
     def _llm_type(self) -> str:
@@ -710,16 +706,14 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
         """Get the default parameters for invoking OCI model deployment TGI endpoint."""
         return {
             "model": self.model,  # can be any
-            "best_of": self.best_of,
-            "max_new_tokens": self.max_tokens,
+            "frequency_penalty": self.frequency_penalty,
+            "max_tokens": self.max_tokens,
+            "repetition_penalty": self.repetition_penalty,
             "temperature": self.temperature,
-            "top_k": (
-                self.k if self.k > 0 else None
-            ),  # `top_k` must be strictly positive'
             "top_p": self.p,
-            "do_sample": self.do_sample,
-            "return_full_text": self.return_full_text,
-            "watermark": self.watermark,
+            "seed": self.seed,
+            "suffix": self.suffix,
+            "stop": self.stop,
             **self.model_kwargs,
         }
 
@@ -747,6 +741,11 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
                 model="odsc-llm"
             )
 
+    """
+
+    best_of: int = 1
+    """Generates best_of completions server-side and returns the "best"
+    (the one with the highest log probability per token).
     """
 
     n: int = 1
