@@ -231,10 +231,10 @@ class ChatOllama(BaseChatModel):
             class Multiply(BaseModel):
                 a: int = Field(..., description="First integer")
                 b: int = Field(..., description="Second integer")
-            
+
             ans = await chat.invoke("What is 45*67")
             ans.tool_calls
-        
+
         .. code-block:: python
 
             [{'name': 'Multiply',
@@ -446,8 +446,8 @@ class ChatOllama(BaseChatModel):
                 options=Options(**params["options"]),
                 keep_alive=params["keep_alive"],
                 format=params["format"],
-                tools=kwargs['tools']
-            ) # type:ignore
+                tools=kwargs["tools"],
+            )  # type:ignore
         else:
             async for part in await AsyncClient().chat(
                 model=params["model"],
@@ -484,7 +484,7 @@ class ChatOllama(BaseChatModel):
                 options=Options(**params["options"]),
                 keep_alive=params["keep_alive"],
                 format=params["format"],
-                tools=kwargs['tools']
+                tools=kwargs["tools"],
             )
         else:
             yield from ollama.chat(
