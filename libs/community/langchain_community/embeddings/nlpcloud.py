@@ -1,8 +1,8 @@
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 
 class NLPCloudEmbeddings(BaseModel, Embeddings):
@@ -30,7 +30,7 @@ class NLPCloudEmbeddings(BaseModel, Embeddings):
     ) -> None:
         super().__init__(model_name=model_name, gpu=gpu, **kwargs)
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         nlpcloud_api_key = get_from_dict_or_env(

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-milvus"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting Milvus and LangChain"
 authors = []
 readme = "README.md"
@@ -12,9 +12,16 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.0"
+langchain-core = "^0.2.20"
 pymilvus = "^2.4.3"
-scipy = "^1.7"
+
+[[tool.poetry.dependencies.scipy]]
+version = "^1.7"
+python = "<3.12"
+
+[[tool.poetry.dependencies.scipy]]
+version = "^1.9"
+python = ">=3.12"
 
 [tool.poetry.group.test]
 optional = true

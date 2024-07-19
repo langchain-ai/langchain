@@ -38,7 +38,17 @@ class AINetworkToolkit(BaseToolkit):
 
     @root_validator(pre=True)
     def set_interface(cls, values: dict) -> dict:
-        """Set the interface if not provided."""
+        """Set the interface if not provided.
+
+        If the interface is not provided, attempt to authenticate with the
+        network using the network value provided.
+
+        Args:
+            values: The values to validate.
+
+        Returns:
+            The validated values.
+        """
         if not values.get("interface"):
             values["interface"] = authenticate(network=values.get("network", "testnet"))
         return values
