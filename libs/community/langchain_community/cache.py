@@ -59,6 +59,9 @@ from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBVectorSearchType,
 )
 
+
+# from libs.community.langchain_community.vectorstores.azure_cosmos_db_no_sql import AzureCosmosDBNoSqlVectorSearch
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
@@ -79,7 +82,7 @@ from langchain_community.utilities.astradb import (
 from langchain_community.utilities.astradb import (
     _AstraDBCollectionEnvironment,
 )
-from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+from langchain_community.vectorstores import AzureCosmosDBVectorSearch, AzureCosmosDBNoSqlVectorSearch
 from langchain_community.vectorstores import (
     OpenSearchVectorSearch as OpenSearchVectorStore,
 )
@@ -218,7 +221,7 @@ class InMemoryCache(BaseCache):
         return self.lookup(prompt, llm_string)
 
     async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+            self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
         """Update cache based on prompt and llm_string."""
         self.update(prompt, llm_string, return_val)
@@ -404,7 +407,7 @@ class _RedisCacheBase(BaseCache, ABC):
 
     @staticmethod
     def _get_generations(
-        results: dict[str | bytes, str | bytes],
+            results: dict[str | bytes, str | bytes],
     ) -> Optional[List[Generation]]:
         generations = []
         if results:
@@ -425,7 +428,7 @@ class _RedisCacheBase(BaseCache, ABC):
 
     @staticmethod
     def _configure_pipeline_for_update(
-        key: str, pipe: Any, return_val: RETURN_VAL_TYPE, ttl: Optional[int] = None
+            key: str, pipe: Any, return_val: RETURN_VAL_TYPE, ttl: Optional[int] = None
     ) -> None:
         pipe.hset(
             key,
@@ -564,7 +567,7 @@ class AsyncRedisCache(_RedisCacheBase):
         )
 
     async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+            self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
         """Update cache based on prompt and llm_string. Async version."""
         self._ensure_generation_type(return_val)
@@ -609,7 +612,7 @@ class RedisSemanticCache(BaseCache):
     }
 
     def __init__(
-        self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
+            self, redis_url: str, embedding: Embeddings, score_threshold: float = 0.2
     ):
         """Initialize by passing in the `init` GPTCache func
 
@@ -729,10 +732,10 @@ class GPTCache(BaseCache):
     """Cache that uses GPTCache as a backend."""
 
     def __init__(
-        self,
-        init_func: Union[
-            Callable[[Any, str], None], Callable[[Any], None], None
-        ] = None,
+            self,
+            init_func: Union[
+                Callable[[Any, str], None], Callable[[Any], None], None
+            ] = None,
     ):
         """Initialize by passing in init function (default: `None`).
 
@@ -860,7 +863,7 @@ def _ensure_cache_exists(cache_client: momento.CacheClient, cache_name: str) -> 
 
     create_cache_response = cache_client.create_cache(cache_name)
     if isinstance(create_cache_response, CreateCache.Success) or isinstance(
-        create_cache_response, CreateCache.CacheAlreadyExists
+            create_cache_response, CreateCache.CacheAlreadyExists
     ):
         return None
     elif isinstance(create_cache_response, CreateCache.Error):
@@ -878,12 +881,12 @@ class MomentoCache(BaseCache):
     """Cache that uses Momento as a backend. See https://gomomento.com/"""
 
     def __init__(
-        self,
-        cache_client: momento.CacheClient,
-        cache_name: str,
-        *,
-        ttl: Optional[timedelta] = None,
-        ensure_cache_exists: bool = True,
+            self,
+            cache_client: momento.CacheClient,
+            cache_name: str,
+            *,
+            ttl: Optional[timedelta] = None,
+            ensure_cache_exists: bool = True,
     ):
         """Instantiate a prompt cache using Momento as a backend.
 
@@ -922,14 +925,14 @@ class MomentoCache(BaseCache):
 
     @classmethod
     def from_client_params(
-        cls,
-        cache_name: str,
-        ttl: timedelta,
-        *,
-        configuration: Optional[momento.config.Configuration] = None,
-        api_key: Optional[str] = None,
-        auth_token: Optional[str] = None,  # for backwards compatibility
-        **kwargs: Any,
+            cls,
+            cache_name: str,
+            ttl: timedelta,
+            *,
+            configuration: Optional[momento.config.Configuration] = None,
+            api_key: Optional[str] = None,
+            auth_token: Optional[str] = None,  # for backwards compatibility
+            **kwargs: Any,
     ) -> MomentoCache:
         """Construct cache from CacheClient parameters."""
         try:
@@ -1085,13 +1088,13 @@ class CassandraCache(BaseCache):
     """
 
     def __init__(
-        self,
-        session: Optional[CassandraSession] = None,
-        keyspace: Optional[str] = None,
-        table_name: str = CASSANDRA_CACHE_DEFAULT_TABLE_NAME,
-        ttl_seconds: Optional[int] = CASSANDRA_CACHE_DEFAULT_TTL_SECONDS,
-        skip_provisioning: bool = False,
-        setup_mode: CassandraSetupMode = CassandraSetupMode.SYNC,
+            self,
+            session: Optional[CassandraSession] = None,
+            keyspace: Optional[str] = None,
+            table_name: str = CASSANDRA_CACHE_DEFAULT_TABLE_NAME,
+            ttl_seconds: Optional[int] = CASSANDRA_CACHE_DEFAULT_TTL_SECONDS,
+            skip_provisioning: bool = False,
+            setup_mode: CassandraSetupMode = CassandraSetupMode.SYNC,
     ):
         if skip_provisioning:
             warn_deprecated(
@@ -1159,7 +1162,7 @@ class CassandraCache(BaseCache):
         )
 
     async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+            self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
         blob = _dumps_generations(return_val)
         await self.kv_cache.aput(
@@ -1169,7 +1172,7 @@ class CassandraCache(BaseCache):
         )
 
     def delete_through_llm(
-        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+            self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> None:
         """
         A wrapper around `delete` with the LLM being passed.
@@ -1274,17 +1277,17 @@ class CassandraSemanticCache(BaseCache):
     """
 
     def __init__(
-        self,
-        session: Optional[CassandraSession] = None,
-        keyspace: Optional[str] = None,
-        embedding: Optional[Embeddings] = None,
-        table_name: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME,
-        distance_metric: Optional[str] = None,
-        score_threshold: float = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD,
-        ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
-        skip_provisioning: bool = False,
-        similarity_measure: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
-        setup_mode: CassandraSetupMode = CassandraSetupMode.SYNC,
+            self,
+            session: Optional[CassandraSession] = None,
+            keyspace: Optional[str] = None,
+            embedding: Optional[Embeddings] = None,
+            table_name: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME,
+            distance_metric: Optional[str] = None,
+            score_threshold: float = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD,
+            ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
+            skip_provisioning: bool = False,
+            similarity_measure: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
+            setup_mode: CassandraSetupMode = CassandraSetupMode.SYNC,
     ):
         if skip_provisioning:
             warn_deprecated(
@@ -1388,7 +1391,7 @@ class CassandraSemanticCache(BaseCache):
         )
 
     async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+            self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
         embedding_vector = await self._aget_embedding(text=prompt)
         llm_string_hash = _hash(llm_string)
@@ -1421,7 +1424,7 @@ class CassandraSemanticCache(BaseCache):
             return None
 
     def lookup_with_id(
-        self, prompt: str, llm_string: str
+            self, prompt: str, llm_string: str
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
         """
         Look up based on prompt and llm_string.
@@ -1452,7 +1455,7 @@ class CassandraSemanticCache(BaseCache):
             return None
 
     async def alookup_with_id(
-        self, prompt: str, llm_string: str
+            self, prompt: str, llm_string: str
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
         """
         Look up based on prompt and llm_string.
@@ -1483,7 +1486,7 @@ class CassandraSemanticCache(BaseCache):
             return None
 
     def lookup_with_id_through_llm(
-        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+            self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
         llm_string = get_prompts(
             {**llm.dict(), **{"stop": stop}},
@@ -1492,7 +1495,7 @@ class CassandraSemanticCache(BaseCache):
         return self.lookup_with_id(prompt, llm_string=llm_string)
 
     async def alookup_with_id_through_llm(
-        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+            self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
         llm_string = (
             await aget_prompts(
@@ -1543,7 +1546,7 @@ class SQLAlchemyMd5Cache(BaseCache):
     """Cache that uses SQAlchemy as a backend."""
 
     def __init__(
-        self, engine: Engine, cache_schema: Type[FullMd5LLMCache] = FullMd5LLMCache
+            self, engine: Engine, cache_schema: Type[FullMd5LLMCache] = FullMd5LLMCache
     ):
         """Initialize by creating all tables."""
         self.engine = engine
@@ -1621,16 +1624,16 @@ class AstraDBCache(BaseCache):
         return f"{_hash(prompt)}#{_hash(llm_string)}"
 
     def __init__(
-        self,
-        *,
-        collection_name: str = ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME,
-        token: Optional[str] = None,
-        api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[AstraDB] = None,
-        async_astra_db_client: Optional[AsyncAstraDB] = None,
-        namespace: Optional[str] = None,
-        pre_delete_collection: bool = False,
-        setup_mode: AstraSetupMode = AstraSetupMode.SYNC,
+            self,
+            *,
+            collection_name: str = ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME,
+            token: Optional[str] = None,
+            api_endpoint: Optional[str] = None,
+            astra_db_client: Optional[AstraDB] = None,
+            async_astra_db_client: Optional[AsyncAstraDB] = None,
+            namespace: Optional[str] = None,
+            pre_delete_collection: bool = False,
+            setup_mode: AstraSetupMode = AstraSetupMode.SYNC,
     ):
         """
         Cache that uses Astra DB as a backend.
@@ -1711,7 +1714,7 @@ class AstraDBCache(BaseCache):
         )
 
     async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+            self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
         await self.astra_env.aensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
@@ -1724,7 +1727,7 @@ class AstraDBCache(BaseCache):
         )
 
     def delete_through_llm(
-        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+            self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> None:
         """
         A wrapper around `delete` with the LLM being passed.
@@ -1738,7 +1741,7 @@ class AstraDBCache(BaseCache):
         return self.delete(prompt, llm_string=llm_string)
 
     async def adelete_through_llm(
-        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+            self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> None:
         """
         A wrapper around `adelete` with the LLM being passed.
@@ -1777,7 +1780,6 @@ class AstraDBCache(BaseCache):
 ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD = 0.85
 ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_semantic_cache"
 ASTRA_DB_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE = 16
-
 
 _unset = ["unset"]
 
@@ -1822,19 +1824,19 @@ def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
 )
 class AstraDBSemanticCache(BaseCache):
     def __init__(
-        self,
-        *,
-        collection_name: str = ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME,
-        token: Optional[str] = None,
-        api_endpoint: Optional[str] = None,
-        astra_db_client: Optional[AstraDB] = None,
-        async_astra_db_client: Optional[AsyncAstraDB] = None,
-        namespace: Optional[str] = None,
-        setup_mode: AstraSetupMode = AstraSetupMode.SYNC,
-        pre_delete_collection: bool = False,
-        embedding: Embeddings,
-        metric: Optional[str] = None,
-        similarity_threshold: float = ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD,
+            self,
+            *,
+            collection_name: str = ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME,
+            token: Optional[str] = None,
+            api_endpoint: Optional[str] = None,
+            astra_db_client: Optional[AstraDB] = None,
+            async_astra_db_client: Optional[AsyncAstraDB] = None,
+            namespace: Optional[str] = None,
+            setup_mode: AstraSetupMode = AstraSetupMode.SYNC,
+            pre_delete_collection: bool = False,
+            embedding: Embeddings,
+            metric: Optional[str] = None,
+            similarity_threshold: float = ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD,
     ):
         """
         Cache that uses Astra DB as a vector-store backend for semantic
@@ -1940,7 +1942,7 @@ class AstraDBSemanticCache(BaseCache):
         )
 
     async def aupdate(
-        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+            self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
         await self.astra_env.aensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
@@ -1972,7 +1974,7 @@ class AstraDBSemanticCache(BaseCache):
             return None
 
     def lookup_with_id(
-        self, prompt: str, llm_string: str
+            self, prompt: str, llm_string: str
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
         """
         Look up based on prompt and llm_string.
@@ -2002,7 +2004,7 @@ class AstraDBSemanticCache(BaseCache):
                 return None
 
     async def alookup_with_id(
-        self, prompt: str, llm_string: str
+            self, prompt: str, llm_string: str
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
         """
         Look up based on prompt and llm_string.
@@ -2032,7 +2034,7 @@ class AstraDBSemanticCache(BaseCache):
                 return None
 
     def lookup_with_id_through_llm(
-        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+            self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
         llm_string = get_prompts(
             {**llm.dict(), **{"stop": stop}},
@@ -2041,7 +2043,7 @@ class AstraDBSemanticCache(BaseCache):
         return self.lookup_with_id(prompt, llm_string=llm_string)
 
     async def alookup_with_id_through_llm(
-        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+            self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
         llm_string = (
             await aget_prompts(
@@ -2085,22 +2087,22 @@ class AzureCosmosDBSemanticCache(BaseCache):
     DEFAULT_COLLECTION_NAME = "CosmosMongoVCoreCacheColl"
 
     def __init__(
-        self,
-        cosmosdb_connection_string: str,
-        database_name: str,
-        collection_name: str,
-        embedding: Embeddings,
-        *,
-        cosmosdb_client: Optional[Any] = None,
-        num_lists: int = 100,
-        similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
-        kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
-        dimensions: int = 1536,
-        m: int = 16,
-        ef_construction: int = 64,
-        ef_search: int = 40,
-        score_threshold: Optional[float] = None,
-        application_name: str = "LANGCHAIN_CACHING_PYTHON",
+            self,
+            cosmosdb_connection_string: str,
+            database_name: str,
+            collection_name: str,
+            embedding: Embeddings,
+            *,
+            cosmosdb_client: Optional[Any] = None,
+            num_lists: int = 100,
+            similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
+            kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+            dimensions: int = 1536,
+            m: int = 16,
+            ef_construction: int = 64,
+            ef_search: int = 40,
+            score_threshold: Optional[float] = None,
+            application_name: str = "LANGCHAIN_CACHING_PYTHON",
     ):
         """
         Args:
@@ -2271,13 +2273,106 @@ class AzureCosmosDBSemanticCache(BaseCache):
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
         if not isinstance(value, enum_type):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
+class AzureCosmosDBNoSqlSemanticCache(BaseCache):
+    """Cache that uses Cosmos DB NoSQL backend"""
 
+    def __init__(
+            self,
+            embedding: Embeddings,
+            cosmos_client: Optional[Any] = None,
+            database_name: str = "CosmosNoSqlCacheDB",
+            container_name: str = "CosmosNoSqlCacheContainer",
+            *,
+            vector_embedding_policy: Optional[Dict[str, Any]] = None,
+            indexing_policy: Optional[Dict[str, Any]] = None,
+            cosmos_container_properties: Dict[str, Any],
+            cosmos_database_properties: Dict[str, Any]
+    ):
+        self.cosmos_client = cosmos_client
+        self.database_name = database_name
+        self.container_name = container_name
+        self.embedding = embedding
+        self.vector_embedding_policy = vector_embedding_policy
+        self.indexing_policy = indexing_policy
+        self.cosmos_container_properties = cosmos_container_properties
+        self.cosmos_database_properties = cosmos_database_properties
+        self._cache_: Optional[AzureCosmosDBNoSqlVectorSearch] = None
+
+    def _create_llm_cache(self, llm_string: str) -> AzureCosmosDBNoSqlVectorSearch:
+
+        #create new vectorstore client to create the cache
+        if self.cosmos_client:
+            self._cache_ = AzureCosmosDBNoSqlVectorSearch(
+                cosmos_client=self.cosmos_client,
+                embedding=self.embedding,
+                vector_embedding_policy=self.vector_embedding_policy,
+                indexing_policy=self.indexing_policy,
+                cosmos_container_properties=self.cosmos_container_properties,
+                cosmos_database_properties=self.cosmos_database_properties,
+                database_name=self.database_name,
+                container_name=self.container_name
+            )
+
+        return self._cache_
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt."""
+        if not self._cache_:
+            self._cache_ = self._create_llm_cache(llm_string)
+        llm_cache = self._cache_
+        generations: List = []
+        # Read from a Hash
+        results = llm_cache.similarity_search(
+            query=prompt,
+            k=1,
+        )
+        if results:
+            for document in results:
+                try:
+                    generations.extend(loads(document.metadata["return_val"]))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.extend(
+                        _load_generations_from_json(document.metadata["return_val"])
+                    )
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "CosmosDBNoSqlSemanticCache only supports caching of "
+                    f"normal LLM generations, got {type(gen)}"
+                )
+        if not self._cache_:
+            self._cache_ = self._create_llm_cache(llm_string)
+        llm_cache = self._cache_
+        metadata = {
+            "llm_string": llm_string,
+            "prompt": prompt,
+            "return_val": dumps([g for g in return_val]),
+        }
+        llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear semantic cache for a given llm_string."""
+        database = self.cosmos_client.get_database_client(self.database_name)
+        container = database.get_container_client(self.container_name)
+        database.delete_container(self.container_name)
 
 class OpenSearchSemanticCache(BaseCache):
     """Cache that uses OpenSearch vector store backend"""
 
     def __init__(
-        self, opensearch_url: str, embedding: Embeddings, score_threshold: float = 0.2
+            self, opensearch_url: str, embedding: Embeddings, score_threshold: float = 0.2
     ):
         """
         Args:
