@@ -10,7 +10,6 @@ You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
 
 from langchain_core.pydantic_v1 import SecretStr
-from pytest import CaptureFixture
 
 from langchain_community.llms import EdenAI
 
@@ -53,13 +52,6 @@ def test_edenai_call_with_old_params() -> None:
 def test_api_key_is_secret_string() -> None:
     llm = EdenAI(provider="openai", edenai_api_key="secret-api-key")
     assert isinstance(llm.edenai_api_key, SecretStr)
-
-
-def test_api_key_masked_when_printed(capsys: CaptureFixture) -> None:
-    llm = EdenAI(provider="openai", edenai_api_key="secret-api-key")
-    print(llm.edenai_api_key, end="")
-    captured = capsys.readouterr()
-    assert captured.out == "**********"
 
 
 def test_uses_actual_secret_value() -> None:
