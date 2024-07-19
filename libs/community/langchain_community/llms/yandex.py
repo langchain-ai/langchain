@@ -92,13 +92,13 @@ class _BaseYandexGPT(Serializable):
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
 
         if values["iam_token"]:
-            values["_grpc_metadata"] = [
+            cls._grpc_metadata = [
                 ("authorization", f"Bearer {values['iam_token'].get_secret_value()}")
             ]
             if values["folder_id"]:
-                values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
+                cls._grpc_metadata.append(("x-folder-id", values["folder_id"]))
         else:
-            values["_grpc_metadata"] = (
+            cls._grpc_metadata = (
                 ("authorization", f"Api-Key {values['api_key'].get_secret_value()}"),
             )
         if values["model_uri"] == "" and values["folder_id"] == "":
@@ -108,7 +108,7 @@ class _BaseYandexGPT(Serializable):
                 f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
             )
         if values["disable_request_logging"]:
-            values["_grpc_metadata"].append(
+            cls._grpc_metadata.append(
                 (
                     "x-data-logging-enabled",
                     "false",
