@@ -81,7 +81,6 @@ def copy_with_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> Docum
     new_links = set(get_links(doc))
     for link in links:
         if isinstance(link, Iterable):
-            print(f"{link!r}")
             new_links.update(link)
         else:
             new_links.add(link)
