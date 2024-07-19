@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from abc import ABC
 import json
 import logging
 from pathlib import Path
-from typing import IO, Any, Callable, Iterator, TYPE_CHECKING, Optional, Sequence, cast
+from typing import IO, Any, Callable, Iterator, TYPE_CHECKING, Optional, cast
 
-# from langchain_community.document_loaders.unstructured import UnstructuredBaseLoader
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_unstructured.utils import lazyproperty
@@ -54,9 +52,10 @@ class UnstructuredLoader(BaseLoader):
             from langchain_unstructured import UnstructuredLoader
 
             loader = UnstructuredLoader(
-                file_path = "example.pdf",
+                file_path = ["example.pdf", "fake.pdf"],
                 api_key=UNSTRUCTURED_API_KEY,
-                chunking_strategy="by_page",
+                partition_via_api=True,
+                chunking_strategy="by_title",
                 strategy="fast",
             )
 
@@ -78,8 +77,8 @@ class UnstructuredLoader(BaseLoader):
     def __init__(
         self,
         *,
-        file: Optional[IO[bytes] | Sequence[IO[bytes]]] = None,
-        file_path: Optional[str | Path | Sequence[str | Path]] = None,
+        file: Optional[IO[bytes] | list[IO[bytes]]] = None,
+        file_path: Optional[str | Path | list[str] | list[Path]] = None,
         partition_via_api: bool = False,
         post_processors: Optional[list[Callable[[str], str]]] = None,
         # SDK parameters
@@ -106,12 +105,12 @@ class UnstructuredLoader(BaseLoader):
         self.unstructured_kwargs = unstructured_kwargs
 
 
-    def lazy_load(self) -> Iterator[list[Document]]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load file(s) to the _UnstructuredBaseLoader."""
 
         def load_file(
             f: Optional[IO[bytes]] = None, f_path: Optional[str | Path] = None
-        ) -> list[Document]:
+        ) -> Iterator[Document]:
             """Load an individual file to the _UnstructuredBaseLoader."""
             return _UnstructuredBaseLoader(
                 file=f,
@@ -126,19 +125,20 @@ class UnstructuredLoader(BaseLoader):
                 url=self.url,
                 url_params=self.url_params,
                 **self.unstructured_kwargs,
-            ).load()
+            ).lazy_load()
 
-        if isinstance(self.file, Sequence):
+        if isinstance(self.file, list):
             for f in self.file:
-                yield load_file(f=f)
+                yield from load_file(f=f)
             return
         
-        if isinstance(self.file_path, Sequence):
+        if isinstance(self.file_path, list):
             for f_path in self.file_path:
-                yield load_file(f_path=f_path)
+                yield from load_file(f_path=f_path)
             return
         
-        yield load_file(f=self.file, f_path=self.file_path)
+        # Call _UnstructuredBaseLoader normally since file and file_path are not lists
+        yield from load_file(f=self.file, f_path=self.file_path)
 
 
 class _UnstructuredBaseLoader(BaseLoader):
@@ -169,7 +169,6 @@ class _UnstructuredBaseLoader(BaseLoader):
         self.file_path = str(file_path) if isinstance(file_path, Path) else file_path
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
-        self.unstructured_kwargs = unstructured_kwargs
         # SDK parameters
         self.api_key = api_key
         self.client = client
@@ -177,6 +176,7 @@ class _UnstructuredBaseLoader(BaseLoader):
         self.server = server
         self.url = url
         self.url_params = url_params
+        self.unstructured_kwargs = unstructured_kwargs
         
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
