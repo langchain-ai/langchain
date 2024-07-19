@@ -17,7 +17,7 @@ from typing import (
 
 from langchain_core.stores import BaseStore
 from sqlalchemy import (
-    Engine,
+    Engine,  # TODO(erick): problem in sqlalchemy v1
     LargeBinary,
     and_,
     create_engine,
@@ -27,14 +27,14 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
+    async_sessionmaker,  # TODO(erick): problem in sqlalchemy v1
     create_async_engine,
 )
 from sqlalchemy.orm import (
     Mapped,
     Session,
     declarative_base,
-    mapped_column,
+    mapped_column,  # TODO(erick): problem in sqlalchemy v1
     sessionmaker,
 )
 

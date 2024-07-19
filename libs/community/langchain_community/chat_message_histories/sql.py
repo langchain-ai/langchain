@@ -32,7 +32,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
+    async_sessionmaker,  # problem in sqlalchemy v1
     create_async_engine,
 )
 from sqlalchemy.orm import (
