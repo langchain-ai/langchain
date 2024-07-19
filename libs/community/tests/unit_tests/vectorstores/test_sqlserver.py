@@ -175,13 +175,12 @@ def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(
     assert len(result) == len(docs)
 
 
-def test_that_drop_deletes_vector_store(
-    store: SQLServer_VectorStore,
-    texts: List[str],
-) -> None:
-    """Test that when drop is called, vector store is deleted
-    and a call to add_text raises an exception.
-    """
+def test_that_drop_deletes_vector_store(store) -> None:
     store.drop()
-    with pytest.raises(DBAPIError):
-        store.add_texts(texts)
+
+    texts = ["rabbit", "cherry", "hamster", "cat", "elderberry"]
+    result = store.add_texts(texts)
+
+    assert (
+        result is None
+    ), "There were entries to a vector store that should be dropped."

@@ -211,3 +211,9 @@ class SQLServer_VectorStore(VectorStore):
             logging.error(f"Add text failed:\n {e.__cause__}.")
             raise
         return ids
+
+    def drop(self) -> None:
+        logging.info("Dropping vector store: %s.", self.table_name)
+        with Session(bind=self._bind) as session:
+            # Drop all the tables associated with the session bind.
+            Base.metadata.drop_all(session.get_bind())
