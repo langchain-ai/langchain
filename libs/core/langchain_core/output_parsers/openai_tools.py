@@ -15,6 +15,7 @@ from langchain_core.output_parsers.transform import BaseCumulativeTransformOutpu
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
 from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.pydantic import PydanticBaseModel
 
 
 def parse_tool_call(
@@ -255,7 +256,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
-    tools: List[Type[BaseModel]]
+    tools: List[Type[PydanticBaseModel]]
     """The tools to parse."""
 
     # TODO: Support more granular streaming of objects. Currently only streams once all

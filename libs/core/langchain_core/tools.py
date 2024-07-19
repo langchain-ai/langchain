@@ -332,8 +332,18 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[Type[BaseModel]] = None
-    """Pydantic model class to validate and parse the tool's input arguments."""
+    args_schema: Optional[Union[Any, BaseModel]] = None
+    """Pydantic model class to validate and parse the tool's input arguments.
+    
+    Args schema should be either: 
+    
+    - A subclass of pydantic.BaseModel.
+    or 
+    - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
+    
+    This is typed as Any to prevent validation using pydantic v1 which will not
+    be able to validate pydantic v2 models.
+    """
     return_direct: bool = False
     """Whether to return the tool's output directly. 
     

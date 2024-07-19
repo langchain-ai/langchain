@@ -1,21 +1,12 @@
 import json
-from typing import Generic, List, Type, TypeVar, Union
+from typing import Generic, List, Type, TypeVar
 
-import pydantic  # pydantic: ignore
+import pydantic
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
-
-if PYDANTIC_MAJOR_VERSION < 2:
-    PydanticBaseModel = pydantic.BaseModel
-
-else:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
-
-    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, PydanticBaseModel
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 

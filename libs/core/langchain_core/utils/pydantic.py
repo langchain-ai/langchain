@@ -5,7 +5,9 @@ from __future__ import annotations
 import inspect
 import textwrap
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, Union
+
+import pydantic
 
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -21,6 +23,16 @@ def get_pydantic_major_version() -> int:
 
 
 PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
+
+
+if PYDANTIC_MAJOR_VERSION < 2:
+    PydanticBaseModel = pydantic.BaseModel
+
+else:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
+    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
 
 
 def is_basemodel_subclass(cls: Type) -> bool:
