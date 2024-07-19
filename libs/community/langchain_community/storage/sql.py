@@ -17,26 +17,36 @@ from typing import (
 
 from langchain_core.stores import BaseStore
 from sqlalchemy import (
-    Engine,  # TODO(erick): problem in sqlalchemy v1
     LargeBinary,
     and_,
     create_engine,
     delete,
     select,
 )
+from sqlalchemy.engine.base import Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,  # TODO(erick): problem in sqlalchemy v1
     create_async_engine,
 )
 from sqlalchemy.orm import (
     Mapped,
     Session,
     declarative_base,
-    mapped_column,  # TODO(erick): problem in sqlalchemy v1
     sessionmaker,
 )
+
+try:
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+except ImportError:
+    # dummy for sqlalchemy < 2
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
+
+try:
+    from sqlalchemy.orm import mapped_column
+except ImportError:
+    # dummy for sqlalchemy < 2
+    from sqlalchemy import Column as mapped_column  # type: ignore
 
 Base = declarative_base()
 
