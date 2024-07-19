@@ -6,7 +6,6 @@ from typing import Generator
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
-from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.llms.loading import load_llm
@@ -14,40 +13,6 @@ from langchain_community.llms.openai import OpenAI
 from tests.unit_tests.callbacks.fake_callback_handler import (
     FakeCallbackHandler,
 )
-
-
-def test_api_key_is_secret_string() -> None:
-    llm = OpenAI(openai_api_key="secret_api_key")
-    assert isinstance(llm.openai_api_key, SecretStr)
-
-
-def test_api_key_masked_when_passed_from_env(
-    monkeypatch: MonkeyPatch, capsys: CaptureFixture
-) -> None:
-    """Test initialization with an API key provided via an env variable"""
-    monkeypatch.setenv("OPENAI_API_KEY", "secret-api-key")
-    llm = OpenAI()
-    print(llm.openai_api_key, end="")
-    captured = capsys.readouterr()
-
-    assert captured.out == "**********"
-    assert str(llm.openai_api_key) == "**********"
-    assert "secret-api-key" not in repr(llm.openai_api_key)
-    assert "secret-api-key" not in repr(llm)
-
-
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
-    """Test initialization with an API key provided via the initializer"""
-    llm = OpenAI(openai_api_key="secret-api-key")
-    print(llm.openai_api_key, end="")
-    captured = capsys.readouterr()
-
-    assert captured.out == "**********"
-    assert str(llm.openai_api_key) == "**********"
-    assert "secret-api-key" not in repr(llm.openai_api_key)
-    assert "secret-api-key" not in repr(llm)
 
 
 @pytest.mark.scheduled

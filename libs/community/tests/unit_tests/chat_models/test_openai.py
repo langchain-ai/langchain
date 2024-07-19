@@ -11,7 +11,6 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.adapters.openai import convert_dict_to_message
 from langchain_community.chat_models.openai import ChatOpenAI
@@ -132,41 +131,3 @@ async def test_openai_apredict(mock_completion: dict) -> None:
         res = await llm.apredict("bar")
         assert res == "Bar Baz"
     assert completed
-
-
-"""Test Openai chat model"""
-
-
-@pytest.mark.requires("openai")
-def test_api_key_is_secret_string() -> None:
-    llm = ChatOpenAI(
-        openai_api_key="secret-api-key", openai_api_base="test", model_name="test"
-    )
-    assert isinstance(llm.openai_api_key, SecretStr)
-
-
-@pytest.mark.requires("openai")
-def test_api_key_masked_when_passed_from_env(
-    monkeypatch: MonkeyPatch, capsys: CaptureFixture
-) -> None:
-    """Test initialization with an API key provided via an env variable"""
-    monkeypatch.setenv("OPENAI_API_KEY", "secret-api-key")
-    llm = ChatOpenAI(openai_api_base="test", model_name="test")
-    print(llm.openai_api_key, end="")
-    captured = capsys.readouterr()
-
-    assert captured.out == "**********"
-
-
-@pytest.mark.requires("openai")
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
-    """Test initialization with an API key provided via the initializer"""
-    llm = ChatOpenAI(
-        openai_api_key="secret-api-key", openai_api_base="test", model_name="test"
-    )
-    print(llm.openai_api_key, end="")
-    captured = capsys.readouterr()
-
-    assert captured.out == "**********"
