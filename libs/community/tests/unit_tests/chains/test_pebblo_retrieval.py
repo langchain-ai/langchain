@@ -11,7 +11,11 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.vectorstores import InMemoryVectorStore, VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import (
+    InMemoryVectorStore,
+    VectorStore,
+    VectorStoreRetriever,
+)
 
 from langchain_community.chains import PebbloRetrievalQA
 from langchain_community.chains.pebblo_retrieval.models import (
