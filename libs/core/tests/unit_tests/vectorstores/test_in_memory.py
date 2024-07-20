@@ -153,8 +153,8 @@ async def test_inmemory_upsert() -> None:
     }
 
 
-async def test_inmemory_from_document_get_by_ids() -> None:
-    """Test construction from documents."""
+async def test_inmemory_get_by_ids() -> None:
+    """Test get by ids."""
 
     store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=3))
 
