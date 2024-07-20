@@ -21,7 +21,8 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
 
     async def abuffer(self) -> Union[str, List[BaseMessage]]:
         """Async memory buffer."""
-        return await self.aload_memory_variables({})[self.memory_key]
+        memory_variables = await self.aload_memory_variables({})
+        return memory_variables[self.memory_key]
 
     @property
     def memory_variables(self) -> List[str]:
