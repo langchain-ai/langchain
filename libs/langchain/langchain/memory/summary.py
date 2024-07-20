@@ -45,7 +45,7 @@ class SummarizerMixin(BaseModel):
 
         chain = LLMChain(llm=self.llm, prompt=self.prompt)
         return await chain.apredict(summary=existing_summary, new_lines=new_lines)
-    
+
 
 class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
     """Conversation summarizer to chat memory."""

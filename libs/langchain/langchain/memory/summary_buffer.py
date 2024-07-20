@@ -26,26 +26,26 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             if self.return_messages
             else await self.abuffer_as_str()
         )
-    
+
     def _buffer_as_str(self, messages: List[BaseMessage]) -> str:
         return get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
             ai_prefix=self.ai_prefix,
         )
-        
+
     async def abuffer_as_str(self) -> str:
-        """Asynchronously exposes the buffer as a string in case return_messages is True."""
+        """Asynchronously expose buffer as string."""
         messages = await self.chat_memory.aget_messages()
-        return self._buffer_as_str(messages)        
+        return self._buffer_as_str(messages)
 
     @property
     def buffer_as_messages(self) -> List[BaseMessage]:
-        """Exposes the buffer as a list of messages in case return_messages is False."""
+        """Expose buffer as a list of messages."""
         return self.chat_memory.messages
 
     async def abuffer_as_messages(self) -> List[BaseMessage]:
-        """Asynchronously exposes the buffer as a list of messages in case return_messages is False."""
+        """Asynchronously expose buffer as a list of messages."""
         return await self.chat_memory.aget_messages()
 
     @property
@@ -105,7 +105,9 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         super().save_context(inputs, outputs)
         self.prune()
 
-    async def asave_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    async def asave_context(
+        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+    ) -> None:
         """Asynchronously save context from this conversation to buffer."""
         await super().asave_context(inputs, outputs)
         await self.aprune()
@@ -122,7 +124,6 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             self.moving_summary_buffer = self.predict_new_summary(
                 pruned_memory, self.moving_summary_buffer
             )
-
 
     async def aprune(self) -> None:
         """Asynchronously prune buffer if it exceeds max token limit"""
