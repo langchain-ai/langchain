@@ -45,7 +45,7 @@ class QdrantVectorStore(VectorStore):
         .. code-block:: python
         from langchain_qdrant import QdrantVectorStore
 
-        store = QdrantVectorStore.from_existing_collection("my-collection", embedding, url="http://localhost:6333")
+        store = QdrantVectorStore.from_existing_collection("my-collection", embeddings, url="http://localhost:6333")
     """
 
     CONTENT_KEY: str = "page_content"
@@ -57,13 +57,13 @@ class QdrantVectorStore(VectorStore):
         self,
         client: QdrantClient,
         collection_name: str,
-        embedding: Optional[Embeddings] = None,
+        embeddings: Optional[Embeddings] = None,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
         vector_name: str = VECTOR_NAME,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         distance: models.Distance = models.Distance.COSINE,
-        sparse_embedding: Optional[SparseEmbeddings] = None,
+        sparse_embeddings: Optional[SparseEmbeddings] = None,
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
         validate_embeddings: bool = True,
         validate_collection_config: bool = True,
@@ -75,13 +75,13 @@ class QdrantVectorStore(VectorStore):
         qdrant = Qdrant(
             client=client,
             collection_name="my-collection",
-            embedding=OpenAIEmbeddings(),
+            embeddings=OpenAIEmbeddings(),
             retrieval_mode=RetrievalMode.HYBRID,
-            sparse_embedding=FastEmbedSparse(),
+            sparse_embeddings=FastEmbedSparse(),
         )
         """
         if validate_embeddings:
-            self._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
+            self._validate_embeddings(retrieval_mode, embeddings, sparse_embeddings)
 
         if validate_collection_config:
             self._validate_collection_config(
@@ -91,18 +91,18 @@ class QdrantVectorStore(VectorStore):
                 vector_name,
                 sparse_vector_name,
                 distance,
-                embedding,
+                embeddings,
             )
 
         self._client = client
         self.collection_name = collection_name
-        self._embeddings = embedding
+        self._embeddings = embeddings
         self.retrieval_mode = retrieval_mode
         self.vector_name = vector_name
         self.content_payload_key = content_payload_key
         self.metadata_payload_key = metadata_payload_key
         self.distance = distance
-        self._sparse_embeddings = sparse_embedding
+        self._sparse_embeddings = sparse_embeddings
         self.sparse_vector_name = sparse_vector_name
 
     @property
@@ -151,7 +151,7 @@ class QdrantVectorStore(VectorStore):
     def from_texts(
         cls: Type[QdrantVectorStore],
         texts: List[str],
-        embedding: Optional[Embeddings] = None,
+        embeddings: Optional[Embeddings] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[Sequence[str | int]] = None,
         collection_name: Optional[str] = None,
@@ -171,7 +171,7 @@ class QdrantVectorStore(VectorStore):
         metadata_payload_key: str = METADATA_KEY,
         vector_name: str = VECTOR_NAME,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
-        sparse_embedding: Optional[SparseEmbeddings] = None,
+        sparse_embeddings: Optional[SparseEmbeddings] = None,
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
         collection_create_options: Dict[str, Any] = {},
         vector_params: Dict[str, Any] = {},
@@ -215,9 +215,9 @@ class QdrantVectorStore(VectorStore):
         }
 
         qdrant = cls.construct_instance(
-            embedding,
+            embeddings,
             retrieval_mode,
-            sparse_embedding,
+            sparse_embeddings,
             client_options,
             collection_name,
             distance,
@@ -239,7 +239,7 @@ class QdrantVectorStore(VectorStore):
     def from_existing_collection(
         cls: Type[QdrantVectorStore],
         collection_name: str,
-        embedding: Optional[Embeddings] = None,
+        embeddings: Optional[Embeddings] = None,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
         location: Optional[str] = None,
         url: Optional[str] = None,
@@ -257,7 +257,7 @@ class QdrantVectorStore(VectorStore):
         metadata_payload_key: str = METADATA_KEY,
         vector_name: str = VECTOR_NAME,
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
-        sparse_embedding: Optional[SparseEmbeddings] = None,
+        sparse_embeddings: Optional[SparseEmbeddings] = None,
         validate_embeddings: bool = True,
         validate_collection_config: bool = True,
         **kwargs: Any,
@@ -286,13 +286,13 @@ class QdrantVectorStore(VectorStore):
         return cls(
             client=client,
             collection_name=collection_name,
-            embedding=embedding,
+            embeddings=embeddings,
             retrieval_mode=retrieval_mode,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
             distance=distance,
             vector_name=vector_name,
-            sparse_embedding=sparse_embedding,
+            sparse_embeddings=sparse_embeddings,
             sparse_vector_name=sparse_vector_name,
             validate_embeddings=validate_embeddings,
             validate_collection_config=validate_collection_config,
@@ -382,15 +382,15 @@ class QdrantVectorStore(VectorStore):
             **kwargs,
         }
         if self.retrieval_mode == RetrievalMode.DENSE:
-            query_dense_embedding = self.embeddings.embed_query(query)
+            query_dense_embeddings = self.embeddings.embed_query(query)
             results = self.client.query_points(
-                query=query_dense_embedding,
+                query=query_dense_embeddings,
                 using=self.vector_name,
                 **query_options,
             ).points
 
         elif self.retrieval_mode == RetrievalMode.SPARSE:
-            query_sparse_embedding = self.sparse_embeddings.embed_query(query)
+            query_sparse_embeddings = self.sparse_embeddings.embed_query(query)
             results = self.client.query_points(
                 query=models.SparseVector(
                     indices=query_sparse_embedding.indices,
@@ -401,13 +401,13 @@ class QdrantVectorStore(VectorStore):
             ).points
 
         elif self.retrieval_mode == RetrievalMode.HYBRID:
-            query_dense_embedding = self.embeddings.embed_query(query)
-            query_sparse_embedding = self.sparse_embeddings.embed_query(query)
+            query_dense_embeddings = self.embeddings.embed_query(query)
+            query_sparse_embeddings = self.sparse_embeddings.embed_query(query)
             results = self.client.query_points(
                 prefetch=[
                     models.Prefetch(
                         using=self.vector_name,
-                        query=query_dense_embedding,
+                        query=query_dense_embeddings,
                         filter=filter,
                         limit=k,
                         params=search_params,
@@ -465,11 +465,11 @@ class QdrantVectorStore(VectorStore):
             collection_name=self.collection_name,
             vector_name=self.vector_name,
             distance=self.distance,
-            dense_embeddings=embedding,
+            dense_embeddings=embeddings,
         )
         results = self.client.query_points(
             collection_name=self.collection_name,
-            query=embedding,
+            query=embeddings,
             using=self.vector_name,
             query_filter=qdrant_filter,
             search_params=search_params,
@@ -521,9 +521,9 @@ class QdrantVectorStore(VectorStore):
             self.embeddings,
         )
 
-        query_embedding = self.embeddings.embed_query(query)
+        query_embeddings = self.embeddings.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            query_embedding,
+            query_embeddings,
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
@@ -555,7 +555,7 @@ class QdrantVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         results = self.max_marginal_relevance_search_with_score_by_vector(
-            embedding,
+            embeddings,
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
@@ -589,7 +589,7 @@ class QdrantVectorStore(VectorStore):
         """
         results = self.client.query_points(
             collection_name=self.collection_name,
-            query=embedding,
+            query=embeddings,
             query_filter=filter,
             search_params=search_params,
             limit=fetch_k,
@@ -677,7 +677,7 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,
     ) -> QdrantVectorStore:
         if validate_embeddings:
-            cls._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
+            cls._validate_embeddings(retrieval_mode, embeddings, sparse_embedding)
         collection_name = collection_name or uuid.uuid4().hex
         client = QdrantClient(**client_options)
 
@@ -695,7 +695,7 @@ class QdrantVectorStore(VectorStore):
                     vector_name,
                     sparse_vector_name,
                     distance,
-                    embedding,
+                    embeddings,
                 )
         else:
             vectors_config, sparse_vectors_config = {}, {}
@@ -745,13 +745,13 @@ class QdrantVectorStore(VectorStore):
         qdrant = cls(
             client=client,
             collection_name=collection_name,
-            embedding=embedding,
+            embeddings=embeddings,
             retrieval_mode=retrieval_mode,
             content_payload_key=content_payload_key,
             metadata_payload_key=metadata_payload_key,
             distance=distance,
             vector_name=vector_name,
-            sparse_embedding=sparse_embedding,
+            sparse_embeddings=sparse_embeddings,
             sparse_vector_name=sparse_vector_name,
             validate_embeddings=False,
             validate_collection_config=False,

@@ -27,7 +27,7 @@ def maximal_marginal_relevance(
         for i, query_score in enumerate(similarity_to_query):
             if i in idxs:
                 continue
-            redundant_score = max(similarity_to_selected[i])
+            redundant_score = np.max(similarity_to_selected[i])
             equation_score = (
                 lambda_mult * query_score - (1 - lambda_mult) * redundant_score
             )
