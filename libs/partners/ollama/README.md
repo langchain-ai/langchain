@@ -18,7 +18,7 @@ You can download it [here](https://ollama.com/download).
 ```python
 from langchain_ollama import ChatOllama
 
-llm = ChatOllama(model="llama3")
+llm = ChatOllama(model="llama3-groq-tool-use")
 llm.invoke("Sing a ballad of LangChain.")
 ```
 
@@ -39,6 +39,6 @@ embeddings.embed_query("What is the meaning of life?")
 ```python
 from langchain_ollama import OllamaLLM
 
-llm = OllamaLLM()
+llm = OllamaLLM(model="llama3")
 llm.invoke("The meaning of life is")
 ```

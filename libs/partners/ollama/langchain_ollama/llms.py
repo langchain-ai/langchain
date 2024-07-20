@@ -34,7 +34,7 @@ class OllamaLLM(BaseLLM):
             model.invoke("Come up with 10 names for a song about parrots")
     """
 
-    model: str = "llama2"
+    model: str
     """Model name to use."""
 
     mirostat: Optional[int] = None
@@ -205,9 +205,9 @@ class OllamaLLM(BaseLLM):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
                     text=stream_resp["response"] if "response" in stream_resp else "",
-                    generation_info=dict(stream_resp)
-                    if stream_resp.get("done") is True
-                    else None,
+                    generation_info=(
+                        dict(stream_resp) if stream_resp.get("done") is True else None
+                    ),
                 )
                 if final_chunk is None:
                     final_chunk = chunk
@@ -237,9 +237,9 @@ class OllamaLLM(BaseLLM):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
                     text=stream_resp["response"] if "response" in stream_resp else "",
-                    generation_info=dict(stream_resp)
-                    if stream_resp.get("done") is True
-                    else None,
+                    generation_info=(
+                        dict(stream_resp) if stream_resp.get("done") is True else None
+                    ),
                 )
                 if final_chunk is None:
                     final_chunk = chunk
@@ -304,12 +304,14 @@ class OllamaLLM(BaseLLM):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
-                    text=stream_resp["message"]["content"]
-                    if "message" in stream_resp
-                    else "",
-                    generation_info=dict(stream_resp)
-                    if stream_resp.get("done") is True
-                    else None,
+                    text=(
+                        stream_resp["message"]["content"]
+                        if "message" in stream_resp
+                        else ""
+                    ),
+                    generation_info=(
+                        dict(stream_resp) if stream_resp.get("done") is True else None
+                    ),
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(
@@ -328,12 +330,14 @@ class OllamaLLM(BaseLLM):
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
-                    text=stream_resp["message"]["content"]
-                    if "message" in stream_resp
-                    else "",
-                    generation_info=dict(stream_resp)
-                    if stream_resp.get("done") is True
-                    else None,
+                    text=(
+                        stream_resp["message"]["content"]
+                        if "message" in stream_resp
+                        else ""
+                    ),
+                    generation_info=(
+                        dict(stream_resp) if stream_resp.get("done") is True else None
+                    ),
                 )
                 if run_manager:
                     await run_manager.on_llm_new_token(

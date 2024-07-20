@@ -243,7 +243,7 @@ class ChatOllama(BaseChatModel):
             'type': 'tool_call'}]
     """  # noqa: E501
 
-    model: str = "llama2"
+    model: str
     """Model name to use."""
 
     mirostat: Optional[int] = None

@@ -18,7 +18,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             embedder.embed_query("what is the place that jonathan worked at?")
     """
 
-    model: str = "llama2"
+    model: str
     """Model name to use."""
 
     class Config:
