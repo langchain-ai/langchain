@@ -55,10 +55,11 @@ class WebBaseLoader(BaseLoader):
         default_parser: str = "html.parser",
         requests_kwargs: Optional[Dict[str, Any]] = None,
         raise_for_status: bool = False,
-        show_progress: bool = True,
         bs_get_text_kwargs: Optional[Dict[str, Any]] = None,
         bs_kwargs: Optional[Dict[str, Any]] = None,
         session: Any = None,
+        *,
+        show_progress: bool = True,
     ) -> None:
         """Initialize loader.
 
@@ -68,9 +69,9 @@ class WebBaseLoader(BaseLoader):
             default_parser: Default parser to use for BeautifulSoup.
             requests_kwargs: kwargs for requests
             raise_for_status: Raise an exception if http status code denotes an error.
-            show_progress: Show progress bar when loading pages.
             bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
             bs_kwargs: kwargs for beatifulsoup4 web page parsing
+            show_progress: Show progress bar when loading pages.
         """
         # web_path kept for backwards-compatibility.
         if web_path and web_paths:
