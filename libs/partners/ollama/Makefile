@@ -5,7 +5,9 @@ all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
-integration_test integration_tests: TEST_FILE = tests/integration_tests/
+integration_test: TEST_FILE = tests/integration_tests/
+# note: leaving out integration_tests (with s) command to skip release testing for now
+# TODO(erick) configure ollama server to run in CI, in separate repo
 
 
 # unit tests are run with the --disable-socket flag to prevent network calls
