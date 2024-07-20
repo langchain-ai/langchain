@@ -75,11 +75,13 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _create_tool_content(content: str) -> str:
-    """Convert tool content to json scheme."""
+def _create_tool_content(content: Union[str, List[Union[str, Dict[Any, Any]]]]) -> str:
+    """Convert tool content to dict scheme."""
     try:
-        json.loads(content)
-        return content
+        if isinstance(json.loads(content), dict):
+            return content
+        else:
+            return json.dumps({"original_content": content})
     except json.JSONDecodeError:
         return json.dumps({"original_content": content})
 
