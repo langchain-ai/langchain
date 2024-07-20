@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from langchain_standard_tests.integration_tests.vectorstores import (
@@ -179,3 +180,18 @@ async def test_inmemory_get_by_ids() -> None:
         Document(page_content="foo", id="1", metadata={"metadata": "value"}),
         Document(page_content="baz", id="3"),
     ]
+
+async def test_inmemory_call_embeddings_async() -> None:
+    embeddings_mock = Mock(
+        wraps=DeterministicFakeEmbedding(size=3), 
+        aembed_documents=AsyncMock(),
+        aembed_query=AsyncMock(),
+    )
+    store = InMemoryVectorStore(embedding=embeddings_mock)
+
+    await store.aadd_texts("foo")
+    await store.asimilarity_search("foo", k=1)
+    
+    # Ensure the async embedding function is called
+    assert embeddings_mock.aembed_documents.await_count == 1
+    assert embeddings_mock.aembed_query.await_count == 1
