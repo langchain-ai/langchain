@@ -171,8 +171,12 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
                     empty[k] = v  # type: ignore[literal-required]
                 else:
                     empty["configurable"][k] = v
-    for key, value in empty["configurable"].items():
-        if isinstance(value, (str, int, float, bool)) and key not in empty["metadata"]:
+    for key, value in empty.get("configurable", {}).items():
+        if (
+            not key.startswith("__")
+            and isinstance(value, (str, int, float, bool))
+            and key not in empty["metadata"]
+        ):
             empty["metadata"][key] = value
     return empty
 
