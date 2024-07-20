@@ -32,7 +32,6 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
     create_async_engine,
 )
 from sqlalchemy.orm import (
@@ -43,6 +42,12 @@ from sqlalchemy.orm import (
     scoped_session,
     sessionmaker,
 )
+
+try:
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+except ImportError:
+    # dummy for sqlalchemy < 2
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
 
 logger = logging.getLogger(__name__)
 
