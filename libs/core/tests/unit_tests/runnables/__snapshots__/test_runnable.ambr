@@ -11972,7 +11972,8 @@
                         "FakeListChatModel"
                       ],
                       "name": "FakeListChatModel"
-                    }
+                    },
+                    "metadata": {}
                   },
                   {
                     "id": 2,
@@ -12078,7 +12079,8 @@
                   "FakeListChatModel"
                 ],
                 "name": "FakeListChatModel"
-              }
+              },
+              "metadata": {}
             },
             {
               "id": 3,
@@ -12191,7 +12193,8 @@
               "FakeListChatModel"
             ],
             "name": "FakeListChatModel"
-          }
+          },
+          "metadata": {}
         },
         {
           "id": 6,
