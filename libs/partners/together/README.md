@@ -1,48 +1,28 @@
 # langchain-together
 
-This package contains the LangChain integration for Together's generative models.
+This package contains the LangChain integrations for [Together AI](https://www.together.ai/) through their [APIs](https://docs.together.ai/).
 
-## Installation
+## Installation and Setup
 
-```sh
+- Install the LangChain partner package
+
+```bash
 pip install -U langchain-together
 ```
 
+- Get your Together AI api key from the [Together Dashboard](https://api.together.ai/settings/api-keys) and set it as an environment variable (`TOGETHER_API_KEY`)
+
+## Chat Completions
+
+This package contains the `ChatTogether` class, which is the recommended way to interface with Together AI chat models.
+
+ADD USAGE EXAMPLE HERE.
+Can we add this in the langchain docs?
+
+NEED to add image endpoint + completions endpoint as well
+
 ## Embeddings
 
-You can use Together's embedding models through `TogetherEmbeddings` class.
+See a [usage example](https://python.langchain.com/docs/integrations/text_embedding/together/)
 
-```py
-from langchain_together import TogetherEmbeddings
-
-embeddings = TogetherEmbeddings(
-    model='togethercomputer/m2-bert-80M-8k-retrieval'
-)
-embeddings.embed_query("What is a large language model?")
-```
-
-## LLMs
-
-You can use Together's generative AI models as Langchain LLMs:
-
-```py
-from langchain_together import Together
-from langchain_core.prompts import PromptTemplate
-
-llm = Together(
-    model="togethercomputer/RedPajama-INCITE-7B-Base",
-    temperature=0.7,
-    max_tokens=64,
-    top_k=1,
-    # together_api_key="..."
-)
-
-template = """Question: {question}
-Answer: """
-prompt = PromptTemplate.from_template(template)
-
-chain = prompt | llm
-
-question = "Who was the president in the year Justin Beiber was born?"
-print(chain.invoke({"question": question}))
-```
+Use `togethercomputer/m2-bert-80M-8k-retrieval` as the default model for embeddings.

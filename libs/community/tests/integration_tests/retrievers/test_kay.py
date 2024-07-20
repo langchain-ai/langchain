@@ -1,4 +1,5 @@
 """Integration test for Kay.ai API Wrapper."""
+
 import pytest
 from langchain_core.documents import Document
 

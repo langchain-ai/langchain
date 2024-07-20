@@ -1,3 +1,6 @@
+"""Module contains a few fake embedding models for testing purposes."""
+
+# Please do not add additional fake embedding model implementations here.
 import hashlib
 from typing import List
 
@@ -6,7 +9,21 @@ from langchain_core.pydantic_v1 import BaseModel
 
 
 class FakeEmbeddings(Embeddings, BaseModel):
-    """Fake embedding model."""
+    """Fake embedding model for unit testing purposes.
+
+    This embedding model creates embeddings by sampling from a normal distribution.
+
+    Do not use this outside of testing, as it is not a real embedding model.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.embeddings import FakeEmbeddings
+
+            fake_embeddings = FakeEmbeddings(size=100)
+            fake_embeddings.embed_documents(["hello world", "foo bar"])
+    """
 
     size: int
     """The size of the embedding vector."""
@@ -24,9 +41,21 @@ class FakeEmbeddings(Embeddings, BaseModel):
 
 
 class DeterministicFakeEmbedding(Embeddings, BaseModel):
-    """
-    Fake embedding model that always returns
-    the same embedding vector for the same text.
+    """Deterministic fake embedding model for unit testing purposes.
+
+    This embedding model creates embeddings by sampling from a normal distribution
+    with a seed based on the hash of the text.
+
+    Do not use this outside of testing, as it is not a real embedding model.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.embeddings import DeterministicFakeEmbedding
+
+            fake_embeddings = DeterministicFakeEmbedding(size=100)
+            fake_embeddings.embed_documents(["hello world", "foo bar"])
     """
 
     size: int
@@ -40,9 +69,7 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         return list(np.random.normal(size=self.size))
 
     def _get_seed(self, text: str) -> int:
-        """
-        Get a seed for the random generator, using the hash of the text.
-        """
+        """Get a seed for the random generator, using the hash of the text."""
         return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % 10**8
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

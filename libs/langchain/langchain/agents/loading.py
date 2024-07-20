@@ -31,7 +31,7 @@ def _load_agent_from_tools(
     return agent_cls.from_llm_and_tools(llm, tools, **combined_config)
 
 
-@deprecated("0.1.0", removal="0.2.0")
+@deprecated("0.1.0", removal="0.3.0")
 def load_agent_from_config(
     config: dict,
     llm: Optional[BaseLanguageModel] = None,
@@ -48,6 +48,9 @@ def load_agent_from_config(
 
     Returns:
         An agent executor.
+
+    Raises:
+        ValueError: If agent type is not specified in the config.
     """
     if "_type" not in config:
         raise ValueError("Must specify an agent Type in config")
@@ -87,7 +90,7 @@ def load_agent_from_config(
     return agent_cls(**combined_config)  # type: ignore
 
 
-@deprecated("0.1.0", removal="0.2.0")
+@deprecated("0.1.0", removal="0.3.0")
 def load_agent(
     path: Union[str, Path], **kwargs: Any
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
@@ -99,6 +102,10 @@ def load_agent(
 
     Returns:
         An agent executor.
+
+    Raises:
+        RuntimeError: If loading from the deprecated github-based
+            Hub is attempted.
     """
     if isinstance(path, str) and path.startswith("lc://"):
         raise RuntimeError(

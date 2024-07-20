@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import uuid
 from copy import deepcopy
 from typing import Any, Dict, List, Mapping, Optional, cast
 
+from bson import ObjectId
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -162,7 +162,7 @@ class MockCollection(Collection):
 
     def insert_many(self, to_insert: List[Any], *args, **kwargs) -> InsertManyResult:  # type: ignore
         mongodb_inserts = [
-            {"_id": str(uuid.uuid4()), "score": 1, **insert} for insert in to_insert
+            {"_id": ObjectId(), "score": 1, **insert} for insert in to_insert
         ]
         self._data.extend(mongodb_inserts)
         return self._insert_result or InsertManyResult(

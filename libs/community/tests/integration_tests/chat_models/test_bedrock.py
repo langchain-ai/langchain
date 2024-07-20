@@ -1,4 +1,5 @@
 """Test Bedrock chat model."""
+
 from typing import Any, cast
 
 import pytest
@@ -17,7 +18,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 @pytest.fixture
 def chat() -> BedrockChat:
-    return BedrockChat(model_id="anthropic.claude-v2", model_kwargs={"temperature": 0})
+    return BedrockChat(model_id="anthropic.claude-v2", model_kwargs={"temperature": 0})  # type: ignore[call-arg]
 
 
 @pytest.mark.scheduled
@@ -63,7 +64,7 @@ def test_chat_bedrock_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = BedrockChat(
+    chat = BedrockChat(  # type: ignore[call-arg]
         model_id="anthropic.claude-v2",
         streaming=True,
         callback_manager=callback_manager,
@@ -92,7 +93,7 @@ def test_chat_bedrock_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = BedrockChat(
+    chat = BedrockChat(  # type: ignore[call-arg]
         model_id="anthropic.claude-v2",
         callback_manager=callback_manager,
     )

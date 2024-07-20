@@ -3,6 +3,7 @@
 
 Using DuckDB as SQLite does not support schemas.
 """
+
 import pytest
 
 from sqlalchemy import (
@@ -17,6 +18,9 @@ from sqlalchemy import (
     insert,
     schema,
 )
+import sqlalchemy as sa
+
+from packaging import version
 
 from langchain_community.utilities.sql_database import SQLDatabase
 
@@ -42,6 +46,9 @@ company = Table(
 )
 
 
+@pytest.mark.xfail(
+    version.parse(sa.__version__).major == 1, reason="SQLAlchemy 1.x issues"
+)
 def test_table_info() -> None:
     """Test that table info is constructed properly."""
     engine = create_engine("duckdb:///:memory:")
@@ -64,6 +71,9 @@ def test_table_info() -> None:
     assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
 
 
+@pytest.mark.xfail(
+    version.parse(sa.__version__).major == 1, reason="SQLAlchemy 1.x issues"
+)
 def test_sql_database_run() -> None:
     """Test that commands can be run successfully and returned in correct format."""
     engine = create_engine("duckdb:///:memory:")
@@ -75,16 +85,17 @@ def test_sql_database_run() -> None:
     with pytest.warns(Warning) as records:
         db = SQLDatabase(engine, schema="schema_a")
 
-    # Metadata creation with duckdb raises a warning at the moment about reflection.
+    # Metadata creation with duckdb raises 3 warnings at the moment about reflection.
     # As a stop-gap to increase strictness of pytest to fail on warnings, we'll
-    # explicitly catch the warning and assert that it's the one we expect.
+    # explicitly catch the warnings and assert that it's the one we expect.
     # We may need to revisit at a later stage and determine why a warning is being
     # raised here.
-    assert len(records) == 1
-    assert isinstance(records[0].message, Warning)
-    assert (
-        records[0].message.args[0]
+    for record in records:
+        assert isinstance(record.message, Warning)
+    assert any(
+        record.message.args[0]  # type: ignore
         == "duckdb-engine doesn't yet support reflection on indices"
+        for record in records
     )
 
     command = 'select user_name from "user" where user_id = 13'

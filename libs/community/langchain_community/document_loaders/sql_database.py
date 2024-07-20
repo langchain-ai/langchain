@@ -1,6 +1,7 @@
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
 
-import sqlalchemy as sa
+from sqlalchemy.engine import RowMapping
+from sqlalchemy.sql.expression import Select
 
 from langchain_community.docstore.document import Document
 from langchain_community.document_loaders.base import BaseLoader
@@ -19,7 +20,7 @@ class SQLDatabaseLoader(BaseLoader):
 
     def __init__(
         self,
-        query: Union[str, sa.Select],
+        query: Union[str, Select],
         db: SQLDatabase,
         *,
         parameters: Optional[Dict[str, Any]] = None,
@@ -106,7 +107,7 @@ class SQLDatabaseLoader(BaseLoader):
 
     @staticmethod
     def page_content_default_mapper(
-        row: sa.RowMapping, column_names: Optional[List[str]] = None
+        row: RowMapping, column_names: Optional[List[str]] = None
     ) -> str:
         """
         A reasonable default function to convert a record into a "page content" string.
@@ -121,7 +122,7 @@ class SQLDatabaseLoader(BaseLoader):
 
     @staticmethod
     def metadata_default_mapper(
-        row: sa.RowMapping, column_names: Optional[List[str]] = None
+        row: RowMapping, column_names: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         A reasonable default function to convert a record into a "metadata" dictionary.

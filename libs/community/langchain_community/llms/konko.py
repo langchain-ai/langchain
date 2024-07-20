@@ -1,4 +1,5 @@
 """Wrapper around Konko AI's Completion API."""
+
 import logging
 import warnings
 from typing import Any, Dict, List, Optional
@@ -71,7 +72,7 @@ class Konko(LLM):
             import konko
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import konko python package. "
                 "Please install it with `pip install konko`."
             )

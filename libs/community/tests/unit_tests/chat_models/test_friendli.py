@@ -38,7 +38,7 @@ def chat_friendli(
 def test_friendli_token_is_secret_string(capsys: CaptureFixture) -> None:
     """Test if friendli token is stored as a SecretStr."""
     fake_token_value = "personal-access-token"
-    chat = ChatFriendli(friendli_token=fake_token_value)
+    chat = ChatFriendli(friendli_token=fake_token_value)  # type: ignore[arg-type]
     assert isinstance(chat.friendli_token, SecretStr)
     assert chat.friendli_token.get_secret_value() == fake_token_value
     print(chat.friendli_token, end="")  # noqa: T201

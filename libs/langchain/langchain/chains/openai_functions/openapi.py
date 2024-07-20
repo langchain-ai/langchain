@@ -6,7 +6,6 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from langchain_community.utilities.openapi import OpenAPISpec
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
@@ -17,9 +16,9 @@ from requests import Response
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.tools import APIOperation
 
 if TYPE_CHECKING:
+    from langchain_community.utilities.openapi import OpenAPISpec
     from openapi_pydantic import Parameter
 
 
@@ -77,7 +76,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
         if p.param_schema:
             schema = spec.get_schema(p.param_schema)
         else:
-            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore  # noqa: E501
+            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
@@ -100,6 +99,14 @@ def openapi_spec_to_openai_fn(
         Tuple of the OpenAI functions JSON schema and a default function for executing
             a request based on the OpenAI function schema.
     """
+    try:
+        from langchain_community.tools import APIOperation
+    except ImportError:
+        raise ImportError(
+            "Could not import langchain_community.tools. "
+            "Please install it with `pip install langchain-community`."
+        )
+
     if not spec.paths:
         return [], lambda: None
     functions = []
@@ -230,7 +237,7 @@ class SimpleRequestChain(Chain):
         else:
             try:
                 response = api_response.json()
-            except Exception:  # noqa: E722
+            except Exception:
                 response = api_response.text
         return {self.output_key: response}
 
@@ -255,6 +262,13 @@ def get_openapi_chain(
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
     """
+    try:
+        from langchain_community.utilities.openapi import OpenAPISpec
+    except ImportError as e:
+        raise ImportError(
+            "Could not import langchain_community.utilities.openapi. "
+            "Please install it with `pip install langchain-community`."
+        ) from e
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
@@ -266,7 +280,7 @@ def get_openapi_chain(
                 break
             except ImportError as e:
                 raise e
-            except Exception:  # noqa: E722
+            except Exception:
                 pass
         if isinstance(spec, str):
             raise ValueError(f"Unable to parse spec from source {spec}")

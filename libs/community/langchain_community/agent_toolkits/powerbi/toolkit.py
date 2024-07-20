@@ -1,4 +1,5 @@
 """Toolkit for interacting with a Power BI dataset."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Union
@@ -43,6 +44,15 @@ class PowerBIToolkit(BaseToolkit):
         code are appropriately scoped to the application.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        powerbi: The Power BI dataset.
+        llm: The language model to use.
+        examples: Optional. The examples for the prompt. Default is None.
+        max_iterations: Optional. The maximum iterations to run. Default is 5.
+        callback_manager: Optional. The callback manager. Default is None.
+        output_token_limit: Optional. The output token limit. Default is None.
+        tiktoken_model_name: Optional. The TikToken model name. Default is None.
     """
 
     powerbi: PowerBIDataset = Field(exclude=True)
@@ -66,7 +76,7 @@ class PowerBIToolkit(BaseToolkit):
                 powerbi=self.powerbi,
                 examples=self.examples,
                 max_iterations=self.max_iterations,
-                output_token_limit=self.output_token_limit,
+                output_token_limit=self.output_token_limit,  # type: ignore[arg-type]
                 tiktoken_model_name=self.tiktoken_model_name,
             ),
             InfoPowerBITool(powerbi=self.powerbi),

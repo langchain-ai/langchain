@@ -76,7 +76,7 @@ class AGEGraph(GraphStore):
         try:
             import psycopg2
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import psycopg2 python package. "
                 "Please install it with `pip install psycopg2`."
             )

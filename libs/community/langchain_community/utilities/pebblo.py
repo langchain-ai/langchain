@@ -45,16 +45,17 @@ dir_loader = [
 ]
 
 in_memory = ["DataFrameLoader"]
-remote_db = [
+cloud_folder = [
     "NotionDBLoader",
     "GoogleDriveLoader",
+    "SharePointLoader",
 ]
 
 LOADER_TYPE_MAPPING = {
     "file": file_loader,
     "dir": dir_loader,
     "in-memory": in_memory,
-    "remote_db": remote_db,
+    "cloud-folder": cloud_folder,
 }
 
 SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
@@ -63,93 +64,86 @@ logger = logging.getLogger(__name__)
 
 
 class IndexedDocument(Document):
-    id: str
+    """Pebblo Indexed Document."""
+
+    pb_id: str
+    """Unique ID of the document."""
 
 
 class Runtime(BaseModel):
-    """Pebblo Runtime.
-
-    Args:
-        type (Optional[str]): Runtime type. Defaults to ""
-        host (str): Hostname of runtime.
-        path (str): Current working directory path.
-        ip (Optional[str]): Ip of current runtime. Defaults to ""
-        platform (str): Platform details of current runtime.
-        os (str): OS name.
-        os_version (str): OS version.
-        language (str): Runtime kernel.
-        language_version (str): version of current runtime kernel.
-        runtime (Optional[str]) More runtime details. Defaults to ""
-    """
+    """Pebblo Runtime."""
 
     type: str = "local"
+    """Runtime type. Defaults to 'local'."""
     host: str
+    """Host name of the runtime."""
     path: str
+    """Current working directory path."""
     ip: Optional[str] = ""
+    """IP address of the runtime. Defaults to ''."""
     platform: str
+    """Platform details of the runtime."""
     os: str
+    """OS name."""
     os_version: str
+    """OS version."""
     language: str
+    """Runtime kernel."""
     language_version: str
+    """Version of the runtime kernel."""
     runtime: str = "local"
+    """More runtime details. Defaults to 'local'."""
 
 
 class Framework(BaseModel):
-    """Pebblo Framework instance.
-
-    Args:
-        name (str): Name of the Framework.
-        version (str): Version of the Framework.
-    """
+    """Pebblo Framework instance."""
 
     name: str
+    """Name of the Framework."""
     version: str
+    """Version of the Framework."""
 
 
 class App(BaseModel):
-    """Pebblo AI application.
-
-    Args:
-        name (str): Name of the app.
-        owner (str): Owner of the app.
-        description (Optional[str]): Description of the app.
-        load_id (str): Unique load_id of the app instance.
-        runtime (Runtime): Runtime details of app.
-        framework (Framework): Framework details of the app
-        plugin_version (str): Plugin version used for the app.
-    """
+    """Pebblo AI application."""
 
     name: str
+    """Name of the app."""
     owner: str
+    """Owner of the app."""
     description: Optional[str]
+    """Description of the app."""
     load_id: str
+    """Unique load_id of the app instance."""
     runtime: Runtime
+    """Runtime details of the app."""
     framework: Framework
+    """Framework details of the app."""
     plugin_version: str
+    """Plugin version used for the app."""
 
 
 class Doc(BaseModel):
-    """Pebblo document.
-
-    Args:
-        name (str): Name of app originating this document.
-        owner (str): Owner of app.
-        docs (list): List of documents with its metadata.
-        plugin_version (str): Pebblo plugin Version
-        load_id (str): Unique load_id of the app instance.
-        loader_details (dict): Loader details with its metadata.
-        loading_end (bool): Boolean, specifying end of loading of source.
-        source_owner (str): Owner of the source of the loader.
-    """
+    """Pebblo document."""
 
     name: str
+    """Name of app originating this document."""
     owner: str
+    """Owner of app."""
     docs: list
+    """List of documents with its metadata."""
     plugin_version: str
+    """Pebblo plugin Version"""
     load_id: str
+    """Unique load_id of the app instance."""
     loader_details: dict
+    """Loader details with its metadata."""
     loading_end: bool
+    """Boolean, specifying end of loading of source."""
     source_owner: str
+    """Owner of the source of the loader."""
+    classifier_location: str
+    """Location of the classifier."""
 
 
 def get_full_path(path: str) -> str:
@@ -169,7 +163,9 @@ def get_full_path(path: str) -> str:
         or (path in ["unknown", "-", "in-memory"])
     ):
         return path
-    full_path = pathlib.Path(path).resolve()
+    full_path = pathlib.Path(path)
+    if full_path.exists():
+        full_path = full_path.resolve()
     return str(full_path)
 
 
@@ -190,7 +186,7 @@ def get_loader_type(loader: str) -> str:
 
 def get_loader_full_path(loader: BaseLoader) -> str:
     """Return an absolute source path of source of loader based on the
-    keys present in Document object from loader.
+    keys present in Document.
 
     Args:
         loader (BaseLoader): Langchain document loader, derived from Baseloader.
@@ -234,6 +230,27 @@ def get_loader_full_path(loader: BaseLoader) -> str:
             location = "in-memory"
         elif isinstance(loader, NotionDBLoader):
             location = f"notiondb://{loader.database_id}"
+        elif loader.__class__.__name__ == "GoogleDriveLoader":
+            if loader_dict.get("folder_id"):
+                folder_id = loader_dict.get("folder_id")
+                location = f"https://drive.google.com/drive/u/2/folders/{folder_id}"
+            elif loader_dict.get("file_ids"):
+                file_ids = loader_dict.get("file_ids", [])
+                location = ", ".join(
+                    [
+                        f"https://drive.google.com/file/d/{file_id}/view"
+                        for file_id in file_ids
+                    ]
+                )
+            elif loader_dict.get("document_ids"):
+                document_ids = loader_dict.get("document_ids", [])
+                location = ", ".join(
+                    [
+                        f"https://docs.google.com/document/d/{doc_id}/edit"
+                        for doc_id in document_ids
+                    ]
+                )
+
     except Exception:
         pass
     return get_full_path(str(location))

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class BS4HTMLParser(BaseBlobParser):
-    """Pparse HTML files using `Beautiful Soup`."""
+    """Parse HTML files using `Beautiful Soup`."""
 
     def __init__(
         self,

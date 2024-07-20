@@ -227,7 +227,7 @@ class Typesense(VectorStore):
         try:
             from typesense import Client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import typesense python package. "
                 "Please install it with `pip install typesense`."
             )

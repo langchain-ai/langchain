@@ -97,7 +97,7 @@ We will first follow the standard MongoDB Atlas setup instructions [here](https:
 2. Create a new project (if not already done)
 3. Locate your MongoDB URI.
 
-This can be done by going to the deployement overview page and connecting to you database
+This can be done by going to the deployment overview page and connecting to you database
 
 ![Screenshot highlighting the 'Connect' button in MongoDB Atlas.](_images/connect.png "MongoDB Atlas Connect Button")
 

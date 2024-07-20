@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",
+    "AskNewsAPIWrapper",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
@@ -34,14 +35,15 @@ EXPECTED_ALL = [
     "NVIDIARivaTTS",
     "NVIDIARivaStream",
     "OpenWeatherMapAPIWrapper",
+    "OracleSummary",
     "OutlineAPIWrapper",
     "NutritionAIAPI",
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
-    "PythonREPL",
     "Requests",
     "RequestsWrapper",
+    "RememberizerAPIWrapper",
     "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",
@@ -58,6 +60,7 @@ EXPECTED_ALL = [
     "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
     "MerriamWebsterAPIWrapper",
+    "MojeekSearchAPIWrapper",
 ]
 
 

@@ -75,7 +75,7 @@ class NucliaUnderstandingAPI(BaseTool):
         else:
             self._config["NUA_KEY"] = key
         self._config["enable_ml"] = enable_ml
-        super().__init__()
+        super().__init__()  # type: ignore[call-arg]
 
     def _run(
         self,
@@ -220,7 +220,7 @@ class NucliaUnderstandingAPI(BaseTool):
                 data = MessageToJson(
                     pb,
                     preserving_proto_field_name=True,
-                    including_default_value_fields=True,
+                    including_default_value_fields=True,  # type: ignore
                 )
                 self._results[matching_id]["data"] = data
 

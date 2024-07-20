@@ -1,5 +1,5 @@
-"""Loader that uses Playwright to load a page, then uses unstructured to load the html.
-"""
+"""Loader that uses Playwright to load a page, then uses unstructured to parse html."""
+
 import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AsyncIterator, Dict, Iterator, List, Optional
@@ -57,7 +57,7 @@ class PlaywrightEvaluator(ABC):
 
 
 class UnstructuredHtmlEvaluator(PlaywrightEvaluator):
-    """Evaluates the page HTML content using the `unstructured` library."""
+    """Evaluate the page HTML content using the `unstructured` library."""
 
     def __init__(self, remove_selectors: Optional[List[str]] = None):
         """Initialize UnstructuredHtmlEvaluator."""

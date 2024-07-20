@@ -56,7 +56,7 @@ def test_backends(request: Any, backend: Any) -> None:
         index=index,
         embeddings=embeddings,
         search_field="title_embedding",
-        search_type="mmr",
+        search_type="mmr",  # type: ignore[arg-type]
         content_field="title",
         filters=filter_query,
     )

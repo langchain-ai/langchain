@@ -18,7 +18,7 @@ class PubmedQueryRun(BaseTool):
         "from biomedical literature, MEDLINE, life science journals, and online books. "
         "Input should be a search query."
     )
-    api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)
+    api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)  # type: ignore[arg-type]
 
     def _run(
         self,

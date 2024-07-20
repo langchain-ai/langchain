@@ -1,4 +1,5 @@
 """Web base loader class."""
+
 import asyncio
 import logging
 import warnings
@@ -9,11 +10,12 @@ import requests
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.utils.user_agent import get_user_agent
 
 logger = logging.getLogger(__name__)
 
 default_header_template = {
-    "User-Agent": "",
+    "User-Agent": get_user_agent(),
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
     ";q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
@@ -56,6 +58,8 @@ class WebBaseLoader(BaseLoader):
         bs_get_text_kwargs: Optional[Dict[str, Any]] = None,
         bs_kwargs: Optional[Dict[str, Any]] = None,
         session: Any = None,
+        *,
+        show_progress: bool = True,
     ) -> None:
         """Initialize loader.
 
@@ -67,6 +71,7 @@ class WebBaseLoader(BaseLoader):
             raise_for_status: Raise an exception if http status code denotes an error.
             bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
             bs_kwargs: kwargs for beatifulsoup4 web page parsing
+            show_progress: Show progress bar when loading pages.
         """
         # web_path kept for backwards-compatibility.
         if web_path and web_paths:
@@ -89,6 +94,7 @@ class WebBaseLoader(BaseLoader):
         self.default_parser = default_parser
         self.requests_kwargs = requests_kwargs or {}
         self.raise_for_status = raise_for_status
+        self.show_progress = show_progress
         self.bs_get_text_kwargs = bs_get_text_kwargs or {}
         self.bs_kwargs = bs_kwargs or {}
         if session:
@@ -134,6 +140,8 @@ class WebBaseLoader(BaseLoader):
                         ssl=None if self.session.verify else False,
                         cookies=self.session.cookies.get_dict(),
                     ) as response:
+                        if self.raise_for_status:
+                            response.raise_for_status()
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
                     if i == retries - 1:
@@ -173,11 +181,14 @@ class WebBaseLoader(BaseLoader):
             task = asyncio.ensure_future(self._fetch_with_rate_limit(url, semaphore))
             tasks.append(task)
         try:
-            from tqdm.asyncio import tqdm_asyncio
+            if self.show_progress:
+                from tqdm.asyncio import tqdm_asyncio
 
-            return await tqdm_asyncio.gather(
-                *tasks, desc="Fetching pages", ascii=True, mininterval=1
-            )
+                return await tqdm_asyncio.gather(
+                    *tasks, desc="Fetching pages", ascii=True, mininterval=1
+                )
+            else:
+                return await asyncio.gather(*tasks)
         except ImportError:
             warnings.warn("For better logging of progress, `pip install tqdm`")
             return await asyncio.gather(*tasks)

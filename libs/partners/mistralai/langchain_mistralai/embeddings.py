@@ -75,25 +75,27 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         )
         api_key_str = values["mistral_api_key"].get_secret_value()
         # todo: handle retries
-        values["client"] = httpx.Client(
-            base_url=values["endpoint"],
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key_str}",
-            },
-            timeout=values["timeout"],
-        )
+        if not values.get("client"):
+            values["client"] = httpx.Client(
+                base_url=values["endpoint"],
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {api_key_str}",
+                },
+                timeout=values["timeout"],
+            )
         # todo: handle retries and max_concurrency
-        values["async_client"] = httpx.AsyncClient(
-            base_url=values["endpoint"],
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key_str}",
-            },
-            timeout=values["timeout"],
-        )
+        if not values.get("async_client"):
+            values["async_client"] = httpx.AsyncClient(
+                base_url=values["endpoint"],
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {api_key_str}",
+                },
+                timeout=values["timeout"],
+            )
         if values["tokenizer"] is None:
             try:
                 values["tokenizer"] = Tokenizer.from_pretrained(

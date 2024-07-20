@@ -1,6 +1,11 @@
 import sys
 
-import tomllib
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    # for python 3.10 and below, which doesnt have stdlib tomllib
+    import tomli as tomllib
+
 from packaging.version import parse as parse_version
 import re
 
@@ -9,6 +14,7 @@ MIN_VERSION_LIBS = [
     "langchain-community",
     "langchain",
     "langchain-text-splitters",
+    "SQLAlchemy",
 ]
 
 
@@ -74,6 +80,4 @@ if __name__ == "__main__":
     # Call the function to get the minimum versions
     min_versions = get_min_version_from_toml(toml_file)
 
-    print(
-        " ".join([f"{lib}=={version}" for lib, version in min_versions.items()])
-    )  # noqa: T201
+    print(" ".join([f"{lib}=={version}" for lib, version in min_versions.items()]))
