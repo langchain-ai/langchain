@@ -75,7 +75,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _create_tool_content(content: Union[str, List[Union[str, Dict[Any, Any]]]]) -> str:
+def _create_tool_content(content: str) -> str:  # type: ignore[arg-type]
     """Convert tool content to dict scheme."""
     try:
         if isinstance(json.loads(content), dict):
