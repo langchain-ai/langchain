@@ -2194,7 +2194,7 @@ class Runnable(Generic[Input, Output], ABC):
         else:
             await run_manager.on_chain_end(final_output, inputs=final_input)
         finally:
-            if iterator is not None and hasattr(iterator_, "aclose"):
+            if iterator_ is not None and hasattr(iterator_, "aclose"):
                 await iterator_.aclose()
 
     @beta_decorator.beta(message="This API is in beta and may change in the future.")
