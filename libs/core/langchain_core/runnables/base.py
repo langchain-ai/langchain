@@ -2127,6 +2127,7 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
+        iterator_ = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
@@ -2193,7 +2194,7 @@ class Runnable(Generic[Input, Output], ABC):
         else:
             await run_manager.on_chain_end(final_output, inputs=final_input)
         finally:
-            if hasattr(iterator_, "aclose"):
+            if iterator_ is not None and hasattr(iterator_, "aclose"):
                 await iterator_.aclose()
 
     @beta_decorator.beta(message="This API is in beta and may change in the future.")
