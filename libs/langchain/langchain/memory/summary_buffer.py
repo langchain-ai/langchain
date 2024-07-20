@@ -19,34 +19,9 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
         """String buffer of memory."""
         return self.load_memory_variables({})[self.memory_key]
 
-    async def abuffer(self) -> Any:
-        """String buffer of memory asynchronously."""
-        return (
-            await self.abuffer_as_messages()
-            if self.return_messages
-            else await self.abuffer_as_str()
-        )
-
-    def _buffer_as_str(self, messages: List[BaseMessage]) -> str:
-        return get_buffer_string(
-            messages,
-            human_prefix=self.human_prefix,
-            ai_prefix=self.ai_prefix,
-        )
-
-    async def abuffer_as_str(self) -> str:
-        """Asynchronously expose buffer as string."""
-        messages = await self.chat_memory.aget_messages()
-        return self._buffer_as_str(messages)
-
-    @property
-    def buffer_as_messages(self) -> List[BaseMessage]:
-        """Expose buffer as a list of messages."""
-        return self.chat_memory.messages
-
-    async def abuffer_as_messages(self) -> List[BaseMessage]:
-        """Asynchronously expose buffer as a list of messages."""
-        return await self.chat_memory.aget_messages()
+    async def abuffer(self) -> Union[str, List[BaseMessage]]:
+        """Async memory buffer."""
+        return await self.aload_memory_variables({})[self.memory_key]
 
     @property
     def memory_variables(self) -> List[str]:
@@ -74,7 +49,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
 
     async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Asynchronously return key-value pairs given the text input to the chain."""
-        buffer = await self.abuffer()
+        buffer = await self.chat_memory.aget_messages()
         if self.moving_summary_buffer != "":
             first_messages: List[BaseMessage] = [
                 self.summary_message_cls(content=self.moving_summary_buffer)
