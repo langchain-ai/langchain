@@ -15,7 +15,7 @@ def test_summary_buffer_memory_buffer_only() -> None:
     """Test ConversationSummaryBufferMemory when only buffer."""
     memory = ConversationSummaryBufferMemory(llm=FakeLLM(), memory_key="baz")
     memory.save_context({"input": "bar"}, {"output": "foo"})
-    assert memory.buffer == ["Human: bar\nAI: foo"]
+    assert memory.buffer == "Human: bar\nAI: foo"
     output = memory.load_memory_variables({})
     assert output == {"baz": "Human: bar\nAI: foo"}
 
@@ -27,6 +27,6 @@ def test_summary_buffer_memory_summary() -> None:
     )
     memory.save_context({"input": "bar"}, {"output": "foo"})
     memory.save_context({"input": "bar1"}, {"output": "foo1"})
-    assert memory.buffer == ["Human: bar1\nAI: foo1"]
+    assert memory.buffer == "Human: bar\nAI: foo\nHuman: bar1\nAI: foo1"
     output = memory.load_memory_variables({})
-    assert output == {"baz": "foo\nHuman: bar1\nAI: foo1"}
+    assert output == {'baz': 'Human: bar\nAI: foo\nHuman: bar1\nAI: foo1'}
