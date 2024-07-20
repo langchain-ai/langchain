@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from operator import itemgetter
@@ -65,13 +66,22 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, (FunctionMessage, ToolMessage)):
         message_dict = {
             "role": "function",
-            "content": message.content,
+            "content": _create_tool_content(message.content),
             "name": message.name or message.additional_kwargs.get("name"),
         }
     else:
         raise TypeError(f"Got unknown type {message}")
 
     return message_dict
+
+
+def _create_tool_content(content: str) -> str:
+    """Convert tool content to json scheme."""
+    try:
+        json.loads(content)
+        return content
+    except json.JSONDecodeError:
+        return json.dumps({"original_content": content})
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
