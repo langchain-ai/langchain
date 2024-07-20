@@ -55,6 +55,7 @@ class WebBaseLoader(BaseLoader):
         default_parser: str = "html.parser",
         requests_kwargs: Optional[Dict[str, Any]] = None,
         raise_for_status: bool = False,
+        show_progress: bool = True,
         bs_get_text_kwargs: Optional[Dict[str, Any]] = None,
         bs_kwargs: Optional[Dict[str, Any]] = None,
         session: Any = None,
@@ -67,6 +68,7 @@ class WebBaseLoader(BaseLoader):
             default_parser: Default parser to use for BeautifulSoup.
             requests_kwargs: kwargs for requests
             raise_for_status: Raise an exception if http status code denotes an error.
+            show_progress: Show progress bar when loading pages.
             bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
             bs_kwargs: kwargs for beatifulsoup4 web page parsing
         """
@@ -91,6 +93,7 @@ class WebBaseLoader(BaseLoader):
         self.default_parser = default_parser
         self.requests_kwargs = requests_kwargs or {}
         self.raise_for_status = raise_for_status
+        self.show_progress = show_progress
         self.bs_get_text_kwargs = bs_get_text_kwargs or {}
         self.bs_kwargs = bs_kwargs or {}
         if session:
@@ -177,11 +180,14 @@ class WebBaseLoader(BaseLoader):
             task = asyncio.ensure_future(self._fetch_with_rate_limit(url, semaphore))
             tasks.append(task)
         try:
-            from tqdm.asyncio import tqdm_asyncio
+            if self.show_progress:
+                from tqdm.asyncio import tqdm_asyncio
 
-            return await tqdm_asyncio.gather(
-                *tasks, desc="Fetching pages", ascii=True, mininterval=1
-            )
+                return await tqdm_asyncio.gather(
+                    *tasks, desc="Fetching pages", ascii=True, mininterval=1
+                )
+            else:
+                return await asyncio.gather(*tasks)
         except ImportError:
             warnings.warn("For better logging of progress, `pip install tqdm`")
             return await asyncio.gather(*tasks)
