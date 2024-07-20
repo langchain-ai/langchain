@@ -22,7 +22,7 @@ def test_chat_qianfan_tool_result_to_model() -> None:
                     name="get_current_weather",
                     args={"location": "上海", "unit": "摄氏度"},
                     id="foo",
-                    type="function",
+                    type="tool_call",
                 ),
             ],
         ),
@@ -32,7 +32,7 @@ def test_chat_qianfan_tool_result_to_model() -> None:
             name="get_current_weather",
         ),
     ]
-    chat = QianfanChatEndpoint(model="ERNIE-3.5-8K")
+    chat = QianfanChatEndpoint(model="ERNIE-3.5-8K")  # type: ignore[call-arg]
     llm_with_tool = chat.bind_tools([get_current_weather])
     response = llm_with_tool.invoke(messages)
     assert isinstance(response, AIMessage)
