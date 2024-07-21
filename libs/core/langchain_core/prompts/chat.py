@@ -824,7 +824,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
             from langchain_core.prompts import ChatPromptTemplate
 
-            template = ChatPromptTemplate.from_messages([
+            template = ChatPromptTemplate([
                 ("system", "You are a helpful AI bot. Your name is {name}."),
                 ("human", "Hello, how are you doing?"),
                 ("ai", "I'm doing well, thanks!"),
@@ -855,7 +855,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             # you can initialize the template with a MessagesPlaceholder
             # either using the class directly or with the shorthand tuple syntax:
 
-            template = ChatPromptTemplate.from_messages([
+            template = ChatPromptTemplate([
                 ("system", "You are a helpful AI bot."),
                 # Means the template will receive an optional list of messages under
                 # the "conversation" key
@@ -897,7 +897,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
             from langchain_core.prompts import ChatPromptTemplate
 
-            template = ChatPromptTemplate.from_messages([
+            template = ChatPromptTemplate([
                 ("system", "You are a helpful AI bot. Your name is Carl."),
                 ("human", "{user_input}"),
             ])
@@ -920,6 +920,75 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""
+
+    def __init__(
+        self,
+        messages: Sequence[MessageLikeRepresentation],
+        *,
+        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
+        **kwargs: Any,
+    ) -> None:
+        """Create a chat prompt template from a variety of message formats.
+
+        Examples:
+
+            Instantiation from a list of message templates:
+
+            .. code-block:: python
+
+                template = ChatPromptTemplate([
+                    ("human", "Hello, how are you?"),
+                    ("ai", "I'm doing well, thanks!"),
+                    ("human", "That's good to hear."),
+                ])
+
+            Instantiation from mixed message formats:
+
+            .. code-block:: python
+
+                template = ChatPromptTemplate([
+                    SystemMessage(content="hello"),
+                    ("human", "Hello, how are you?"),
+                ])
+
+        Args:
+            messages: sequence of message representations.
+                  A message can be represented using the following formats:
+                  (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
+                  (message type, template); e.g., ("human", "{user_input}"),
+                  (4) 2-tuple of (message class, template), (4) a string which is
+                  shorthand for ("human", template); e.g., "{user_input}".
+            template_format: format of the template. Defaults to "f-string".
+
+        Returns:
+            A chat prompt template.
+        """
+        _messages = [
+            _convert_to_message(message, template_format) for message in messages
+        ]
+
+        # Automatically infer input variables from messages
+        input_vars: Set[str] = set()
+        optional_variables: Set[str] = set()
+        partial_vars: Dict[str, Any] = {}
+        for _message in _messages:
+            if isinstance(_message, MessagesPlaceholder) and _message.optional:
+                partial_vars[_message.variable_name] = []
+                optional_variables.add(_message.variable_name)
+            elif isinstance(
+                _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
+            ):
+                input_vars.update(_message.input_variables)
+
+        kwargs = {
+            **dict(
+                input_variables=sorted(input_vars),
+                optional_variables=sorted(optional_variables),
+                partial_variables=partial_vars,
+            ),
+            **kwargs,
+        }
+        cast(Type[ChatPromptTemplate], super()).__init__(messages=_messages, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
