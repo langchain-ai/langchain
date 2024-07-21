@@ -3,18 +3,16 @@ import os
 from typing import Dict, Iterable, List, Optional
 
 import aiohttp
-from pinecone import Pinecone as PineconeClient  # type: ignore
-
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
     SecretStr,
-    root_validator,
+    root_validator
 )
 from langchain_core.utils import convert_to_secret_str
-from .config import ModelConfig, MultilingualE5LargeConfig
+from pinecone import Pinecone as PineconeClient  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -26,20 +24,47 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_pinecone import PineconeEmbeddings
-            from langchain_pinecone import MultilingualE5LargeConfig
 
-            model = PineconeEmbeddings(model_config=MultilingualE5LargeConfig())
+            model = PineconeEmbeddings(model="multilingual-e5-large")
     """
-
+    # Clients
     _client: PineconeClient = Field(exclude=True)
     _async_client: aiohttp.ClientSession = Field(exclude=True)
-    model_config: ModelConfig = MultilingualE5LargeConfig()
-    """Config Embeddings model to use, for example 'MultilingualE5LargeConfig'."""
+    # Config
+    model: str
+    """Model to use for example 'multilingual-e5-large'."""
+    batch_size: Optional[int]
+    """Batch size for embedding documents."""
+    truncation: Optional[str] = "END"
+    """Truncation for embedding."""
+    query_params: Dict = Field(default_factory=dict)
+    """Parameters for embedding query."""
+    document_params: Dict = Field(default_factory=dict)
+    """Parameters for embedding document"""
+    #
     show_progress_bar: bool = False
     pinecone_api_key: Optional[SecretStr] = None
 
     class Config:
         extra = Extra.forbid
+
+    @root_validator(pre=True)
+    def set_default_config(cls, values):
+        """Set default configuration based on model."""
+        default_config_map = {
+            "multilingual-e5-large": {
+                "batch_size": 96,
+                "query_params": {"input_type": "query", "truncation": "END"},
+                "document_params": {"input_type": "passage", "truncation": "END"}
+            }
+        }
+        model = values.get("model")
+        if model in default_config_map:
+            config = default_config_map.get(model)
+            for key, value in config.items():
+                if key not in values:
+                    values[key] = value
+        return values
 
     @root_validator()
     def validate_environment(cls, values: dict) -> dict:
@@ -82,9 +107,9 @@ class PineconeEmbeddings(BaseModel, Embeddings):
                     "Please install with `pip install tqdm`."
                 ) from e
 
-            _iter = tqdm(range(0, len(texts), self.model_config.batch_size))
+            _iter = tqdm(range(0, len(texts), self.batch_size))
         else:
-            _iter = range(0, len(texts), self.model_config.batch_size)
+            _iter = range(0, len(texts), self.batch_size)
 
         return _iter
 
@@ -95,9 +120,9 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
             response = self._client.inference.embed(
-                model=self.model_config.model,
-                parameters=self.model_config.get_doc_parameters(),
-                inputs=texts[i: i + self.model_config.batch_size],
+                model=self.model,
+                parameters=self.document_params,
+                inputs=texts[i: i + self.batch_size],
             )
             embeddings.extend([r["values"] for r in response])
 
@@ -109,9 +134,9 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
             response = await self._aembed_texts(
-                model=self.model_config.model,
-                parameters=self.model_config.get_doc_parameters(),
-                texts=texts[i: i + self.model_config.batch_size],
+                model=self.model,
+                parameters=self.document_params,
+                texts=texts[i: i + self.batch_size],
             )
             embeddings.extend([r["values"] for r in response["data"]])
         return embeddings
@@ -119,16 +144,16 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
         return self._client.inference.embed(
-            model=self.model_config.model,
-            parameters=self.model_config.get_query_parameters(),
+            model=self.model,
+            parameters=self.query_params,
             inputs=[text]
         )[0]["values"]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Asynchronously embed query text."""
         response = await self._aembed_texts(
-            model=self.model_config.model,
-            parameters=self.model_config.get_doc_parameters(),
+            model=self.model,
+            parameters=self.document_params,
             texts=[text],
         )
         return response["data"][0]["values"]
