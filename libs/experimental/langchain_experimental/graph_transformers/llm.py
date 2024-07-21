@@ -773,13 +773,13 @@ class LLMGraphTransformer:
         """
         return [self.process_response(document, config) for document in documents]
 
-    async def aprocess_response(self, document: Document) -> GraphDocument:
+    async def aprocess_response(self, document: Document, config: Optional[RunnableConfig] = None) -> GraphDocument:
         """
         Asynchronously processes a single document, transforming it into a
         graph document.
         """
         text = document.page_content
-        raw_schema = await self.chain.ainvoke({"input": text})
+        raw_schema = await self.chain.ainvoke({"input": text}, config=config)
         raw_schema = cast(Dict[Any, Any], raw_schema)
         nodes, relationships = _convert_to_graph_document(raw_schema)
 
@@ -806,13 +806,13 @@ class LLMGraphTransformer:
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     async def aconvert_to_graph_documents(
-        self, documents: Sequence[Document]
+        self, documents: Sequence[Document], config: Optional[RunnableConfig] = None
     ) -> List[GraphDocument]:
         """
         Asynchronously convert a sequence of documents into graph documents.
         """
         tasks = [
-            asyncio.create_task(self.aprocess_response(document))
+            asyncio.create_task(self.aprocess_response(document, config))
             for document in documents
         ]
         results = await asyncio.gather(*tasks)
