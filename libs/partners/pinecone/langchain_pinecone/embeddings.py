@@ -35,8 +35,6 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     """Model to use for example 'multilingual-e5-large'."""
     batch_size: Optional[int]
     """Batch size for embedding documents."""
-    truncation: Optional[str] = "END"
-    """Truncation for embedding."""
     query_params: Dict = Field(default_factory=dict)
     """Parameters for embedding query."""
     document_params: Dict = Field(default_factory=dict)
