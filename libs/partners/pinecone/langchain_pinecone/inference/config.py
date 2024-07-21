@@ -1,10 +1,10 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import Dict, Optional
 
 from pydantic import BaseModel
 
 
-class ModelConfig(BaseModel):
+class ModelConfig(BaseModel, ABC):
     model: str
     batch_size: int
     dimension: int
