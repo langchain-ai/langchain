@@ -9,7 +9,9 @@ def test_default_config():
 
 
 def test_custom_config():
-    e = PineconeEmbeddings(pinecone_api_key=API_KEY, model="multilingual-e5-large", batch_size=128)
+    e = PineconeEmbeddings(
+        pinecone_api_key=API_KEY, model="multilingual-e5-large", batch_size=128
+    )
     assert e.batch_size == 128
 
 

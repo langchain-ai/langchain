@@ -4,6 +4,7 @@ from langchain_pinecone import PineconeEmbeddings
 
 DIMENSION = 1024
 
+
 @pytest.fixture()
 def client():
     return PineconeEmbeddings(model="multilingual-e5-large")

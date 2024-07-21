@@ -9,7 +9,7 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     SecretStr,
-    root_validator
+    root_validator,
 )
 from langchain_core.utils import convert_to_secret_str
 from pinecone import Pinecone as PineconeClient  # type: ignore
@@ -27,6 +27,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
 
             model = PineconeEmbeddings(model="multilingual-e5-large")
     """
+
     # Clients
     _client: PineconeClient = Field(exclude=True)
     _async_client: aiohttp.ClientSession = Field(exclude=True)
@@ -53,7 +54,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             "multilingual-e5-large": {
                 "batch_size": 96,
                 "query_params": {"input_type": "query", "truncation": "END"},
-                "document_params": {"input_type": "passage", "truncation": "END"}
+                "document_params": {"input_type": "passage", "truncation": "END"},
             }
         }
         model = values.get("model")
@@ -120,21 +121,20 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             response = self._client.inference.embed(
                 model=self.model,
                 parameters=self.document_params,
-                inputs=texts[i: i + self.batch_size],
+                inputs=texts[i : i + self.batch_size],
             )
             embeddings.extend([r["values"] for r in response])
 
         return embeddings
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-
         embeddings: List[List[float]] = []
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
             response = await self._aembed_texts(
                 model=self.model,
                 parameters=self.document_params,
-                texts=texts[i: i + self.batch_size],
+                texts=texts[i : i + self.batch_size],
             )
             embeddings.extend([r["values"] for r in response["data"]])
         return embeddings
@@ -142,9 +142,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
         return self._client.inference.embed(
-            model=self.model,
-            parameters=self.query_params,
-            inputs=[text]
+            model=self.model, parameters=self.query_params, inputs=[text]
         )[0]["values"]
 
     async def aembed_query(self, text: str) -> List[float]:
@@ -157,7 +155,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         return response["data"][0]["values"]
 
     async def _aembed_texts(
-            self, texts: List[str], model: str, parameters: dict
+        self, texts: List[str], model: str, parameters: dict
     ) -> Dict:
         data = {
             "model": model,
@@ -165,7 +163,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             "parameters": parameters,
         }
         async with self._async_client.post(
-                "https://api.pinecone.io/embed", json=data
+            "https://api.pinecone.io/embed", json=data
         ) as response:
             response_data = await response.json(content_type=None)
             return response_data
