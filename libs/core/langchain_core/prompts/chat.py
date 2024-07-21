@@ -930,6 +930,28 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     ) -> None:
         """Create a chat prompt template from a variety of message formats.
 
+        Args:
+            messages: sequence of message representations.
+                  A message can be represented using the following formats:
+                  (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
+                  (message type, template); e.g., ("human", "{user_input}"),
+                  (4) 2-tuple of (message class, template), (4) a string which is
+                  shorthand for ("human", template); e.g., "{user_input}".
+            template_format: format of the template. Defaults to "f-string".
+            input_variables: A list of the names of the variables whose values are
+                required as inputs to the prompt.
+            optional_variables: A list of the names of the variables that are optional
+                in the prompt.
+            partial_variables: A dictionary of the partial variables the prompt
+                template carries. Partial variables populate the template so that you
+                don't need to pass them in every time you call the prompt.
+            validate_template: Whether to validate the template.
+            input_types: A dictionary of the types of the variables the prompt template
+                expects. If not provided, all variables are assumed to be strings.
+
+        Returns:
+            A chat prompt template.
+
         Examples:
 
             Instantiation from a list of message templates:
@@ -951,17 +973,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     ("human", "Hello, how are you?"),
                 ])
 
-        Args:
-            messages: sequence of message representations.
-                  A message can be represented using the following formats:
-                  (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
-                  (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (4) a string which is
-                  shorthand for ("human", template); e.g., "{user_input}".
-            template_format: format of the template. Defaults to "f-string".
-
-        Returns:
-            A chat prompt template.
         """
         _messages = [
             _convert_to_message(message, template_format) for message in messages
