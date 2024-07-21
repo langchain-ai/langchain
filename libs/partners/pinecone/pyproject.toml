@@ -21,6 +21,7 @@ disallow_untyped_defs = "True"
 python = ">=3.8.1,<3.13"
 langchain-core = ">=0.1.52,<0.3"
 pinecone-client = ">=3.2.2,<5"
+aiohttp = "^3.9.5"
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
