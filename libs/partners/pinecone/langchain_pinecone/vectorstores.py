@@ -40,10 +40,9 @@ class PineconeVectorStore(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_pinecone import PineconeVectorStore
-            from langchain_openai import OpenAIEmbeddings
+            from langchain_pinecone import PineconeVectorStore, PineconeEmbeddings
 
-            embeddings = OpenAIEmbeddings()
+            embeddings = PineconeEmbeddings(model="multilingual-e5-large")
             index_name = "my-index"
             namespace = "my-namespace"
             vectorstore = Pinecone(
@@ -439,10 +438,10 @@ class PineconeVectorStore(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain_pinecone import PineconeVectorStore
-                from langchain_openai import OpenAIEmbeddings
+                from langchain_pinecone import PineconeVectorStore, PineconeEmbeddings
 
-                embeddings = OpenAIEmbeddings()
+                embeddings = PineconeEmbeddings(model="multilingual-e5-large")
+
                 index_name = "my-index"
                 vectorstore = PineconeVectorStore.from_texts(
                     texts,
