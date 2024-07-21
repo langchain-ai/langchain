@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import jsonpatch  # type: ignore[import]
 
@@ -20,8 +20,6 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables import RunnableSerializable
 from langchain_core.utils.function_calling import convert_to_openai_function
-
-T = TypeVar("T")
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -314,12 +312,12 @@ class OutputFunctionsFixingParser(OutputFunctionsParser):
     def from_llm(
         cls,
         llm: BaseChatModel,
-        parser: BaseGenerationOutputParser[T],
+        parser: BaseGenerationOutputParser,
         functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
         prompt: BasePromptTemplate = NAIVE_FUNCTIONS_FIX_PROMPT,
         instructions: str = NAIVE_FUNCTIONS_FIX_INSTRUCTIONS,
         max_retries: int = 1,
-    ) -> "OutputFunctionsFixingParser[T]":
+    ) -> "OutputFunctionsFixingParser":
         model = llm.bind(
             functions=[convert_to_openai_function(function) for function in functions]
         )
@@ -331,7 +329,7 @@ class OutputFunctionsFixingParser(OutputFunctionsParser):
             instructions=instructions,
         )
 
-    def parse_result(self, result: List[Generation], *, partial: bool = False) -> T:
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call using the wrapped parser.
         If the parsing fails, retry.
 
