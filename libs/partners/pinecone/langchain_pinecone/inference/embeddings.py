@@ -3,6 +3,8 @@ import os
 from typing import Dict, Iterable, List, Optional
 
 import aiohttp
+from pinecone import Pinecone as PineconeClient  # type: ignore
+
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -12,7 +14,7 @@ from langchain_core.pydantic_v1 import (
     root_validator,
 )
 from langchain_core.utils import convert_to_secret_str
-from pinecone import Pinecone as PineconeClient  # type: ignore
+from .config import ModelConfig, MultilingualE5LargeConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,29 +26,20 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_pinecone import PineconeEmbeddings
+            from langchain_pinecone import MultilingualE5LargeConfig
 
-            model = PineconeEmbeddings()
+            model = PineconeEmbeddings(model_config=MultilingualE5LargeConfig())
     """
 
     _client: PineconeClient = Field(exclude=True)
     _async_client: aiohttp.ClientSession = Field(exclude=True)
-    model: str
-    batch_size: int
+    model_config: ModelConfig = MultilingualE5LargeConfig()
+    """Config Embeddings model to use, for example 'MultilingualE5LargeConfig'."""
     show_progress_bar: bool = False
-    truncation: Optional[bool] = None
     pinecone_api_key: Optional[SecretStr] = None
 
     class Config:
         extra = Extra.forbid
-
-    @root_validator(pre=True)
-    def default_values(cls, values: dict) -> dict:
-        """Set default batch size"""
-
-        batch_size = values.get("batch_size")
-        if batch_size is None:
-            values["batch_size"] = 96
-        return values
 
     @root_validator()
     def validate_environment(cls, values: dict) -> dict:
@@ -89,9 +82,9 @@ class PineconeEmbeddings(BaseModel, Embeddings):
                     "Please install with `pip install tqdm`."
                 ) from e
 
-            _iter = tqdm(range(0, len(texts), self.batch_size))
+            _iter = tqdm(range(0, len(texts), self.model_config.batch_size))
         else:
-            _iter = range(0, len(texts), self.batch_size)  # type: ignore
+            _iter = range(0, len(texts), self.model_config.batch_size)
 
         return _iter
 
@@ -102,22 +95,23 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
             response = self._client.inference.embed(
-                model=self.model,
-                inputs=texts[i: i + self.batch_size],
-                parameters={"input_type": "passage", "truncation": "END"},
+                model=self.model_config.model,
+                parameters=self.model_config.get_doc_parameters(),
+                inputs=texts[i: i + self.model_config.batch_size],
             )
             embeddings.extend([r["values"] for r in response])
 
         return embeddings
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+
         embeddings: List[List[float]] = []
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
             response = await self._aembed_texts(
-                texts=texts[i: i + self.batch_size],
-                model=self.model,
-                parameters={"input_type": "passage", "truncation": "END"},
+                model=self.model_config.model,
+                parameters=self.model_config.get_doc_parameters(),
+                texts=texts[i: i + self.model_config.batch_size],
             )
             embeddings.extend([r["values"] for r in response["data"]])
         return embeddings
@@ -125,17 +119,17 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
         return self._client.inference.embed(
-            model=self.model,
-            inputs=[text],
-            parameters={"input_type": "query", "truncation": "END"},
+            model=self.model_config.model,
+            parameters=self.model_config.get_query_parameters(),
+            inputs=[text]
         )[0]["values"]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Asynchronously embed query text."""
         response = await self._aembed_texts(
+            model=self.model_config.model,
+            parameters=self.model_config.get_doc_parameters(),
             texts=[text],
-            model=self.model,
-            parameters={"input_type": "query", "truncation": "END"},
         )
         return response["data"][0]["values"]
 
