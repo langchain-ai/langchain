@@ -89,6 +89,10 @@ def convert_to_ollama_tool(tool: Any) -> Dict:
     if _is_pydantic_class(tool):
         schema = tool.construct().schema()
         name = schema["title"]
+    elif isinstance(tool, BaseTool):
+        schema = tool.tool_call_schema.schema()
+        name = tool.get_name()
+        description = tool.description
     elif _is_pydantic_object(tool):
         schema = tool.get_input_schema().schema()
         name = tool.get_name()
