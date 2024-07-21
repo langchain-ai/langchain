@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-couchbase"
-version = "0.0.2"
+version = "0.1.0"
 description = "An integration package connecting Couchbase and LangChain"
 authors = []
 readme = "README.md"
@@ -54,6 +54,7 @@ pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
 syrupy = "^4.0.2"
+langchain = "^0.2.9"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.6"

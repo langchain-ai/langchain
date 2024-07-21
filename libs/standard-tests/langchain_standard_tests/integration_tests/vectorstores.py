@@ -1,4 +1,5 @@
 """Test suite to test vectostores."""
+
 import inspect
 from abc import ABC, abstractmethod
 
