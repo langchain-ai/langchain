@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class ModelConfig(BaseModel):
     model: str
     batch_size: int
+    dimension: int
 
     @abstractmethod
     def get_query_parameters(self) -> Dict:
@@ -18,14 +19,11 @@ class ModelConfig(BaseModel):
         """Provide default parameters for documents; must be overridden in subclass."""
         pass
 
-    class Config:
-        validate_assignment = True
-        extra = "forbid"
-
 
 class MultilingualE5LargeConfig(ModelConfig):
     model = "multilingual-e5-large"
     batch_size = 96
+    dimension = 1024
     truncation: Optional[str] = None
 
     def get_query_parameters(self) -> Dict:
