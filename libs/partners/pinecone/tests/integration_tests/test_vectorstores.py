@@ -8,7 +8,7 @@ import pinecone  # type: ignore
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings  # type: ignore[import-not-found]
-from pinecone import PodSpec
+from pinecone import PodSpec  # type: ignore
 from pytest_mock import MockerFixture  # type: ignore[import-not-found]
 
 from langchain_pinecone import PineconeVectorStore
