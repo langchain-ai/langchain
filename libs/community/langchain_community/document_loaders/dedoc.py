@@ -284,28 +284,69 @@ class DedocBaseLoader(BaseLoader, ABC):
 
 class DedocFileLoader(DedocBaseLoader):
     """
-    Load files using `dedoc`.
+    DedocFileLoader document loader integration to load files using `dedoc`.
 
     The file loader automatically detects the file type (with the correct extension).
     The list of supported file types is gives at
     https://dedoc.readthedocs.io/en/latest/index.html#id1.
     Please see the documentation of DedocBaseLoader to get more details.
 
-    Examples
-    --------
-    ```python
-    from langchain_community.document_loaders import DedocFileLoader
+    Setup:
+        Install ``dedoc`` package.
 
-    loader = DedocFileLoader(
-        "example.pdf", split="page", pdf_with_text_layer="tabby", pages=":10"
-    )
-    docs = loader.load()
-    ```
+        .. code-block:: bash
 
-    References
-    ----------
-    https://dedoc.readthedocs.io/en/latest/index.html#id1
-    https://dedoc.readthedocs.io/en/latest/parameters/parameters.html
+            pip install -U dedoc
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import DedocFileLoader
+
+            loader = DedocFileLoader(
+                file_path="example.pdf",
+                # split=...,
+                # with_tables=...,
+                # pdf_with_text_layer=...,
+                # pages=...,
+                # ...
+            )
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
     """
 
     def _make_config(self) -> dict:
@@ -323,24 +364,73 @@ class DedocAPIFileLoader(DedocBaseLoader):
     Load files using `dedoc` API.
     The file loader automatically detects the file type (even with the wrong extension).
     By default, the loader makes a call to the locally hosted `dedoc` API.
-    You don't need to install `dedoc` library for using this loader.
+    More information about `dedoc` API can be found in `dedoc` documentation:
+        https://dedoc.readthedocs.io/en/latest/dedoc_api_usage/api.html
+
     Please see the documentation of DedocBaseLoader to get more details.
 
-    Examples
-    --------
-    ```python
-    from langchain_community.document_loaders import DedocAPIFileLoader
+    Setup:
+        You don't need to install `dedoc` library for using this loader.
+        Instead, the `dedoc` API needs to be run.
+        You may use Docker container for this purpose.
+        Please see `dedoc` documentation for more details:
+            https://dedoc.readthedocs.io/en/latest/getting_started/installation.html#install-and-run-dedoc-using-docker
 
-    loader = DedocAPIFileLoader(
-        "example.pdf", split="page", pdf_with_text_layer="tabby", pages=":10"
-    )
-    docs = loader.load()
-    ```
+        .. code-block:: bash
 
-    References
-    ----------
-    https://dedoc.readthedocs.io/en/latest/getting_started/installation.html#install-and-run-dedoc-using-docker
-    https://dedoc.readthedocs.io/en/latest/dedoc_api_usage/api.html
+            docker pull dedocproject/dedoc
+            docker run -p 1231:1231
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import DedocAPIFileLoader
+
+            loader = DedocAPIFileLoader(
+                file_path="example.pdf",
+                # url=...,
+                # split=...,
+                # with_tables=...,
+                # pdf_with_text_layer=...,
+                # pages=...,
+                # ...
+            )
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
     """
 
     def __init__(

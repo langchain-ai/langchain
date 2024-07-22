@@ -741,11 +741,68 @@ class AmazonTextractPDFLoader(BasePDFLoader):
 
 class DedocPDFLoader(DedocBaseLoader):
     """
-    Load PDF files using `dedoc`.
+    DedocPDFLoader document loader integration to load PDF files using `dedoc`.
     The file loader can automatically detect the correctness of a textual layer in the
         PDF document.
-    Note that `__init__` method supports dedoc_kwargs that differ from ones of
+    Note that `__init__` method supports parameters that differ from ones of
         DedocBaseLoader.
+
+    Setup:
+        Install ``dedoc`` package.
+
+        .. code-block:: bash
+
+            pip install -U dedoc
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import DedocPDFLoader
+
+            loader = DedocPDFLoader(
+                file_path="example.pdf",
+                # split=...,
+                # with_tables=...,
+                # pdf_with_text_layer=...,
+                # pages=...,
+                # ...
+            )
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
 
     Parameters used for document parsing via `dedoc`
         (https://dedoc.readthedocs.io/en/latest/parameters/pdf_handling.html):
@@ -768,22 +825,6 @@ class DedocPDFLoader(DedocBaseLoader):
         need_binarization: clean pages background (binarize) for PDF without a textual
             layer
         need_pdf_table_analysis: parse tables for PDF without a textual layer
-
-    Examples
-    --------
-    ```python
-    from langchain_community.document_loaders import DedocPDFLoader
-
-    loader = DedocPDFLoader(
-        "example.pdf", split="page", pdf_with_text_layer="tabby", pages=":10"
-    )
-    docs = loader.load()
-    ```
-
-    References
-    ----------
-    https://dedoc.readthedocs.io/en/latest/parameters/pdf_handling.html
-    https://dedoc.readthedocs.io/en/latest/modules/readers.html#dedoc.readers.PdfAutoReader
     """
 
     def _make_config(self) -> dict:
