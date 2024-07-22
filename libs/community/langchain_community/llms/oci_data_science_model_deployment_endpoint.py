@@ -35,10 +35,14 @@ DEFAULT_MODEL_NAME = "odsc-llm"
 
 
 class TokenExpiredError(Exception):
+    """Raises when token expired."""
+
     pass
 
 
 class ServerError(Exception):
+    """Raises when encounter server error when making inference."""
+
     pass
 
 
@@ -344,8 +348,17 @@ class BaseOCIModelDeployment(Serializable):
 
 
 class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
-    """Base class for LLM deployed on OCI Data Science Model Deployment.
+    """LLM deployed on OCI Data Science Model Deployment.
 
+    To use, you must provide the model HTTP endpoint from your deployed
+    model, e.g. https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict.
+
+    To authenticate, `oracle-ads` has been used to automatically load
+    credentials: https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
+
+    Make sure to have the required policies to access the OCI Data
+    Science Model Deployment endpoint. See:
+    https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm#model_dep_policies_auth__predict-endpoint
     Example:
 
         .. code-block:: python
@@ -354,6 +367,9 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
 
             llm = OCIModelDeploymentLLM(
                 endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
+                model="odsc-llm",
+                streaming=True,
+                model_kwargs={"frequency_penalty": 1.0},
             )
     """
 
@@ -436,8 +452,8 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
         Example:
             .. code-block:: python
 
-                response = oci_md.invoke("Tell me a joke.")
-                response = oci_md.generate(["Tell me a joke."])
+                response = llm.invoke("Tell me a joke.")
+                response = llm.generate(["Tell me a joke."])
         """
         prompts = [prompts] if isinstance(prompts, str) else prompts
         generations: List[List[Generation]] = []
@@ -479,8 +495,8 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
         Example:
             .. code-block:: python
 
-                response = await oci_md.ainvoke("Tell me a joke.")
-                response = await oci_md.agenerate(["Tell me a joke."])
+                response = await llm.ainvoke("Tell me a joke.")
+                response = await llm.agenerate(["Tell me a joke."])
         """  # noqa: E501
         prompts = [prompts] if isinstance(prompts, str) else prompts
         generations: List[List[Generation]] = []
@@ -530,7 +546,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
 
             .. code-block:: python
 
-            response = oci_md.stream("Tell me a joke.")
+            response = llm.stream("Tell me a joke.")
 
         """
         requests_kwargs = kwargs.pop("requests_kwargs", {})
@@ -575,7 +591,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
 
             .. code-block:: python
 
-            async for chunk in oci_md.astream(("Tell me a joke."):
+            async for chunk in llm.astream(("Tell me a joke."):
                 print(chunk, end="", flush=True)
 
         """
@@ -677,7 +693,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     """OCI Data Science Model Deployment TGI Endpoint.
 
     To use, you must provide the model HTTP endpoint from your deployed
-    model, e.g. https://<MD_OCID>/predict.
+    model, e.g. https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict.
 
     To authenticate, `oracle-ads` has been used to automatically load
     credentials: https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
@@ -689,10 +705,15 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import ModelDeploymentTGI
+            from langchain_community.llms import OCIModelDeploymentTGI
 
-            oci_md = ModelDeploymentTGI(
-                endpoint="https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict"
+            llm = OCIModelDeploymentTGI(
+                endpoint="https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict",
+                api="/v1/completions",
+                streaming=True,
+                temperature=0.2,
+                seed=42,
+                # other model parameters ...
             )
 
     """
@@ -815,9 +836,15 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
 
             from langchain_community.llms import OCIModelDeploymentVLLM
 
-            oci_md = OCIModelDeploymentVLLM(
+            llm = OCIModelDeploymentVLLM(
                 endpoint="https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict",
-                model="odsc-llm"
+                model="odsc-llm",
+                streaming=False,
+                temperature=0.2,
+                max_tokens=512,
+                n=3,
+                best_of=3,
+                # other model parameters
             )
 
     """
