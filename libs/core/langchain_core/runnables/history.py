@@ -45,13 +45,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     history for it; it is responsible for reading and updating the chat message
     history.
 
-    The formats supports for the inputs and outputs of the wrapped Runnable
+    The formats supported for the inputs and outputs of the wrapped Runnable
     are described below.
 
     RunnableWithMessageHistory must always be called with a config that contains
     the appropriate parameters for the chat message history factory.
 
-    By default the Runnable is expected to take a single configuration parameter
+    By default, the Runnable is expected to take a single configuration parameter
     called `session_id` which is a string. This parameter is used to create a new
     or look up an existing chat message history that matches the given session_id.
 
@@ -70,6 +70,19 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     For production use cases, you will want to use a persistent implementation
     of chat message history, such as ``RedisChatMessageHistory``.
 
+    Parameters:
+        get_session_history: Function that returns a new BaseChatMessageHistory.
+            This function should either take a single positional argument
+            `session_id` of type string and return a corresponding
+            chat message history instance.
+        input_messages_key: Must be specified if the base runnable accepts a dict
+            as input. The key in the input dict that contains the messages.
+        output_messages_key: Must be specified if the base Runnable returns a dict
+            as output. The key in the output dict that contains the messages.
+        history_messages_key: Must be specified if the base runnable accepts a dict
+            as input and expects a separate key for historical messages.
+        history_factory_config: Configure fields that should be passed to the
+            chat history factory. See ``ConfigurableFieldSpec`` for more details.
 
     Example: Chat message history with an in-memory implementation for testing.
 
@@ -287,9 +300,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                         ...
 
             input_messages_key: Must be specified if the base runnable accepts a dict
-                as input.
+                as input. Default is None.
             output_messages_key: Must be specified if the base runnable returns a dict
-                as output.
+                as output. Default is None.
             history_messages_key: Must be specified if the base runnable accepts a dict
                 as input and expects a separate key for historical messages.
             history_factory_config: Configure fields that should be passed to the
@@ -347,6 +360,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
+        """Get the configuration specs for the RunnableWithMessageHistory."""
         return get_unique_config_specs(
             super().config_specs + list(self.history_factory_config)
         )

@@ -124,8 +124,7 @@ _json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
 def parse_json_markdown(
     json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
 ) -> dict:
-    """
-    Parse a JSON string from a Markdown string.
+    """Parse a JSON string from a Markdown string.
 
     Args:
         json_string: The Markdown string.
@@ -175,6 +174,10 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
 
     Returns:
         The parsed JSON object as a Python dictionary.
+
+    Raises:
+        OutputParserException: If the JSON string is invalid or does not contain
+            the expected keys.
     """
     try:
         json_obj = parse_json_markdown(text)

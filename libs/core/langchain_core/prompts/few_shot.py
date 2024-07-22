@@ -18,7 +18,7 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -134,6 +134,12 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     template_format: Literal["f-string", "jinja2"] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the few shot prompt template."""
+        if "input_variables" not in kwargs and "example_prompt" in kwargs:
+            kwargs["input_variables"] = kwargs["example_prompt"].input_variables
+        super().__init__(**kwargs)
 
     @root_validator(pre=False, skip_on_failure=True)
     def template_is_valid(cls, values: Dict) -> Dict:
@@ -351,13 +357,17 @@ class FewShotChatMessagePromptTemplate(
             chain.invoke({"input": "What's 3+3?"})
     """
 
+    input_variables: List[str] = Field(default_factory=list)
+    """A list of the names of the variables the prompt template will use
+    to pass to the example_selector, if provided."""
+
+    example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
+    """The class to format each example."""
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return False
-
-    example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
-    """The class to format each example."""
 
     class Config:
         """Configuration for this pydantic object."""
