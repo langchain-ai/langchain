@@ -56,6 +56,7 @@ EXPECT_ALL = [
     "Modal",
     "MosaicML",
     "Nebula",
+    "OCIModelDeploymentLLM",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
     "OCIGenAI",
