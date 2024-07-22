@@ -710,7 +710,7 @@ def test_ignore_session_id() -> None:
         ]
 
     runnable = RunnableLambda(_fake_llm)
-    history = ChatMessageHistory()
+    history = InMemoryChatMessageHistory()
     with_message_history = RunnableWithMessageHistory(runnable, lambda: history)  # type: ignore
     _ = with_message_history.invoke("hello")
     _ = with_message_history.invoke("hello again")
