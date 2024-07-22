@@ -83,7 +83,7 @@ if __name__ == "__main__":
     # Get the TOML file path from the command line argument
     toml_file = sys.argv[1]
     versions_for = sys.argv[2]
-    assert version_for in ["release", "pull_request"]
+    assert versions_for in ["release", "pull_request"]
 
     # Call the function to get the minimum versions
     min_versions = get_min_version_from_toml(toml_file, versions_for)
