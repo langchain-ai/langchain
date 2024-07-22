@@ -81,7 +81,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
     include_project_metadata_in_doc_metadata: bool = True
     """Set to True if you want to include the project metadata in the doc metadata."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either local file paths are given, or remote API docset ID.
 

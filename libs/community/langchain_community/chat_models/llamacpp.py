@@ -46,10 +46,15 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 class ChatLlamaCpp(BaseChatModel):
@@ -525,21 +530,21 @@ class ChatLlamaCpp(BaseChatModel):
 
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         if schema is None:
             raise ValueError(
                 "schema must be specified when method is 'function_calling'. "
                 "Received None."
             )
-        llm = self.bind_tools([schema], tool_choice=True)
+        tool_name = convert_to_openai_tool(schema)["function"]["name"]
+        llm = self.bind_tools([schema], tool_choice=tool_name)
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[cast(Type, schema)], first_tool_only=True
             )
         else:
-            key_name = convert_to_openai_tool(schema)["function"]["name"]
             output_parser = JsonOutputKeyToolsParser(
-                key_name=key_name, first_tool_only=True
+                key_name=tool_name, first_tool_only=True
             )
 
         if include_raw:

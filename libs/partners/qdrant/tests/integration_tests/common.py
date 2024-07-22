@@ -4,6 +4,8 @@ import requests  # type: ignore
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
+from langchain_qdrant import SparseEmbeddings, SparseVector
+
 
 def qdrant_running_locally() -> bool:
     """Check if Qdrant is running at http://localhost:6333."""
@@ -31,29 +33,7 @@ def assert_documents_equals(actual: List[Document], expected: List[Document]):  
         assert actual_doc.metadata == expected_doc.metadata
 
 
-class FakeEmbeddings(Embeddings):
-    """Fake embeddings functionality for testing."""
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Return simple embeddings.
-        Embeddings encode each text as its index."""
-        return [[float(1.0)] * 9 + [float(i)] for i in range(len(texts))]
-
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.embed_documents(texts)
-
-    def embed_query(self, text: str) -> List[float]:
-        """Return constant query embeddings.
-        Embeddings are identical to embed_documents(texts)[0].
-        Distance to each text will be that text's index,
-        as it was passed to embed_documents."""
-        return [float(1.0)] * 9 + [float(0.0)]
-
-    async def aembed_query(self, text: str) -> List[float]:
-        return self.embed_query(text)
-
-
-class ConsistentFakeEmbeddings(FakeEmbeddings):
+class ConsistentFakeEmbeddings(Embeddings):
     """Fake embeddings which remember all the texts seen so far to return consistent
     vectors for the same texts."""
 
@@ -76,4 +56,30 @@ class ConsistentFakeEmbeddings(FakeEmbeddings):
     def embed_query(self, text: str) -> List[float]:
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown."""
+        return self.embed_documents([text])[0]
+
+
+class ConsistentFakeSparseEmbeddings(SparseEmbeddings):
+    """Fake sparse embeddings which remembers all the texts seen so far "
+    "to return consistent vectors for the same texts."""
+
+    def __init__(self, dimensionality: int = 25) -> None:
+        self.known_texts: List[str] = []
+        self.dimensionality = 25
+
+    def embed_documents(self, texts: List[str]) -> List[SparseVector]:
+        """Return consistent embeddings for each text seen so far."""
+        out_vectors = []
+        for text in texts:
+            if text not in self.known_texts:
+                self.known_texts.append(text)
+            index = self.known_texts.index(text)
+            indices = [i + index for i in range(self.dimensionality)]
+            values = [1.0] * (self.dimensionality - 1) + [float(index)]
+            out_vectors.append(SparseVector(indices=indices, values=values))
+        return out_vectors
+
+    def embed_query(self, text: str) -> SparseVector:
+        """Return consistent embeddings for the text, "
+        "if seen before, or a constant one if the text is unknown."""
         return self.embed_documents([text])[0]
