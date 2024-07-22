@@ -36,9 +36,11 @@ from langchain_core.messages import (
     InvalidToolCall,
     SystemMessage,
     ToolCall,
-    ToolCallChunk,
     ToolMessage,
 )
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -63,7 +65,7 @@ def _result_to_chunked_message(generated_result: ChatResult) -> ChatGenerationCh
     message = generated_result.generations[0].message
     if isinstance(message, AIMessage) and message.tool_calls is not None:
         tool_call_chunks = [
-            ToolCallChunk(
+            create_tool_call_chunk(
                 name=tool_call["name"],
                 args=json.dumps(tool_call["args"]),
                 id=tool_call["id"],
@@ -189,7 +191,7 @@ def _extract_tool_calls_from_edenai_response(
         for raw_tool_call in raw_tool_calls:
             try:
                 tool_calls.append(
-                    ToolCall(
+                    create_tool_call(
                         name=raw_tool_call["name"],
                         args=json.loads(raw_tool_call["arguments"]),
                         id=raw_tool_call["id"],
@@ -197,7 +199,7 @@ def _extract_tool_calls_from_edenai_response(
                 )
             except json.JSONDecodeError as exc:
                 invalid_tool_calls.append(
-                    InvalidToolCall(
+                    create_invalid_tool_call(
                         name=raw_tool_call.get("name"),
                         args=raw_tool_call.get("arguments"),
                         id=raw_tool_call.get("id"),

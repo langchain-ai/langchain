@@ -19,6 +19,8 @@ class SearchType(str, Enum):
 
     similarity = "similarity"
     """Similarity search."""
+    similarity_score_threshold = "similarity_score_threshold"
+    """Similarity search with a score threshold."""
     mmr = "mmr"
     """Maximal Marginal Relevance reranking of similarity search."""
 
@@ -64,6 +66,13 @@ class MultiVectorRetriever(BaseRetriever):
             sub_docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == SearchType.similarity_score_threshold:
+            sub_docs_and_similarities = (
+                self.vectorstore.similarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            sub_docs = [sub_doc for sub_doc, _ in sub_docs_and_similarities]
         else:
             sub_docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
 
@@ -89,6 +98,13 @@ class MultiVectorRetriever(BaseRetriever):
             sub_docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == SearchType.similarity_score_threshold:
+            sub_docs_and_similarities = (
+                await self.vectorstore.asimilarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            sub_docs = [sub_doc for sub_doc, _ in sub_docs_and_similarities]
         else:
             sub_docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs
