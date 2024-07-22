@@ -41,7 +41,7 @@ def test_FileLoader_with_multiple_files() -> None:
     assert docs[-1].metadata.get("filename") == "whatsapp_chat.txt"
 
 
-def test_FileLoader_with_post_processor(get_post_processor) -> None:
+def test_FileLoader_with_post_processor(get_post_processor: Callable[[str], str]) -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredFileLoader(
         file_path=file_path,
@@ -85,7 +85,7 @@ def test_FileLoader_single_mode() -> None:
 # -- UnstructuredAPIFileLoader -------------------------------
 
 
-def test_APIFileLoader_calls_get_elements_from_api(fake_element_response) -> None:
+def test_APIFileLoader_calls_get_elements_from_api(fake_element_response: list[Element]) -> None:
     """Test unstructured loader."""
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredAPIFileLoader(
@@ -96,7 +96,7 @@ def test_APIFileLoader_calls_get_elements_from_api(fake_element_response) -> Non
     )
 
     with mock.patch(
-        "langchain_community.document_loaders.unstructured._get_elements_from_api",
+        "langchain_community.document_loaders.unstructured.get_elements_from_api",
         return_value=fake_element_response,
     ) as mock_get_elements:
         docs = loader.load()
@@ -119,7 +119,7 @@ def test_APIFileLoader_calls_get_elements_from_api(fake_element_response) -> Non
 
 
 def test_APIFileLoader_with_multiple_files_calls_get_elements_from_api(
-    fake_multiple_docs_element_response,
+    fake_multiple_docs_element_response: list[Element],
 ) -> None:
     """Test unstructured loader."""
     file_paths = [
@@ -134,7 +134,7 @@ def test_APIFileLoader_with_multiple_files_calls_get_elements_from_api(
         strategy="fast",
     )
     with mock.patch(
-        "langchain_community.document_loaders.unstructured._get_elements_from_api",
+        "langchain_community.document_loaders.unstructured.get_elements_from_api",
         return_value=fake_multiple_docs_element_response,
     ) as mock_get_elements:
         docs = loader.load()
@@ -153,7 +153,7 @@ def test_APIFileLoader_with_multiple_files_calls_get_elements_from_api(
 
 
 def test_APIFileLoader_with_post_processors(
-    get_post_processor, fake_element_response
+    get_post_processor: Callable[[str], str], fake_element_response: list[Element]
 ) -> None:
     """Test UnstructuredAPIFileLoader._post_proceess_elements."""
     loader = UnstructuredAPIFileLoader(
@@ -165,7 +165,7 @@ def test_APIFileLoader_with_post_processors(
     )
 
     with mock.patch(
-        "langchain_community.document_loaders.unstructured._get_elements_from_api",
+        "langchain_community.document_loaders.unstructured.get_elements_from_api",
         return_value=fake_element_response,
     ) as mock_get_elements:
         docs = loader.load()
@@ -204,7 +204,7 @@ def test_FileIOLoader() -> None:
 # -- UnstructuredAPIFileIOLoader -------------------------------
 
 
-def test_APIFileIOLoader_calls_get_elements_from_api(fake_element_response) -> None:
+def test_APIFileIOLoader_calls_get_elements_from_api(fake_element_response: list[Element]) -> None:
     """Test unstructured loader."""
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
 
@@ -217,7 +217,7 @@ def test_APIFileIOLoader_calls_get_elements_from_api(fake_element_response) -> N
             strategy="fast",
         )
         with mock.patch(
-            "langchain_community.document_loaders.unstructured._get_elements_from_api",
+            "langchain_community.document_loaders.unstructured.get_elements_from_api",
             return_value=fake_element_response,
         ) as mock_get_elements:
             docs = loader.load()
@@ -236,7 +236,7 @@ def test_APIFileIOLoader_calls_get_elements_from_api(fake_element_response) -> N
 
 
 def test_APIFileIOLoader_with_multiple_files_calls_get_elements_from_api(
-    fake_multiple_docs_element_response,
+    fake_multiple_docs_element_response: list[Element],
 ) -> None:
     """Test unstructured loader."""
     file_paths = [
@@ -274,7 +274,7 @@ def test_APIFileIOLoader_with_multiple_files_calls_get_elements_from_api(
 
 
 def test_APIFileIOLoader_with_post_processors(
-    get_post_processor, fake_element_response
+    get_post_processor: Callable[[str], str], fake_element_response: list[Element]
 ) -> None:
     """Test unstructured loader."""
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")

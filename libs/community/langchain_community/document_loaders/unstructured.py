@@ -5,18 +5,47 @@ import io
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, Any, Callable, Iterator, Optional, Sequence, Union
+from typing import IO, TYPE_CHECKING, Any, Callable, Iterator, Optional, Sequence, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
 
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
+
 logger = logging.getLogger(__file__)
 
 
+def satisfies_min_unstructured_version(min_version: str) -> bool:
+    """Check if the installed `Unstructured` version exceeds the minimum version
+    for the feature in question."""
+    from unstructured.__version__ import __version__ as __unstructured_version__
+
+    min_version_tuple = tuple([int(x) for x in min_version.split(".")])
+
+    # NOTE(MthwRobinson) - enables the loader to work when you're using pre-release
+    # versions of unstructured like 0.4.17-dev1
+    _unstructured_version = __unstructured_version__.split("-")[0]
+    unstructured_version_tuple = tuple(
+        [int(x) for x in _unstructured_version.split(".")]
+    )
+
+    return unstructured_version_tuple >= min_version_tuple
+
+
+def validate_unstructured_version(min_unstructured_version: str) -> None:
+    """Raise an error if the `Unstructured` version does not exceed the
+    specified minimum."""
+    if not satisfies_min_unstructured_version(min_unstructured_version):
+        raise ValueError(
+            f"unstructured>={min_unstructured_version} is required in this loader."
+        )
+
+
 class UnstructuredBaseLoader(BaseLoader, ABC):
-    """Parent class for Unstructured Base Loaders."""
+    """Base Loader that uses `Unstructured`."""
 
     def __init__(
         self,
@@ -42,15 +71,15 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         self.post_processors = post_processors or []
 
     @abstractmethod
-    def _get_elements(self) -> list:
+    def _get_elements(self) -> list[Element]:
         """Get elements."""
 
     @abstractmethod
-    def _get_metadata(self) -> dict:
+    def _get_metadata(self) -> dict[str, Any]:
         """Get file_path metadata if available."""
 
     @abstractmethod
-    def _post_process_elements(self, elements: list) -> list:
+    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -120,7 +149,11 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 " set. `chunking_strategy` is preferred."
             )
 
-
+@deprecated(
+    since="0.2.8",
+    removal="0.4.0",
+    alternative_import="langchain_unstructured.UnstructuredLoader",
+)
 class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured`.
 
@@ -174,7 +207,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> list:
+    def _get_elements(self) -> list[Element]:
         from unstructured.partition.auto import partition
 
         if isinstance(self.file_path, list):
@@ -189,10 +222,10 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
                 self.file_path = str(self.file_path)
             return partition(filename=self.file_path, **self.unstructured_kwargs)
 
-    def _get_metadata(self) -> dict:
+    def _get_metadata(self) -> dict[str, Any]:
         return {"source": self.file_path}
 
-    def _post_process_elements(self, elements: list) -> list:
+    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -207,7 +240,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 @deprecated(
     since="0.2.8",
     removal="0.4.0",
-    alternative_import="langchain_unstructured.UnstructuredSDKFileLoader",
+    alternative_import="langchain_unstructured.UnstructuredLoader",
 )
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured` API.
@@ -232,7 +265,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     ```python
     from langchain_community.document_loaders import UnstructuredAPIFileLoader
 
-    loader = UnstructuredFileAPILoader(
+    loader = UnstructuredAPIFileLoader(
         "example.pdf", mode="elements", strategy="fast", api_key="MY_API_KEY",
     )
     docs = loader.load()
@@ -264,18 +297,18 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> list:
-        return _get_elements_from_api(
+    def _get_elements(self) -> list[Element]:
+        return get_elements_from_api(
             file_path=self.file_path,
             api_key=self.api_key,
             api_url=self.url,
             **self.unstructured_kwargs,
         )
 
-    def _get_metadata(self) -> dict:
+    def _get_metadata(self) -> dict[str, Any]:
         return {"source": self.file_path}
 
-    def _post_process_elements(self, elements: list) -> list:
+    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -286,7 +319,11 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
                 element.apply(post_processor)
         return elements
 
-
+@deprecated(
+    since="0.2.8",
+    removal="0.4.0",
+    alternative_import="langchain_unstructured.UnstructuredLoader",
+)
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Load file-like objects opened in read mode using `Unstructured`.
 
@@ -342,7 +379,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> list:
+    def _get_elements(self) -> list[Element]:
         from unstructured.partition.auto import partition
 
         if isinstance(self.file, io.IOBase):
@@ -350,10 +387,10 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
         else:
             raise ValueError("file must be of type IO.")
 
-    def _get_metadata(self) -> dict:
+    def _get_metadata(self) -> dict[str, Any]:
         return {}
 
-    def _post_process_elements(self, elements: list) -> list:
+    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -368,7 +405,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 @deprecated(
     since="0.2.8",
     removal="0.4.0",
-    alternative_import="langchain_unstructured.UnstructuredSDKFileIOLoader",
+    alternative_import="langchain_unstructured.UnstructuredLoader",
 )
 class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     """Send file-like objects with `unstructured-client` sdk to the Unstructured API.
@@ -394,7 +431,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     from langchain_community.document_loaders import UnstructuredAPIFileLoader
 
     with open("example.pdf", "rb") as f:
-        loader = UnstructuredFileAPILoader(
+        loader = UnstructuredAPIFileIOLoader(
             f, mode="elements", strategy="fast", api_key="MY_API_KEY",
         )
         docs = loader.load()
@@ -409,7 +446,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file: Union[IO, Sequence[IO]],
+        file: Union[IO[bytes], Sequence[IO[bytes]]],
         *,
         mode: str = "single",
         url: str = "https://api.unstructuredapp.io/general/v0/general",
@@ -428,9 +465,9 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> list:
+    def _get_elements(self) -> list[Element]:
         if self.unstructured_kwargs.get("metadata_filename"):
-            return _get_elements_from_api(
+            return get_elements_from_api(
                 file=self.file,
                 file_path=self.unstructured_kwargs.pop("metadata_filename"),
                 api_key=self.api_key,
@@ -443,10 +480,10 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
                 " metadata_filename must be specified as well.",
             )
 
-    def _get_metadata(self) -> dict:
+    def _get_metadata(self) -> dict[str, Any]:
         return {}
 
-    def _post_process_elements(self, elements: list) -> list:
+    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -458,13 +495,13 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
         return elements
 
 
-def _get_elements_from_api(
+def get_elements_from_api(
     file_path: Union[str, list[str], Path, list[Path], None] = None,
-    file: Union[IO, Sequence[IO], None] = None,
+    file: Union[IO[bytes], Sequence[IO[bytes]], None] = None,
     api_url: str = "https://api.unstructuredapp.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
-) -> list:
+) -> list[Element]:
     """Retrieve a list of elements from the `Unstructured API`."""
     if is_list := isinstance(file_path, list):
         file_path = [str(path) for path in file_path]
@@ -491,30 +528,4 @@ def _get_elements_from_api(
             api_key=api_key,
             api_url=api_url,
             **unstructured_kwargs,
-        )
-
-
-def satisfies_min_unstructured_version(min_version: str) -> bool:
-    """Check if the installed `Unstructured` version exceeds the minimum version
-    for the feature in question."""
-    from unstructured.__version__ import __version__ as __unstructured_version__
-
-    min_version_tuple = tuple([int(x) for x in min_version.split(".")])
-
-    # NOTE(MthwRobinson) - enables the loader to work when you're using pre-release
-    # versions of unstructured like 0.4.17-dev1
-    _unstructured_version = __unstructured_version__.split("-")[0]
-    unstructured_version_tuple = tuple(
-        [int(x) for x in _unstructured_version.split(".")]
-    )
-
-    return unstructured_version_tuple >= min_version_tuple
-
-
-def validate_unstructured_version(min_unstructured_version: str) -> None:
-    """Raise an error if the `Unstructured` version does not exceed the
-    specified minimum."""
-    if not satisfies_min_unstructured_version(min_unstructured_version):
-        raise ValueError(
-            f"unstructured>={min_unstructured_version} is required in this loader."
         )
