@@ -4,7 +4,6 @@ from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
-    Callable,
     Dict,
     Iterator,
     List,
@@ -14,8 +13,6 @@ from typing import (
     Union,
 )
 
-import aiohttp
-import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -26,62 +23,44 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
-from langchain_core.utils import (
-    get_from_dict_or_env,
-)
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
 from langchain_community.chat_models.openai import _convert_delta_to_message_chunk
-from langchain_community.utilities.requests import Requests
+from langchain_community.llms.oci_data_science_model_deployment_endpoint import (
+    DEFAULT_MODEL_NAME,
+    BaseOCIModelDeployment,
+)
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_TIME_OUT = 300
-DEFAULT_CONTENT_TYPE_JSON = "application/json"
-DEFAULT_MODEL_NAME = "odsc-llm"
 
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and issubclass(obj, BaseModel)
 
 
-class TokenExpiredError(Exception):
-    pass
-
-
-class ServerError(Exception):
-    pass
-
-
-def _create_retry_decorator(
-    llm,
-    *,
-    run_manager: Optional[
-        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
-    ] = None,
-) -> Callable[[Any], Any]:
-    """Create a retry decorator."""
-    errors = [requests.exceptions.ConnectTimeout, TokenExpiredError]
-    decorator = create_base_retry_decorator(
-        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
-    )
-    return decorator
-
-
-class ChatOCIModelDeploymentEndpoint(BaseChatModel):
+class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
     """OCI Data Science Model Deployment chat model integration.
+
+    To use, you must provide the model HTTP endpoint from your deployed
+    chat model, e.g. https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict.
+
+    To authenticate, `oracle-ads` has been used to automatically load
+    credentials: https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
+
+    Make sure to have the required policies to access the OCI Data
+    Science Model Deployment endpoint. See:
+    https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm#model_dep_policies_auth__predict-endpoint
 
     Instantiate:
         .. code-block:: python
@@ -91,7 +70,13 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             chat = ChatOCIModelDeploymentEndpoint(
                 endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
                 model="odsc-llm",
-                # other params...
+                streaming=True,
+                max_retries=3,
+                model_kwargs={
+                    "max_token": 512,
+                    "temperature": 0.2,
+                    # other model parameters ...
+                },
             )
 
     Invocation:
@@ -161,20 +146,37 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
         See ``ChatOCIModelDeploymentEndpoint.with_structured_output()`` for more.
 
+    Customized Usage:
+
+    You can inherit from base class and overrwrite the `_process_response`, `_process_stream_response`,
+    `_construct_json_body` for satisfying customized needed.
+
+        .. code-block:: python
+
+            class MyChatModel(ChatOCIModelDeploymentEndpoint):
+                def _process_stream_response(self, response_json: dict) -> ChatGenerationChunk:
+                    print("My customized streaming result handler.")
+                    return GenerationChunk(...)
+
+                def _process_response(self, response_json:dict) -> ChatResult:
+                    print("My customized output handler.")
+                    return ChatResult(...)
+
+                def _construct_json_body(self, messages: list, params: dict) -> dict:
+                    print("My customized payload handler.")
+                    return {
+                        "messages": messages,
+                        **params,
+                    }
+
+            chat = MyChatModel(
+                endpoint=f"https://modeldeployment.us-ashburn-1.oci.customer-oci.com/{ocid}/predict",
+                model="odsc-llm",
+            }
+
+            chat.invoke("tell me a joke")
+
     """  # noqa: E501
-
-    auth: dict = Field(default_factory=dict, exclude=True)
-    """ADS auth dictionary for OCI authentication:
-    https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html.
-    This can be generated by calling `ads.common.auth.api_keys()`
-    or `ads.common.auth.resource_principal()`. If this is not
-    provided then the `ads.common.default_signer()` will be used."""
-
-    endpoint: str = ""
-    """The uri of the endpoint from the deployed Model Deployment model."""
-
-    streaming: bool = False
-    """Whether to stream the results or not."""
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
@@ -182,50 +184,21 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     model: str = DEFAULT_MODEL_NAME
     """The name of the model."""
 
-    max_retries: int = 3
-    """Maximum number of retries to make when generating."""
-
     stop: Optional[List[str]] = None
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
-
-    @root_validator()
-    def validate_environment(  # pylint: disable=no-self-argument
-        cls, values: Dict
-    ) -> Dict:
-        """Validate that python package exists in environment."""
-        try:
-            import ads
-
-        except ImportError as ex:
-            raise ImportError(
-                "Could not import ads python package. "
-                "Please install it with `pip install oracle_ads`."
-            ) from ex
-        if not values.get("auth", None):
-            values["auth"] = ads.common.auth.default_signer()
-        values["endpoint"] = get_from_dict_or_env(
-            values,
-            "endpoint",
-            "OCI_LLM_ENDPOINT",
-        )
-        return values
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "oci_model_depolyment_chat_endpoint"
 
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
-        return True
-
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
+        _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint": self.endpoint},
+            **{"endpoint": self.endpoint, "model_kwargs": _model_kwargs},
             **self._default_params,
         }
 
@@ -236,7 +209,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             "model": self.model,
             "stop": self.stop,
             "stream": self.streaming,
-            **self.model_kwargs,
         }
 
     def _generate(
@@ -264,15 +236,16 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
 
             .. code-block:: python
 
-                from langchain_core.messages import HumanMessage, AIMessage
-
                 messages = [
-                            HumanMessage(content="hello!"),
-                            AIMessage(content="Hi there human!"),
-                            HumanMessage(content="Meow!")
-                          ]
+                    (
+                        "system",
+                        "You are a helpful assistant that translates English to French. Translate the user sentence.",
+                    ),
+                    ("human", "Hello World!"),
+                ]
+
                 response = chat.invoke(messages)
-        """
+        """  # noqa: E501
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
             stream_iter = self._stream(
@@ -533,218 +506,9 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         """Combines the invocation parameters with default parameters."""
         params = self._default_params
-        params["stop"] = stop or params["stop"]
-        return {**params, **kwargs}
-
-    def _headers(self, is_async=False, body=None) -> Dict:
-        """Construct and return the headers for a request.
-
-        Args:
-            is_async (bool, optional): Indicates if the request is asynchronous.
-                Defaults to `False`.
-            body (optional): The request body to be included in the headers if
-                the request is asynchronous.
-
-        Returns:
-            Dict: A dictionary containing the appropriate headers for the request.
-        """
-        if is_async:
-            signer = self.auth["signer"]
-            req = requests.Request("POST", self.endpoint, json=body)
-            req = req.prepare()
-            req = signer(req)
-            headers = {}
-            for key, value in req.headers.items():
-                headers[key] = value
-
-            if self.streaming:
-                headers.update(
-                    {"enable-streaming": "true", "Accept": "text/event-stream"}
-                )
-            return headers
-
-        return (
-            {
-                "Content-Type": DEFAULT_CONTENT_TYPE_JSON,
-                "enable-streaming": "true",
-                "Accept": "text/event-stream",
-            }
-            if self.streaming
-            else {
-                "Content-Type": DEFAULT_CONTENT_TYPE_JSON,
-            }
-        )
-
-    def completion_with_retry(
-        self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
-    ) -> Any:
-        """Use tenacity to retry the completion call."""
-        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
-
-        @retry_decorator
-        def _completion_with_retry(**kwargs: Any) -> Any:
-            try:
-                request_timeout = kwargs.pop("request_timeout", DEFAULT_TIME_OUT)
-                data = kwargs.pop("data")
-                stream = kwargs.pop("stream", self.streaming)
-
-                request = Requests(
-                    headers=self._headers(), auth=self.auth.get("signer")
-                )
-                response = request.post(
-                    url=self.endpoint,
-                    data=data,
-                    timeout=request_timeout,
-                    stream=stream,
-                    **kwargs,
-                )
-                self._check_response(response)
-                return response
-            except TokenExpiredError as e:
-                raise e
-            except Exception as err:
-                logger.debug(
-                    f"Requests payload: {data}. Requests arguments: "
-                    f"url={self.endpoint},timeout={request_timeout},stream={stream}."
-                    f"Additional request kwargs={kwargs}."
-                )
-                raise ValueError(
-                    f"Error occurs by inference endpoint: {str(err)}"
-                ) from err
-
-        return _completion_with_retry(**kwargs)
-
-    async def acompletion_with_retry(
-        self,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Use tenacity to retry the async completion call."""
-        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
-
-        @retry_decorator
-        async def _completion_with_retry(**kwargs: Any) -> Any:
-            try:
-                request_timeout = kwargs.pop("request_timeout", DEFAULT_TIME_OUT)
-                data = kwargs.pop("data")
-                stream = kwargs.pop("stream", self.streaming)
-
-                request = Requests(headers=self._headers(is_async=True, body=data))
-                if stream:
-                    response = request.apost(
-                        url=self.endpoint,
-                        data=data,
-                        timeout=request_timeout,
-                    )
-                    return self._aiter_sse(response)
-                else:
-                    async with request.apost(
-                        url=self.endpoint,
-                        data=data,
-                        timeout=request_timeout,
-                    ) as response:
-                        self._check_response(response)
-                        data = await response.json()
-                        return data
-            except TokenExpiredError as e:
-                raise e
-            except Exception as err:
-                logger.debug(
-                    f"Requests payload: `{data}`. "
-                    f"Stream mode={stream}. "
-                    f"Requests kwargs: url={self.endpoint}, timeout={request_timeout}."
-                )
-                raise ValueError(
-                    f"Error occurs by inference endpoint: {str(err)}"
-                ) from err
-
-        return await _completion_with_retry(**kwargs)
-
-    def _check_response(
-        self, response: Union[requests.Response, aiohttp.ClientResponse]
-    ) -> None:
-        """Handle server error by checking the response status.
-
-        Args:
-            response (Union[requests.Response, aiohttp.ClientResponse]):
-                The response object from either `requests` or `aiohttp` library.
-
-        Raises:
-            TokenExpiredError:
-                If the response status code is 401 and the token refresh is successful.
-            ServerError:
-                If any other HTTP error occurs.
-        """
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as http_err:
-            status_code = (
-                response.status_code
-                if hasattr(response, "status_code")
-                else response.status
-            )
-            if status_code == 401 and self._refresh_signer():
-                raise TokenExpiredError() from http_err
-            else:
-                raise ServerError(
-                    f"Server error: {str(http_err)}. \nMessage: {response.text}"
-                ) from http_err
-
-    def _parse_stream(self, lines: Iterator[bytes]) -> Iterator[str]:
-        """Parse a stream of byte lines and yield parsed string lines.
-
-        Args:
-            lines (Iterator[bytes]):
-                An iterator that yields lines in byte format.
-
-        Yields:
-            Iterator[str]:
-                An iterator that yields parsed lines as strings.
-        """
-        for line in lines:
-            _line = self._parse_stream_line(line)
-            if _line is not None:
-                yield _line
-
-    async def _parse_stream_async(
-        self,
-        lines: aiohttp.StreamReader,
-    ) -> AsyncIterator[str]:
-        """
-        Asynchronously parse a stream of byte lines and yield parsed string lines.
-
-        Args:
-            lines (aiohttp.StreamReader):
-                An `aiohttp.StreamReader` object that yields lines in byte format.
-
-        Yields:
-            AsyncIterator[str]:
-                An asynchronous iterator that yields parsed lines as strings.
-        """
-        async for line in lines:
-            _line = self._parse_stream_line(line)
-            if _line is not None:
-                yield _line
-
-    def _parse_stream_line(self, line: bytes) -> Optional[str]:
-        """Parse a single byte line and return a processed string line if valid.
-
-        Args:
-            line (bytes): A single line in byte format.
-
-        Returns:
-            Optional[str]:
-                The processed line as a string if valid, otherwise `None`.
-        """
-        line = line.strip()
-        if line:
-            line = line.decode("utf-8")
-            if "[DONE]" in line:
-                return None
-
-            if line.startswith("data:"):
-                return line[5:].lstrip()
-        return None
+        _model_kwargs = self.model_kwargs or {}
+        params["stop"] = stop or params.get("stop", [])
+        return {**params, **_model_kwargs, **kwargs}
 
     def _handle_sse_line(
         self, line: str, default_chunk_cls: AIMessageChunk
@@ -766,38 +530,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             return self._process_stream_response(obj, default_chunk_cls)
         except Exception:
             return ChatGenerationChunk()
-
-    async def _aiter_sse(
-        self,
-        async_cntx_mgr,
-    ) -> AsyncIterator[Dict]:
-        """Asynchronously iterate over server-sent events (SSE).
-
-        Args:
-            async_cntx_mgr: An asynchronous context manager that yields a client
-                response object.
-
-        Yields:
-            AsyncIterator[Dict]: An asynchronous iterator that yields parsed server-sent
-                event lines as dictionaries.
-        """
-        async with async_cntx_mgr as client_resp:
-            self._check_response(client_resp)
-            async for line in self._parse_stream_async(client_resp.content):
-                yield line
-
-    def _refresh_signer(self) -> None:
-        """Attempt to refresh the security token using the signer.
-
-        Returns:
-                bool: `True` if the token was successfully refreshed, `False` otherwise.
-        """
-        if self.auth.get("signer", None) and hasattr(
-            self.auth["signer"], "refresh_security_token"
-        ):
-            self.auth["signer"].refresh_security_token()
-            return True
-        return False
 
     def _construct_json_body(self, messages: list, params: dict) -> dict:
         """Constructs the request body as a dictionary (JSON).
@@ -910,7 +642,7 @@ class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
     """OCI large language chat models deployed with vLLM.
 
     To use, you must provide the model HTTP endpoint from your deployed
-    model, e.g. https://<MD_OCID>/predict.
+    model, e.g. https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict.
 
     To authenticate, `oracle-ads` has been used to automatically load
     credentials: https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
@@ -925,8 +657,13 @@ class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
 
             from langchain_community.chat_models import ChatOCIModelDeploymentEndpointVLLM
 
-            oci_md = ChatOCIModelDeploymentEndpointVLLM(
-                endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict"
+            chat = ChatOCIModelDeploymentEndpointVLLM(
+                endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
+                frequency_penalty=0.1,
+                max_tokens=512,
+                temperature=0.2,
+                top_p=1.0,
+                # other model parameters...
             )
 
     """  # noqa: E501

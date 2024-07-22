@@ -454,14 +454,15 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
             "temperature": self.temperature,
             "top_k": self.k,
             "top_p": self.p,
-            **self.model_kwargs,
         }
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
+        _model_kwargs = self.model_kwargs or {}
         return {
             **{"endpoint": self.endpoint},
+            **{"model_kwargs": _model_kwargs},
             **self._default_params,
         }
 
@@ -652,8 +653,9 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
     ) -> dict:
         """Combines the invocation parameters with default parameters."""
         params = self._default_params
+        _model_kwargs = self.model_kwargs or {}
         params["stop"] = stop or params.get("stop", [])
-        return {**params, **kwargs}
+        return {**params, **_model_kwargs, **kwargs}
 
     def _process_stream_response(self, response_json: dict) -> GenerationChunk:
         """Formats streaming response for OpenAI spec into GenerationChunk."""
@@ -798,7 +800,6 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
                 "stream": self.streaming,
                 "suffix": self.suffix,
                 "stop": self.stop,
-                **self.model_kwargs,
             }
             if self.api == "/v1/completions"
             else {
@@ -813,15 +814,19 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
                 "return_full_text": self.return_full_text,
                 "watermark": self.watermark,
                 "stop": self.stop,
-                **self.model_kwargs,
             }
         )
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
+        _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint": self.endpoint, "endpoint_spec": self.api},
+            **{
+                "endpoint": self.endpoint,
+                "api": self.api,
+                "model_kwargs": _model_kwargs,
+            },
             **self._default_params,
         }
 
@@ -926,5 +931,4 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             "top_k": self.k,
             "top_p": self.p,
             "use_beam_search": self.use_beam_search,
-            **self.model_kwargs,
         }

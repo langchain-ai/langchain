@@ -22,10 +22,10 @@ def test_initialization(mocker: MockerFixture) -> None:
     assert chat.model_kwargs == {"temperature": 0.2}
     assert chat._identifying_params == {
         "endpoint": chat.endpoint,
+        "model_kwargs": {"temperature": 0.2},
         "model": chat.model,
         "stop": chat.stop,
         "stream": chat.streaming,
-        "temperature": 0.2,
     }
 
 
