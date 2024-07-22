@@ -1,16 +1,16 @@
 import os
 
 from git import Repo
-from langchain.document_loaders.generic import GenericLoader
-from langchain.document_loaders.parsers import LanguageParser
-from langchain.embeddings import GPT4AllEmbeddings
-from langchain.llms.fireworks import Fireworks
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
+from langchain_chroma import Chroma
+from langchain_community.document_loaders.generic import GenericLoader
+from langchain_community.document_loaders.parsers import LanguageParser
+from langchain_community.embeddings import GPT4AllEmbeddings
+from langchain_community.llms.fireworks import Fireworks
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 
 # Check API key
 if os.environ.get("FIREWORKS_API_KEY", None) is None:

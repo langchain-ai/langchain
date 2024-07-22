@@ -1,4 +1,4 @@
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 # There are a few different templates to choose from
 # These are just different ways to generate hypothetical documents

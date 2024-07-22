@@ -27,7 +27,7 @@ class ModerationToxicityError(Exception):
 
 
 class ModerationPromptSafetyError(Exception):
-    """Exception raised if Intention entities are detected.
+    """Exception raised if Unsafe prompts are detected.
 
     Attributes:
         message -- explanation of the error

@@ -1,44 +1,25 @@
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.azure_blob_storage_file import (
-    AzureBlobStorageFileLoader,
-)
-from langchain.document_loaders.base import BaseLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import AzureBlobStorageContainerLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "AzureBlobStorageContainerLoader": "langchain_community.document_loaders"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AzureBlobStorageContainerLoader(BaseLoader):
-    """Load from `Azure Blob Storage` container."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, conn_str: str, container: str, prefix: str = ""):
-        """Initialize with connection string, container and blob prefix."""
-        self.conn_str = conn_str
-        """Connection string for Azure Blob Storage."""
-        self.container = container
-        """Container name."""
-        self.prefix = prefix
-        """Prefix for blob names."""
 
-    def load(self) -> List[Document]:
-        """Load documents."""
-        try:
-            from azure.storage.blob import ContainerClient
-        except ImportError as exc:
-            raise ImportError(
-                "Could not import azure storage blob python package. "
-                "Please install it with `pip install azure-storage-blob`."
-            ) from exc
-
-        container = ContainerClient.from_connection_string(
-            conn_str=self.conn_str, container_name=self.container
-        )
-        docs = []
-        blob_list = container.list_blobs(name_starts_with=self.prefix)
-        for blob in blob_list:
-            loader = AzureBlobStorageFileLoader(
-                self.conn_str,
-                self.container,
-                blob.name,  # type: ignore
-            )
-            docs.extend(loader.load())
-        return docs
+__all__ = [
+    "AzureBlobStorageContainerLoader",
+]

@@ -1,27 +1,23 @@
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import GutenbergLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"GutenbergLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GutenbergLoader(BaseLoader):
-    """Load from `Gutenberg.org`."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, file_path: str):
-        """Initialize with a file path."""
-        if not file_path.startswith("https://www.gutenberg.org"):
-            raise ValueError("file path must start with 'https://www.gutenberg.org'")
 
-        if not file_path.endswith(".txt"):
-            raise ValueError("file path must end with '.txt'")
-
-        self.file_path = file_path
-
-    def load(self) -> List[Document]:
-        """Load file."""
-        from urllib.request import urlopen
-
-        elements = urlopen(self.file_path)
-        text = "\n\n".join([str(el.decode("utf-8-sig")) for el in elements])
-        metadata = {"source": self.file_path}
-        return [Document(page_content=text, metadata=metadata)]
+__all__ = [
+    "GutenbergLoader",
+]

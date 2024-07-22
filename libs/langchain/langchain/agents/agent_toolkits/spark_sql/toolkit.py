@@ -1,35 +1,25 @@
-"""Toolkit for interacting with Spark SQL."""
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools import BaseTool
-from langchain.tools.spark_sql.tool import (
-    InfoSparkSQLTool,
-    ListSparkSQLTool,
-    QueryCheckerTool,
-    QuerySparkSQLTool,
-)
-from langchain.utilities.spark_sql import SparkSQL
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "SparkSQLToolkit": "langchain_community.agent_toolkits.spark_sql.toolkit"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SparkSQLToolkit(BaseToolkit):
-    """Toolkit for interacting with Spark SQL."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    db: SparkSQL = Field(exclude=True)
-    llm: BaseLanguageModel = Field(exclude=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return [
-            QuerySparkSQLTool(db=self.db),
-            InfoSparkSQLTool(db=self.db),
-            ListSparkSQLTool(db=self.db),
-            QueryCheckerTool(db=self.db, llm=self.llm),
-        ]
+__all__ = [
+    "SparkSQLToolkit",
+]

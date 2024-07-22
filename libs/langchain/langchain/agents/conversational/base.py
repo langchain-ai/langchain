@@ -1,21 +1,25 @@
 """An agent designed to hold a conversation in addition to using tools."""
+
 from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
+
+from langchain_core._api import deprecated
+from langchain_core.callbacks import BaseCallbackManager
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseTool
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.agent_types import AgentType
 from langchain.agents.conversational.output_parser import ConvoOutputParser
 from langchain.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.utils import validate_tools_single_input
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Field
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools.base import BaseTool
 
 
+@deprecated("0.1.0", alternative="create_react_agent", removal="0.3.0")
 class ConversationalAgent(Agent):
     """An agent that holds a conversation in addition to using tools."""
 
@@ -37,12 +41,20 @@ class ConversationalAgent(Agent):
 
     @property
     def observation_prefix(self) -> str:
-        """Prefix to append the observation with."""
+        """Prefix to append the observation with.
+
+        Returns:
+            "Observation: "
+        """
         return "Observation: "
 
     @property
     def llm_prefix(self) -> str:
-        """Prefix to append the llm call with."""
+        """Prefix to append the llm call with.
+
+        Returns:
+            "Thought: "
+        """
         return "Thought:"
 
     @classmethod
@@ -61,11 +73,15 @@ class ConversationalAgent(Agent):
         Args:
             tools: List of tools the agent will have access to, used to format the
                 prompt.
-            prefix: String to put before the list of tools.
-            suffix: String to put after the list of tools.
-            ai_prefix: String to use before AI output.
+            prefix: String to put before the list of tools. Defaults to PREFIX.
+            suffix: String to put after the list of tools. Defaults to SUFFIX.
+            format_instructions: Instructions on how to use the tools. Defaults to
+                FORMAT_INSTRUCTIONS
+            ai_prefix: String to use before AI output. Defaults to "AI".
             human_prefix: String to use before human output.
+                Defaults to "Human".
             input_variables: List of input variables the final prompt will expect.
+                Defaults to ["input", "chat_history", "agent_scratchpad"].
 
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
@@ -102,7 +118,26 @@ class ConversationalAgent(Agent):
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
-        """Construct an agent from an LLM and tools."""
+        """Construct an agent from an LLM and tools.
+
+        Args:
+            llm: The language model to use.
+            tools: A list of tools to use.
+            callback_manager: The callback manager to use. Default is None.
+            output_parser: The output parser to use. Default is None.
+            prefix: The prefix to use in the prompt. Default is PREFIX.
+            suffix: The suffix to use in the prompt. Default is SUFFIX.
+            format_instructions: The format instructions to use.
+                Default is FORMAT_INSTRUCTIONS.
+            ai_prefix: The prefix to use before AI output. Default is "AI".
+            human_prefix: The prefix to use before human output.
+                Default is "Human".
+            input_variables: The input variables to use. Default is None.
+            **kwargs: Any additional keyword arguments to pass to the agent.
+
+        Returns:
+            An agent.
+        """
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
             tools,
@@ -113,7 +148,7 @@ class ConversationalAgent(Agent):
             format_instructions=format_instructions,
             input_variables=input_variables,
         )
-        llm_chain = LLMChain(
+        llm_chain = LLMChain(  # type: ignore[misc]
             llm=llm,
             prompt=prompt,
             callback_manager=callback_manager,

@@ -1,8 +1,14 @@
 """Configuration for run evaluators."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+from langchain_core.embeddings import Embeddings
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langsmith import RunEvaluator
+from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
+from langsmith.schemas import Example, Run
 
 from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE
 from langchain.evaluation.embedding_distance.base import (
@@ -12,10 +18,14 @@ from langchain.evaluation.schema import EvaluatorType, StringEvaluator
 from langchain.evaluation.string_distance.base import (
     StringDistance as StringDistanceEnum,
 )
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema.embeddings import Embeddings
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.prompt_template import BasePromptTemplate
+
+RUN_EVALUATOR_LIKE = Callable[
+    [Run, Optional[Example]], Union[EvaluationResult, EvaluationResults, dict]
+]
+BATCH_EVALUATOR_LIKE = Callable[
+    [Sequence[Run], Optional[Sequence[Example]]],
+    Union[EvaluationResult, EvaluationResults, dict],
+]
 
 
 class EvalConfig(BaseModel):
@@ -54,12 +64,38 @@ class EvalConfig(BaseModel):
         return kwargs
 
 
+class SingleKeyEvalConfig(EvalConfig):
+    """Configuration for a run evaluator that only requires a single key."""
+
+    reference_key: Optional[str] = None
+    """The key in the dataset run to use as the reference string.
+    If not provided, we will attempt to infer automatically."""
+    prediction_key: Optional[str] = None
+    """The key from the traced run's outputs dictionary to use to
+    represent the prediction. If not provided, it will be inferred
+    automatically."""
+    input_key: Optional[str] = None
+    """The key from the traced run's inputs dictionary to use to represent the
+    input. If not provided, it will be inferred automatically."""
+
+    def get_kwargs(self) -> Dict[str, Any]:
+        kwargs = super().get_kwargs()
+        # Filer out the keys that are not needed for the evaluator.
+        for key in ["reference_key", "prediction_key", "input_key"]:
+            kwargs.pop(key, None)
+        return kwargs
+
+
+CUSTOM_EVALUATOR_TYPE = Union[RUN_EVALUATOR_LIKE, RunEvaluator, StringEvaluator]
+SINGLE_EVAL_CONFIG_TYPE = Union[EvaluatorType, str, EvalConfig]
+
+
 class RunEvalConfig(BaseModel):
     """Configuration for a run evaluation.
 
     Parameters
     ----------
-    evaluators : List[Union[EvaluatorType, EvalConfig]]
+    evaluators : List[Union[EvaluatorType, EvalConfig, RunEvaluator, Callable]]
         Configurations for which evaluators to apply to the dataset run.
         Each can be the string of an :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
         as EvaluatorType.QA, the evaluator type string ("qa"), or a configuration for a
@@ -85,18 +121,28 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """  # noqa: E501
 
-    evaluators: List[Union[EvaluatorType, str, EvalConfig]] = Field(
-        default_factory=list
-    )
+    evaluators: List[
+        Union[
+            SINGLE_EVAL_CONFIG_TYPE,
+            CUSTOM_EVALUATOR_TYPE,
+        ]
+    ] = Field(default_factory=list)
     """Configurations for which evaluators to apply to the dataset run.
     Each can be the string of an
     :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
     as `EvaluatorType.QA`, the evaluator type string ("qa"), or a configuration for a
     given evaluator
     (e.g., 
-    :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""  # noqa: E501
-    custom_evaluators: Optional[List[Union[RunEvaluator, StringEvaluator]]] = None
+    :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""
+    custom_evaluators: Optional[List[CUSTOM_EVALUATOR_TYPE]] = None
     """Custom evaluators to apply to the dataset run."""
+    batch_evaluators: Optional[List[BATCH_EVALUATOR_LIKE]] = None
+    """Evaluators that run on an aggregate/batch level.
+
+    These generate 1 or more metrics that are assigned to the full test run.
+    As a result, they are not associated with individual traces.
+    """
+
     reference_key: Optional[str] = None
     """The key in the dataset run to use as the reference string.
     If not provided, we will attempt to infer automatically."""
@@ -113,7 +159,7 @@ class RunEvalConfig(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    class Criteria(EvalConfig):
+    class Criteria(SingleKeyEvalConfig):
         """Configuration for a reference-free criteria evaluator.
 
         Parameters
@@ -132,9 +178,9 @@ class RunEvalConfig(BaseModel):
         def __init__(
             self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
         ) -> None:
-            super().__init__(criteria=criteria, **kwargs)
+            super().__init__(criteria=criteria, **kwargs)  # type: ignore[call-arg]
 
-    class LabeledCriteria(EvalConfig):
+    class LabeledCriteria(SingleKeyEvalConfig):
         """Configuration for a labeled (with references) criteria evaluator.
 
         Parameters
@@ -152,9 +198,9 @@ class RunEvalConfig(BaseModel):
         def __init__(
             self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
         ) -> None:
-            super().__init__(criteria=criteria, **kwargs)
+            super().__init__(criteria=criteria, **kwargs)  # type: ignore[call-arg]
 
-    class EmbeddingDistance(EvalConfig):
+    class EmbeddingDistance(SingleKeyEvalConfig):
         """Configuration for an embedding distance evaluator.
 
         Parameters
@@ -174,7 +220,7 @@ class RunEvalConfig(BaseModel):
         class Config:
             arbitrary_types_allowed = True
 
-    class StringDistance(EvalConfig):
+    class StringDistance(SingleKeyEvalConfig):
         """Configuration for a string distance evaluator.
 
         Parameters
@@ -196,7 +242,7 @@ class RunEvalConfig(BaseModel):
         """Whether to normalize the distance to between 0 and 1.
         Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
-    class QA(EvalConfig):
+    class QA(SingleKeyEvalConfig):
         """Configuration for a QA evaluator.
 
         Parameters
@@ -211,7 +257,7 @@ class RunEvalConfig(BaseModel):
         llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
-    class ContextQA(EvalConfig):
+    class ContextQA(SingleKeyEvalConfig):
         """Configuration for a context-based QA evaluator.
 
         Parameters
@@ -227,7 +273,7 @@ class RunEvalConfig(BaseModel):
         llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
-    class CoTQA(EvalConfig):
+    class CoTQA(SingleKeyEvalConfig):
         """Configuration for a context-based QA evaluator.
 
         Parameters
@@ -243,7 +289,7 @@ class RunEvalConfig(BaseModel):
         llm: Optional[BaseLanguageModel] = None
         prompt: Optional[BasePromptTemplate] = None
 
-    class JsonValidity(EvalConfig):
+    class JsonValidity(SingleKeyEvalConfig):
         """Configuration for a json validity evaluator.
 
         Parameters
@@ -261,7 +307,7 @@ class RunEvalConfig(BaseModel):
 
         evaluator_type: EvaluatorType = EvaluatorType.JSON_EQUALITY
 
-    class ExactMatch(EvalConfig):
+    class ExactMatch(SingleKeyEvalConfig):
         """Configuration for an exact match string evaluator.
 
         Parameters
@@ -274,12 +320,12 @@ class RunEvalConfig(BaseModel):
             Whether to ignore numbers when comparing strings.
         """
 
-        evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
+        evaluator_type: EvaluatorType = EvaluatorType.EXACT_MATCH
         ignore_case: bool = False
         ignore_punctuation: bool = False
         ignore_numbers: bool = False
 
-    class RegexMatch(EvalConfig):
+    class RegexMatch(SingleKeyEvalConfig):
         """Configuration for a regex match string evaluator.
 
         Parameters
@@ -291,7 +337,7 @@ class RunEvalConfig(BaseModel):
         evaluator_type: EvaluatorType = EvaluatorType.REGEX_MATCH
         flags: int = 0
 
-    class ScoreString(EvalConfig):
+    class ScoreString(SingleKeyEvalConfig):
         """Configuration for a score string evaluator.
         This is like the criteria evaluator but it is configured by
         default to return a score on the scale from 1-10.
@@ -324,7 +370,7 @@ class RunEvalConfig(BaseModel):
             normalize_by: Optional[float] = None,
             **kwargs: Any,
         ) -> None:
-            super().__init__(criteria=criteria, normalize_by=normalize_by, **kwargs)
+            super().__init__(criteria=criteria, normalize_by=normalize_by, **kwargs)  # type: ignore[call-arg]
 
     class LabeledScoreString(ScoreString):
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_SCORE_STRING

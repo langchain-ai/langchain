@@ -1,52 +1,23 @@
-"""
-Adapted from https://github.com/venuv/langchain_yt_tools
+from typing import TYPE_CHECKING, Any
 
-CustomYTSearchTool searches YouTube videos related to a person
-and returns a specified number of video URLs.
-Input to this tool should be a comma separated list,
- - the first part contains a person name
- - and the second(optional) a number that is the
-    maximum number of video results to return
- """
-import json
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools import BaseTool
+if TYPE_CHECKING:
+    from langchain_community.tools import YouTubeSearchTool
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"YouTubeSearchTool": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class YouTubeSearchTool(BaseTool):
-    """Tool that queries YouTube."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "youtube_search"
-    description: str = (
-        "search for youtube videos associated with a person. "
-        "the input to this tool should be a comma separated list, "
-        "the first part contains a person name and the second a "
-        "number that is the maximum number of video results "
-        "to return aka num_results. the second part is optional"
-    )
 
-    def _search(self, person: str, num_results: int) -> str:
-        from youtube_search import YoutubeSearch
-
-        results = YoutubeSearch(person, num_results).to_json()
-        data = json.loads(results)
-        url_suffix_list = [
-            "https://www.youtube.com" + video["url_suffix"] for video in data["videos"]
-        ]
-        return str(url_suffix_list)
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        values = query.split(",")
-        person = values[0]
-        if len(values) > 1:
-            num_results = int(values[1])
-        else:
-            num_results = 2
-        return self._search(person, num_results)
+__all__ = [
+    "YouTubeSearchTool",
+]

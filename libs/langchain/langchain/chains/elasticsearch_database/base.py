@@ -1,16 +1,19 @@
 """Chain for interacting with Elasticsearch Database."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseLLMOutputParser
+from langchain_core.output_parsers.json import SimpleJsonOutputParser
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Extra, root_validator
+
 from langchain.chains.base import Chain
 from langchain.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.output_parsers.json import SimpleJsonOutputParser
-from langchain.pydantic_v1 import Extra, root_validator
-from langchain.schema import BaseLLMOutputParser, BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -25,7 +28,7 @@ class ElasticsearchDatabaseChain(Chain):
         .. code-block:: python
 
             from langchain.chains import ElasticsearchDatabaseChain
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from elasticsearch import Elasticsearch
 
             database = Elasticsearch("http://localhost:9200")
@@ -54,7 +57,7 @@ class ElasticsearchDatabaseChain(Chain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_indices(cls, values: dict) -> dict:
         if values["include_indices"] and values["ignore_indices"]:
             raise ValueError(

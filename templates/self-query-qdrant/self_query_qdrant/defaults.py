@@ -1,5 +1,5 @@
 from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 # Qdrant collection name
 DEFAULT_COLLECTION_NAME = "restaurants"

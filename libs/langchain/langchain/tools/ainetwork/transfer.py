@@ -1,33 +1,28 @@
-import json
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.ainetwork.base import AINBaseTool
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.tools import AINTransfer
+    from langchain_community.tools.ainetwork.transfer import TransferSchema
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "TransferSchema": "langchain_community.tools.ainetwork.transfer",
+    "AINTransfer": "langchain_community.tools",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class TransferSchema(BaseModel):
-    """Schema for transfer operations."""
-
-    address: str = Field(..., description="Address to transfer AIN to")
-    amount: int = Field(..., description="Amount of AIN to transfer")
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-class AINTransfer(AINBaseTool):
-    """Tool for transfer operations."""
-
-    name: str = "AINtransfer"
-    description: str = "Transfers AIN to a specified address"
-    args_schema: Type[TransferSchema] = TransferSchema
-
-    async def _arun(
-        self,
-        address: str,
-        amount: int,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        try:
-            res = await self.interface.wallet.transfer(address, amount, nonce=-1)
-            return json.dumps(res, ensure_ascii=False)
-        except Exception as e:
-            return f"{type(e).__name__}: {str(e)}"
+__all__ = [
+    "TransferSchema",
+    "AINTransfer",
+]

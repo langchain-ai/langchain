@@ -1,17 +1,23 @@
-"""Base class for Amadeus tools."""
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING
-
-from langchain.pydantic_v1 import Field
-from langchain.tools.amadeus.utils import authenticate
-from langchain.tools.base import BaseTool
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from amadeus import Client
+    from langchain_community.tools.amadeus.base import AmadeusBaseTool
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"AmadeusBaseTool": "langchain_community.tools.amadeus.base"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AmadeusBaseTool(BaseTool):
-    """Base Tool for Amadeus."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    client: Client = Field(default_factory=authenticate)
+
+__all__ = [
+    "AmadeusBaseTool",
+]

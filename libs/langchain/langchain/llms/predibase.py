@@ -1,50 +1,23 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.base import LLM
-from langchain.pydantic_v1 import Field
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.llms import Predibase
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"Predibase": "langchain_community.llms"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class Predibase(LLM):
-    """Use your Predibase models with Langchain.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    To use, you should have the ``predibase`` python package installed,
-    and have your Predibase API key.
-    """
 
-    model: str
-    predibase_api_key: str
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-
-    @property
-    def _llm_type(self) -> str:
-        return "predibase"
-
-    def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        try:
-            from predibase import PredibaseClient
-
-            pc = PredibaseClient(token=self.predibase_api_key)
-        except ImportError as e:
-            raise ImportError(
-                "Could not import Predibase Python package. "
-                "Please install it with `pip install predibase`."
-            ) from e
-        except ValueError as e:
-            raise ValueError("Your API key is not correct. Please try again") from e
-        # load model and version
-        results = pc.prompt(prompt, model_name=self.model)
-        return results[0].response
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        """Get the identifying parameters."""
-        return {
-            **{"model_kwargs": self.model_kwargs},
-        }
+__all__ = [
+    "Predibase",
+]

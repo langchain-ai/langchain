@@ -1,0 +1,150 @@
+# Astra DB
+
+> [DataStax Astra DB](https://docs.datastax.com/en/astra/home/astra.html) is a serverless 
+> vector-capable database built on `Apache Cassandra®`and made conveniently available
+> through an easy-to-use JSON API.
+
+See a [tutorial provided by DataStax](https://docs.datastax.com/en/astra/astra-db-vector/tutorials/chatbot.html).
+
+## Installation and Setup
+
+Install the following Python package:
+```bash
+pip install "langchain-astradb>=0.1.0"
+```
+
+Get the [connection secrets](https://docs.datastax.com/en/astra/astra-db-vector/get-started/quickstart.html).
+Set up the following environment variables:
+
+```python
+ASTRA_DB_APPLICATION_TOKEN="TOKEN"
+ASTRA_DB_API_ENDPOINT="API_ENDPOINT"
+```
+
+## Vector Store
+
+```python
+from langchain_astradb import AstraDBVectorStore
+
+vector_store = AstraDBVectorStore(
+    embedding=my_embedding,
+    collection_name="my_store",
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/vectorstores/astradb).
+
+See the [example provided by DataStax](https://docs.datastax.com/en/astra/astra-db-vector/integrations/langchain.html).
+
+## Chat message history
+
+```python
+from langchain_astradb import AstraDBChatMessageHistory
+
+message_history = AstraDBChatMessageHistory(
+    session_id="test-session",
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+)
+```
+
+See the [usage example](/docs/integrations/memory/astradb_chat_message_history#example).
+
+## LLM Cache
+
+```python
+from langchain.globals import set_llm_cache
+from langchain_astradb import AstraDBCache
+
+set_llm_cache(AstraDBCache(
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+))
+```
+
+Learn more in the [example notebook](/docs/integrations/llm_caching#astra-db-caches) (scroll to the Astra DB section).
+
+
+## Semantic LLM Cache
+
+```python
+from langchain.globals import set_llm_cache
+from langchain_astradb import AstraDBSemanticCache
+
+set_llm_cache(AstraDBSemanticCache(
+    embedding=my_embedding,
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+))
+```
+
+Learn more in the [example notebook](/docs/integrations/llm_caching#astra-db-caches) (scroll to the appropriate section).
+
+Learn more in the [example notebook](/docs/integrations/memory/astradb_chat_message_history).
+
+## Document loader
+
+```python
+from langchain_astradb import AstraDBLoader
+
+loader = AstraDBLoader(
+    collection_name="my_collection",
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/document_loaders/astradb).
+
+## Self-querying retriever
+
+```python
+from langchain_astradb import AstraDBVectorStore
+from langchain.retrievers.self_query.base import SelfQueryRetriever
+
+vector_store = AstraDBVectorStore(
+    embedding=my_embedding,
+    collection_name="my_store",
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+)
+
+retriever = SelfQueryRetriever.from_llm(
+    my_llm,
+    vector_store,
+    document_content_description,
+    metadata_field_info
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/retrievers/self_query/astradb).
+
+## Store
+
+```python
+from langchain_astradb import AstraDBStore
+
+store = AstraDBStore(
+    collection_name="my_kv_store",
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/stores/astradb#astradbstore).
+
+## Byte Store
+
+```python
+from langchain_astradb import AstraDBByteStore
+
+store = AstraDBByteStore(
+    collection_name="my_kv_store",
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+)
+```
+
+Learn more in the [example notebook](/docs/integrations/stores/astradb#astradbbytestore).

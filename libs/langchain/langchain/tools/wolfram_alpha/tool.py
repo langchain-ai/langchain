@@ -1,28 +1,23 @@
-"""Tool for the Wolfram Alpha API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import WolframAlphaQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"WolframAlphaQueryRun": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class WolframAlphaQueryRun(BaseTool):
-    """Tool that queries using the Wolfram Alpha SDK."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "wolfram_alpha"
-    description: str = (
-        "A wrapper around Wolfram Alpha. "
-        "Useful for when you need to answer questions about Math, "
-        "Science, Technology, Culture, Society and Everyday Life. "
-        "Input should be a search query."
-    )
-    api_wrapper: WolframAlphaAPIWrapper
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the WolframAlpha tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "WolframAlphaQueryRun",
+]

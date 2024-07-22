@@ -17,6 +17,7 @@ EXPECTED_ALL = [
     "SystemMessage",
     "messages_from_dict",
     "messages_to_dict",
+    "message_to_dict",
     "_message_to_dict",
     "_message_from_dict",
     "get_buffer_string",

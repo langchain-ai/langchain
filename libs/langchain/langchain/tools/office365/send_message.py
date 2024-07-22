@@ -1,67 +1,28 @@
-from typing import List, Optional, Type
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.office365.base import O365BaseTool
+from langchain._api import create_importer
 
+if TYPE_CHECKING:
+    from langchain_community.tools import O365SendMessage
+    from langchain_community.tools.office365.send_message import SendMessageSchema
 
-class SendMessageSchema(BaseModel):
-    """Input for SendMessageTool."""
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "SendMessageSchema": "langchain_community.tools.office365.send_message",
+    "O365SendMessage": "langchain_community.tools",
+}
 
-    body: str = Field(
-        ...,
-        description="The message body to be sent.",
-    )
-    to: List[str] = Field(
-        ...,
-        description="The list of recipients.",
-    )
-    subject: str = Field(
-        ...,
-        description="The subject of the message.",
-    )
-    cc: Optional[List[str]] = Field(
-        None,
-        description="The list of CC recipients.",
-    )
-    bcc: Optional[List[str]] = Field(
-        None,
-        description="The list of BCC recipients.",
-    )
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class O365SendMessage(O365BaseTool):
-    """Tool for sending an email in Office 365."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "send_email"
-    description: str = (
-        "Use this tool to send an email with the provided message fields."
-    )
-    args_schema: Type[SendMessageSchema] = SendMessageSchema
 
-    def _run(
-        self,
-        body: str,
-        to: List[str],
-        subject: str,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        # Get mailbox object
-        mailbox = self.account.mailbox()
-        message = mailbox.new_message()
-
-        # Assign message values
-        message.body = body
-        message.subject = subject
-        message.to.add(to)
-        if cc is not None:
-            message.cc.add(cc)
-        if bcc is not None:
-            message.bcc.add(cc)
-
-        message.send()
-
-        output = "Message sent: " + str(message)
-        return output
+__all__ = [
+    "SendMessageSchema",
+    "O365SendMessage",
+]

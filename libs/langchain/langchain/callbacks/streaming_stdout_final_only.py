@@ -1,8 +1,9 @@
 """Callback Handler streams to stdout on new llm token."""
+
 import sys
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.callbacks import StreamingStdOutCallbackHandler
 
 DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 

@@ -2,8 +2,8 @@
 
 import unittest
 
-from langchain.chat_models.anthropic import ChatAnthropic
-from langchain.chat_models.bedrock import BedrockChat
+from langchain_community.chat_models.anthropic import ChatAnthropic
+from langchain_community.chat_models.bedrock import BedrockChat
 
 from langchain_experimental.llms.anthropic_functions import AnthropicFunctions
 
@@ -14,7 +14,7 @@ class TestAnthropicFunctions(unittest.TestCase):
     """
 
     def test_default_chat_anthropic(self) -> None:
-        base_model = AnthropicFunctions(model="claude-2")
+        base_model = AnthropicFunctions(model="claude-2")  # type: ignore[call-arg]
         self.assertIsInstance(base_model.model, ChatAnthropic)
 
         # bind functions
@@ -64,7 +64,7 @@ class TestAnthropicFunctions(unittest.TestCase):
             accessKeyId: process.env.BEDROCK_AWS_ACCESS_KEY_ID!,
           },
         });"""
-        llm = BedrockChat(
+        llm = BedrockChat(  # type: ignore[call-arg]
             model_id="anthropic.claude-v2",
             model_kwargs={"temperature": 0.1},
             region_name="us-east-1",

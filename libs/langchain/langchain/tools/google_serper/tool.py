@@ -1,69 +1,27 @@
-"""Tool for the Serper.dev Google Search API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.google_serper import GoogleSerperAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import GoogleSerperResults, GoogleSerperRun
 
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "GoogleSerperRun": "langchain_community.tools",
+    "GoogleSerperResults": "langchain_community.tools",
+}
 
-class GoogleSerperRun(BaseTool):
-    """Tool that queries the Serper.dev Google search API."""
-
-    name: str = "google_serper"
-    description: str = (
-        "A low-cost Google Search API."
-        "Useful for when you need to answer questions about current events."
-        "Input should be a search query."
-    )
-    api_wrapper: GoogleSerperAPIWrapper
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return str(self.api_wrapper.run(query))
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-        return (await self.api_wrapper.arun(query)).__str__()
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GoogleSerperResults(BaseTool):
-    """Tool that queries the Serper.dev Google Search API
-    and get back json."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "google_serper_results_json"
-    description: str = (
-        "A low-cost Google Search API."
-        "Useful for when you need to answer questions about current events."
-        "Input should be a search query. Output is a JSON object of the query results"
-    )
-    api_wrapper: GoogleSerperAPIWrapper = Field(default_factory=GoogleSerperAPIWrapper)
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return str(self.api_wrapper.results(query))
-
-    async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool asynchronously."""
-
-        return (await self.api_wrapper.aresults(query)).__str__()
+__all__ = [
+    "GoogleSerperRun",
+    "GoogleSerperResults",
+]

@@ -82,13 +82,13 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag_supabase
+langchain app new my-app --package rag-supabase
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag_supabase
+langchain app add rag-supabase
 ```
 
 And add the following code to your `server.py` file:
@@ -101,7 +101,7 @@ add_routes(app, rag_supabase_chain, path="/rag-supabase")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell
@@ -127,7 +127,7 @@ We can access the template from code with:
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag_supabase")
+runnable = RemoteRunnable("http://localhost:8000/rag-supabase")
 ```
 
 TODO: Add details about setting up the Supabase database

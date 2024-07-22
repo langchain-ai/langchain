@@ -1,10 +1,10 @@
 from typing import Any, Dict, List
 
-from langchain.schema import BaseMemory
+from langchain_core.memory import BaseMemory
 
 
 class ReadOnlySharedMemory(BaseMemory):
-    """A memory wrapper that is read-only and cannot be changed."""
+    """Memory wrapper that is read-only and cannot be changed."""
 
     memory: BaseMemory
 

@@ -1,26 +1,23 @@
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.utilities.arxiv import ArxivAPIWrapper
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import ArxivLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"ArxivLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class ArxivLoader(BaseLoader):
-    """Load a query result from `Arxiv`.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    The loader converts the original PDF format into the text.
 
-    Args:
-        Supports all arguments of `ArxivAPIWrapper`.
-    """
-
-    def __init__(
-        self, query: str, doc_content_chars_max: Optional[int] = None, **kwargs: Any
-    ):
-        self.query = query
-        self.client = ArxivAPIWrapper(
-            doc_content_chars_max=doc_content_chars_max, **kwargs
-        )
-
-    def load(self) -> List[Document]:
-        return self.client.load(self.query)
+__all__ = [
+    "ArxivLoader",
+]

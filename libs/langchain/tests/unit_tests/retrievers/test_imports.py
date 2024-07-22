@@ -1,17 +1,24 @@
-from langchain.retrievers import __all__
+from langchain import retrievers
 
 EXPECTED_ALL = [
     "AmazonKendraRetriever",
+    "AmazonKnowledgeBasesRetriever",
     "ArceeRetriever",
     "ArxivRetriever",
+    "AzureAISearchRetriever",
     "AzureCognitiveSearchRetriever",
-    "ChatGPTPluginRetriever",
-    "ContextualCompressionRetriever",
+    "BM25Retriever",
     "ChaindeskRetriever",
+    "ChatGPTPluginRetriever",
     "CohereRagRetriever",
+    "ContextualCompressionRetriever",
+    "DocArrayRetriever",
+    "DriaRetriever",
     "ElasticSearchBM25Retriever",
-    "GoogleDocumentAIWarehouseRetriever",
+    "EmbedchainRetriever",
+    "EnsembleRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
+    "GoogleDocumentAIWarehouseRetriever",
     "GoogleVertexAIMultiTurnSearchRetriever",
     "GoogleVertexAISearchRetriever",
     "KayAiRetriever",
@@ -22,28 +29,27 @@ EXPECTED_ALL = [
     "MetalRetriever",
     "MilvusRetriever",
     "MultiQueryRetriever",
+    "MultiVectorRetriever",
+    "NeuralDBRetriever",
+    "OutlineRetriever",
+    "ParentDocumentRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
     "RemoteLangChainRetriever",
-    "SVMRetriever",
+    "RePhraseQueryRetriever",
     "SelfQueryRetriever",
+    "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
-    "BM25Retriever",
     "TimeWeightedVectorStoreRetriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
+    "WebResearchRetriever",
     "WikipediaRetriever",
     "ZepRetriever",
     "ZillizRetriever",
-    "DocArrayRetriever",
-    "RePhraseQueryRetriever",
-    "WebResearchRetriever",
-    "EnsembleRetriever",
-    "ParentDocumentRetriever",
-    "MultiVectorRetriever",
 ]
 
 
-def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+def test_imports() -> None:
+    assert sorted(retrievers.__all__) == sorted(EXPECTED_ALL)

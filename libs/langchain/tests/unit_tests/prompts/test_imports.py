@@ -1,4 +1,4 @@
-from langchain.prompts import __all__
+from langchain import prompts
 
 EXPECTED_ALL = [
     "AIMessagePromptTemplate",
@@ -25,4 +25,4 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(prompts.__all__) == set(EXPECTED_ALL)

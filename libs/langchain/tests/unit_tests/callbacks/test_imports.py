@@ -1,4 +1,4 @@
-from langchain.callbacks import __all__
+from langchain import callbacks
 
 EXPECTED_ALL = [
     "AimCallbackHandler",
@@ -37,4 +37,4 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(callbacks.__all__) == set(EXPECTED_ALL)
