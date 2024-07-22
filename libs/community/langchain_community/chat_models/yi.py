@@ -79,3 +79,4 @@ class YiChat(YiCommon, ChatOpenAI):  # type: ignore[misc]
         """Get the identifying parameters."""
         return {**{"model_name": self.model_name}, **super()._identifying_params}
 
+
