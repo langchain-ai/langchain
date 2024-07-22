@@ -1,8 +1,7 @@
 from langchain_unstructured import __all__
 
 EXPECTED_ALL = [
-    "UnstructuredSDKFileLoader",
-    "UnstructuredSDKFileIOLoader",
+    "UnstructuredLoader",
     '__version__',
 ]
 

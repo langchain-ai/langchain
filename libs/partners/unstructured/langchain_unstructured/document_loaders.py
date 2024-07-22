@@ -212,13 +212,12 @@ class _UnstructuredBaseLoader(BaseLoader):
     @lazyproperty
     def _elements_via_local(self) -> list[Element]:
         try:
-            import unstructured  # noqa:F401
+            from unstructured.partition.auto import partition  # noqa:F401
         except ImportError:
             raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
-        from unstructured.partition.auto import partition
 
         if self.file and self.unstructured_kwargs.get("metadata_filename") is None:
             raise ValueError(

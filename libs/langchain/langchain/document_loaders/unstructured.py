@@ -6,12 +6,10 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders import (
         UnstructuredAPIFileIOLoader,
         UnstructuredAPIFileLoader,
-        UnstructuredBaseLoader,
         UnstructuredFileIOLoader,
         UnstructuredFileLoader,
     )
     from langchain_community.document_loaders.unstructured import (
-        UnstructuredBaseLoader,
         get_elements_from_api,
         satisfies_min_unstructured_version,
         validate_unstructured_version,
@@ -30,7 +28,6 @@ DEPRECATED_LOOKUP = {
     "get_elements_from_api": "langchain_community.document_loaders.unstructured",
     "UnstructuredAPIFileLoader": "langchain_community.document_loaders",
     "UnstructuredAPIFileIOLoader": "langchain_community.document_loaders",
-    "UnstructuredBaseLoader": "langchain_community.document_loaders.unstructured",
     "UnstructuredFileLoader": "langchain_community.document_loaders",
     "UnstructuredFileIOLoader": "langchain_community.document_loaders",
 }
@@ -46,7 +43,6 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "satisfies_min_unstructured_version",
     "validate_unstructured_version",
-    "UnstructuredBaseLoader",
     "UnstructuredFileLoader",
     "get_elements_from_api",
     "UnstructuredAPIFileLoader",
