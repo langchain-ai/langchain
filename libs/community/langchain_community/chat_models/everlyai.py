@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Set
 
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.adapters.openai import convert_message_to_dict
 from langchain_community.chat_models.openai import (
@@ -79,10 +79,12 @@ class ChatEverlyAI(ChatOpenAI):
     @root_validator(pre=True)
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "everlyai_api_key",
-            "EVERLYAI_API_KEY",
+        values["openai_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "everlyai_api_key",
+                "EVERLYAI_API_KEY",
+            )
         )
         values["openai_api_base"] = DEFAULT_API_BASE
 
