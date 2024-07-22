@@ -101,7 +101,11 @@ def convert_pydantic_to_openai_function(
     Returns:
         The function description.
     """
-    schema = dereference_refs(model.schema())
+    if hasattr(model, "model_json_schema"):
+        schema = model.model_json_schema()  # Pydantic 2
+    else:
+        schema = model.schema()  # Pydantic 1
+    schema = dereference_refs(schema)
     schema.pop("definitions", None)
     title = schema.pop("title", "")
     default_description = schema.pop("description", "")
