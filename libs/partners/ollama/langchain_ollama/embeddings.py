@@ -28,7 +28,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = ollama.embeddings(self.model, texts)["embeddings"]
+        embedded_docs = ollama.embed(self.model, texts)["embeddings"]
         return embedded_docs
 
     def embed_query(self, text: str) -> List[float]:
