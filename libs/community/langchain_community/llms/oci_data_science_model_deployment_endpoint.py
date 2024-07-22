@@ -359,6 +359,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
     Make sure to have the required policies to access the OCI Data
     Science Model Deployment endpoint. See:
     https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm#model_dep_policies_auth__predict-endpoint
+
     Example:
 
         .. code-block:: python
@@ -371,7 +372,38 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
                 streaming=True,
                 model_kwargs={"frequency_penalty": 1.0},
             )
-    """
+            llm.invoke("tell me a joke.")
+
+        Customized Usage:
+
+        User can inherit from our base class and overrwrite the `_process_response`, `_process_stream_response`,
+        `_construct_json_body` for satisfying customized needed.
+
+        .. code-block:: python
+
+            from langchain_community.llms import OCIModelDeploymentLLM
+
+            class MyCutomizedModel(OCIModelDeploymentLLM):
+                def _process_stream_response(self, response_json:dict) -> GenerationChunk:
+                    print("My customized output stream handler.")
+                    return GenerationChunk()
+
+                def _process_response(self, response_json:dict) -> List[Generation]:
+                    print("My customized output handler.")
+                    return [Generation()]
+
+                def _construct_json_body(self, prompt: str, param:dict) -> dict:
+                    print("My customized input handler.")
+                    return {}
+
+            llm = MyCutomizedModel(
+                endpoint=f"https://modeldeployment.us-ashburn-1.oci.customer-oci.com/{ocid}/predict",
+                model="<model_name>",
+            }
+
+            llm.invoke("tell me a joke.")
+
+    """  # noqa: E501
 
     model: str = DEFAULT_MODEL_NAME
     """The name of the model."""
