@@ -47,7 +47,7 @@ class BasePromptTemplate(
     prompt."""
     optional_variables: List[str] = Field(default=[])
     """A list of the names of the variables that are optional in the prompt."""
-    input_types: Dict[str, Any] = Field(default_factory=dict)
+    input_types: Dict[str, Any] = Field(default_factory=dict, exclude=True)
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
