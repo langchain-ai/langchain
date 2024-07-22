@@ -806,9 +806,11 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     prompt_optional.input_schema(input="")  # won't raise error
     assert prompt_optional.input_schema.schema() == snapshot(name="partial")
 
+
 def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> None:
     prompt = ChatPromptTemplate.from_messages(
-        [("system", "foo"), MessagesPlaceholder("bar"), ("human", "baz")])
+        [("system", "foo"), MessagesPlaceholder("bar"), ("human", "baz")]
+    )
     assert dumpd(MessagesPlaceholder("bar")) == snapshot(name="placholder")
     assert load(dumpd(MessagesPlaceholder("bar"))) == MessagesPlaceholder("bar")
     assert dumpd(prompt) == snapshot(name="chat_prompt")
