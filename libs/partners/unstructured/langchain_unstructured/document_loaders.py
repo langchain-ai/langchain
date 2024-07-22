@@ -17,7 +17,7 @@ logger = logging.getLogger(__file__)
 if TYPE_CHECKING:
     import requests
     from unstructured.documents.elements import Element
-    from unstructured_client.utils import RetryConfig
+    from unstructured_client.utils import RetryConfig # type: ignore
 
 
 class UnstructuredLoader(BaseLoader):
@@ -238,7 +238,7 @@ class _SingleDocumentLoader(BaseLoader):
         """Retrieve a list of element dicts from the API using the SDK client."""
         client = self._sdk_client
         req = self._sdk_partition_request
-        response = client.general.partition(req)
+        response = client.general.partition(req) # type: ignore
         if response.status_code == 200:
             return json.loads(response.raw_response.text)
         raise ValueError(
@@ -258,7 +258,7 @@ class _SingleDocumentLoader(BaseLoader):
     @lazyproperty
     def _sdk_client(self):
         try:
-            import unstructured_client  # noqa:F401
+            import unstructured_client  # type: ignore # noqa:F401
         except ImportError:
             raise ImportError(
                 "unstructured_client package not found, please install it with"
@@ -276,7 +276,7 @@ class _SingleDocumentLoader(BaseLoader):
     @lazyproperty
     def _sdk_partition_request(self):
         try:
-            from unstructured_client.models import operations, shared
+            from unstructured_client.models import operations, shared # type: ignore
         except ImportError:
             raise ImportError(
                 "unstructured_client package not found, please install it with"
