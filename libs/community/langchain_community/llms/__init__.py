@@ -640,12 +640,6 @@ def _import_yuan2() -> Type[BaseLLM]:
     return Yuan2
 
 
-def _import_you() -> Type[BaseLLM]:
-    from langchain_community.llms.you import You
-
-    return You
-
-
 def _import_volcengine_maas() -> Type[BaseLLM]:
     from langchain_community.llms.volcengine_maas import VolcEngineMaasLLM
 
@@ -657,6 +651,11 @@ def _import_sparkllm() -> Type[BaseLLM]:
 
     return SparkLLM
 
+
+def _import_yi() -> Type[BaseLLM]:
+    from langchain_community.llms.yi import YiLLM
+
+    return YiLLM
 
 def __getattr__(name: str) -> Any:
     if name == "AI21":
@@ -853,8 +852,6 @@ def __getattr__(name: str) -> Any:
         return _import_yandex_gpt()
     elif name == "Yuan2":
         return _import_yuan2()
-    elif name == "You":
-        return _import_you()
     elif name == "VolcEngineMaasLLM":
         return _import_volcengine_maas()
     elif name == "type_to_cls_dict":
@@ -865,6 +862,8 @@ def __getattr__(name: str) -> Any:
         return type_to_cls_dict
     elif name == "SparkLLM":
         return _import_sparkllm()
+    elif name == "YiLLM":
+        return _import_yi()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -967,8 +966,8 @@ __all__ = [
     "Writer",
     "Xinference",
     "YandexGPT",
-    "You",
     "Yuan2",
+    "YiLLM",
 ]
 
 
@@ -1065,7 +1064,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "qianfan_endpoint": _import_baidu_qianfan_endpoint,
         "yandex_gpt": _import_yandex_gpt,
         "yuan2": _import_yuan2,
-        "you": _import_you,
         "VolcEngineMaasLLM": _import_volcengine_maas,
         "SparkLLM": _import_sparkllm,
+        "yi": _import_yi,
     }
