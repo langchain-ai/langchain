@@ -1,120 +1,85 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+import json
+import logging
+from typing import Any, Dict, List, Optional, Literal
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.language_models.llms import LLM
+from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
-YI_SERVICE_URL_DOMESTIC = "https://api.lingyiwanwu.com/v1"
-YI_SERVICE_URL_INTERNATIONAL = "https://api.01.ai/v1"
+logger = logging.getLogger(__name__)
 
+class YiLLM(LLM):
+    """Yi large language models."""
 
-class _YiClient(BaseModel):
-    """An API client that talks to the Yi server."""
+    model: str = "yi-large"
+    temperature: float = 0.3
+    top_p: float = 0.95
+    timeout: int = 60
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    api_key: SecretStr
-    """The API key to use for authentication."""
-    base_url: str = YI_SERVICE_URL_INTERNATIONAL
-
-    def completion(self, request: Any) -> Any:
-        headers = {"Authorization": f"Bearer {self.api_key.get_secret_value()}"}
-        response = requests.post(
-            f"{self.base_url}/chat/completions",
-            headers=headers,
-            json=request,
-        )
-        if not response.ok:
-            raise ValueError(f"HTTP {response.status_code} error: {response.text}")
-        return response.json()["choices"][0]["message"]["content"]
-
-
-class YiCommon(BaseModel):
-    """Common parameters for Yi LLMs."""
-
-    _client: _YiClient
-    base_url: str = YI_SERVICE_URL_INTERNATIONAL
-    yi_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Yi API key. Get it from the Yi platform.https://platform.01.ai/apikeys or https://platform.lingyiwanwu.com/apikeys"""
-    model_name: str = Field(default="yi-large", alias="model")
-    """Model name. Default is yi-large."""
-    max_tokens: int = 1024
-    """Maximum number of tokens to generate."""
-    temperature: float = 0.7
-    """Temperature parameter (higher values make the model more creative)."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-
-    @property
-    def lc_secrets(self) -> dict:
-        """A map of constructor argument names to secret ids."""
-        return {"yi_api_key": "YI_API_KEY"}
-
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Yi API."""
-        return {
-            "model": self.model_name,
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-        }
-
-    @property
-    def _invocation_params(self) -> Dict[str, Any]:
-        return {**{"model": self.model_name}, **self._default_params}
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Build extra parameters."""
-        return values
+    yi_api_key: Optional[SecretStr] = None
+    region: Literal["auto", "domestic", "international"] = "auto"
+    yi_api_url_domestic: str = "https://api.lingyiwanwu.com/v1/chat/completions"
+    yi_api_url_international: str = "https://api.01.ai/v1/chat/completions"
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
         values["yi_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "yi_api_key", "YI_API_KEY")
-        )
-
-        # Determine the base URL based on the provided value or default to international
-        base_url = values.get("base_url", YI_SERVICE_URL_INTERNATIONAL)
-        if base_url not in [YI_SERVICE_URL_DOMESTIC, YI_SERVICE_URL_INTERNATIONAL]:
-            raise ValueError("Invalid base_url. Must be either domestic or international Yi API URL.")
-
-        values["_client"] = _YiClient(
-            api_key=values["yi_api_key"],
-            base_url=base_url,
         )
         return values
 
     @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "yi"
+    def _default_params(self) -> Dict[str, Any]:
+        return {
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            **self.model_kwargs,
+        }
 
+    def _post(self, request: Any) -> Any:
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.yi_api_key.get_secret_value()}",
+        }
 
-class Yi(YiCommon, LLM):
-    """Yi large language models.
+        urls = []
+        if self.region == "domestic":
+            urls = [self.yi_api_url_domestic]
+        elif self.region == "international":
+            urls = [self.yi_api_url_international]
+        else:  # auto
+            urls = [self.yi_api_url_domestic, self.yi_api_url_international]
 
-    To use, you should have the environment variable ``YI_API_KEY`` set with your
-    API key. Referenced from https://platform.01.ai/docs
+        for url in urls:
+            try:
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json=request,
+                    timeout=self.timeout,
+                )
 
-    Example:
-        .. code-block:: python
+                if response.status_code == 200:
+                    parsed_json = json.loads(response.text)
+                    return parsed_json["choices"][0]["message"]["content"]
+                elif response.status_code != 403:  # If not a permission error, raise immediately
+                    response.raise_for_status()
+            except requests.RequestException as e:
+                if url == urls[-1]:  # If this is the last URL to try
+                    raise ValueError(f"An error has occurred: {e}")
+                else:
+                    logger.warning(f"Failed to connect to {url}, trying next URL")
+                    continue
 
-            from langchain_community.llms.yi import Yi
-
-            yi = Yi(model="yi-large")
-    """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+        raise ValueError("Failed to connect to all available URLs")
 
     def _call(
         self,
@@ -123,11 +88,15 @@ class Yi(YiCommon, LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        request = self._invocation_params
+        request = self._default_params
         request["messages"] = [{"role": "user", "content": prompt}]
         request.update(kwargs)
-        text = self._client.completion(request)
+        text = self._post(request)
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
-
         return text
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat_model."""
+        return "yi-llm"
