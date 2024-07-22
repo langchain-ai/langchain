@@ -694,3 +694,24 @@ async def test_using_custom_config_specs_async() -> None:
             ]
         ),
     }
+
+
+def test_ignore_session_id() -> None:
+    """Test without config."""
+
+    def _fake_llm(input: List[BaseMessage]) -> List[BaseMessage]:
+        return [
+            AIMessage(
+                content="you said: "
+                + "\n".join(
+                    str(m.content) for m in input if isinstance(m, HumanMessage)
+                )
+            )
+        ]
+
+    runnable = RunnableLambda(_fake_llm)
+    history = InMemoryChatMessageHistory()
+    with_message_history = RunnableWithMessageHistory(runnable, lambda: history)  # type: ignore
+    _ = with_message_history.invoke("hello")
+    _ = with_message_history.invoke("hello again")
+    assert len(history.messages) == 4
