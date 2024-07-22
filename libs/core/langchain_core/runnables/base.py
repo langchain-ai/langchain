@@ -1059,7 +1059,21 @@ class Runnable(Generic[Input, Output], ABC):
         | on_prompt_end        | [template_name]  |                                 | {"question": "hello"}                         | ChatPromptValue(messages: [SystemMessage, ...]) |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
 
-        Here are declarations associated with the events shown above:
+        In addition to the standard events, users can also dispatch custom events (see example below).
+
+        Custom events will be only be surfaced with in the `v2` version of the API!
+
+        A custom event has following format:
+
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | Attribute | Type | Description                                                                                               |
+        +===========+======+===========================================================================================================+
+        | name      | str  | A user defined name for the event.                                                                        |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | data      | Any  | The data associated with the event. This can be anything, though we suggest making it JSON serializable.  |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+
+        Here are declarations associated with the standard events shown above:
 
         `format_docs`:
 
@@ -1130,6 +1144,40 @@ class Runnable(Generic[Input, Output], ABC):
                 },
             ]
 
+
+        Example: Dispatch Custom Event
+
+        .. code-block:: python
+
+            from langchain_core.callbacks.manager import (
+                adispatch_custom_event,
+            )
+            from langchain_core.runnables import RunnableLambda, RunnableConfig
+            import asyncio
+
+
+            async def slow_thing(some_input: str, config: RunnableConfig) -> str:
+                \"\"\"Do something that takes a long time.\"\"\"
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                await adispatch_custom_event(
+                    "progress_event",
+                    {"message": "Finished step 1 of 3"},
+                    config=config # Must be included for python < 3.10
+                )
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                await adispatch_custom_event(
+                    "progress_event",
+                    {"message": "Finished step 2 of 3"},
+                    config=config # Must be included for python < 3.10
+                )
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                return "Done"
+
+            slow_thing = RunnableLambda(slow_thing)
+
+            async for event in slow_thing.astream_events("some_input", version="v2"):
+                print(event)
+
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable.
@@ -1138,6 +1186,7 @@ class Runnable(Generic[Input, Output], ABC):
                      `v1` is for backwards compatibility and will be deprecated
                      in 0.4.0.
                      No default will be assigned until the API is stabilized.
+                     custom events will only be surfaced in `v2`.
             include_names: Only include events from runnables with matching names.
             include_types: Only include events from runnables with matching types.
             include_tags: Only include events from runnables with matching tags.
@@ -1327,7 +1376,7 @@ class Runnable(Generic[Input, Output], ABC):
     def with_config(
         self,
         config: Optional[RunnableConfig] = None,
-        # Sadly Unpack is not well supported by mypy so this will have to be untyped
+        # Sadly Unpack is not well-supported by mypy so this will have to be untyped
         **kwargs: Any,
     ) -> Runnable[Input, Output]:
         """
@@ -2078,6 +2127,7 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
+        iterator_ = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
@@ -2144,12 +2194,13 @@ class Runnable(Generic[Input, Output], ABC):
         else:
             await run_manager.on_chain_end(final_output, inputs=final_input)
         finally:
-            if hasattr(iterator_, "aclose"):
+            if iterator_ is not None and hasattr(iterator_, "aclose"):
                 await iterator_.aclose()
 
     @beta_decorator.beta(message="This API is in beta and may change in the future.")
     def as_tool(
         self,
+        args_schema: Optional[Type[BaseModel]] = None,
         *,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -2161,9 +2212,11 @@ class Runnable(Generic[Input, Output], ABC):
         ``args_schema`` from a Runnable. Where possible, schemas are inferred
         from ``runnable.get_input_schema``. Alternatively (e.g., if the
         Runnable takes a dict as input and the specific dict keys are not typed),
-        pass ``arg_types`` to specify the required arguments.
+        the schema can be specified directly with ``args_schema``. You can also
+        pass ``arg_types`` to just specify the required arguments and their types.
 
         Args:
+            args_schema: The schema for the tool. Defaults to None.
             name: The name of the tool. Defaults to None.
             description: The description of the tool. Defaults to None.
             arg_types: A dictionary of argument names to types. Defaults to None.
@@ -2190,7 +2243,28 @@ class Runnable(Generic[Input, Output], ABC):
             as_tool = runnable.as_tool()
             as_tool.invoke({"a": 3, "b": [1, 2]})
 
-        ``dict`` input, specifying schema:
+        ``dict`` input, specifying schema via ``args_schema``:
+
+        .. code-block:: python
+
+            from typing import Any, Dict, List
+            from langchain_core.pydantic_v1 import BaseModel, Field
+            from langchain_core.runnables import RunnableLambda
+
+            def f(x: Dict[str, Any]) -> str:
+                return str(x["a"] * max(x["b"]))
+
+            class FSchema(BaseModel):
+                \"\"\"Apply a function to an integer and list of integers.\"\"\"
+
+                a: int = Field(..., description="Integer")
+                b: List[int] = Field(..., description="List of ints")
+
+            runnable = RunnableLambda(f)
+            as_tool = runnable.as_tool(FSchema)
+            as_tool.invoke({"a": 3, "b": [1, 2]})
+
+        ``dict`` input, specifying schema via ``arg_types``:
 
         .. code-block:: python
 
@@ -2226,7 +2300,11 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain_core.tools import convert_runnable_to_tool
 
         return convert_runnable_to_tool(
-            self, name=name, description=description, arg_types=arg_types
+            self,
+            args_schema=args_schema,
+            name=name,
+            description=description,
+            arg_types=arg_types,
         )
 
 

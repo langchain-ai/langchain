@@ -202,7 +202,7 @@ Prem Templates are also available for Streaming too.
 
 ## Prem Embeddings
 
-In this section we are going to dicuss how we can get access to different embedding model using `PremEmbeddings` with LangChain. Lets start by importing our modules and setting our API Key. 
+In this section we cover how we can get access to different embedding models using `PremEmbeddings` with LangChain. Let's start by importing our modules and setting our API Key.
 
 ```python
 import os
