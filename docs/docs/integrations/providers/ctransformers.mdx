@@ -23,7 +23,7 @@ It provides a unified interface for all models:
 ```python
 llm = CTransformers(model='/path/to/ggml-gpt-2.bin', model_type='gpt2')
 
-print(llm('AI is going to'))
+print(llm.invoke('AI is going to'))
 ```
 
 If you are getting `illegal instruction` error, try using `lib='avx'` or `lib='basic'`:

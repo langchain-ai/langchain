@@ -1,12 +1,9 @@
 """Generic Wrapper for chat LLMs, with sample implementations
 for Llama-2-chat, Llama-2-instruct and Vicuna models.
 """
+
 from typing import Any, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -15,6 +12,10 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
     SystemMessage,
+)
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LLM, BaseChatModel
 
@@ -149,7 +150,7 @@ class Llama2Chat(ChatWrapper):
 
 
 class Mixtral(ChatWrapper):
-    """See https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1#instruction-format"""  # noqa: E501
+    """See https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1#instruction-format"""
 
     @property
     def _llm_type(self) -> str:

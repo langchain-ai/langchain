@@ -1,4 +1,4 @@
-from langchain_community.utils.openai_functions import (
+from langchain_core.utils.function_calling import (
     FunctionDescription,
     ToolDescription,
     convert_pydantic_to_openai_function,

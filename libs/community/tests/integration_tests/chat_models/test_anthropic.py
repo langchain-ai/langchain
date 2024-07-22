@@ -1,4 +1,5 @@
 """Test Anthropic API wrapper."""
+
 from typing import List
 
 import pytest
@@ -15,9 +16,9 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 @pytest.mark.scheduled
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    chat = ChatAnthropic(model="test")
+    chat = ChatAnthropic(model="test")  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -25,7 +26,7 @@ def test_anthropic_call() -> None:
 @pytest.mark.scheduled
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
-    chat = ChatAnthropic(model="test")
+    chat = ChatAnthropic(model="test")  # type: ignore[call-arg]
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -42,9 +43,9 @@ def test_anthropic_generate() -> None:
 @pytest.mark.scheduled
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    chat = ChatAnthropic(model="test", streaming=True)
+    chat = ChatAnthropic(model="test", streaming=True)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -54,14 +55,14 @@ def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatAnthropic(
+    chat = ChatAnthropic(  # type: ignore[call-arg]
         model="test",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
-    chat([message])
+    chat.invoke([message])
     assert callback_handler.llm_streams > 1
 
 
@@ -70,7 +71,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatAnthropic(
+    chat = ChatAnthropic(  # type: ignore[call-arg]
         model="test",
         streaming=True,
         callback_manager=callback_manager,

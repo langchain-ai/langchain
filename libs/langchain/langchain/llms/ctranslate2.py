@@ -1,3 +1,23 @@
-from langchain_community.llms.ctranslate2 import CTranslate2
+from typing import TYPE_CHECKING, Any
 
-__all__ = ["CTranslate2"]
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.llms import CTranslate2
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"CTranslate2": "langchain_community.llms"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "CTranslate2",
+]

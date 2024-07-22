@@ -1,7 +1,8 @@
 """Fake LLM wrapper for testing purposes."""
+
 from typing import Any, Dict, List, Mapping, Optional, cast
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 
 from langchain_experimental.pydantic_v1 import validator

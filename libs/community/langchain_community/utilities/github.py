@@ -42,7 +42,7 @@ class GitHubAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         github_repository = get_from_dict_or_env(
@@ -315,7 +315,7 @@ class GitHubAPIWrapper(BaseModel):
         the branch the bot uses to make changes.
 
         Returns:
-            str: A plaintext list containing the the filepaths in the branch.
+            str: A plaintext list containing the filepaths in the branch.
         """
         files: List[str] = []
         try:

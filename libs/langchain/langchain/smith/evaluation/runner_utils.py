@@ -22,6 +22,7 @@ from typing import (
 )
 
 from langchain_core._api import warn_deprecated
+from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, messages_from_dict
 from langchain_core.outputs import ChatResult, LLMResult
@@ -48,7 +49,6 @@ from langsmith.utils import LangSmithError
 from requests import HTTPError
 from typing_extensions import TypedDict
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.base import Chain
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.schema import (
@@ -225,7 +225,7 @@ def _wrap_in_chain_factory(
             return lambda: RunnableLambda(constructor)
         else:
             # Typical correct case
-            return constructor  # noqa
+            return constructor
     return llm_or_chain_factory
 
 
@@ -281,6 +281,12 @@ def _get_prompt(inputs: Dict[str, Any]) -> str:
 
 
 class ChatModelInput(TypedDict):
+    """Input for a chat model.
+
+    Parameters:
+        messages: List of chat messages.
+    """
+
     messages: List[BaseMessage]
 
 

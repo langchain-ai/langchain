@@ -78,7 +78,20 @@ def create_base_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    """Create a retry decorator for a given LLM and provided list of error types."""
+    """Create a retry decorator for a given LLM and provided
+     a list of error types.
+
+    Args:
+        error_types: List of error types to retry on.
+        max_retries: Number of retries. Default is 1.
+        run_manager: Callback manager for the run. Default is None.
+
+    Returns:
+        A retry decorator.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
 
     _logging = before_sleep_log(logger, logging.WARNING)
 
@@ -115,17 +128,54 @@ def create_base_retry_decorator(
     )
 
 
+def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
+    """Resolve the cache."""
+    if isinstance(cache, BaseCache):
+        llm_cache = cache
+    elif cache is None:
+        llm_cache = get_llm_cache()
+    elif cache is True:
+        llm_cache = get_llm_cache()
+        if llm_cache is None:
+            raise ValueError(
+                "No global cache was configured. Use `set_llm_cache`."
+                "to set a global cache if you want to use a global cache."
+                "Otherwise either pass a cache object or set cache to False/None"
+            )
+    elif cache is False:
+        llm_cache = None
+    else:
+        raise ValueError(f"Unsupported cache value {cache}")
+    return llm_cache
+
+
 def get_prompts(
-    params: Dict[str, Any], prompts: List[str]
+    params: Dict[str, Any],
+    prompts: List[str],
+    cache: Optional[Union[BaseCache, bool, None]] = None,
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
-    """Get prompts that are already cached."""
+    """Get prompts that are already cached.
+
+    Args:
+        params: Dictionary of parameters.
+        prompts: List of prompts.
+        cache: Cache object. Default is None.
+
+    Returns:
+        A tuple of existing prompts, llm_string, missing prompt indexes,
+            and missing prompts.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    llm_cache = get_llm_cache()
+
+    llm_cache = _resolve_cache(cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache is not None:
+        if llm_cache:
             cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
@@ -136,14 +186,29 @@ def get_prompts(
 
 
 async def aget_prompts(
-    params: Dict[str, Any], prompts: List[str]
+    params: Dict[str, Any],
+    prompts: List[str],
+    cache: Optional[Union[BaseCache, bool, None]] = None,
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
-    """Get prompts that are already cached. Async version."""
+    """Get prompts that are already cached. Async version.
+
+    Args:
+        params: Dictionary of parameters.
+        prompts: List of prompts.
+        cache: Cache object. Default is None.
+
+    Returns:
+        A tuple of existing prompts, llm_string, missing prompt indexes,
+            and missing prompts.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    llm_cache = get_llm_cache()
+    llm_cache = _resolve_cache(cache)
     for i, prompt in enumerate(prompts):
         if llm_cache:
             cache_val = await llm_cache.alookup(prompt, llm_string)
@@ -156,14 +221,30 @@ async def aget_prompts(
 
 
 def update_cache(
+    cache: Union[BaseCache, bool, None],
     existing_prompts: Dict[int, List],
     llm_string: str,
     missing_prompt_idxs: List[int],
     new_results: LLMResult,
     prompts: List[str],
 ) -> Optional[dict]:
-    """Update the cache and get the LLM output."""
-    llm_cache = get_llm_cache()
+    """Update the cache and get the LLM output.
+
+    Args:
+        cache: Cache object.
+        existing_prompts: Dictionary of existing prompts.
+        llm_string: LLM string.
+        missing_prompt_idxs: List of missing prompt indexes.
+        new_results: LLMResult object.
+        prompts: List of prompts.
+
+    Returns:
+        LLM output.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
+    llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -174,14 +255,31 @@ def update_cache(
 
 
 async def aupdate_cache(
+    cache: Union[BaseCache, bool, None],
     existing_prompts: Dict[int, List],
     llm_string: str,
     missing_prompt_idxs: List[int],
     new_results: LLMResult,
     prompts: List[str],
 ) -> Optional[dict]:
-    """Update the cache and get the LLM output. Async version"""
-    llm_cache = get_llm_cache()
+    """Update the cache and get the LLM output. Async version.
+
+    Args:
+        cache: Cache object.
+        existing_prompts: Dictionary of existing prompts.
+        llm_string: LLM string.
+        missing_prompt_idxs: List of missing prompt indexes.
+        new_results: LLMResult object.
+        prompts: List of prompts.
+
+    Returns:
+        LLM output.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
+
+    llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -204,7 +302,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -529,6 +627,25 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
+        """Stream the LLM on the given prompt.
+
+        This method should be overridden by subclasses that support streaming.
+
+        If not implemented, the default behavior of calls to stream will be to
+        fallback to the non-streaming version of the model and return
+        the output as a single chunk.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An iterator of GenerationChunks.
+        """
         raise NotImplementedError()
 
     async def _astream(
@@ -538,6 +655,23 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
+        """An async version of the _stream method.
+
+        The default implementation uses the synchronous _stream method and wraps it in
+        an async iterator. Subclasses that need to provide a true async implementation
+        should override this method.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An async iterator of GenerationChunks.
+        """
         iterator = await run_in_executor(
             None,
             self._stream,
@@ -642,6 +776,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with each prompt. If provided, the length
+                of the list must match the length of the prompts list.
+            metadata: List of metadata dictionaries to associate with each prompt. If
+                provided, the length of the list must match the length of the prompts
+                list.
+            run_name: List of run names to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
+            run_id: List of run IDs to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
@@ -717,20 +860,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             llm_string,
             missing_prompt_idxs,
             missing_prompts,
-        ) = get_prompts(params, prompts)
-        if isinstance(self.cache, BaseCache):
-            raise NotImplementedError(
-                "Local cache is not yet supported for " "LLMs (only chat models)"
-            )
-        disregard_cache = self.cache is not None and not self.cache
+        ) = get_prompts(params, prompts, self.cache)
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
-        if get_llm_cache() is None or disregard_cache:
-            if self.cache is not None and self.cache:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
+        if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = [
                 callback_manager.on_llm_start(
                     dumpd(self),
@@ -765,7 +899,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
             llm_output = update_cache(
-                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+                self.cache,
+                existing_prompts,
+                llm_string,
+                missing_prompt_idxs,
+                new_results,
+                prompts,
             )
             run_info = (
                 [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]
@@ -864,6 +1003,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with each prompt. If provided, the length
+                of the list must match the length of the prompts list.
+            metadata: List of metadata dictionaries to associate with each prompt. If
+                provided, the length of the list must match the length of the prompts
+                list.
+            run_name: List of run names to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
+            run_id: List of run IDs to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
@@ -930,21 +1078,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             llm_string,
             missing_prompt_idxs,
             missing_prompts,
-        ) = await aget_prompts(params, prompts)
-        if isinstance(self.cache, BaseCache):
-            raise NotImplementedError(
-                "Local cache is not yet supported for " "LLMs (only chat models)"
-            )
+        ) = await aget_prompts(params, prompts, self.cache)
 
-        disregard_cache = self.cache is not None and not self.cache
+        # Verify whether the cache is set, and if the cache is set,
+        # verify whether the cache is available.
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
-        if get_llm_cache() is None or disregard_cache:
-            if self.cache is not None and self.cache:
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
+        if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = await asyncio.gather(
                 *[
                     callback_manager.on_llm_start(
@@ -993,7 +1134,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 **kwargs,  # type: ignore[arg-type]
             )
             llm_output = await aupdate_cache(
-                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+                self.cache,
+                existing_prompts,
+                llm_string,
+                missing_prompt_idxs,
+                new_results,
+                prompts,
             )
             run_info = (
                 [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]  # type: ignore[attr-defined]
@@ -1006,7 +1152,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def __call__(
         self,
         prompt: str,
@@ -1017,7 +1163,25 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
-        """Check Cache and run the LLM on the given prompt and input."""
+        """Check Cache and run the LLM on the given prompt and input.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with the prompt.
+            metadata: Metadata to associate with the prompt.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The generated text.
+
+        Raises:
+            ValueError: If the prompt is not a string.
+        """
         if not isinstance(prompt, str):
             raise ValueError(
                 "Argument `prompt` is expected to be a string. Instead found "
@@ -1058,7 +1222,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         )
         return result.generations[0][0].text
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1068,7 +1232,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         return self(text, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -1084,7 +1248,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         content = self(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1094,7 +1258,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         return await self._call_async(text, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],
@@ -1132,6 +1296,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         Args:
             file_path: Path to file to save the LLM to.
 
+        Raises:
+            ValueError: If the file path is not a string or Path object.
+
         Example:
         .. code-block:: python
 
@@ -1160,10 +1327,33 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
 
 class LLM(BaseLLM):
-    """Base LLM abstract class.
+    """Simple interface for implementing a custom LLM.
 
-    The purpose of this class is to expose a simpler interface for working
-    with LLMs, rather than expect the user to implement the full _generate method.
+    You should subclass this class and implement the following:
+
+    - `_call` method: Run the LLM on the given prompt and input (used by `invoke`).
+    - `_identifying_params` property: Return a dictionary of the identifying parameters
+        This is critical for caching and tracing purposes. Identifying parameters
+        is a dict that identifies the LLM.
+        It should mostly include a `model_name`.
+
+    Optional: Override the following methods to provide more optimizations:
+
+    - `_acall`: Provide a native async version of the `_call` method.
+        If not provided, will delegate to the synchronous version using
+        `run_in_executor`. (Used by `ainvoke`).
+    - `_stream`: Stream the LLM on the given prompt and input.
+        `stream` will use `_stream` if provided, otherwise it
+        use `_call` and output will arrive in one chunk.
+    - `_astream`: Override to provide a native async version of the `_stream` method.
+        `astream` will use `_astream` if provided, otherwise it will implement
+        a fallback behavior that will use `_stream` if `_stream` is implemented,
+        and use `_acall` if `_stream` is not implemented.
+
+    Please see the following guide for more information on how to
+    implement a custom LLM:
+
+    https://python.langchain.com/v0.2/docs/how_to/custom_llm/
     """
 
     @abstractmethod
@@ -1174,7 +1364,22 @@ class LLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Run the LLM on the given prompt and input."""
+        """Run the LLM on the given input.
+
+        Override this method to implement the LLM logic.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of the stop substrings.
+                If stop tokens are not supported consider raising NotImplementedError.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The model output as a string. SHOULD NOT include the prompt.
+        """
 
     async def _acall(
         self,
@@ -1183,7 +1388,24 @@ class LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Run the LLM on the given prompt and input."""
+        """Async version of the _call method.
+
+        The default implementation delegates to the synchronous _call method using
+        `run_in_executor`. Subclasses that need to provide a true async implementation
+        should override this method to reduce the overhead of using `run_in_executor`.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of the stop substrings.
+                If stop tokens are not supported consider raising NotImplementedError.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The model output as a string. SHOULD NOT include the prompt.
+        """
         return await run_in_executor(
             None,
             self._call,
@@ -1220,7 +1442,7 @@ class LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompt and input."""
+        """Async run the LLM on the given prompt and input."""
         generations = []
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         for prompt in prompts:

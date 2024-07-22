@@ -27,7 +27,7 @@ def api_passed_via_constructor_fixture() -> AzureMLChatOnlineEndpoint:
     with API key passed from constructor"""
     azure_chat = AzureMLChatOnlineEndpoint(
         endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
-        endpoint_api_key="my-api-key",
+        endpoint_api_key="my-api-key",  # type: ignore[arg-type]
     )
     return azure_chat
 

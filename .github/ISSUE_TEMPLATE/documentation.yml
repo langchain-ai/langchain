@@ -26,6 +26,13 @@ body:
       [LangChain Github Discussions](https://github.com/langchain-ai/langchain/discussions),
       [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue),
       [LangChain ChatBot](https://chat.langchain.com/)
+- type: input
+  id: url
+  attributes:
+    label: URL
+    description: URL to documentation
+  validations:
+    required: false
 - type: checkboxes
   id: checks
   attributes:

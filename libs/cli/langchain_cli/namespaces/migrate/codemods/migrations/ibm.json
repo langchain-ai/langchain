@@ -1,0 +1,10 @@
+[
+  [
+    "langchain_community.llms.watsonxllm.WatsonxLLM",
+    "langchain_ibm.WatsonxLLM"
+  ],
+  [
+    "langchain_community.llms.WatsonxLLM",
+    "langchain_ibm.WatsonxLLM"
+  ]
+]

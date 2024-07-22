@@ -1,3 +1,3 @@
-from langchain_community.agent_toolkits.base import BaseToolkit
+from langchain_core.tools import BaseToolkit
 
 __all__ = ["BaseToolkit"]

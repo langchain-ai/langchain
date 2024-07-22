@@ -1,6 +1,6 @@
 """Test PremAIEmbeddings from PremAI API wrapper.
 
-Note: This test must be run with the PREMAI_API_KEY environment variable set to a valid 
+Note: This test must be run with the PREMAI_API_KEY environment variable set to a valid
 API key and a valid project_id. This needs to setup a project in PremAI's platform.
 You can check it out here: https://app.premai.io
 """
@@ -12,7 +12,7 @@ from langchain_community.embeddings.premai import PremAIEmbeddings
 
 @pytest.fixture
 def embedder() -> PremAIEmbeddings:
-    return PremAIEmbeddings(project_id=8, model="text-embedding-3-small")
+    return PremAIEmbeddings(project_id=8, model="text-embedding-3-small")  # type: ignore[call-arg]
 
 
 def test_prem_embedding_documents(embedder: PremAIEmbeddings) -> None:

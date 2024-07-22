@@ -98,7 +98,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         ...             mode='prompt'
         ... )
         >>> llm = OpenAI(callbacks=[handler])
-        >>> llm.predict('Tell me a story about a dog.')
+        >>> llm.invoke('Tell me a story about a dog.')
     """
 
     DEFAULT_PROJECT_NAME: str = "LangChain-%Y-%m-%d"

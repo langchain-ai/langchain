@@ -26,7 +26,7 @@ GUARDRAILS_TRIGGER = os.environ.get(
 class BedrockAsyncCallbackHandler(AsyncCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""
 
-    guardrails_intervened = False
+    guardrails_intervened: bool = False
 
     async def on_llm_error(
         self,
@@ -86,7 +86,7 @@ def test_claude_instant_v1(bedrock_runtime_client, bedrock_models):  # type: ign
             client=bedrock_runtime_client,
             model_kwargs={},
         )
-        output = llm("Say something positive:")
+        output = llm.invoke("Say something positive:")
         assert isinstance(output, str)
     except Exception as e:
         pytest.fail(f"can not instantiate claude-instant-v1: {e}", pytrace=False)
@@ -106,7 +106,7 @@ def test_amazon_bedrock_guardrails_no_intervention_for_valid_query(  # type: ign
                 "trace": False,
             },
         )
-        output = llm("Say something positive:")
+        output = llm.invoke("Say something positive:")
         assert isinstance(output, str)
     except Exception as e:
         pytest.fail(f"can not instantiate claude-instant-v1: {e}", pytrace=False)
@@ -131,6 +131,6 @@ def test_amazon_bedrock_guardrails_intervention_for_invalid_query(  # type: igno
     except Exception as e:
         pytest.fail(f"can not instantiate claude-instant-v1: {e}", pytrace=False)
     else:
-        llm(GUARDRAILS_TRIGGER)
+        llm.invoke(GUARDRAILS_TRIGGER)
         guardrails_intervened = handler.get_response()
         assert guardrails_intervened is True

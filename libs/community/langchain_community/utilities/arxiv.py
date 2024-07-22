@@ -1,4 +1,5 @@
 """Util that calls Arxiv."""
+
 import logging
 import os
 import re
@@ -27,6 +28,7 @@ class ArxivAPIWrapper(BaseModel):
     Attributes:
         top_k_results: number of the top-scored document used for the arxiv tool
         ARXIV_MAX_QUERY_LENGTH: the cut limit on the query used for the arxiv tool.
+        continue_on_failure (bool): If True, continue loading other URLs on failure.
         load_max_docs: a limit to the number of loaded documents
         load_all_available_meta:
             if True: the `metadata` of the loaded Documents contains all available
@@ -47,13 +49,14 @@ class ArxivAPIWrapper(BaseModel):
                 load_all_available_meta = False,
                 doc_content_chars_max = 40000
             )
-            arxiv.run("tree of thought llm)
+            arxiv.run("tree of thought llm")
     """
 
     arxiv_search: Any  #: :meta private:
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH: int = 300
+    continue_on_failure: bool = False
     load_max_docs: int = 100
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
@@ -70,7 +73,7 @@ class ArxivAPIWrapper(BaseModel):
                 return False
         return True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
@@ -101,7 +104,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
@@ -140,7 +143,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
@@ -225,6 +228,12 @@ class ArxivAPIWrapper(BaseModel):
             except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
+            except Exception as e:
+                if self.continue_on_failure:
+                    logger.error(e)
+                    continue
+                else:
+                    raise e
             if self.load_all_available_meta:
                 extra_metadata = {
                     "entry_id": result.entry_id,

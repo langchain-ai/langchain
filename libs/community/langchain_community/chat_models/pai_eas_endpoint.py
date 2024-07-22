@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class PaiEasChatEndpoint(BaseChatModel):
-    """Eas LLM Service chat model API.
+    """Alibaba Cloud PAI-EAS LLM Service chat model API.
 
         To use, must have a deployed eas chat llm service on AliCloud. One can set the
     environment variable ``eas_service_url`` and ``eas_service_token`` set with your eas
@@ -67,7 +67,7 @@ class PaiEasChatEndpoint(BaseChatModel):
 
     timeout: Optional[int] = 5000
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["eas_service_url"] = get_from_dict_or_env(

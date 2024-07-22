@@ -124,7 +124,7 @@ class PromptLayerOpenAI(OpenAI):
 
 
 class PromptLayerOpenAIChat(OpenAIChat):
-    """Wrapper around OpenAI large language models.
+    """PromptLayer OpenAI large language models.
 
     To use, you should have the ``openai`` and ``promptlayer`` python
     package installed, and the environment variable ``OPENAI_API_KEY``

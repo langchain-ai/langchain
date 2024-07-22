@@ -1,6 +1,6 @@
 """Test Google Vertex AI Search retriever.
 
-You need to create a Vertex AI Search app and populate it 
+You need to create a Vertex AI Search app and populate it
 with data to run the integration tests.
 Follow the instructions in the example notebook:
 google_vertex_ai_search.ipynb
@@ -24,10 +24,10 @@ from langchain_community.retrievers.google_vertex_ai_search import (
 
 
 @pytest.mark.requires("google.api_core")
-def test_google_vertex_ai_search_get_relevant_documents() -> None:
-    """Test the get_relevant_documents() method."""
+def test_google_vertex_ai_search_invoke() -> None:
+    """Test the invoke() method."""
     retriever = GoogleVertexAISearchRetriever()
-    documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
+    documents = retriever.invoke("What are Alphabet's Other Bets?")
     assert len(documents) > 0
     for doc in documents:
         assert isinstance(doc, Document)
@@ -37,10 +37,10 @@ def test_google_vertex_ai_search_get_relevant_documents() -> None:
 
 
 @pytest.mark.requires("google.api_core")
-def test_google_vertex_ai_multiturnsearch_get_relevant_documents() -> None:
-    """Test the get_relevant_documents() method."""
+def test_google_vertex_ai_multiturnsearch_invoke() -> None:
+    """Test the invoke() method."""
     retriever = GoogleVertexAIMultiTurnSearchRetriever()
-    documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
+    documents = retriever.invoke("What are Alphabet's Other Bets?")
     assert len(documents) > 0
     for doc in documents:
         assert isinstance(doc, Document)
@@ -66,7 +66,7 @@ def test_google_vertex_ai_search_enterprise_search_deprecation() -> None:
         retriever = GoogleCloudEnterpriseSearchRetriever()
 
     # Check that mapped methods still work.
-    documents = retriever.get_relevant_documents("What are Alphabet's Other Bets?")
+    documents = retriever.invoke("What are Alphabet's Other Bets?")
     assert len(documents) > 0
     for doc in documents:
         assert isinstance(doc, Document)

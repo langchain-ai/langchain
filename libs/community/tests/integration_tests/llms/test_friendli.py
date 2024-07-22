@@ -13,12 +13,6 @@ def friendli_llm() -> Friendli:
     return Friendli(temperature=0, max_tokens=10)
 
 
-def test_friendli_call(friendli_llm: Friendli) -> None:
-    """Test call."""
-    output = friendli_llm("Say hello world.")
-    assert isinstance(output, str)
-
-
 def test_friendli_invoke(friendli_llm: Friendli) -> None:
     """Test invoke."""
     output = friendli_llm.invoke("Say hello world.")

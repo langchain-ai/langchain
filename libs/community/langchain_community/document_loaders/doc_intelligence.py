@@ -10,7 +10,7 @@ from langchain_community.document_loaders.parsers import (
 
 
 class AzureAIDocumentIntelligenceLoader(BaseLoader):
-    """Loads a PDF with Azure Document Intelligence"""
+    """Load a PDF with Azure Document Intelligence."""
 
     def __init__(
         self,
@@ -78,7 +78,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         self.file_path = file_path
         self.url_path = url_path
 
-        self.parser = AzureAIDocumentIntelligenceParser(
+        self.parser = AzureAIDocumentIntelligenceParser(  # type: ignore[misc]
             api_endpoint=api_endpoint,
             api_key=api_key,
             api_version=api_version,
@@ -92,7 +92,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
         if self.file_path is not None:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
             yield from self.parser.parse(blob)
         else:
             yield from self.parser.parse_url(self.url_path)  # type: ignore[arg-type]

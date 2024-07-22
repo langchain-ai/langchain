@@ -119,7 +119,7 @@ class AtlasDB(VectorStore):
 
         texts = list(texts)
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         # Embedding upload case
         if self._embedding_function is not None:

@@ -1,10 +1,10 @@
 """Implement an LLM driven browser."""
+
 from __future__ import annotations
 
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain_community.llms.openai import OpenAI
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Extra, root_validator
@@ -68,8 +68,11 @@ class NatBotChain(Chain):
     @classmethod
     def from_default(cls, objective: str, **kwargs: Any) -> NatBotChain:
         """Load with default LLMChain."""
-        llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)
-        return cls.from_llm(llm, objective, **kwargs)
+        raise NotImplementedError(
+            "This method is no longer implemented. Please use from_llm."
+            "llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)"
+            "For example, NatBotChain.from_llm(llm, objective)"
+        )
 
     @classmethod
     def from_llm(

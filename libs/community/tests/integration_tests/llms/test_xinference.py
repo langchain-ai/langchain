@@ -46,12 +46,12 @@ def test_xinference_llm_(setup: Tuple[str, str]) -> None:
 
     llm = Xinference(server_url=endpoint, model_uid=model_uid)
 
-    answer = llm(prompt="Q: What food can we try in the capital of France? A:")
+    answer = llm.invoke("Q: What food can we try in the capital of France? A:")
 
     assert isinstance(answer, str)
 
-    answer = llm(
-        prompt="Q: where can we visit in the capital of France? A:",
+    answer = llm.invoke(
+        "Q: where can we visit in the capital of France? A:",
         generate_config={"max_tokens": 1024, "stream": True},
     )
 

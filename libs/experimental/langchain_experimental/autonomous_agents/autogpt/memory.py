@@ -26,7 +26,7 @@ class AutoGPTMemory(BaseChatMemory):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]
-        docs = self.retriever.get_relevant_documents(query)
+        docs = self.retriever.invoke(query)
         return {
             "chat_history": self.chat_memory.messages[-10:],
             "relevant_context": docs,

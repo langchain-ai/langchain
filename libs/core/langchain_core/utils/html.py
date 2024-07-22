@@ -34,11 +34,11 @@ DEFAULT_LINK_REGEX = (
 def find_all_links(
     raw_html: str, *, pattern: Union[str, re.Pattern, None] = None
 ) -> List[str]:
-    """Extract all links from a raw html string.
+    """Extract all links from a raw HTML string.
 
     Args:
-        raw_html: original html.
-        pattern: Regex to use for extracting links from raw html.
+        raw_html: original HTML.
+        pattern: Regex to use for extracting links from raw HTML.
 
     Returns:
         List[str]: all links
@@ -57,20 +57,20 @@ def extract_sub_links(
     exclude_prefixes: Sequence[str] = (),
     continue_on_failure: bool = False,
 ) -> List[str]:
-    """Extract all links from a raw html string and convert into absolute paths.
+    """Extract all links from a raw HTML string and convert into absolute paths.
 
     Args:
-        raw_html: original html.
-        url: the url of the html.
-        base_url: the base url to check for outside links against.
-        pattern: Regex to use for extracting links from raw html.
+        raw_html: original HTML.
+        url: the url of the HTML.
+        base_url: the base URL to check for outside links against.
+        pattern: Regex to use for extracting links from raw HTML.
         prevent_outside: If True, ignore external links which are not children
-            of the base url.
+            of the base URL.
         exclude_prefixes: Exclude any URLs that start with one of these prefixes.
         continue_on_failure: If True, continue if parsing a specific link raises an
             exception. Otherwise, raise the exception.
     Returns:
-        List[str]: sub links
+        List[str]: sub links.
     """
     base_url_to_use = base_url if base_url is not None else url
     parsed_base_url = urlparse(base_url_to_use)
@@ -88,6 +88,8 @@ def extract_sub_links(
                 absolute_path = f"{parsed_url.scheme}:{link}"
             else:
                 absolute_path = urljoin(url, parsed_link.path)
+                if parsed_link.query:
+                    absolute_path += f"?{parsed_link.query}"
             absolute_paths.add(absolute_path)
         except Exception as e:
             if continue_on_failure:

@@ -6,6 +6,7 @@ There could be multiple strategies for selecting examples. For example, one coul
 select examples based on the similarity of the input to the examples. Another
 strategy could be to select examples based on the diversity of the examples.
 """
+
 from langchain_community.example_selectors.ngram_overlap import (
     NGramOverlapExampleSelector,
     ngram_overlap_score,

@@ -1,4 +1,5 @@
 """Wrapper around LiteLLM's model I/O library."""
+
 from __future__ import annotations
 
 import logging
@@ -11,6 +12,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -20,6 +22,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -45,8 +48,11 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +89,14 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Fix for azure
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
+
+        additional_kwargs = {}
         if _dict.get("function_call"):
-            additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        else:
-            additional_kwargs = {}
+            additional_kwargs["function_call"] = dict(_dict["function_call"])
+
+        if _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = _dict["tool_calls"]
+
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
@@ -131,9 +141,9 @@ def _convert_delta_to_message_chunk(
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -161,7 +171,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLiteLLM(BaseChatModel):
-    """A chat model that uses the LiteLLM API."""
+    """Chat model that uses the LiteLLM API."""
 
     client: Any  #: :meta private:
     model: str = "gpt-3.5-turbo"
@@ -191,7 +201,7 @@ class ChatLiteLLM(BaseChatModel):
     n: int = 1
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
 
     max_retries: int = 6
 
@@ -239,7 +249,7 @@ class ChatLiteLLM(BaseChatModel):
 
         return _completion_with_retry(**kwargs)
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         try:
@@ -405,6 +415,32 @@ class ChatLiteLLM(BaseChatModel):
             self, messages=message_dicts, run_manager=run_manager, **params
         )
         return self._create_chat_result(response)
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        LiteLLM expects tools argument in OpenAI format.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any), or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

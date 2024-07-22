@@ -1,4 +1,5 @@
 """Base classes for LLM-powered router chains."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type, cast
@@ -12,10 +13,10 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils.json import parse_and_check_json_markdown
 
 from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
-from langchain.output_parsers.json import parse_and_check_json_markdown
 
 
 class LLMRouterChain(RouterChain):
@@ -24,7 +25,7 @@ class LLMRouterChain(RouterChain):
     llm_chain: LLMChain
     """LLM chain used to perform routing"""
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_prompt(cls, values: dict) -> dict:
         prompt = values["llm_chain"].prompt
         if prompt.output_parser is None:
