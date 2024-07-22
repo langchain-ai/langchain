@@ -32,7 +32,10 @@ def _format_nebula_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
     formatted_messages = []
     for message in messages[:-1]:
         if message.type == "system":
-            system = message.content
+            if isinstance(message.content, str):
+                system = message.content
+            else:
+                raise ValueError("System prompt must be a string")
         else:
             formatted_messages.append(
                 {
@@ -132,10 +135,10 @@ class ChatNebula(BaseChatModel):
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
-        payload = json.dumps(payload)
+        json_payload = json.dumps(payload)
 
         response = requests.request(
-            "POST", url, headers=headers, data=payload, stream=True
+            "POST", url, headers=headers, data=json_payload, stream=True
         )
         response.raise_for_status()
 
@@ -169,11 +172,11 @@ class ChatNebula(BaseChatModel):
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
-        payload = json.dumps(payload)
+        json_payload = json.dumps(payload)
 
         async with ClientSession() as session:
             async with session.post(
-                url, data=payload, headers=headers, stream=True
+                url, data=json_payload, headers=headers, stream=True
             ) as response:
                 response.raise_for_status()
                 async for chunk_response in response.content:
@@ -214,9 +217,9 @@ class ChatNebula(BaseChatModel):
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
-        payload = json.dumps(payload)
+        json_payload = json.dumps(payload)
 
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request("POST", url, headers=headers, data=json_payload)
         response.raise_for_status()
         data = response.json()
 
@@ -249,10 +252,12 @@ class ChatNebula(BaseChatModel):
         }
 
         payload = {k: v for k, v in payload.items() if v is not None}
-        payload = json.dumps(payload)
+        json_payload = json.dumps(payload)
 
         async with ClientSession() as session:
-            async with session.post(url, data=payload, headers=headers) as response:
+            async with session.post(
+                url, data=json_payload, headers=headers
+            ) as response:
                 response.raise_for_status()
                 data = await response.json()
 
