@@ -340,13 +340,13 @@ class QianfanChatEndpoint(BaseChatModel):
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Bot-turbo"
+    model: str = "ERNIE-Lite-8K"
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set.
-    Default is ERNIE-Bot-turbo.
+    Default is ERNIE-Lite-8K.
     """
 
     endpoint: Optional[str] = None
