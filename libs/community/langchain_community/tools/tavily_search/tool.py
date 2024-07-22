@@ -74,7 +74,7 @@ class TavilySearchResults(BaseTool):
         .. code-block:: python
 
             'Pan-Seared Steaks\nPan-searing is the best way to cook a steak, and it's also the easiest!\nIngredients\nInstructions\nPair with\nNutrition Information\nPowered by\nThis website is written and produced for informational purposes only. When I do this again I will do for 5 minutes but will turn off the heat on my cast Iron frying pan 2 minutes before and add butter and rosemary and garlic to get the steak more to our liking.\n I got a ribeye steak, heated the pan to the top heat and did everything like you mentioned, but after three minutes the steak was burned, on the other side the same happened. After doing some more research, I find you have to bring the steak to room temperature before you cook it and yiu have to snip the fat around the edges to keep it from curling. 22 Quick and Easy Recipes in 30 Minutes (or less) + 5 Chef Secrets To Make You A Better Cook!\nFind a Recipe\nHow To Cook Steak On The Stovetop\nThis post may contain affiliate links.'
-    
+
             {'query': 'how to cook a steak?',
             'follow_up_questions': None,
             'answer': None,
@@ -118,7 +118,7 @@ class TavilySearchResults(BaseTool):
     ) -> Union[List[Dict], str]:
         """Use the tool."""
         try:
-            raw_result = self.api_wrapper.results(
+            raw_result = self.api_wrapper.raw_results(
                 query,
                 self.max_results,
                 self.search_depth,
@@ -131,7 +131,7 @@ class TavilySearchResults(BaseTool):
         except Exception as e:
             return repr(e)
         content = self.api_wrapper.clean_results(raw_result["results"])
-        return content, raw_result
+        return content, raw_result  # type: ignore
 
     async def _arun(
         self,
@@ -140,7 +140,7 @@ class TavilySearchResults(BaseTool):
     ) -> Union[List[Dict], str]:
         """Use the tool asynchronously."""
         try:
-            raw_result = await self.api_wrapper.results_async(
+            raw_result = await self.api_wrapper.raw_results_async(
                 query,
                 self.max_results,
                 self.search_depth,
@@ -153,7 +153,8 @@ class TavilySearchResults(BaseTool):
         except Exception as e:
             return repr(e)
         content = self.api_wrapper.clean_results(raw_result["results"])
-        return content, raw_result
+        return content, raw_result  # type: ignore
+
 
 class TavilyAnswer(BaseTool):
     """Tool that queries the Tavily Search API and gets back an answer."""
