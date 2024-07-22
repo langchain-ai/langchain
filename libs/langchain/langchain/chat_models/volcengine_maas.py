@@ -18,8 +18,7 @@ DEPRECATED_LOOKUP = {
     "VolcEngineMaasChatV3": "langchain_community.chat_models.volcengine_maas",
 }
 
-_import_attribute = create_importer(
-    __package__, deprecated_lookups=DEPRECATED_LOOKUP)
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
