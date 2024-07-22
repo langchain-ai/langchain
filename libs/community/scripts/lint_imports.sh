@@ -29,7 +29,7 @@ fi
 # is very nuanced and depends on the user's environment.
 # https://docs.python.org/3/library/xml.etree.elementtree.html
 
-result=$(git -C "$repository_path" grep -En '^from xml.|^import xml$|^import xml.' | grep -vE "# OK: user-must-opt-in" || true)
+result=$(git -C "$repository_path" grep -En '^from xml.|^import xml$|^import xml.' | grep -vE "# OK: user-must-opt-in| # OK: trusted-source" || true)
 
 if [ -n "$result" ]; then
   echo "ERROR: The following lines need to be updated:"
