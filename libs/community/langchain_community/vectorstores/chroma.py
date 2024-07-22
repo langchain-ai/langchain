@@ -50,6 +50,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     ]
 
 
+@deprecated(since="0.2.9", removal="0.4", alternative_import="langchain_chroma.Chroma")
 class Chroma(VectorStore):
     """`ChromaDB` vector store.
 
