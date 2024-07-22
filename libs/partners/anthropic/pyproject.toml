@@ -18,9 +18,6 @@ license = "MIT"
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
-
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 anthropic = ">=0.28.0,<1"
