@@ -63,23 +63,12 @@ ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
+langchain-core = { path =  "../../core", develop = true }
+langchain-standard-tests = { path =  "../../standard-tests", develop = true }
 
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[tool.poetry.group.dev.dependencies]
+langchain-core = { path =  "../../core", develop = true }
+langchain-standard-tests = { path =  "../../standard-tests", develop = true }
 
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
-path = "../../standard-tests"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[tool.poetry.group.test_integration.dependencies]
+langchain-core = { path =  "../../core", develop = true }
