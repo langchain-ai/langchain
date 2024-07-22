@@ -82,11 +82,11 @@ def _create_tool_content(content: Union[str, List[Union[str, Dict[Any, Any]]]]) 
             if isinstance(json.loads(content), dict):
                 return content
             else:
-                return json.dumps({"original_content": content})
+                return json.dumps({"tool_result": content})
         except json.JSONDecodeError:
-            return json.dumps({"original_content": content})
+            return json.dumps({"tool_result": content})
     else:
-        return json.dumps({"original_content": content})
+        return json.dumps({"tool_result": content})
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
