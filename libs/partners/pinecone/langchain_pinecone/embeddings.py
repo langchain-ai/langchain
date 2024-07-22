@@ -31,15 +31,17 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     # Clients
     _client: PineconeClient = Field(exclude=True)
     _async_client: aiohttp.ClientSession = Field(exclude=True)
-    # Config
     model: str
     """Model to use for example 'multilingual-e5-large'."""
+    # Config
     batch_size: Optional[int]
     """Batch size for embedding documents."""
     query_params: Dict = Field(default_factory=dict)
     """Parameters for embedding query."""
     document_params: Dict = Field(default_factory=dict)
     """Parameters for embedding document"""
+    #
+    dimension: Optional[int] = None
     #
     show_progress_bar: bool = False
     pinecone_api_key: Optional[SecretStr] = None
@@ -55,6 +57,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
                 "batch_size": 96,
                 "query_params": {"input_type": "query", "truncation": "END"},
                 "document_params": {"input_type": "passage", "truncation": "END"},
+                "dimension": 1024,
             }
         }
         model = values.get("model")

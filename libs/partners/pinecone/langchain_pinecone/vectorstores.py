@@ -45,7 +45,7 @@ class PineconeVectorStore(VectorStore):
             embeddings = PineconeEmbeddings(model="multilingual-e5-large")
             index_name = "my-index"
             namespace = "my-namespace"
-            vectorstore = Pinecone(
+            vectorstore = PineconeVectorStore(
                 index_name=index_name,
                 embedding=embedding,
                 namespace=namespace,
