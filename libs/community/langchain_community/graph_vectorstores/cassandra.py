@@ -29,19 +29,13 @@ class CassandraGraphVectorStore(GraphVectorStore):
         embedding: Embeddings,
         *,
         node_table: str = "graph_nodes",
-        targets_table: str = "graph_targets",
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
     ):
         """
         Create the hybrid graph store.
-        Parameters configure the ways that edges should be added between
-        documents. Many take `Union[bool, Set[str]]`, with `False` disabling
-        inference, `True` enabling it globally between all documents, and a set
-        of metadata fields defining a scope in which to enable it. Specifically,
-        passing a set of metadata fields such as `source` only links documents
-        with the same `source` metadata value.
+
         Args:
             embedding: The embeddings to use for the document content.
             setup_mode: Mode used to create the Cassandra table (SYNC,
@@ -77,7 +71,6 @@ class CassandraGraphVectorStore(GraphVectorStore):
         self.store = graph_store.GraphStore(
             embedding=_EmbeddingModelAdapter(embedding),
             node_table=node_table,
-            targets_table=targets_table,
             session=session,
             keyspace=keyspace,
             setup_mode=_setup_mode,
