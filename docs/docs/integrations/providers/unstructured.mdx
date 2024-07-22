@@ -13,15 +13,16 @@ dependencies running.
 
 - For the smallest installation footprint and to take advantage of features not available in the
   open-source `unstructured` package, install the Python SDK with `pip install unstructured-client`
-  along with `pip install langchain-unstructured` to use the `UnstructuredSDKFileLoader` or
-  `UnstructuredSDKFileIOLoader`. These loaders live in a LangChain partner repo instead of the
-  `langchain-community` repo.
+  along with `pip install langchain-unstructured` to use the `UnstructuredLoader` and partition
+  remotely against the Unstructured API. This loader lives
+  in a LangChain partner repo instead of the `langchain-community` repo and you will need an
+  `api_key`, which you can generate a free key [here](https://unstructured.io/api-key/).
     - Unstructured's documentation for the sdk can be found here:
       https://docs.unstructured.io/api-reference/api-services/sdk
 
 - To run everything locally, install the open-source python package with `pip install unstructured`
-  along with `pip install langchain-community` and use the `UnstructuredFileLoader` or `UnstructuredFileIOLoader`.
-    - You can install document specific dependencies with extras, i.e. `pip install "unstructured[docx]"`.
+  along with `pip install langchain-community` and use the same `UnstructuredLoader` as mentioned above.
+    - You can install document specific dependencies with extras, e.g. `pip install "unstructured[docx]"`.
     - To install the dependencies for all document types, use `pip install "unstructured[all-docs]"`.
 - Install the following system dependencies if they are not already available on your system with e.g. `brew install` for Mac.
   Depending on what document types you're parsing, you may not need all of these.
@@ -46,29 +47,20 @@ Check out the instructions
 
 ## Data Loaders
 
-The primary usage of the `Unstructured` is in data loaders.
+The primary usage of `Unstructured` is in data loaders.
 
-### UnstructuredSDKFileIOLoader
+### UnstructuredLoader
 
-See a [usage example](/docs/integrations/document_loaders/unstructured_file#unstructured-api).
-
-```python
-from langchain_community.document_loaders import UnstructuredSDKFileIOLoader
-```
-
-### UnstructuredSDKFileLoader
-
-See a [usage example](/docs/integrations/document_loaders/unstructured_file#unstructured-api).
+See a [usage example](/docs/integrations/document_loaders/unstructured_file) to see how you can use
+this loader for both partitioning locally and remotely with the serverless Unstructured API.
 
 ```python
-from langchain_community.document_loaders import UnstructuredSDKFileLoader
+from langchain_unstructured import UnstructuredLoader
 ```
 
 ### UnstructuredCHMLoader
 
 `CHM` means `Microsoft Compiled HTML Help`.
-
-See a usage example in the API documentation.
 
 ```python
 from langchain_community.document_loaders import UnstructuredCHMLoader
@@ -121,15 +113,6 @@ See a [usage example](/docs/integrations/document_loaders/google_drive#passing-i
 
 ```python
 from langchain_community.document_loaders import UnstructuredFileIOLoader
-```
-
-### UnstructuredFileLoader
-
-See a [usage example](/docs/integrations/document_loaders/unstructured_file).
-
-
-```python
-from langchain_community.document_loaders import UnstructuredFileLoader
 ```
 
 ### UnstructuredHTMLLoader

@@ -6,7 +6,10 @@ import pytest
 
 from langchain_unstructured import UnstructuredLoader
 
-EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent.parent.parent.parent / "community/tests/integration_tests/examples/")
+EXAMPLE_DOCS_DIRECTORY = str(
+    Path(__file__).parent.parent.parent.parent.parent
+    / "community/tests/integration_tests/examples/"
+)
 UNSTRUCTURED_API_KEY = os.getenv("UNSTRUCTURED_API_KEY")
 
 
@@ -27,7 +30,24 @@ def test_loader_partitions_locally() -> None:
     assert any(doc.metadata.get("category") == "PageBreak" for doc in docs)
 
 
-def test_loader_partitions_locally_and_applies_post_processors(get_post_processor):
+def test_loader_partition_ignores_invalid_arg() -> None:
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+
+    docs = UnstructuredLoader(
+        file_path=file_path,
+        # Unstructured kwargs
+        strategy="fast",
+        # mode is no longer a valid argument and will be ignored when partitioning locally
+        mode="single",
+    ).load()
+
+    assert len(docs) > 1
+    assert all(doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs)
+
+
+def test_loader_partitions_locally_and_applies_post_processors(
+    get_post_processor: Callable[[str], str]
+):
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredLoader(
         file_path=file_path,
@@ -91,7 +111,7 @@ def test_loader_partition_via_api_raises_TypeError_with_invalid_arg() -> None:
         partition_via_api=True,
         mode="elements",
     )
-    
+
     with pytest.raises(TypeError, match="unexpected keyword argument 'mode'"):
         loader.load()
 

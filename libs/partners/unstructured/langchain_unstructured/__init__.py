@@ -1,6 +1,9 @@
 from importlib import metadata
 
-from langchain_unstructured.document_loaders import UnstructuredLoader, _UnstructuredBaseLoader
+from langchain_unstructured.document_loaders import (
+    UnstructuredLoader,
+    _UnstructuredBaseLoader, # type: ignore
+)
 
 try:
     __version__ = metadata.version(__package__)

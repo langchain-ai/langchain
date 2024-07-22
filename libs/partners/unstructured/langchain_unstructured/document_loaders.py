@@ -76,9 +76,9 @@ class UnstructuredLoader(BaseLoader):
 
     def __init__(
         self,
+        file_path: Optional[str | Path | list[str] | list[Path]] = None,
         *,
         file: Optional[IO[bytes] | list[IO[bytes]]] = None,
-        file_path: Optional[str | Path | list[str] | list[Path]] = None,
         partition_via_api: bool = False,
         post_processors: Optional[list[Callable[[str], str]]] = None,
         # SDK parameters
@@ -91,8 +91,8 @@ class UnstructuredLoader(BaseLoader):
         **unstructured_kwargs: Any,
     ):
         """Initialize loader."""
-        self.file = file
         self.file_path = file_path
+        self.file = file
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
         # SDK parameters
@@ -150,9 +150,9 @@ class _UnstructuredBaseLoader(BaseLoader):
 
     def __init__(
         self,
+        file_path: Optional[str | Path] = None,
         *,
         file: Optional[IO[bytes]] = None,
-        file_path: Optional[str | Path] = None,
         partition_via_api: bool = False,
         post_processors: Optional[list[Callable[[str], str]]] = None,
         # SDK parameters
@@ -165,8 +165,8 @@ class _UnstructuredBaseLoader(BaseLoader):
         **unstructured_kwargs: Any,
     ):
         """Initialize loader."""
-        self.file = file
         self.file_path = str(file_path) if isinstance(file_path, Path) else file_path
+        self.file = file
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
         # SDK parameters
