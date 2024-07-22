@@ -16,6 +16,8 @@ from pinecone import Pinecone as PineconeClient  # type: ignore
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_BATCH_SIZE = 64
+
 
 class PineconeEmbeddings(BaseModel, Embeddings):
     """PineconeEmbeddings embedding model.
@@ -29,12 +31,12 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     """
 
     # Clients
-    _client: PineconeClient = Field(exclude=True)
-    _async_client: aiohttp.ClientSession = Field(exclude=True)
+    _client: PineconeClient = Field(default=None, exclude=True)
+    _async_client: aiohttp.ClientSession = Field(default=None, exclude=True)
     model: str
     """Model to use for example 'multilingual-e5-large'."""
     # Config
-    batch_size: Optional[int]
+    batch_size: Optional[int] = None
     """Batch size for embedding documents."""
     query_params: Dict = Field(default_factory=dict)
     """Parameters for embedding query."""
@@ -50,7 +52,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         extra = Extra.forbid
 
     @root_validator(pre=True)
-    def set_default_config(cls, values):
+    def set_default_config(cls, values: dict) -> dict:
         """Set default configuration based on model."""
         default_config_map = {
             "multilingual-e5-large": {
@@ -62,7 +64,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         }
         model = values.get("model")
         if model in default_config_map:
-            config = default_config_map.get(model)
+            config = default_config_map[model]
             for key, value in config.items():
                 if key not in values:
                     values[key] = value
@@ -100,6 +102,11 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         return values
 
     def _get_batch_iterator(self, texts: List[str]) -> Iterable:
+        if self.batch_size is None:
+            batch_size = DEFAULT_BATCH_SIZE
+        else:
+            batch_size = self.batch_size
+
         if self.show_progress_bar:
             try:
                 from tqdm.auto import tqdm  # type: ignore
@@ -109,9 +116,9 @@ class PineconeEmbeddings(BaseModel, Embeddings):
                     "Please install with `pip install tqdm`."
                 ) from e
 
-            _iter = tqdm(range(0, len(texts), self.batch_size))
+            _iter = tqdm(range(0, len(texts), batch_size))  # ignore: type
         else:
-            _iter = range(0, len(texts), self.batch_size)
+            _iter = range(0, len(texts), batch_size)
 
         return _iter
 
