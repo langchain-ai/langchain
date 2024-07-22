@@ -1,5 +1,5 @@
 import json
-from typing import Generic, List, Type
+from typing import Generic, List, Optional, Type
 
 import pydantic  # pydantic: ignore
 
@@ -49,7 +49,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
 
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
-    ) -> TBaseModel:
+    ) -> Optional[TBaseModel]:
         """Parse the result of an LLM call to a pydantic object.
 
         Args:
