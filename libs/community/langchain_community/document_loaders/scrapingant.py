@@ -30,14 +30,14 @@ class ScrapingAntLoader(BaseLoader):
             urls: List of urls to scrape.
             api_key: The ScrapingAnt API key. If not specified must have env var
                 SCRAPINGANT_API_KEY set.
-            scrape_config: The scraping configuration from ScrapingAntClient.markdown_request
+            scrape_config: The scraping config from ScrapingAntClient.markdown_request
             continue_on_failure: Whether to continue if scraping an url fails.
         """
         try:
             from scrapingant_client import ScrapingAntClient
         except ImportError:
             raise ImportError(
-                "`scrapingant-client` package not found, please run `pip install scrapingant-client`"
+                "`scrapingant-client` package not found, run `pip install scrapingant-client`"
             )
         if not urls:
             raise ValueError("URLs must be provided.")
