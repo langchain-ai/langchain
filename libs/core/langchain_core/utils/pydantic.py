@@ -5,7 +5,9 @@ from __future__ import annotations
 import inspect
 import textwrap
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+
+import pydantic  # pydantic: ignore
 
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -26,6 +28,22 @@ def get_pydantic_major_version() -> int:
 PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 
+if PYDANTIC_MAJOR_VERSION == 1:
+    PydanticBaseModel = pydantic.BaseModel
+    TypeBaseModel = Type[BaseModel]
+elif PYDANTIC_MAJOR_VERSION == 2:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
+    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
+    TypeBaseModel = Union[Type[BaseModel], Type[pydantic.BaseModel]]  # type: ignore
+else:
+    raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+
+
+TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
+
+
 def is_basemodel_subclass(cls: Type) -> bool:
     """Check if the given class is a subclass of Pydantic BaseModel.
 
@@ -40,13 +58,13 @@ def is_basemodel_subclass(cls: Type) -> bool:
         return False
 
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1Proper
+        from pydantic import BaseModel as BaseModelV1Proper  # pydantic: ignore
 
         if issubclass(cls, BaseModelV1Proper):
             return True
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2
-        from pydantic.v1 import BaseModel as BaseModelV1
+        from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
+        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
 
         if issubclass(cls, BaseModelV2):
             return True
@@ -68,13 +86,13 @@ def is_basemodel_instance(obj: Any) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
     """
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import BaseModel as BaseModelV1Proper
+        from pydantic import BaseModel as BaseModelV1Proper  # pydantic: ignore
 
         if isinstance(obj, BaseModelV1Proper):
             return True
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2
-        from pydantic.v1 import BaseModel as BaseModelV1
+        from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
+        from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
 
         if isinstance(obj, BaseModelV2):
             return True
