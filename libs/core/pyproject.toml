@@ -11,6 +11,10 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-core%3D%3D0%22&expanded=true"
+
 [tool.mypy]
 disallow_untyped_defs = "True"
 exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic",]
