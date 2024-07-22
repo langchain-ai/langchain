@@ -20,13 +20,21 @@ from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
 from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
 from langchain_experimental.utilities import PythonREPL
 
-COMMAND_EXECUTION_FUNCTIONS = ["system", "exec", "execfile", "eval", "__import__"]
+COMMAND_EXECUTION_FUNCTIONS = [
+    "system",
+    "exec",
+    "execfile",
+    "eval",
+    "__import__",
+    "compile",
+]
 COMMAND_EXECUTION_ATTRIBUTES = [
     "__import__",
     "__subclasses__",
     "__builtins__",
     "__globals__",
     "__getattribute__",
+    "__code__",
     "__bases__",
     "__mro__",
     "__base__",

@@ -1146,30 +1146,6 @@ class AgentExecutor(Chain):
                 )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_return_direct_tool(cls, values: Dict) -> Dict:
-        """Validate that tools are compatible with agent.
-
-        Args:
-            values: Values to validate.
-
-        Returns:
-            Dict: Validated values.
-
-        Raises:
-            ValueError: If tools that have `return_direct=True` are not allowed.
-        """
-        agent = values["agent"]
-        tools = values["tools"]
-        if isinstance(agent, BaseMultiActionAgent):
-            for tool in tools:
-                if tool.return_direct:
-                    raise ValueError(
-                        "Tools that have `return_direct=True` are not allowed "
-                        "in multi-action agents"
-                    )
-        return values
-
     @root_validator(pre=True)
     def validate_runnable_agent(cls, values: Dict) -> Dict:
         """Convert runnable to agent if passed in.
