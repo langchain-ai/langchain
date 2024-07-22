@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-couchbase"
-version = "0.1.0"
+version = "0.1.1"
 description = "An integration package connecting Couchbase and LangChain"
 authors = []
 readme = "README.md"
