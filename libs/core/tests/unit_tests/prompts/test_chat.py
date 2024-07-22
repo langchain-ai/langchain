@@ -6,9 +6,8 @@ from typing import Any, List, Union
 import pytest
 from syrupy import SnapshotAssertion
 
-from langchain_core._api.deprecation import (
-    LangChainPendingDeprecationWarning,
-)
+from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
+from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -806,3 +805,13 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     assert set(prompt_optional.input_variables) == {"input"}
     prompt_optional.input_schema(input="")  # won't raise error
     assert prompt_optional.input_schema.schema() == snapshot(name="partial")
+
+
+def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> None:
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "foo"), MessagesPlaceholder("bar"), ("human", "baz")]
+    )
+    assert dumpd(MessagesPlaceholder("bar")) == snapshot(name="placholder")
+    assert load(dumpd(MessagesPlaceholder("bar"))) == MessagesPlaceholder("bar")
+    assert dumpd(prompt) == snapshot(name="chat_prompt")
+    assert load(dumpd(prompt)) == prompt
