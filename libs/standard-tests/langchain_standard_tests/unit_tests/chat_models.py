@@ -155,7 +155,10 @@ class ChatModelUnitTests(ChatModelTests):
         for pydantic_model in TEST_PYDANTIC_MODELS:
             tools.extend([pydantic_model, pydantic_model.schema()])
 
-        tool_model = model.bind_tools(tools, tool_choice="any")
+        # Doing a mypy ignore here since some of the tools are from pydantic
+        # BaseModel 2 which isn't typed properly yet. This will need to be fixed
+        # so type checking does not become annoying to users.
+        tool_model = model.bind_tools(tools, tool_choice="any")  # type: ignore
         assert isinstance(tool_model, RunnableBinding)
 
     @pytest.mark.parametrize("schema", TEST_PYDANTIC_MODELS)
