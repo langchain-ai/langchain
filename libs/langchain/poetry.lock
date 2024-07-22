@@ -1760,7 +1760,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.20"
+version = "0.2.22"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1784,7 +1784,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.16"
+version = "0.1.18"
 description = "An integration package connecting OpenAI and LangChain"
 optional = true
 python-versions = ">=3.8.1,<4.0"
@@ -1792,7 +1792,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.2.17"
+langchain-core = "^0.2.20"
 openai = "^1.32.0"
 tiktoken = ">=0.7,<1"
 
@@ -4561,4 +4561,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "717e3c652887444e5a074765cb31bb8cbc9a17871ccf610d97bc9bc3341f37f0"
+content-hash = "3bfb687a4835f55d71f5fc1d23c16a42afcf8e9ad496b4da61bd3cb9b026b6ca"
