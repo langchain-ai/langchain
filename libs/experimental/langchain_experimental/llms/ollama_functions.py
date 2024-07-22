@@ -41,7 +41,7 @@ from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils.pydantic import _isinstance_base_model, is_basemodel_subclass
+from langchain_core.utils.pydantic import is_basemodel_instance, is_basemodel_subclass
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
@@ -92,7 +92,7 @@ def convert_to_ollama_tool(tool: Any) -> Dict:
         schema = tool.tool_call_schema.schema()
         name = tool.get_name()
         description = tool.description
-    elif _isinstance_base_model(tool):
+    elif is_basemodel_instance(tool):
         schema = tool.get_input_schema().schema()
         name = tool.get_name()
         description = tool.description
