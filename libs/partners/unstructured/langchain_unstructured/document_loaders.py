@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import IO, Any, Callable, Iterator, TYPE_CHECKING, Optional, cast
+from typing import IO, TYPE_CHECKING, Any, Callable, Iterator, Optional, cast
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+
 from langchain_unstructured.utils import lazyproperty
 
 logger = logging.getLogger(__file__)
@@ -27,8 +28,8 @@ class UnstructuredLoader(BaseLoader):
 
     API:
     To partition via the Unstructured API `pip install unstructured-client` and set
-    `partition_via_api=True` and define `api_key`. If you are running the unstructured API
-    locally, you can change the API rule by defining `url` when you initialize the
+    `partition_via_api=True` and define `api_key`. If you are running the unstructured
+    API locally, you can change the API rule by defining `url` when you initialize the
     loader. The hosted Unstructured API requires an API key. See the links below to
     learn more about our API offerings and get an API key.
 
@@ -104,7 +105,6 @@ class UnstructuredLoader(BaseLoader):
         self.url_params = url_params
         self.unstructured_kwargs = unstructured_kwargs
 
-
     def lazy_load(self) -> Iterator[Document]:
         """Load file(s) to the _UnstructuredBaseLoader."""
 
@@ -112,7 +112,7 @@ class UnstructuredLoader(BaseLoader):
             f: Optional[IO[bytes]] = None, f_path: Optional[str | Path] = None
         ) -> Iterator[Document]:
             """Load an individual file to the _UnstructuredBaseLoader."""
-            return _UnstructuredBaseLoader(
+            return _SingleDocumentLoader(
                 file=f,
                 file_path=f_path,
                 partition_via_api=self.partition_via_api,
@@ -131,19 +131,19 @@ class UnstructuredLoader(BaseLoader):
             for f in self.file:
                 yield from load_file(f=f)
             return
-        
+
         if isinstance(self.file_path, list):
             for f_path in self.file_path:
                 yield from load_file(f_path=f_path)
             return
-        
+
         # Call _UnstructuredBaseLoader normally since file and file_path are not lists
         yield from load_file(f=self.file, f_path=self.file_path)
 
 
-class _UnstructuredBaseLoader(BaseLoader):
+class _SingleDocumentLoader(BaseLoader):
     """Provides loader functionality for individual document/file objects.
-    
+
     Encapsulates partitioning individual file objects (file or file_path) either
     locally or via the Unstructured API.
     """
@@ -177,21 +177,24 @@ class _UnstructuredBaseLoader(BaseLoader):
         self.url = url
         self.url_params = url_params
         self.unstructured_kwargs = unstructured_kwargs
-        
+
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
         elements_json = (
             self._post_process_elements_json(self._elements_json)
-            if self.post_processors else self._elements_json
+            if self.post_processors
+            else self._elements_json
         )
         for element in elements_json:
             metadata = self._get_metadata()
-            metadata.update(element.get("metadata")) # type: ignore
+            metadata.update(element.get("metadata"))  # type: ignore
             metadata.update(
                 {"category": element.get("category") or element.get("type")}
             )
             metadata.update({"element_id": element.get("element_id")})
-            yield Document(page_content=cast(str, element.get("text")), metadata=metadata)
+            yield Document(
+                page_content=cast(str, element.get("text")), metadata=metadata
+            )
 
     @lazyproperty
     def _elements_json(self) -> list[dict[str, Any]]:
@@ -202,13 +205,14 @@ class _UnstructuredBaseLoader(BaseLoader):
             )
         if not self.partition_via_api and self.api_key:
             logger.warning(
-                "Partitioning locally even though api_key is defined since partition_via_api=False.",
+                "Partitioning locally even though api_key is defined since"
+                " partition_via_api=False.",
             )
         if self.partition_via_api and self.api_key:
             return self._elements_via_api
-        
+
         return self._convert_elements_to_dicts(self._elements_via_local)
-    
+
     @lazyproperty
     def _elements_via_local(self) -> list[Element]:
         try:
@@ -224,12 +228,14 @@ class _UnstructuredBaseLoader(BaseLoader):
                 "If partitioning a fileIO object, metadata_filename must be specified"
                 " as well.",
             )
-        
-        return partition(file=self.file, filename=self.file_path, **self.unstructured_kwargs)
-    
+
+        return partition(
+            file=self.file, filename=self.file_path, **self.unstructured_kwargs
+        )
+
     @lazyproperty
     def _elements_via_api(self) -> list[dict[str, Any]]:
-        """Retrieve a list of element dicts from the `Unstructured API` using the SDK client."""
+        """Retrieve a list of element dicts from the API using the SDK client."""
         client = self._sdk_client
         req = self._sdk_partition_request
         response = client.general.partition(req)
@@ -238,7 +244,7 @@ class _UnstructuredBaseLoader(BaseLoader):
         raise ValueError(
             f"Receive unexpected status code {response.status_code} from the API.",
         )
-    
+
     @lazyproperty
     def _file_content(self) -> bytes:
         """Get content from either file or file_path."""
@@ -259,14 +265,14 @@ class _UnstructuredBaseLoader(BaseLoader):
                 " `pip install unstructured-client`."
             )
         return unstructured_client.UnstructuredClient(
-            api_key_auth=self.api_key, # type: ignore
+            api_key_auth=self.api_key,  # type: ignore
             client=self.client,
             retry_config=self.retry_config,
             server=self.server,
             server_url=self.url,
             url_params=self.url_params,
         )
-    
+
     @lazyproperty
     def _sdk_partition_request(self):
         try:
@@ -284,14 +290,16 @@ class _UnstructuredBaseLoader(BaseLoader):
                 **self.unstructured_kwargs,
             ),
         )
-    
-    def _convert_elements_to_dicts(self, elements: list[Element]) -> list[dict[str, Any]]:
+
+    def _convert_elements_to_dicts(
+        self, elements: list[Element]
+    ) -> list[dict[str, Any]]:
         return [element.to_dict() for element in elements]
-    
+
     def _get_metadata(self) -> dict[str, Any]:
         """Get file_path metadata if available."""
         return {"source": self.file_path} if self.file_path else {}
-    
+
     def _post_process_elements_json(
         self, elements_json: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:
@@ -301,6 +309,6 @@ class _UnstructuredBaseLoader(BaseLoader):
         in using the post_processors kwarg when the loader is instantiated.
         """
         for element in elements_json:
-            for post_processor in self.post_processors: # type: ignore
+            for post_processor in self.post_processors:  # type: ignore
                 element["text"] = post_processor(str(element.get("text")))
         return elements_json

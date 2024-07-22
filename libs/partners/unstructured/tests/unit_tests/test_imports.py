@@ -2,7 +2,7 @@ from langchain_unstructured import __all__
 
 EXPECTED_ALL = [
     "UnstructuredLoader",
-    '__version__',
+    "__version__",
 ]
 
 

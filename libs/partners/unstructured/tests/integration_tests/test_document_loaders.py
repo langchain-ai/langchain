@@ -26,7 +26,9 @@ def test_loader_partitions_locally() -> None:
         include_page_breaks=True,
     ).load()
 
-    assert all(doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs)
+    assert all(
+        doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs
+    )
     assert any(doc.metadata.get("category") == "PageBreak" for doc in docs)
 
 
@@ -37,17 +39,19 @@ def test_loader_partition_ignores_invalid_arg() -> None:
         file_path=file_path,
         # Unstructured kwargs
         strategy="fast",
-        # mode is no longer a valid argument and will be ignored when partitioning locally
+        # mode is no longer a valid argument and is ignored when partitioning locally
         mode="single",
     ).load()
 
     assert len(docs) > 1
-    assert all(doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs)
+    assert all(
+        doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs
+    )
 
 
 def test_loader_partitions_locally_and_applies_post_processors(
-    get_post_processor: Callable[[str], str]
-):
+    get_post_processor: Callable[[str], str],
+) -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredLoader(
         file_path=file_path,
@@ -74,12 +78,14 @@ def test_loader_partitions_via_api() -> None:
         strategy="fast",
         include_page_breaks=True,
     )
-    
+
     docs = loader.load()
 
     assert len(docs) > 1
     assert any(doc.metadata.get("category") == "PageBreak" for doc in docs)
-    assert all(doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs)
+    assert all(
+        doc.metadata.get("filename") == "layout-parser-paper.pdf" for doc in docs
+    )
     assert docs[0].metadata.get("element_id") is not None
 
 
@@ -95,7 +101,7 @@ def test_loader_partitions_multiple_via_api() -> None:
         # Unstructured kwargs
         strategy="fast",
     )
-    
+
     docs = loader.load()
 
     assert len(docs) > 1

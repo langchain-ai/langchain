@@ -50,10 +50,18 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def __init__(
         self,
         mode: str = "single",  # deprecated
-        post_processors: Optional[list[Callable]] = None,
+        post_processors: Optional[list[Callable[[str], str]]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
+
+        try:
+            import unstructured  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "unstructured package not found, please install it with "
+                "`pip install unstructured`"
+            )
 
         # `single` - elements are combined into one (default)
         # `elements` - maintain individual elements
@@ -63,6 +71,11 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
             raise ValueError(
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
+
+        if not satisfies_min_unstructured_version("0.5.4"):
+            if "strategy" in unstructured_kwargs:
+                unstructured_kwargs.pop("strategy")
+
         self._check_if_both_mode_and_chunking_strategy_are_by_page(
             mode, unstructured_kwargs
         )
@@ -78,13 +91,16 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def _get_metadata(self) -> dict[str, Any]:
         """Get file_path metadata if available."""
 
-    @abstractmethod
     def _post_process_elements(self, elements: list[Element]) -> list[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
         in using the post_processors kwarg when the loader is instantiated.
         """
+        for element in elements:
+            for post_processor in self.post_processors:
+                element.apply(post_processor)
+        return elements
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
@@ -109,7 +125,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 " https://docs.unstructured.io/open-source/core-functionality/chunking"
             )
             text_dict: dict[int, str] = {}
-            meta_dict: dict[int, dict] = {}
+            meta_dict: dict[int, dict[str, Any]] = {}
 
             for element in elements:
                 metadata = self._get_metadata()
@@ -148,6 +164,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 "Only one of `chunking_strategy='by_page'` or `mode='paged'` may be"
                 " set. `chunking_strategy` is preferred."
             )
+
 
 @deprecated(
     since="0.2.8",
@@ -211,7 +228,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         from unstructured.partition.auto import partition
 
         if isinstance(self.file_path, list):
-            elements = []
+            elements: list[Element] = []
             for file in self.file_path:
                 if isinstance(file, Path):
                     file = str(file)
@@ -235,6 +252,42 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
             for post_processor in self.post_processors:
                 element.apply(post_processor)
         return elements
+
+
+def get_elements_from_api(
+    file_path: Union[str, list[str], Path, list[Path], None] = None,
+    file: Union[IO[bytes], Sequence[IO[bytes]], None] = None,
+    api_url: str = "https://api.unstructuredapp.io/general/v0/general",
+    api_key: str = "",
+    **unstructured_kwargs: Any,
+) -> list[Element]:
+    """Retrieve a list of elements from the `Unstructured API`."""
+    if is_list := isinstance(file_path, list):
+        file_path = [str(path) for path in file_path]
+    if isinstance(file, Sequence) or is_list:
+        from unstructured.partition.api import partition_multiple_via_api
+
+        _doc_elements = partition_multiple_via_api(
+            filenames=file_path,  # type: ignore
+            files=file,  # type: ignore
+            api_key=api_key,
+            api_url=api_url,
+            **unstructured_kwargs,
+        )
+        elements = []
+        for _elements in _doc_elements:
+            elements.extend(_elements)
+        return elements
+    else:
+        from unstructured.partition.api import partition_via_api
+
+        return partition_via_api(
+            filename=str(file_path) if file_path is not None else None,
+            file=file,
+            api_key=api_key,
+            api_url=api_url,
+            **unstructured_kwargs,
+        )
 
 
 @deprecated(
@@ -318,6 +371,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
             for post_processor in self.post_processors:
                 element.apply(post_processor)
         return elements
+
 
 @deprecated(
     since="0.2.8",
@@ -493,39 +547,3 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
             for post_processor in self.post_processors:
                 element.apply(post_processor)
         return elements
-
-
-def get_elements_from_api(
-    file_path: Union[str, list[str], Path, list[Path], None] = None,
-    file: Union[IO[bytes], Sequence[IO[bytes]], None] = None,
-    api_url: str = "https://api.unstructuredapp.io/general/v0/general",
-    api_key: str = "",
-    **unstructured_kwargs: Any,
-) -> list[Element]:
-    """Retrieve a list of elements from the `Unstructured API`."""
-    if is_list := isinstance(file_path, list):
-        file_path = [str(path) for path in file_path]
-    if isinstance(file, Sequence) or is_list:
-        from unstructured.partition.api import partition_multiple_via_api
-
-        _doc_elements = partition_multiple_via_api(
-            filenames=file_path,  # type: ignore
-            files=file,  # type: ignore
-            api_key=api_key,
-            api_url=api_url,
-            **unstructured_kwargs,
-        )
-        elements = []
-        for _elements in _doc_elements:
-            elements.extend(_elements)
-        return elements
-    else:
-        from unstructured.partition.api import partition_via_api
-
-        return partition_via_api(
-            filename=str(file_path) if file_path is not None else None,
-            file=file,
-            api_key=api_key,
-            api_url=api_url,
-            **unstructured_kwargs,
-        )

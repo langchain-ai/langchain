@@ -5,35 +5,38 @@ from typing import Any, Callable, Generic, TypeVar, cast
 
 _T = TypeVar("_T")
 
+
 class lazyproperty(Generic[_T]):
     """Decorator like @property, but evaluated only on first access.
 
-    Like @property, this can only be used to decorate methods having only a `self` parameter, and
-    is accessed like an attribute on an instance, i.e. trailing parentheses are not used. Unlike
-    @property, the decorated method is only evaluated on first access; the resulting value is
-    cached and that same value returned on second and later access without re-evaluation of the
-    method.
+    Like @property, this can only be used to decorate methods having only a `self`
+    parameter, and is accessed like an attribute on an instance, i.e. trailing
+    parentheses are not used. Unlike @property, the decorated method is only evaluated
+    on first access; the resulting value is cached and that same value returned on
+    second and later access without re-evaluation of the method.
 
-    Like @property, this class produces a *data descriptor* object, which is stored in the __dict__
-    of the *class* under the name of the decorated method ('fget' nominally). The cached value is
-    stored in the __dict__ of the *instance* under that same name.
+    Like @property, this class produces a *data descriptor* object, which is stored in
+    the __dict__ of the *class* under the name of the decorated method ('fget'
+    nominally). The cached value is stored in the __dict__ of the *instance* under that
+    same name.
 
-    Because it is a data descriptor (as opposed to a *non-data descriptor*), its `__get__()` method
-    is executed on each access of the decorated attribute; the __dict__ item of the same name is
-    "shadowed" by the descriptor.
+    Because it is a data descriptor (as opposed to a *non-data descriptor*), its
+    `__get__()` method is executed on each access of the decorated attribute; the
+    __dict__ item of the same name is "shadowed" by the descriptor.
 
-    While this may represent a performance improvement over a property, its greater benefit may be
-    its other characteristics. One common use is to construct collaborator objects, removing that
-    "real work" from the constructor, while still only executing once. It also de-couples client
-    code from any sequencing considerations; if it's accessed from more than one location, it's
-    assured it will be ready whenever needed.
+    While this may represent a performance improvement over a property, its greater
+    benefit may be its other characteristics. One common use is to construct
+    collaborator objects, removing that "real work" from the constructor, while still
+    only executing once. It also de-couples client code from any sequencing
+    considerations; if it's accessed from more than one location, it's assured it will
+    be ready whenever needed.
 
     Loosely based on: https://stackoverflow.com/a/6849299/1902513.
 
-    A lazyproperty is read-only. There is no counterpart to the optional "setter" (or deleter)
-    behavior of an @property. This is critically important to maintaining its immutability and
-    idempotence guarantees. Attempting to assign to a lazyproperty raises AttributeError
-    unconditionally.
+    A lazyproperty is read-only. There is no counterpart to the optional "setter" (or
+    deleter) behavior of an @property. This is critically important to maintaining its
+    immutability and idempotence guarantees. Attempting to assign to a lazyproperty
+    raises AttributeError unconditionally.
 
     The parameter names in the methods below correspond to this usage example::
 
@@ -45,7 +48,8 @@ class lazyproperty(Generic[_T]):
 
         obj = Obj()
 
-    Not suitable for wrapping a function (as opposed to a method) because it is not callable.
+    Not suitable for wrapping a function (as opposed to a method) because it is not
+    callable.
     """
 
     def __init__(self, fget: Callable[..., _T]) -> None:
@@ -103,9 +107,9 @@ class lazyproperty(Generic[_T]):
         *non-data descriptor*. That would be nice because the cached value would be
         accessed directly once set (__dict__ attrs have precedence over non-data
         descriptors on instance attribute lookup). The problem is, there would be
-        nothing to stop assignment to the cached value, which would overwrite the result
-        of `fget()` and break both the immutability and idempotence guarantees of this
-        decorator.
+        nothing to stop assignment to the cached value, which would overwrite the
+        result of `fget()` and break both the immutability and idempotence guarantees
+        of this decorator.
 
         The performance with this __set__() method in place was roughly 0.4 usec per
         access when measured on a 2.8GHz development machine; so quite snappy and
