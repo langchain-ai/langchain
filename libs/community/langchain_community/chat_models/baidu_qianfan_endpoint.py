@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from operator import itemgetter
@@ -65,13 +66,27 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, (FunctionMessage, ToolMessage)):
         message_dict = {
             "role": "function",
-            "content": message.content,
+            "content": _create_tool_content(message.content),
             "name": message.name or message.additional_kwargs.get("name"),
         }
     else:
         raise TypeError(f"Got unknown type {message}")
 
     return message_dict
+
+
+def _create_tool_content(content: Union[str, List[Union[str, Dict[Any, Any]]]]) -> str:
+    """Convert tool content to dict scheme."""
+    if isinstance(content, str):
+        try:
+            if isinstance(json.loads(content), dict):
+                return content
+            else:
+                return json.dumps({"tool_result": content})
+        except json.JSONDecodeError:
+            return json.dumps({"tool_result": content})
+    else:
+        return json.dumps({"tool_result": content})
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
@@ -109,9 +124,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             content=content,
             additional_kwargs=msg_additional_kwargs,
             usage_metadata=UsageMetadata(
-                input_tokens=usage.prompt_tokens,
-                output_tokens=usage.completion_tokens,
-                total_tokens=usage.total_tokens,
+                input_tokens=usage.get("prompt_tokens", 0),
+                output_tokens=usage.get("completion_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0),
             ),
         )
 
@@ -340,13 +355,13 @@ class QianfanChatEndpoint(BaseChatModel):
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Bot-turbo"
+    model: str = "ERNIE-Lite-8K"
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set.
-    Default is ERNIE-Bot-turbo.
+    Default is ERNIE-Lite-8K.
     """
 
     endpoint: Optional[str] = None
