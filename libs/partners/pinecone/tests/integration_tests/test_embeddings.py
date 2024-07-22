@@ -2,7 +2,7 @@ import time
 
 import pytest
 from langchain_core.documents import Document
-from pinecone import ServerlessSpec, Pinecone
+from pinecone import Pinecone, ServerlessSpec
 
 from langchain_pinecone import PineconeEmbeddings, PineconeVectorStore
 
