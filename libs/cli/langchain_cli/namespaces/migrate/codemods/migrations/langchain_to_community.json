@@ -925,9 +925,7 @@
   ],
   [
     "langchain.chat_models.VolcEngineMaasChat",
-    "langchain.chat_models.VolcEngineMaasChatV3",
-    "langchain_community.chat_models.VolcEngineMaasChat",
-    "langchain_community.chat_models.VolcEngineMaasChatV3"
+    "langchain_community.chat_models.VolcEngineMaasChat"
   ],
   [
     "langchain.chat_models.anthropic.convert_messages_to_prompt_anthropic",
@@ -1091,9 +1089,7 @@
   ],
   [
     "langchain.chat_models.volcengine_maas.VolcEngineMaasChat",
-    "langchain.chat_models.volcengine_maas.VolcEngineMaasChatV3",
-    "langchain_community.chat_models.VolcEngineMaasChat",
-    "langchain_community.chat_models.VolcEngineMaasChatV3"
+    "langchain_community.chat_models.VolcEngineMaasChat"
   ],
   [
     "langchain.chat_models.yandex.ChatYandexGPT",
@@ -3701,9 +3697,7 @@
   ],
   [
     "langchain.llms.VolcEngineMaasLLM",
-    "langchain.llms.VolcEngineMaasLLMV3",
-    "langchain_community.llms.VolcEngineMaasLLM",
-    "langchain_community.llms.VolcEngineMaasLLMV3"
+    "langchain_community.llms.VolcEngineMaasLLM"
   ],
   [
     "langchain.llms.ai21.AI21PenaltyData",
@@ -4091,15 +4085,11 @@
   ],
   [
     "langchain.llms.volcengine_maas.VolcEngineMaasBase",
-    "langchain.llms.volcengine_maas.VolcEngineMaasBaseV3",
-    "langchain_community.llms.volcengine_maas.VolcEngineMaasBase",
-    "langchain_community.llms.volcengine_maas.VolcEngineMaasBaseV3"
+    "langchain_community.llms.volcengine_maas.VolcEngineMaasBase"
   ],
   [
     "langchain.llms.volcengine_maas.VolcEngineMaasLLM",
-    "langchain.llms.volcengine_maas.VolcEngineMaasLLMV3",
-    "langchain_community.llms.VolcEngineMaasLLM",
-    "langchain_community.llms.VolcEngineMaasLLMV3"
+    "langchain_community.llms.VolcEngineMaasLLM"
   ],
   [
     "langchain.llms.watsonxllm.WatsonxLLM",
