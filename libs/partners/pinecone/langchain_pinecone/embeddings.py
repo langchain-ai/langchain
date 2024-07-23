@@ -116,7 +116,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
                     "Please install with `pip install tqdm`."
                 ) from e
 
-            _iter = tqdm(range(0, len(texts), batch_size))  # ignore: type
+            _iter = tqdm(range(0, len(texts), batch_size))
         else:
             _iter = range(0, len(texts), batch_size)
 
