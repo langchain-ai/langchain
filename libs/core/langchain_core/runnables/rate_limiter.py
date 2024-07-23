@@ -1,9 +1,11 @@
-"""Provides a rate limiter based on a token bucket algorithm.
+"""Interface and implementation for time based rate limiters.
 
-This rate limiter is designed to only limit based on the number of requests
-per second.
+This module defines an interface for rate limiting requests based on time.
 
-It does not take into account the size of the request or any other factors.
+The interface cannot account for the size of the request or any other factors.
+
+The module also provides an in-memory implementation of the rate limiter and
+a function to add a rate limiter to a runnable.
 """
 
 from __future__ import annotations
