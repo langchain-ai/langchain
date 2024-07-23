@@ -43,13 +43,19 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import (
     Runnable,
     RunnableMap,
@@ -62,6 +68,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -993,7 +1000,7 @@ class ChatAnthropic(BaseChatModel):
 
         tool_name = convert_to_anthropic_tool(schema)["name"]
         llm = self.bind_tools([schema], tool_choice=tool_name)
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
@@ -1102,12 +1109,12 @@ def _make_message_chunk_from_anthropic_event(
             warnings.warn("Received unexpected tool content block.")
         content_block = event.content_block.model_dump()
         content_block["index"] = event.index
-        tool_call_chunk = {
-            "index": event.index,
-            "id": event.content_block.id,
-            "name": event.content_block.name,
-            "args": "",
-        }
+        tool_call_chunk = create_tool_call_chunk(
+            index=event.index,
+            id=event.content_block.id,
+            name=event.content_block.name,
+            args="",
+        )
         message_chunk = AIMessageChunk(
             content=[content_block],
             tool_call_chunks=[tool_call_chunk],  # type: ignore
