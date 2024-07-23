@@ -5,18 +5,18 @@ per second.
 
 It does not take into account the size of the request or any other factors.
 """
+
 from __future__ import annotations
 
 import abc
 import asyncio
 import threading
-import time
 from typing import (
-    TYPE_CHECKING,
     Any,
     Optional,
-    TypeVar,
 )
+
+import time
 
 from langchain_core.runnables.base import (
     Input,
@@ -25,15 +25,6 @@ from langchain_core.runnables.base import (
     RunnableBindingBase,
     RunnableLambda,
 )
-
-if TYPE_CHECKING:
-    from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForChainRun,
-        CallbackManagerForChainRun,
-    )
-
-    T = TypeVar("T", CallbackManagerForChainRun, AsyncCallbackManagerForChainRun)
-U = TypeVar("U")
 
 
 class BaseRateLimiter(abc.ABC):
@@ -44,31 +35,11 @@ class BaseRateLimiter(abc.ABC):
     """
 
     @abc.abstractmethod
-    def _consume(self) -> bool:
-        """Consume the given amount of tokens if possible.
-
-        Returns:
-            True means that the tokens were consumed, and the caller can proceed to
-            make the request. A False means that the tokens were not consumed, and
-            the caller should try again later.
-        """
-
-    @abc.abstractmethod
-    async def _aconsume(self) -> bool:
-        """Consume the given amount of tokens if possible.
-
-        Returns:
-            True means that the tokens were consumed, and the caller can proceed to
-            make the request. A False means that the tokens were not consumed, and
-            the caller should try again later.
-        """
-
-    @abc.abstractmethod
-    def wait(self) -> None:
+    def sync_wait(self) -> None:
         """Blocking call to wait until the given number of tokens are available."""
 
     @abc.abstractmethod
-    async def await_(self) -> None:
+    async def async_await(self) -> None:
         """Blocking call to wait until the given number of tokens are available."""
 
 
@@ -146,7 +117,7 @@ class RateLimiter(BaseRateLimiter):
 
             return False
 
-    def wait(self) -> None:
+    def sync_wait(self) -> None:
         """Blocking call to wait until the given number of tokens are available."""
         while not self._consume():
             time.sleep(self.check_every_n_seconds)
@@ -183,12 +154,12 @@ def with_rate_limit(
 
     def _wait(input: dict) -> dict:
         """Wait for the rate limiter to allow the request to proceed."""
-        rate_limiter.wait()
+        rate_limiter.sync_wait()
         return input
 
     async def _await(input: dict) -> dict:
         """Wait for the rate limiter to allow the request to proceed."""
-        await rate_limiter.await_()
+        await rate_limiter.async_await()
         return input
 
     return (
