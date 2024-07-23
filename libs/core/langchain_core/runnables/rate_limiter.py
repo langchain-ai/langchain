@@ -4,8 +4,7 @@ This module defines an interface for rate limiting requests based on time.
 
 The interface cannot account for the size of the request or any other factors.
 
-The module also provides an in-memory implementation of the rate limiter and
-a function to add a rate limiter to a runnable.
+The module also provides an in-memory implementation of the rate limiter.
 """
 
 from __future__ import annotations
@@ -13,12 +12,14 @@ from __future__ import annotations
 import abc
 import asyncio
 import threading
-import time
 from typing import (
     Any,
     Optional,
 )
 
+import time
+
+from langchain_core._api import beta
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.base import (
     Input,
@@ -34,7 +35,8 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
     on whether running in a sync or async context.
 
     The current implementation does not handle streaming inputs well and will
-    consume all inputs even if the rate limit has been reached.
+    consume all inputs even if the rate limit has been reached. Better support
+    for streaming inputs will be added in the future.
 
     This should not be a problem if working with chat models since chat models
     only operate on a fully materialized input.
@@ -97,6 +99,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
         return self._acall_with_config(_ainvoke, input, config, **kwargs)
 
 
+@beta(message="Introduced in 0.2.24. API subject to change.")
 class InMemoryRateLimiter(BaseRateLimiter):
     """An in memory rate limiter.
 
