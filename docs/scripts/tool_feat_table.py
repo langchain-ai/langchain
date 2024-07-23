@@ -3,90 +3,90 @@ from pathlib import Path
 
 SEARCH_TOOL_FEAT_TABLE = {
     "Exa Search": {
-        "pricing":"1000 free searches/month",
-        "available_data":"URL, Author, Title, Published Date",
-        "link" : "/docs/integrations/tools/exa_search"
+        "pricing": "1000 free searches/month",
+        "available_data": "URL, Author, Title, Published Date",
+        "link": "/docs/integrations/tools/exa_search",
     },
     "Bing Search": {
-        "pricing":"Paid",
-        "available_data":"URL, Snippet, Title",
-        "link" : "/docs/integrations/tools/bing_search"
+        "pricing": "Paid",
+        "available_data": "URL, Snippet, Title",
+        "link": "/docs/integrations/tools/bing_search",
     },
     "DuckDuckgoSearch": {
-        "pricing":"Free",
-        "available_data":"URL, Snippet, Title",
-        "link" : "/docs/integrations/tools/ddg"
+        "pricing": "Free",
+        "available_data": "URL, Snippet, Title",
+        "link": "/docs/integrations/tools/ddg",
     },
     "Brave Search": {
-        "pricing":"Free",
-        "available_data":"URL, Snippet, Title",
-        "link" : "/docs/integrations/tools/brave_search"
+        "pricing": "Free",
+        "available_data": "URL, Snippet, Title",
+        "link": "/docs/integrations/tools/brave_search",
     },
     "Google Search": {
-        "pricing":"Paid",
-        "available_data":"URL, Snippet, Title",
-        "link" : "/docs/integrations/tools/google_search"
+        "pricing": "Paid",
+        "available_data": "URL, Snippet, Title",
+        "link": "/docs/integrations/tools/google_search",
     },
     "Google Serper": {
-        "pricing":"Free",
-        "available_data":"URL, Snippet, Title, Search Rank, Site Links",
-        "link" : "/docs/integrations/tools/google_serper"
+        "pricing": "Free",
+        "available_data": "URL, Snippet, Title, Search Rank, Site Links",
+        "link": "/docs/integrations/tools/google_serper",
     },
     "Mojeek Search": {
-        "pricing":"Paid",
-        "available_data":"URL, Snippet, Title",
-        "link" : "/docs/integrations/tools/mojeek_search"
+        "pricing": "Paid",
+        "available_data": "URL, Snippet, Title",
+        "link": "/docs/integrations/tools/mojeek_search",
     },
     "SearxNG Search": {
-        "pricing":"Free",
-        "available_data":"URL, Snippet, Title, Category",
-        "link" : "/docs/integrations/tools/searx_search"
+        "pricing": "Free",
+        "available_data": "URL, Snippet, Title, Category",
+        "link": "/docs/integrations/tools/searx_search",
     },
     "You.com Search": {
-        "pricing":"Free for 60 days",
-        "available_data":"URL, Title, Page Content",
-        "link" : "/docs/integrations/tools/you"
+        "pricing": "Free for 60 days",
+        "available_data": "URL, Title, Page Content",
+        "link": "/docs/integrations/tools/you",
     },
     "SearchApi": {
-        "pricing":"100 Free Searches on Sign Up",
-        "available_data":"URL, Snippet, Title, Search Rank, Site Links, Authors",
-        "link" : "/docs/integrations/tools/searchapi"
+        "pricing": "100 Free Searches on Sign Up",
+        "available_data": "URL, Snippet, Title, Search Rank, Site Links, Authors",
+        "link": "/docs/integrations/tools/searchapi",
     },
     "SerpAPI": {
-        "pricing":"100 Free Searches/Month",
-        "available_data":"Answer",
-        "link" : "/docs/integrations/tools/serpapi"
+        "pricing": "100 Free Searches/Month",
+        "available_data": "Answer",
+        "link": "/docs/integrations/tools/serpapi",
     },
 }
 
 CODE_INTERPRETER_TOOL_FEAT_TABLE = {
-    "Bearly Code Interpreter" : {
-        "langauges":"Python",
+    "Bearly Code Interpreter": {
+        "langauges": "Python",
         "sandbox_lifetime": "Resets on Execution",
         "upload": True,
         "return_results": "Text",
-        "link":"/docs/integrations/tools/bearly"
+        "link": "/docs/integrations/tools/bearly",
     },
-    "Riza Code Interpreter" : {
-        "langauges":"Python, JavaScript, PHP, Ruby",
+    "Riza Code Interpreter": {
+        "langauges": "Python, JavaScript, PHP, Ruby",
         "sandbox_lifetime": "Resets on Execution",
         "upload": False,
         "return_results": "Text",
-        "link":"/docs/integrations/tools/riza"
+        "link": "/docs/integrations/tools/riza",
     },
-    "E2B Data Analysis" : {
-        "langauges":"Python. In beta: JavaScript, R, Java",
+    "E2B Data Analysis": {
+        "langauges": "Python. In beta: JavaScript, R, Java",
         "sandbox_lifetime": "24 Hours",
         "upload": True,
         "return_results": "Text, Images, Videos",
-        "link":"/docs/integrations/tools/e2b_data_analysis"
+        "link": "/docs/integrations/tools/e2b_data_analysis",
     },
     "Azure Container Apps dynamic sessions": {
-        "langauges":"Python",
+        "langauges": "Python",
         "sandbox_lifetime": "1 Hour",
         "upload": True,
         "return_results": "Text, Images",
-        "link":"/docs/integrations/tools/azure_dynamic_sessions"
+        "link": "/docs/integrations/tools/azure_dynamic_sessions",
     },
 }
 
@@ -118,16 +118,8 @@ The following table shows tools that can be used as code interpreters:
 
 def get_search_tools_table() -> str:
     """Get the table of search tools."""
-    header = [
-        "tool",
-        "pricing",
-        "available_data"
-    ]
-    title = [
-        "Tool",
-        "Free/Paid",
-        "Return Data"
-    ]
+    header = ["tool", "pricing", "available_data"]
+    title = ["Tool", "Free/Paid", "Return Data"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for search_tool, feats in sorted(SEARCH_TOOL_FEAT_TABLE.items()):
         # Fields are in the order of the header
@@ -154,7 +146,7 @@ def get_code_interpreter_table() -> str:
         "Supported Languages",
         "Sandbox Lifetime",
         "Supports File Uploads",
-        "Return Types"
+        "Return Types",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for search_tool, feats in sorted(CODE_INTERPRETER_TOOL_FEAT_TABLE.items()):
@@ -181,6 +173,9 @@ if __name__ == "__main__":
     output_integrations_dir_tools = output_integrations_dir / "tools"
     output_integrations_dir_tools.mkdir(parents=True, exist_ok=True)
 
-    tools_page = TOOLS_TEMPLATE.format(search_table=get_search_tools_table(),code_interpreter_table=get_code_interpreter_table())
+    tools_page = TOOLS_TEMPLATE.format(
+        search_table=get_search_tools_table(),
+        code_interpreter_table=get_code_interpreter_table(),
+    )
     with open(output_integrations_dir / "tools" / "index.mdx", "w") as f:
         f.write(tools_page)
