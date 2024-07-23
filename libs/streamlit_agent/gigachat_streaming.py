@@ -42,7 +42,6 @@ with st.sidebar:
     user = st.text_input("GIGACHAT_USER")
     password = st.text_input("GIGACHAT_PASSWORD", type="password")
 
-
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -50,15 +49,20 @@ if "messages" not in st.session_state:
             role="system",
             content="Ты - умный ИИ ассистент, который всегда готов помочь пользователю.",
         ),
-        ChatMessage(role="assistant", content="Как я могу помочь вам?"),
+        ChatMessage(
+            role="assistant",
+            content="Как я могу помочь вам?",
+            additional_kwargs={"render_content": "Как я могу помочь вам?"},
+        ),
     ]
-
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
     with st.chat_message(message.role):
-        st.markdown(message.content, True)
-
+        if message.role == "assistant":
+            st.markdown(message.additional_kwargs["render_content"], True)
+        else:
+            st.markdown(message.content, True)
 
 if prompt := st.chat_input():
     if not access_token and not credentials and not (user and password):
@@ -83,7 +87,9 @@ if prompt := st.chat_input():
     with st.chat_message(message.role):
         st.markdown(message.content)
 
-    message = ChatMessage(role="assistant", content="")
+    message = ChatMessage(
+        role="assistant", content="", additional_kwargs={"render_content": ""}
+    )
     st.session_state.messages.append(message)
 
     with st.chat_message(message.role):
@@ -102,16 +108,21 @@ if prompt := st.chat_input():
                     spinner = None
                 if chunk.additional_kwargs.get("image_uuid"):
                     image_uuid = chunk.additional_kwargs.get("image_uuid")
-                    message.content += f"""<img src="data:png;base64,{chat.get_file(image_uuid).content}" style="width: 450px; display: block; border-radius: 10px;" >"""
+                    message.additional_kwargs[
+                        "render_content"
+                    ] += f"""<img src="data:png;base64,{chat.get_file(image_uuid).content}" style="width: 450px; display: block; border-radius: 10px;" >"""
                 else:
-                    message.content += chunk.content
+                    message.additional_kwargs["render_content"] += chunk.content
+            message.content += chunk.content
             message.additional_kwargs = {
                 **message.additional_kwargs,
                 **chunk.additional_kwargs,
             }
 
-            message_placeholder.markdown(message.content + "▌", True)
-        message_placeholder.markdown(message.content, True)
+            message_placeholder.markdown(
+                message.additional_kwargs["render_content"] + "▌", True
+            )
+        message_placeholder.markdown(message.additional_kwargs["render_content"], True)
 
     # Каждый раз, когда пользователь нажимает что-то в интерфейсе весь скрипт выполняется заново.
     # Сохраняем токен и закрываем соединения
