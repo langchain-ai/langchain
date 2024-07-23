@@ -6,7 +6,7 @@ import pytest
 from freezegun import freeze_time
 
 from langchain_core.runnables import RunnableLambda
-from langchain_core.runnables.rate_limiter import InMemoryRateLimiter, add_rate_limiter
+from langchain_core.runnables.rate_limiter import InMemoryRateLimiter
 
 
 @pytest.fixture
@@ -118,14 +118,13 @@ def test_add_rate_limiter() -> None:
         """Return x."""
         return x
 
-    foo_ = RunnableLambda(foo)
-    with_rate_limit = add_rate_limiter(
-        foo_,
-        InMemoryRateLimiter(
-            requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
-        ),
+    rate_limiter = InMemoryRateLimiter(
+        requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
     )
-    assert with_rate_limit.invoke(1) == 1
+
+    foo_ = RunnableLambda(foo)
+    chain = rate_limiter | foo_
+    assert chain.invoke(1) == 1
 
 
 async def test_async_add_rate_limiter() -> None:
@@ -135,11 +134,10 @@ async def test_async_add_rate_limiter() -> None:
         """Return x."""
         return x
 
-    foo_ = RunnableLambda(foo)
-    with_rate_limit = add_rate_limiter(
-        foo_,
-        InMemoryRateLimiter(
-            requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
-        ),
+    rate_limiter = InMemoryRateLimiter(
+        requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
     )
-    assert (await with_rate_limit.ainvoke(1)) == 1
+
+    foo_ = RunnableLambda(foo)
+    chain = rate_limiter | foo_
+    assert (await chain.ainvoke(1)) == 1

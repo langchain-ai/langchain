@@ -15,23 +15,31 @@ import asyncio
 import threading
 import time
 from typing import (
+    Any,
     Optional,
 )
 
-from langchain_core._api import beta
+from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.base import (
     Input,
     Output,
     Runnable,
-    RunnableLambda,
 )
 
 
-class BaseRateLimiter(abc.ABC):
+class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
     """Base class for rate limiters.
 
     Usage of the base limiter is through the sync_wait and async_wait methods depending
     on whether running in a sync or async context.
+
+    The current implementation does not handle streaming inputs well and will
+    consume all inputs even if the rate limit has been reached.
+
+    This should not be a problem if working with chat models since chat models
+    only operate on a fully materialized input.
+
+    The rate limiter should always be prepended to a chat model.
 
     .. versionadded:: 0.2.24
     """
@@ -43,6 +51,74 @@ class BaseRateLimiter(abc.ABC):
     @abc.abstractmethod
     async def async_wait(self) -> None:
         """Blocking call to wait until the given number of tokens are available."""
+
+    def _invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
+        """Invoke the rate limiter.
+
+        This is the actual implementation of the rate limiter.
+
+        Args:
+            input: The input to the rate limiter.
+            config: The configuration for the rate limiter.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The output of the rate limiter.
+        """
+        self.sync_wait()
+        return input
+
+    async def _ainvoke(
+        self, input: Input, config: RunnableConfig, **kwargs: Any
+    ) -> Output:
+        """Invoke the rate limiter. Async variant.
+
+        This is the actual implementation of the rate limiter.
+
+        Args:
+            input: The input to the rate limiter.
+            config: The configuration for the rate limiter.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The output of the rate limiter.
+        """
+        await self.async_wait()
+        return input
+
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
+        """Invoke the rate limiter.
+
+        This is a blocking call that waits until the given number of tokens are available.
+
+        Args:
+            input: The input to the rate limiter.
+            config: The configuration for the rate limiter.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The output of the rate limiter.
+        """
+        return self._call_with_config(self._invoke, input, config, **kwargs)
+
+    def ainvoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
+        """Invoke the rate limiter. Async version.
+
+        This is a blocking call that waits until the given number of tokens are
+        available.
+
+        Args:
+            input: The input to the rate limiter.
+            config: The configuration for the rate limiter.
+            **kwargs: Additional keyword arguments.
+        """
+        return self._acall_with_config(self._invoke, input, config, **kwargs)
 
 
 class InMemoryRateLimiter(BaseRateLimiter):
@@ -56,6 +132,14 @@ class InMemoryRateLimiter(BaseRateLimiter):
     cannot be used to rate limit based on the size of the request.
 
     It is thread safe and can be used in either a sync or async context.
+
+    The in memory rate limiter is based on a token bucket. The bucket is filled
+    with tokens at a given rate. Each request consumes a token. If there are
+    not enough tokens in the bucket, the request is blocked until there are
+    enough tokens.
+
+    These *tokens* have NOTHING to do with LLM tokens. They are just
+    a way to keep track of how many requests can be made at a given time.
 
     .. versionadded:: 0.2.24
     """
@@ -152,55 +236,3 @@ class InMemoryRateLimiter(BaseRateLimiter):
         """Blocking call to wait until the given number of tokens are available."""
         while not await self._aconsume():
             await asyncio.sleep(self.check_every_n_seconds)
-
-
-@beta(message="API was added in 0.2.24")
-def add_rate_limiter(
-    runnable: Runnable[Input, Output],
-    rate_limiter: BaseRateLimiter,
-) -> Runnable[Input, Output]:
-    """Prepends a rate limiter in front of the given runnable.
-
-    The rate limiter will be used to throttle the requests to the runnable.
-
-    .. code-block:: python
-
-        from langchain_core.runnables.rate_limiter import (
-            InMemoryRateLimiter,
-            add_rate_limiter
-        )
-
-        rate_limiter = InMemoryRateLimiter(
-            requests_per_second=2, check_every_n_seconds=0.1, max_bucket_size=2
-        )
-
-        runnable = RunnableLambda(lambda x: x)
-        runnable_with_rate_limiter = add_rate_limiter(runnable, rate_limiter)
-
-        # Now runnable_with_rate_limiter will only allow 2 requests per second.
-        runnable_with_rate_limiter.invoke(1)
-
-    Args:
-        runnable: The runnable to throttle.
-        rate_limiter: The throttle to use.
-
-    Returns:
-        A runnable lambda that acts as a throttled passthrough.
-
-    .. versionadded:: 0.2.24
-    """
-
-    def _wait(input: Input) -> Output:
-        """Wait for the rate limiter to allow the request to proceed."""
-        rate_limiter.sync_wait()
-        return input
-
-    async def _await(input: Input) -> Output:
-        """Wait for the rate limiter to allow the request to proceed."""
-        await rate_limiter.async_wait()
-        return input
-
-    return (
-        RunnableLambda(_wait, afunc=_await).with_config({"name": "RunnableWait"})
-        | runnable
-    )
