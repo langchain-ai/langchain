@@ -11,17 +11,17 @@ from __future__ import annotations
 import abc
 import asyncio
 import threading
-import time
 from typing import (
-    Any,
     Optional,
 )
 
+import time
+
+from langchain_core._api import beta
 from langchain_core.runnables.base import (
     Input,
     Output,
     Runnable,
-    RunnableBindingBase,
     RunnableLambda,
 )
 
@@ -31,6 +31,8 @@ class BaseRateLimiter(abc.ABC):
 
     Usage of the base limiter is through the sync_wait and async_wait methods depending
     on whether running in a sync or async context.
+
+    .. versionadded:: 0.2.24
     """
 
     @abc.abstractmethod
@@ -53,6 +55,8 @@ class InMemoryRateLimiter(BaseRateLimiter):
     cannot be used to rate limit based on the size of the request.
 
     It is thread safe and can be used in either a sync or async context.
+
+    .. versionadded:: 0.2.24
     """
 
     def __init__(
@@ -149,11 +153,31 @@ class InMemoryRateLimiter(BaseRateLimiter):
             await asyncio.sleep(self.check_every_n_seconds)
 
 
-def with_rate_limit(
+@beta(message="API was added in 0.2.24")
+def add_rate_limiter(
     runnable: Runnable[Input, Output],
     rate_limiter: BaseRateLimiter,
 ) -> Runnable[Input, Output]:
-    """Add a rate limiter to the runnable.
+    """Prepends a rate limiter in front of the given runnable.
+
+    The rate limiter will be used to throttle the requests to the runnable.
+
+    .. code-block:: python
+
+        from langchain_core.runnables.rate_limiter import (
+            InMemoryRateLimiter,
+            add_rate_limiter
+        )
+
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=2, check_every_n_seconds=0.1, max_bucket_size=2
+        )
+
+        runnable = RunnableLambda(lambda x: x)
+        runnable_with_rate_limiter = add_rate_limiter(runnable, rate_limiter)
+
+        # Now runnable_with_rate_limiter will only allow 2 requests per second.
+        runnable_with_rate_limiter.invoke(1)
 
     Args:
         runnable: The runnable to throttle.
@@ -161,6 +185,8 @@ def with_rate_limit(
 
     Returns:
         A runnable lambda that acts as a throttled passthrough.
+
+    .. versionadded:: 0.2.24
     """
 
     def _wait(input: dict) -> dict:
@@ -177,38 +203,3 @@ def with_rate_limit(
         RunnableLambda(_wait, afunc=_await).with_config({"name": "RunnableWait"})
         | runnable
     )
-
-
-class RunnableRateLimiter(RunnableBindingBase[Input, Output]):
-    """A rate limiter that can be used with Runnables.
-
-    Example:
-
-        .. code-block:: python
-
-            from langchain_core.runnables.rate_limiter import InMemoryRateLimiter
-            from langchain_core.runnables import RunnableLambda
-
-            rate_limiter = InMemoryRateLimiter(
-                requests_per_second=1,
-                max_bucket_size=10, # Up to a burst size of 10 requests
-            )
-
-            @RunnableLambda
-            def foo(input: dict) -> dict:
-                return input
-
-            runnable = RunnableRateLimiter(
-                bound=foo,
-                rate_limiter=rate_limiter
-            )
-    """
-
-    rate_limiter: BaseRateLimiter
-
-    def __init__(
-        self, *, bound: Runnable, rate_limiter: Optional[BaseRateLimiter], **kwargs: Any
-    ) -> None:
-        """Create a new rate limiter."""
-        bound = with_rate_limit(bound, rate_limiter)
-        super().__init__(rate_limiter=rate_limiter, bound=bound, **kwargs)
