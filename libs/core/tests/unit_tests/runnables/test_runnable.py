@@ -1271,7 +1271,11 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
 
     assert (
         fakew.with_config(tags=["a-tag"]).invoke(
-            "hello", {"configurable": {"hello": "there"}, "metadata": {"bye": "now"}}
+            "hello",
+            {
+                "configurable": {"hello": "there", "__secret_key": "nahnah"},
+                "metadata": {"bye": "now"},
+            },
         )
         == 5
     )
@@ -1281,7 +1285,7 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             tags=["a-tag"],
             callbacks=None,
             recursion_limit=25,
-            configurable={"hello": "there"},
+            configurable={"hello": "there", "__secret_key": "nahnah"},
             metadata={"hello": "there", "bye": "now"},
         ),
     )
@@ -1294,7 +1298,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     assert fake.with_config(tags=["a-tag"]).invoke("hello") == 5
     assert spy.call_args_list == [
-        mocker.call("hello", dict(tags=["a-tag"])),
+        mocker.call(
+            "hello",
+            dict(tags=["a-tag"], metadata={}, configurable={}),
+        ),
     ]
     spy.reset_mock()
 
@@ -1323,7 +1330,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
         )
     ] == [5]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(tags=["a-tag"], metadata={"key": "value"})),
+        mocker.call(
+            "hello",
+            dict(tags=["a-tag"], metadata={"key": "value"}, configurable={}),
+        ),
     ]
     spy.reset_mock()
 
@@ -1398,7 +1408,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
         == 5
     )
     assert spy.call_args_list == [
-        mocker.call("hello", dict(callbacks=[handler], metadata={"a": "b"})),
+        mocker.call(
+            "hello",
+            dict(callbacks=[handler], metadata={"a": "b"}, configurable={}, tags=[]),
+        ),
     ]
     spy.reset_mock()
 
@@ -1406,7 +1419,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
         part async for part in fake.with_config(metadata={"a": "b"}).astream("hello")
     ] == [5]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(metadata={"a": "b"})),
+        mocker.call("hello", dict(metadata={"a": "b"}, tags=[], configurable={})),
     ]
     spy.reset_mock()
 
@@ -1424,6 +1437,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                configurable={},
             ),
         ),
         mocker.call(
@@ -1433,6 +1447,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                configurable={},
             ),
         ),
     ]
@@ -1458,6 +1473,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
+            configurable={},
         ),
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
@@ -1468,6 +1484,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
+            configurable={},
         ),
     )
 
@@ -1538,6 +1555,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
             tags=[],
             callbacks=None,
             recursion_limit=25,
+            configurable={},
         )
 
 

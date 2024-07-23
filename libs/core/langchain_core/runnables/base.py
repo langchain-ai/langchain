@@ -82,6 +82,7 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -300,7 +301,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.InputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if inspect.isclass(root_type) and is_basemodel_subclass(root_type):
             return root_type
 
         return create_model(
@@ -332,7 +333,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.OutputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if inspect.isclass(root_type) and is_basemodel_subclass(root_type):
             return root_type
 
         return create_model(
@@ -2127,6 +2128,7 @@ class Runnable(Generic[Input, Output], ABC):
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
+        iterator_ = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
@@ -2193,7 +2195,7 @@ class Runnable(Generic[Input, Output], ABC):
         else:
             await run_manager.on_chain_end(final_output, inputs=final_input)
         finally:
-            if hasattr(iterator_, "aclose"):
+            if iterator_ is not None and hasattr(iterator_, "aclose"):
                 await iterator_.aclose()
 
     @beta_decorator.beta(message="This API is in beta and may change in the future.")
