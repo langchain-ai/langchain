@@ -12,12 +12,12 @@ from langchain_core.documents import Document
 
 from langchain_unstructured.utils import lazyproperty
 
-logger = logging.getLogger(__file__)
-
 if TYPE_CHECKING:
     import requests
     from unstructured.documents.elements import Element
-    from unstructured_client.utils import RetryConfig # type: ignore
+    from unstructured_client.utils import RetryConfig  # type: ignore
+
+logger = logging.getLogger(__file__)
 
 
 class UnstructuredLoader(BaseLoader):
@@ -276,7 +276,7 @@ class _SingleDocumentLoader(BaseLoader):
     @lazyproperty
     def _sdk_partition_request(self):
         try:
-            from unstructured_client.models import operations, shared # type: ignore
+            from unstructured_client.models import operations, shared  # type: ignore # noqa:F401
         except ImportError:
             raise ImportError(
                 "unstructured_client package not found, please install it with"

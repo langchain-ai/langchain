@@ -26,12 +26,12 @@ DEPRECATED_LOOKUP = {
     "validate_unstructured_version": (
         "langchain_community.document_loaders.unstructured"
     ),
-    "get_elements_from_api": "langchain_community.document_loaders.unstructured",
     "UnstructuredBaseLoader": "langchain_community.document_loaders.unstructured",
+    "get_elements_from_api": "langchain_community.document_loaders.unstructured",
     "UnstructuredAPIFileLoader": "langchain_community.document_loaders",
-    "UnstructuredAPIFileIOLoader": "langchain_community.document_loaders",
     "UnstructuredFileLoader": "langchain_community.document_loaders",
     "UnstructuredFileIOLoader": "langchain_community.document_loaders",
+    "UnstructuredAPIFileIOLoader": "langchain_community.document_loaders",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -45,9 +45,9 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "satisfies_min_unstructured_version",
     "validate_unstructured_version",
+    "UnstructuredBaseLoader",
     "UnstructuredFileLoader",
     "get_elements_from_api",
-    "UnstructuredBaseLoader",
     "UnstructuredAPIFileLoader",
     "UnstructuredFileIOLoader",
     "UnstructuredAPIFileIOLoader",

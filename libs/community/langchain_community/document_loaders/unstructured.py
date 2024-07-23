@@ -5,15 +5,14 @@ import io
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Callable, Iterator, Optional, Sequence, Union
+from typing import IO, Any, Callable, Iterator, List, Optional, Sequence, TypeAlias, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
 
-if TYPE_CHECKING:
-    from unstructured.documents.elements import Element
+Element: TypeAlias = Any
 
 logger = logging.getLogger(__file__)
 
@@ -50,7 +49,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def __init__(
         self,
         mode: str = "single",  # deprecated
-        post_processors: Optional[list[Callable[[str], str]]] = None,
+        post_processors: Optional[List[Callable[[str], str]]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -84,14 +83,14 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         self.post_processors = post_processors or []
 
     @abstractmethod
-    def _get_elements(self) -> list[Element]:
+    def _get_elements(self) -> List[Element]:
         """Get elements."""
 
     @abstractmethod
     def _get_metadata(self) -> dict[str, Any]:
         """Get file_path metadata if available."""
 
-    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
+    def _post_process_elements(self, elements: List[Element]) -> List[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -202,7 +201,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, list[str], Path, list[Path]],
+        file_path: Union[str, List[str], Path, List[Path]],
         *,
         mode: str = "single",
         **unstructured_kwargs: Any,
@@ -224,11 +223,11 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> list[Element]:
+    def _get_elements(self) -> List[Element]:
         from unstructured.partition.auto import partition
 
         if isinstance(self.file_path, list):
-            elements: list[Element] = []
+            elements: List[Element] = []
             for file in self.file_path:
                 if isinstance(file, Path):
                     file = str(file)
@@ -242,7 +241,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
     def _get_metadata(self) -> dict[str, Any]:
         return {"source": self.file_path}
 
-    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
+    def _post_process_elements(self, elements: List[Element]) -> List[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -255,12 +254,12 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
 
 def get_elements_from_api(
-    file_path: Union[str, list[str], Path, list[Path], None] = None,
+    file_path: Union[str, List[str], Path, List[Path], None] = None,
     file: Union[IO[bytes], Sequence[IO[bytes]], None] = None,
     api_url: str = "https://api.unstructuredapp.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
-) -> list[Element]:
+) -> List[Element]:
     """Retrieve a list of elements from the `Unstructured API`."""
     if is_list := isinstance(file_path, list):
         file_path = [str(path) for path in file_path]
@@ -333,7 +332,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, list[str]],
+        file_path: Union[str, List[str]],
         *,
         mode: str = "single",
         url: str = "https://api.unstructuredapp.io/general/v0/general",
@@ -350,7 +349,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> list[Element]:
+    def _get_elements(self) -> List[Element]:
         return get_elements_from_api(
             file_path=self.file_path,
             api_key=self.api_key,
@@ -361,7 +360,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     def _get_metadata(self) -> dict[str, Any]:
         return {"source": self.file_path}
 
-    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
+    def _post_process_elements(self, elements: List[Element]) -> List[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -433,7 +432,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> list[Element]:
+    def _get_elements(self) -> List[Element]:
         from unstructured.partition.auto import partition
 
         if isinstance(self.file, io.IOBase):
@@ -444,7 +443,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     def _get_metadata(self) -> dict[str, Any]:
         return {}
 
-    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
+    def _post_process_elements(self, elements: List[Element]) -> List[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -519,7 +518,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> list[Element]:
+    def _get_elements(self) -> List[Element]:
         if self.unstructured_kwargs.get("metadata_filename"):
             return get_elements_from_api(
                 file=self.file,
@@ -537,7 +536,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     def _get_metadata(self) -> dict[str, Any]:
         return {}
 
-    def _post_process_elements(self, elements: list[Element]) -> list[Element]:
+    def _post_process_elements(self, elements: List[Element]) -> List[Element]:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
