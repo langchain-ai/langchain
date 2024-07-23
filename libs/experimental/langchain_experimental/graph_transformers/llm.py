@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast, Set
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
@@ -704,6 +704,35 @@ class LLMGraphTransformer:
             prompt = prompt or default_prompt
             self.chain = prompt | structured_llm
 
+    # Safe parsing extracted NERs
+    def _parse_triples(self, parsed_json: List[dict]) -> Tuple[Set[Tuple[str, str]], List[Relationship], List[Node]]:
+        nodes_set = set()
+        relationships = []
+        nodes = []
+        for rel in parsed_json:
+            if isinstance(rel, list):
+                if len(rel) == 0:
+                    continue
+                nodes_set_, relationships_, nodes_ = self._parse_triples(rel)
+                nodes_set.union(nodes_set_)
+                relationships.extend(relationships_)
+                nodes.extend(nodes_)
+            else:
+                # Nodes need to be deduplicated using a set
+                head, head_type = rel.get("head", None), rel.get("head_type", None)
+                tail, tail_type = rel.get("tail", None), rel.get("tail_type", None)
+                relation = rel.get("relation", None)
+                if head and head_type and tail and tail_type and relation:
+                    nodes_set.add((head, head_type))
+                    nodes_set.add((tail, tail_type))
+                    source_node = Node(id=head, type=head_type)
+                    target_node = Node(id=tail, type=tail_type)
+                    relationships.append(Relationship(source=source_node, target=target_node, type=relation))
+
+        nodes.extend([Node(id=el[0], type=el[1]) for el in list(nodes_set)])
+        return nodes_set, relationships, nodes
+
+
     def process_response(self, document: Document) -> GraphDocument:
         """
         Processes a single document, transforming it into a graph document using
@@ -715,25 +744,10 @@ class LLMGraphTransformer:
             raw_schema = cast(Dict[Any, Any], raw_schema)
             nodes, relationships = _convert_to_graph_document(raw_schema)
         else:
-            nodes_set = set()
-            relationships = []
             if not isinstance(raw_schema, str):
                 raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
-            for rel in parsed_json:
-                # Nodes need to be deduplicated using a set
-                nodes_set.add((rel["head"], rel["head_type"]))
-                nodes_set.add((rel["tail"], rel["tail_type"]))
-
-                source_node = Node(id=rel["head"], type=rel["head_type"])
-                target_node = Node(id=rel["tail"], type=rel["tail_type"])
-                relationships.append(
-                    Relationship(
-                        source=source_node, target=target_node, type=rel["relation"]
-                    )
-                )
-            # Create nodes list
-            nodes = [Node(id=el[0], type=el[1]) for el in list(nodes_set)]
+            nodes_set, relationships, nodes = self._parse_triples(parsed_json)
 
         # Strict mode filtering
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
