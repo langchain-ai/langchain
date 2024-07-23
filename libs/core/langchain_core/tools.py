@@ -133,10 +133,8 @@ def create_return_schema_from_function(
         and return_type is not float
         and return_type is not None
     ):
-        if return_type is not Any:
-            return create_model(f"{model_name}ReturnSchema", result=(return_type, ...))
-        else:
-            return create_model(f"{model_name}ReturnSchema", result=(Any, ...))
+        if isinstance(return_type, type) and issubclass(return_type, BaseModel):
+            return return_type
 
     return None
 
@@ -178,6 +176,9 @@ class ToolException(Exception):
     """
 
     pass
+
+
+FewShotExamples = Optional[List[Dict[str, Any]]]
 
 
 class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
@@ -243,7 +244,7 @@ class ChildTool(BaseTool):
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
     """
-    few_shot_examples: Optional[List[Dict[str, Any]]] = None
+    few_shot_examples: FewShotExamples = None
     """Few-shot examples to help the model understand how to use the tool."""
 
     handle_tool_error: Optional[

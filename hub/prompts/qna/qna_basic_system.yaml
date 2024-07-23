@@ -1,8 +1,9 @@
 input_variables: [context]
 output_parser: null
-template: 'Используй следующие части контекста, чтобы ответить на вопрос пользователя. 
-Если ты не знаешь ответа, просто скажи, что не знаешь, не пытайся придумать ответ.
-----------------
-{context}'
+template: 'Используй информацию между тэгами BEGIN_CONTEXT и END_CONTEXT, чтобы ответить на вопросы пользователя.Если ты не знаешь ответа и в данной тебе информации между тэгами BEGIN_CONTEXT и END_CONTEXT ее нет, просто скажи, что не знаешь, не пытайся придумать ответ.
+
+BEGIN_CONTEXT
+{context}
+END_CONTEXT'
 template_format: f-string
 _type: prompt
