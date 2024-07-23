@@ -6,15 +6,22 @@ from abc import ABC, abstractmethod
 from typing import (
     Any,
     Dict,
+    Generic,
     List,
     Optional,
     Sequence,
+    TypeVar,
+    Union,
 )
 
 from typing_extensions import TypedDict
 
 from langchain_core._api import beta
-from langchain_core.documents.base import Document
+from langchain_core.callbacks import (
+    CallbackManagerForRetrieverRun,
+)
+from langchain_core.documents.base import BaseMedia, Document
+from langchain_core.retrievers import BaseRetriever
 
 
 class UpsertResponse(TypedDict):
@@ -79,8 +86,21 @@ class DeleteResponse(TypedDict, total=False):
     """The number of items that failed to be deleted."""
 
 
+Hit = TypeVar("Hit")
+Query = TypeVar("Query")
+Content = TypeVar("Content", bound=BaseMedia)
+
+
+class QueryResponse(Generic[Hit], TypedDict):
+    """A retrieval result."""
+
+    # Free form metadata for vectorstore providers
+    metadata: Dict[str, Any]
+    hits: List[Hit]
+
+
 @beta(message="Added in ___version___. The API is subject to change.")
-class DocumentIndexer(abc.ABC):
+class Index(abc.ABC, Generic[Content, Query, Hit]):
     """An abstraction for indexing documents.
 
     This indexing interface is designed to be a generic abstraction for storing and
@@ -98,7 +118,7 @@ class DocumentIndexer(abc.ABC):
     """
 
     @abc.abstractmethod
-    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+    def upsert(self, items: Sequence[Content], /, **kwargs: Any) -> UpsertResponse:
         """Upsert documents into the index.
 
         The upsert functionality should utilize the ID field of the content object
@@ -131,7 +151,7 @@ class DocumentIndexer(abc.ABC):
             ids: List of ids to delete.
             kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index,
-                or else issue a non blocking delete etc.
+                or else issue a non-blocking delete etc.
 
         Returns:
             DeleteResponse: A response object that contains the list of IDs that were
@@ -144,7 +164,7 @@ class DocumentIndexer(abc.ABC):
         ids: Sequence[str],
         /,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[Content]:
         """Get documents by id.
 
         Fewer documents may be returned than requested if some IDs are not found or
@@ -166,6 +186,122 @@ class DocumentIndexer(abc.ABC):
 
         .. versionadded:: ___version___
         """
+
+    @abc.abstractmethod
+    def search(self, query: Query, **kwargs: Any) -> QueryResponse[Hit]:
+        """Search for documents."""
+        raise NotImplementedError()
+
+
+@beta(message="Added in ___version___. The API is subject to change.")
+class OneShotIndex(abc.ABC, Generic[Content, Query, Hit]):
+    @abc.abstractmethod
+    def from_items(
+        cls, items: Sequence[Content], /, **kwargs: Any
+    ) -> OneShotIndex[Content]:
+        """Create an index from a sequence of items."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get(
+        self,
+        ids: Sequence[str],
+        /,
+        **kwargs: Any,
+    ) -> List[Content]:
+        """Get documents by id.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of IDs to get.
+            kwargs: Additional keyword arguments. These are up to the implementation.
+
+        Returns:
+            List[Document]: List of documents that were found.
+
+        .. versionadded:: ___version___
+        """
+
+    @abc.abstractmethod
+    def search(self, query: Query, **kwargs: Any) -> QueryResponse[Hit]:
+        """Search for documents."""
+        raise NotImplementedError()
+
+
+# This targets existing retrievers that can be used as indexes
+# These retrievers only support `str` as an input for a query.
+class DocumentIndex(Index[Document, str, Document], BaseRetriever):
+    """A searchable document index."""
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        """Get relevant documents for a query."""
+        import inspect
+
+        # check if run_manager is in the signature of query if so pass it
+        accepts_run_manager = "run_manager" in inspect.signature(self.query).parameters
+        if accepts_run_manager:
+            return self.query(
+                query,
+                run_manager=run_manager,
+            )["hits"]
+        else:
+            return self.query(query)
+
+
+class OneShotDocumentIndex(OneShotIndex[Document, str, Document], BaseRetriever):
+    """A searchable document index."""
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        """Get relevant documents for a query."""
+        import inspect
+
+        # check if run_manager is in the signature of query if so pass it
+        accepts_run_manager = "run_manager" in inspect.signature(self.query).parameters
+        if accepts_run_manager:
+            return self.query(
+                query,
+                run_manager=run_manager,
+            )["hits"]
+        else:
+            return self.query(query)
+
+
+class VectorStoreQuery(TypedDict):
+    """A generic query type for vectorstores."""
+
+    query: Union[
+        str, List[float]
+    ]  # Search by vector or text (can swap into base media)
+    filter: Dict[str, Any]
+    limit: int
+    include_vector: bool
+    include_score: bool
+
+
+class VectorHit(Document):  # Or type-dict and include document as source etc.
+    """A hit in a vectorstore."""
+
+    score: Optional[float]
+    vector: Optional[List[float]]
+
+
+class GenericVectorStore(
+    Index[BaseMedia, VectorStoreQuery, VectorHit]
+):  # Would require generalizing the BaseRetriever
+    """An interface for a generic vectorstore."""
 
 
 @beta(message="Added in ___version___. The API is subject to change.")
