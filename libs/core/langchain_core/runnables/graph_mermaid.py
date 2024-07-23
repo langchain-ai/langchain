@@ -263,8 +263,6 @@ async def _render_mermaid_using_playwright(
                 height=int(dimensions["height"] + padding),
             )
 
-            # await page.set_viewport_size(viewport_size)
-
             _ = await browser.new_context(
                 viewport=viewport_size,
                 device_scale_factor=device_scale_factor,
