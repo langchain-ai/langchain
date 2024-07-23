@@ -53,7 +53,6 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
-
         try:
             import unstructured  # noqa:F401
         except ImportError:
@@ -209,18 +208,6 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         """Initialize with file path."""
         self.file_path = file_path
 
-        try:
-            import unstructured  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "unstructured package not found, please install it with "
-                "`pip install unstructured`"
-            )
-
-        if not satisfies_min_unstructured_version("0.5.4"):
-            if "strategy" in unstructured_kwargs:
-                unstructured_kwargs.pop("strategy")
-
         super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List[Element]:
@@ -237,20 +224,9 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
             if isinstance(self.file_path, Path):
                 self.file_path = str(self.file_path)
             return partition(filename=self.file_path, **self.unstructured_kwargs)
-
+        
     def _get_metadata(self) -> dict[str, Any]:
         return {"source": self.file_path}
-
-    def _post_process_elements(self, elements: List[Element]) -> List[Element]:
-        """Apply post processing functions to extracted unstructured elements.
-
-        Post processing functions are str -> str callables passed
-        in using the post_processors kwarg when the loader is instantiated.
-        """
-        for element in elements:
-            for post_processor in self.post_processors:
-                element.apply(post_processor)
-        return elements
 
 
 def get_elements_from_api(
@@ -340,7 +316,6 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
-
         validate_unstructured_version(min_unstructured_version="0.10.15")
 
         self.file_path = file_path
@@ -349,6 +324,9 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
+    def _get_metadata(self) -> dict[str, Any]:
+        return {"source": self.file_path}
+
     def _get_elements(self) -> List[Element]:
         return get_elements_from_api(
             file_path=self.file_path,
@@ -356,9 +334,6 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
             api_url=self.url,
             **self.unstructured_kwargs,
         )
-
-    def _get_metadata(self) -> dict[str, Any]:
-        return {"source": self.file_path}
 
     def _post_process_elements(self, elements: List[Element]) -> List[Element]:
         """Apply post processing functions to extracted unstructured elements.
@@ -417,28 +392,12 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     ):
         """Initialize with file path."""
         self.file = file
-
-        try:
-            import unstructured  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "unstructured package not found, please install it with "
-                "`pip install unstructured`"
-            )
-
-        if not satisfies_min_unstructured_version("0.5.4"):
-            if "strategy" in unstructured_kwargs:
-                unstructured_kwargs.pop("strategy")
-
         super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List[Element]:
         from unstructured.partition.auto import partition
 
-        if isinstance(self.file, io.IOBase):
-            return partition(file=self.file, **self.unstructured_kwargs)
-        else:
-            raise ValueError("file must be of type IO.")
+        return partition(file=self.file, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict[str, Any]:
         return {}
