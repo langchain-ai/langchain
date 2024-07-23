@@ -52,42 +52,6 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
     async def async_wait(self) -> None:
         """Blocking call to wait until the given number of tokens are available."""
 
-    def _invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> Output:
-        """Invoke the rate limiter.
-
-        This is the actual implementation of the rate limiter.
-
-        Args:
-            input: The input to the rate limiter.
-            config: The configuration for the rate limiter.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            The output of the rate limiter.
-        """
-        self.sync_wait()
-        return input
-
-    async def _ainvoke(
-        self, input: Input, config: RunnableConfig, **kwargs: Any
-    ) -> Output:
-        """Invoke the rate limiter. Async variant.
-
-        This is the actual implementation of the rate limiter.
-
-        Args:
-            input: The input to the rate limiter.
-            config: The configuration for the rate limiter.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            The output of the rate limiter.
-        """
-        await self.async_wait()
-        return input
-
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -103,7 +67,13 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
         Returns:
             The output of the rate limiter.
         """
-        return self._call_with_config(self._invoke, input, config, **kwargs)
+
+        def _invoke(input: Input) -> Output:
+            """Invoke the rate limiter. Internal function."""
+            self.sync_wait()
+            return input
+
+        return self._call_with_config(_invoke, input, config, **kwargs)
 
     def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -118,7 +88,13 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
             config: The configuration for the rate limiter.
             **kwargs: Additional keyword arguments.
         """
-        return self._acall_with_config(self._invoke, input, config, **kwargs)
+
+        async def _ainvoke(input: Input) -> Output:
+            """Invoke the rate limiter. Internal function."""
+            await self.async_wait()
+            return input
+
+        return self._acall_with_config(_ainvoke, input, config, **kwargs)
 
 
 class InMemoryRateLimiter(BaseRateLimiter):
