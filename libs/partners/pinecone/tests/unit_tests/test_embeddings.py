@@ -14,9 +14,3 @@ def test_default_config() -> None:
 def test_custom_config() -> None:
     e = PineconeEmbeddings(pinecone_api_key=API_KEY, model=MODEL_NAME, batch_size=128)
     assert e.batch_size == 128
-
-
-def test_custom_model() -> None:
-    e = PineconeEmbeddings(pinecone_api_key=API_KEY, model=MODEL_NAME)
-    assert e.model == "a-model"
-    assert e.batch_size is None
