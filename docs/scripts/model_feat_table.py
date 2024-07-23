@@ -87,7 +87,7 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-huggingface",
         "link": "/docs/integrations/chat/huggingface/",
     },
-    "ChatNvidia": {
+    "ChatNVIDIA": {
         "tool_calling": True,
         "json_mode": True,
         "local": True,

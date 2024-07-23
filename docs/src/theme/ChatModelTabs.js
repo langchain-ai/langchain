@@ -124,6 +124,15 @@ export default function ChatModelTabs(props) {
       shouldHide: hideCohere,
     },
     {
+      value: "NVIDIA",
+      label: "NVIDIA",
+      text: `from langchain import ChatNVIDIA\n\n${llmVarName} = ChatNVIDIA(${nvidiaParamsOrDefault})`,
+      apiKeyName: "NVIDIA_API_KEY",
+      packageName: "langchain-nvidia-ai-endpoints",
+      default: false,
+      shouldHide: hideNvidia,
+    },
+    {
       value: "FireworksAI",
       label: "FireworksAI",
       text: `from langchain_fireworks import ChatFireworks\n\n${llmVarName} = ChatFireworks(${fireworksParamsOrDefault})`,
@@ -149,15 +158,6 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-mistralai",
       default: false,
       shouldHide: hideMistral,
-    },
-    {
-      value: "NVIDIA",
-      label: "NVIDIA",
-      text: `from langchain import ChatNVIDIA\n\n${llmVarName} = ChatNVIDIA(${nvidiaParamsOrDefault})`,
-      apiKeyName: "NVIDIA_API_KEY",
-      packageName: "langchain-nvidia-ai-endpoints",
-      default: false,
-      shouldHide: hideNvidia,
     },
     {
       value: "TogetherAI",
