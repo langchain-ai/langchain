@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from operator import itemgetter
@@ -32,17 +33,24 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -64,13 +72,27 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, (FunctionMessage, ToolMessage)):
         message_dict = {
             "role": "function",
-            "content": message.content,
+            "content": _create_tool_content(message.content),
             "name": message.name or message.additional_kwargs.get("name"),
         }
     else:
         raise TypeError(f"Got unknown type {message}")
 
     return message_dict
+
+
+def _create_tool_content(content: Union[str, List[Union[str, Dict[Any, Any]]]]) -> str:
+    """Convert tool content to dict scheme."""
+    if isinstance(content, str):
+        try:
+            if isinstance(json.loads(content), dict):
+                return content
+            else:
+                return json.dumps({"tool_result": content})
+        except json.JSONDecodeError:
+            return json.dumps({"tool_result": content})
+    else:
+        return json.dumps({"tool_result": content})
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
@@ -88,6 +110,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
         request_id=additional_kwargs["id"],
         object=additional_kwargs.get("object", ""),
         search_info=additional_kwargs.get("search_info", []),
+        usage=additional_kwargs.get("usage", None),
     )
 
     if additional_kwargs.get("function_call", {}):
@@ -101,6 +124,17 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
                 "id": str(uuid.uuid4()),
             }
         ]
+
+    if usage := additional_kwargs.get("usage", None):
+        return AIMessage(
+            content=content,
+            additional_kwargs=msg_additional_kwargs,
+            usage_metadata=UsageMetadata(
+                input_tokens=usage.get("prompt_tokens", 0),
+                output_tokens=usage.get("completion_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0),
+            ),
+        )
 
     return AIMessage(
         content=content,
@@ -327,13 +361,13 @@ class QianfanChatEndpoint(BaseChatModel):
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Bot-turbo"
+    model: str = "ERNIE-Lite-8K"
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set.
-    Default is ERNIE-Bot-turbo.
+    Default is ERNIE-Lite-8K.
     """
 
     endpoint: Optional[str] = None
@@ -578,6 +612,7 @@ class QianfanChatEndpoint(BaseChatModel):
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
+                        usage_metadata=msg.usage_metadata,
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -605,6 +640,7 @@ class QianfanChatEndpoint(BaseChatModel):
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
+                        usage_metadata=msg.usage_metadata,
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -739,7 +775,7 @@ class QianfanChatEndpoint(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         llm = self.bind_tools([schema])
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(

@@ -1,6 +1,7 @@
 {
   "buildCommand": "yarn build",
   "outputDirectory": "build",
+  "ignoreCommand": "bash ignore-step.sh",
   "trailingSlash": true,
   "rewrites": [
     {
