@@ -20,7 +20,7 @@ from langchain_community.graph_vectorstores.extractors.link_extractor import (
 from langchain_community.graph_vectorstores.extractors.link_extractor_adapter import (
     LinkExtractorAdapter,
 )
-from langchain_community.graph_vectorstores.extractors.link_extractor_transformer import (  #noqa: E501
+from langchain_community.graph_vectorstores.extractors.link_extractor_transformer import (  # noqa: E501
     LinkExtractorTransformer,
 )
 
