@@ -11,11 +11,12 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
 
-[tool.mypy]
-disallow_untyped_defs = "True"
-
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-anthropic%3D%3D0%22&expanded=true"
+
+[tool.mypy]
+disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

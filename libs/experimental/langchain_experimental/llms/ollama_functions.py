@@ -34,11 +34,14 @@ from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+)
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.pydantic import is_basemodel_instance, is_basemodel_subclass
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
@@ -75,12 +78,8 @@ _DictOrPydantic = Union[Dict, _BM]
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and (
-        issubclass(obj, BaseModel) or BaseModel in obj.__bases__
+        is_basemodel_subclass(obj) or BaseModel in obj.__bases__
     )
-
-
-def _is_pydantic_object(obj: Any) -> bool:
-    return isinstance(obj, BaseModel)
 
 
 def convert_to_ollama_tool(tool: Any) -> Dict:
@@ -93,7 +92,7 @@ def convert_to_ollama_tool(tool: Any) -> Dict:
         schema = tool.tool_call_schema.schema()
         name = tool.get_name()
         description = tool.description
-    elif _is_pydantic_object(tool):
+    elif is_basemodel_instance(tool):
         schema = tool.get_input_schema().schema()
         name = tool.get_name()
         description = tool.description
