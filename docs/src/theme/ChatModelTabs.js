@@ -52,17 +52,17 @@ export default function ChatModelTabs(props) {
     customVarName,
   } = props;
 
-  const openAIParamsOrDefault = openaiParams ?? `model="gpt-3.5-turbo-0125"`;
+  const openAIParamsOrDefault = openaiParams ?? `model="gpt-4o-mini"`;
   const anthropicParamsOrDefault =
-    anthropicParams ?? `model="claude-3-sonnet-20240229"`;
-  const cohereParamsOrDefault = cohereParams ?? `model="command-r"`;
+    anthropicParams ?? `model="claude-3-5-sonnet-20240620"`;
+  const cohereParamsOrDefault = cohereParams ?? `model="command-r-plus"`;
   const fireworksParamsOrDefault =
     fireworksParams ??
-    `model="accounts/fireworks/models/mixtral-8x7b-instruct"`;
+    `model="accounts/fireworks/models/llama-v3p1-70b-instruct"`;
   const groqParamsOrDefault = groqParams ?? `model="llama3-8b-8192"`;
   const mistralParamsOrDefault =
     mistralParams ?? `model="mistral-large-latest"`;
-  const googleParamsOrDefault = googleParams ?? `model="gemini-pro"`;
+  const googleParamsOrDefault = googleParams ?? `model="gemini-1.5-flash"`;
   const togetherParamsOrDefault =
     togetherParams ??
     `\n    base_url="https://api.together.xyz/v1",\n    api_key=os.environ["TOGETHER_API_KEY"],\n    model="mistralai/Mixtral-8x7B-Instruct-v0.1",\n`;
