@@ -11,12 +11,11 @@ from __future__ import annotations
 import abc
 import asyncio
 import threading
+import time
 from typing import (
     Any,
     Optional,
 )
-
-import time
 
 from langchain_core.runnables.base import (
     Input,
@@ -30,7 +29,7 @@ from langchain_core.runnables.base import (
 class BaseRateLimiter(abc.ABC):
     """Base class for rate limiters.
 
-    Usage of the base limiter is through the wait and await_ methods depending
+    Usage of the base limiter is through the sync_wait and async_wait methods depending
     on whether running in a sync or async context.
     """
 
@@ -39,11 +38,23 @@ class BaseRateLimiter(abc.ABC):
         """Blocking call to wait until the given number of tokens are available."""
 
     @abc.abstractmethod
-    async def async_await(self) -> None:
+    async def async_wait(self) -> None:
         """Blocking call to wait until the given number of tokens are available."""
 
 
-class RateLimiter(BaseRateLimiter):
+class InMemoryRateLimiter(BaseRateLimiter):
+    """An in memory rate limiter.
+
+    This is an in memory rate limiter, so it cannot rate limit across
+    different processes.
+
+    The rate limiter only allows time-based rate limiting and does not
+    take into account any information about the input or the output, so it
+    cannot be used to rate limit based on the size of the request.
+
+    It is thread safe and can be used in either a sync or async context.
+    """
+
     def __init__(
         self,
         *,
@@ -132,7 +143,7 @@ class RateLimiter(BaseRateLimiter):
         """
         return self._consume()
 
-    async def await_(self) -> None:
+    async def async_wait(self) -> None:
         """Blocking call to wait until the given number of tokens are available."""
         while not await self._aconsume():
             await asyncio.sleep(self.check_every_n_seconds)
@@ -159,7 +170,7 @@ def with_rate_limit(
 
     async def _await(input: dict) -> dict:
         """Wait for the rate limiter to allow the request to proceed."""
-        await rate_limiter.async_await()
+        await rate_limiter.async_wait()
         return input
 
     return (
@@ -169,7 +180,29 @@ def with_rate_limit(
 
 
 class RunnableRateLimiter(RunnableBindingBase[Input, Output]):
-    """A rate limiter that can be used with runnables."""
+    """A rate limiter that can be used with Runnables.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.runnables.rate_limiter import InMemoryRateLimiter
+            from langchain_core.runnables import RunnableLambda
+
+            rate_limiter = InMemoryRateLimiter(
+                requests_per_second=1,
+                max_bucket_size=10, # Up to a burst size of 10 requests
+            )
+
+            @RunnableLambda
+            def foo(input: dict) -> dict:
+                return input
+
+            runnable = RunnableRateLimiter(
+                bound=foo,
+                rate_limiter=rate_limiter
+            )
+    """
 
     rate_limiter: BaseRateLimiter
 
