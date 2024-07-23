@@ -17,11 +17,8 @@ REFINE_PROMPT = PromptTemplate(
 )
 
 
-prompt_template = """Напиши краткое резюме следующего:
-
-
+prompt_template = """Тебе будет дан текст, напиши его краткое содержание:
 "{text}"
 
-
-КРАТКОЕ РЕЗЮМЕ:"""
+КРАТКОЕ СОДЕРЖАНИЕ:"""
 PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])

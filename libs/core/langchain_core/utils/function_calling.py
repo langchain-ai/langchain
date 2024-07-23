@@ -127,24 +127,22 @@ def convert_pydantic_to_gigachat_function(
             if "description" not in schema["properties"][key]:
                 schema["properties"][key]["description"] = ""
 
-    return_parameters = None
+    return_schema = None
     if return_model:
         return_schema = dereference_refs(return_model.schema())
         return_schema.pop("definitions", None)
-        if "properties" in return_schema and "result" in return_schema["properties"]:
-            if "type" not in return_schema["properties"]["result"]:
-                return_schema["properties"]["result"]["type"] = "object"
-            return_parameters = return_schema["properties"]["result"]
-
-    # Remove empty return paramters
-    if return_parameters and "properties" not in return_parameters:
-        return_parameters = None
+        return_schema.pop("title", None)
+        for key in return_schema["properties"]:
+            if "type" not in return_schema["properties"][key]:
+                return_schema["properties"][key]["type"] = "object"
+            if "description" not in return_schema["properties"][key]:
+                return_schema["properties"][key]["description"] = ""
 
     return GigaFunctionDescription(
         name=name or title,
         description=description or schema["description"],
         parameters=schema,
-        return_parameters=return_parameters,
+        return_parameters=return_schema,
         few_shot_examples=few_shot_examples,
     )
 
@@ -450,7 +448,11 @@ def flatten_all_of(schema: Any) -> Any:
                 continue
             if k == "allOf":
                 obj = flatten_all_of(v[0])
+                outer_description = schema.get("description")
                 obj_out = {**obj_out, **obj}
+                if outer_description:
+                    # Внешнее описания приоритетнее внутреннего для ref
+                    obj_out["description"] = outer_description
             elif isinstance(v, (list, dict)):
                 obj_out[k] = flatten_all_of(v)
             else:
