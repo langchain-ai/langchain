@@ -493,7 +493,7 @@ def test_similarity_search(index_details: dict, query_type: Optional[str]) -> No
     limit = 7
 
     search_result = vectorsearch.similarity_search(
-        query, k=limit, filters=filters, query_type=query_type
+        query, k=limit, filter=filters, query_type=query_type
     )
     if index_details == DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS:
         index.similarity_search.assert_called_once_with(
@@ -576,7 +576,7 @@ def test_mmr_parameters(index_details: dict) -> None:
                 "k": limit,
                 "fetch_k": fetch_k,
                 "lambda_mult": lambda_mult,
-                "filters": filters,
+                "filter": filters,
             },
         )
         search_result = retriever.invoke(query)
@@ -625,7 +625,7 @@ def test_similarity_search_by_vector(index_details: dict) -> None:
     limit = 7
 
     search_result = vectorsearch.similarity_search_by_vector(
-        query_embedding, k=limit, filters=filters
+        query_embedding, k=limit, filter=filters
     )
     index.similarity_search.assert_called_once_with(
         columns=[DEFAULT_PRIMARY_KEY, DEFAULT_TEXT_COLUMN],
@@ -681,3 +681,31 @@ def test_similarity_search_by_vector_not_supported_for_managed_embedding() -> No
         "`similarity_search_by_vector` is not supported for index with "
         "Databricks-managed embeddings." in str(ex.value)
     )
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        "similarity_search",
+        "similarity_search_with_score",
+        "similarity_search_by_vector",
+        "similarity_search_by_vector_with_score",
+        "max_marginal_relevance_search",
+        "max_marginal_relevance_search_by_vector",
+    ],
+)
+def test_filter_arg_alias(method: str) -> None:
+    index = mock_index(DIRECT_ACCESS_INDEX)
+    vectorsearch = default_databricks_vector_search(index)
+    query = "foo"
+    query_embedding = DEFAULT_EMBEDDING_MODEL.embed_query("foo")
+    filters = {"some filter": True}
+    limit = 7
+
+    if "by_vector" in method:
+        getattr(vectorsearch, method)(query_embedding, k=limit, filters=filters)
+    else:
+        getattr(vectorsearch, method)(query, k=limit, filters=filters)
+
+    index_call_args = index.similarity_search.call_args[1]
+    assert index_call_args["filters"] == filters
