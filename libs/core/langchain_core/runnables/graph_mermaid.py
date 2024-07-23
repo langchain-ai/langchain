@@ -3,8 +3,6 @@ import re
 from dataclasses import asdict
 from typing import Dict, List, Optional
 
-from playwright.async_api import ViewportSize
-
 from langchain_core.runnables.graph import (
     CurveStyle,
     Edge,
@@ -205,14 +203,14 @@ async def _render_mermaid_using_playwright(
 ) -> bytes:
     """Renders Mermaid graph using Playwright."""
     try:
-        from playwright.async_api import async_playwright
+        from playwright.async_api import ViewportSize, async_playwright
     except ImportError as e:
         raise ImportError(
             "Install Playwright to use the Playwright method: `pip install playwright`."
         ) from e
 
     async with async_playwright() as p:
-        img_bytes: bytes = b''
+        img_bytes: bytes = b""
 
         for browser_type in [p.chromium, p.firefox, p.webkit]:
             try:
@@ -262,7 +260,7 @@ async def _render_mermaid_using_playwright(
 
             viewport_size = ViewportSize(
                 width=int(dimensions["width"] + padding),
-                height=int(dimensions["height"] + padding)
+                height=int(dimensions["height"] + padding),
             )
 
             # await page.set_viewport_size(viewport_size)
@@ -278,7 +276,9 @@ async def _render_mermaid_using_playwright(
             break
 
         if len(img_bytes) == 0:
-            raise Exception("Install a Playwright supported browser with `playwright install`.")
+            raise Exception(
+                "Install a Playwright supported browser with `playwright install`."
+            )
 
         if output_file_path is not None:
             with open(output_file_path, "wb") as file:
