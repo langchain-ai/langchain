@@ -53,7 +53,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     class Config:
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def set_default_config(cls, values: dict) -> dict:
         """Set default configuration based on model."""
         default_config_map = {
