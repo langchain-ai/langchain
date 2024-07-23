@@ -142,6 +142,10 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.dataframe import (
         DataFrameLoader,
     )
+    from langchain_community.document_loaders.dedoc import (
+        DedocAPIFileLoader,
+        DedocFileLoader,
+    )
     from langchain_community.document_loaders.diffbot import (
         DiffbotLoader,
     )
@@ -340,6 +344,7 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.pdf import (
         AmazonTextractPDFLoader,
+        DedocPDFLoader,
         MathpixPDFLoader,
         OnlinePDFLoader,
         PagedPDFSplitter,
@@ -570,6 +575,9 @@ _module_lookup = {
     "CubeSemanticLoader": "langchain_community.document_loaders.cube_semantic",
     "DataFrameLoader": "langchain_community.document_loaders.dataframe",
     "DatadogLogsLoader": "langchain_community.document_loaders.datadog_logs",
+    "DedocAPIFileLoader": "langchain_community.document_loaders.dedoc",
+    "DedocFileLoader": "langchain_community.document_loaders.dedoc",
+    "DedocPDFLoader": "langchain_community.document_loaders.pdf",
     "DiffbotLoader": "langchain_community.document_loaders.diffbot",
     "DirectoryLoader": "langchain_community.document_loaders.directory",
     "DiscordChatLoader": "langchain_community.document_loaders.discord",
@@ -771,6 +779,9 @@ __all__ = [
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
+    "DedocAPIFileLoader",
+    "DedocFileLoader",
+    "DedocPDFLoader",
     "DiffbotLoader",
     "DirectoryLoader",
     "DiscordChatLoader",
