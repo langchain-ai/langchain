@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Type, Union
+from typing import Any, List, Optional, Type, Union, cast
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -10,6 +10,7 @@ from langchain_core.output_parsers.openai_functions import (
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs
@@ -45,7 +46,7 @@ def create_qa_with_structure_chain(
 
     """
     if output_parser == "pydantic":
-        if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
+        if not (isinstance(schema, type) and is_basemodel_subclass(schema)):
             raise ValueError(
                 "Must provide a pydantic class for schema when output_parser is "
                 "'pydantic'."
@@ -60,10 +61,10 @@ def create_qa_with_structure_chain(
             f"Got unexpected output_parser: {output_parser}. "
             f"Should be one of `pydantic` or `base`."
         )
-    if isinstance(schema, type) and issubclass(schema, BaseModel):
-        schema_dict = schema.schema()
+    if isinstance(schema, type) and is_basemodel_subclass(schema):
+        schema_dict = cast(dict, schema.schema())
     else:
-        schema_dict = schema
+        schema_dict = cast(dict, schema)
     function = {
         "name": schema_dict["title"],
         "description": schema_dict["description"],
