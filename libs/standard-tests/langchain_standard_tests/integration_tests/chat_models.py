@@ -247,7 +247,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
-    @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, "Test requires pydantic 2.")
+    @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         """Test to verify compatibility with pydantic.v1.BaseModel.
 
