@@ -1,4 +1,5 @@
 """Wrapper around the Tencent vector database."""
+
 from __future__ import annotations
 
 import json
@@ -374,8 +375,7 @@ class TencentVectorDB(VectorStore):
                 }
                 if embeddings:
                     doc_attrs["vector"] = embeddings[id]
-                else:
-                    doc_attrs["text"] = texts[id]
+                doc_attrs["text"] = texts[id]
                 doc_attrs.update(metadata)
                 doc = self.document.Document(**doc_attrs)
                 docs.append(doc)

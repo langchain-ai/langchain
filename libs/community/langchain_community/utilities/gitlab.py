@@ -1,4 +1,5 @@
 """Util that calls gitlab."""
+
 from __future__ import annotations
 
 import json

@@ -1,19 +1,16 @@
 from langchain_core.load import dumpd, load
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    InvalidToolCall,
-    ToolCall,
-    ToolCallChunk,
-)
+from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 
 
 def test_serdes_message() -> None:
     msg = AIMessage(
         content=[{"text": "blah", "type": "text"}],
-        tool_calls=[ToolCall(name="foo", args={"bar": 1}, id="baz")],
+        tool_calls=[create_tool_call(name="foo", args={"bar": 1}, id="baz")],
         invalid_tool_calls=[
-            InvalidToolCall(name="foobad", args="blah", id="booz", error="bad")
+            create_invalid_tool_call(name="foobad", args="blah", id="booz", error="bad")
         ],
     )
     expected = {
@@ -23,9 +20,17 @@ def test_serdes_message() -> None:
         "kwargs": {
             "type": "ai",
             "content": [{"text": "blah", "type": "text"}],
-            "tool_calls": [{"name": "foo", "args": {"bar": 1}, "id": "baz"}],
+            "tool_calls": [
+                {"name": "foo", "args": {"bar": 1}, "id": "baz", "type": "tool_call"}
+            ],
             "invalid_tool_calls": [
-                {"name": "foobad", "args": "blah", "id": "booz", "error": "bad"}
+                {
+                    "name": "foobad",
+                    "args": "blah",
+                    "id": "booz",
+                    "error": "bad",
+                    "type": "invalid_tool_call",
+                }
             ],
         },
     }
@@ -38,8 +43,13 @@ def test_serdes_message_chunk() -> None:
     chunk = AIMessageChunk(
         content=[{"text": "blah", "type": "text"}],
         tool_call_chunks=[
-            ToolCallChunk(name="foo", args='{"bar": 1}', id="baz", index=0),
-            ToolCallChunk(name="foobad", args="blah", id="booz", index=1),
+            create_tool_call_chunk(name="foo", args='{"bar": 1}', id="baz", index=0),
+            create_tool_call_chunk(
+                name="foobad",
+                args="blah",
+                id="booz",
+                index=1,
+            ),
         ],
     )
     expected = {
@@ -49,18 +59,33 @@ def test_serdes_message_chunk() -> None:
         "kwargs": {
             "type": "AIMessageChunk",
             "content": [{"text": "blah", "type": "text"}],
-            "tool_calls": [{"name": "foo", "args": {"bar": 1}, "id": "baz"}],
+            "tool_calls": [
+                {"name": "foo", "args": {"bar": 1}, "id": "baz", "type": "tool_call"}
+            ],
             "invalid_tool_calls": [
                 {
                     "name": "foobad",
                     "args": "blah",
                     "id": "booz",
                     "error": None,
+                    "type": "invalid_tool_call",
                 }
             ],
             "tool_call_chunks": [
-                {"name": "foo", "args": '{"bar": 1}', "id": "baz", "index": 0},
-                {"name": "foobad", "args": "blah", "id": "booz", "index": 1},
+                {
+                    "name": "foo",
+                    "args": '{"bar": 1}',
+                    "id": "baz",
+                    "index": 0,
+                    "type": "tool_call_chunk",
+                },
+                {
+                    "name": "foobad",
+                    "args": "blah",
+                    "id": "booz",
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                },
             ],
         },
     }

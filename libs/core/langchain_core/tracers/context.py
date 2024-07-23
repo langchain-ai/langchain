@@ -68,8 +68,8 @@ def tracing_v2_enabled(
         client (LangSmithClient, optional): The client of the langsmith.
             Defaults to None.
 
-    Returns:
-        None
+    Yields:
+        LangChainTracer: The LangChain tracer.
 
     Example:
         >>> with tracing_v2_enabled():
@@ -100,7 +100,7 @@ def tracing_v2_enabled(
 def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
     """Collect all run traces in context.
 
-    Returns:
+    Yields:
         run_collector.RunCollectorCallbackHandler: The run collector callback handler.
 
     Example:

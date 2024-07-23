@@ -53,6 +53,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -65,7 +66,12 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -77,6 +83,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 class ChatGroq(BaseChatModel):
@@ -511,12 +518,12 @@ class ChatGroq(BaseChatModel):
             generation = chat_result.generations[0]
             message = cast(AIMessage, generation.message)
             tool_call_chunks = [
-                {
-                    "name": rtc["function"].get("name"),
-                    "args": rtc["function"].get("arguments"),
-                    "id": rtc.get("id"),
-                    "index": rtc.get("index"),
-                }
+                create_tool_call_chunk(
+                    name=rtc["function"].get("name"),
+                    args=rtc["function"].get("arguments"),
+                    id=rtc.get("id"),
+                    index=rtc.get("index"),
+                )
                 for rtc in message.additional_kwargs.get("tool_calls", [])
             ]
             chunk_ = ChatGenerationChunk(
@@ -595,7 +602,7 @@ class ChatGroq(BaseChatModel):
                 message=AIMessageChunk(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                     usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,
@@ -1018,7 +1025,8 @@ class ChatGroq(BaseChatModel):
             llm = self.bind_tools([schema], tool_choice=tool_name)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(
@@ -1027,7 +1035,7 @@ class ChatGroq(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
@@ -1051,7 +1059,7 @@ class ChatGroq(BaseChatModel):
 
 
 def _is_pydantic_class(obj: Any) -> bool:
-    return isinstance(obj, type) and issubclass(obj, BaseModel)
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
 class _FunctionCall(TypedDict):
@@ -1147,7 +1155,7 @@ def _convert_chunk_to_message_chunk(
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
-            usage_metadata=usage_metadata,
+            usage_metadata=usage_metadata,  # type: ignore[arg-type]
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -1200,7 +1208,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
-        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))
+        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))  # type: ignore[arg-type]
     elif role == "tool":
         additional_kwargs = {}
         if "name" in _dict:
@@ -1211,7 +1219,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs=additional_kwargs,
         )
     else:
-        return ChatMessage(content=_dict.get("content", ""), role=role)
+        return ChatMessage(content=_dict.get("content", ""), role=role)  # type: ignore[arg-type]
 
 
 def _lc_tool_call_to_groq_tool_call(tool_call: ToolCall) -> dict:

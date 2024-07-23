@@ -44,7 +44,15 @@ from langchain_core.runnables.utils import (
 
 
 class DynamicRunnable(RunnableSerializable[Input, Output]):
-    """Serializable Runnable that can be dynamically configured."""
+    """Serializable Runnable that can be dynamically configured.
+
+    A DynamicRunnable should be initiated using the `configurable_fields` or
+    `configurable_alternatives` method of a Runnable.
+
+    Parameters:
+        default: The default Runnable to use.
+        config: The configuration to use.
+    """
 
     default: RunnableSerializable[Input, Output]
 
@@ -99,6 +107,15 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def prepare(
         self, config: Optional[RunnableConfig] = None
     ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
+        """Prepare the Runnable for invocation.
+
+        Args:
+            config: The configuration to use. Defaults to None.
+
+        Returns:
+            Tuple[Runnable[Input, Output], RunnableConfig]: The prepared Runnable and
+            configuration.
+        """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
             runnable, config = runnable._prepare(merge_configs(runnable.config, config))
@@ -107,8 +124,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     @abstractmethod
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
-        ...
+    ) -> Tuple[Runnable[Input, Output], RunnableConfig]: ...
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -285,6 +301,9 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     A RunnableConfigurableFields should be initiated using the
     `configurable_fields` method of a Runnable.
 
+    Parameters:
+        fields: The configurable fields to use.
+
     Here is an example of using a RunnableConfigurableFields with LLMs:
 
         .. code-block:: python
@@ -349,6 +368,11 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
+        """Get the configuration specs for the RunnableConfigurableFields.
+
+        Returns:
+            List[ConfigurableFieldSpec]: The configuration specs.
+        """
         return get_unique_config_specs(
             [
                 (
@@ -375,6 +399,8 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
+        """Get a new RunnableConfigurableFields with the specified
+        configurable fields."""
         return self.default.configurable_fields(**{**self.fields, **kwargs})
 
     def _prepare(
@@ -494,11 +520,13 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """  # noqa: E501
 
     which: ConfigurableField
+    """The ConfigurableField to use to choose between alternatives."""
 
     alternatives: Dict[
         str,
         Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ]
+    """The alternatives to choose from."""
 
     default_key: str = "default"
     """The enum value to use for the default option. Defaults to "default"."""
@@ -620,7 +648,7 @@ def prefix_config_spec(
         prefix: The prefix to add.
 
     Returns:
-
+        ConfigurableFieldSpec: The prefixed ConfigurableFieldSpec.
     """
     return (
         ConfigurableFieldSpec(
@@ -642,6 +670,13 @@ def make_options_spec(
 ) -> ConfigurableFieldSpec:
     """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
     ConfigurableFieldMultiOption.
+
+    Args:
+        spec: The ConfigurableFieldSingleOption or ConfigurableFieldMultiOption.
+        description: The description to use if the spec does not have one.
+
+    Returns:
+        The ConfigurableFieldSpec.
     """
     with _enums_for_spec_lock:
         if enum := _enums_for_spec.get(spec):

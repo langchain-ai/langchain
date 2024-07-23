@@ -124,6 +124,11 @@ class PebbloRetrievalQA(Chain):
                     ),
                     "doc": doc.page_content,
                     "vector_db": self.retriever.vectorstore.__class__.__name__,
+                    **(
+                        {"pb_checksum": doc.metadata.get("pb_checksum")}
+                        if doc.metadata.get("pb_checksum")
+                        else {}
+                    ),
                 }
                 for doc in docs
                 if isinstance(doc, Document)
@@ -272,14 +277,11 @@ class PebbloRetrievalQA(Chain):
         """
         Validate that the vectorstore of the retriever is supported vectorstores.
         """
-        if not any(
-            isinstance(retriever.vectorstore, supported_class)
-            for supported_class in SUPPORTED_VECTORSTORES
-        ):
+        if retriever.vectorstore.__class__.__name__ not in SUPPORTED_VECTORSTORES:
             raise ValueError(
                 f"Vectorstore must be an instance of one of the supported "
                 f"vectorstores: {SUPPORTED_VECTORSTORES}. "
-                f"Got {type(retriever.vectorstore).__name__} instead."
+                f"Got '{retriever.vectorstore.__class__.__name__}' instead."
             )
         return retriever
 
@@ -460,25 +462,24 @@ class PebbloRetrievalQA(Chain):
         if self.api_key:
             if self.classifier_location == "local":
                 if pebblo_resp:
-                    payload["response"] = (
-                        json.loads(pebblo_resp.text)
-                        .get("retrieval_data", {})
-                        .get("response", {})
-                    )
-                    payload["context"] = (
-                        json.loads(pebblo_resp.text)
-                        .get("retrieval_data", {})
-                        .get("context", [])
-                    )
-                    payload["prompt"] = (
-                        json.loads(pebblo_resp.text)
-                        .get("retrieval_data", {})
-                        .get("prompt", {})
-                    )
+                    resp = json.loads(pebblo_resp.text)
+                    if resp:
+                        payload["response"].update(
+                            resp.get("retrieval_data", {}).get("response", {})
+                        )
+                        payload["response"].pop("data")
+                        payload["prompt"].update(
+                            resp.get("retrieval_data", {}).get("prompt", {})
+                        )
+                        payload["prompt"].pop("data")
+                        context = payload["context"]
+                        for context_data in context:
+                            context_data.pop("doc")
+                        payload["context"] = context
                 else:
-                    payload["response"] = None
-                    payload["context"] = None
-                    payload["prompt"] = None
+                    payload["response"] = {}
+                    payload["prompt"] = {}
+                    payload["context"] = []
             headers.update({"x-api-key": self.api_key})
             pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{PROMPT_URL}"
             try:

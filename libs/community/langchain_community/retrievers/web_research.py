@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
@@ -80,6 +80,35 @@ class WebResearchRetriever(BaseRetriever):
         description="Whether to use the http_proxy/https_proxy env variables or "
         "check .netrc for proxy configuration",
     )
+
+    allow_dangerous_requests: bool = False
+    """A flag to force users to acknowledge the risks of SSRF attacks when using 
+    this retriever.
+    
+    Users should set this flag to `True` if they have taken the necessary precautions
+    to prevent SSRF attacks when using this retriever.
+    
+    For example, users can run the requests through a properly configured
+    proxy and prevent the crawler from accidentally crawling internal resources.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the retriever."""
+        allow_dangerous_requests = kwargs.get("allow_dangerous_requests", False)
+        if not allow_dangerous_requests:
+            raise ValueError(
+                "WebResearchRetriever crawls URLs surfaced through "
+                "the provided search engine. It is possible that some of those URLs "
+                "will end up pointing to machines residing on an internal network, "
+                "leading"
+                "to an SSRF (Server-Side Request Forgery) attack. "
+                "To protect yourself against that risk, you can run the requests "
+                "through a proxy and prevent the crawler from accidentally crawling "
+                "internal resources."
+                "If've taken the necessary precautions, you can set "
+                "`allow_dangerous_requests` to `True`."
+            )
+        super().__init__(**kwargs)
 
     @classmethod
     def from_llm(
