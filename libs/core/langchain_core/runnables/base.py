@@ -82,6 +82,7 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -300,7 +301,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.InputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if inspect.isclass(root_type) and is_basemodel_subclass(root_type):
             return root_type
 
         return create_model(
@@ -332,7 +333,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         root_type = self.OutputType
 
-        if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
+        if inspect.isclass(root_type) and is_basemodel_subclass(root_type):
             return root_type
 
         return create_model(

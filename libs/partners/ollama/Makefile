@@ -15,8 +15,10 @@ test tests:
 	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 # integration tests are run without the --disable-socket flag to allow network calls
-integration_test integration_tests:
+integration_test:
 	poetry run pytest $(TEST_FILE)
+# note: leaving out integration_tests (with s) command to skip release testing for now
+# TODO(erick) configure ollama server to run in CI, in separate repo
 
 ######################
 # LINTING AND FORMATTING
