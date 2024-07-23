@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-import time
+import inspect
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -14,6 +14,7 @@ from typing import (
     Union,
 )
 
+import time
 from typing_extensions import TypedDict
 
 from langchain_core._api import beta
@@ -266,8 +267,6 @@ class OneShotDocumentIndex(OneShotIndex[Document, str, Document], BaseRetriever)
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get relevant documents for a query."""
-        import inspect
-
         # check if run_manager is in the signature of query if so pass it
         accepts_run_manager = "run_manager" in inspect.signature(self.query).parameters
         if accepts_run_manager:
@@ -276,7 +275,7 @@ class OneShotDocumentIndex(OneShotIndex[Document, str, Document], BaseRetriever)
                 run_manager=run_manager,
             )["hits"]
         else:
-            return self.query(query)
+            return self.query(query)["hits"]
 
 
 class VectorStoreQuery(TypedDict):
