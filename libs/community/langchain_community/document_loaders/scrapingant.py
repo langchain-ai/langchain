@@ -37,7 +37,8 @@ class ScrapingAntLoader(BaseLoader):
             from scrapingant_client import ScrapingAntClient
         except ImportError:
             raise ImportError(
-                "`scrapingant-client` package not found, run `pip install scrapingant-client`"
+                "`scrapingant-client` package not found,"
+                " run `pip install scrapingant-client`"
             )
         if not urls:
             raise ValueError("URLs must be provided.")
@@ -53,9 +54,7 @@ class ScrapingAntLoader(BaseLoader):
         scrape_config = self.scrape_config if self.scrape_config is not None else {}
         for url in self.urls:
             try:
-                result = self.client.markdown_request(
-                    url=url, **scrape_config
-                )
+                result = self.client.markdown_request(url=url, **scrape_config)
                 yield Document(
                     page_content=result.markdown,
                     metadata={"url": result.url},
