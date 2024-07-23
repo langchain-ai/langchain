@@ -3,7 +3,7 @@ import Admonition from '@theme/Admonition';
 
 export default function Prerequisites({ titlesAndLinks }) {
     return (
-        <Admonition type="info" title="Prerequisite Guides" icon="📚">
+        <Admonition type="info" title="Recommended Prereading" icon="📚">
             <ul style={{ fontSize: "15px", lineHeight: "1.5em" }}>
                 {titlesAndLinks.map(([title, link], i) => {
                     return (
