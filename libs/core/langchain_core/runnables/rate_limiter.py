@@ -14,6 +14,7 @@ import threading
 import time
 from typing import (
     Optional,
+    cast,
 )
 
 from langchain_core._api import beta
@@ -96,7 +97,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
         # at a given time.
         self._consume_lock = threading.Lock()
         # The last time we tried to consume tokens.
-        self.last: Optional[time.time] = None
+        self.last: Optional[float] = None
         self.check_every_n_seconds = check_every_n_seconds
 
     def _consume(self) -> bool:
@@ -188,12 +189,12 @@ def add_rate_limiter(
     .. versionadded:: 0.2.24
     """
 
-    def _wait(input: dict) -> dict:
+    def _wait(input: Input) -> Output:
         """Wait for the rate limiter to allow the request to proceed."""
         rate_limiter.sync_wait()
         return input
 
-    async def _await(input: dict) -> dict:
+    async def _await(input: Input) -> Output:
         """Wait for the rate limiter to allow the request to proceed."""
         await rate_limiter.async_wait()
         return input
