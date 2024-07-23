@@ -91,3 +91,6 @@ extend-exclude = [
 # Don't require them to change at once, though we should look into them eventually.
 "cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
 "docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]
+
+[tool.setuptools]
+py-modules = []
