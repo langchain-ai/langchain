@@ -67,7 +67,7 @@ class PaiEasChatEndpoint(BaseChatModel):
 
     timeout: Optional[int] = 5000
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["eas_service_url"] = get_from_dict_or_env(

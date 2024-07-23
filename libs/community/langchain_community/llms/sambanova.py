@@ -5,8 +5,8 @@ import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 
 class SVEndpointHandler:
@@ -43,7 +43,7 @@ class SVEndpointHandler:
 
         :param requests.Response response: the response object to process
         :return: the response dict
-        :rtype: dict
+        :type: dict
         """
         result: Dict[str, Any] = {}
         try:
@@ -87,7 +87,7 @@ class SVEndpointHandler:
         """
         Return the full API URL for a given path.
         :returns: the full API URL for the sub-path
-        :rtype: str
+        :type: str
         """
         return f"{self.host_url}{self.API_BASE_PATH}"
 
@@ -108,23 +108,12 @@ class SVEndpointHandler:
         :param str input_str: Input string
         :param str params: Input params string
         :returns: Prediction results
-        :rtype: dict
+        :type: dict
         """
-        parsed_element = {
-            "conversation_id": "sambaverse-conversation-id",
-            "messages": [
-                {
-                    "message_id": 0,
-                    "role": "user",
-                    "content": input,
-                }
-            ],
-        }
-        parsed_input = json.dumps(parsed_element)
         if params:
-            data = {"instance": parsed_input, "params": json.loads(params)}
+            data = {"instance": input, "params": json.loads(params)}
         else:
-            data = {"instance": parsed_input}
+            data = {"instance": input}
         response = self.http_session.post(
             self._get_full_url(),
             headers={
@@ -152,23 +141,12 @@ class SVEndpointHandler:
         :param str input_str: Input string
         :param str params: Input params string
         :returns: Prediction results
-        :rtype: dict
+        :type: dict
         """
-        parsed_element = {
-            "conversation_id": "sambaverse-conversation-id",
-            "messages": [
-                {
-                    "message_id": 0,
-                    "role": "user",
-                    "content": input,
-                }
-            ],
-        }
-        parsed_input = json.dumps(parsed_element)
         if params:
-            data = {"instance": parsed_input, "params": json.loads(params)}
+            data = {"instance": input, "params": json.loads(params)}
         else:
-            data = {"instance": parsed_input}
+            data = {"instance": input}
         # Streaming output
         response = self.http_session.post(
             self._get_full_url(),
@@ -212,6 +190,7 @@ class Sambaverse(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1.0,
                 "top_k": 50,
+                "process_prompt": False
             },
         )
     """
@@ -240,7 +219,7 @@ class Sambaverse(LLM):
     def is_lc_serializable(cls) -> bool:
         return True
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["sambaverse_url"] = get_from_dict_or_env(
@@ -522,7 +501,7 @@ class SSEndpointHandler:
 
         :param requests.Response response: the response object to process
         :return: the response dict
-        :rtype: dict
+        :type: dict
         """
         result: Dict[str, Any] = {}
         try:
@@ -581,7 +560,7 @@ class SSEndpointHandler:
 
         :param str path: the sub-path
         :returns: the full API URL for the sub-path
-        :rtype: str
+        :type: str
         """
         return f"{self.host_url}/{self.api_base_uri}/{path}"
 
@@ -603,7 +582,7 @@ class SSEndpointHandler:
         :param str input_str: Input string
         :param str params: Input params string
         :returns: Prediction results
-        :rtype: dict
+        :type: dict
         """
         if isinstance(input, str):
             input = [input]
@@ -645,7 +624,7 @@ class SSEndpointHandler:
         :param str input_str: Input string
         :param str params: Input params string
         :returns: Prediction results
-        :rtype: dict
+        :type: dict
         """
         if "nlp" in self.api_base_uri:
             if isinstance(input, str):
@@ -694,7 +673,7 @@ class SambaStudio(LLM):
     Example:
     .. code-block:: python
 
-        from langchain_community.llms.sambanova  import Sambaverse
+        from langchain_community.llms.sambanova  import SambaStudio
         SambaStudio(
             sambastudio_base_url="your-SambaStudio-environment-URL",
             sambastudio_base_uri="your-SambaStudio-base-URI",
@@ -709,6 +688,8 @@ class SambaStudio(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1,
                 "top_k": 50,
+                #"process_prompt": False,
+                #"select_expert": "Meta-Llama-3-8B-Instruct"
             },
         )
     """
@@ -753,7 +734,7 @@ class SambaStudio(LLM):
         """Return type of llm."""
         return "Sambastudio LLM"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["sambastudio_base_url"] = get_from_dict_or_env(
@@ -763,7 +744,7 @@ class SambaStudio(LLM):
             values,
             "sambastudio_base_uri",
             "SAMBASTUDIO_BASE_URI",
-            default="api/predict/nlp",
+            default="api/predict/generic",
         )
         values["sambastudio_project_id"] = get_from_dict_or_env(
             values, "sambastudio_project_id", "SAMBASTUDIO_PROJECT_ID"

@@ -13,7 +13,7 @@ OUTPUT_NEW_DOCS_DIR = $(OUTPUT_NEW_DIR)/docs
 
 PYTHON = .venv/bin/python
 
-PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/pyproject.toml" \; -print | grep -vE "airbyte|ibm" | tr '\n' ' ')
+PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/pyproject.toml" \; -print | grep -vE "airbyte|ibm|couchbase" | tr '\n' ' ')
 
 PORT ?= 3001
 
@@ -35,10 +35,10 @@ generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
 	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 	mkdir -p $(INTERMEDIATE_DIR)/templates
-	cp ../templates/docs/INDEX.md $(INTERMEDIATE_DIR)/templates/index.md
-	cp ../cookbook/README.md $(INTERMEDIATE_DIR)/cookbook.mdx
 
 	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
+
+	$(PYTHON) scripts/document_loader_feat_table.py $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
 
@@ -61,7 +61,7 @@ render:
 	$(PYTHON) scripts/notebook_convert.py $(INTERMEDIATE_DIR) $(OUTPUT_NEW_DOCS_DIR)
 
 md-sync:
-	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
+	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --include="*/_category_.yml" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
 generate-references:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)

@@ -9,12 +9,16 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils import get_pydantic_field_names, pre_init
 
 logger = logging.getLogger(__name__)
 
 
-@deprecated("0.0.21", removal="0.3.0", alternative="HuggingFaceEndpoint")
+@deprecated(
+    "0.0.21",
+    removal="0.3.0",
+    alternative_import="langchain_huggingface.HuggingFaceEndpoint",
+)
 class HuggingFaceTextGenInference(LLM):
     """
     HuggingFace text generation API.
@@ -130,7 +134,7 @@ class HuggingFaceTextGenInference(LLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
 

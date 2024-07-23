@@ -456,7 +456,14 @@ class Annoy(VectorStore):
         annoy = guard_import("annoy")
         # load docstore and index_to_docstore_id
         with open(path / "index.pkl", "rb") as file:
-            docstore, index_to_docstore_id, config_object = pickle.load(file)
+            # Code path can only be reached if allow_dangerous_deserialization is True
+            (
+                docstore,
+                index_to_docstore_id,
+                config_object,
+            ) = pickle.load(  # ignore[pickle]: explicit-opt-in
+                file
+            )
 
         f = int(config_object["ANNOY"]["f"])
         metric = config_object["ANNOY"]["metric"]

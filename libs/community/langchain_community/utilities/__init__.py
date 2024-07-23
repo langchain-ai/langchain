@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.brave_search import (
         BraveSearchWrapper,
     )
+    from langchain_community.utilities.dataherald import DataheraldAPIWrapper
     from langchain_community.utilities.dria_index import (
         DriaAPIWrapper,
     )
@@ -104,7 +105,7 @@ if TYPE_CHECKING:
         OpenWeatherMapAPIWrapper,
     )
     from langchain_community.utilities.oracleai import (
-        OracleSummary,  # noqa: F401
+        OracleSummary,
     )
     from langchain_community.utilities.outline import (
         OutlineAPIWrapper,
@@ -121,9 +122,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.pubmed import (
         PubMedAPIWrapper,
     )
-    from langchain_community.utilities.python import (
-        PythonREPL,
-    )
+    from langchain_community.utilities.rememberizer import RememberizerAPIWrapper
     from langchain_community.utilities.requests import (
         Requests,
         RequestsWrapper,
@@ -182,6 +181,7 @@ __all__ = [
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
+    "DataheraldAPIWrapper",
     "DriaAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "GoldenQueryAPIWrapper",
@@ -212,14 +212,14 @@ __all__ = [
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
-    "PythonREPL",
+    "RememberizerAPIWrapper",
     "Requests",
     "RequestsWrapper",
     "RivaASR",
     "RivaTTS",
-    "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",
+    "SQLDatabase",
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
@@ -275,7 +275,6 @@ _module_lookup = {
     "Portkey": "langchain_community.utilities.portkey",
     "PowerBIDataset": "langchain_community.utilities.powerbi",
     "PubMedAPIWrapper": "langchain_community.utilities.pubmed",
-    "PythonREPL": "langchain_community.utilities.python",
     "RememberizerAPIWrapper": "langchain_community.utilities.rememberizer",
     "Requests": "langchain_community.utilities.requests",
     "RequestsWrapper": "langchain_community.utilities.requests",
@@ -298,12 +297,22 @@ _module_lookup = {
     "ZapierNLAWrapper": "langchain_community.utilities.zapier",
 }
 
+REMOVED = {
+    "PythonREPL": (
+        "PythonREPL has been deprecated from langchain_community "
+        "due to being flagged by security scanners. See: "
+        "https://github.com/langchain-ai/langchain/issues/14345 "
+        "If you need to use it, please use the version "
+        "from langchain_experimental. "
+        "from langchain_experimental.utilities.python import PythonREPL."
+    )
+}
+
 
 def __getattr__(name: str) -> Any:
+    if name in REMOVED:
+        raise AssertionError(REMOVED[name])
     if name in _module_lookup:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())

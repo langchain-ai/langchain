@@ -105,6 +105,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.llama_edge import (
         LlamaEdgeChatService,
     )
+    from langchain_community.chat_models.llamacpp import ChatLlamaCpp
     from langchain_community.chat_models.maritalk import (
         ChatMaritalk,
     )
@@ -120,6 +121,10 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.mlx import (
         ChatMLX,
     )
+    from langchain_community.chat_models.oci_generative_ai import (
+        ChatOCIGenAI,  # noqa: F401
+    )
+    from langchain_community.chat_models.octoai import ChatOctoAI
     from langchain_community.chat_models.ollama import (
         ChatOllama,
     )
@@ -137,6 +142,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,
+    )
+    from langchain_community.chat_models.snowflake import (
+        ChatSnowflakeCortex,
     )
     from langchain_community.chat_models.solar import (
         SolarChat,
@@ -171,6 +179,7 @@ __all__ = [
     "ChatBaichuan",
     "ChatCohere",
     "ChatCoze",
+    "ChatOctoAI",
     "ChatDatabricks",
     "ChatDeepInfra",
     "ChatEverlyAI",
@@ -188,16 +197,19 @@ __all__ = [
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
+    "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
     "ChatPremAI",
     "ChatSparkLLM",
+    "ChatSnowflakeCortex",
     "ChatTongyi",
     "ChatVertexAI",
     "ChatYandexGPT",
     "ChatYuan2",
     "ChatZhipuAI",
+    "ChatLlamaCpp",
     "ErnieBotChat",
     "FakeListChatModel",
     "GPTRouter",
@@ -240,9 +252,11 @@ _module_lookup = {
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
+    "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
+    "ChatSnowflakeCortex": "langchain_community.chat_models.snowflake",
     "ChatSparkLLM": "langchain_community.chat_models.sparkllm",
     "ChatTongyi": "langchain_community.chat_models.tongyi",
     "ChatVertexAI": "langchain_community.chat_models.vertexai",
@@ -263,6 +277,7 @@ _module_lookup = {
     "QianfanChatEndpoint": "langchain_community.chat_models.baidu_qianfan_endpoint",
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
     "ChatPremAI": "langchain_community.chat_models.premai",
+    "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
 }
 
 
@@ -271,6 +286,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())

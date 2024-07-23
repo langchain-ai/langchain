@@ -9,7 +9,7 @@ This template demonstrates how to perform private visual search and question-ans
 
 It uses an open source multi-modal LLM of your choice to create image summaries for each photos, embeds the summaries, and stores them in Chroma.
  
-Given a question, relevat photos are retrieved and passed to the multi-modal LLM for answer synthesis.
+Given a question, relevant photos are retrieved and passed to the multi-modal LLM for answer synthesis.
 
 ![Diagram illustrating the visual search process with food pictures, captioning, a database, a question input, and the synthesis of an answer using a multi-modal LLM.](https://github.com/langchain-ai/langchain/assets/122662504/cd9b3d82-9b06-4a39-8490-7482466baf43 "Visual Search Process Diagram")
 

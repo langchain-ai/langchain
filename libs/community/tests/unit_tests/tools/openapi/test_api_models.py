@@ -1,4 +1,5 @@
 """Test the APIOperation class."""
+
 import json
 import os
 from pathlib import Path

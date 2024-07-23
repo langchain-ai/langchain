@@ -1,9 +1,10 @@
 """Unit tests for document transformers."""
+
 import pytest
 
 pytest.importorskip("langchain_community")
 
-from langchain_community.document_transformers.embeddings_redundant_filter import (  # noqa: E402,E501
+from langchain_community.document_transformers.embeddings_redundant_filter import (  # noqa: E402
     _filter_similar_embeddings,
 )
 from langchain_community.utils.math import cosine_similarity  # noqa: E402

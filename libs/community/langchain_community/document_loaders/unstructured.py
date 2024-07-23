@@ -1,4 +1,5 @@
 """Loader that uses unstructured to load files."""
+
 import collections
 from abc import ABC, abstractmethod
 from pathlib import Path
