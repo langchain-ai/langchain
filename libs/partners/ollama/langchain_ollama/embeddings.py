@@ -4,7 +4,7 @@ import ollama
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
 from ollama import AsyncClient
-import asyncio
+
 
 class OllamaEmbeddings(BaseModel, Embeddings):
     """OllamaEmbeddings embedding model.
@@ -37,7 +37,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = (await AsyncClient().embed(self.model, texts))['embeddings']
+        embedded_docs = (await AsyncClient().embed(self.model, texts))["embeddings"]
         return embedded_docs
 
     async def aembed_query(self, text: str) -> List[float]:
