@@ -683,6 +683,7 @@ def test_similarity_search_by_vector_not_supported_for_managed_embedding() -> No
     )
 
 
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "method",
     [
