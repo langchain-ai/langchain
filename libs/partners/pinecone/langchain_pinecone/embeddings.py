@@ -76,8 +76,13 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     def validate_environment(cls, values: dict) -> dict:
         """Validate that Pinecone version and credentials exist in environment."""
         # Embeddings new in 5.0.0
-        if int(pinecone_version.split('.')[0]) < int(MIN_PINECONE_VERSION.split('.')[0]):
-            raise ValueError(f"Pinecone client version must be >= {MIN_PINECONE_VERSION}. Found version: {pinecone_version}")
+        if int(pinecone_version.split(".")[0]) < int(
+            MIN_PINECONE_VERSION.split(".")[0]
+        ):
+            raise ValueError(
+                f"Pinecone client version must be >= {MIN_PINECONE_VERSION}."
+                f" Found version: {pinecone_version}"
+            )
 
         pinecone_api_key = values.get("pinecone_api_key") or os.getenv(
             "PINECONE_API_KEY", None
@@ -138,7 +143,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             response = self._client.inference.embed(
                 model=self.model,
                 parameters=self.document_params,
-                inputs=texts[i: i + self.batch_size],
+                inputs=texts[i : i + self.batch_size],
             )
             embeddings.extend([r["values"] for r in response])
 
@@ -151,7 +156,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             response = await self._aembed_texts(
                 model=self.model,
                 parameters=self.document_params,
-                texts=texts[i: i + self.batch_size],
+                texts=texts[i : i + self.batch_size],
             )
             embeddings.extend([r["values"] for r in response["data"]])
         return embeddings
@@ -172,7 +177,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         return response["data"][0]["values"]
 
     async def _aembed_texts(
-            self, texts: List[str], model: str, parameters: dict
+        self, texts: List[str], model: str, parameters: dict
     ) -> Dict:
         data = {
             "model": model,
@@ -180,7 +185,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             "parameters": parameters,
         }
         async with self._async_client.post(
-                "https://api.pinecone.io/embed", json=data
+            "https://api.pinecone.io/embed", json=data
         ) as response:
             response_data = await response.json(content_type=None)
             return response_data
