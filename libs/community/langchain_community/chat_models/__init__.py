@@ -122,6 +122,7 @@ if TYPE_CHECKING:
     )
     from langchain_community.chat_models.oci_data_science_model_deployment_endpoint import (  # noqa: E501
         ChatOCIModelDeploymentEndpoint,
+        ChatOCIModelDeploymentEndpointTGI,
         ChatOCIModelDeploymentEndpointVLLM,
     )
     from langchain_community.chat_models.octoai import ChatOctoAI
@@ -196,6 +197,7 @@ __all__ = [
     "ChatMlflow",
     "ChatOCIModelDeploymentEndpoint",
     "ChatOCIModelDeploymentEndpointVLLM",
+    "ChatOCIModelDeploymentEndpointTGI",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
@@ -249,6 +251,7 @@ _module_lookup = {
     "ChatMlflow": "langchain_community.chat_models.mlflow",
     "ChatOCIModelDeploymentEndpoint": "langchain_community.chat_models.oci_data_science_model_deployment_endpoint",  # noqa: E501
     "ChatOCIModelDeploymentEndpointVLLM": "langchain_community.chat_models.oci_data_science_model_deployment_endpoint",  # noqa: E501
+    "ChatOCIModelDeploymentEndpointTGI": "langchain_community.chat_models.oci_data_science_model_deployment_endpoint",  # noqa: E501
     "ChatOctoAI": "langchain_community.chat_models.octoai",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",

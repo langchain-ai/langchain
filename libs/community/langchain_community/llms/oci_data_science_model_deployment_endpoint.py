@@ -166,6 +166,10 @@ class BaseOCIModelDeployment(Serializable):
                     stream=stream,
                     **kwargs,
                 )
+                print("payload\n")
+                print(data)
+                print("\nkwargs\n")
+                print(kwargs)
                 self._check_response(response)
                 return response
             except TokenExpiredError as e:

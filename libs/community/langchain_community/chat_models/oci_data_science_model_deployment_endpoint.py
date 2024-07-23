@@ -216,7 +216,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Call out to an OCI Model Deployment Online endpoint.
@@ -229,7 +228,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
             LangChain ChatResult
 
         Raises:
-            ValueError:
+            RuntimeError:
                 Raise when invoking endpoint fails.
 
         Example:
@@ -246,8 +245,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
 
                 response = chat.invoke(messages)
         """  # noqa: E501
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if self.streaming:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -283,7 +281,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
             An iterator of ChatGenerationChunk.
 
         Raises:
-            ValueError:
+            RuntimeError:
                 Raise when invoking endpoint fails.
 
         Example:
@@ -321,7 +319,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Asynchronously call out to OCI Data Science Model Deployment
@@ -358,8 +355,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
                 resp = await chat.ainvoke(messages)
 
         """  # noqa: E501
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if self.streaming:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -761,7 +757,6 @@ class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
             except Exception:
                 pass
 
-        params.update(**self.model_kwargs)
         return params
 
     def _get_model_params(self) -> List[str]:
@@ -787,4 +782,107 @@ class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
             "top_k",
             "top_p",
             "use_beam_search",
+        ]
+
+
+class ChatOCIModelDeploymentEndpointTGI(ChatOCIModelDeploymentEndpoint):
+    """OCI large language chat models deployed with Text Generation Inference.
+
+    To use, you must provide the model HTTP endpoint from your deployed
+    model, e.g. https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict.
+
+    To authenticate, `oracle-ads` has been used to automatically load
+    credentials: https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
+
+    Make sure to have the required policies to access the OCI Data
+    Science Model Deployment endpoint. See:
+    https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm#model_dep_policies_auth__predict-endpoint
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatOCIModelDeploymentEndpointTGI
+
+            chat = ChatOCIModelDeploymentEndpointTGI(
+                endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
+                max_token=512,
+                temperature=0.2,
+                frequency_penalty=0.1,
+                seed=42,
+                # other model parameters...
+            )
+
+    """  # noqa: E501
+
+    frequency_penalty: Optional[float] = None
+    """Penalizes repeated tokens according to frequency. Between 0 and 1."""
+
+    logit_bias: Optional[Dict[str, float]] = None
+    """Adjust the probability of specific tokens being generated."""
+
+    logprobs: Optional[bool] = None
+    """Whether to return log probabilities of the output tokens or not."""
+
+    max_tokens: int = 256
+    """The maximum number of tokens to generate in the completion."""
+
+    n: int = 1
+    """Number of output sequences to return for the given prompt."""
+
+    presence_penalty: Optional[float] = None
+    """Penalizes repeated tokens. Between 0 and 1."""
+
+    seed: Optional[int] = None
+    """To sample deterministically,"""
+
+    temperature: float = 0.2
+    """What sampling temperature to use."""
+
+    top_p: Optional[float] = None
+    """Total probability mass of tokens to consider at each step."""
+
+    top_logprobs: Optional[int] = None
+    """An integer between 0 and 5 specifying the number of most 
+    likely tokens to return at each token position, each with an 
+    associated log probability. logprobs must be set to true if 
+    this parameter is used."""
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "oci_model_depolyment_chat_endpoint_tgi"
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters."""
+        params = {
+            "model": self.model,
+            "stop": self.stop,
+            "stream": self.streaming,
+        }
+        for attr_name in self._get_model_params():
+            try:
+                value = getattr(self, attr_name)
+                if value is not None:
+                    params.update({attr_name: value})
+            except Exception:
+                pass
+
+        return params
+
+    def _get_model_params(self) -> List[str]:
+        """Gets the name of model parameters."""
+        return [
+            "frequency_penalty",
+            "logit_bias",
+            "logprobs",
+            "max_tokens",
+            "n",
+            "presence_penalty",
+            "seed",
+            "temperature",
+            "top_k",
+            "top_p",
+            "top_logprobs",
         ]
