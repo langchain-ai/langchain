@@ -7,15 +7,14 @@ from langchain_core.utils.input import get_bolded_text, get_colored_text
 
 
 def try_json_stringify(obj: Any, fallback: str) -> str:
-    """
-    Try to stringify an object to JSON.
+    """Try to stringify an object to JSON.
+
     Args:
         obj: Object to stringify.
         fallback: Fallback string to return if the object cannot be stringified.
 
     Returns:
         A JSON string if the object can be stringified, otherwise the fallback string.
-
     """
     try:
         return json.dumps(obj, indent=2, ensure_ascii=False)
@@ -45,6 +44,8 @@ class FunctionCallbackHandler(BaseTracer):
     """Tracer that calls a function with a single str parameter."""
 
     name: str = "function_callback_handler"
+    """The name of the tracer. This is used to identify the tracer in the logs.
+    Default is "function_callback_handler"."""
 
     def __init__(self, function: Callable[[str], None], **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -54,6 +55,14 @@ class FunctionCallbackHandler(BaseTracer):
         pass
 
     def get_parents(self, run: Run) -> List[Run]:
+        """Get the parents of a run.
+
+        Args:
+            run: The run to get the parents of.
+
+        Returns:
+            A list of parent runs.
+        """
         parents = []
         current_run = run
         while current_run.parent_run_id:
@@ -66,6 +75,14 @@ class FunctionCallbackHandler(BaseTracer):
         return parents
 
     def get_breadcrumbs(self, run: Run) -> str:
+        """Get the breadcrumbs of a run.
+
+        Args:
+            run: The run to get the breadcrumbs of.
+
+        Returns:
+            A string with the breadcrumbs of the run.
+        """
         parents = self.get_parents(run)[::-1]
         string = " > ".join(
             f"{parent.run_type}:{parent.name}"
