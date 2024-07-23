@@ -78,12 +78,11 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
         elif message.tool_calls or message.invalid_tool_calls:
             message_dict["tool_calls"] = [
-                                             _lc_tool_call_to_openai_tool_call(tc)
-                                             for tc in message.tool_calls
-                                         ] + [
-                                             _lc_invalid_tool_call_to_openai_tool_call(tc)
-                                             for tc in message.invalid_tool_calls
-                                         ]
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ] + [
+                _lc_invalid_tool_call_to_openai_tool_call(tc)
+                for tc in message.invalid_tool_calls
+            ]
     elif isinstance(message, ToolMessage):
         message_dict = {
             "role": "tool",
@@ -133,7 +132,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ToolMessage(
             content=content,
             tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
-            additional_kwargs=additional_kwargs)
+            additional_kwargs=additional_kwargs,
+        )
     elif role == "system":
         return SystemMessage(content=content)
     else:
@@ -570,7 +570,7 @@ class ChatBaichuan(BaseChatModel):
             "temperature": temperature,
             "with_search_enhance": with_search_enhance,
             "stream": stream,
-            "tools": tools
+            "tools": tools,
         }
 
         return payload
@@ -605,9 +605,9 @@ class ChatBaichuan(BaseChatModel):
         return "baichuan-chat"
 
     def bind_tools(
-            self,
-            tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-            **kwargs: Any,
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
 

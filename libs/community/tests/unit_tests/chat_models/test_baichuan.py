@@ -60,10 +60,14 @@ def test__convert_message_to_dict_system() -> None:
 
 
 def test__convert_message_to_dict_tool() -> None:
-    message = ToolMessage(name="foo", content="bar", tool_call_id='abc123')
+    message = ToolMessage(name="foo", content="bar", tool_call_id="abc123")
     result = _convert_message_to_dict(message)
-    expected_output = {"name": "foo", "content": "bar",
-                       "tool_call_id": "abc123", "role": "tool"}
+    expected_output = {
+        "name": "foo",
+        "content": "bar",
+        "tool_call_id": "abc123",
+        "role": "tool",
+    }
     assert result == expected_output
 
 
