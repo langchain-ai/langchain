@@ -1,7 +1,8 @@
 """Test rate limiter."""
 
-import pytest
 import time
+
+import pytest
 from freezegun import freeze_time
 
 from langchain_core.runnables import RunnableLambda
