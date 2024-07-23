@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Type
+from typing import List, Type, Union
 
 import pytest
 
@@ -18,11 +18,11 @@ from langchain_core.messages import (
     ToolMessage,
     convert_to_messages,
     get_buffer_string,
+    merge_content,
     message_chunk_to_message,
     message_to_dict,
     messages_from_dict,
     messages_to_dict,
-    merge_content,
 )
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
@@ -952,4 +952,26 @@ def test_tool_message_str() -> None:
     actual = str(message)
     assert expected == actual
 
-def test_merge_content() -> None:
+
+@pytest.mark.parametrize(
+    ["first", "others", "expected"],
+    [
+        ("", [""], ""),
+        ("", [[]], [""]),
+        ([], [""], []),
+        ([], [[]], []),
+        ("foo", [""], "foo"),
+        ("foo", [[]], ["foo"]),
+        (["foo"], [""], ["foo"]),
+        (["foo"], [[]], ["foo"]),
+        ("foo", ["bar"], "foobar"),
+        ("foo", [["bar"]], ["foo", "bar"]),
+        (["foo"], ["bar"], ["foobar"]),
+        (["foo"], [["bar"]], ["foo", "bar"]),
+    ],
+)
+def test_merge_content(
+    first: Union[list, str], others: list, expected: Union[list, str]
+) -> None:
+    actual = merge_content(first, *others)
+    assert actual == expected
