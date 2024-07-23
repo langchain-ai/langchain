@@ -133,7 +133,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             response = self._client.inference.embed(
                 model=self.model,
                 parameters=self.document_params,
-                inputs=texts[i: i + self.batch_size],
+                inputs=texts[i : i + self.batch_size],
             )
             embeddings.extend([r["values"] for r in response])
 
@@ -146,7 +146,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             response = await self._aembed_texts(
                 model=self.model,
                 parameters=self.document_params,
-                texts=texts[i: i + self.batch_size],
+                texts=texts[i : i + self.batch_size],
             )
             embeddings.extend([r["values"] for r in response["data"]])
         return embeddings
@@ -167,7 +167,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
         return response["data"][0]["values"]
 
     async def _aembed_texts(
-            self, texts: List[str], model: str, parameters: dict
+        self, texts: List[str], model: str, parameters: dict
     ) -> Dict:
         data = {
             "model": model,
@@ -175,7 +175,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             "parameters": parameters,
         }
         async with self._async_client.post(
-                "https://api.pinecone.io/embed", json=data
+            "https://api.pinecone.io/embed", json=data
         ) as response:
             response_data = await response.json(content_type=None)
             return response_data
