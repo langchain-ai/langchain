@@ -3999,10 +3999,13 @@ class RunnableLambda(Runnable[Input, Output]):
     RunnableLambda can be composed as any other Runnable and provides
     seamless integration with LangChain tracing.
 
-    `RunnableLambda` is best suited for code that does not need to support
+    ``RunnableLambda`` is best suited for code that does not need to support
     streaming. If you need to support streaming (i.e., be able to operate
-    on chunks of inputs and yield chunks of outputs), use `RunnableGenerator`
+    on chunks of inputs and yield chunks of outputs), use ``RunnableGenerator``
     instead.
+
+    Note that if a ``RunnableLambda`` returns an instance of ``Runnable``, that
+    instance is invoked (or streamed) during execution.
 
     Examples:
 
