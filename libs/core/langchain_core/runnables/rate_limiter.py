@@ -58,7 +58,8 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
     ) -> Output:
         """Invoke the rate limiter.
 
-        This is a blocking call that waits until the given number of tokens are available.
+        This is a blocking call that waits until the given number of tokens are
+        available.
 
         Args:
             input: The input to the rate limiter.
