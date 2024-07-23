@@ -8,6 +8,12 @@ from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
+    # GPT-4o-mini input
+    "gpt-4o-mini": 0.00015,
+    "gpt-4o-mini-2024-07-18": 0.00015,
+    # GPT-4o-mini output
+    "gpt-4o-mini-completion": 0.0006,
+    "gpt-4o-mini-2024-07-18-completion": 0.0006,
     # GPT-4o input
     "gpt-4o": 0.005,
     "gpt-4o-2024-05-13": 0.005,
@@ -223,19 +229,23 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 message = generation.message
                 if isinstance(message, AIMessage):
                     usage_metadata = message.usage_metadata
+                    response_metadata = message.response_metadata
                 else:
                     usage_metadata = None
+                    response_metadata = None
             except AttributeError:
                 usage_metadata = None
+                response_metadata = None
         else:
             usage_metadata = None
+            response_metadata = None
         if usage_metadata:
             token_usage = {"total_tokens": usage_metadata["total_tokens"]}
             completion_tokens = usage_metadata["output_tokens"]
             prompt_tokens = usage_metadata["input_tokens"]
-            if response.llm_output is None:
-                # model name (and therefore cost) is unavailable in
-                # streaming responses
+            if response_model_name := (response_metadata or {}).get("model_name"):
+                model_name = standardize_model_name(response_model_name)
+            elif response.llm_output is None:
                 model_name = ""
             else:
                 model_name = standardize_model_name(

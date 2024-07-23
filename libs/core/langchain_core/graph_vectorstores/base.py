@@ -12,6 +12,7 @@ from typing import (
     Optional,
 )
 
+from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -130,11 +131,14 @@ def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
         )
 
 
+@beta(message="Added in version 0.2.14 of langchain_core. API subject to change.")
 class GraphVectorStore(VectorStore):
     """A hybrid vector-and-graph graph store.
 
     Document chunks support vector-similarity search as well as edges linking
     chunks based on structural and semantic properties.
+
+    .. versionadded:: 0.2.14
     """
 
     @abstractmethod

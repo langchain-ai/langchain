@@ -112,17 +112,19 @@ class _OllamaCommon(BaseLanguageModel):
     """Timeout for the request stream"""
 
     keep_alive: Optional[Union[int, str]] = None
-    """How long the model will stay loaded into memory."""
+    """How long the model will stay loaded into memory.
 
-    raw: Optional[bool] = None
-    """raw or not.""
     The parameter (Default: 5 minutes) can be set to:
     1. a duration string in Golang (such as "10m" or "24h");
     2. a number in seconds (such as 3600);
     3. any negative number which will keep the model loaded \
         in memory (e.g. -1 or "-1m");
     4. 0 which will unload the model immediately after generating a response;
+
     See the [Ollama documents](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-keep-a-model-loaded-in-memory-or-make-it-unload-immediately)"""
+
+    raw: Optional[bool] = None
+    """raw or not."""
 
     headers: Optional[dict] = None
     """Additional headers to pass to endpoint (e.g. Authorization, Referer).
