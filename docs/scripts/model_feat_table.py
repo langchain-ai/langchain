@@ -88,9 +88,10 @@ CHAT_MODEL_FEAT_TABLE = {
         "link": "/docs/integrations/chat/huggingface/",
     },
     "ChatOllama": {
+        "tool_calling": True,
         "local": True,
         "json_mode": True,
-        "package": "langchain-community",
+        "package": "langchain-ollama",
         "link": "/docs/integrations/chat/ollama/",
     },
     "vLLM Chat (via ChatOpenAI)": {
