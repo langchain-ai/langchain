@@ -1,18 +1,21 @@
 """Test suite to test vectostores."""
+
 import inspect
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding, Embeddings
 from langchain_core.vectorstores import VectorStore
 
+from langchain_standard_tests.base import BaseStandardTests
+
 # Arbitrarily chosen. Using a small embedding size
 # so tests are faster and easier to debug.
 EMBEDDING_SIZE = 6
 
 
-class ReadWriteTestSuite(ABC):
+class ReadWriteTestSuite(BaseStandardTests):
     """Test suite for checking the read-write API of a vectorstore.
 
     This test suite verifies the basic read-write API of a vectorstore.
@@ -200,7 +203,7 @@ class ReadWriteTestSuite(ABC):
         assert "ids" not in signature.parameters
 
 
-class AsyncReadWriteTestSuite(ABC):
+class AsyncReadWriteTestSuite(BaseStandardTests):
     """Test suite for checking the **async** read-write API of a vectorstore.
 
     This test suite verifies the basic read-write API of a vectorstore.
