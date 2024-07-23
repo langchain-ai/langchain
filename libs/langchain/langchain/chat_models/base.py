@@ -366,6 +366,12 @@ def _init_chat_model_helper(
 
         # TODO: update to use model= once ChatBedrock supports
         return ChatBedrock(model_id=model, **kwargs)
+    elif model_provider == "bedrock_converse":
+        _check_pkg("langchain_aws")
+        from langchain_aws import ChatBedrockConverse
+
+        # TODO: update to use model= once ChatBedrock supports
+        return ChatBedrockConverse(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -388,6 +394,7 @@ _SUPPORTED_PROVIDERS = {
     "huggingface",
     "groq",
     "bedrock",
+    "bedrock_converse",
 }
 
 
