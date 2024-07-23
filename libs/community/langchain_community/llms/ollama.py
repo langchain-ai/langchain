@@ -1,5 +1,18 @@
+from __future__ import annotations
+
 import json
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Tuple,
+    Mapping,
+    Optional,
+    Union,
+)
 
 import aiohttp
 import requests
@@ -132,7 +145,7 @@ class _OllamaCommon(BaseLanguageModel):
     tokens for authentication.
     """
 
-    auth: Callable | tuple | None = None
+    auth: Union[Callable, Tuple, None] = None
     """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
     Expects the same format, type and values as requests.request auth parameter."""
 
