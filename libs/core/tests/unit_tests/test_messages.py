@@ -22,6 +22,7 @@ from langchain_core.messages import (
     message_to_dict,
     messages_from_dict,
     messages_to_dict,
+    merge_content,
 )
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
@@ -950,3 +951,5 @@ def test_tool_message_str() -> None:
     expected = "content='foo' tool_call_id='1' artifact={'bar': {'baz': 123}}"
     actual = str(message)
     assert expected == actual
+
+def test_merge_content() -> None:
