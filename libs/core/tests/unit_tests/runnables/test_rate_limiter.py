@@ -138,6 +138,8 @@ async def test_async_add_rate_limiter() -> None:
         requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
     )
 
-    foo_ = RunnableLambda(foo)
+    # mypy is unable to follow the type information when
+    # RunnableLambda is used with an async function
+    foo_ = RunnableLambda(foo)  # type: ignore
     chain = rate_limiter | foo_
     assert (await chain.ainvoke(1)) == 1
