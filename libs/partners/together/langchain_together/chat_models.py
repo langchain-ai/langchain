@@ -21,16 +21,166 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 class ChatTogether(BaseChatOpenAI):
     """ChatTogether chat model.
 
-    To use, you should have the environment variable `TOGETHER_API_KEY`
-    set with your API key or pass it as a named parameter to the constructor.
+    Setup:
+        Install ``langchain-together`` and set environment variable ``TOGETHER_API_KEY``.
 
-    Example:
+        .. code-block:: bash
+
+            pip install -U langchain-together
+            export TOGETHER_API_KEY="your-api-key"
+
+            
+    Key init args — completion params:
+        model: str
+            Name of model to use.
+        temperature: float
+            Sampling temperature.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        logprobs: Optional[bool]
+            Whether to return logprobs.
+        stream_options: Dict
+            Configure streaming outputs, like whether to return token usage when
+            streaming (``{"include_usage": True}``).
+
+    Key init args — client params:
+        timeout: Union[float, Tuple[float, float], Any, None]
+            Timeout for requests.
+        max_retries: int
+            Max number of retries.
+        api_key: Optional[str]
+            Together API key. If not passed in will be read from env var OPENAI_API_KEY.
+            
+    Instantiate:
         .. code-block:: python
 
-            from langchain_together import ChatTogether
+            from langhcain_together import ChatTogether
+
+            llm = ChatTogether(
+                model="meta-llama/Llama-3-70b-chat-hf",
+                temperature=0,
+                max_tokens=None,
+                timeout=None,
+                max_retries=2,
+                # api_key="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                (
+                    "system",
+                    "You are a helpful translator. Translate the user sentence to French.",
+                ),
+                ("human", "I love programming."),
+            ]
+            llm.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content="J'adore la programmation.",
+                response_metadata={
+                    'token_usage': {'completion_tokens': 9, 'prompt_tokens': 32, 'total_tokens': 41},
+                    'model_name': 'meta-llama/Llama-3-70b-chat-hf',
+                    'system_fingerprint': None,
+                    'finish_reason': 'stop',
+                    'logprobs': None
+                }, 
+                id='run-168dceca-3b8b-4283-94e3-4c739dbc1525-0', 
+                usage_metadata={'input_tokens': 32, 'output_tokens': 9, 'total_tokens': 41})
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='J' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content="'" id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content='ad' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content='ore' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content=' la' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content=' programm' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content='ation' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content='.' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+            content='' response_metadata={'finish_reason': 'stop', 'model_name': 'meta-llama/Llama-3-70b-chat-hf'} id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+
+            
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(messages)
+
+            # stream:
+            # async for chunk in (await llm.astream(messages))
+
+            # batch:
+            # await llm.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(
+                content="J'adore la programmation.", 
+                response_metadata={
+                    'token_usage': {'completion_tokens': 9, 'prompt_tokens': 32, 'total_tokens': 41}, 
+                    'model_name': 'meta-llama/Llama-3-70b-chat-hf', 
+                    'system_fingerprint': None, 
+                    'finish_reason': 'stop', 
+                    'logprobs': None
+                }, 
+                id='run-09371a11-7f72-4c53-8e7c-9de5c238b34c-0', 
+                usage_metadata={'input_tokens': 32, 'output_tokens': 9, 'total_tokens': 41})
+    
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            # Only certain models support tool calling, check the together website to confirm compatibility
+            llm = ChatTogether(model="mistralai/Mixtral-8x7B-Instruct-v0.1")
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke(
+                "Which city is bigger: LA or NY?"
+            )
+            ai_msg.tool_calls
 
 
-            model = ChatTogether()
+        .. code-block:: python
+
+            [
+                {
+                    'name': 'GetPopulation',
+                    'args': {'location': 'NY'},
+                    'id': 'call_m5tstyn2004pre9bfuxvom8x',
+                    'type': 'tool_call'
+                },
+                {
+                    'name': 'GetPopulation',
+                    'args': {'location': 'LA'},
+                    'id': 'call_0vjgq455gq1av5sp9eb1pw6a',
+                    'type': 'tool_call'
+                }
+            ]
     """
 
     @property
