@@ -277,7 +277,13 @@ class DatabricksVectorSearch(VectorStore):
         return True
 
     def similarity_search(
-        self, query: str, k: int = 4, filters: Optional[Any] = None, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filters: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -285,17 +291,24 @@ class DatabricksVectorSearch(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filters: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
 
         Returns:
             List of Documents most similar to the embedding.
         """
         docs_with_score = self.similarity_search_with_score(
-            query=query, k=k, filters=filters, **kwargs
+            query=query, k=k, filters=filters, query_type=query_type, **kwargs
         )
         return [doc for doc, _ in docs_with_score]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[Any] = None, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filters: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query, along with scores.
 
@@ -303,6 +316,7 @@ class DatabricksVectorSearch(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filters: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
 
         Returns:
             List of Documents most similar to the embedding and score for each.
@@ -321,6 +335,7 @@ class DatabricksVectorSearch(VectorStore):
             query_vector=query_vector,
             filters=filters,
             num_results=k,
+            query_type=query_type,
         )
         return self._parse_search_response(search_resp)
 
@@ -343,6 +358,8 @@ class DatabricksVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filters: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -359,6 +376,7 @@ class DatabricksVectorSearch(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filters: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -377,6 +395,7 @@ class DatabricksVectorSearch(VectorStore):
             fetch_k,
             lambda_mult=lambda_mult,
             filters=filters,
+            query_type=query_type,
         )
         return docs
 
@@ -387,6 +406,8 @@ class DatabricksVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filters: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -403,6 +424,7 @@ class DatabricksVectorSearch(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filters: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -420,6 +442,7 @@ class DatabricksVectorSearch(VectorStore):
             query_vector=embedding,
             filters=filters,
             num_results=fetch_k,
+            query_type=query_type,
         )
 
         embeddings_result_index = (
@@ -449,6 +472,8 @@ class DatabricksVectorSearch(VectorStore):
         embedding: List[float],
         k: int = 4,
         filters: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -457,12 +482,13 @@ class DatabricksVectorSearch(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filters: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
 
         Returns:
             List of Documents most similar to the embedding.
         """
         docs_with_score = self.similarity_search_by_vector_with_score(
-            embedding=embedding, k=k, filters=filters, **kwargs
+            embedding=embedding, k=k, filters=filters, query_type=query_type, **kwargs
         )
         return [doc for doc, _ in docs_with_score]
 
@@ -471,6 +497,8 @@ class DatabricksVectorSearch(VectorStore):
         embedding: List[float],
         k: int = 4,
         filters: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector, along with scores.
@@ -479,6 +507,7 @@ class DatabricksVectorSearch(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filters: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
 
         Returns:
             List of Documents most similar to the embedding and score for each.
@@ -493,6 +522,7 @@ class DatabricksVectorSearch(VectorStore):
             query_vector=embedding,
             filters=filters,
             num_results=k,
+            query_type=query_type,
         )
         return self._parse_search_response(search_resp)
 

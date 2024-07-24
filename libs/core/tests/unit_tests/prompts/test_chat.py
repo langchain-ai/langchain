@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
+from syrupy import SnapshotAssertion
 
-from langchain_core._api.deprecation import (
-    LangChainPendingDeprecationWarning,
-)
+from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
+from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -28,6 +28,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
+from langchain_core.pydantic_v1 import ValidationError
 
 
 @pytest.fixture
@@ -786,3 +787,31 @@ async def test_messages_prompt_accepts_list() -> None:
 
     with pytest.raises(TypeError):
         await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+
+
+def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
+    prompt_all_required = ChatPromptTemplate.from_messages(
+        messages=[MessagesPlaceholder("history", optional=False), ("user", "${input}")]
+    )
+    assert set(prompt_all_required.input_variables) == {"input", "history"}
+    assert prompt_all_required.optional_variables == []
+    with pytest.raises(ValidationError):
+        prompt_all_required.input_schema(input="")
+    assert prompt_all_required.input_schema.schema() == snapshot(name="required")
+    prompt_optional = ChatPromptTemplate.from_messages(
+        messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
+    )
+    # input variables only lists required variables
+    assert set(prompt_optional.input_variables) == {"input"}
+    prompt_optional.input_schema(input="")  # won't raise error
+    assert prompt_optional.input_schema.schema() == snapshot(name="partial")
+
+
+def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> None:
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "foo"), MessagesPlaceholder("bar"), ("human", "baz")]
+    )
+    assert dumpd(MessagesPlaceholder("bar")) == snapshot(name="placholder")
+    assert load(dumpd(MessagesPlaceholder("bar"))) == MessagesPlaceholder("bar")
+    assert dumpd(prompt) == snapshot(name="chat_prompt")
+    assert load(dumpd(prompt)) == prompt

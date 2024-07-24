@@ -78,7 +78,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             continue
 
         if inspect.isclass(type_):
-            # The clasification of the class is used to select a template
+            # The type of the class is used to select a template
             # for the object when rendering the documentation.
             # See `templates` directory for defined templates.
             # This is a hacky solution to distinguish between different

@@ -55,11 +55,16 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    root_validator,
+)
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
@@ -94,13 +99,11 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         ChatResult: Chat result.
     """
 
-    generation: Optional[ChatGenerationChunk] = None
-    for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
+    generation = next(stream, None)
+    if generation:
+        generation += list(stream)
+    if generation is None:
+        raise ValueError("No generations found in stream.")
     return ChatResult(
         generations=[
             ChatGeneration(
@@ -123,21 +126,8 @@ async def agenerate_from_stream(
         ChatResult: Chat result.
     """
 
-    generation: Optional[ChatGenerationChunk] = None
-    async for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=message_chunk_to_message(generation.message),
-                generation_info=generation.generation_info,
-            )
-        ]
-    )
+    chunks = [chunk async for chunk in stream]
+    return await run_in_executor(None, generate_from_stream, iter(chunks))
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
@@ -1177,7 +1167,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 "with_structured_output is not implemented for this model."
             )
         llm = self.bind_tools([schema], tool_choice="any")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )

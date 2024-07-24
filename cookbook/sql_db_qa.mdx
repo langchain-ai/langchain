@@ -740,7 +740,7 @@ Even this relatively large model will most likely fail to generate more complica
 
 
 ```bash
-poetry run pip install pyyaml chromadb
+poetry run pip install pyyaml langchain_chroma
 import yaml
 ```
 
@@ -994,7 +994,7 @@ from langchain.prompts import FewShotPromptTemplate, PromptTemplate
 from langchain.chains.sql_database.prompt import _sqlite_prompt, PROMPT_SUFFIX
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.prompts.example_selector.semantic_similarity import SemanticSimilarityExampleSelector
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 example_prompt = PromptTemplate(
     input_variables=["table_info", "input", "sql_cmd", "sql_result", "answer"],

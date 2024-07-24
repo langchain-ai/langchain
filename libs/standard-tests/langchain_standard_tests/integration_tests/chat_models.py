@@ -4,15 +4,18 @@ from typing import List, Optional
 
 import httpx
 import pytest
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
 
@@ -20,6 +23,7 @@ from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
     my_adder_tool,
 )
+from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
 @tool
@@ -28,13 +32,30 @@ def magic_function(input: int) -> int:
     return input + 2
 
 
-def _validate_tool_call_message(message: AIMessage) -> None:
+@tool
+def magic_function_no_args() -> int:
+    """Calculates a magic function."""
+    return 5
+
+
+def _validate_tool_call_message(message: BaseMessage) -> None:
     assert isinstance(message, AIMessage)
     assert len(message.tool_calls) == 1
     tool_call = message.tool_calls[0]
     assert tool_call["name"] == "magic_function"
     assert tool_call["args"] == {"input": 3}
     assert tool_call["id"] is not None
+    assert tool_call["type"] == "tool_call"
+
+
+def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
+    assert isinstance(message, AIMessage)
+    assert len(message.tool_calls) == 1
+    tool_call = message.tool_calls[0]
+    assert tool_call["name"] == "magic_function_no_args"
+    assert tool_call["args"] == {}
+    assert tool_call["id"] is not None
+    assert tool_call["type"] == "tool_call"
 
 
 class ChatModelIntegrationTests(ChatModelTests):
@@ -113,6 +134,19 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
+    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        if not self.returns_usage_metadata:
+            pytest.skip("Not implemented.")
+        full: Optional[BaseMessageChunk] = None
+        for chunk in model.stream("Hello"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+        assert isinstance(full, AIMessageChunk)
+        assert full.usage_metadata is not None
+        assert isinstance(full.usage_metadata["input_tokens"], int)
+        assert isinstance(full.usage_metadata["output_tokens"], int)
+        assert isinstance(full.usage_metadata["total_tokens"], int)
+
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         result = model.invoke("hi", stop=["you"])
         assert isinstance(result, AIMessage)
@@ -131,7 +165,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
         result = model_with_tools.invoke(query)
-        assert isinstance(result, AIMessage)
         _validate_tool_call_message(result)
 
         # Test stream
@@ -141,11 +174,89 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
-    def test_structured_output(self, model: BaseChatModel) -> None:
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        class Joke(BaseModel):
+        model_with_tools = model.bind_tools([magic_function_no_args])
+        query = "What is the value of magic_function()? Use the tool."
+        result = model_with_tools.invoke(query)
+        _validate_tool_call_message_no_args(result)
+
+        full: Optional[BaseMessageChunk] = None
+        for chunk in model_with_tools.stream(query):
+            full = chunk if full is None else full + chunk  # type: ignore
+        assert isinstance(full, AIMessage)
+        _validate_tool_call_message_no_args(full)
+
+    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        prompt = ChatPromptTemplate.from_messages(
+            [("human", "Hello. Please respond in the style of {answer_style}.")]
+        )
+        llm = GenericFakeChatModel(messages=iter(["hello matey"]))
+        chain = prompt | llm | StrOutputParser()
+        tool_ = chain.as_tool(
+            name="greeting_generator",
+            description="Generate a greeting in a particular style of speaking.",
+        )
+        model_with_tools = model.bind_tools([tool_])
+        query = "Using the tool, generate a Pirate greeting."
+        result = model_with_tools.invoke(query)
+        assert isinstance(result, AIMessage)
+        assert result.tool_calls
+        tool_call = result.tool_calls[0]
+        assert tool_call["args"].get("answer_style")
+        assert tool_call["type"] == "tool_call"
+
+    def test_structured_output(self, model: BaseChatModel) -> None:
+        """Test to verify structured output with a Pydantic model."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        from pydantic import BaseModel as BaseModelProper
+        from pydantic import Field as FieldProper
+
+        class Joke(BaseModelProper):
+            """Joke to tell user."""
+
+            setup: str = FieldProper(description="question to set up a joke")
+            punchline: str = FieldProper(description="answer to resolve the joke")
+
+        # Pydantic class
+        # Type ignoring since the interface only officially supports pydantic 1
+        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
+        # We'll need to do a pass updating the type signatures.
+        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, Joke)
+
+        for chunk in chat.stream("Tell me a joke about cats."):
+            assert isinstance(chunk, Joke)
+
+        # Schema
+        chat = model.with_structured_output(Joke.schema())
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {"setup", "punchline"}
+
+        for chunk in chat.stream("Tell me a joke about cats."):
+            assert isinstance(chunk, dict)
+        assert isinstance(chunk, dict)  # for mypy
+        assert set(chunk.keys()) == {"setup", "punchline"}
+
+    @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
+    def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
+        """Test to verify compatibility with pydantic.v1.BaseModel.
+
+        pydantic.v1.BaseModel is available in the pydantic 2 package.
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        class Joke(BaseModel):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
 
             setup: str = Field(description="question to set up a joke")
@@ -194,6 +305,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),
@@ -238,6 +350,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),
@@ -270,6 +383,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "name": function_name,
                         "args": function_args,
                         "id": "abc123",
+                        "type": "tool_call",
                     },
                 ],
             ),

@@ -7,7 +7,6 @@
 # 4. For service accounts visit
 #   https://cloud.google.com/iam/docs/service-accounts-create
 
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -53,7 +52,7 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
     file_loader_kwargs: Dict["str", Any] = {}
     """The file loader kwargs to use."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either folder_id or document_ids is set, but not both."""
         if values.get("folder_id") and (
@@ -108,7 +107,13 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
         return v
 
     def _load_credentials(self) -> Any:
-        """Load credentials."""
+        """Load credentials.
+        The order of loading credentials:
+        1. Service account key if file exists
+        2. Token path (for OAuth Client) if file exists
+        3. Credentials path (for OAuth Client) if file exists
+        4. Default credentials. if no credentials found, raise DefaultCredentialsError
+        """
         # Adapted from https://developers.google.com/drive/api/v3/quickstart/python
         try:
             from google.auth import default
@@ -126,30 +131,31 @@ class GoogleDriveLoader(BaseLoader, BaseModel):
             )
 
         creds = None
+        # From service account
         if self.service_account_key.exists():
             return service_account.Credentials.from_service_account_file(
                 str(self.service_account_key), scopes=SCOPES
             )
 
+        # From Oauth Client
         if self.token_path.exists():
             creds = Credentials.from_authorized_user_file(str(self.token_path), SCOPES)
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
-            elif "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
-                creds, project = default()
-                creds = creds.with_scopes(SCOPES)
-                # no need to write to file
-                if creds:
-                    return creds
-            else:
+            elif self.credentials_path.exists():
                 flow = InstalledAppFlow.from_client_secrets_file(
                     str(self.credentials_path), SCOPES
                 )
                 creds = flow.run_local_server(port=0)
-            with open(self.token_path, "w") as token:
-                token.write(creds.to_json())
+            if creds:
+                with open(self.token_path, "w") as token:
+                    token.write(creds.to_json())
+
+        # From Application Default Credentials
+        if not creds:
+            creds, _ = default(scopes=SCOPES)
 
         return creds
 
