@@ -18,6 +18,8 @@ Element: TypeAlias = Any
 
 logger = logging.getLogger(__file__)
 
+_DEFAULT_URL = "https://api.unstructuredapp.io/general/v0/general"
+
 
 class UnstructuredLoader(BaseLoader):
     """Unstructured document loader interface.
@@ -86,20 +88,36 @@ class UnstructuredLoader(BaseLoader):
         # SDK parameters
         api_key: Optional[str] = None,
         client: Optional[UnstructuredClient] = None,
-        url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
-        **unstructured_kwargs: Any,
+        server_url: Optional[str] = None,
+        **kwargs: Any,
     ):
         """Initialize loader."""
+        if file_path is not None and file is not None:
+            raise ValueError("file_path and file cannot be defined simultaneously.")
+        if client is not None:
+            disallowed_params = [("api_key", api_key), ("server_url", server_url)]
+            bad_params = [
+                param for param, value in disallowed_params if value is not None
+            ]
+
+            if bad_params:
+                raise ValueError(
+                    "if you are passing a custom `client`, you cannot also pass these "
+                    f"params: {', '.join(bad_params)}."
+                )
+
+        unstructured_api_key = api_key or os.getenv("UNSTRUCTURED_API_KEY")
+        unstructured_url = server_url or os.getenv("UNSTRUCTURED_URL") or _DEFAULT_URL
+
+        self.client = client or UnstructuredClient(
+            api_key_auth=unstructured_api_key, server_url=unstructured_url
+        )
+
         self.file_path = file_path
         self.file = file
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
-        # SDK parameters
-        self.api_key = os.getenv("UNSTRUCTURED_API_KEY") or api_key
-        self.client = client
-        self.url = url
-
-        self.unstructured_kwargs = unstructured_kwargs
+        self.unstructured_kwargs = kwargs
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file(s) to the _UnstructuredBaseLoader."""
@@ -114,9 +132,7 @@ class UnstructuredLoader(BaseLoader):
                 partition_via_api=self.partition_via_api,
                 post_processors=self.post_processors,
                 # SDK parameters
-                api_key=self.api_key,
                 client=self.client,
-                url=self.url,
                 **self.unstructured_kwargs,
             ).lazy_load()
 
@@ -145,14 +161,12 @@ class _SingleDocumentLoader(BaseLoader):
         self,
         file_path: Optional[str | Path] = None,
         *,
+        client: UnstructuredClient,
         file: Optional[IO[bytes]] = None,
         partition_via_api: bool = False,
         post_processors: Optional[list[Callable[[str], str]]] = None,
         # SDK parameters
-        api_key: Optional[str] = None,
-        client: Optional[UnstructuredClient] = None,
-        url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
-        **unstructured_kwargs: Any,
+        **kwargs: Any,
     ):
         """Initialize loader."""
         self.file_path = str(file_path) if isinstance(file_path, Path) else file_path
@@ -160,17 +174,8 @@ class _SingleDocumentLoader(BaseLoader):
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
         # SDK parameters
-        self.api_key = api_key
-        self.url = url
-        if client is not None:
-            self.client = client
-        elif self.api_key is not None:
-            self.client = UnstructuredClient(
-                api_key_auth=self.api_key,
-                server_url=self.url,
-            )
-
-        self.unstructured_kwargs = unstructured_kwargs
+        self.client = client
+        self.unstructured_kwargs = kwargs
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
@@ -193,16 +198,7 @@ class _SingleDocumentLoader(BaseLoader):
     @property
     def _elements_json(self) -> list[dict[str, Any]]:
         """Get elements as a list of dictionaries from local partition or via API."""
-        if self.partition_via_api and self.api_key is None:
-            raise ValueError(
-                "If partitioning via the API, api_key must be defined.",
-            )
-        if not self.partition_via_api and self.api_key:
-            logger.warning(
-                "Partitioning locally even though api_key is defined since"
-                " partition_via_api=False.",
-            )
-        if self.partition_via_api and self.api_key:
+        if self.partition_via_api:
             return self._elements_via_api
 
         return self._convert_elements_to_dicts(self._elements_via_local)

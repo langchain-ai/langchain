@@ -72,7 +72,6 @@ def test_loader_partitions_via_api() -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredLoader(
         file_path=file_path,
-        api_key=UNSTRUCTURED_API_KEY,
         partition_via_api=True,
         # Unstructured kwargs
         strategy="fast",

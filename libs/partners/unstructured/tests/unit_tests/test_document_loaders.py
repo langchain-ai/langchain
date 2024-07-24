@@ -23,7 +23,9 @@ EXAMPLE_DOCS_DIRECTORY = str(
 def test_it_gets_content_from_file() -> None:
     mock_file = Mock()
     mock_file.read.return_value = b"content from file"
-    loader = _SingleDocumentLoader(file=mock_file, metadata_filename="fake.txt")
+    loader = _SingleDocumentLoader(
+        client=Mock(), file=mock_file, metadata_filename="fake.txt"
+    )
 
     content = loader._file_content  # type: ignore
 
@@ -33,7 +35,7 @@ def test_it_gets_content_from_file() -> None:
 
 @patch("builtins.open", new_callable=mock_open, read_data=b"content from file_path")
 def test_it_gets_content_from_file_path(mock_file: Mock) -> None:
-    loader = _SingleDocumentLoader(file_path="dummy_path")
+    loader = _SingleDocumentLoader(client=Mock(), file_path="dummy_path")
 
     content = loader._file_content  # type: ignore
 
@@ -44,7 +46,9 @@ def test_it_gets_content_from_file_path(mock_file: Mock) -> None:
 
 
 def test_it_raises_value_error_without_file_or_file_path() -> None:
-    loader = _SingleDocumentLoader()
+    loader = _SingleDocumentLoader(
+        client=Mock(),
+    )
 
     with pytest.raises(ValueError) as e:
         loader._file_content  # type: ignore
@@ -61,6 +65,7 @@ def test_it_calls_elements_via_api_with_valid_args() -> None:
     ) as mock_elements_via_api:
         mock_elements_via_api.return_value = [{"element": "data"}]
         loader = _SingleDocumentLoader(
+            client=Mock(),
             # Minimum required args for self._elements_via_api to be called:
             partition_via_api=True,
             api_key="some_key",
@@ -80,7 +85,9 @@ def test_it_partitions_locally_by_default(mock_convert_elements_to_dicts: Mock) 
     ) as mock_elements_via_local:
         mock_elements_via_local.return_value = [{}]
         # Minimum required args for self._elements_via_api to be called:
-        loader = _SingleDocumentLoader()
+        loader = _SingleDocumentLoader(
+            client=Mock(),
+        )
 
         result = loader._elements_json  # type: ignore
 
@@ -96,27 +103,11 @@ def test_it_partitions_locally_and_logs_warning_with_partition_via_api_False(
         _SingleDocumentLoader, "_elements_via_local"
     ) as mock_get_elements_locally:
         mock_get_elements_locally.return_value = [Text("Mock text element.")]
-        loader = _SingleDocumentLoader(partition_via_api=False, api_key="some_key")
-
-        with caplog.at_level(logging.WARNING):
-            loader._elements_json  # type: ignore
-
-        assert len(caplog.records) == 1
-        assert caplog.records[0].levelname == "WARNING"
-        assert (
-            caplog.records[0].message
-            == "Partitioning locally even though api_key is defined since"
-            " partition_via_api=False."
+        loader = _SingleDocumentLoader(
+            client=Mock(), partition_via_api=False, api_key="some_key"
         )
 
-
-def test_it_raises_value_error_with_partition_via_api_True_and_no_api_key() -> None:
-    loader = _SingleDocumentLoader(partition_via_api=True, api_key=None)
-
-    with pytest.raises(ValueError) as e:
-        loader._elements_json  # type: ignore
-
-    assert str(e.value) == "If partitioning via the API, api_key must be defined."
+        elements = loader._elements_json  # type: ignore
 
 
 # -- fixtures -------------------------------
