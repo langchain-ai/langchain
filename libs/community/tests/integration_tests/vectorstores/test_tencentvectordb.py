@@ -85,3 +85,27 @@ def test_tencent_vector_db_no_drop() -> None:
     time.sleep(3)
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
+
+
+def test_tencent_vector_db_add_texts_and_search_with_score() -> None:
+    """Test add texts to a new-created db and search with score."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    conn_params = ConnectionParams(
+        url="http://10.0.X.X",
+        key="eC4bLRy2va******************************",
+        username="root",
+        timeout=20,
+    )
+    docsearch = TencentVectorDB(
+        embedding=FakeEmbeddings(),
+        connection_params=conn_params,
+    )
+    docsearch.add_texts(texts, metadatas)
+    output = docsearch.similarity_search_with_score("foo", k=3)
+    docs = [o[0] for o in output]
+    assert docs == [
+        Document(page_content="foo", metadata={"page": 0}),
+        Document(page_content="bar", metadata={"page": 1}),
+        Document(page_content="baz", metadata={"page": 2}),
+    ]
