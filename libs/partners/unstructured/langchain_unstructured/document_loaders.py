@@ -6,7 +6,8 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import IO, Any, Callable, Iterator, Optional, TypeAlias, cast
+from typing import IO, Any, Callable, Iterator, Optional, cast
+from typing_extensions import TypeAlias
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
