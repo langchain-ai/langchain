@@ -338,7 +338,7 @@ class SQLDatabase:
                 continue
 
             # Ignore JSON datatyped columns
-            for k, v in table.columns.items():
+            for k, v in table.columns.items():  # AttributeError: items in sqlalchemy v1
                 if type(v.type) is NullType:
                     table._columns.remove(v)
 
