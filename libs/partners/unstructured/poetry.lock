@@ -1835,4 +1835,4 @@ local = ["unstructured"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "183e410fcdf30001867bb837a918bb05f4b39d5b99c80094f08ec87870dffd22"
+content-hash = "ac1805f1f6dd028a56cdf0db925e4666344a3e8067d75d05cfcc7d80b84af3f3"

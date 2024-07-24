@@ -5,19 +5,13 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Callable, Iterator, Optional, cast
+from typing import IO, Any, Callable, Iterator, Optional, cast
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
-
-from langchain_unstructured.utils import lazyproperty
-
-if TYPE_CHECKING:
-    import requests
-    from unstructured.documents.elements import Element
-    from unstructured_client import UnstructuredClient  # type: ignore
-    from unstructured_client.models.operations import PartitionRequest  # type: ignore
-    from unstructured_client.utils import RetryConfig  # type: ignore
+from unstructured_client import UnstructuredClient  # type: ignore
+from unstructured_client.models import operations, shared  # type: ignore
+from unstructured_client.utils import RetryConfig  # type: ignore
 
 logger = logging.getLogger(__file__)
 
@@ -88,7 +82,7 @@ class UnstructuredLoader(BaseLoader):
         post_processors: Optional[list[Callable[[str], str]]] = None,
         # SDK parameters
         api_key: Optional[str] = None,
-        client: Optional[requests.Session] = None,
+        client: Optional[UnstructuredClient] = None,
         retry_config: Optional[RetryConfig] = None,
         server: Optional[str] = None,
         url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
@@ -161,7 +155,7 @@ class _SingleDocumentLoader(BaseLoader):
         post_processors: Optional[list[Callable[[str], str]]] = None,
         # SDK parameters
         api_key: Optional[str] = None,
-        client: Optional[requests.Session] = None,
+        client: Optional[UnstructuredClient] = None,
         retry_config: Optional[RetryConfig] = None,
         server: Optional[str] = None,
         url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
@@ -175,7 +169,17 @@ class _SingleDocumentLoader(BaseLoader):
         self.post_processors = post_processors
         # SDK parameters
         self.api_key = api_key
-        self.client = client
+        self.client = (
+            client
+            if client is not None
+            else UnstructuredClient(
+                api_key_auth=self.api_key,
+                retry_config=self.retry_config,  # type: ignore[has-type]
+                server=self.server,  # type: ignore[has-type]
+                server_url=self.url,  # type: ignore[has-type]
+                url_params=self.url_params,  # type: ignore[has-type]
+            )
+        )
         self.retry_config = retry_config
         self.server = server
         self.url = url
@@ -200,7 +204,7 @@ class _SingleDocumentLoader(BaseLoader):
                 page_content=cast(str, element.get("text")), metadata=metadata
             )
 
-    @lazyproperty
+    @property
     def _elements_json(self) -> list[dict[str, Any]]:
         """Get elements as a list of dictionaries from local partition or via API."""
         if self.partition_via_api and self.api_key is None:
@@ -217,10 +221,10 @@ class _SingleDocumentLoader(BaseLoader):
 
         return self._convert_elements_to_dicts(self._elements_via_local)
 
-    @lazyproperty
-    def _elements_via_local(self) -> list[Element]:
+    @property
+    def _elements_via_local(self) -> list[Any]:
         try:
-            from unstructured.partition.auto import partition  # noqa:F401
+            from unstructured.partition.auto import partition  # type: ignore
         except ImportError:
             raise ImportError(
                 "unstructured package not found, please install it with "
@@ -237,10 +241,10 @@ class _SingleDocumentLoader(BaseLoader):
             file=self.file, filename=self.file_path, **self.unstructured_kwargs
         )
 
-    @lazyproperty
+    @property
     def _elements_via_api(self) -> list[dict[str, Any]]:
         """Retrieve a list of element dicts from the API using the SDK client."""
-        client = self._sdk_client
+        client = self.client
         req = self._sdk_partition_request
         response = client.general.partition(req)  # type: ignore
         if response.status_code == 200:
@@ -249,7 +253,7 @@ class _SingleDocumentLoader(BaseLoader):
             f"Receive unexpected status code {response.status_code} from the API.",
         )
 
-    @lazyproperty
+    @property
     def _file_content(self) -> bytes:
         """Get content from either file or file_path."""
         if self.file is not None:
@@ -259,23 +263,8 @@ class _SingleDocumentLoader(BaseLoader):
                 return f.read()
         raise ValueError("file or file_path must be defined.")
 
-    @lazyproperty
-    def _sdk_client(self) -> UnstructuredClient:
-        import unstructured_client  # type: ignore
-
-        return unstructured_client.UnstructuredClient(
-            api_key_auth=self.api_key,  # type: ignore
-            client=self.client,
-            retry_config=self.retry_config,
-            server=self.server,
-            server_url=self.url,
-            url_params=self.url_params,
-        )
-
-    @lazyproperty
-    def _sdk_partition_request(self) -> PartitionRequest:
-        from unstructured_client.models import operations, shared  # type: ignore
-
+    @property
+    def _sdk_partition_request(self) -> operations.PartitionRequest:
         return operations.PartitionRequest(
             partition_parameters=shared.PartitionParameters(
                 files=shared.Files(
@@ -285,9 +274,7 @@ class _SingleDocumentLoader(BaseLoader):
             ),
         )
 
-    def _convert_elements_to_dicts(
-        self, elements: list[Element]
-    ) -> list[dict[str, Any]]:
+    def _convert_elements_to_dicts(self, elements: list[Any]) -> list[dict[str, Any]]:
         return [element.to_dict() for element in elements]
 
     def _get_metadata(self) -> dict[str, Any]:

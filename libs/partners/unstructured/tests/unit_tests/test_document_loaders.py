@@ -5,7 +5,7 @@ from unittest import mock
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
-from unstructured.documents.elements import Text
+from unstructured.documents.elements import Text  # type: ignore
 
 from langchain_unstructured.document_loaders import (
     _SingleDocumentLoader,  # type: ignore

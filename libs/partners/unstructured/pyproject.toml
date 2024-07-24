@@ -48,6 +48,7 @@ ruff = "^0.1.8"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.7.1"
+unstructured = { version = "^0.15.0", optional = true, python = ">=3.9,<3.13" }
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
