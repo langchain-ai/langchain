@@ -126,7 +126,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
-        if language == Language.CPP:
+        if language == Language.C or language == Language.CPP:
             return [
                 # Split along class definitions
                 "\nclass ",
@@ -345,7 +345,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             ]
         elif language == Language.ELIXIR:
             return [
-                # Split along method function and module definiton
+                # Split along method function and module definition
                 "\ndef ",
                 "\ndefp ",
                 "\ndefmodule ",

@@ -112,7 +112,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     """Whether to add jitter to the exponential backoff."""
 
     max_attempt_number: int = 3
-    """The maximum number of attempts to retry the runnable."""
+    """The maximum number of attempts to retry the Runnable."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

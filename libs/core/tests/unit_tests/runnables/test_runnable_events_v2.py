@@ -2353,3 +2353,245 @@ async def test_cancel_astream_events() -> None:
 
     # node "anotherwhile" should never start
     assert anotherwhile.started is False
+
+
+async def test_custom_event() -> None:
+    """Test adhoc event."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo", config=config)
+        return x + 1
+
+    uuid1 = uuid.UUID(int=7)
+
+    events = await _collect_events(
+        foo.astream_events(
+            1,
+            version="v2",
+            config={"run_id": uuid1},
+        ),
+        with_nulled_ids=False,
+    )
+
+    run_id = str(uuid1)
+    assert events == [
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"x": 1},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": "foo",
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event2",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": 2},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+    ]
+
+
+async def test_custom_event_nested() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo", config=config)
+        return x + 1
+
+    run_id = uuid.UUID(int=7)
+    child_run_id = uuid.UUID(int=8)
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def bar(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        return await foo.ainvoke(
+            x,  # type: ignore[arg-type]
+            {"run_id": child_run_id, **config},
+        )
+
+    events = await _collect_events(
+        bar.astream_events(
+            1,
+            version="v2",
+            config={"run_id": run_id},
+        ),
+        with_nulled_ids=False,
+    )
+
+    run_id = str(run_id)  # type: ignore[assignment]
+    child_run_id = str(child_run_id)  # type: ignore[assignment]
+
+    assert events == [
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"x": 1},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": "foo",
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event2",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"input": 1, "output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": 2},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+        {
+            "data": {"output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+    ]
+
+
+async def test_custom_event_root_dispatch() -> None:
+    """Test adhoc event in a nested chain."""
+    # This just tests that nothing breaks on the path.
+    # It shouldn't do anything at the moment, since the tracer isn't configured
+    # to handle adhoc events.
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Expected behavior is that the event cannot be dispatched
+    with pytest.raises(RuntimeError):
+        await adispatch_custom_event("event1", {"x": 1})
+
+
+IS_GTE_3_11 = sys.version_info >= (3, 11)
+
+
+# Test relies on automatically picking up RunnableConfig from contextvars
+@pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
+async def test_custom_event_root_dispatch_with_in_tool() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+    from langchain_core.tools import tool
+
+    @tool
+    async def foo(x: int) -> int:
+        """Foo"""
+        await adispatch_custom_event("event1", {"x": x})
+        return x + 1
+
+    # Ignoring type due to @tool not returning correct type annotations
+    events = await _collect_events(
+        foo.astream_events({"x": 2}, version="v2")  # type: ignore[attr-defined]
+    )
+    assert events == [
+        {
+            "data": {"input": {"x": 2}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"x": 2},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": 3},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+    ]
