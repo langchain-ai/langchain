@@ -131,8 +131,9 @@ def _get_search_client(
         )
     else:
         credential = DefaultAzureCredential()
-    index_client: SearchIndexClient = SearchIndexClient(endpoint=endpoint, 
-        credential=credential, user_agent=user_agent)
+    index_client: SearchIndexClient = SearchIndexClient(
+        endpoint=endpoint, credential=credential, user_agent=user_agent
+    )
     try:
         index_client.get_index(name=index_name)
     except ResourceNotFoundError:
