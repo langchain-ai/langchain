@@ -977,6 +977,8 @@ class QdrantVectorStore(VectorStore):
                     "set `force_recreate` to `True`."
                 )
 
+        assert vector_config is not None, "VectorParams is None"
+
         if isinstance(dense_embeddings, Embeddings):
             vector_size = len(dense_embeddings.embed_documents(["dummy_text"])[0])
         elif isinstance(dense_embeddings, list):
