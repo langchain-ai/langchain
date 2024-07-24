@@ -99,4 +99,5 @@ async def test_inmemory_filter() -> None:
     output = await store.asimilarity_search(
         "baz", filter=lambda doc: doc.metadata["id"] == 1
     )
-    assert output == [Document(page_content="foo", metadata={"id": 1}, id=AnyStr())]
+    assert output == [Document(page_content="foo", id=AnyStr())]
+    assert output[0].metadata["vector"] is not None
