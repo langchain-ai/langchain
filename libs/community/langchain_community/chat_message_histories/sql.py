@@ -187,7 +187,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
                     since="0.2.2",
                     removal="0.3.0",
                     name="connection_string",
-                    alternative="Use connection instead",
+                    alternative="connection",
                 )
                 _warned_once_already = True
             connection = connection_string
