@@ -1,8 +1,10 @@
 import json
+from typing import Any
 from unittest.mock import patch
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
+
 from langchain_experimental.llms.ollama_functions import OllamaFunctions
 
 
@@ -11,7 +13,9 @@ class Schema(BaseModel):
 
 
 @patch.object(OllamaFunctions, "_create_stream")
-def test_convert_image_prompt(_create_stream_mock):
+def test_convert_image_prompt(
+    _create_stream_mock: Any,
+) -> None:
     response = {"message": {"content": '{"tool": "Schema", "tool_input": {}}'}}
     _create_stream_mock.return_value = [json.dumps(response)]
 
