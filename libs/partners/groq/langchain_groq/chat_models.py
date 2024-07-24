@@ -53,6 +53,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -65,7 +66,12 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -77,6 +83,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 class ChatGroq(BaseChatModel):
@@ -511,19 +518,19 @@ class ChatGroq(BaseChatModel):
             generation = chat_result.generations[0]
             message = cast(AIMessage, generation.message)
             tool_call_chunks = [
-                {
-                    "name": rtc["function"].get("name"),
-                    "args": rtc["function"].get("arguments"),
-                    "id": rtc.get("id"),
-                    "index": rtc.get("index"),
-                }
+                create_tool_call_chunk(
+                    name=rtc["function"].get("name"),
+                    args=rtc["function"].get("arguments"),
+                    id=rtc.get("id"),
+                    index=rtc.get("index"),
+                )
                 for rtc in message.additional_kwargs.get("tool_calls", [])
             ]
             chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
-                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
+                    tool_call_chunks=tool_call_chunks,
                     usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,
@@ -1052,7 +1059,7 @@ class ChatGroq(BaseChatModel):
 
 
 def _is_pydantic_class(obj: Any) -> bool:
-    return isinstance(obj, type) and issubclass(obj, BaseModel)
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
 class _FunctionCall(TypedDict):

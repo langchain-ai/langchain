@@ -65,7 +65,7 @@ class EdenAiTextToSpeechTool(EdenaiTool):
             )
         return v
 
-    @root_validator
+    @root_validator(pre=True)
     def check_voice_models_key_is_provider_name(cls, values: dict) -> dict:
         for key in values.get("voice_models", {}).keys():
             if key not in values.get("providers", []):

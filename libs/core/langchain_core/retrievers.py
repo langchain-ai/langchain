@@ -53,14 +53,13 @@ RetrieverOutputLike = Runnable[Any, RetrieverOutput]
 class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """Abstract base class for a Document retrieval system.
 
-
     A retrieval system is defined as something that can take string queries and return
     the most 'relevant' Documents from some source.
 
     Usage:
 
     A retriever follows the standard Runnable interface, and should be used
-    via the standard runnable methods of `invoke`, `ainvoke`, `batch`, `abatch`.
+    via the standard Runnable methods of `invoke`, `ainvoke`, `batch`, `abatch`.
 
     Implementation:
 
@@ -89,7 +88,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     \"\"\"(Optional) async native implementation.\"\"\"
                     return self.docs[:self.k]
 
-    Example: A simple retriever based on a scitkit learn vectorizer
+    Example: A simple retriever based on a scikit-learn vectorizer
 
         .. code-block:: python
 
@@ -178,12 +177,12 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Main entry point for synchronous retriever invocations.
 
         Args:
-            input: The query string
-            config: Configuration for the retriever
-            **kwargs: Additional arguments to pass to the retriever
+            input: The query string.
+            config: Configuration for the retriever. Defaults to None.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
-            List of relevant documents
+            List of relevant documents.
 
         Examples:
 
@@ -237,12 +236,12 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Main entry point for asynchronous retriever invocations.
 
         Args:
-            input: The query string
-            config: Configuration for the retriever
-            **kwargs: Additional arguments to pass to the retriever
+            input: The query string.
+            config: Configuration for the retriever. Defaults to None.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
-            List of relevant documents
+            List of relevant documents.
 
         Examples:
 
@@ -292,10 +291,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         """Get documents relevant to a query.
 
         Args:
-            query: String to find relevant documents for
-            run_manager: The callback handler to use
+            query: String to find relevant documents for.
+            run_manager: The callback handler to use.
         Returns:
-            List of relevant documents
+            List of relevant documents.
         """
 
     async def _aget_relevant_documents(
@@ -333,18 +332,21 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         `get_relevant_documents directly`.
 
         Args:
-            query: string to find relevant documents for
-            callbacks: Callback manager or list of callbacks
-            tags: Optional list of tags associated with the retriever. Defaults to None
+            query: string to find relevant documents for.
+            callbacks: Callback manager or list of callbacks. Defaults to None.
+            tags: Optional list of tags associated with the retriever.
                 These tags will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-            metadata: Optional metadata associated with the retriever. Defaults to None
+                Defaults to None.
+            metadata: Optional metadata associated with the retriever.
                 This metadata will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-            run_name: Optional name for the run.
+                Defaults to None.
+            run_name: Optional name for the run. Defaults to None.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
-            List of relevant documents
+            List of relevant documents.
         """
         config: RunnableConfig = {}
         if callbacks:
@@ -374,18 +376,21 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         `aget_relevant_documents directly`.
 
         Args:
-            query: string to find relevant documents for
-            callbacks: Callback manager or list of callbacks
-            tags: Optional list of tags associated with the retriever. Defaults to None
+            query: string to find relevant documents for.
+            callbacks: Callback manager or list of callbacks.
+            tags: Optional list of tags associated with the retriever.
                 These tags will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-            metadata: Optional metadata associated with the retriever. Defaults to None
+                Defaults to None.
+            metadata: Optional metadata associated with the retriever.
                 This metadata will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-            run_name: Optional name for the run.
+                Defaults to None.
+            run_name: Optional name for the run. Defaults to None.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
-            List of relevant documents
+            List of relevant documents.
         """
         config: RunnableConfig = {}
         if callbacks:

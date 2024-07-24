@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
+from xml.etree.ElementTree import ParseError  # OK: trusted-source
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
@@ -28,6 +29,8 @@ class GoogleApiClient:
     As the google api expects credentials you need to set up a google account and
     register your Service. "https://developers.google.com/docs/api/quickstart/python"
 
+    *Security Note*: Note that parsing of the transcripts relies on the standard
+        xml library but the input is viewed as trusted in this case.
 
 
     Example:
@@ -47,7 +50,7 @@ class GoogleApiClient:
     def __post_init__(self) -> None:
         self.creds = self._load_credentials()
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_channel_or_videoIds_is_set(
         cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -388,7 +391,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
         return build("youtube", "v3", credentials=creds)
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_channel_or_videoIds_is_set(
         cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -437,6 +440,14 @@ class GoogleApiYoutubeLoader(BaseLoader):
         channel_id = response["items"][0]["id"]["channelId"]
         return channel_id
 
+    def _get_uploads_playlist_id(self, channel_id: str) -> str:
+        request = self.youtube_client.channels().list(
+            part="contentDetails",
+            id=channel_id,
+        )
+        response = request.execute()
+        return response["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+
     def _get_document_for_channel(self, channel: str, **kwargs: Any) -> List[Document]:
         try:
             from youtube_transcript_api import (
@@ -452,10 +463,11 @@ class GoogleApiYoutubeLoader(BaseLoader):
             )
 
         channel_id = self._get_channel_id(channel)
-        request = self.youtube_client.search().list(
+        uploads_playlist_id = self._get_uploads_playlist_id(channel_id)
+        request = self.youtube_client.playlistItems().list(
             part="id,snippet",
-            channelId=channel_id,
-            maxResults=50,  # adjust this value to retrieve more or fewer videos
+            playlistId=uploads_playlist_id,
+            maxResults=50,
         )
         video_ids = []
         while request is not None:
@@ -463,23 +475,20 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
             # Add each video ID to the list
             for item in response["items"]:
-                if not item["id"].get("videoId"):
-                    continue
-                meta_data = {"videoId": item["id"]["videoId"]}
+                video_id = item["snippet"]["resourceId"]["videoId"]
+                meta_data = {"videoId": video_id}
                 if self.add_video_info:
                     item["snippet"].pop("thumbnails")
                     meta_data.update(item["snippet"])
                 try:
-                    page_content = self._get_transcripe_for_video_id(
-                        item["id"]["videoId"]
-                    )
+                    page_content = self._get_transcripe_for_video_id(video_id)
                     video_ids.append(
                         Document(
                             page_content=page_content,
                             metadata=meta_data,
                         )
                     )
-                except (TranscriptsDisabled, NoTranscriptFound) as e:
+                except (TranscriptsDisabled, NoTranscriptFound, ParseError) as e:
                     if self.continue_on_failure:
                         logger.error(
                             "Error fetching transscript "
