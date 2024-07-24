@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from typing import Any, Callable
 from unittest import mock
@@ -107,7 +106,7 @@ def test_it_partitions_locally_and_logs_warning_with_partition_via_api_False(
             client=Mock(), partition_via_api=False, api_key="some_key"
         )
 
-        elements = loader._elements_json  # type: ignore
+        _ = loader._elements_json  # type: ignore
 
 
 # -- fixtures -------------------------------
