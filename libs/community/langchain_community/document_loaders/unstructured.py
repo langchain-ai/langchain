@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+import os
 from pathlib import Path
 from typing import (
     IO,
@@ -330,7 +331,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
         self.file_path = file_path
         self.url = url
-        self.api_key = api_key
+        self.api_key = os.getenv("UNSTRUCTURED_API_KEY") or api_key
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
@@ -483,7 +484,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
         self.file = file
         self.url = url
-        self.api_key = api_key
+        self.api_key = os.getenv("UNSTRUCTURED_API_KEY") or api_key
 
         super().__init__(mode=mode, **unstructured_kwargs)
 

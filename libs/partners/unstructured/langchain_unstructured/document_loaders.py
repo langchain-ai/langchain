@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
-from typing import IO, Any, Callable, Iterator, Optional, cast
+from typing import IO, Any, Callable, Iterator, Optional, TypeAlias, cast
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from unstructured_client import UnstructuredClient  # type: ignore
 from unstructured_client.models import operations, shared  # type: ignore
-from unstructured_client.utils import RetryConfig  # type: ignore
+
+Element: TypeAlias = Any
 
 logger = logging.getLogger(__file__)
 
@@ -83,10 +85,7 @@ class UnstructuredLoader(BaseLoader):
         # SDK parameters
         api_key: Optional[str] = None,
         client: Optional[UnstructuredClient] = None,
-        retry_config: Optional[RetryConfig] = None,
-        server: Optional[str] = None,
         url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
-        url_params: Optional[dict[str, str]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize loader."""
@@ -95,12 +94,10 @@ class UnstructuredLoader(BaseLoader):
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
         # SDK parameters
-        self.api_key = api_key
+        self.api_key = os.getenv("UNSTRUCTURED_API_KEY") or api_key
         self.client = client
-        self.retry_config = retry_config
-        self.server = server
         self.url = url
-        self.url_params = url_params
+
         self.unstructured_kwargs = unstructured_kwargs
 
     def lazy_load(self) -> Iterator[Document]:
@@ -118,10 +115,7 @@ class UnstructuredLoader(BaseLoader):
                 # SDK parameters
                 api_key=self.api_key,
                 client=self.client,
-                retry_config=self.retry_config,
-                server=self.server,
                 url=self.url,
-                url_params=self.url_params,
                 **self.unstructured_kwargs,
             ).lazy_load()
 
@@ -156,10 +150,7 @@ class _SingleDocumentLoader(BaseLoader):
         # SDK parameters
         api_key: Optional[str] = None,
         client: Optional[UnstructuredClient] = None,
-        retry_config: Optional[RetryConfig] = None,
-        server: Optional[str] = None,
         url: Optional[str] = "https://api.unstructuredapp.io/general/v0/general",
-        url_params: Optional[dict[str, str]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize loader."""
@@ -169,21 +160,15 @@ class _SingleDocumentLoader(BaseLoader):
         self.post_processors = post_processors
         # SDK parameters
         self.api_key = api_key
-        self.client = (
-            client
-            if client is not None
-            else UnstructuredClient(
-                api_key_auth=self.api_key,
-                retry_config=self.retry_config,  # type: ignore[has-type]
-                server=self.server,  # type: ignore[has-type]
-                server_url=self.url,  # type: ignore[has-type]
-                url_params=self.url_params,  # type: ignore[has-type]
-            )
-        )
-        self.retry_config = retry_config
-        self.server = server
         self.url = url
-        self.url_params = url_params
+        if client is not None:
+            self.client = client
+        elif self.api_key is not None:
+            self.client = UnstructuredClient(
+                api_key_auth=self.api_key,
+                server_url=self.url,
+            )
+
         self.unstructured_kwargs = unstructured_kwargs
 
     def lazy_load(self) -> Iterator[Document]:
@@ -222,7 +207,7 @@ class _SingleDocumentLoader(BaseLoader):
         return self._convert_elements_to_dicts(self._elements_via_local)
 
     @property
-    def _elements_via_local(self) -> list[Any]:
+    def _elements_via_local(self) -> list[Element]:
         try:
             from unstructured.partition.auto import partition  # type: ignore
         except ImportError:
@@ -239,7 +224,7 @@ class _SingleDocumentLoader(BaseLoader):
 
         return partition(
             file=self.file, filename=self.file_path, **self.unstructured_kwargs
-        )
+        )  # type: ignore
 
     @property
     def _elements_via_api(self) -> list[dict[str, Any]]:
@@ -274,7 +259,9 @@ class _SingleDocumentLoader(BaseLoader):
             ),
         )
 
-    def _convert_elements_to_dicts(self, elements: list[Any]) -> list[dict[str, Any]]:
+    def _convert_elements_to_dicts(
+        self, elements: list[Element]
+    ) -> list[dict[str, Any]]:
         return [element.to_dict() for element in elements]
 
     def _get_metadata(self) -> dict[str, Any]:
