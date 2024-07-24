@@ -7,8 +7,7 @@ from langchain_community.utils.openai import is_openai_v1
 
 
 class OpenLLM(BaseOpenAI):
-    """OpenAI's compatible API client for OpenLLM server
-    """
+    """OpenAI's compatible API client for OpenLLM server"""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
