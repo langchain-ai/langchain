@@ -172,7 +172,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
     - The rate limiter only supports time-based rate limiting. It does not take
       into account the size of the request or any other factors.
     - The current implementation does not handle streaming inputs well and will
-      consume all inputs even if the rate limit has been reached. Better support
+      consume all inputs even if the rate limit has not been reached. Better support
       for streaming inputs will be added in the future.
     - When the rate limiter is combined with another runnable via a RunnableSequence,
       usage of .batch() or .abatch() will only respect the average rate limit.
