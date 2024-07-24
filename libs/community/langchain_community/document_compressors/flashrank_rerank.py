@@ -30,6 +30,8 @@ class FlashrankRerank(BaseDocumentCompressor):
     """Minimum relevance threshold to return."""
     model: Optional[str] = None
     """Model to use for reranking."""
+    prefix_metadata: Optional[str] = None
+    """Prefix for flashrank_rerank metadata keys"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -56,13 +58,13 @@ class FlashrankRerank(BaseDocumentCompressor):
             return values
 
     def compress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
+            self,
+            documents: Sequence[Document],
+            query: str,
+            callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         passages = [
-            {"id": i, "text": doc.page_content, "metadata": doc.metadata}
+            {"id": i, "text": doc.page_content, "meta": doc.metadata}
             for i, doc in enumerate(documents)
         ]
 
@@ -74,7 +76,8 @@ class FlashrankRerank(BaseDocumentCompressor):
             if r["score"] >= self.score_threshold:
                 doc = Document(
                     page_content=r["text"],
-                    metadata={"flashrank_rerank": {"id": r["id"], "relevance_score": r["score"]}, **r["metadata"]},
+                    metadata={self.prefix_metadata + "id": r["id"],
+                              self.prefix_metadata + "relevance_score": r["score"], **r["meta"]},
                 )
                 final_results.append(doc)
         return final_results
