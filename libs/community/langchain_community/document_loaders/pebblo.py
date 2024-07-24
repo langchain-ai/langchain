@@ -48,6 +48,7 @@ class PebbloSafeLoader(BaseLoader):
         classifier_url: Optional[str] = None,
         *,
         classifier_location: str = "local",
+        batch_size: int = 20,
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -68,6 +69,7 @@ class PebbloSafeLoader(BaseLoader):
         self.source_aggregate_size = 0
         self.classifier_url = classifier_url or CLASSIFIER_URL
         self.classifier_location = classifier_location
+        self.batch_size = batch_size
         self.loader_details = {
             "loader": loader_name,
             "source_path": self.source_path,
@@ -89,14 +91,35 @@ class PebbloSafeLoader(BaseLoader):
             list: Documents fetched from load method of the wrapped `loader`.
         """
         self.docs = self.loader.load()
-        self.docs_with_id = self._index_docs()
-        classified_docs = self._classify_doc(loading_end=True)
-        self._add_pebblo_specific_metadata(classified_docs)
-        if self.load_semantic:
-            self.docs = self._add_semantic_to_docs(classified_docs)
-        else:
-            self.docs = self._unindex_docs()  # type: ignore
+        # Process docs in batches
+        self.process_in_batches()
         return self.docs
+
+    def process_in_batches(self):
+        """
+        Process documents in batches.
+        This is to avoid API timeouts when sending large number of documents.
+        """
+        batches: List[List[Document]] = [
+            self.docs[i : i + self.batch_size]
+            for i in range(0, len(self.docs), self.batch_size)
+        ]
+        processed_docs: List[Document] = []
+
+        total_batches = len(batches)
+        for i, batch in enumerate(batches):
+            is_last_batch: bool = i == total_batches - 1
+            self.docs = batch
+            self.docs_with_id = self._index_docs()
+            classified_docs = self._classify_doc(loading_end=is_last_batch)
+            self._add_pebblo_specific_metadata(classified_docs)
+            if self.load_semantic:
+                batch_processed_docs = self._add_semantic_to_docs(classified_docs)
+            else:
+                batch_processed_docs = self._unindex_docs()
+            processed_docs.extend(batch_processed_docs)
+
+        self.docs = processed_docs
 
     def lazy_load(self) -> Iterator[Document]:
         """Load documents in lazy fashion.
