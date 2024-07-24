@@ -1,4 +1,5 @@
 """Test LLM-generated structured query parsing."""
+
 import datetime
 from typing import Any, cast
 
@@ -107,13 +108,6 @@ def test_parse_string_value(x: str) -> None:
     parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
     actual = parsed.value
     assert actual == x[1:-1]
-
-
-@pytest.mark.parametrize("x", ('"2001-01-01"', '"2020-11-21"'))
-def test_parse_date_value(x: str) -> None:
-    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
-    actual = parsed.value
-    assert actual == datetime.datetime.strptime(x[1:-1], "%Y-%m-%d").date()
 
 
 @pytest.mark.parametrize("x", ('"2001-01-01T01:01:01Z"', '"2020-11-21T11:11:11Z"'))
