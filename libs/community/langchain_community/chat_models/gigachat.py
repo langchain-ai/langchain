@@ -157,7 +157,12 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
         kwargs["role"] = MessagesRole.USER
         kwargs["content"] = message.content
     elif isinstance(message, AIMessage):
-        function_call = message.additional_kwargs.get("function_call", None)
+        if function_call := getattr(message, "tool_calls", None):
+            for function in function_call:
+                if "args" in function:
+                    function["arguments"] = function.pop("args")
+        else:
+            function_call = message.additional_kwargs.get("function_call", None)
         if isinstance(function_call, list):
             if len(function_call) > 0:
                 function_call = function_call[0]
@@ -328,7 +333,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
         # Iterative remove title keys from the payload.
         # It is not needed for the GigaChat API.
-        def _remove_title_keys(payload_dict: dict[str, Any]) -> dict[str, Any]:
+        def _remove_title_keys(payload_dict: Union[Dict, List]) -> None:
             if isinstance(payload_dict, dict):
                 payload_dict.pop("title", None)
 
@@ -338,9 +343,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
                 for item in payload_dict:
                     _remove_title_keys(item)
 
-            return payload_dict
-
-        payload_dict = _remove_title_keys(payload_dict)
+        _remove_title_keys(payload_dict)
         payload = Chat.parse_obj(payload_dict)
 
         if self.verbose:
