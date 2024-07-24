@@ -73,9 +73,9 @@ MAX_UPLOAD_BATCH_SIZE = 1000
 
 def _get_search_client(
     endpoint: str,
-    key: str,
-    azure_ad_access_token: Optional[str],
     index_name: str,
+    key: Optional[str] = None,
+    azure_ad_access_token: Optional[str] = None,
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
@@ -116,24 +116,23 @@ def _get_search_client(
     default_fields = default_fields or []
     credential: Union[AzureKeyCredential, TokenCredential, InteractiveBrowserCredential]
 
-    if key is None:
-        if azure_ad_access_token:
-            credential = TokenCredential(
-                lambda *scopes, **kwargs: AccessToken(
-                    azure_ad_access_token, int(time.time()) + 3600
-                )
-            )
-
+    # Determine the appropriate credential to use
+    if key is not None:
+        if key.upper() == "INTERACTIVE":
+            credential = InteractiveBrowserCredential()
+            credential.get_token("https://search.azure.com/.default")
         else:
-            credential = DefaultAzureCredential()
-    elif key.upper() == "INTERACTIVE":
-        credential = InteractiveBrowserCredential()
-        credential.get_token("https://search.azure.com/.default")
+            credential = AzureKeyCredential(key)
+    elif azure_ad_access_token is not None:
+        credential = TokenCredential(
+            lambda *scopes, **kwargs: AccessToken(
+                azure_ad_access_token, int(time.time()) + 3600
+            )
+        )
     else:
-        credential = AzureKeyCredential(key)
-    index_client: SearchIndexClient = SearchIndexClient(
-        endpoint=endpoint, credential=credential, user_agent=user_agent
-    )
+        credential = DefaultAzureCredential()
+    index_client: SearchIndexClient = SearchIndexClient(endpoint=endpoint, 
+        credential=credential, user_agent=user_agent)
     try:
         index_client.get_index(name=index_name)
     except ResourceNotFoundError:
