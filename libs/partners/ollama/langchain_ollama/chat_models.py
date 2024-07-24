@@ -346,26 +346,23 @@ class ChatOllama(BaseChatModel):
     ) -> Sequence[Message]:
         ollama_messages: List = []
         for message in messages:
-            role = ""
-            tool_call_id: Optional[str] = None
-            tool_calls: Optional[List[Dict[str, Any]]] = None
+            role: Literal["user", "assistant", "system"]
+            tool_calls: Optional[List[dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
                 role = "user"
-            elif isinstance(message, AIMessage):
+            elif isinstance(message, AIMessage) or isinstance(message, ToolMessage):
                 role = "assistant"
-                tool_calls = (
-                    [
-                        _lc_tool_call_to_openai_tool_call(tool_call)
-                        for tool_call in message.tool_calls
-                    ]
-                    if message.tool_calls
-                    else None
-                )
+                if isinstance(message, AIMessage):
+                    tool_calls = (
+                        [
+                            _lc_tool_call_to_openai_tool_call(tool_call)
+                            for tool_call in message.tool_calls
+                        ]
+                        if message.tool_calls
+                        else None
+                    )
             elif isinstance(message, SystemMessage):
                 role = "system"
-            elif isinstance(message, ToolMessage):
-                role = "tool"
-                tool_call_id = message.tool_call_id
             else:
                 raise ValueError("Received unsupported message type for Ollama.")
 
@@ -385,9 +382,11 @@ class ChatOllama(BaseChatModel):
                         if isinstance(temp_image_url, str):
                             image_url = temp_image_url
                         elif (
-                            isinstance(temp_image_url, dict) and "url" in temp_image_url
+                            isinstance(temp_image_url, dict)
+                            and "url" in temp_image_url
+                            and isinstance(temp_image_url["url"], str)
                         ):
-                            image_url = temp_image_url['url']
+                            image_url = temp_image_url["url"]
                         else:
                             raise ValueError(
                                 "Only string image_url or dict with string 'url' "
@@ -408,15 +407,13 @@ class ChatOllama(BaseChatModel):
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
-            msg = {
+            msg: Message = {
                 "role": role,
                 "content": content,
                 "images": images,
             }
-            if tool_call_id:
-                msg["tool_call_id"] = tool_call_id
             if tool_calls:
-                msg["tool_calls"] = tool_calls
+                msg["tool_calls"] = tool_calls  # type: ignore
             ollama_messages.append(msg)
 
         return ollama_messages
