@@ -1,28 +1,23 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.pubmed import PubMedAPIWrapper
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.tools import PubmedQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"PubmedQueryRun": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class PubmedQueryRun(BaseTool):
-    """Tool that searches the PubMed API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "PubMed"
-    description: str = (
-        "A wrapper around PubMed. "
-        "Useful for when you need to answer questions about medicine, health, "
-        "and biomedical topics "
-        "from biomedical literature, MEDLINE, life science journals, and online books. "
-        "Input should be a search query."
-    )
-    api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)
 
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the PubMed tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "PubmedQueryRun",
+]

@@ -1,8 +1,5 @@
-import pinecone
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Pinecone
-
-pinecone.init(api_key="...", environment="...")
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
 
 all_documents = {
     "doc1": "Climate change and economic impact.",
@@ -17,6 +14,6 @@ all_documents = {
     "doc10": "The history of climate change activism.",
 }
 
-Pinecone.from_texts(
+PineconeVectorStore.from_texts(
     list(all_documents.values()), OpenAIEmbeddings(), index_name="rag-fusion"
 )

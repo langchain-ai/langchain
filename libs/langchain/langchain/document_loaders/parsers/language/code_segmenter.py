@@ -1,20 +1,29 @@
-from abc import ABC, abstractmethod
-from typing import List
+from typing import TYPE_CHECKING, Any
+
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders.parsers.language.code_segmenter import (
+        CodeSegmenter,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "CodeSegmenter": (
+        "langchain_community.document_loaders.parsers.language.code_segmenter"
+    ),
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class CodeSegmenter(ABC):
-    """Abstract class for the code segmenter."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, code: str):
-        self.code = code
 
-    def is_valid(self) -> bool:
-        return True
-
-    @abstractmethod
-    def simplify_code(self) -> str:
-        raise NotImplementedError()  # pragma: no cover
-
-    @abstractmethod
-    def extract_functions_classes(self) -> List[str]:
-        raise NotImplementedError()  # pragma: no cover
+__all__ = [
+    "CodeSegmenter",
+]

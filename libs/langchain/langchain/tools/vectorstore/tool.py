@@ -1,94 +1,30 @@
-"""Tools for interacting with vectorstores."""
+from typing import TYPE_CHECKING, Any
 
-import json
-from typing import Any, Dict, Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.llms.openai import OpenAI
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.vectorstore import VectorStore
-from langchain.tools.base import BaseTool
+if TYPE_CHECKING:
+    from langchain_community.tools import (
+        VectorStoreQATool,
+        VectorStoreQAWithSourcesTool,
+    )
 
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "VectorStoreQATool": "langchain_community.tools",
+    "VectorStoreQAWithSourcesTool": "langchain_community.tools",
+}
 
-class BaseVectorStoreTool(BaseModel):
-    """Base class for tools that use a VectorStore."""
-
-    vectorstore: VectorStore = Field(exclude=True)
-    llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
-
-    class Config(BaseTool.Config):
-        pass
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
-    values["description"] = values["template"].format(name=values["name"])
-    return values
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
-    """Tool for the VectorDBQA chain. To be initialized with name and chain."""
-
-    @staticmethod
-    def get_description(name: str, description: str) -> str:
-        template: str = (
-            "Useful for when you need to answer questions about {name}. "
-            "Whenever you need information about {description} "
-            "you should ALWAYS use this. "
-            "Input should be a fully formed question."
-        )
-        return template.format(name=name, description=description)
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        from langchain.chains.retrieval_qa.base import RetrievalQA
-
-        chain = RetrievalQA.from_chain_type(
-            self.llm, retriever=self.vectorstore.as_retriever()
-        )
-        return chain.run(
-            query, callbacks=run_manager.get_child() if run_manager else None
-        )
-
-
-class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
-    """Tool for the VectorDBQAWithSources chain."""
-
-    @staticmethod
-    def get_description(name: str, description: str) -> str:
-        template: str = (
-            "Useful for when you need to answer questions about {name} and the sources "
-            "used to construct the answer. "
-            "Whenever you need information about {description} "
-            "you should ALWAYS use this. "
-            " Input should be a fully formed question. "
-            "Output is a json serialized dictionary with keys `answer` and `sources`. "
-            "Only use this tool if the user explicitly asks for sources."
-        )
-        return template.format(name=name, description=description)
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-
-        from langchain.chains.qa_with_sources.retrieval import (
-            RetrievalQAWithSourcesChain,
-        )
-
-        chain = RetrievalQAWithSourcesChain.from_chain_type(
-            self.llm, retriever=self.vectorstore.as_retriever()
-        )
-        return json.dumps(
-            chain(
-                {chain.question_key: query},
-                return_only_outputs=True,
-                callbacks=run_manager.get_child() if run_manager else None,
-            )
-        )
+__all__ = [
+    "VectorStoreQATool",
+    "VectorStoreQAWithSourcesTool",
+]

@@ -1,8 +1,8 @@
-from langchain.graphs import Neo4jGraph
+from langchain_community.graphs import Neo4jGraph
 
 graph = Neo4jGraph()
 
-# Import sample data 
+# Import sample data
 graph.query(
     """
 MERGE (m:Movie {name:"Top Gun"})

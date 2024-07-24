@@ -1,53 +1,23 @@
-"""
-This tool allows agents to interact with the atlassian-python-api library
-and operate on a Jira instance. For more information on the
-atlassian-python-api library, see https://atlassian-python-api.readthedocs.io/jira.html
+from typing import TYPE_CHECKING, Any
 
-To use this tool, you must first set as environment variables:
-    JIRA_API_TOKEN
-    JIRA_USERNAME
-    JIRA_INSTANCE_URL
+from langchain._api import create_importer
 
-Below is a sample script that uses the Jira tool:
+if TYPE_CHECKING:
+    from langchain_community.tools import JiraAction
 
-```python
-from langchain.agents import AgentType
-from langchain.agents import initialize_agent
-from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
-from langchain.llms import OpenAI
-from langchain.utilities.jira import JiraAPIWrapper
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"JiraAction": "langchain_community.tools"}
 
-llm = OpenAI(temperature=0)
-jira = JiraAPIWrapper()
-toolkit = JiraToolkit.from_jira_api_wrapper(jira)
-agent = initialize_agent(
-    toolkit.get_tools(),
-    llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True
-)
-```
-"""
-from typing import Optional
-
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.jira import JiraAPIWrapper
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class JiraAction(BaseTool):
-    """Tool that queries the Atlassian Jira API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    api_wrapper: JiraAPIWrapper = Field(default_factory=JiraAPIWrapper)
-    mode: str
-    name: str = ""
-    description: str = ""
 
-    def _run(
-        self,
-        instructions: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the Atlassian Jira API to run an operation."""
-        return self.api_wrapper.run(self.mode, instructions)
+__all__ = [
+    "JiraAction",
+]

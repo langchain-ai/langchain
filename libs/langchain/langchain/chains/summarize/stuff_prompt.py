@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 prompt_template = """Write a concise summary of the following:
 

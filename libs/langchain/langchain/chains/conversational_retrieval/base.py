@@ -1,4 +1,5 @@
 """Chain for chatting with a vector database."""
+
 from __future__ import annotations
 
 import inspect
@@ -7,23 +8,27 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from langchain.callbacks.manager import (
+from langchain_core._api import deprecated
+from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import RunnableConfig
+from langchain_core.vectorstores import VectorStore
+
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain.schema import BasePromptTemplate, BaseRetriever, Document
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage
-from langchain.schema.runnable.config import RunnableConfig
-from langchain.schema.vectorstore import VectorStore
 
 # Depending on the memory type and configuration, the chat history format may differ.
 # This needs to be consolidated.
@@ -37,8 +42,11 @@ def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
     buffer = ""
     for dialogue_turn in chat_history:
         if isinstance(dialogue_turn, BaseMessage):
-            role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
-            buffer += f"\n{role_prefix}{dialogue_turn.content}"
+            if len(dialogue_turn.content) > 0:
+                role_prefix = _ROLE_MAP.get(
+                    dialogue_turn.type, f"{dialogue_turn.type}: "
+                )
+                buffer += f"\n{role_prefix}{dialogue_turn.content}"
         elif isinstance(dialogue_turn, tuple):
             human = "Human: " + dialogue_turn[0]
             ai = "Assistant: " + dialogue_turn[1]
@@ -52,8 +60,12 @@ def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
 
 
 class InputType(BaseModel):
+    """Input type for ConversationalRetrievalChain."""
+
     question: str
+    """The question to answer."""
     chat_history: List[CHAT_TURN_TYPE] = Field(default_factory=list)
+    """The chat history to use for retrieval."""
 
 
 class BaseConversationalRetrievalChain(Chain):
@@ -201,14 +213,19 @@ class BaseConversationalRetrievalChain(Chain):
         else:
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
-        new_inputs = inputs.copy()
-        if self.rephrase_question:
-            new_inputs["question"] = new_question
-        new_inputs["chat_history"] = chat_history_str
-        answer = await self.combine_docs_chain.arun(
-            input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
-        )
-        output: Dict[str, Any] = {self.output_key: answer}
+        output: Dict[str, Any] = {}
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+            answer = await self.combine_docs_chain.arun(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
@@ -221,8 +238,83 @@ class BaseConversationalRetrievalChain(Chain):
         super().save(file_path)
 
 
+@deprecated(
+    since="0.1.17",
+    alternative=(
+        "create_history_aware_retriever together with create_retrieval_chain "
+        "(see example in docstring)"
+    ),
+    removal="0.3.0",
+)
 class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     """Chain for having a conversation based on retrieved documents.
+
+    This class is deprecated. See below for an example implementation using
+    `create_retrieval_chain`. Additional walkthroughs can be found at
+    https://python.langchain.com/docs/use_cases/question_answering/chat_history
+
+        .. code-block:: python
+
+            from langchain.chains import (
+                create_history_aware_retriever,
+                create_retrieval_chain,
+            )
+            from langchain.chains.combine_documents import create_stuff_documents_chain
+            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+            from langchain_openai import ChatOpenAI
+
+
+            retriever = ...  # Your retriever
+
+            llm = ChatOpenAI()
+
+            # Contextualize question
+            contextualize_q_system_prompt = (
+                "Given a chat history and the latest user question "
+                "which might reference context in the chat history, "
+                "formulate a standalone question which can be understood "
+                "without the chat history. Do NOT answer the question, just "
+                "reformulate it if needed and otherwise return it as is."
+            )
+            contextualize_q_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", contextualize_q_system_prompt),
+                    MessagesPlaceholder("chat_history"),
+                    ("human", "{input}"),
+                ]
+            )
+            history_aware_retriever = create_history_aware_retriever(
+                llm, retriever, contextualize_q_prompt
+            )
+
+            # Answer question
+            qa_system_prompt = (
+                "You are an assistant for question-answering tasks. Use "
+                "the following pieces of retrieved context to answer the "
+                "question. If you don't know the answer, just say that you "
+                "don't know. Use three sentences maximum and keep the answer "
+                "concise."
+                "\n\n"
+                "{context}"
+            )
+            qa_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", qa_system_prompt),
+                    MessagesPlaceholder("chat_history"),
+                    ("human", "{input}"),
+                ]
+            )
+            # Below we use create_stuff_documents_chain to feed all retrieved context
+            # into the LLM. Note that we can also use StuffDocumentsChain and other
+            # instances of BaseCombineDocumentsChain.
+            question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+            rag_chain = create_retrieval_chain(
+                history_aware_retriever, question_answer_chain
+            )
+
+            # Usage:
+            chat_history = []  # Collect chat history here (a sequence of messages)
+            rag_chain.invoke({"input": query, "chat_history": chat_history})
 
     This chain takes in chat history (a list of messages) and new questions,
     and then returns an answer to that question.
@@ -247,8 +339,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             from langchain.chains import (
                 StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
             )
-            from langchain.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_core.prompts import PromptTemplate
+            from langchain_community.llms import OpenAI
 
             combine_docs_chain = StuffDocumentsChain(...)
             vectorstore = ...
@@ -284,7 +376,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             self.combine_docs_chain, StuffDocumentsChain
         ):
             tokens = [
-                self.combine_docs_chain.llm_chain.llm.get_num_tokens(doc.page_content)
+                self.combine_docs_chain.llm_chain._get_num_tokens(doc.page_content)
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])
@@ -302,8 +394,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         run_manager: CallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        docs = self.retriever.get_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        docs = self.retriever.invoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
         return self._reduce_tokens_below_limit(docs)
 
@@ -315,8 +407,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        docs = await self.retriever.aget_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        docs = await self.retriever.ainvoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
         return self._reduce_tokens_below_limit(docs)
 
@@ -392,7 +484,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
     def _chain_type(self) -> str:
         return "chat-vector-db"
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "

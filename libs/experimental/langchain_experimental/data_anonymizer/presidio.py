@@ -23,28 +23,62 @@ from langchain_experimental.data_anonymizer.faker_presidio_mapping import (
     get_pseudoanonymizer_mapping,
 )
 
-try:
-    from presidio_analyzer import AnalyzerEngine
-    from presidio_analyzer.nlp_engine import NlpEngineProvider
-
-except ImportError as e:
-    raise ImportError(
-        "Could not import presidio_analyzer, please install with "
-        "`pip install presidio-analyzer`. You will also need to download a "
-        "spaCy model to use the analyzer, e.g. "
-        "`python -m spacy download en_core_web_lg`."
-    ) from e
-try:
-    from presidio_anonymizer import AnonymizerEngine
-    from presidio_anonymizer.entities import OperatorConfig
-except ImportError as e:
-    raise ImportError(
-        "Could not import presidio_anonymizer, please install with "
-        "`pip install presidio-anonymizer`."
-    ) from e
-
 if TYPE_CHECKING:
-    from presidio_analyzer import EntityRecognizer
+    from presidio_analyzer import AnalyzerEngine, EntityRecognizer
+    from presidio_analyzer.nlp_engine import NlpEngineProvider
+    from presidio_anonymizer import AnonymizerEngine
+    from presidio_anonymizer.entities import ConflictResolutionStrategy, OperatorConfig
+
+
+def _import_analyzer_engine() -> "AnalyzerEngine":
+    try:
+        from presidio_analyzer import AnalyzerEngine
+
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_analyzer, please install with "
+            "`pip install presidio-analyzer`. You will also need to download a "
+            "spaCy model to use the analyzer, e.g. "
+            "`python -m spacy download en_core_web_lg`."
+        ) from e
+    return AnalyzerEngine
+
+
+def _import_nlp_engine_provider() -> "NlpEngineProvider":
+    try:
+        from presidio_analyzer.nlp_engine import NlpEngineProvider
+
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_analyzer, please install with "
+            "`pip install presidio-analyzer`. You will also need to download a "
+            "spaCy model to use the analyzer, e.g. "
+            "`python -m spacy download en_core_web_lg`."
+        ) from e
+    return NlpEngineProvider
+
+
+def _import_anonymizer_engine() -> "AnonymizerEngine":
+    try:
+        from presidio_anonymizer import AnonymizerEngine
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_anonymizer, please install with "
+            "`pip install presidio-anonymizer`."
+        ) from e
+    return AnonymizerEngine
+
+
+def _import_operator_config() -> "OperatorConfig":
+    try:
+        from presidio_anonymizer.entities import OperatorConfig
+    except ImportError as e:
+        raise ImportError(
+            "Could not import presidio_anonymizer, please install with "
+            "`pip install presidio-anonymizer`."
+        ) from e
+    return OperatorConfig
+
 
 # Configuring Anonymizer for multiple languages
 # Detailed description and examples can be found here:
@@ -64,11 +98,16 @@ DEFAULT_LANGUAGES_CONFIG = {
 
 
 class PresidioAnonymizerBase(AnonymizerBase):
+    """Base Anonymizer using Microsoft Presidio.
+
+    See more: https://microsoft.github.io/presidio/
+    """
+
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,
         operators: Optional[Dict[str, OperatorConfig]] = None,
-        languages_config: Dict = DEFAULT_LANGUAGES_CONFIG,
+        languages_config: Optional[Dict] = None,
         add_default_faker_operators: bool = True,
         faker_seed: Optional[int] = None,
     ):
@@ -89,6 +128,13 @@ class PresidioAnonymizerBase(AnonymizerBase):
                 Defaults to None, in which case faker will be seeded randomly
                 and provide random values.
         """
+        if languages_config is None:
+            languages_config = DEFAULT_LANGUAGES_CONFIG
+        OperatorConfig = _import_operator_config()
+        AnalyzerEngine = _import_analyzer_engine()
+        NlpEngineProvider = _import_nlp_engine_provider()
+        AnonymizerEngine = _import_anonymizer_engine()
+
         self.analyzed_fields = (
             analyzed_fields
             if analyzed_fields is not None
@@ -139,11 +185,14 @@ class PresidioAnonymizerBase(AnonymizerBase):
 
 
 class PresidioAnonymizer(PresidioAnonymizerBase):
+    """Anonymizer using Microsoft Presidio."""
+
     def _anonymize(
         self,
         text: str,
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
+        conflict_resolution: Optional[ConflictResolutionStrategy] = None,
     ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
@@ -165,8 +214,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         """
         if language is None:
             language = self.supported_languages[0]
-
-        if language not in self.supported_languages:
+        elif language not in self.supported_languages:
             raise ValueError(
                 f"Language '{language}' is not supported. "
                 f"Supported languages are: {self.supported_languages}. "
@@ -198,7 +246,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
 
         filtered_analyzer_results = (
             self._anonymizer._remove_conflicts_and_get_text_manipulation_data(
-                analyzer_results
+                analyzer_results, conflict_resolution
             )
         )
 
@@ -217,14 +265,18 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
 
 
 class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerBase):
+    """Reversible Anonymizer using Microsoft Presidio."""
+
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,
         operators: Optional[Dict[str, OperatorConfig]] = None,
-        languages_config: Dict = DEFAULT_LANGUAGES_CONFIG,
+        languages_config: Optional[Dict] = None,
         add_default_faker_operators: bool = True,
         faker_seed: Optional[int] = None,
     ):
+        if languages_config is None:
+            languages_config = DEFAULT_LANGUAGES_CONFIG
         super().__init__(
             analyzed_fields,
             operators,
@@ -253,6 +305,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         text: str,
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
+        conflict_resolution: Optional[ConflictResolutionStrategy] = None,
     ) -> str:
         """Anonymize text.
         Each PII entity is replaced with a fake value.
@@ -309,7 +362,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
 
         filtered_analyzer_results = (
             self._anonymizer._remove_conflicts_and_get_text_manipulation_data(
-                analyzer_results
+                analyzer_results, conflict_resolution
             )
         )
 
@@ -384,7 +437,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         if save_path.suffix == ".json":
             with open(save_path, "w") as f:
                 json.dump(self.deanonymizer_mapping, f, indent=2)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(save_path, "w") as f:
                 yaml.dump(self.deanonymizer_mapping, f, default_flow_style=False)
 
@@ -408,7 +461,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         if load_path.suffix == ".json":
             with open(load_path, "r") as f:
                 loaded_mapping = json.load(f)
-        elif load_path.suffix == ".yaml":
+        elif load_path.suffix.endswith((".yaml", ".yml")):
             with open(load_path, "r") as f:
                 loaded_mapping = yaml.load(f, Loader=yaml.FullLoader)
 

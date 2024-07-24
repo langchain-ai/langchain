@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "python-lint"
+version = "0.0.1"
+description = "Python code-writing agent whose work is checked by black, ruff, and mypy."
+authors = ["Joshua Sundance Bailey"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+ruff = ">=0.1.8"
+black = "^24.2.0"
+mypy = ">=1.7.1"
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = ">=1.3.9"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "python_lint"
+export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "code-generation"
+author = "Joshua Sundance Bailey"
+integrations = ["OpenAI"]
+tags = ["python", "agent"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,5 +1,6 @@
+from langchain_core.agents import AgentAction, AgentFinish
+
 from langchain.agents.output_parsers.self_ask import SelfAskOutputParser
-from langchain.schema.agent import AgentAction, AgentFinish
 
 
 def test_follow_up() -> None:

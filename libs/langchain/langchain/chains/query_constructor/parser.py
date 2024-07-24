@@ -1,7 +1,9 @@
 import datetime
-from typing import Any, Optional, Sequence, Union
+import warnings
+from typing import Any, Literal, Optional, Sequence, Union
 
-from langchain.utils import check_package_version
+from langchain_core.utils import check_package_version
+from typing_extensions import TypedDict
 
 try:
     check_package_version("lark", gte_version="1.1.5")
@@ -15,7 +17,7 @@ except ImportError:
     Transformer = object  # type: ignore
     Lark = object  # type: ignore
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     FilterDirective,
@@ -40,7 +42,7 @@ GRAMMAR = r"""
         | ("true" | "True" | "TRUE") -> true
 
     args: expr ("," expr)*
-    DATE.2: /["'](\d{4}-[01]\d-[0-3]\d)["']/
+    DATE.2: /["']?(\d{4}-[01]\d-[0-3]\d)["']?/
     TIMESTAMP.3: /["'](\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?Z)["']/
     string: /'[^']*'/ | ESCAPED_STRING
     list: "[" [args] "]"
@@ -54,9 +56,16 @@ GRAMMAR = r"""
 """
 
 
+class ISO8601Date(TypedDict):
+    """A date in ISO 8601 format (YYYY-MM-DD)."""
+
+    date: str
+    type: Literal["date"]
+
+
 @v_args(inline=True)
 class QueryTransformer(Transformer):
-    """Transforms a query string into an intermediate representation."""
+    """Transform a query string into an intermediate representation."""
 
     def __init__(
         self,
@@ -131,9 +140,16 @@ class QueryTransformer(Transformer):
     def float(self, item: Any) -> float:
         return float(item)
 
-    def date(self, item: Any) -> datetime.date:
-        item = item.replace("'", '"')
-        return datetime.datetime.strptime(item, '"%Y-%m-%d"').date()
+    def date(self, item: Any) -> ISO8601Date:
+        item = str(item).strip("\"'")
+        try:
+            datetime.datetime.strptime(item, "%Y-%m-%d")
+        except ValueError:
+            warnings.warn(
+                "Dates are expected to be provided in ISO 8601 date format "
+                "(YYYY-MM-DD)."
+            )
+        return {"date": item, "type": "date"}
 
     def timestamp(self, item: Any) -> datetime.datetime:
         item = item.replace("'", '"')
@@ -149,8 +165,7 @@ def get_parser(
     allowed_operators: Optional[Sequence[Operator]] = None,
     allowed_attributes: Optional[Sequence[str]] = None,
 ) -> Lark:
-    """
-    Returns a parser for the query language.
+    """Return a parser for the query language.
 
     Args:
         allowed_comparators: Optional[Sequence[Comparator]]

@@ -1,64 +1,28 @@
-import datetime
-import json
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain._api import create_importer
 
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import ChatGPTLoader
+    from langchain_community.document_loaders.chatgpt import concatenate_rows
 
-def concatenate_rows(message: dict, title: str) -> str:
-    """
-    Combine message information in a readable format ready to be used.
-    Args:
-        message: Message to be concatenated
-        title: Title of the conversation
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "concatenate_rows": "langchain_community.document_loaders.chatgpt",
+    "ChatGPTLoader": "langchain_community.document_loaders",
+}
 
-    Returns:
-        Concatenated message
-    """
-    if not message:
-        return ""
-
-    sender = message["author"]["role"] if message["author"] else "unknown"
-    text = message["content"]["parts"][0]
-    date = datetime.datetime.fromtimestamp(message["create_time"]).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
-    return f"{title} - {sender} on {date}: {text}\n\n"
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class ChatGPTLoader(BaseLoader):
-    """Load conversations from exported `ChatGPT` data."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, log_file: str, num_logs: int = -1):
-        """Initialize a class object.
 
-        Args:
-            log_file: Path to the log file
-            num_logs: Number of logs to load. If 0, load all logs.
-        """
-        self.log_file = log_file
-        self.num_logs = num_logs
-
-    def load(self) -> List[Document]:
-        with open(self.log_file, encoding="utf8") as f:
-            data = json.load(f)[: self.num_logs] if self.num_logs else json.load(f)
-
-        documents = []
-        for d in data:
-            title = d["title"]
-            messages = d["mapping"]
-            text = "".join(
-                [
-                    concatenate_rows(messages[key]["message"], title)
-                    for idx, key in enumerate(messages)
-                    if not (
-                        idx == 0
-                        and messages[key]["message"]["author"]["role"] == "system"
-                    )
-                ]
-            )
-            metadata = {"source": str(self.log_file)}
-            documents.append(Document(page_content=text, metadata=metadata))
-
-        return documents
+__all__ = [
+    "concatenate_rows",
+    "ChatGPTLoader",
+]

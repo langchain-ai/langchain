@@ -1,9 +1,10 @@
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain.vectorstores import Chroma
+from langchain_chroma import Chroma
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel
 
 from hyde.prompts import hyde_prompt
 
@@ -11,12 +12,12 @@ from hyde.prompts import hyde_prompt
 
 """ 
 # Load
-from langchain.document_loaders import WebBaseLoader
+from langchain_community.document_loaders import WebBaseLoader
 loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
 data = loader.load()
 
 # Split
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
 
@@ -47,21 +48,28 @@ prompt = ChatPromptTemplate.from_template(template)
 # LLM
 model = ChatOpenAI()
 
+# Query transformation chain
+# This transforms the query into the hypothetical document
+hyde_chain = hyde_prompt | model | StrOutputParser()
+
 # RAG chain
 chain = (
     RunnableParallel(
         {
-            # Configure the input, pass it the prompt, pass that to the model,
-            # and then the result to the retriever
-            "context": {"input": RunnablePassthrough()}
-            | hyde_prompt
-            | model
-            | StrOutputParser()
-            | retriever,
-            "question": RunnablePassthrough(),
+            # Generate a hypothetical document and then pass it to the retriever
+            "context": hyde_chain | retriever,
+            "question": lambda x: x["question"],
         }
     )
     | prompt
     | model
     | StrOutputParser()
 )
+
+
+# Add input types for playground
+class ChainInput(BaseModel):
+    question: str
+
+
+chain = chain.with_types(input_type=ChainInput)

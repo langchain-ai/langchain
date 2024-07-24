@@ -1,27 +1,23 @@
-from typing import Iterator, List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import MergedDataLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"MergedDataLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class MergedDataLoader(BaseLoader):
-    """Merge documents from a list of loaders"""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, loaders: List):
-        """Initialize with a list of loaders"""
-        self.loaders = loaders
 
-    def lazy_load(self) -> Iterator[Document]:
-        """Lazy load docs from each individual loader."""
-        for loader in self.loaders:
-            # Check if lazy_load is implemented
-            try:
-                data = loader.lazy_load()
-            except NotImplementedError:
-                data = loader.load()
-            for document in data:
-                yield document
-
-    def load(self) -> List[Document]:
-        """Load docs."""
-        return list(self.lazy_load())
+__all__ = [
+    "MergedDataLoader",
+]

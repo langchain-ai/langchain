@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "pirate-speak-configurable"
+version = "0.0.1"
+description = "Use Configurable Alternatives to allow clients to choose their Runnables"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+anthropic = "^0.6.0"
+cohere = "^4.34"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "pirate_speak_configurable"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["Cohere", "Anthropic", "OpenAI"]
+tags = ["configurable"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

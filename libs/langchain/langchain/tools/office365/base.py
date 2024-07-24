@@ -1,18 +1,23 @@
-"""Base class for Office 365 tools."""
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING
-
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.tools.office365.utils import authenticate
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from O365 import Account
+    from langchain_community.tools.office365.base import O365BaseTool
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"O365BaseTool": "langchain_community.tools.office365.base"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class O365BaseTool(BaseTool):
-    """Base class for the Office 365 tools."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    account: Account = Field(default_factory=authenticate)
-    """The account object for the Office 365 account."""
+
+__all__ = [
+    "O365BaseTool",
+]

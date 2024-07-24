@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 def _resolve_schema_references(schema: Any, definitions: Dict[str, Any]) -> Any:
     """
-    Resolves the $ref keys in a JSON schema object using the provided definitions.
+    Resolve the $ref keys in a JSON schema object using the provided definitions.
     """
     if isinstance(schema, list):
         for i, item in enumerate(schema):
@@ -29,7 +29,7 @@ def _convert_schema(schema: dict) -> dict:
 
 
 def get_llm_kwargs(function: dict) -> dict:
-    """Returns the kwargs for the LLMChain constructor.
+    """Return the kwargs for the LLMChain constructor.
 
     Args:
         function: The function to use.

@@ -1,72 +1,27 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-import asyncio
-import threading
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
-
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
-from langchain.tools.ainetwork.utils import authenticate
-from langchain.tools.base import BaseTool
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from ain.ain import Ain
+    from langchain_community.tools.ainetwork.base import AINBaseTool, OperationType
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "OperationType": "langchain_community.tools.ainetwork.base",
+    "AINBaseTool": "langchain_community.tools.ainetwork.base",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class OperationType(str, Enum):
-    """Type of operation as enumerator."""
-
-    SET = "SET"
-    GET = "GET"
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-class AINBaseTool(BaseTool):
-    """Base class for the AINetwork tools."""
-
-    interface: Ain = Field(default_factory=authenticate)
-    """The interface object for the AINetwork Blockchain."""
-
-    def _run(
-        self,
-        *args: Any,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        if loop.is_running():
-            result_container = []
-
-            def thread_target() -> None:
-                nonlocal result_container
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                try:
-                    result_container.append(
-                        new_loop.run_until_complete(self._arun(*args, **kwargs))
-                    )
-                except Exception as e:
-                    result_container.append(e)
-                finally:
-                    new_loop.close()
-
-            thread = threading.Thread(target=thread_target)
-            thread.start()
-            thread.join()
-            result = result_container[0]
-            if isinstance(result, Exception):
-                raise result
-            return result
-
-        else:
-            result = loop.run_until_complete(self._arun(*args, **kwargs))
-            loop.close()
-            return result
+__all__ = [
+    "OperationType",
+    "AINBaseTool",
+]

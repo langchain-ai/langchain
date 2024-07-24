@@ -1,53 +1,25 @@
-"""Loader that uses bs4 to load HTML files, enriching metadata with page title."""
+from typing import TYPE_CHECKING, Any
 
-import logging
-from typing import Any, Dict, Iterator, Union
+from langchain._api import create_importer
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseBlobParser
-from langchain.document_loaders.blob_loaders import Blob
+if TYPE_CHECKING:
+    from langchain_community.document_loaders.parsers.html.bs4 import BS4HTMLParser
 
-logger = logging.getLogger(__name__)
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "BS4HTMLParser": "langchain_community.document_loaders.parsers.html.bs4"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class BS4HTMLParser(BaseBlobParser):
-    """Pparse HTML files using `Beautiful Soup`."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(
-        self,
-        *,
-        features: str = "lxml",
-        get_text_separator: str = "",
-        **kwargs: Any,
-    ) -> None:
-        """Initialize a bs4 based HTML parser."""
-        try:
-            import bs4  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "beautifulsoup4 package not found, please install it with "
-                "`pip install beautifulsoup4`"
-            )
 
-        self.bs_kwargs = {"features": features, **kwargs}
-        self.get_text_separator = get_text_separator
-
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
-        """Load HTML document into document objects."""
-        from bs4 import BeautifulSoup
-
-        with blob.as_bytes_io() as f:
-            soup = BeautifulSoup(f, **self.bs_kwargs)
-
-        text = soup.get_text(self.get_text_separator)
-
-        if soup.title:
-            title = str(soup.title.string)
-        else:
-            title = ""
-
-        metadata: Dict[str, Union[str, None]] = {
-            "source": blob.source,
-            "title": title,
-        }
-        yield Document(page_content=text, metadata=metadata)
+__all__ = [
+    "BS4HTMLParser",
+]

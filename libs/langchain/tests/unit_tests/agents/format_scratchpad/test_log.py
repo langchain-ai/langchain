@@ -1,5 +1,6 @@
+from langchain_core.agents import AgentAction
+
 from langchain.agents.format_scratchpad.log import format_log_to_str
-from langchain.schema.agent import AgentAction
 
 
 def test_single_agent_action_observation() -> None:

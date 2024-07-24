@@ -3,10 +3,10 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional
 
-from langchain.schema import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser
 
 
-class RegexParser(BaseOutputParser):
+class RegexParser(BaseOutputParser[Dict[str, str]]):
     """Parse the output of an LLM call using a regex."""
 
     @classmethod

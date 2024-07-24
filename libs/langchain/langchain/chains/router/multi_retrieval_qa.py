@@ -1,7 +1,12 @@
 """Use a single chain to route an input to one of multiple retrieval qa chains."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
+
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.retrievers import BaseRetriever
 
 from langchain.chains import ConversationChain
 from langchain.chains.base import Chain
@@ -12,10 +17,6 @@ from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParse
 from langchain.chains.router.multi_retrieval_prompt import (
     MULTI_RETRIEVAL_ROUTER_TEMPLATE,
 )
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.schema import BaseRetriever
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class MultiRetrievalQAChain(MultiRouteChain):
@@ -41,6 +42,8 @@ class MultiRetrievalQAChain(MultiRouteChain):
         default_retriever: Optional[BaseRetriever] = None,
         default_prompt: Optional[PromptTemplate] = None,
         default_chain: Optional[Chain] = None,
+        *,
+        default_chain_llm: Optional[BaseLanguageModel] = None,
         **kwargs: Any,
     ) -> MultiRetrievalQAChain:
         if default_prompt and not default_retriever:
@@ -77,8 +80,20 @@ class MultiRetrievalQAChain(MultiRouteChain):
             prompt = PromptTemplate(
                 template=prompt_template, input_variables=["history", "query"]
             )
+            if default_chain_llm is None:
+                raise NotImplementedError(
+                    "conversation_llm must be provided if default_chain is not "
+                    "specified. This API has been changed to avoid instantiating "
+                    "default LLMs on behalf of users."
+                    "You can provide a conversation LLM like so:\n"
+                    "from langchain_openai import ChatOpenAI\n"
+                    "llm = ChatOpenAI()"
+                )
             _default_chain = ConversationChain(
-                llm=ChatOpenAI(), prompt=prompt, input_key="query", output_key="result"
+                llm=default_chain_llm,
+                prompt=prompt,
+                input_key="query",
+                output_key="result",
             )
         return cls(
             router_chain=router_chain,

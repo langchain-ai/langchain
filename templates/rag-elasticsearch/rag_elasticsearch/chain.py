@@ -1,12 +1,14 @@
 from operator import itemgetter
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.schema import format_document
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableMap, RunnablePassthrough
-from langchain.vectorstores.elasticsearch import ElasticsearchStore
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_core.messages import BaseMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import format_document
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_elasticsearch import ElasticsearchStore
 
 from .connection import es_connection_details
 from .prompts import CONDENSE_QUESTION_PROMPT, DOCUMENT_PROMPT, LLM_CONTEXT_PROMPT
@@ -41,7 +43,14 @@ def _format_chat_history(chat_history: List[Tuple]) -> str:
     return buffer
 
 
-_inputs = RunnableMap(
+class ChainInput(BaseModel):
+    chat_history: Optional[List[BaseMessage]] = Field(
+        description="Previous chat messages."
+    )
+    question: str = Field(..., description="The question to answer.")
+
+
+_inputs = RunnableParallel(
     standalone_question=RunnablePassthrough.assign(
         chat_history=lambda x: _format_chat_history(x["chat_history"])
     )
@@ -56,3 +65,5 @@ _context = {
 }
 
 chain = _inputs | _context | LLM_CONTEXT_PROMPT | llm | StrOutputParser()
+
+chain = chain.with_types(input_type=ChainInput)

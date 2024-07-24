@@ -1,43 +1,25 @@
-import os
-import tempfile
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.unstructured import UnstructuredFileLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import AzureBlobStorageFileLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "AzureBlobStorageFileLoader": "langchain_community.document_loaders"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AzureBlobStorageFileLoader(BaseLoader):
-    """Load from `Azure Blob Storage` files."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, conn_str: str, container: str, blob_name: str):
-        """Initialize with connection string, container and blob name."""
-        self.conn_str = conn_str
-        """Connection string for Azure Blob Storage."""
-        self.container = container
-        """Container name."""
-        self.blob = blob_name
-        """Blob name."""
 
-    def load(self) -> List[Document]:
-        """Load documents."""
-        try:
-            from azure.storage.blob import BlobClient
-        except ImportError as exc:
-            raise ImportError(
-                "Could not import azure storage blob python package. "
-                "Please install it with `pip install azure-storage-blob`."
-            ) from exc
-
-        client = BlobClient.from_connection_string(
-            conn_str=self.conn_str, container_name=self.container, blob_name=self.blob
-        )
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}/{self.container}/{self.blob}"
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(f"{file_path}", "wb") as file:
-                blob_data = client.download_blob()
-                blob_data.readinto(file)
-            loader = UnstructuredFileLoader(file_path)
-            return loader.load()
+__all__ = [
+    "AzureBlobStorageFileLoader",
+]
