@@ -1505,20 +1505,31 @@ def _format_output(
     content: Any, artifact: Any, tool_call_id: Optional[str], name: str
 ) -> Union[ToolMessage, Any]:
     if tool_call_id:
-        # NOTE: This will fail to stringify lists which aren't actually content blocks
-        # but whose first element happens to be a string or dict. Tools should avoid
-        # returning such contents.
-        if not isinstance(content, str) and not (
-            isinstance(content, list)
-            and content
-            and isinstance(content[0], (str, dict))
-        ):
+        if not _is_message_content_type(content):
             content = _stringify(content)
         return ToolMessage(
             content, artifact=artifact, tool_call_id=tool_call_id, name=name
         )
     else:
         return content
+
+
+def _is_message_content_type(obj: Any) -> bool:
+    if isinstance(obj, str):
+        return True
+    elif isinstance(obj, list) and all(_is_message_content_block(e) for e in obj):
+        return True
+    else:
+        return False
+
+
+def _is_message_content_block(obj: Any) -> bool:
+    if isinstance(obj, str):
+        return True
+    elif isinstance(obj, dict):
+        return obj.get("type", None) in ("text", "image_url", "image", "tool_use")
+    else:
+        return False
 
 
 def _stringify(content: Any) -> str:
