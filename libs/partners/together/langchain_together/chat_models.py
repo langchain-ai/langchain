@@ -19,7 +19,7 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 
 
 class ChatTogether(BaseChatOpenAI):
-    """ChatTogether chat model.
+    r"""ChatTogether chat model.
 
     Setup:
         Install ``langchain-together`` and set environment variable ``TOGETHER_API_KEY``.
@@ -29,7 +29,7 @@ class ChatTogether(BaseChatOpenAI):
             pip install -U langchain-together
             export TOGETHER_API_KEY="your-api-key"
 
-            
+
     Key init args — completion params:
         model: str
             Name of model to use.
@@ -50,7 +50,7 @@ class ChatTogether(BaseChatOpenAI):
             Max number of retries.
         api_key: Optional[str]
             Together API key. If not passed in will be read from env var OPENAI_API_KEY.
-            
+
     Instantiate:
         .. code-block:: python
 
@@ -88,8 +88,8 @@ class ChatTogether(BaseChatOpenAI):
                     'system_fingerprint': None,
                     'finish_reason': 'stop',
                     'logprobs': None
-                }, 
-                id='run-168dceca-3b8b-4283-94e3-4c739dbc1525-0', 
+                },
+                id='run-168dceca-3b8b-4283-94e3-4c739dbc1525-0',
                 usage_metadata={'input_tokens': 32, 'output_tokens': 9, 'total_tokens': 41})
 
     Stream:
@@ -110,7 +110,7 @@ class ChatTogether(BaseChatOpenAI):
             content='.' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
             content='' response_metadata={'finish_reason': 'stop', 'model_name': 'meta-llama/Llama-3-70b-chat-hf'} id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
 
-            
+
     Async:
         .. code-block:: python
 
@@ -125,17 +125,17 @@ class ChatTogether(BaseChatOpenAI):
         .. code-block:: python
 
             AIMessage(
-                content="J'adore la programmation.", 
+                content="J'adore la programmation.",
                 response_metadata={
-                    'token_usage': {'completion_tokens': 9, 'prompt_tokens': 32, 'total_tokens': 41}, 
-                    'model_name': 'meta-llama/Llama-3-70b-chat-hf', 
-                    'system_fingerprint': None, 
-                    'finish_reason': 'stop', 
+                    'token_usage': {'completion_tokens': 9, 'prompt_tokens': 32, 'total_tokens': 41},
+                    'model_name': 'meta-llama/Llama-3-70b-chat-hf',
+                    'system_fingerprint': None,
+                    'finish_reason': 'stop',
                     'logprobs': None
-                }, 
-                id='run-09371a11-7f72-4c53-8e7c-9de5c238b34c-0', 
+                },
+                id='run-09371a11-7f72-4c53-8e7c-9de5c238b34c-0',
                 usage_metadata={'input_tokens': 32, 'output_tokens': 9, 'total_tokens': 41})
-    
+
     Tool calling:
         .. code-block:: python
 
@@ -181,7 +181,96 @@ class ChatTogether(BaseChatOpenAI):
                     'type': 'tool_call'
                 }
             ]
-    """
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+
+            structured_llm = llm.with_structured_output(Joke)
+            structured_llm.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(
+                setup='Why was the cat sitting on the computer?',
+                punchline='To keep an eye on the mouse!',
+                rating=7
+            )
+
+    JSON mode:
+        .. code-block:: python
+
+            json_llm = llm.bind(response_format={"type": "json_object"})
+            ai_msg = json_llm.invoke(
+                "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
+            )
+            ai_msg.content
+
+        .. code-block:: python
+
+            ' {\\n"random_ints": [\\n13,\\n54,\\n78,\\n45,\\n67,\\n90,\\n11,\\n29,\\n84,\\n33\\n]\\n}'
+
+    Token usage:
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.usage_metadata
+
+        .. code-block:: python
+
+            {'input_tokens': 37, 'output_tokens': 6, 'total_tokens': 43}
+
+    Logprobs:
+        .. code-block:: python
+
+            logprobs_llm = llm.bind(logprobs=True)
+            messages=[("human","Say Hello World! Do not return anything else.")]
+            ai_msg = logprobs_llm.invoke(messages)
+            ai_msg.response_metadata["logprobs"]
+
+        .. code-block:: python
+
+            {
+                'content': None,
+                'token_ids': [22557, 3304, 28808, 2],
+                'tokens': [' Hello', ' World', '!', '</s>'],
+                'token_logprobs': [-4.7683716e-06, -5.9604645e-07, 0, -0.057373047]
+            }
+
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {
+                'token_usage': {
+                    'completion_tokens': 4,
+                    'prompt_tokens': 19,
+                    'total_tokens': 23
+                    },
+                'model_name': 'mistralai/Mixtral-8x7B-Instruct-v0.1',
+                'system_fingerprint': None,
+                'finish_reason': 'eos',
+                'logprobs': None
+            }
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
