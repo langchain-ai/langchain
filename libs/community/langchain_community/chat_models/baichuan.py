@@ -300,6 +300,24 @@ class ChatBaichuan(BaseChatModel):
                 },
                 id='run-952509ed-9154-4ff9-b187-e616d7ddfbba-0'
             )
+    Tool calling:
+
+        .. code-block:: python
+            class get_current_weather(BaseModel):
+                '''Get current weather.'''
+
+                location: str = Field('City or province, such as Shanghai')
+
+
+            llm_with_tools = ChatBaichuan(model='Baichuan3-Turbo').bind_tools([get_current_weather])
+            llm_with_tools.invoke('How is the weather today?')
+
+        .. code-block:: python
+
+            [{'name': 'get_current_weather',
+            'args': {'location': 'New York'},
+            'id': '3951017OF8doB0A',
+            'type': 'tool_call'}]
 
     Response metadata
         .. code-block:: python
