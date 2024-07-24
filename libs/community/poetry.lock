@@ -2117,7 +2117,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.2.9"
+version = "0.2.10"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -2127,7 +2127,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-langchain-core = "^0.2.20"
+langchain-core = "^0.2.22"
 langchain-text-splitters = "^0.2.0"
 langsmith = "^0.1.17"
 numpy = [
@@ -2146,7 +2146,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.2.22"
+version = "0.2.23"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -5759,4 +5759,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7755e46a5239dc88c52f49ac337d573090728fc8a3b1f3465fcd4a9f18c5aaec"
+content-hash = "14d60e1f61fa9c0ba69cb4e227e4af3de395a8dd4a53b121fe488e7b9f75ea66"
