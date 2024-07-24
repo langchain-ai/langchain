@@ -1,11 +1,20 @@
 """Loader that uses unstructured to load files."""
+
 from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
-    IO, Any, Callable, Iterator, List, Optional, Sequence, TypeAlias, Union
+    IO,
+    Any,
+    Callable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    TypeAlias,
+    Union,
 )
 
 from langchain_core._api.deprecation import deprecated
@@ -225,7 +234,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
             if isinstance(self.file_path, Path):
                 self.file_path = str(self.file_path)
             return partition(filename=self.file_path, **self.unstructured_kwargs)
-        
+
     def _get_metadata(self) -> dict[str, Any]:
         return {"source": self.file_path}
 
