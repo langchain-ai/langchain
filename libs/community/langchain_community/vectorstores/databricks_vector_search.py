@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import warn_deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
@@ -346,7 +347,7 @@ class DatabricksVectorSearch(VectorStore):
             columns=self.columns,
             query_text=query_text,
             query_vector=query_vector,
-            filters=filter or self._alias_filters(kwargs),
+            filters=filter or _alias_filters(kwargs),
             num_results=k,
             query_type=query_type,
         )
@@ -407,7 +408,7 @@ class DatabricksVectorSearch(VectorStore):
             k,
             fetch_k,
             lambda_mult=lambda_mult,
-            filter=filter or self._alias_filters(kwargs),
+            filter=filter or _alias_filters(kwargs),
             query_type=query_type,
         )
         return docs
@@ -452,7 +453,7 @@ class DatabricksVectorSearch(VectorStore):
             columns=list(set(self.columns + [embedding_column])),
             query_text=None,
             query_vector=embedding,
-            filters=filter or self._alias_filters(kwargs),
+            filters=filter or _alias_filters(kwargs),
             num_results=fetch_k,
             query_type=query_type,
         )
@@ -536,24 +537,11 @@ class DatabricksVectorSearch(VectorStore):
         search_resp = self.index.similarity_search(
             columns=self.columns,
             query_vector=embedding,
-            filters=filter or self._alias_filters(kwargs),
+            filters=filter or _alias_filters(kwargs),
             num_results=k,
             query_type=query_type,
         )
         return self._parse_search_response(search_resp)
-
-    def _alias_filters(self, kwargs: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """
-        The `filters` argument was used in the previous versions. It is now
-        replaced with `filter` for consistency with other vector stores, but
-        we still support `filters` for backward compatibility.
-        """
-        if "filters" in kwargs:
-            logger.warning(
-                "DatabricksVectorSearch received a key `filters` in search_kwargs, "
-                "which is deprecated. Please use `filter` instead."
-            )
-        return kwargs.pop("filters", None)
 
     def _parse_search_response(
         self, search_resp: Dict, ignore_cols: Optional[List[str]] = None
@@ -658,3 +646,20 @@ class DatabricksVectorSearch(VectorStore):
         """Raise ValueError if the required arg with name `arg_name` is None."""
         if not arg:
             raise ValueError(f"`{arg_name}` is required for this index.")
+
+
+def _alias_filters(kwargs: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    The `filters` argument was used in the previous versions. It is now
+    replaced with `filter` for consistency with other vector stores, but
+    we still support `filters` for backward compatibility.
+    """
+    if "filters" in kwargs:
+        warn_deprecated(
+            since="0.2.11",
+            removal="0.3",
+            message="DatabricksVectorSearch received a key `filters` in search_kwargs. "
+            "`filters` was deprecated since langchain-community 0.2.11 and will "
+            "be removed in 0.3. Please use `filter` instead.",
+        )
+    return kwargs.pop("filters", None)

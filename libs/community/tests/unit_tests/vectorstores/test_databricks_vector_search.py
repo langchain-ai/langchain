@@ -519,6 +519,27 @@ def test_similarity_search(index_details: dict, query_type: Optional[str]) -> No
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
+def test_similarity_search_both_filter_and_filters_passed() -> None:
+    index = mock_index(DIRECT_ACCESS_INDEX)
+    index.similarity_search.return_value = EXAMPLE_SEARCH_RESPONSE
+    vectorsearch = default_databricks_vector_search(index)
+    query = "foo"
+    filter = {"some filter": True}
+    filters = {"some other filter": False}
+
+    vectorsearch.similarity_search(query, filter=filter, filters=filters)
+    index.similarity_search.assert_called_once_with(
+        columns=[DEFAULT_PRIMARY_KEY, DEFAULT_TEXT_COLUMN],
+        query_vector=DEFAULT_EMBEDDING_MODEL.embed_query(query),
+        # `filter` should prevail over `filters`
+        filters=filter,
+        num_results=4,
+        query_text=None,
+        query_type=None,
+    )
+
+
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details, columns, expected_columns",
     [
