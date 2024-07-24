@@ -117,7 +117,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
         def _invoke(input: Input) -> Output:
             """Invoke the rate limiter. Internal function."""
             self.acquire(blocking=True)
-            return input
+            return cast(Output, input)
 
         return self._call_with_config(_invoke, input, config, **kwargs)
 
@@ -138,7 +138,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
         async def _ainvoke(input: Input) -> Output:
             """Invoke the rate limiter. Internal function."""
             await self.aacquire(blocking=True)
-            return input
+            return cast(Output, input)
 
         return self._acall_with_config(_ainvoke, input, config, **kwargs)
 
