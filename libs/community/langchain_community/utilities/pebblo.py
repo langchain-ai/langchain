@@ -66,7 +66,7 @@ logger = logging.getLogger(__name__)
 class IndexedDocument(Document):
     """Pebblo Indexed Document."""
 
-    id: str
+    pb_id: str
     """Unique ID of the document."""
 
 
