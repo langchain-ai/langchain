@@ -387,7 +387,7 @@ class ChatOllama(BaseChatModel):
                         elif (
                             isinstance(temp_image_url, dict) and "url" in temp_image_url
                         ):
-                            image_url = temp_image_url
+                            image_url = temp_image_url['url']
                         else:
                             raise ValueError(
                                 "Only string image_url or dict with string 'url' "
