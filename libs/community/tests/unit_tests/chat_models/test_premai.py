@@ -3,12 +3,16 @@
 from typing import cast
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models import ChatPremAI
-from langchain_community.chat_models.premai import _messages_to_prompt_dict
+from langchain_community.chat_models.premai import (
+    SINGLE_TOOL_PROMPT_TEMPLATE,
+    TOOL_PROMPT_HEADER,
+    _messages_to_prompt_dict,
+)
 
 
 @pytest.mark.requires("premai")
@@ -36,13 +40,20 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
             AIMessage(content="AI message #1"),
             HumanMessage(content="User message #2"),
             AIMessage(content="AI message #2"),
+            ToolMessage(content="Tool Message #1", tool_call_id="test_tool"),
+            AIMessage(content="AI message #3"),
         ]
+    )
+    expected_tool_message = SINGLE_TOOL_PROMPT_TEMPLATE.format(
+        tool_id="test_tool", tool_response="Tool Message #1"
     )
     expected = [
         {"role": "user", "content": "User message #1"},
         {"role": "assistant", "content": "AI message #1"},
         {"role": "user", "content": "User message #2"},
         {"role": "assistant", "content": "AI message #2"},
+        {"role": "assistant", "content": "AI message #3"},
+        {"role": "user", "content": TOOL_PROMPT_HEADER + expected_tool_message},
     ]
 
     assert system_message == "System Prompt"
