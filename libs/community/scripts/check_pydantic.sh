@@ -66,5 +66,3 @@ if [ -n "$result" ]; then
   echo "@root_validator(pre=True) or @root_validator(pre=False, skip_on_failure=True)"
   exit 1
 fi
-
-
