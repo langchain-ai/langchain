@@ -712,12 +712,14 @@ class LLMGraphTransformer:
         nodes_set = set()
         relationships = []
         nodes = []
+
         for rel in parsed_json:
-            if isinstance(rel, list):
+            if isinstance(rel, str):  # bad LLM output
+                continue
+            elif isinstance(rel, list):
                 if len(rel) == 0:
                     continue
                 nodes_, relationships_ = self._parse_triples(rel)
-                nodes_set.union(nodes_set_)
                 relationships.extend(relationships_)
                 nodes.extend(nodes_)
             else:
