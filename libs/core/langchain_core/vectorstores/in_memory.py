@@ -41,7 +41,7 @@ class InMemoryVectorStore(VectorStore):
         Args:
             embedding: embedding function to use.
         """
-        
+
         self.store: Dict[str, Document] = {}
         self.embedding = embedding
 
@@ -65,7 +65,8 @@ class InMemoryVectorStore(VectorStore):
             ids.append(doc_id)
             metadata = item.metadata
             metadata["vector"] = vector
-            self.store[doc_id] = Document(id=doc_id, page_content=item.page_content, metadata=metadata)
+            self.store[doc_id] = (
+                Document(id=doc_id, page_content=item.page_content, metadata=metadata))
         return {
             "succeeded": ids,
             "failed": [],

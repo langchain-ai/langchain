@@ -1,13 +1,13 @@
 from pathlib import Path
 
 import pytest
-from langchain_core.documents import Document
-from langchain_core.embeddings.fake import DeterministicFakeEmbedding
-from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_standard_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
+from langchain_core.documents import Document
+from langchain_core.embeddings.fake import DeterministicFakeEmbedding
+from langchain_core.vectorstores import InMemoryVectorStore
 from tests.unit_tests.stubs import AnyStr
 
 
