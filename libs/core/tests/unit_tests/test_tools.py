@@ -1526,3 +1526,40 @@ def test_args_schema_explicitly_typed() -> None:
         "title": "some_tool",
         "type": "object",
     }
+
+
+@pytest.mark.parametrize("pydantic_model", TEST_MODELS)
+def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -> None:
+    """This should test that one can type the args schema as a pydantic model."""
+    from langchain_core.tools import StructuredTool
+
+    def foo(a: int, b: str) -> str:
+        """Hahaha"""
+        return "foo"
+
+    foo_tool = StructuredTool.from_function(
+        func=foo,
+        args_schema=pydantic_model,
+    )
+
+    assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
+
+    assert foo_tool.args_schema.schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": pydantic_model.__name__,
+        "type": "object",
+    }
+
+    assert foo_tool.get_input_schema().schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": pydantic_model.__name__,
+        "type": "object",
+    }

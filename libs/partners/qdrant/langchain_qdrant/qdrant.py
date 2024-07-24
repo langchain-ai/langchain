@@ -950,21 +950,9 @@ class QdrantVectorStore(VectorStore):
         collection_info = client.get_collection(collection_name=collection_name)
         vector_config = collection_info.config.params.vectors
 
-        if isinstance(vector_config, models.VectorParams) and vector_name != "":
-            # For single/unnamed vector,
-            # qdrant-client returns a single VectorParams object
-
-            raise QdrantVectorStoreError(
-                f"Existing Qdrant collection {collection_name} is built "
-                "with unnamed dense vector. "
-                f"If you want to reuse it, set `vector_name` to ''(empty string)."
-                f"If you want to recreate the collection, "
-                "set `force_recreate` to `True`."
-            )
-
-        else:
+        if isinstance(vector_config, Dict):
             # vector_config is a Dict[str, VectorParams]
-            if isinstance(vector_config, dict) and vector_name not in vector_config:
+            if vector_name not in vector_config:
                 raise QdrantVectorStoreError(
                     f"Existing Qdrant collection {collection_name} does not "
                     f"contain dense vector named {vector_name}. "
@@ -976,6 +964,20 @@ class QdrantVectorStore(VectorStore):
 
             # Get the VectorParams object for the specified vector_name
             vector_config = vector_config[vector_name]  # type: ignore
+
+        else:
+            # vector_config is an instance of VectorParams
+            # Case of a collection with single/unnamed vector.
+            if vector_name != "":
+                raise QdrantVectorStoreError(
+                    f"Existing Qdrant collection {collection_name} is built "
+                    "with unnamed dense vector. "
+                    f"If you want to reuse it, set `vector_name` to ''(empty string)."
+                    f"If you want to recreate the collection, "
+                    "set `force_recreate` to `True`."
+                )
+
+        assert vector_config is not None, "VectorParams is None"
 
         if isinstance(dense_embeddings, Embeddings):
             vector_size = len(dense_embeddings.embed_documents(["dummy_text"])[0])

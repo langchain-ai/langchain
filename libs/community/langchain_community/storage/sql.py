@@ -17,46 +17,72 @@ from typing import (
 
 from langchain_core.stores import BaseStore
 from sqlalchemy import (
-    Engine,
     LargeBinary,
+    Text,
     and_,
     create_engine,
     delete,
     select,
 )
+from sqlalchemy.engine.base import Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
     create_async_engine,
 )
 from sqlalchemy.orm import (
     Mapped,
     Session,
     declarative_base,
-    mapped_column,
     sessionmaker,
 )
 
+try:
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+except ImportError:
+    # dummy for sqlalchemy < 2
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
+
 Base = declarative_base()
+
+try:
+    from sqlalchemy.orm import mapped_column
+
+    class LangchainKeyValueStores(Base):  # type: ignore[valid-type,misc]
+        """Table used to save values."""
+
+        # ATTENTION:
+        # Prior to modifying this table, please determine whether
+        # we should create migrations for this table to make sure
+        # users do not experience data loss.
+        __tablename__ = "langchain_key_value_stores"
+
+        namespace: Mapped[str] = mapped_column(
+            primary_key=True, index=True, nullable=False
+        )
+        key: Mapped[str] = mapped_column(primary_key=True, index=True, nullable=False)
+        value = mapped_column(LargeBinary, index=False, nullable=False)
+
+except ImportError:
+    # dummy for sqlalchemy < 2
+    from sqlalchemy import Column
+
+    class LangchainKeyValueStores(Base):  # type: ignore[valid-type,misc,no-redef]
+        """Table used to save values."""
+
+        # ATTENTION:
+        # Prior to modifying this table, please determine whether
+        # we should create migrations for this table to make sure
+        # users do not experience data loss.
+        __tablename__ = "langchain_key_value_stores"
+
+        namespace = Column(Text(), primary_key=True, index=True, nullable=False)
+        key = Column(Text(), primary_key=True, index=True, nullable=False)
+        value = Column(LargeBinary, index=False, nullable=False)
 
 
 def items_equal(x: Any, y: Any) -> bool:
     return x == y
-
-
-class LangchainKeyValueStores(Base):  # type: ignore[valid-type,misc]
-    """Table used to save values."""
-
-    # ATTENTION:
-    # Prior to modifying this table, please determine whether
-    # we should create migrations for this table to make sure
-    # users do not experience data loss.
-    __tablename__ = "langchain_key_value_stores"
-
-    namespace: Mapped[str] = mapped_column(primary_key=True, index=True, nullable=False)
-    key: Mapped[str] = mapped_column(primary_key=True, index=True, nullable=False)
-    value = mapped_column(LargeBinary, index=False, nullable=False)
 
 
 # This is a fix of original SQLStore.
@@ -135,7 +161,10 @@ class SQLStore(BaseStore[str, bytes]):
         self.namespace = namespace
 
     def create_schema(self) -> None:
-        Base.metadata.create_all(self.engine)
+        Base.metadata.create_all(self.engine)  # problem in sqlalchemy v1
+        # sqlalchemy.exc.CompileError: (in table 'langchain_key_value_stores',
+        # column 'namespace'): Can't generate DDL for NullType(); did you forget
+        # to specify a type on this Column?
 
     async def acreate_schema(self) -> None:
         assert isinstance(self.engine, AsyncEngine)
