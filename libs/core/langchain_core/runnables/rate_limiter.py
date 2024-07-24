@@ -30,28 +30,72 @@ from langchain_core.runnables.base import (
 class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
     """Base class for rate limiters.
 
-    Usage of the base limiter is through the sync_wait and async_wait methods depending
+    Usage of the base limiter is through the acquire and aacquire methods depending
     on whether running in a sync or async context.
 
-    The current implementation does not handle streaming inputs well and will
-    consume all inputs even if the rate limit has been reached. Better support
-    for streaming inputs will be added in the future.
+    Implementations are free to add a timeout parameter to their initialize method
+    to allow users to specify a timeout for acquiring the necessary tokens when
+    using a blocking call.
 
-    This should not be a problem if working with chat models since chat models
-    only operate on a fully materialized input.
+    Current limitations:
 
-    The rate limiter should always be prepended to a chat model.
+    - The rate limiter is not designed to work across different processes. It is
+      an in-memory rate limiter, but it is thread safe.
+    - The rate limiter only supports time-based rate limiting. It does not take
+      into account the size of the request or any other factors.
+    - The current implementation does not handle streaming inputs well and will
+      consume all inputs even if the rate limit has been reached. Better support
+      for streaming inputs will be added in the future.
+    - When the rate limiter is combined with another runnable via a RunnableSequence,
+      usage of .batch() or .abatch() will only respect the average rate limit.
+      There will be bursty behavior as .batch() and .abatch() wait for each step
+      to complete before starting the next step. One way to mitigate this is to
+      use batch_as_completed() or abatch_as_completed().
 
     .. versionadded:: 0.2.24
     """
 
     @abc.abstractmethod
-    def sync_wait(self) -> None:
-        """Blocking call to wait until the given number of tokens are available."""
+    def acquire(self, *, blocking: bool = True) -> bool:
+        """Attempt to acquire the necessary tokens for the rate limiter.
+
+        This method blocks until the required tokens are available if `blocking`
+        is set to True.
+
+        If `blocking` is set to False, the method will immediately return the result
+        of the attempt to acquire the tokens.
+
+        Args:
+            blocking: If True, the method will block until the tokens are available.
+                If False, the method will return immediately with the result of
+                the attempt. Defaults to True.
+
+        Returns:
+           True if the tokens were successfully acquired, False otherwise.
+
+        .. versionadded:: 0.2.24
+        """
 
     @abc.abstractmethod
-    async def async_wait(self) -> None:
-        """Blocking call to wait until the given number of tokens are available."""
+    async def aacquire(self, *, blocking: bool = True) -> bool:
+        """Attempt to acquire the necessary tokens for the rate limiter.
+
+        This method blocks until the required tokens are available if `blocking`
+        is set to True.
+
+        If `blocking` is set to False, the method will immediately return the result
+        of the attempt to acquire the tokens.
+
+        Args:
+            blocking: If True, the method will block until the tokens are available.
+                If False, the method will return immediately with the result of
+                the attempt. Defaults to True.
+
+        Returns:
+           True if the tokens were successfully acquired, False otherwise.
+
+        .. versionadded:: 0.2.24
+        """
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -72,7 +116,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
 
         def _invoke(input: Input) -> Output:
             """Invoke the rate limiter. Internal function."""
-            self.sync_wait()
+            self.acquire(blocking=True)
             return input
 
         return self._call_with_config(_invoke, input, config, **kwargs)
@@ -93,7 +137,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
 
         async def _ainvoke(input: Input) -> Output:
             """Invoke the rate limiter. Internal function."""
-            await self.async_wait()
+            await self.aacquire(blocking=True)
             return input
 
         return self._acall_with_config(_ainvoke, input, config, **kwargs)
@@ -119,6 +163,38 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
     These *tokens* have NOTHING to do with LLM tokens. They are just
     a way to keep track of how many requests can be made at a given time.
+
+    Current limitations:
+
+    - The rate limiter is not designed to work across different processes. It is
+      an in-memory rate limiter, but it is thread safe.
+    - The rate limiter only supports time-based rate limiting. It does not take
+      into account the size of the request or any other factors.
+    - The current implementation does not handle streaming inputs well and will
+      consume all inputs even if the rate limit has been reached. Better support
+      for streaming inputs will be added in the future.
+    - When the rate limiter is combined with another runnable via a RunnableSequence,
+      usage of .batch() or .abatch() will only respect the average rate limit.
+      There will be bursty behavior as .batch() and .abatch() wait for each step
+      to complete before starting the next step. One way to mitigate this is to
+      use batch_as_completed() or abatch_as_completed().
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import RunnableLambda, InMemoryRateLimiter
+
+            rate_limiter = InMemoryRateLimiter(
+                requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
+            )
+
+            def foo(x: int) -> int:
+                return x
+
+            foo_ = RunnableLambda(foo)
+            chain = rate_limiter | foo_
+            assert chain.invoke(1) == 1
 
     .. versionadded:: 0.2.24
     """
@@ -196,22 +272,54 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
             return False
 
-    def sync_wait(self) -> None:
-        """Blocking call to wait until the given number of tokens are available."""
-        while not self._consume():
-            time.sleep(self.check_every_n_seconds)
+    def acquire(self, *, blocking: bool = True) -> bool:
+        """Attempt to acquire a token from the rate limiter.
 
-    async def _aconsume(self) -> bool:
-        """Consume the given amount of tokens if possible. Async variant.
+        This method blocks until the required tokens are available if `blocking`
+        is set to True.
+
+        If `blocking` is set to False, the method will immediately return the result
+        of the attempt to acquire the tokens.
+
+        Args:
+            blocking: If True, the method will block until the tokens are available.
+                If False, the method will return immediately with the result of
+                the attempt. Defaults to True.
 
         Returns:
-            True means that the tokens were consumed, and the caller can proceed to
-            make the request. A False means that the tokens were not consumed, and
-            the caller should try again later.
-        """
-        return self._consume()
+           True if the tokens were successfully acquired, False otherwise.
 
-    async def async_wait(self) -> None:
-        """Blocking call to wait until the given number of tokens are available."""
-        while not await self._aconsume():
+        .. versionadded:: 0.2.24
+        """
+        if not blocking:
+            return self._consume()
+
+        while not self._consume():
+            time.sleep(self.check_every_n_seconds)
+        return True
+
+    async def aacquire(self, *, blocking: bool = True) -> bool:
+        """Attempt to acquire a token from the rate limiter. Async version.
+
+        This method blocks until the required tokens are available if `blocking`
+        is set to True.
+
+        If `blocking` is set to False, the method will immediately return the result
+        of the attempt to acquire the tokens.
+
+        Args:
+            blocking: If True, the method will block until the tokens are available.
+                If False, the method will return immediately with the result of
+                the attempt. Defaults to True.
+
+        Returns:
+           True if the tokens were successfully acquired, False otherwise.
+
+        .. versionadded:: 0.2.24
+        """
+        if not blocking:
+            return self._consume()
+
+        while not self._consume():
             await asyncio.sleep(self.check_every_n_seconds)
+        return True
