@@ -122,7 +122,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
 
         return self._call_with_config(_invoke, input, config, **kwargs)
 
-    def ainvoke(
+    async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         """Invoke the rate limiter. Async version.
@@ -141,7 +141,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
             await self.aacquire(blocking=True)
             return cast(Output, input)
 
-        return self._acall_with_config(_ainvoke, input, config, **kwargs)
+        return await self._acall_with_config(_ainvoke, input, config, **kwargs)
 
 
 @beta(message="Introduced in 0.2.24. API subject to change.")
