@@ -8,6 +8,7 @@ from langchain_core.embeddings import Embeddings
 from pymongo.collection import Collection
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
+
 from ..utils import ConsistentFakeEmbeddings, MockCollection
 
 INDEX_NAME = "langchain-test-index"

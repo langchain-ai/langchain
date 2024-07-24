@@ -12,7 +12,8 @@ from pymongo.collection import Collection
 
 from langchain_mongodb.cache import MongoDBAtlasSemanticCache, MongoDBCache
 from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
-from tests.utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM, MockCollection
+
+from ..utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM, MockCollection
 
 CONN_STRING = "MockString"
 COLLECTION = "default"
