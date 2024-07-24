@@ -36,6 +36,7 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
@@ -54,7 +55,7 @@ class _AllReturnType(TypedDict):
 
 
 def _is_pydantic_class(obj: Any) -> bool:
-    return isinstance(obj, type) and issubclass(obj, BaseModel)
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
 class AzureChatOpenAI(BaseChatOpenAI):
@@ -95,6 +96,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
             var OPENAI_ORG_ID.
+        model: Optional[str]
+            The name of the underlying OpenAI model. Used for tracing and token
+            counting. Does not affect completion. E.g. "gpt-4", "gpt-35-turbo", etc.
+        model_version: Optional[str]
+            The version of the underlying OpenAI model. Used for tracing and token
+            counting. Does not affect completion. E.g., "0125", "0125-preview", etc.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -111,6 +118,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 timeout=None,
                 max_retries=2,
                 # organization="...",
+                # model="gpt-35-turbo",
+                # model_version="0125",
                 # other params...
             )
 
@@ -512,6 +521,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
     validate_base_url: bool = True
     """If legacy arg openai_api_base is passed in, try to infer if it is a base_url or 
         azure_endpoint and update client params accordingly.
+    """
+
+    model_name: Optional[str] = Field(default=None, alias="model")  # type: ignore[assignment]
+    """Name of the deployed OpenAI model, e.g. "gpt-4o", "gpt-35-turbo", etc. 
+    
+    Distinct from the Azure deployment name, which is set by the Azure user.
+    Used for tracing and token counting. Does NOT affect completion.
     """
 
     @classmethod
@@ -923,12 +939,21 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "azure"
-        if self.deployment_name:
+        if self.model_name:
+            if self.model_version and self.model_version not in self.model_name:
+                params["ls_model_name"] = (
+                    self.model_name + "-" + self.model_version.lstrip("-")
+                )
+            else:
+                params["ls_model_name"] = self.model_name
+        elif self.deployment_name:
             params["ls_model_name"] = self.deployment_name
         return params
 
     def _create_chat_result(
-        self, response: Union[dict, openai.BaseModel]
+        self,
+        response: Union[dict, openai.BaseModel],
+        generation_info: Optional[Dict] = None,
     ) -> ChatResult:
         if not isinstance(response, dict):
             response = response.model_dump()
@@ -938,7 +963,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "Azure has not provided the response due to a content filter "
                     "being triggered"
                 )
-        chat_result = super()._create_chat_result(response)
+        chat_result = super()._create_chat_result(response, generation_info)
 
         if "model" in response:
             model = response["model"]

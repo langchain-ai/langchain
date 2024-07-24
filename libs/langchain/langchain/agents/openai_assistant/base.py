@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from json import JSONDecodeError
 from time import sleep
@@ -742,5 +743,5 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             )
             in_progress = run.status in ("in_progress", "queued")
             if in_progress:
-                sleep(self.check_every_ms / 1000)
+                await asyncio.sleep(self.check_every_ms / 1000)
         return run

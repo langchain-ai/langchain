@@ -1,23 +1,16 @@
 import json
-from typing import Generic, List, Type, TypeVar, Union
+from typing import Generic, List, Type
 
 import pydantic  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
-
-if PYDANTIC_MAJOR_VERSION < 2:
-    PydanticBaseModel = pydantic.BaseModel
-
-else:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
-
-    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
-
-TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
+from langchain_core.utils.pydantic import (
+    PYDANTIC_MAJOR_VERSION,
+    PydanticBaseModel,
+    TBaseModel,
+)
 
 
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
@@ -122,3 +115,10 @@ Here is the output schema:
 ```
 {schema}
 ```"""  # noqa: E501
+
+# Re-exporting types for backwards compatibility
+__all__ = [
+    "PydanticBaseModel",
+    "PydanticOutputParser",
+    "TBaseModel",
+]

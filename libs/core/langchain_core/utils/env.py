@@ -36,7 +36,7 @@ def get_from_dict_or_env(
         env_key: The environment variable to look up if the key is not
             in the dictionary.
         default: The default value to return if the key is not in the dictionary
-            or the environment.
+            or the environment. Defaults to None.
     """
     if isinstance(key, (list, tuple)):
         for k in key:
@@ -56,7 +56,22 @@ def get_from_dict_or_env(
 
 
 def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
-    """Get a value from a dictionary or an environment variable."""
+    """Get a value from a dictionary or an environment variable.
+
+    Args:
+        key: The key to look up in the dictionary.
+        env_key: The environment variable to look up if the key is not
+            in the dictionary.
+        default: The default value to return if the key is not in the dictionary
+            or the environment. Defaults to None.
+
+    Returns:
+        str: The value of the key.
+
+    Raises:
+        ValueError: If the key is not in the dictionary and no default value is
+            provided or if the environment variable is not set.
+    """
     if env_key in os.environ and os.environ[env_key]:
         return os.environ[env_key]
     elif default is not None:

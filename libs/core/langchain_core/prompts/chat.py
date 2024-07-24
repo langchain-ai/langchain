@@ -1060,7 +1060,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     def from_messages(
         cls,
         messages: Sequence[MessageLikeRepresentation],
-        template_format: Literal["f-string", "mustache"] = "f-string",
+        template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -1274,7 +1274,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 def _create_template_from_message_type(
     message_type: str,
     template: Union[str, list],
-    template_format: Literal["f-string", "mustache"] = "f-string",
+    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
 ) -> BaseMessagePromptTemplate:
     """Create a message prompt template from a message type and template string.
 
@@ -1341,7 +1341,7 @@ def _create_template_from_message_type(
 
 def _convert_to_message(
     message: MessageLikeRepresentation,
-    template_format: Literal["f-string", "mustache"] = "f-string",
+    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
 ) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
     """Instantiate a message from a variety of message formats.
 
