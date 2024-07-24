@@ -13,8 +13,12 @@ test tests:
 	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
 
 # integration tests are run without the --disable-socket flag to allow network calls
-integration_test integration_tests:
+integration_test:
 	poetry run pytest $(TEST_FILE)
+
+# skip tests marked as local in CI
+integration_tests:
+	poetry run pytest $(TEST_FILE) -m "not local"
 
 ######################
 # LINTING AND FORMATTING

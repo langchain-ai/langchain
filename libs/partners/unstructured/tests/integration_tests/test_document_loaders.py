@@ -16,6 +16,7 @@ UNSTRUCTURED_API_KEY = os.getenv("UNSTRUCTURED_API_KEY")
 # -- Local partition --
 
 
+@pytest.mark.local
 def test_loader_partitions_locally() -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
 
@@ -32,6 +33,7 @@ def test_loader_partitions_locally() -> None:
     assert any(doc.metadata.get("category") == "PageBreak" for doc in docs)
 
 
+@pytest.mark.local
 def test_loader_partition_ignores_invalid_arg() -> None:
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
 
@@ -49,6 +51,7 @@ def test_loader_partition_ignores_invalid_arg() -> None:
     )
 
 
+@pytest.mark.local
 def test_loader_partitions_locally_and_applies_post_processors(
     get_post_processor: Callable[[str], str],
 ) -> None:
