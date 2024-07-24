@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import (
     Any,
@@ -13,7 +14,6 @@ from typing import (
     Union,
     cast,
 )
-import json
 from urllib.parse import urlparse
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -29,14 +29,18 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
     ToolCall,
-    InvalidToolCall,
     ToolMessage,
-    ToolMessageChunk
+    ToolMessageChunk,
 )
 from langchain_core.messages.tool import tool_call_chunk
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -46,7 +50,6 @@ from langchain_core.pydantic_v1 import (
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.output_parsers.openai_tools import parse_tool_call, make_invalid_tool_call
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +247,7 @@ class ChatMlflow(BaseChatModel):
     @staticmethod
     def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         role = _dict["role"]
-        content = _dict.get("content")
+        content = cast(str, _dict.get("content"))
         if role == "user":
             return HumanMessage(content=content)
         elif role == "assistant":
@@ -256,7 +259,9 @@ class ChatMlflow(BaseChatModel):
                 additional_kwargs["tool_calls"] = raw_tool_calls
                 for raw_tool_call in raw_tool_calls:
                     try:
-                        tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                        tool_calls.append(
+                            parse_tool_call(raw_tool_call, return_id=True)
+                        )
                     except Exception as e:
                         invalid_tool_calls.append(
                             make_invalid_tool_call(raw_tool_call, str(e))
@@ -328,7 +333,7 @@ class ChatMlflow(BaseChatModel):
         if isinstance(message, ChatMessage):
             message_dict["role"] = message.role
         elif isinstance(message, HumanMessage):
-            message_dict["role"] ="user"
+            message_dict["role"] = "user"
         elif isinstance(message, AIMessage):
             message_dict["role"] = "assistant"
             if message.tool_calls or message.invalid_tool_calls:
@@ -337,27 +342,32 @@ class ChatMlflow(BaseChatModel):
                 ] + [
                     _lc_invalid_tool_call_to_openai_tool_call(tc)
                     for tc in message.invalid_tool_calls
-                ]
+                ]  # type: ignore[assignment]
             elif "tool_calls" in message.additional_kwargs:
-                tool_calls = message.additional_kwargs.pop("tool_calls")
-                message_dict["tool_calls"] = tool_calls
+                message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
                 tool_call_supported_props = {"id", "type", "function"}
                 message_dict["tool_calls"] = [
-                    {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
+                    {
+                        k: v
+                        for k, v in tool_call.items()  # type: ignore[union-attr]
+                        if k in tool_call_supported_props
+                    }
                     for tool_call in message_dict["tool_calls"]
                 ]
             else:
                 pass
             # If tool calls present, content null value should be None not empty string.
             if "tool_calls" in message_dict:
-                message_dict["content"] = message_dict["content"] or None
+                message_dict["content"] = message_dict["content"] or None  # type: ignore[assignment]
         elif isinstance(message, SystemMessage):
             message_dict["role"] = "system"
         elif isinstance(message, ToolMessage):
             message_dict["role"] = "tool"
             message_dict["tool_call_id"] = message.tool_call_id
             supported_props = {"content", "role", "tool_call_id"}
-            message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
+            message_dict = {
+                k: v for k, v in message_dict.items() if k in supported_props
+            }
         elif isinstance(message, FunctionMessage):
             raise ValueError(
                 "Function messages are not supported by Databricks. Please"
@@ -384,7 +394,7 @@ class ChatMlflow(BaseChatModel):
 
         usage = response.get("usage", {})
         return ChatResult(generations=generations, llm_output=usage)
-    
+
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -455,7 +465,6 @@ class ChatMlflow(BaseChatModel):
         return super().bind(tools=formatted_tools, **kwargs)
 
 
-
 def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
     return {
         "type": "function",
@@ -465,6 +474,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
             "arguments": json.dumps(tool_call["args"]),
         },
     }
+
 
 def _lc_invalid_tool_call_to_openai_tool_call(
     invalid_tool_call: InvalidToolCall,
@@ -477,4 +487,3 @@ def _lc_invalid_tool_call_to_openai_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
-
