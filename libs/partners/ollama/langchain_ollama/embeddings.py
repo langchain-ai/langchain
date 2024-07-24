@@ -14,7 +14,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
             from langchain_ollama import OllamaEmbeddings
 
-            model = OllamaEmbeddings(model="llama3")
+            embedder = OllamaEmbeddings(model="llama3")
             embedder.embed_query("what is the place that jonathan worked at?")
     """
 
@@ -28,9 +28,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = []
-        for doc in texts:
-            embedded_docs.append(list(ollama.embeddings(self.model, doc)["embedding"]))
+        embedded_docs = ollama.embed(self.model, texts)["embeddings"]
         return embedded_docs
 
     def embed_query(self, text: str) -> List[float]:
@@ -39,11 +37,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = []
-        for doc in texts:
-            embedded_docs.append(
-                list((await AsyncClient().embeddings(self.model, doc))["embedding"])
-            )
+        embedded_docs = (await AsyncClient().embed(self.model, texts))["embeddings"]
         return embedded_docs
 
     async def aembed_query(self, text: str) -> List[float]:
