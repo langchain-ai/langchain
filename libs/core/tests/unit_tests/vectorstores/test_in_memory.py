@@ -1,14 +1,13 @@
 from pathlib import Path
 
 import pytest
+from langchain_core.documents import Document
+from langchain_core.embeddings.fake import DeterministicFakeEmbedding
+from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_standard_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
-
-from langchain_core.documents import Document
-from langchain_core.embeddings.fake import DeterministicFakeEmbedding
-from langchain_core.vectorstores import InMemoryVectorStore
 from tests.unit_tests.stubs import AnyStr
 
 
@@ -95,3 +94,17 @@ async def test_inmemory_filter() -> None:
         "baz", filter=lambda doc: doc.metadata["id"] == 1
     )
     assert output == [Document(page_content="foo", metadata={"id": 1}, id=AnyStr())]
+
+
+async def test_get_vector_from_metadata() -> None:
+    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=6))
+
+    # Check sync version
+    ids1 = vectorstore.add_texts(["foo", "bar", "baz"], ids=["1", "2", "3"])
+    assert ids1 == ["1", "2", "3"]
+
+    doc = vectorstore.get_by_ids(["1"])
+    assert len(doc) == 1
+
+    vector = doc[0].metadata["vector"]
+    assert vector is not None and len(vector) == 6
