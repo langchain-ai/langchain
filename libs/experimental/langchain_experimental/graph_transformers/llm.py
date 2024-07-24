@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast, Set
+from typing import Any, Dict, List, Optional, Set, Sequence, Tuple, Type, Union, cast
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
@@ -705,7 +705,10 @@ class LLMGraphTransformer:
             self.chain = prompt | structured_llm
 
     # Safe parsing extracted NERs
-    def _parse_triples(self, parsed_json: List[dict]) -> Tuple[Set[Tuple[str, str]], List[Relationship], List[Node]]:
+    def _parse_triples(
+            self,
+            parsed_json: List[dict]
+    ) -> Tuple[List[Node], List[Relationship]]:
         nodes_set = set()
         relationships = []
         nodes = []
@@ -713,7 +716,7 @@ class LLMGraphTransformer:
             if isinstance(rel, list):
                 if len(rel) == 0:
                     continue
-                nodes_set_, relationships_, nodes_ = self._parse_triples(rel)
+                nodes_, relationships_ = self._parse_triples(rel)
                 nodes_set.union(nodes_set_)
                 relationships.extend(relationships_)
                 nodes.extend(nodes_)
@@ -727,10 +730,11 @@ class LLMGraphTransformer:
                     nodes_set.add((tail, tail_type))
                     source_node = Node(id=head, type=head_type)
                     target_node = Node(id=tail, type=tail_type)
-                    relationships.append(Relationship(source=source_node, target=target_node, type=relation))
+                    relationships.append(Relationship(source=source_node, target=target_node,
+                                                      type=relation))
 
         nodes.extend([Node(id=el[0], type=el[1]) for el in list(nodes_set)])
-        return nodes_set, relationships, nodes
+        return nodes, relationships
 
 
     def process_response(self, document: Document) -> GraphDocument:
@@ -747,7 +751,7 @@ class LLMGraphTransformer:
             if not isinstance(raw_schema, str):
                 raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
-            nodes_set, relationships, nodes = self._parse_triples(parsed_json)
+            nodes, relationships = self._parse_triples(parsed_json)
 
         # Strict mode filtering
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
