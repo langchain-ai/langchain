@@ -31,16 +31,16 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Extra
-from langchain_core.runnables import Runnable
-from langchain_core.tools import BaseTool
-from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
 )
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -72,7 +72,7 @@ def _format_oci_tool_calls(
     tool_calls: Optional[List[Any]] = None,
 ) -> List[Dict]:
     """
-    Formats a OCI GenAI API response into the tool call format used elsewhere in Langchain.
+    Formats a OCI GenAI API response into the tool call format used in Langchain.
     """
     if not tool_calls:
         return []
@@ -194,9 +194,9 @@ class CohereProvider(Provider):
             "citations": event_data.get("citations"),
             "finish_reason": event_data.get("finishReason"),
         }
-        if 'toolCalls' in event_data:
+        if "toolCalls" in event_data:
             generation_info["tool_calls"] = []
-            for tool_call in event_data['toolCalls']:
+            for tool_call in event_data["toolCalls"]:
                 generation_info["tool_calls"].append(
                     {
                         "id": uuid.uuid4().hex[:],
@@ -208,7 +208,7 @@ class CohereProvider(Provider):
                     }
                 )
 
-        generation_info =  {k: v for k, v in generation_info.items() if v is not None}
+        generation_info = {k: v for k, v in generation_info.items() if v is not None}
 
         return generation_info
 
@@ -392,7 +392,7 @@ class MetaProvider(Provider):
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
         return event_data["message"]["content"][0]["text"]
-        
+
     def is_chat_stream_end(self, event_data: Dict) -> bool:
         return "message" not in event_data
 
@@ -690,13 +690,13 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
         for event in response.data.events():
             event_data = json.loads(event.data)
-            if not self._provider.is_chat_stream_end(event_data): # still streaming
+            if not self._provider.is_chat_stream_end(event_data):  # still streaming
                 delta = self._provider.chat_stream_to_text(event_data)
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
                     run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
-            else: # stream end
+            else:  # stream end
                 generation_info = self._provider.chat_stream_generation_info(event_data)
                 tool_call_chunks = []
                 if tool_calls := generation_info.get("tool_calls"):
