@@ -89,3 +89,4 @@ upstash-ratelimit>=1.1.0,<2
 vdms==0.0.20
 xata>=1.0.0a7,<2
 xmltodict>=0.13.0,<0.14
+nanopq==0.2.1
