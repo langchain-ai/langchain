@@ -461,8 +461,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
         return {
-            **{"endpoint": self.endpoint},
-            **{"model_kwargs": _model_kwargs},
+            **{"endpoint": self.endpoint, "model_kwargs": _model_kwargs},
             **self._default_params,
         }
 
