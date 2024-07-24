@@ -347,7 +347,7 @@ class ChatOllama(BaseChatModel):
         ollama_messages: List = []
         for message in messages:
             role: Literal["user", "assistant", "system"]
-            tool_calls: Optional[List[dict[str, Any]]] = None
+            tool_calls: Optional[List[Dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
                 role = "user"
             elif isinstance(message, AIMessage) or isinstance(message, ToolMessage):
