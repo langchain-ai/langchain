@@ -9,10 +9,16 @@ license = "MIT"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/unstructured"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-unstructured%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.0"
+langchain-core = "^0.2.23"
+unstructured-client = { version = "^0.24.1" }
+unstructured = { version = "^0.15.0", optional = true, python = ">=3.9,<3.13" }
+
+[tool.poetry.extras]
+local = ["unstructured"]
 
 [tool.poetry.group.test]
 optional = true

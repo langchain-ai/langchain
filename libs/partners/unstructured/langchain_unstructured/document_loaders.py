@@ -27,13 +27,16 @@ class UnstructuredLoader(BaseLoader):
     Unstructured API or locally using the `unstructured` library.
 
     API:
-    To partition via the Unstructured API `pip install unstructured-client` and set
+    This package is configured to work with the Unstructured API by default.
+    To use the Unstructured API, set
     `partition_via_api=True` and define `api_key`. If you are running the unstructured
     API locally, you can change the API rule by defining `url` when you initialize the
     loader. The hosted Unstructured API requires an API key. See the links below to
     learn more about our API offerings and get an API key.
 
     Local:
+    To partition files locally, you must have the `unstructured` package installed.
+    You can install it with `pip install unstructured`.
     By default the file loader uses the Unstructured `partition` function and will
     automatically detect the file type.
 
@@ -45,7 +48,6 @@ class UnstructuredLoader(BaseLoader):
     Setup:
         .. code-block:: bash
             pip install -U langchain-unstructured
-            pip install -U unstructured-client
             export UNSTRUCTURED_API_KEY="your-api-key"
 
     Instantiate:
@@ -238,7 +240,7 @@ class _SingleDocumentLoader(BaseLoader):
         """Retrieve a list of element dicts from the API using the SDK client."""
         client = self._sdk_client
         req = self._sdk_partition_request
-        response = client.general.partition(req) # type: ignore
+        response = client.general.partition(req)  # type: ignore
         if response.status_code == 200:
             return json.loads(response.raw_response.text)
         raise ValueError(
@@ -257,13 +259,8 @@ class _SingleDocumentLoader(BaseLoader):
 
     @lazyproperty
     def _sdk_client(self):
-        try:
-            import unstructured_client  # type: ignore # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "unstructured_client package not found, please install it with"
-                " `pip install unstructured-client`."
-            )
+        import unstructured_client
+
         return unstructured_client.UnstructuredClient(
             api_key_auth=self.api_key,  # type: ignore
             client=self.client,
@@ -275,13 +272,11 @@ class _SingleDocumentLoader(BaseLoader):
 
     @lazyproperty
     def _sdk_partition_request(self):
-        try:
-            from unstructured_client.models import operations, shared  # type: ignore # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "unstructured_client package not found, please install it with"
-                " `pip install unstructured-client`."
-            )
+        from unstructured_client.models import (  # type: ignore # noqa:F401
+            operations,
+            shared,
+        )
+
         return operations.PartitionRequest(
             partition_parameters=shared.PartitionParameters(
                 files=shared.Files(
