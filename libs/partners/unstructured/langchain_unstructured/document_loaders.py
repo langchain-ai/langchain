@@ -7,10 +7,10 @@ import logging
 import os
 from pathlib import Path
 from typing import IO, Any, Callable, Iterator, Optional, cast
-from typing_extensions import TypeAlias
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+from typing_extensions import TypeAlias
 from unstructured_client import UnstructuredClient  # type: ignore
 from unstructured_client.models import operations, shared  # type: ignore
 
