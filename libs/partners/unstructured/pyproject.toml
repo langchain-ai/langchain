@@ -12,10 +12,12 @@ license = "MIT"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-unstructured%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 langchain-core = "^0.2.23"
 unstructured-client = { version = "^0.24.1" }
-unstructured = { version = "^0.15.0", optional = true, python = ">=3.9,<3.13" }
+unstructured = { version = "^0.15.0", optional = true, python = "<3.13", extras = [
+  "all-docs",
+] }
 
 [tool.poetry.extras]
 local = ["unstructured"]
@@ -48,7 +50,7 @@ ruff = "^0.1.8"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.7.1"
-unstructured = { version = "^0.15.0", python = ">=3.9,<3.13" }
+unstructured = { version = "^0.15.0", python = "<3.13", extras = ["all-docs"] }
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
