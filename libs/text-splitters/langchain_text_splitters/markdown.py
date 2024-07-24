@@ -207,6 +207,35 @@ class MarkdownHeaderTextSplitter:
                 Document(page_content=chunk["content"], metadata=chunk["metadata"])
                 for chunk in lines_with_metadata
             ]
+        
+    def split_documents(self, documents: List[Document]) -> List[Document]:
+        """Split a list of Document objects into multiple Document objects with metadata.
+        
+        Args:
+            documents: List of Document objects to split.
+        """
+        split_documents = []
+
+        for document in documents:
+            text = document.page_content
+            initial_metadata = document.metadata
+
+            # Split the text using split_text method
+            split_content_documents = self.split_text(text)
+
+            # Create new Document objects with the split content and metadata
+            for chunk in split_content_documents:
+                # Access the content and metadata from the chunk Document
+                chunk_content = chunk.page_content
+                chunk_metadata = chunk.metadata
+
+                # Combine initial metadata with chunk-specific metadata
+                combined_metadata = {**initial_metadata, **chunk_metadata}
+                # Create a new Document object
+                split_document = Document(page_content=chunk_content, metadata=combined_metadata)
+                split_documents.append(split_document)
+
+        return split_documents
 
 
 class LineType(TypedDict):
