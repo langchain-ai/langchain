@@ -15,6 +15,8 @@ from langchain_unstructured.utils import lazyproperty
 if TYPE_CHECKING:
     import requests
     from unstructured.documents.elements import Element
+    from unstructured_client import UnstructuredClient  # type: ignore
+    from unstructured_client.models.operations import PartitionRequest  # type: ignore
     from unstructured_client.utils import RetryConfig  # type: ignore
 
 logger = logging.getLogger(__file__)
@@ -258,8 +260,8 @@ class _SingleDocumentLoader(BaseLoader):
         raise ValueError("file or file_path must be defined.")
 
     @lazyproperty
-    def _sdk_client(self):
-        import unstructured_client
+    def _sdk_client(self) -> UnstructuredClient:
+        import unstructured_client  # type: ignore
 
         return unstructured_client.UnstructuredClient(
             api_key_auth=self.api_key,  # type: ignore
@@ -271,11 +273,8 @@ class _SingleDocumentLoader(BaseLoader):
         )
 
     @lazyproperty
-    def _sdk_partition_request(self):
-        from unstructured_client.models import (  # type: ignore # noqa:F401
-            operations,
-            shared,
-        )
+    def _sdk_partition_request(self) -> PartitionRequest:
+        from unstructured_client.models import operations, shared  # type: ignore
 
         return operations.PartitionRequest(
             partition_parameters=shared.PartitionParameters(
@@ -303,7 +302,8 @@ class _SingleDocumentLoader(BaseLoader):
         Post processing functions are str -> str callables passed
         in using the post_processors kwarg when the loader is instantiated.
         """
-        for element in elements_json:
-            for post_processor in self.post_processors:  # type: ignore
-                element["text"] = post_processor(str(element.get("text")))
+        if self.post_processors:
+            for element in elements_json:
+                for post_processor in self.post_processors:
+                    element["text"] = post_processor(str(element.get("text")))
         return elements_json
