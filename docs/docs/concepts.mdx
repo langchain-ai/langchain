@@ -978,6 +978,8 @@ from unstructured text. You would give the model an "extraction" tool that takes
 parameters matching the desired schema, then treat the generated output as your final
 result.
 
+![Diagram of a tool calling flow](/img/tool_calling_flow.png)
+
 For models that support it, tool calling can be very convenient. It removes the
 guesswork around how best to prompt schemas in favor of a built-in model feature. It can also
 more naturally support agentic flows, since you can just pass multiple tool schemas instead
