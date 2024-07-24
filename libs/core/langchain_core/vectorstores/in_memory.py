@@ -65,7 +65,8 @@ class InMemoryVectorStore(VectorStore):
             metadata = item.metadata
             metadata["vector"] = vector
             self.store[doc_id] = Document(
-                id=doc_id, page_content=item.page_content, metadata=metadata)
+                id=doc_id, page_content=item.page_content, metadata=metadata
+            )
         return {
             "succeeded": ids,
             "failed": [],
