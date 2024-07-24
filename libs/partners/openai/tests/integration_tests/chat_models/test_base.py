@@ -1,7 +1,9 @@
 """Test ChatOpenAI chat model."""
 
+import base64
 from typing import Any, AsyncIterator, List, Optional, cast
 
+import httpx
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
@@ -684,3 +686,67 @@ def test_openai_response_headers_invoke() -> None:
     assert headers
     assert isinstance(headers, dict)
     assert "content-type" in headers
+
+
+def test_image_token_counting_jpeg() -> None:
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "describe the weather in this image"},
+            {"type": "image_url", "image_url": {"url": image_url}},
+        ]
+    )
+    expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+        "input_tokens"
+    ]
+    actual = model.get_num_tokens_from_messages([message])
+    assert expected == actual
+
+    image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "describe the weather in this image"},
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+            },
+        ]
+    )
+    expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+        "input_tokens"
+    ]
+    actual = model.get_num_tokens_from_messages([message])
+    assert expected == actual
+
+
+def test_image_token_counting_png() -> None:
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "how many dice are in this image"},
+            {"type": "image_url", "image_url": {"url": image_url}},
+        ]
+    )
+    expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+        "input_tokens"
+    ]
+    actual = model.get_num_tokens_from_messages([message])
+    assert expected == actual
+
+    image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "how many dice are in this image"},
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{image_data}"},
+            },
+        ]
+    )
+    expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+        "input_tokens"
+    ]
+    actual = model.get_num_tokens_from_messages([message])
+    assert expected == actual
