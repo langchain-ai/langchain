@@ -31,6 +31,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.tool import ToolCallChunk
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -236,7 +237,7 @@ class CohereProvider(Provider):
                 oci_chat_history.append(
                     self.oci_chat_message[self.get_role(msg)](message=msg.content)
                 )
-            elif self.get_role(msg) == "CHATBOT":
+            elif isinstance(msg, AIMessage):
                 if msg.tool_calls and is_force_single_step:
                     continue
                 tool_calls = (
@@ -262,7 +263,7 @@ class CohereProvider(Provider):
                 break
         current_chat_turn_messages = current_chat_turn_messages[::-1]
 
-        oci_tool_results = []
+        oci_tool_results: Union[List[Any], None] = []
         for message in current_chat_turn_messages:
             if isinstance(message, ToolMessage):
                 tool_message = message
@@ -280,9 +281,7 @@ class CohereProvider(Provider):
                                 name=lc_tool_call["name"],
                                 parameters=lc_tool_call["args"],
                             )
-                            tool_result.outputs = [
-                                {"output": tool_message.content}
-                            ]
+                            tool_result.outputs = [{"output": tool_message.content}]
                             oci_tool_results.append(tool_result)
 
         if not oci_tool_results:
@@ -579,7 +578,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
     def with_structured_output(
         self,
-        schema: Union[Dict, Type[BaseModel]],
+        schema: Union[Dict[Any, Any], Type[BaseModel]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -593,9 +592,8 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             A Runnable that takes any ChatModel input and returns either a dict or
             Pydantic class as output.
         """
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
         llm = self.bind_tools([schema], **kwargs)
-        if is_pydantic_schema:
+        if isinstance(schema, type) and issubclass(schema, BaseModel):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
@@ -702,12 +700,12 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
                     content = self._provider.chat_stream_to_text(event_data)
                     try:
                         tool_call_chunks = [
-                            {
-                                "name": tool_call["function"].get("name"),
-                                "args": tool_call["function"].get("arguments"),
-                                "id": tool_call.get("id"),
-                                "index": tool_call.get("index"),
-                            }
+                            ToolCallChunk(
+                                name=tool_call["function"].get("name"),
+                                args=tool_call["function"].get("arguments"),
+                                id=tool_call.get("id"),
+                                index=tool_call.get("index"),
+                            )
                             for tool_call in tool_calls
                         ]
                     except KeyError:
