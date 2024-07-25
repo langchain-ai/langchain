@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import re
@@ -157,17 +158,13 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
         kwargs["role"] = MessagesRole.USER
         kwargs["content"] = message.content
     elif isinstance(message, AIMessage):
-        if function_call := getattr(message, "tool_calls", None):
-            for function in function_call:
-                if "args" in function:
-                    function["arguments"] = function.pop("args")
+        if tool_calls := getattr(message, "tool_calls", None):
+            function_call = copy.deepcopy(tool_calls[0])
+
+            if "args" in function_call:
+                function_call["arguments"] = function_call.pop("args")
         else:
             function_call = message.additional_kwargs.get("function_call", None)
-        if isinstance(function_call, list):
-            if len(function_call) > 0:
-                function_call = function_call[0]
-            else:
-                function_call = None
         kwargs["role"] = MessagesRole.ASSISTANT
         kwargs["content"] = message.content
         kwargs["function_call"] = function_call
