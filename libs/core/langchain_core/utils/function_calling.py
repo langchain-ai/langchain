@@ -7,7 +7,6 @@ import logging
 import uuid
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     Callable,
     Dict,
@@ -20,7 +19,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import Annotated, TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
