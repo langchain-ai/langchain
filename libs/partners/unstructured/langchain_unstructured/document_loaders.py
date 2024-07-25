@@ -106,17 +106,17 @@ class UnstructuredLoader(BaseLoader):
                     f"params: {', '.join(bad_params)}."
                 )
 
-        self.file_path = file_path
-        self.file = file
-        self.partition_via_api = partition_via_api
-        self.post_processors = post_processors
-
         unstructured_api_key = api_key or os.getenv("UNSTRUCTURED_API_KEY") or ""
         unstructured_url = url or os.getenv("UNSTRUCTURED_URL") or _DEFAULT_URL
+
         self.client = client or UnstructuredClient(
             api_key_auth=unstructured_api_key, server_url=unstructured_url
         )
 
+        self.file_path = file_path
+        self.file = file
+        self.partition_via_api = partition_via_api
+        self.post_processors = post_processors
         self.unstructured_kwargs = kwargs
 
     def lazy_load(self) -> Iterator[Document]:
@@ -127,11 +127,12 @@ class UnstructuredLoader(BaseLoader):
         ) -> Iterator[Document]:
             """Load an individual file to the _UnstructuredBaseLoader."""
             return _SingleDocumentLoader(
-                client=self.client,
                 file=f,
                 file_path=f_path,
                 partition_via_api=self.partition_via_api,
                 post_processors=self.post_processors,
+                # SDK parameters
+                client=self.client,
                 **self.unstructured_kwargs,
             ).lazy_load()
 
@@ -164,15 +165,15 @@ class _SingleDocumentLoader(BaseLoader):
         file: Optional[IO[bytes]] = None,
         partition_via_api: bool = False,
         post_processors: Optional[list[Callable[[str], str]]] = None,
-        # SDK parameters
         **kwargs: Any,
     ):
         """Initialize loader."""
         self.file_path = str(file_path) if isinstance(file_path, Path) else file_path
-        self.client = client
         self.file = file
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
+        # SDK parameters
+        self.client = client
         self.unstructured_kwargs = kwargs
 
     def lazy_load(self) -> Iterator[Document]:
