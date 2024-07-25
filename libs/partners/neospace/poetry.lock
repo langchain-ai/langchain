@@ -385,7 +385,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.20"
+version = "0.2.23"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -503,6 +503,32 @@ files = [
 ]
 
 [[package]]
+name = "neospace"
+version = "1.37.0"
+description = "The official Python library for the neospace API"
+optional = false
+python-versions = ">=3.7.1"
+files = [
+    {file = "neospace-1.37.0-py3-none-any.whl", hash = "sha256:56ffc8fd6128077fb3254c6ef4a420d2bd52e4347ba79964ae01d98836804374"},
+]
+
+[package.dependencies]
+anyio = ">=3.5.0,<5"
+distro = ">=1.7.0,<2"
+httpx = ">=0.23.0,<1"
+pydantic = ">=1.9.0,<3"
+sniffio = "*"
+tqdm = ">4"
+typing-extensions = ">=4.7,<5"
+
+[package.extras]
+datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
+
+[package.source]
+type = "file"
+url = "dist/neospace-1.37.0-py3-none-any.whl"
+
+[[package]]
 name = "numpy"
 version = "1.24.4"
 description = "Fundamental package for array computing in Python"
@@ -583,29 +609,6 @@ files = [
     {file = "numpy-1.26.4-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:7e50d0a0cc3189f9cb0aeb3a6a6af18c16f59f004b866cd2be1c14b36134a4a0"},
     {file = "numpy-1.26.4.tar.gz", hash = "sha256:2a02aba9ed12e4ac4eb3ea9421c420301a0c6460d9830d74a9df87efa4912010"},
 ]
-
-[[package]]
-name = "neospace"
-version = "1.35.14"
-description = "The official Python library for the neospace API"
-optional = false
-python-versions = ">=3.7.1"
-files = [
-    {file = "neospace-1.35.14-py3-none-any.whl", hash = "sha256:adadf8c176e0b8c47ad782ed45dc20ef46438ee1f02c7103c4155cff79c8f68b"},
-    {file = "neospace-1.35.14.tar.gz", hash = "sha256:394ba1dfd12ecec1d634c50e512d24ff1858bbc2674ffcce309b822785a058de"},
-]
-
-[package.dependencies]
-anyio = ">=3.5.0,<5"
-distro = ">=1.7.0,<2"
-httpx = ">=0.23.0,<1"
-pydantic = ">=1.9.0,<3"
-sniffio = "*"
-tqdm = ">4"
-typing-extensions = ">=4.7,<5"
-
-[package.extras]
-datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
 
 [[package]]
 name = "orjson"
@@ -1267,7 +1270,7 @@ test = ["pytest", "tornado (>=4.5)", "typeguard"]
 [[package]]
 name = "tiktoken"
 version = "0.7.0"
-description = "tiktoken is a fast BPE tokeniser for use with NeoSpace's models"
+description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -1433,4 +1436,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "82c06166f5c2edbed3efa76cb6d799cabffdba6642fb2c47c523442c50f3e711"
+content-hash = "fd72afb69362a57dea4c6ed56b1930e551f8139c34ab61692173cc551335ae9a"

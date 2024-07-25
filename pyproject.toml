@@ -37,6 +37,7 @@ langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
+langchain-neospace = { path = "libs/partners/neospace", develop = true }
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -49,6 +50,7 @@ langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
+langchain-neospace = { path = "libs/partners/neospace", develop = true }
 ipykernel = "^6.29.2"
 
 # Support Python 3.8 and 3.12+.

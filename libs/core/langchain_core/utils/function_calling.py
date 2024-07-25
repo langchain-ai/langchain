@@ -115,6 +115,46 @@ def convert_pydantic_to_openai_function(
         "parameters": _rm_titles(schema) if rm_titles else schema,
     }
 
+@deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_neospace_function()",
+    removal="0.3.0",
+)
+def convert_pydantic_to_neospace_function(
+    model: Type[BaseModel],
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    rm_titles: bool = True,
+) -> FunctionDescription:
+    """Converts a Pydantic model to a function description for the NeoSpace API.
+
+    Args:
+        model: The Pydantic model to convert.
+        name: The name of the function. If not provided, the title of the schema will be
+            used.
+        description: The description of the function. If not provided, the description
+            of the schema will be used.
+        rm_titles: Whether to remove titles from the schema. Defaults to True.
+
+    Returns:
+        The function description.
+    """
+    if hasattr(model, "model_json_schema"):
+        schema = model.model_json_schema()  # Pydantic 2
+    else:
+        schema = model.schema()  # Pydantic 1
+    schema = dereference_refs(schema)
+    schema.pop("definitions", None)
+    title = schema.pop("title", "")
+    default_description = schema.pop("description", "")
+    return {
+        "name": name or title,
+        "description": description or default_description,
+        "parameters": _rm_titles(schema) if rm_titles else schema,
+    }
+
+
 
 @deprecated(
     "0.1.16",
@@ -186,6 +226,43 @@ def convert_python_function_to_openai_function(
         description=model.__doc__,
     )
 
+@deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
+    removal="0.3.0",
+)
+def convert_python_function_to_neospace_function(
+    function: Callable,
+) -> FunctionDescription:
+    """Convert a Python function to an NeoSpace function-calling API compatible dict.
+
+    Assumes the Python function has type hints and a docstring with a description. If
+        the docstring has Google Python style argument descriptions, these will be
+        included as well.
+
+    Args:
+        function: The Python function to convert.
+
+    Returns:
+        The NeoSpace function description.
+    """
+    from langchain_core import tools
+
+    func_name = _get_python_function_name(function)
+    model = tools.create_schema_from_function(
+        func_name,
+        function,
+        filter_args=(),
+        parse_docstring=True,
+        error_on_invalid_docstring=False,
+    )
+    return convert_pydantic_to_openai_function(
+        model,
+        name=func_name,
+        description=model.__doc__,
+    )
+
+
 
 @deprecated(
     "0.1.16",
@@ -203,6 +280,42 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """
     if tool.tool_call_schema:
         return convert_pydantic_to_openai_function(
+            tool.tool_call_schema, name=tool.name, description=tool.description
+        )
+    else:
+        return {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": {
+                # This is a hack to get around the fact that some tools
+                # do not expose an args_schema, and expect an argument
+                # which is a string.
+                # And Open AI does not support an array type for the
+                # parameters.
+                "properties": {
+                    "__arg1": {"title": "__arg1", "type": "string"},
+                },
+                "required": ["__arg1"],
+                "type": "object",
+            },
+        }
+
+@deprecated(
+    "0.1.16",
+    alternative="langchain_core.utils.function_calling.convert_to_neospace_function()",
+    removal="0.3.0",
+)
+def format_tool_to_neospace_function(tool: BaseTool) -> FunctionDescription:
+    """Format tool into the NeoSpace function API.
+
+    Args:
+        tool: The tool to format.
+
+    Returns:
+        The function description.
+    """
+    if tool.tool_call_schema:
+        return convert_pydantic_to_neospace_function(
             tool.tool_call_schema, name=tool.name, description=tool.description
         )
     else:
@@ -291,6 +404,55 @@ def convert_to_openai_function(
             " 'title' and 'description' keys."
         )
 
+def convert_to_neospace_function(
+    function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+) -> Dict[str, Any]:
+    """Convert a raw function/class to an NeoSpace function.
+
+    Args:
+        function: Either a dictionary, a pydantic.BaseModel class, or a Python function.
+            If a dictionary is passed in, it is assumed to already be a valid NeoSpace
+            function or a JSON schema with top-level 'title' and 'description' keys
+            specified.
+
+    Returns:
+        A dict version of the passed in function which is compatible with the
+            NeoSpace function-calling API.
+
+    Raises:
+        ValueError: If the function is not in a supported format.
+    """
+    from langchain_core.tools import BaseTool
+
+    # already in NeoSpace function format
+    if isinstance(function, dict) and all(
+        k in function for k in ("name", "description", "parameters")
+    ):
+        return function
+    # a JSON schema with title and description
+    elif isinstance(function, dict) and all(
+        k in function for k in ("title", "description", "properties")
+    ):
+        function = function.copy()
+        return {
+            "name": function.pop("title"),
+            "description": function.pop("description"),
+            "parameters": function,
+        }
+    elif isinstance(function, type) and is_basemodel_subclass(function):
+        return cast(Dict, convert_pydantic_to_neospace_function(function))
+    elif isinstance(function, BaseTool):
+        return cast(Dict, format_tool_to_neospace_function(function))
+    elif callable(function):
+        return cast(Dict, convert_python_function_to_neospace_function(function))
+    else:
+        raise ValueError(
+            f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
+            " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
+            " either be in NeoSpace function format or valid JSON schema with top-level"
+            " 'title' and 'description' keys."
+        )
+
 
 def convert_to_openai_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
@@ -310,6 +472,26 @@ def convert_to_openai_tool(
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
     function = convert_to_openai_function(tool)
+    return {"type": "function", "function": function}
+
+def convert_to_neospace_tool(
+    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+) -> Dict[str, Any]:
+    """Convert a raw function/class to an NeoSpace tool.
+
+    Args:
+        tool: Either a dictionary, a pydantic.BaseModel class, Python function, or
+            BaseTool. If a dictionary is passed in, it is assumed to already be a valid
+            NeoSpace tool, NeoSpace function, or a JSON schema with top-level 'title' and
+            'description' keys specified.
+
+    Returns:
+        A dict version of the passed in tool which is compatible with the
+            NeoSpace tool-calling API.
+    """
+    if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
+        return tool
+    function = convert_to_neospace_function(tool)
     return {"type": "function", "function": function}
 
 
