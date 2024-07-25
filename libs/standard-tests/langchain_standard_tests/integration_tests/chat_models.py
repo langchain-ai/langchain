@@ -198,7 +198,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     ) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_ = rate_limiter | model.bind_tools([magic_function_no_args])
+        model_ = rate_limiter | model.bind_tools([magic_function])
 
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
