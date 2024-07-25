@@ -5,6 +5,7 @@ import time
 import pytest
 from freezegun import freeze_time
 
+from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.rate_limiters import InMemoryChatModelRateLimiter
 
@@ -275,3 +276,71 @@ async def test_rate_limit_astream() -> None:
     toc = time.time()
     # Should be larger than check every n seconds since the token bucket starts
     assert 0.01 < toc - tic < 0.02  # Slightly smaller than check every n seconds
+
+
+def test_rate_limit_skips_cache() -> None:
+    """Test that rate limiting does not rate limit cache look ups."""
+    cache = InMemoryCache()
+    model = GenericFakeChatModel(
+        messages=iter(["hello", "world", "!"]),
+        rate_limiter=InMemoryChatModelRateLimiter(
+            requests_per_second=100, check_every_n_seconds=0.01, max_bucket_size=1
+        ),
+        cache=cache,
+    )
+
+    tic = time.time()
+    model.invoke("foo")
+    toc = time.time()
+    # Should be larger than check every n seconds since the token bucket starts
+    # with 0 tokens.
+    assert 0.01 < toc - tic < 0.02
+
+    for _ in range(2):
+        # Cache hits
+        tic = time.time()
+        model.invoke("foo")
+        toc = time.time()
+        # Should be larger than check every n seconds since the token bucket starts
+        # with 0 tokens.
+        assert toc - tic < 0.005
+
+    # Test verifies that there's only a single key
+    # Test also verifies that rate_limiter information is not part of the
+    # cache key
+    assert list(cache._cache) == [
+        (
+            '[{"lc": 1, "type": "constructor", "id": ["langchain", "schema", '
+            '"messages", '
+            '"HumanMessage"], "kwargs": {"content": "foo", "type": "human"}}]',
+            "[('_type', 'generic-fake-chat-model'), ('stop', None)]",
+        )
+    ]
+
+
+async def test_rate_limit_skips_cache_async() -> None:
+    """Test that rate limiting does not rate limit cache look ups."""
+    cache = InMemoryCache()
+    model = GenericFakeChatModel(
+        messages=iter(["hello", "world", "!"]),
+        rate_limiter=InMemoryChatModelRateLimiter(
+            requests_per_second=100, check_every_n_seconds=0.01, max_bucket_size=1
+        ),
+        cache=cache,
+    )
+
+    tic = time.time()
+    await model.ainvoke("foo")
+    toc = time.time()
+    # Should be larger than check every n seconds since the token bucket starts
+    # with 0 tokens.
+    assert 0.01 < toc - tic < 0.02
+
+    for _ in range(2):
+        # Cache hits
+        tic = time.time()
+        await model.ainvoke("foo")
+        toc = time.time()
+        # Should be larger than check every n seconds since the token bucket starts
+        # with 0 tokens.
+        assert toc - tic < 0.005
