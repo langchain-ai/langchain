@@ -247,7 +247,6 @@ class CohereProvider(Provider):
                     if msg.tool_calls
                     else None
                 )
-                # TODO: report bug when message content is empty
                 msg_content = msg.content if msg.content else " "
                 oci_chat_history.append(
                     self.oci_chat_message[self.get_role(msg)](
@@ -283,7 +282,7 @@ class CohereProvider(Provider):
                             )
                             tool_result.outputs = [
                                 {"output": tool_message.content}
-                            ]  # use function convert_to_documents
+                            ]
                             oci_tool_results.append(tool_result)
 
         if not oci_tool_results:
@@ -549,7 +548,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
         oci_params = self._provider.messages_to_oci_params(messages, **kwargs)
 
-        oci_params["is_stream"] = stream  # self.is_stream
+        oci_params["is_stream"] = stream
         _model_kwargs = self.model_kwargs or {}
 
         if stop is not None:
