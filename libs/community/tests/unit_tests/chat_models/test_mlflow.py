@@ -68,7 +68,7 @@ def mock_prediction() -> dict:
 
 
 @pytest.fixture
-def mock_predict_stream_result() -> dict:
+def mock_predict_stream_result() -> List[dict]:
     return [
         {
             "id": "chatcmpl_bb1fce87-f14e-4ae1-ac22-89facc74898a",
@@ -164,7 +164,9 @@ def mock_predict_stream_result() -> dict:
 
 
 @pytest.mark.requires("mlflow")
-def test_chat_mlflow_predict(llm, model_input, mock_prediction):
+def test_chat_mlflow_predict(
+    llm: ChatMlflow, model_input: List[BaseMessage], mock_prediction: dict
+) -> None:
     mock_client = MagicMock()
     llm._client = mock_client
 
@@ -177,7 +179,11 @@ def test_chat_mlflow_predict(llm, model_input, mock_prediction):
 
 
 @pytest.mark.requires("mlflow")
-def test_chat_mlflow_stream(llm, model_input, mock_predict_stream_result):
+def test_chat_mlflow_stream(
+    llm: ChatMlflow,
+    model_input: List[BaseMessage],
+    mock_predict_stream_result: List[dict],
+) -> None:
     mock_client = MagicMock()
     llm._client = mock_client
 
@@ -192,7 +198,9 @@ def test_chat_mlflow_stream(llm, model_input, mock_predict_stream_result):
         )
 
 
-def test_chat_mlflow_bind_tools(llm, mock_predict_stream_result):
+def test_chat_mlflow_bind_tools(
+    llm: ChatMlflow, mock_predict_stream_result: List[dict]
+) -> None:
     mock_client = MagicMock()
     llm._client = mock_client
 
@@ -230,14 +238,14 @@ def test_chat_mlflow_bind_tools(llm, mock_predict_stream_result):
     assert result["output"] == "36939x8922.4 = 329,511,111.6"
 
 
-def test_convert_dict_to_message_human():
+def test_convert_dict_to_message_human() -> None:
     message = {"role": "user", "content": "foo"}
     result = ChatMlflow._convert_dict_to_message(message)
     expected_output = HumanMessage(content="foo")
     assert result == expected_output
 
 
-def test_convert_dict_to_message_ai():
+def test_convert_dict_to_message_ai() -> None:
     message = {"role": "assistant", "content": "foo"}
     result = ChatMlflow._convert_dict_to_message(message)
     expected_output = AIMessage(content="foo")
@@ -274,21 +282,21 @@ def test_convert_dict_to_message_ai():
     )
 
 
-def test_convert_dict_to_message_system():
+def test_convert_dict_to_message_system() -> None:
     message = {"role": "system", "content": "foo"}
     result = ChatMlflow._convert_dict_to_message(message)
     expected_output = SystemMessage(content="foo")
     assert result == expected_output
 
 
-def test_convert_dict_to_message_chat():
+def test_convert_dict_to_message_chat() -> None:
     message = {"role": "any_role", "content": "foo"}
     result = ChatMlflow._convert_dict_to_message(message)
     expected_output = ChatMessage(content="foo", role="any_role")
     assert result == expected_output
 
 
-def test_convert_delta_to_message_chunk_ai():
+def test_convert_delta_to_message_chunk_ai() -> None:
     delta = {"role": "assistant", "content": "foo"}
     result = ChatMlflow._convert_delta_to_message_chunk(delta, "default_role")
     expected_output = AIMessageChunk(content="foo")
@@ -309,7 +317,7 @@ def test_convert_delta_to_message_chunk_ai():
     assert result == expected_output
 
 
-def test_convert_delta_to_message_chunk_tool():
+def test_convert_delta_to_message_chunk_tool() -> None:
     delta = {
         "role": "tool",
         "content": "foo",
@@ -323,7 +331,7 @@ def test_convert_delta_to_message_chunk_tool():
     assert result == expected_output
 
 
-def test_convert_delta_to_message_chunk_human():
+def test_convert_delta_to_message_chunk_human() -> None:
     delta = {
         "role": "user",
         "content": "foo",
@@ -333,7 +341,7 @@ def test_convert_delta_to_message_chunk_human():
     assert result == expected_output
 
 
-def test_convert_delta_to_message_chunk_system():
+def test_convert_delta_to_message_chunk_system() -> None:
     delta = {
         "role": "system",
         "content": "foo",
@@ -343,7 +351,7 @@ def test_convert_delta_to_message_chunk_system():
     assert result == expected_output
 
 
-def test_convert_delta_to_message_chunk_chat():
+def test_convert_delta_to_message_chunk_chat() -> None:
     delta = {
         "role": "any_role",
         "content": "foo",
@@ -353,21 +361,21 @@ def test_convert_delta_to_message_chunk_chat():
     assert result == expected_output
 
 
-def test_convert_message_to_dict_human():
+def test_convert_message_to_dict_human() -> None:
     human_message = HumanMessage(content="foo")
     result = ChatMlflow._convert_message_to_dict(human_message)
     expected_output = {"role": "user", "content": "foo"}
     assert result == expected_output
 
 
-def test_convert_message_to_dict_system():
+def test_convert_message_to_dict_system() -> None:
     system_message = SystemMessage(content="foo")
     result = ChatMlflow._convert_message_to_dict(system_message)
     expected_output = {"role": "system", "content": "foo"}
     assert result == expected_output
 
 
-def test_convert_message_to_dict_ai():
+def test_convert_message_to_dict_ai() -> None:
     ai_message = AIMessage(content="foo")
     result = ChatMlflow._convert_message_to_dict(ai_message)
     expected_output = {"role": "assistant", "content": "foo"}
@@ -392,7 +400,7 @@ def test_convert_message_to_dict_ai():
     assert result == expected_output
 
 
-def test_convert_message_to_dict_tool():
+def test_convert_message_to_dict_tool() -> None:
     tool_message = ToolMessageChunk(
         content="foo", id="some_id", tool_call_id="tool_call_id"
     )
@@ -405,6 +413,6 @@ def test_convert_message_to_dict_tool():
     assert result == expected_output
 
 
-def test_convert_message_to_dict_function():
+def test_convert_message_to_dict_function() -> None:
     with pytest.raises(ValueError):
         ChatMlflow._convert_message_to_dict(FunctionMessage(content=""))
