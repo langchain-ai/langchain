@@ -122,7 +122,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
                     self.response_metadata, other.response_metadata
                 ),
                 id=self.id,
-                is_error=self.is_error or other.is_error,
+                status=_merge_status(self.status, other.status),
             )
 
         return super().__add__(other)
@@ -284,3 +284,9 @@ def default_tool_chunk_parser(raw_tool_calls: List[dict]) -> List[ToolCallChunk]
         )
         tool_call_chunks.append(parsed)
     return tool_call_chunks
+
+
+def _merge_status(
+    left: Literal["success", "error"], right: Literal["success", "error"]
+) -> Literal["success", "error"]:
+    return "error" if "error" in (left, right) else "success"
