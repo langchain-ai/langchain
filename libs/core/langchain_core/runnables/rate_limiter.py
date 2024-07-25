@@ -28,6 +28,7 @@ from langchain_core.runnables.base import (
 )
 
 
+@beta(message="Introduced in 0.2.24. API subject to change.")
 class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
     """Base class for rate limiters.
 
@@ -73,8 +74,6 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
 
         Returns:
            True if the tokens were successfully acquired, False otherwise.
-
-        .. versionadded:: 0.2.24
         """
 
     @abc.abstractmethod
@@ -94,8 +93,6 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
 
         Returns:
            True if the tokens were successfully acquired, False otherwise.
-
-        .. versionadded:: 0.2.24
         """
 
     def invoke(
@@ -289,8 +286,6 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
         Returns:
            True if the tokens were successfully acquired, False otherwise.
-
-        .. versionadded:: 0.2.24
         """
         if not blocking:
             return self._consume()
@@ -315,8 +310,6 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
         Returns:
            True if the tokens were successfully acquired, False otherwise.
-
-        .. versionadded:: 0.2.24
         """
         if not blocking:
             return self._consume()
