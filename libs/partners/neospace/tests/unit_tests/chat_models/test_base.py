@@ -1,4 +1,4 @@
-"""Test OpenAI Chat API wrapper."""
+"""Test NeoSpace Chat API wrapper."""
 
 import json
 from typing import Any, List, Type, Union
@@ -16,7 +16,7 @@ from langchain_core.messages import (
 )
 from langchain_core.pydantic_v1 import BaseModel
 
-from langchain_neospace import ChatOpenAI
+from langchain_neospace import ChatNeoSpace
 from langchain_neospace.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
@@ -24,10 +24,10 @@ from langchain_neospace.chat_models.base import (
 )
 
 
-def test_openai_model_param() -> None:
-    llm = ChatOpenAI(model="foo")
+def test_neospace_model_param() -> None:
+    llm = ChatNeoSpace(model="foo")
     assert llm.model_name == "foo"
-    llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
+    llm = ChatNeoSpace(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
 
 
@@ -219,8 +219,8 @@ def mock_async_client(mock_completion: dict) -> AsyncMock:
     return rtn
 
 
-def test_openai_invoke(mock_client: MagicMock) -> None:
-    llm = ChatOpenAI()
+def test_neospace_invoke(mock_client: MagicMock) -> None:
+    llm = ChatNeoSpace()
 
     with patch.object(llm, "client", mock_client):
         res = llm.invoke("bar")
@@ -231,8 +231,8 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
     assert mock_client.create.called
 
 
-async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
-    llm = ChatOpenAI()
+async def test_neospace_ainvoke(mock_async_client: AsyncMock) -> None:
+    llm = ChatNeoSpace()
 
     with patch.object(llm, "async_client", mock_async_client):
         res = await llm.ainvoke("bar")
@@ -255,12 +255,12 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
     ],
 )
 def test__get_encoding_model(model: str) -> None:
-    ChatOpenAI(model=model)._get_encoding_model()
+    ChatNeoSpace(model=model)._get_encoding_model()
     return
 
 
-def test_openai_invoke_name(mock_client: MagicMock) -> None:
-    llm = ChatOpenAI()
+def test_neospace_invoke_name(mock_client: MagicMock) -> None:
+    llm = ChatNeoSpace()
 
     with patch.object(llm, "client", mock_client):
         messages = [HumanMessage(content="Foo", name="Katie")]
@@ -282,7 +282,7 @@ def test_custom_token_counting() -> None:
     def token_encoder(text: str) -> List[int]:
         return [1, 2, 3]
 
-    llm = ChatOpenAI(custom_get_token_ids=token_encoder)
+    llm = ChatNeoSpace(custom_get_token_ids=token_encoder)
     assert llm.get_token_ids("foo") == [1, 2, 3]
 
 
@@ -345,19 +345,19 @@ class MakeASandwich(BaseModel):
 )
 def test_bind_tools_tool_choice(tool_choice: Any) -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
     llm.bind_tools(tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice)
 
 
 @pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
 def test_with_structured_output(schema: Union[Type[BaseModel], dict]) -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
     llm.with_structured_output(schema)
 
 
 def test_get_num_tokens_from_messages() -> None:
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatNeoSpace(model="gpt-4o")
     messages = [
         SystemMessage("you're a good assistant"),
         HumanMessage("how are you"),

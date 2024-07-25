@@ -1,3 +1,3 @@
-from langchain_neospace.embeddings.base import OpenAIEmbeddings
+from langchain_neospace.embeddings.base import NeoSpaceEmbeddings
 
-__all__ = ["OpenAIEmbeddings"]
+__all__ = ["NeoSpaceEmbeddings"]

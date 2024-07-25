@@ -3,9 +3,9 @@ requires = [ "poetry-core>=1.0.0",]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "langchain-openai"
+name = "langchain-neospace"
 version = "0.1.18"
-description = "An integration package connecting OpenAI and LangChain"
+description = "An integration package connecting NeoSpace and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
@@ -18,13 +18,13 @@ module = "transformers"
 ignore_missing_imports = true
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-openai%3D%3D0%22&expanded=true"
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/neospace"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-neospace%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.20"
-openai = "^1.32.0"
+neospace = "^1.32.0"
 tiktoken = ">=0.7,<1"
 
 [tool.ruff.lint]
@@ -38,7 +38,7 @@ skip-magic-trailing-comma = true
 omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
-addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5 --cov=langchain_openai"
+addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5 --cov=langchain_neospace"
 markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them", "scheduled: mark tests to run in scheduled testing",]
 asyncio_mode = "auto"
 

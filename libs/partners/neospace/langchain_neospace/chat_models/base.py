@@ -1,4 +1,4 @@
-"""OpenAI chat wrapper."""
+"""NeoSpace chat wrapper."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ from typing import (
 )
 from urllib.parse import urlparse
 
-import openai
+import neospace
 import tiktoken
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -66,7 +66,7 @@ from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
-from langchain_core.output_parsers.openai_tools import (
+from langchain_core.output_parsers.neospace_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
     make_invalid_tool_call,
@@ -83,8 +83,8 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import (
-    convert_to_openai_function,
-    convert_to_openai_tool,
+    convert_to_neospace_function,
+    convert_to_neospace_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import build_extra_kwargs
@@ -108,7 +108,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
     elif role == "assistant":
         # Fix for azure
-        # Also OpenAI returns None for tool invocations
+        # Also NeoSpace returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
@@ -197,9 +197,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
         if message.tool_calls or message.invalid_tool_calls:
             message_dict["tool_calls"] = [
-                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+                _lc_tool_call_to_neospace_tool_call(tc) for tc in message.tool_calls
             ] + [
-                _lc_invalid_tool_call_to_openai_tool_call(tc)
+                _lc_invalid_tool_call_to_neospace_tool_call(tc)
                 for tc in message.invalid_tool_calls
             ]
         elif "tool_calls" in message.additional_kwargs:
@@ -295,7 +295,7 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-class BaseChatOpenAI(BaseChatModel):
+class BaseChatNeoSpace(BaseChatModel):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
@@ -304,19 +304,19 @@ class BaseChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    neospace_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `NEOSPACE_API_KEY` if not provided."""
+    neospace_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
-    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
-    # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    neospace_organization: Optional[str] = Field(default=None, alias="organization")
+    """Automatically inferred from env var `NEOSPACE_ORG_ID` if not provided."""
+    # to support explicit proxy for NeoSpace
+    neospace_proxy: Optional[str] = None
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to NeoSpace completion API. Can be float, httpx.Timeout or 
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
@@ -349,7 +349,7 @@ class BaseChatOpenAI(BaseChatModel):
     be the same as the embedding model name. However, there are some cases 
     where you may want to use this Embedding class with a model name not 
     supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
+    when using one of the many model providers that expose an NeoSpace-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
     default_headers: Union[Mapping[str, str], None] = None
@@ -367,7 +367,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
-    making requests to OpenAI compatible APIs, such as vLLM."""
+    making requests to NeoSpace compatible APIs, such as vLLM."""
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
 
@@ -394,39 +394,39 @@ class BaseChatOpenAI(BaseChatModel):
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
 
-        values["openai_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
+        values["neospace_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "neospace_api_key", "NEOSPACE_API_KEY")
         )
-        # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
+        # Check NEOSPACE_ORGANIZATION for backwards compatibility.
+        values["neospace_organization"] = (
+            values["neospace_organization"]
+            or os.getenv("NEOSPACE_ORG_ID")
+            or os.getenv("NEOSPACE_ORGANIZATION")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["neospace_api_base"] = values["neospace_api_base"] or os.getenv(
+            "NEOSPACE_API_BASE"
         )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
+        values["neospace_proxy"] = get_from_dict_or_env(
+            values, "neospace_proxy", "NEOSPACE_PROXY", default=""
         )
 
         client_params = {
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
+                values["neospace_api_key"].get_secret_value()
+                if values["neospace_api_key"]
                 else None
             ),
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
+            "organization": values["neospace_organization"],
+            "base_url": values["neospace_api_base"],
             "timeout": values["request_timeout"],
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
         }
 
-        openai_proxy = values["openai_proxy"]
+        neospace_proxy = values["neospace_proxy"]
         if not values.get("client"):
-            if openai_proxy and not values["http_client"]:
+            if neospace_proxy and not values["http_client"]:
                 try:
                     import httpx
                 except ImportError as e:
@@ -434,13 +434,13 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_client"] = httpx.Client(proxy=openai_proxy)
+                values["http_client"] = httpx.Client(proxy=neospace_proxy)
             sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.OpenAI(
+            values["client"] = neospace.NeoSpace(
                 **client_params, **sync_specific
             ).chat.completions
         if not values.get("async_client"):
-            if openai_proxy and not values["http_async_client"]:
+            if neospace_proxy and not values["http_async_client"]:
                 try:
                     import httpx
                 except ImportError as e:
@@ -448,16 +448,16 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_async_client"] = httpx.AsyncClient(proxy=openai_proxy)
+                values["http_async_client"] = httpx.AsyncClient(proxy=neospace_proxy)
             async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncOpenAI(
+            values["async_client"] = neospace.AsyncNeoSpace(
                 **client_params, **async_specific
             ).chat.completions
         return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling NeoSpace API."""
         exclude_if_none = {
             "presence_penalty": self.presence_penalty,
             "frequency_penalty": self.frequency_penalty,
@@ -609,7 +609,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     def _create_chat_result(
         self,
-        response: Union[dict, openai.BaseModel],
+        response: Union[dict, neospace.BaseModel],
         generation_info: Optional[Dict] = None,
     ) -> ChatResult:
         generations = []
@@ -766,7 +766,7 @@ class BaseChatOpenAI(BaseChatModel):
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
-            ls_provider="openai",
+            ls_provider="neospace",
             ls_model_name=self.model_name,
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
@@ -780,7 +780,7 @@ class BaseChatOpenAI(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "openai-chat"
+        return "neospace-chat"
 
     def _get_encoding_model(self) -> Tuple[str, tiktoken.Encoding]:
         if self.tiktoken_model_name is not None:
@@ -814,7 +814,7 @@ class BaseChatOpenAI(BaseChatModel):
         as a URL. If these aren't installed image inputs will be ignored in token
         counting.
 
-        OpenAI reference: https://github.com/openai/openai-cookbook/blob/
+        NeoSpace reference: https://github.com/neospace/neospace-cookbook/blob/
         main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
@@ -831,7 +831,7 @@ class BaseChatOpenAI(BaseChatModel):
             raise NotImplementedError(
                 f"get_num_tokens_from_messages() is not presently implemented "
                 f"for model {model}. See "
-                "https://platform.openai.com/docs/guides/text-generation/managing-tokens"  # noqa: E501
+                "https://platform.neospace.com/docs/guides/text-generation/managing-tokens"  # noqa: E501
                 " for information on how messages are converted to tokens."
             )
         num_tokens = 0
@@ -839,7 +839,7 @@ class BaseChatOpenAI(BaseChatModel):
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                # This is an inferred approximation. OpenAI does not document how to
+                # This is an inferred approximation. NeoSpace does not document how to
                 # count tool message tokens.
                 if key == "tool_call_id":
                     num_tokens += 3
@@ -858,7 +858,7 @@ class BaseChatOpenAI(BaseChatModel):
                                 if not image_size:
                                     continue
                                 num_tokens += _count_image_tokens(*image_size)
-                        # Tool/function call token counting is not documented by OpenAI.
+                        # Tool/function call token counting is not documented by NeoSpace.
                         # This is an approximation.
                         elif val["type"] == "function":
                             num_tokens += len(
@@ -891,11 +891,11 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind functions (and other objects) to this chat model.
 
-        Assumes model is compatible with OpenAI function-calling API.
+        Assumes model is compatible with NeoSpace function-calling API.
 
         NOTE: Using bind_tools is recommended instead, as the `functions` and
             `function_call` request parameters are officially marked as deprecated by
-            OpenAI.
+            NeoSpace.
 
         Args:
             functions: A list of function definitions to bind to this chat model.
@@ -910,7 +910,7 @@ class BaseChatOpenAI(BaseChatModel):
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
-        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        formatted_functions = [convert_to_neospace_function(fn) for fn in functions]
         if function_call is not None:
             function_call = (
                 {"name": function_call}
@@ -945,7 +945,7 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
 
-        Assumes model is compatible with OpenAI tool-calling API.
+        Assumes model is compatible with NeoSpace tool-calling API.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
@@ -967,7 +967,7 @@ class BaseChatOpenAI(BaseChatModel):
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        formatted_tools = [convert_to_neospace_tool(tool) for tool in tools]
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
@@ -976,7 +976,7 @@ class BaseChatOpenAI(BaseChatModel):
                         "type": "function",
                         "function": {"name": tool_choice},
                     }
-                # 'any' is not natively supported by OpenAI API.
+                # 'any' is not natively supported by NeoSpace API.
                 # We support 'any' since other models use this instead of 'required'.
                 if tool_choice == "any":
                     tool_choice = "required"
@@ -1040,12 +1040,12 @@ class BaseChatOpenAI(BaseChatModel):
                 the model output will be a dict. With a Pydantic class the returned
                 attributes will be validated, whereas with a dict they will not be. If
                 `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec or be a valid JSON schema
+                must match the NeoSpace function-calling spec or be a valid JSON schema
                 with top level 'title' and 'description' keys specified.
             method: The method for steering model generation, either "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
-                to an OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then OpenAI's JSON mode will be
+                to an NeoSpace function and the returned model will make use of the
+                function-calling API. If "json_mode" then NeoSpace's JSON mode will be
                 used. Note that if using "json_mode" then you must include instructions
                 for formatting the output into the desired schema into the model call.
             include_raw: If False then only the parsed structured output is returned. If
@@ -1074,7 +1074,7 @@ class BaseChatOpenAI(BaseChatModel):
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_neospace import ChatNeoSpace
                 from langchain_core.pydantic_v1 import BaseModel
 
 
@@ -1085,7 +1085,7 @@ class BaseChatOpenAI(BaseChatModel):
                     justification: str
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -1100,7 +1100,7 @@ class BaseChatOpenAI(BaseChatModel):
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_neospace import ChatNeoSpace
                 from langchain_core.pydantic_v1 import BaseModel
 
 
@@ -1111,7 +1111,7 @@ class BaseChatOpenAI(BaseChatModel):
                     justification: str
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -1128,9 +1128,9 @@ class BaseChatOpenAI(BaseChatModel):
         Example: Function-calling, dict schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_openai import ChatOpenAI
+                from langchain_neospace import ChatNeoSpace
                 from langchain_core.pydantic_v1 import BaseModel
-                from langchain_core.utils.function_calling import convert_to_openai_tool
+                from langchain_core.utils.function_calling import convert_to_neospace_tool
 
 
                 class AnswerWithJustification(BaseModel):
@@ -1140,8 +1140,8 @@ class BaseChatOpenAI(BaseChatModel):
                     justification: str
 
 
-                dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                dict_schema = convert_to_neospace_tool(AnswerWithJustification)
+                llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
                 structured_llm.invoke(
@@ -1155,14 +1155,14 @@ class BaseChatOpenAI(BaseChatModel):
         Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_openai import ChatOpenAI
+                from langchain_neospace import ChatNeoSpace
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str
                     justification: str
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -1210,7 +1210,7 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            tool_name = convert_to_neospace_tool(schema)["function"]["name"]
             llm = self.bind_tools(
                 [schema], tool_choice=tool_name, parallel_tool_calls=False
             )
@@ -1249,20 +1249,20 @@ class BaseChatOpenAI(BaseChatModel):
             return llm | output_parser
 
 
-class ChatOpenAI(BaseChatOpenAI):
-    """OpenAI chat model integration.
+class ChatNeoSpace(BaseChatNeoSpace):
+    """NeoSpace chat model integration.
 
     Setup:
-        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
+        Install ``langchain-neospace`` and set environment variable ``NEOSPACE_API_KEY``.
 
         .. code-block:: bash
 
-            pip install -U langchain-openai
-            export OPENAI_API_KEY="your-api-key"
+            pip install -U langchain-neospace
+            export NEOSPACE_API_KEY="your-api-key"
 
     Key init args — completion params:
         model: str
-            Name of OpenAI model to use.
+            Name of NeoSpace model to use.
         temperature: float
             Sampling temperature.
         max_tokens: Optional[int]
@@ -1279,22 +1279,22 @@ class ChatOpenAI(BaseChatOpenAI):
         max_retries: int
             Max number of retries.
         api_key: Optional[str]
-            OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
+            NeoSpace API key. If not passed in will be read from env var NEOSPACE_API_KEY.
         base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
         organization: Optional[str]
-            OpenAI organization ID. If not passed in will be read from env
-            var OPENAI_ORG_ID.
+            NeoSpace organization ID. If not passed in will be read from env
+            var NEOSPACE_ORG_ID.
 
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
+            from langchain_neospace import ChatNeoSpace
 
-            llm = ChatOpenAI(
+            llm = ChatNeoSpace(
                 model="gpt-4o",
                 temperature=0,
                 max_tokens=None,
@@ -1307,22 +1307,22 @@ class ChatOpenAI(BaseChatOpenAI):
             )
 
     **NOTE**: Any param which is not explicitly supported will be passed directly to the
-    ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
+    ``neospace.NeoSpace.chat.completions.create(...)`` API every time to the model is
     invoked. For example:
         .. code-block:: python
 
-            from langchain_openai import ChatOpenAI
-            import openai
+            from langchain_neospace import ChatNeoSpace
+            import neospace
 
-            ChatOpenAI(..., frequency_penalty=0.2).invoke(...)
+            ChatNeoSpace(..., frequency_penalty=0.2).invoke(...)
 
             # results in underlying API call of:
 
-            openai.OpenAI(..).chat.completions.create(..., frequency_penalty=0.2)
+            neospace.NeoSpace(..).chat.completions.create(..., frequency_penalty=0.2)
 
             # which is also equivalent to:
 
-            ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
+            ChatNeoSpace(...).invoke(..., frequency_penalty=0.2)
 
     Invoke:
         .. code-block:: python
@@ -1476,7 +1476,7 @@ class ChatOpenAI(BaseChatOpenAI):
                 },
             ]
 
-        Note that ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
+        Note that ``neospace >= 1.32`` supports a ``parallel_tool_calls`` parameter
         that defaults to ``True``. This parameter can be set to ``False`` to
         disable parallel tool calls:
 
@@ -1501,7 +1501,7 @@ class ChatOpenAI(BaseChatOpenAI):
         using ``llm.bind(parallel_tool_calls=False)`` or during instantiation by
         setting ``model_kwargs``.
 
-        See ``ChatOpenAI.bind_tools()`` method for more.
+        See ``ChatNeoSpace.bind_tools()`` method for more.
 
     Structured output:
         .. code-block:: python
@@ -1530,7 +1530,7 @@ class ChatOpenAI(BaseChatOpenAI):
                 rating=None,
             )
 
-        See ``ChatOpenAI.with_structured_output()`` for more.
+        See ``ChatNeoSpace.with_structured_output()`` for more.
 
     JSON mode:
         .. code-block:: python
@@ -1595,13 +1595,13 @@ class ChatOpenAI(BaseChatOpenAI):
             {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
 
         Alternatively, setting ``stream_usage`` when instantiating the model can be
-        useful when incorporating ``ChatOpenAI`` into LCEL chains-- or when using
+        useful when incorporating ``ChatNeoSpace`` into LCEL chains-- or when using
         methods like ``.with_structured_output``, which generate chains under the
         hood.
 
         .. code-block:: python
 
-            llm = ChatOpenAI(model="gpt-4o", stream_usage=True)
+            llm = ChatNeoSpace(model="gpt-4o", stream_usage=True)
             structured_llm = llm.with_structured_output(...)
 
     Logprobs:
@@ -1692,25 +1692,25 @@ class ChatOpenAI(BaseChatOpenAI):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
+        return {"neospace_api_key": "NEOSPACE_API_KEY"}
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ["langchain", "chat_models", "openai"]
+        return ["langchain", "chat_models", "neospace"]
 
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
 
-        if self.openai_organization:
-            attributes["openai_organization"] = self.openai_organization
+        if self.neospace_organization:
+            attributes["neospace_organization"] = self.neospace_organization
 
-        if self.openai_api_base:
-            attributes["openai_api_base"] = self.openai_api_base
+        if self.neospace_api_base:
+            attributes["neospace_api_base"] = self.neospace_api_base
 
-        if self.openai_proxy:
-            attributes["openai_proxy"] = self.openai_proxy
+        if self.neospace_proxy:
+            attributes["neospace_proxy"] = self.neospace_proxy
 
         return attributes
 
@@ -1743,10 +1743,10 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> Iterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        # Note: stream_options is not a valid parameter for Azure OpenAI.
-        # To support users proxying Azure through ChatOpenAI, here we only specify
+        # Note: stream_options is not a valid parameter for Azure NeoSpace.
+        # To support users proxying Azure through ChatNeoSpace, here we only specify
         # stream_options if include_usage is set to True.
-        # See https://learn.microsoft.com/en-us/azure/ai-services/openai/whats-new
+        # See https://learn.microsoft.com/en-us/azure/ai-services/neospace/whats-new
         # for release notes.
         if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
@@ -1769,7 +1769,7 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
-def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+def _lc_tool_call_to_neospace_tool_call(tool_call: ToolCall) -> dict:
     return {
         "type": "function",
         "id": tool_call["id"],
@@ -1780,7 +1780,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
     }
 
 
-def _lc_invalid_tool_call_to_openai_tool_call(
+def _lc_invalid_tool_call_to_neospace_tool_call(
     invalid_tool_call: InvalidToolCall,
 ) -> dict:
     return {
@@ -1825,7 +1825,7 @@ def _url_to_size(image_source: str) -> Optional[Tuple[int, int]]:
 
 
 def _count_image_tokens(width: int, height: int) -> int:
-    # Reference: https://platform.openai.com/docs/guides/vision/calculating-costs
+    # Reference: https://platform.neospace.com/docs/guides/vision/calculating-costs
     width, height = _resize(width, height)
     h = ceil(height / 512)
     w = ceil(width / 512)

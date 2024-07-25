@@ -1,9 +1,9 @@
-from langchain_neospace.chat_models import ChatOpenAI
-from langchain_neospace.embeddings import OpenAIEmbeddings
-from langchain_neospace.llms import OpenAI
+from langchain_neospace.chat_models import ChatNeoSpace
+from langchain_neospace.embeddings import NeoSpaceEmbeddings
+from langchain_neospace.llms import NeoSpace
 
 __all__ = [
-    "OpenAI",
-    "ChatOpenAI",
-    "OpenAIEmbeddings",
+    "NeoSpace",
+    "ChatNeoSpace",
+    "NeoSpaceEmbeddings",
 ]

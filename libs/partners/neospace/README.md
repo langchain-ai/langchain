@@ -6,31 +6,31 @@ This package contains the LangChain integrations for NeoSpace through their `neo
 
 - Install the LangChain partner package
 ```bash
-pip install langchain-openai
+pip install langchain-neospace
 ```
-- Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
+- Get an NeoSpace api key and set it as an environment variable (`NEOSPACE_API_KEY`)
 
 
 ## LLM
 
-See a [usage example](http://python.langchain.com/docs/integrations/llms/openai).
+See a [usage example](http://python.langchain.com/docs/integrations/llms/neospace).
 
 ```python
-from langchain_openai import OpenAI
+from langchain_neospace import NeoSpace
 ```
 
 ## Chat model
 
-See a [usage example](http://python.langchain.com/docs/integrations/chat/openai).
+See a [usage example](http://python.langchain.com/docs/integrations/chat/neospace).
 
 ```python
-from langchain_openai import ChatOpenAI
+from langchain_neospace import ChatNeoSpace
 ```
 
 ## Text Embedding Model
 
-See a [usage example](http://python.langchain.com/docs/integrations/text_embedding/openai)
+See a [usage example](http://python.langchain.com/docs/integrations/text_embedding/neospace)
 
 ```python
-from langchain_openai import OpenAIEmbeddings
+from langchain_neospace import NeoSpaceEmbeddings
 ```

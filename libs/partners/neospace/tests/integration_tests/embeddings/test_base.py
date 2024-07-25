@@ -1,44 +1,44 @@
-"""Test OpenAI embeddings."""
+"""Test NeoSpace embeddings."""
 
 import numpy as np
-import openai
+import neospace
 
-from langchain_neospace.embeddings.base import OpenAIEmbeddings
+from langchain_neospace.embeddings.base import NeoSpaceEmbeddings
 
 
-def test_langchain_openai_embedding_documents() -> None:
-    """Test openai embeddings."""
+def test_langchain_neospace_embedding_documents() -> None:
+    """Test neospace embeddings."""
     documents = ["foo bar"]
-    embedding = OpenAIEmbeddings()
+    embedding = NeoSpaceEmbeddings()
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) > 0
 
 
-def test_langchain_openai_embedding_query() -> None:
-    """Test openai embeddings."""
+def test_langchain_neospace_embedding_query() -> None:
+    """Test neospace embeddings."""
     document = "foo bar"
-    embedding = OpenAIEmbeddings()
+    embedding = NeoSpaceEmbeddings()
     output = embedding.embed_query(document)
     assert len(output) > 0
 
 
-def test_langchain_openai_embeddings_dimensions() -> None:
-    """Test openai embeddings."""
+def test_langchain_neospace_embeddings_dimensions() -> None:
+    """Test neospace embeddings."""
     documents = ["foo bar"]
-    embedding = OpenAIEmbeddings(model="text-embedding-3-small", dimensions=128)
+    embedding = NeoSpaceEmbeddings(model="text-embedding-3-small", dimensions=128)
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 128
 
 
-def test_langchain_openai_embeddings_equivalent_to_raw() -> None:
+def test_langchain_neospace_embeddings_equivalent_to_raw() -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
-    embedding = OpenAIEmbeddings()
+    embedding = NeoSpaceEmbeddings()
 
     lc_output = embedding.embed_documents(documents)[0]
     direct_output = (
-        openai.OpenAI()
+        neospace.NeoSpace()
         .embeddings.create(input=documents, model=embedding.model)
         .data[0]
         .embedding
@@ -46,12 +46,12 @@ def test_langchain_openai_embeddings_equivalent_to_raw() -> None:
     assert np.isclose(lc_output, direct_output).all()
 
 
-async def test_langchain_openai_embeddings_equivalent_to_raw_async() -> None:
+async def test_langchain_neospace_embeddings_equivalent_to_raw_async() -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
-    embedding = OpenAIEmbeddings()
+    embedding = NeoSpaceEmbeddings()
 
     lc_output = (await embedding.aembed_documents(documents))[0]
-    client = openai.AsyncOpenAI()
+    client = neospace.AsyncNeoSpace()
     direct_output = (
         (await client.embeddings.create(input=documents, model=embedding.model))
         .data[0]

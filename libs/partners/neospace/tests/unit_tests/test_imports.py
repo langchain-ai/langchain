@@ -1,9 +1,9 @@
 from langchain_neospace import __all__
 
 EXPECTED_ALL = [
-    "OpenAI",
-    "ChatOpenAI",
-    "OpenAIEmbeddings",
+    "NeoSpace",
+    "ChatNeoSpace",
+    "NeoSpaceEmbeddings",
 ]
 
 

@@ -18,7 +18,7 @@ from typing import (
     cast,
 )
 
-import openai
+import neospace
 import tiktoken
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
@@ -98,22 +98,22 @@ def _process_batched_chunked_embeddings(
     return embeddings
 
 
-class OpenAIEmbeddings(BaseModel, Embeddings):
-    """OpenAI embedding models.
+class NeoSpaceEmbeddings(BaseModel, Embeddings):
+    """NeoSpace embedding models.
 
     To use, you should have the
-    environment variable ``OPENAI_API_KEY`` set with your API key or pass it
+    environment variable ``NEOSPACE_API_KEY`` set with your API key or pass it
     as a named parameter to the constructor.
 
     In order to use the library with Microsoft Azure endpoints, use
-    AzureOpenAIEmbeddings.
+    AzureNeoSpaceEmbeddings.
 
     Example:
         .. code-block:: python
 
-            from langchain_openai import OpenAIEmbeddings
+            from langchain_neospace import NeoSpaceEmbeddings
 
-            model = OpenAIEmbeddings(model="text-embedding-3-large")
+            model = NeoSpaceEmbeddings(model="text-embedding-3-large")
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -124,24 +124,24 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     Only supported in `text-embedding-3` and later models.
     """
-    # to support Azure OpenAI Service custom deployment names
+    # to support Azure NeoSpace Service custom deployment names
     deployment: Optional[str] = model
-    # TODO: Move to AzureOpenAIEmbeddings.
-    openai_api_version: Optional[str] = Field(default=None, alias="api_version")
-    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
-    # to support Azure OpenAI Service custom endpoints
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    # TODO: Move to AzureNeoSpaceEmbeddings.
+    neospace_api_version: Optional[str] = Field(default=None, alias="api_version")
+    """Automatically inferred from env var `NEOSPACE_API_VERSION` if not provided."""
+    # to support Azure NeoSpace Service custom endpoints
+    neospace_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
-    openai_api_type: Optional[str] = None
-    # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    neospace_api_type: Optional[str] = None
+    # to support explicit proxy for NeoSpace
+    neospace_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
-    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
+    neospace_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `NEOSPACE_API_KEY` if not provided."""
+    neospace_organization: Optional[str] = Field(default=None, alias="organization")
+    """Automatically inferred from env var `NEOSPACE_ORG_ID` if not provided."""
     allowed_special: Union[Literal["all"], Set[str], None] = None
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str], None] = None
     chunk_size: int = 1000
@@ -151,12 +151,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or
+    """Timeout for requests to NeoSpace completion API. Can be float, httpx.Timeout or
         None."""
     headers: Any = None
     tiktoken_enabled: bool = True
-    """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
-    the `--extensions openai` extension for `text-generation-webui`"""
+    """Set this to False for non-NeoSpace implementations of the embeddings API, e.g.
+    the `--extensions neospace` extension for `text-generation-webui`"""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
@@ -164,7 +164,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     be the same as the embedding model name. However, there are some cases
     where you may want to use this Embedding class with a model name not
     supported by tiktoken. This can include when using Azure embeddings or
-    when using one of the many model providers that expose an OpenAI-like
+    when using one of the many model providers that expose an NeoSpace-like
     API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     show_progress_bar: bool = False
@@ -228,42 +228,42 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+        neospace_api_key = get_from_dict_or_env(
+            values, "neospace_api_key", "NEOSPACE_API_KEY"
         )
-        values["openai_api_key"] = (
-            convert_to_secret_str(openai_api_key) if openai_api_key else None
+        values["neospace_api_key"] = (
+            convert_to_secret_str(neospace_api_key) if neospace_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["neospace_api_base"] = values["neospace_api_base"] or os.getenv(
+            "NEOSPACE_API_BASE"
         )
-        values["openai_api_type"] = get_from_dict_or_env(
-            values, "openai_api_type", "OPENAI_API_TYPE", default=""
+        values["neospace_api_type"] = get_from_dict_or_env(
+            values, "neospace_api_type", "NEOSPACE_API_TYPE", default=""
         )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
+        values["neospace_proxy"] = get_from_dict_or_env(
+            values, "neospace_proxy", "NEOSPACE_PROXY", default=""
         )
         default_api_version = ""
-        values["openai_api_version"] = get_from_dict_or_env(
+        values["neospace_api_version"] = get_from_dict_or_env(
             values,
-            "openai_api_version",
-            "OPENAI_API_VERSION",
+            "neospace_api_version",
+            "NEOSPACE_API_VERSION",
             default=default_api_version,
         )
-        # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
+        # Check NEOSPACE_ORGANIZATION for backwards compatibility.
+        values["neospace_organization"] = (
+            values["neospace_organization"]
+            or os.getenv("NEOSPACE_ORG_ID")
+            or os.getenv("NEOSPACE_ORGANIZATION")
         )
         client_params = {
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
+                values["neospace_api_key"].get_secret_value()
+                if values["neospace_api_key"]
                 else None
             ),
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
+            "organization": values["neospace_organization"],
+            "base_url": values["neospace_api_base"],
             "timeout": values["request_timeout"],
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
@@ -271,12 +271,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         }
         if not values.get("client"):
             sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.OpenAI(
+            values["client"] = neospace.NeoSpace(
                 **client_params, **sync_specific
             ).embeddings
         if not values.get("async_client"):
             async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncOpenAI(
+            values["async_client"] = neospace.AsyncNeoSpace(
                 **client_params, **async_specific
             ).embeddings
         return values
@@ -295,7 +295,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Take the input `texts` and `chunk_size` and return 3 iterables as a tuple:
 
         We have `batches`, where batches are sets of individual texts
-        we want responses from the openai api. The length of a single batch is
+        we want responses from the neospace api. The length of a single batch is
         `chunk_size` texts.
 
         Each individual text is also split into multiple texts based on the
@@ -322,7 +322,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             except ImportError:
                 raise ValueError(
                     "Could not import transformers python package. "
-                    "This is needed for OpenAIEmbeddings to work without "
+                    "This is needed for NeoSpaceEmbeddings to work without "
                     "`tiktoken`. Please install it with `pip install transformers`. "
                 )
 
@@ -358,7 +358,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             }
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
-                    # See: https://github.com/openai/openai-python/
+                    # See: https://github.com/neospace/neospace-python/
                     #      issues/418#issuecomment-1525939500
                     # replace newlines, which can negatively affect performance.
                     text = text.replace("\n", " ")
@@ -385,7 +385,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return _iter, tokens, indices
 
     # please refer to
-    # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
+    # https://github.com/neospace/neospace-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     def _get_len_safe_embeddings(
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
@@ -434,7 +434,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return [e if e is not None else empty_embedding() for e in embeddings]
 
     # please refer to
-    # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
+    # https://github.com/neospace/neospace-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     async def _aget_len_safe_embeddings(
         self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
     ) -> List[List[float]]:
@@ -488,7 +488,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def embed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
     ) -> List[List[float]]:
-        """Call out to OpenAI's embedding endpoint for embedding search docs.
+        """Call out to NeoSpace's embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
@@ -515,7 +515,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
     ) -> List[List[float]]:
-        """Call out to OpenAI's embedding endpoint async for embedding search docs.
+        """Call out to NeoSpace's embedding endpoint async for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
@@ -542,7 +542,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return await self._aget_len_safe_embeddings(texts, engine=engine)
 
     def embed_query(self, text: str) -> List[float]:
-        """Call out to OpenAI's embedding endpoint for embedding query text.
+        """Call out to NeoSpace's embedding endpoint for embedding query text.
 
         Args:
             text: The text to embed.
@@ -553,7 +553,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return self.embed_documents([text])[0]
 
     async def aembed_query(self, text: str) -> List[float]:
-        """Call out to OpenAI's embedding endpoint async for embedding query text.
+        """Call out to NeoSpace's embedding endpoint async for embedding query text.
 
         Args:
             text: The text to embed.

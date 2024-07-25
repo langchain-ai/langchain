@@ -5,10 +5,10 @@ from typing import Type
 from langchain_core.language_models import BaseChatModel
 from langchain_standard_tests.unit_tests import ChatModelUnitTests
 
-from langchain_neospace import ChatOpenAI
+from langchain_neospace import ChatNeoSpace
 
 
-class TestOpenAIStandard(ChatModelUnitTests):
+class TestNeoSpaceStandard(ChatModelUnitTests):
     @property
     def chat_model_class(self) -> Type[BaseChatModel]:
-        return ChatOpenAI
+        return ChatNeoSpace

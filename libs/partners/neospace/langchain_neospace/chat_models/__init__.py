@@ -1,3 +1,3 @@
-from langchain_neospace.chat_models.base import ChatOpenAI
+from langchain_neospace.chat_models.base import ChatNeoSpace
 
-__all__ = ["ChatOpenAI"]
+__all__ = ["ChatNeoSpace"]

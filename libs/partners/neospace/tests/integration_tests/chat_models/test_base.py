@@ -1,4 +1,4 @@
-"""Test ChatOpenAI chat model."""
+"""Test ChatNeoSpace chat model."""
 
 import base64
 from typing import Any, AsyncIterator, List, Optional, cast
@@ -20,18 +20,18 @@ from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 
-from langchain_neospace import ChatOpenAI
+from langchain_neospace import ChatNeoSpace
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
 @pytest.mark.scheduled
-def test_chat_openai() -> None:
-    """Test ChatOpenAI wrapper."""
-    chat = ChatOpenAI(
+def test_chat_neospace() -> None:
+    """Test ChatNeoSpace wrapper."""
+    chat = ChatNeoSpace(
         temperature=0.7,
         base_url=None,
         organization=None,
-        openai_proxy=None,
+        neospace_proxy=None,
         timeout=10.0,
         max_retries=3,
         http_client=None,
@@ -46,17 +46,17 @@ def test_chat_openai() -> None:
     assert isinstance(response.content, str)
 
 
-def test_chat_openai_model() -> None:
-    """Test ChatOpenAI wrapper handles model_name."""
-    chat = ChatOpenAI(model="foo")
+def test_chat_neospace_model() -> None:
+    """Test ChatNeoSpace wrapper handles model_name."""
+    chat = ChatNeoSpace(model="foo")
     assert chat.model_name == "foo"
-    chat = ChatOpenAI(model_name="bar")  # type: ignore[call-arg]
+    chat = ChatNeoSpace(model_name="bar")  # type: ignore[call-arg]
     assert chat.model_name == "bar"
 
 
-def test_chat_openai_system_message() -> None:
-    """Test ChatOpenAI wrapper with system message."""
-    chat = ChatOpenAI(max_tokens=10)
+def test_chat_neospace_system_message() -> None:
+    """Test ChatNeoSpace wrapper with system message."""
+    chat = ChatNeoSpace(max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
@@ -65,9 +65,9 @@ def test_chat_openai_system_message() -> None:
 
 
 @pytest.mark.scheduled
-def test_chat_openai_generate() -> None:
-    """Test ChatOpenAI wrapper with generate."""
-    chat = ChatOpenAI(max_tokens=10, n=2)
+def test_chat_neospace_generate() -> None:
+    """Test ChatNeoSpace wrapper with generate."""
+    chat = ChatNeoSpace(max_tokens=10, n=2)
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -82,9 +82,9 @@ def test_chat_openai_generate() -> None:
 
 
 @pytest.mark.scheduled
-def test_chat_openai_multiple_completions() -> None:
-    """Test ChatOpenAI wrapper with multiple completions."""
-    chat = ChatOpenAI(max_tokens=10, n=5)
+def test_chat_neospace_multiple_completions() -> None:
+    """Test ChatNeoSpace wrapper with multiple completions."""
+    chat = ChatNeoSpace(max_tokens=10, n=5)
     message = HumanMessage(content="Hello")
     response = chat._generate([message])
     assert isinstance(response, ChatResult)
@@ -95,11 +95,11 @@ def test_chat_openai_multiple_completions() -> None:
 
 
 @pytest.mark.scheduled
-def test_chat_openai_streaming() -> None:
+def test_chat_neospace_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatOpenAI(
+    chat = ChatNeoSpace(
         max_tokens=10,
         streaming=True,
         temperature=0,
@@ -113,7 +113,7 @@ def test_chat_openai_streaming() -> None:
 
 
 @pytest.mark.scheduled
-def test_chat_openai_streaming_generation_info() -> None:
+def test_chat_neospace_streaming_generation_info() -> None:
     """Test that generation info is preserved when streaming."""
 
     class _FakeCallback(FakeCallbackHandler):
@@ -125,41 +125,41 @@ def test_chat_openai_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = ChatOpenAI(max_tokens=2, temperature=0, callback_manager=callback_manager)
+    chat = ChatNeoSpace(max_tokens=2, temperature=0, callback_manager=callback_manager)
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
     assert generation.generations[0][0].text == "Hello!"
 
 
-def test_chat_openai_llm_output_contains_model_name() -> None:
+def test_chat_neospace_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
-    chat = ChatOpenAI(max_tokens=10)
+    chat = ChatNeoSpace(max_tokens=10)
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
     assert llm_result.llm_output["model_name"] == chat.model_name
 
 
-def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
+def test_chat_neospace_streaming_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
-    chat = ChatOpenAI(max_tokens=10, streaming=True)
+    chat = ChatNeoSpace(max_tokens=10, streaming=True)
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
     assert llm_result.llm_output["model_name"] == chat.model_name
 
 
-def test_chat_openai_invalid_streaming_params() -> None:
+def test_chat_neospace_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
-        ChatOpenAI(max_tokens=10, streaming=True, temperature=0, n=5)
+        ChatNeoSpace(max_tokens=10, streaming=True, temperature=0, n=5)
 
 
 @pytest.mark.scheduled
-async def test_async_chat_openai() -> None:
+async def test_async_chat_neospace() -> None:
     """Test async generation."""
-    chat = ChatOpenAI(max_tokens=10, n=2)
+    chat = ChatNeoSpace(max_tokens=10, n=2)
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -174,11 +174,11 @@ async def test_async_chat_openai() -> None:
 
 
 @pytest.mark.scheduled
-async def test_async_chat_openai_streaming() -> None:
+async def test_async_chat_neospace_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatOpenAI(
+    chat = ChatNeoSpace(
         max_tokens=10,
         streaming=True,
         temperature=0,
@@ -199,8 +199,8 @@ async def test_async_chat_openai_streaming() -> None:
 
 
 @pytest.mark.scheduled
-async def test_async_chat_openai_bind_functions() -> None:
-    """Test ChatOpenAI wrapper with multiple completions."""
+async def test_async_chat_neospace_bind_functions() -> None:
+    """Test ChatNeoSpace wrapper with multiple completions."""
 
     class Person(BaseModel):
         """Identifying information about a person."""
@@ -211,7 +211,7 @@ async def test_async_chat_openai_bind_functions() -> None:
             default=None, title="Fav Food", description="The person's favorite food"
         )
 
-    chat = ChatOpenAI(max_tokens=30, n=1, streaming=True).bind_functions(
+    chat = ChatNeoSpace(max_tokens=30, n=1, streaming=True).bind_functions(
         functions=[Person], function_call="Person"
     )
 
@@ -230,52 +230,52 @@ async def test_async_chat_openai_bind_functions() -> None:
         assert isinstance(generation, AIMessage)
 
 
-def test_chat_openai_extra_kwargs() -> None:
-    """Test extra kwargs to chat openai."""
+def test_chat_neospace_extra_kwargs() -> None:
+    """Test extra kwargs to chat neospace."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatOpenAI(foo=3, max_tokens=10)  # type: ignore[call-arg]
+    llm = ChatNeoSpace(foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatOpenAI(foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    llm = ChatNeoSpace(foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
-        ChatOpenAI(foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+        ChatNeoSpace(foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
 
     # Test that if explicit param is specified in kwargs it errors
     with pytest.raises(ValueError):
-        ChatOpenAI(model_kwargs={"temperature": 0.2})
+        ChatNeoSpace(model_kwargs={"temperature": 0.2})
 
     # Test that "model" cannot be specified in kwargs
     with pytest.raises(ValueError):
-        ChatOpenAI(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
+        ChatNeoSpace(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
 
 
 @pytest.mark.scheduled
-def test_openai_streaming() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+def test_neospace_streaming() -> None:
+    """Test streaming tokens from NeoSpace."""
+    llm = ChatNeoSpace(max_tokens=10)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
 
 
 @pytest.mark.scheduled
-async def test_openai_astream() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+async def test_neospace_astream() -> None:
+    """Test streaming tokens from NeoSpace."""
+    llm = ChatNeoSpace(max_tokens=10)
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
 
 
 @pytest.mark.scheduled
-async def test_openai_abatch() -> None:
-    """Test streaming tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+async def test_neospace_abatch() -> None:
+    """Test streaming tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace(max_tokens=10)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -283,9 +283,9 @@ async def test_openai_abatch() -> None:
 
 
 @pytest.mark.scheduled
-async def test_openai_abatch_tags() -> None:
-    """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+async def test_neospace_abatch_tags() -> None:
+    """Test batch tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace(max_tokens=10)
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -295,9 +295,9 @@ async def test_openai_abatch_tags() -> None:
 
 
 @pytest.mark.scheduled
-def test_openai_batch() -> None:
-    """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+def test_neospace_batch() -> None:
+    """Test batch tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace(max_tokens=10)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -305,18 +305,18 @@ def test_openai_batch() -> None:
 
 
 @pytest.mark.scheduled
-async def test_openai_ainvoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+async def test_neospace_ainvoke() -> None:
+    """Test invoke tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace(max_tokens=10)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
 
 @pytest.mark.scheduled
-def test_openai_invoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=10)
+def test_neospace_invoke() -> None:
+    """Test invoke tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace(max_tokens=10)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -326,8 +326,8 @@ def test_openai_invoke() -> None:
 
 
 def test_stream() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI()
+    """Test streaming tokens from NeoSpace."""
+    llm = ChatNeoSpace()
 
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("I'm Pickle Rick"):
@@ -363,7 +363,7 @@ def test_stream() -> None:
 
 
 async def test_astream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from NeoSpace."""
 
     async def _test_stream(stream: AsyncIterator, expect_usage: bool) -> None:
         full: Optional[BaseMessageChunk] = None
@@ -401,13 +401,13 @@ async def test_astream() -> None:
             assert chunks_with_token_counts == 0
             assert full.usage_metadata is None
 
-    llm = ChatOpenAI(temperature=0, max_tokens=5)
+    llm = ChatNeoSpace(temperature=0, max_tokens=5)
     await _test_stream(llm.astream("Hello"), expect_usage=False)
     await _test_stream(
         llm.astream("Hello", stream_options={"include_usage": True}), expect_usage=True
     )
     await _test_stream(llm.astream("Hello", stream_usage=True), expect_usage=True)
-    llm = ChatOpenAI(
+    llm = ChatNeoSpace(
         temperature=0,
         max_tokens=5,
         model_kwargs={"stream_options": {"include_usage": True}},
@@ -417,14 +417,14 @@ async def test_astream() -> None:
         llm.astream("Hello", stream_options={"include_usage": False}),
         expect_usage=False,
     )
-    llm = ChatOpenAI(temperature=0, max_tokens=5, stream_usage=True)
+    llm = ChatNeoSpace(temperature=0, max_tokens=5, stream_usage=True)
     await _test_stream(llm.astream("Hello"), expect_usage=True)
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
 
 async def test_abatch() -> None:
-    """Test streaming tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
+    """Test streaming tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace()
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -432,8 +432,8 @@ async def test_abatch() -> None:
 
 
 async def test_abatch_tags() -> None:
-    """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
+    """Test batch tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace()
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -443,8 +443,8 @@ async def test_abatch_tags() -> None:
 
 
 def test_batch() -> None:
-    """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
+    """Test batch tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace()
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -452,8 +452,8 @@ def test_batch() -> None:
 
 
 async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
+    """Test invoke tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace()
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -461,8 +461,8 @@ async def test_ainvoke() -> None:
 
 
 def test_invoke() -> None:
-    """Test invoke tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
+    """Test invoke tokens from ChatNeoSpace."""
+    llm = ChatNeoSpace()
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -470,7 +470,7 @@ def test_invoke() -> None:
 
 
 def test_response_metadata() -> None:
-    llm = ChatOpenAI()
+    llm = ChatNeoSpace()
     result = llm.invoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
     assert result.response_metadata
     assert all(
@@ -487,7 +487,7 @@ def test_response_metadata() -> None:
 
 
 async def test_async_response_metadata() -> None:
-    llm = ChatOpenAI()
+    llm = ChatNeoSpace()
     result = await llm.ainvoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
     assert result.response_metadata
     assert all(
@@ -504,7 +504,7 @@ async def test_async_response_metadata() -> None:
 
 
 def test_response_metadata_streaming() -> None:
-    llm = ChatOpenAI()
+    llm = ChatNeoSpace()
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
@@ -517,7 +517,7 @@ def test_response_metadata_streaming() -> None:
 
 
 async def test_async_response_metadata_streaming() -> None:
-    llm = ChatOpenAI()
+    llm = ChatNeoSpace()
     full: Optional[BaseMessageChunk] = None
     async for chunk in llm.astream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
@@ -546,7 +546,7 @@ class MakeASandwich(BaseModel):
 
 
 def test_tool_use() -> None:
-    llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
+    llm = ChatNeoSpace(model="gpt-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
     msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
@@ -588,7 +588,7 @@ def test_tool_use() -> None:
 
 def test_manual_tool_call_msg() -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
     msgs: List = [
         HumanMessage("Sally has green hair, what would her username be?"),
@@ -609,7 +609,7 @@ def test_manual_tool_call_msg() -> None:
     # Should not have called the tool again.
     assert not output.tool_calls and not output.invalid_tool_calls
 
-    # OpenAI should error when tool call id doesn't match across AIMessage and
+    # NeoSpace should error when tool call id doesn't match across AIMessage and
     # ToolMessage
     msgs = [
         HumanMessage("Sally has green hair, what would her username be?"),
@@ -631,7 +631,7 @@ def test_manual_tool_call_msg() -> None:
 
 def test_bind_tools_tool_choice() -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
     for tool_choice in ("any", "required"):
         llm_with_tools = llm.bind_tools(
             tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice
@@ -644,24 +644,24 @@ def test_bind_tools_tool_choice() -> None:
     assert not msg.tool_calls
 
 
-def test_openai_structured_output() -> None:
+def test_neospace_structured_output() -> None:
     class MyModel(BaseModel):
         """A Person"""
 
         name: str
         age: int
 
-    llm = ChatOpenAI().with_structured_output(MyModel)
+    llm = ChatNeoSpace().with_structured_output(MyModel)
     result = llm.invoke("I'm a 27 year old named Erick")
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
     assert result.age == 27
 
 
-def test_openai_proxy() -> None:
-    """Test ChatOpenAI with proxy."""
-    chat_openai = ChatOpenAI(openai_proxy="http://localhost:8080")
-    mounts = chat_openai.client._client._client._mounts
+def test_neospace_proxy() -> None:
+    """Test ChatNeoSpace with proxy."""
+    chat_neospace = ChatNeoSpace(neospace_proxy="http://localhost:8080")
+    mounts = chat_neospace.client._client._client._mounts
     assert len(mounts) == 1
     for key, value in mounts.items():
         proxy = value._pool._proxy_url.origin
@@ -669,7 +669,7 @@ def test_openai_proxy() -> None:
         assert proxy.host == b"localhost"
         assert proxy.port == 8080
 
-    async_client_mounts = chat_openai.async_client._client._client._mounts
+    async_client_mounts = chat_neospace.async_client._client._client._mounts
     assert len(async_client_mounts) == 1
     for key, value in async_client_mounts.items():
         proxy = value._pool._proxy_url.origin
@@ -678,10 +678,10 @@ def test_openai_proxy() -> None:
         assert proxy.port == 8080
 
 
-def test_openai_response_headers_invoke() -> None:
-    """Test ChatOpenAI response headers."""
-    chat_openai = ChatOpenAI(include_response_headers=True)
-    result = chat_openai.invoke("I'm Pickle Rick")
+def test_neospace_response_headers_invoke() -> None:
+    """Test ChatNeoSpace response headers."""
+    chat_neospace = ChatNeoSpace(include_response_headers=True)
+    result = chat_neospace.invoke("I'm Pickle Rick")
     headers = result.response_metadata["headers"]
     assert headers
     assert isinstance(headers, dict)
@@ -689,7 +689,7 @@ def test_openai_response_headers_invoke() -> None:
 
 
 def test_image_token_counting_jpeg() -> None:
-    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    model = ChatNeoSpace(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
     message = HumanMessage(
         content=[
@@ -721,7 +721,7 @@ def test_image_token_counting_jpeg() -> None:
 
 
 def test_image_token_counting_png() -> None:
-    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    model = ChatNeoSpace(model="gpt-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
     message = HumanMessage(
         content=[

@@ -1,6 +1,6 @@
 from langchain_neospace.llms import __all__
 
-EXPECTED_ALL = ["OpenAI"]
+EXPECTED_ALL = ["NeoSpace"]
 
 
 def test_all_imports() -> None:

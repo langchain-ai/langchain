@@ -1,3 +1,3 @@
-from langchain_neospace.llms.base import OpenAI
+from langchain_neospace.llms.base import NeoSpace
 
-__all__ = ["OpenAI"]
+__all__ = ["NeoSpace"]

@@ -585,14 +585,14 @@ files = [
 ]
 
 [[package]]
-name = "openai"
+name = "neospace"
 version = "1.35.14"
-description = "The official Python library for the openai API"
+description = "The official Python library for the neospace API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.35.14-py3-none-any.whl", hash = "sha256:adadf8c176e0b8c47ad782ed45dc20ef46438ee1f02c7103c4155cff79c8f68b"},
-    {file = "openai-1.35.14.tar.gz", hash = "sha256:394ba1dfd12ecec1d634c50e512d24ff1858bbc2674ffcce309b822785a058de"},
+    {file = "neospace-1.35.14-py3-none-any.whl", hash = "sha256:adadf8c176e0b8c47ad782ed45dc20ef46438ee1f02c7103c4155cff79c8f68b"},
+    {file = "neospace-1.35.14.tar.gz", hash = "sha256:394ba1dfd12ecec1d634c50e512d24ff1858bbc2674ffcce309b822785a058de"},
 ]
 
 [package.dependencies]
@@ -1267,7 +1267,7 @@ test = ["pytest", "tornado (>=4.5)", "typeguard"]
 [[package]]
 name = "tiktoken"
 version = "0.7.0"
-description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
+description = "tiktoken is a fast BPE tokeniser for use with NeoSpace's models"
 optional = false
 python-versions = ">=3.8"
 files = [

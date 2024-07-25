@@ -1,6 +1,6 @@
 import pytest
 
-from langchain_neospace import ChatOpenAI, OpenAI
+from langchain_neospace import ChatNeoSpace, NeoSpace
 
 _EXPECTED_NUM_TOKENS = {
     "ada": 17,
@@ -17,14 +17,14 @@ _CHAT_MODELS = ["gpt-4", "gpt-4-32k", "gpt-3.5-turbo"]
 
 
 @pytest.mark.parametrize("model", _MODELS)
-def test_openai_get_num_tokens(model: str) -> None:
+def test_neospace_get_num_tokens(model: str) -> None:
     """Test get_tokens."""
-    llm = OpenAI(model=model)
+    llm = NeoSpace(model=model)
     assert llm.get_num_tokens("表情符号是\n🦜🔗") == _EXPECTED_NUM_TOKENS[model]
 
 
 @pytest.mark.parametrize("model", _CHAT_MODELS)
-def test_chat_openai_get_num_tokens(model: str) -> None:
+def test_chat_neospace_get_num_tokens(model: str) -> None:
     """Test get_tokens."""
-    llm = ChatOpenAI(model=model)
+    llm = ChatNeoSpace(model=model)
     assert llm.get_num_tokens("表情符号是\n🦜🔗") == _EXPECTED_NUM_TOKENS[model]

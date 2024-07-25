@@ -19,7 +19,7 @@ from typing import (
     Union,
 )
 
-import openai
+import neospace
 import tiktoken
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -65,8 +65,8 @@ def _stream_response_to_generation_chunk(
     )
 
 
-class BaseOpenAI(BaseLLM):
-    """Base OpenAI large language model class."""
+class BaseNeoSpace(BaseLLM):
+    """Base NeoSpace large language model class."""
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -90,21 +90,21 @@ class BaseOpenAI(BaseLLM):
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    neospace_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    """Automatically inferred from env var `NEOSPACE_API_KEY` if not provided."""
+    neospace_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
-    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
-    # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    neospace_organization: Optional[str] = Field(default=None, alias="organization")
+    """Automatically inferred from env var `NEOSPACE_ORG_ID` if not provided."""
+    # to support explicit proxy for NeoSpace
+    neospace_proxy: Optional[str] = None
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to NeoSpace completion API. Can be float, httpx.Timeout or 
         None."""
     logit_bias: Optional[Dict[str, float]] = Field(default_factory=dict)
     """Adjust the probability of specific tokens being generated."""
@@ -128,7 +128,7 @@ class BaseOpenAI(BaseLLM):
     be the same as the embedding model name. However, there are some cases 
     where you may want to use this Embedding class with a model name not 
     supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
+    when using one of the many model providers that expose an NeoSpace-like 
     API but with different models. In those cases, in order to avoid erroring 
     when tiktoken is called, you can specify a model name to use here."""
     default_headers: Union[Mapping[str, str], None] = None
@@ -144,7 +144,7 @@ class BaseOpenAI(BaseLLM):
         http_client as well if you'd like a custom client for sync invocations."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
-    making requests to OpenAI compatible APIs, such as vLLM."""
+    making requests to NeoSpace compatible APIs, such as vLLM."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -171,32 +171,32 @@ class BaseOpenAI(BaseLLM):
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
-        openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+        neospace_api_key = get_from_dict_or_env(
+            values, "neospace_api_key", "NEOSPACE_API_KEY"
         )
-        values["openai_api_key"] = (
-            convert_to_secret_str(openai_api_key) if openai_api_key else None
+        values["neospace_api_key"] = (
+            convert_to_secret_str(neospace_api_key) if neospace_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["neospace_api_base"] = values["neospace_api_base"] or os.getenv(
+            "NEOSPACE_API_BASE"
         )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
+        values["neospace_proxy"] = get_from_dict_or_env(
+            values, "neospace_proxy", "NEOSPACE_PROXY", default=""
         )
-        values["openai_organization"] = (
-            values["openai_organization"]
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
+        values["neospace_organization"] = (
+            values["neospace_organization"]
+            or os.getenv("NEOSPACE_ORG_ID")
+            or os.getenv("NEOSPACE_ORGANIZATION")
         )
 
         client_params = {
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
+                values["neospace_api_key"].get_secret_value()
+                if values["neospace_api_key"]
                 else None
             ),
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
+            "organization": values["neospace_organization"],
+            "base_url": values["neospace_api_base"],
             "timeout": values["request_timeout"],
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
@@ -204,12 +204,12 @@ class BaseOpenAI(BaseLLM):
         }
         if not values.get("client"):
             sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.OpenAI(
+            values["client"] = neospace.NeoSpace(
                 **client_params, **sync_specific
             ).completions
         if not values.get("async_client"):
             async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncOpenAI(
+            values["async_client"] = neospace.AsyncNeoSpace(
                 **client_params, **async_specific
             ).completions
 
@@ -217,7 +217,7 @@ class BaseOpenAI(BaseLLM):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling OpenAI API."""
+        """Get the default parameters for calling NeoSpace API."""
         normal_params: Dict[str, Any] = {
             "temperature": self.temperature,
             "top_p": self.top_p,
@@ -304,7 +304,7 @@ class BaseOpenAI(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Call out to OpenAI's endpoint with k unique prompts.
+        """Call out to NeoSpace's endpoint with k unique prompts.
 
         Args:
             prompts: The prompts to pass into the model.
@@ -316,7 +316,7 @@ class BaseOpenAI(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = openai.generate(["Tell me a joke."])
+                response = neospace.generate(["Tell me a joke."])
         """
         # TODO: write a unit test for this
         params = self._invocation_params
@@ -384,7 +384,7 @@ class BaseOpenAI(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Call out to OpenAI's endpoint async with k unique prompts."""
+        """Call out to NeoSpace's endpoint async with k unique prompts."""
         params = self._invocation_params
         params = {**params, **kwargs}
         sub_prompts = self.get_sub_prompts(params, prompts, stop)
@@ -498,7 +498,7 @@ class BaseOpenAI(BaseLLM):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "openai"
+        return "neospace"
 
     def get_token_ids(self, text: str) -> List[int]:
         """Get the token IDs using the tiktoken package."""
@@ -533,7 +533,7 @@ class BaseOpenAI(BaseLLM):
         Example:
             .. code-block:: python
 
-                max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+                max_tokens = neospace.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
             "gpt-4o-mini": 128_000,
@@ -574,7 +574,7 @@ class BaseOpenAI(BaseLLM):
 
         if context_size is None:
             raise ValueError(
-                f"Unknown model: {modelname}. Please provide a valid OpenAI model name."
+                f"Unknown model: {modelname}. Please provide a valid NeoSpace model name."
                 "Known models are: " + ", ".join(model_token_mapping.keys())
             )
 
@@ -597,33 +597,33 @@ class BaseOpenAI(BaseLLM):
         Example:
             .. code-block:: python
 
-                max_tokens = openai.max_token_for_prompt("Tell me a joke.")
+                max_tokens = neospace.max_token_for_prompt("Tell me a joke.")
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
 
 
-class OpenAI(BaseOpenAI):
-    """OpenAI large language models.
+class NeoSpace(BaseNeoSpace):
+    """NeoSpace large language models.
 
-    To use, you should have the environment variable ``OPENAI_API_KEY``
+    To use, you should have the environment variable ``NEOSPACE_API_KEY``
     set with your API key, or pass it as a named parameter to the constructor.
 
-    Any parameters that are valid to be passed to the openai.create call can be passed
+    Any parameters that are valid to be passed to the neospace.create call can be passed
     in, even if not explicitly saved on this class.
 
     Example:
         .. code-block:: python
 
-            from langchain_openai import OpenAI
+            from langchain_neospace import NeoSpace
 
-            model = OpenAI(model_name="gpt-3.5-turbo-instruct")
+            model = NeoSpace(model_name="gpt-3.5-turbo-instruct")
     """
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ["langchain", "llms", "openai"]
+        return ["langchain", "llms", "neospace"]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -636,18 +636,18 @@ class OpenAI(BaseOpenAI):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
+        return {"neospace_api_key": "NEOSPACE_API_KEY"}
 
     @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
-        if self.openai_api_base:
-            attributes["openai_api_base"] = self.openai_api_base
+        if self.neospace_api_base:
+            attributes["neospace_api_base"] = self.neospace_api_base
 
-        if self.openai_organization:
-            attributes["openai_organization"] = self.openai_organization
+        if self.neospace_organization:
+            attributes["neospace_organization"] = self.neospace_organization
 
-        if self.openai_proxy:
-            attributes["openai_proxy"] = self.openai_proxy
+        if self.neospace_proxy:
+            attributes["neospace_proxy"] = self.neospace_proxy
 
         return attributes

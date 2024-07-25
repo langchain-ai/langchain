@@ -2,17 +2,17 @@ import os
 
 import pytest
 
-from langchain_neospace import OpenAIEmbeddings
+from langchain_neospace import NeoSpaceEmbeddings
 
-os.environ["OPENAI_API_KEY"] = "foo"
+os.environ["NEOSPACE_API_KEY"] = "foo"
 
 
-def test_openai_invalid_model_kwargs() -> None:
+def test_neospace_invalid_model_kwargs() -> None:
     with pytest.raises(ValueError):
-        OpenAIEmbeddings(model_kwargs={"model": "foo"})
+        NeoSpaceEmbeddings(model_kwargs={"model": "foo"})
 
 
-def test_openai_incorrect_field() -> None:
+def test_neospace_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = OpenAIEmbeddings(foo="bar")  # type: ignore[call-arg]
+        llm = NeoSpaceEmbeddings(foo="bar")  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
