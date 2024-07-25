@@ -6,22 +6,12 @@ from typing import List
 import pytest
 from langchain_core.documents import Document
 from sqlalchemy.exc import DBAPIError
+from typing import List
 
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
-
-
-@pytest.fixture
-def store() -> SQLServer_VectorStore:
-    """Setup resources that are needed for the duration of the test."""
-    store = SQLServer_VectorStore(
-        connection_string=_CONNECTION_STRING,
-        embedding_function=FakeEmbeddings(size=1536),
-        table_name="langchain_vector_store_tests",
-    )
-    return store  # provide this data to the test
 
 
 @pytest.fixture
@@ -49,82 +39,33 @@ def texts() -> List[str]:
     return query  # provide this data to the test.
 
 
-def test_sqlserver_add_texts(store: SQLServer_VectorStore) -> None:
-    """Test that add text returns equivalent number of ids of input texts."""
-    texts = ["rabbit", "cherry", "hamster", "cat", "elderberry"]
-    metadatas = [
-        {"color": "black", "type": "pet", "length": 6},
-        {"color": "red", "type": "fruit", "length": 6},
-        {"color": "brown", "type": "pet", "length": 7},
-        {"color": "black", "type": "pet", "length": 3},
-        {"color": "blue", "type": "fruit", "length": 10},
+@pytest.fixture
+def metadatas() -> List[dict]:
+    """Definition of metadatas used in the tests."""
+    query_metadata = [
+        {"id": 1, "summary": "Good Quality Dog Food"},
+        {"id": 2, "summary": "Nasty No flavor"},
+        {"id": 3, "summary": "stale product"},
+        {"id": 4, "summary": "Great value and convenient ramen"},
+        {"id": 5, "summary": "Great for the kids!"},
     ]
-    result = store.add_texts(texts, metadatas)
-    assert len(result) == len(texts)
+    return query_metadata  # provide this data to the test.
 
 
-def test_sqlserver_add_texts_when_no_metadata_is_provided(
-    store: SQLServer_VectorStore,
-) -> None:
-    """Test that when user calls the add_texts function without providing metadata,
-    the embedded text still get added to the vector store."""
-    texts = [
-        "Good review",
-        "new books",
-        "table",
-        "Sunglasses are a form of protective eyewear.",
-    ]
-    result = store.add_texts(texts)
-    assert len(result) == len(texts)
+@pytest.fixture
+def store() -> SQLServer_VectorStore:
+    """Setup resources that are needed for the duration of the test."""
+    store = SQLServer_VectorStore(
+        connection_string=_CONNECTION_STRING,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name="langchain_vector_store_tests",
+    )
+    return store  # provide this data to the test
 
 
-def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(
-    store: SQLServer_VectorStore,
-) -> None:
-    """Test that all texts provided are added into the vector store
-    even when metadata is not available for all the texts."""
-    # The text 'elderberry' and its embedded value should be added to the vector store.
-    texts = ["rabbit", "cherry", "hamster", "cat", "elderberry"]
-    metadatas = [
-        {"color": "black", "type": "pet", "length": 6},
-        {"color": "red", "type": "fruit", "length": 6},
-        {"color": "brown", "type": "pet", "length": 7},
-        {"color": "black", "type": "pet", "length": 3},
-    ]
-    result = store.add_texts(texts, metadatas)
-    assert len(result) == len(texts)
-
-
-def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
-    store: SQLServer_VectorStore,
-) -> None:
-    """Test that when length of given id is less than length of texts,
-    random ids are created."""
-    texts = [
-        "Good review",
-        "new books",
-        "table",
-        "Sunglasses are a form of protective eyewear.",
-        "It's a new year.",
-    ]
-
-    # List of ids is 3 and is less than len(texts) which is 5.
-    metadatas = [
-        {"id": 1, "soure": "book review", "length": 11},
-        {"id": 2, "source": "random texts", "length": 9},
-        {"source": "household list", "length": 5},
-        {"id": 6, "source": "newspaper page", "length": 44},
-        {"source": "random texts", "length": 16},
-    ]
-    result = store.add_texts(texts, metadatas)
-
-    # Length of ids returned by add_texts function should be equal to length of texts.
-    assert len(result) == len(texts)
-
-
-def test_add_document_with_sqlserver(store: SQLServer_VectorStore) -> None:
-    """Test that when add_document function is used, it integrates well
-    with the add_text function in SQLServer Vector Store."""
+@pytest.fixture
+def docs():
+    """Definition of doc variable used in the tests."""
     docs = [
         Document(
             page_content="rabbit",
@@ -146,41 +87,88 @@ def test_add_document_with_sqlserver(store: SQLServer_VectorStore) -> None:
             metadata={"color": "blue", "type": "fruit", "length": 10},
         ),
     ]
+    yield docs  # provide this data to the test
+
+
+def test_sqlserver_add_texts(store, texts, metadatas) -> None:
+    """Test that add text returns equivalent number of ids of input texts."""
+    result = store.add_texts(texts, metadatas)
+    assert len(result) == len(texts)
+
+
+def test_sqlserver_add_texts_when_no_metadata_is_provided(store, texts) -> None:
+    """Test that when user calls the add_texts function without providing metadata,
+    the embedded text still get added to the vector store."""
+    result = store.add_texts(texts)
+    assert len(result) == len(texts)
+
+
+def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(
+    store, texts, metadatas
+) -> None:
+    """Test that all texts provided are added into the vector store
+    even when metadata is not available for all the texts."""
+    # We get all metadatas except the last one from our metadatas fixture.
+    # The text without a corresponding metadata should be added to the vector store.
+    metadatas = metadatas[:-1]
+    result = store.add_texts(texts, metadatas)
+    assert len(result) == len(texts)
+
+
+def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
+    store, texts, metadatas
+) -> None:
+    """Test that when length of given id is less than length of texts,
+    random ids are created."""
+    # List of ids is one less than len(texts) which is 5.
+    metadatas = metadatas[:-1]
+    metadatas.append({"summary": "Great for the kids!"})
+    result = store.add_texts(texts, metadatas)
+    # Length of ids returned by add_texts function should be equal to length of texts.
+    assert len(result) == len(texts)
+
+
+def test_add_document_with_sqlserver(store, docs) -> None:
+    """Test that when add_document function is used, it integerates well
+    with the add_text function in SQLServer Vector Store."""
     result = store.add_documents(docs)
     assert len(result) == len(docs)
 
 
 def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(
-    store: SQLServer_VectorStore,
+    store: SQLServer_VectorStore, docs
 ) -> None:
-    docs = [
-        Document(
-            page_content="rabbit",
-            metadata={"color": "black", "type": "pet", "length": 6},
-        ),
-        Document(
-            page_content="cherry",
-        ),
-        Document(
-            page_content="hamster",
-            metadata={"color": "brown", "type": "pet", "length": 7},
-        ),
-        Document(page_content="cat"),
-        Document(
-            page_content="elderberry",
-            metadata={"color": "blue", "type": "fruit", "length": 10},
-        ),
-    ]
-    result = store.add_documents(docs)
-    assert len(result) == len(docs)
+    """Test that you can add a document that has no metadata into the vectorstore."""
+    documents = docs[:-1]
+    documents.append(Document(page_content="elderberry"))
+    result = store.add_documents(documents)
+    assert len(result) == len(documents)
 
 
-def test_that_drop_deletes_vector_store(store) -> None:
+def test_that_drop_deletes_vector_store(store, texts) -> None:
+    """Test that when drop is called, vector store is deleted
+    and a call to add_text raises an exception.
+    """
     store.drop()
+    with pytest.raises(DBAPIError):
+        store.add_texts(texts)
 
-    texts = ["rabbit", "cherry", "hamster", "cat", "elderberry"]
-    result = store.add_texts(texts)
 
-    assert (
-        result is None
-    ), "There were entries to a vector store that should be dropped."
+def test_that_similarity_search_returns_expected_no_of_documents(store, texts) -> None:
+    """Test that the amount of documents returned when similarity search
+    is called is the same as the number of documents requested."""
+    store.add_texts(texts)
+    result = store.similarity_search(query="Good review", k=3)
+    assert len(result) == 3
+
+
+def test_that_similarity_search_returns_results_with_scores_sorted_in_ascending_order(
+    store, texts
+) -> None:
+    """Assert that the list returned by a similarity search
+    is sorted in an ascending order. The implication is that
+    we have the smallest score (most similar doc.) returned first.
+    """
+    store.add_texts(texts)
+    result_with_score = store.similarity_search_with_score("Good review", k=4)
+    assert result_with_score == sorted(result_with_score, key=lambda x: x[1])
