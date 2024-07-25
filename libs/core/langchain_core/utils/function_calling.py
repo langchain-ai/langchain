@@ -241,7 +241,7 @@ def _convert_typed_dict_to_pydantic(type_: Type, *, depth: int = 0) -> Type:
         type_args = tuple(
             _convert_typed_dict_to_pydantic(arg, depth=depth + 1) for arg in type_args
         )
-        return origin[*type_args]
+        return origin[type_args]
     else:
         return type_
 
