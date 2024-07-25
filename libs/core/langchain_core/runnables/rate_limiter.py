@@ -112,7 +112,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
             The output of the rate limiter.
         """
 
-        def _invoke(input: Input) -> Output:
+        def _invoke(input: Input, **kwargs: Any) -> Output:
             """Invoke the rate limiter. Internal function."""
             self.acquire(blocking=True)
             return cast(Output, input)
@@ -133,7 +133,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
             **kwargs: Additional keyword arguments.
         """
 
-        async def _ainvoke(input: Input) -> Output:
+        async def _ainvoke(input: Input, **kwargs: Any) -> Output:
             """Invoke the rate limiter. Internal function."""
             await self.aacquire(blocking=True)
             return cast(Output, input)
