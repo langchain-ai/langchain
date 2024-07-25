@@ -1,4 +1,4 @@
-"""Implementations of"""
+"""Interface for a rate limiter and an in-memory rate limiter."""
 
 from __future__ import annotations
 
