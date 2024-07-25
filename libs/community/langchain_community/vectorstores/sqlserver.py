@@ -73,10 +73,10 @@ class SQLServer_VectorStore(VectorStore):
         self._create_table_if_not_exists()
 
     def _create_engine(self) -> Engine:
-        return create_engine(url=self.connection_string)  # , echo=True)
+        return create_engine(url=self.connection_string, echo=True)
 
     def _create_table_if_not_exists(self) -> None:
-        logging.info("Creating table %s", self.table_name)
+        logging.info("Creating table %s.", self.table_name)
         with Session(self._bind) as session:
             Base.metadata.create_all(session.get_bind())
 
@@ -232,12 +232,12 @@ class SQLServer_VectorStore(VectorStore):
     def _search_store(
         self, embedding: List[float], k: int, filter: Optional[dict] = None
     ) -> List[Any]:
-        # This variable will be passed as an argument to the filter function
+        # The filter variable will be passed as an argument to the filter function
         # filter_clause = self._create_filter_clause(filter)
         with Session(self._bind) as session:
             results = (
                 session.query(
-                    self.EmbeddingStore,
+                    _embedding_store,
                     text(
                         """VECTOR_DISTANCE(:distancestrategy, 
                         JSON_ARRAY_TO_VECTOR(:embedding), embeddings) AS distance"""
@@ -259,7 +259,7 @@ class SQLServer_VectorStore(VectorStore):
             )
         return results
 
-    def _create_filter_clause(self, filter: dict):
+    def _create_filter_clause(self, filter: dict) -> None:
         """TODO: parse filter and create a sql clause."""
 
     def _docs_from_result(self, results: Any) -> List[Document]:

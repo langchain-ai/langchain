@@ -6,7 +6,6 @@ from typing import List
 import pytest
 from langchain_core.documents import Document
 from sqlalchemy.exc import DBAPIError
-from typing import List
 
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
@@ -64,7 +63,7 @@ def store() -> SQLServer_VectorStore:
 
 
 @pytest.fixture
-def docs():
+def docs() -> List[Document]:
     """Definition of doc variable used in the tests."""
     docs = [
         Document(
@@ -87,16 +86,23 @@ def docs():
             metadata={"color": "blue", "type": "fruit", "length": 10},
         ),
     ]
-    yield docs  # provide this data to the test
+    return docs  # provide this data to the test
 
 
-def test_sqlserver_add_texts(store, texts, metadatas) -> None:
+def test_sqlserver_add_texts(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+    metadatas: List[dict],
+) -> None:
     """Test that add text returns equivalent number of ids of input texts."""
     result = store.add_texts(texts, metadatas)
     assert len(result) == len(texts)
 
 
-def test_sqlserver_add_texts_when_no_metadata_is_provided(store, texts) -> None:
+def test_sqlserver_add_texts_when_no_metadata_is_provided(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
     """Test that when user calls the add_texts function without providing metadata,
     the embedded text still get added to the vector store."""
     result = store.add_texts(texts)
@@ -104,7 +110,9 @@ def test_sqlserver_add_texts_when_no_metadata_is_provided(store, texts) -> None:
 
 
 def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(
-    store, texts, metadatas
+    store: SQLServer_VectorStore,
+    texts: List[str],
+    metadatas: List[dict],
 ) -> None:
     """Test that all texts provided are added into the vector store
     even when metadata is not available for all the texts."""
@@ -116,7 +124,9 @@ def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(
 
 
 def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
-    store, texts, metadatas
+    store: SQLServer_VectorStore,
+    texts: List[str],
+    metadatas: List[dict],
 ) -> None:
     """Test that when length of given id is less than length of texts,
     random ids are created."""
@@ -128,15 +138,19 @@ def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
     assert len(result) == len(texts)
 
 
-def test_add_document_with_sqlserver(store, docs) -> None:
-    """Test that when add_document function is used, it integerates well
+def test_add_document_with_sqlserver(
+    store: SQLServer_VectorStore,
+    docs: List[Document],
+) -> None:
+    """Test that when add_document function is used, it integrates well
     with the add_text function in SQLServer Vector Store."""
     result = store.add_documents(docs)
     assert len(result) == len(docs)
 
 
 def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(
-    store: SQLServer_VectorStore, docs
+    store: SQLServer_VectorStore,
+    docs: List[Document],
 ) -> None:
     """Test that you can add a document that has no metadata into the vectorstore."""
     documents = docs[:-1]
@@ -145,7 +159,10 @@ def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(
     assert len(result) == len(documents)
 
 
-def test_that_drop_deletes_vector_store(store, texts) -> None:
+def test_that_drop_deletes_vector_store(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
     """Test that when drop is called, vector store is deleted
     and a call to add_text raises an exception.
     """
@@ -154,7 +171,10 @@ def test_that_drop_deletes_vector_store(store, texts) -> None:
         store.add_texts(texts)
 
 
-def test_that_similarity_search_returns_expected_no_of_documents(store, texts) -> None:
+def test_that_similarity_search_returns_expected_no_of_documents(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
     """Test that the amount of documents returned when similarity search
     is called is the same as the number of documents requested."""
     store.add_texts(texts)
@@ -163,7 +183,8 @@ def test_that_similarity_search_returns_expected_no_of_documents(store, texts) -
 
 
 def test_that_similarity_search_returns_results_with_scores_sorted_in_ascending_order(
-    store, texts
+    store: SQLServer_VectorStore,
+    texts: List[str],
 ) -> None:
     """Assert that the list returned by a similarity search
     is sorted in an ascending order. The implication is that
