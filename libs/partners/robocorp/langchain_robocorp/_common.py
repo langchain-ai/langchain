@@ -1,9 +1,14 @@
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Any, Dict, List, Set, Tuple, Union, cast
 
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    create_model,
+)
 from langchain_core.utils.json_schema import dereference_refs
+from langchain_core.utils.pydantic import is_basemodel_instance
 
 
 @dataclass(frozen=True)
@@ -160,8 +165,8 @@ def get_param_fields(endpoint_spec: dict) -> dict:
 def model_to_dict(
     item: Union[BaseModel, List, Dict[str, Any]],
 ) -> Any:
-    if isinstance(item, BaseModel):
-        return item.dict()
+    if is_basemodel_instance(item):
+        return cast(BaseModel, item).dict()
     elif isinstance(item, dict):
         return {key: model_to_dict(value) for key, value in item.items()}
     elif isinstance(item, list):

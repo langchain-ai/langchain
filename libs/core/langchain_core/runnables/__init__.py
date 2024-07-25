@@ -16,6 +16,7 @@ creating more responsive UX.
 
 This module contains schema and implementation of LangChain Runnables primitives.
 """
+
 from langchain_core.runnables.base import (
     Runnable,
     RunnableBinding,
@@ -42,6 +43,7 @@ from langchain_core.runnables.passthrough import (
     RunnablePassthrough,
     RunnablePick,
 )
+from langchain_core.runnables.rate_limiter import InMemoryRateLimiter
 from langchain_core.runnables.router import RouterInput, RouterRunnable
 from langchain_core.runnables.utils import (
     AddableDict,
@@ -63,6 +65,7 @@ __all__ = [
     "ensure_config",
     "run_in_executor",
     "patch_config",
+    "InMemoryRateLimiter",
     "RouterInput",
     "RouterRunnable",
     "Runnable",

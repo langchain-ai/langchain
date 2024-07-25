@@ -11,6 +11,7 @@ from typing import (
     Any,
     AsyncContextManager,
     AsyncGenerator,
+    AsyncIterable,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -43,6 +44,18 @@ def py_anext(
     Can be used to compare the built-in implementation of the inner
     coroutines machinery to C-implementation of __anext__() and send()
     or throw() on the returned generator.
+
+    Args:
+        iterator: The async iterator to advance.
+        default: The value to return if the iterator is exhausted.
+            If not provided, a StopAsyncIteration exception is raised.
+
+    Returns:
+        The next value from the iterator, or the default value
+            if the iterator is exhausted.
+
+    Raises:
+        TypeError: If the iterator is not an async iterator.
     """
 
     try:
@@ -70,7 +83,7 @@ def py_anext(
 
 
 class NoLock:
-    """Dummy lock that provides the proper interface but no protection"""
+    """Dummy lock that provides the proper interface but no protection."""
 
     async def __aenter__(self) -> None:
         pass
@@ -87,7 +100,21 @@ async def tee_peer(
     peers: List[Deque[T]],
     lock: AsyncContextManager[Any],
 ) -> AsyncGenerator[T, None]:
-    """An individual iterator of a :py:func:`~.tee`"""
+    """An individual iterator of a :py:func:`~.tee`.
+
+    This function is a generator that yields items from the shared iterator
+    ``iterator``. It buffers items until the least advanced iterator has
+    yielded them as well. The buffer is shared with all other peers.
+
+    Args:
+        iterator: The shared iterator.
+        buffer: The buffer for this peer.
+        peers: The buffers of all peers.
+        lock: The lock to synchronise access to the shared buffers.
+
+    Yields:
+        The next item from the shared iterator.
+    """
     try:
         while True:
             if not buffer:
@@ -182,12 +209,10 @@ class Tee(Generic[T]):
         return len(self._children)
 
     @overload
-    def __getitem__(self, item: int) -> AsyncIterator[T]:
-        ...
+    def __getitem__(self, item: int) -> AsyncIterator[T]: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Tuple[AsyncIterator[T], ...]:
-        ...
+    def __getitem__(self, item: slice) -> Tuple[AsyncIterator[T], ...]: ...
 
     def __getitem__(
         self, item: Union[int, slice]
@@ -205,6 +230,7 @@ class Tee(Generic[T]):
         return False
 
     async def aclose(self) -> None:
+        """Async close all child iterators."""
         for child in self._children:
             await child.aclose()
 
@@ -247,3 +273,28 @@ class aclosing(AbstractAsyncContextManager):
     ) -> None:
         if hasattr(self.thing, "aclose"):
             await self.thing.aclose()
+
+
+async def abatch_iterate(
+    size: int, iterable: AsyncIterable[T]
+) -> AsyncIterator[List[T]]:
+    """Utility batching function for async iterables.
+
+    Args:
+        size: The size of the batch.
+        iterable: The async iterable to batch.
+
+    Returns:
+        An async iterator over the batches.
+    """
+    batch: List[T] = []
+    async for element in iterable:
+        if len(batch) < size:
+            batch.append(element)
+
+        if len(batch) >= size:
+            yield batch
+            batch = []
+
+    if batch:
+        yield batch

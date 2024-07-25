@@ -1078,9 +1078,9 @@ class AgentExecutor(Chain):
     `"generate"` calls the agent's LLM Chain one final time to generate
         a final answer based on the previous steps.
     """
-    handle_parsing_errors: Union[
-        bool, str, Callable[[OutputParserException], str]
-    ] = False
+    handle_parsing_errors: Union[bool, str, Callable[[OutputParserException], str]] = (
+        False
+    )
     """How to handle errors raised by the agent's output parser.
     Defaults to `False`, which raises the error.
     If `true`, the error will be sent back to the LLM as an observation.
@@ -1144,30 +1144,6 @@ class AgentExecutor(Chain):
                     f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
                 )
-        return values
-
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_return_direct_tool(cls, values: Dict) -> Dict:
-        """Validate that tools are compatible with agent.
-
-        Args:
-            values: Values to validate.
-
-        Returns:
-            Dict: Validated values.
-
-        Raises:
-            ValueError: If tools that have `return_direct=True` are not allowed.
-        """
-        agent = values["agent"]
-        tools = values["tools"]
-        if isinstance(agent, BaseMultiActionAgent):
-            for tool in tools:
-                if tool.return_direct:
-                    raise ValueError(
-                        "Tools that have `return_direct=True` are not allowed "
-                        "in multi-action agents"
-                    )
         return values
 
     @root_validator(pre=True)

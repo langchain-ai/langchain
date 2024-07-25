@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import re
 import uuid
 from operator import itemgetter
 from typing import (
@@ -50,6 +52,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -62,13 +65,22 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
+
+# Mistral enforces a specific pattern for tool call IDs
+TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 
 
 def _create_retry_decorator(
@@ -83,6 +95,39 @@ def _create_retry_decorator(
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
+
+
+def _is_valid_mistral_tool_call_id(tool_call_id: str) -> bool:
+    """Check if tool call ID is nine character string consisting of a-z, A-Z, 0-9"""
+    return bool(TOOL_CALL_ID_PATTERN.match(tool_call_id))
+
+
+def _base62_encode(num: int) -> str:
+    """Encodes a number in base62 and ensures result is of a specified length."""
+    base62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if num == 0:
+        return base62[0]
+    arr = []
+    base = len(base62)
+    while num:
+        num, rem = divmod(num, base)
+        arr.append(base62[rem])
+    arr.reverse()
+    return "".join(arr)
+
+
+def _convert_tool_call_id_to_mistral_compatible(tool_call_id: str) -> str:
+    """Convert a tool call ID to a Mistral-compatible format"""
+    if _is_valid_mistral_tool_call_id(tool_call_id):
+        return tool_call_id
+    else:
+        hash_bytes = hashlib.sha256(tool_call_id.encode()).digest()
+        hash_int = int.from_bytes(hash_bytes, byteorder="big")
+        base62_str = _base62_encode(hash_int)
+        if len(base62_str) >= 9:
+            return base62_str[:9]
+        else:
+            return base62_str.rjust(9, "0")
 
 
 def _convert_mistral_chat_message_to_message(
@@ -103,19 +148,10 @@ def _convert_mistral_chat_message_to_message(
                     dict, parse_tool_call(raw_tool_call, return_id=True)
                 )
                 if not parsed["id"]:
-                    tool_call_id = uuid.uuid4().hex[:]
-                    tool_calls.append(
-                        {
-                            **parsed,
-                            **{"id": tool_call_id},
-                        },
-                    )
-                else:
-                    tool_calls.append(parsed)
+                    parsed["id"] = uuid.uuid4().hex[:]
+                tool_calls.append(parsed)
             except Exception as e:
-                invalid_tool_calls.append(
-                    dict(make_invalid_tool_call(raw_tool_call, str(e)))
-                )
+                invalid_tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)))
     return AIMessage(
         content=content,
         additional_kwargs=additional_kwargs,
@@ -206,12 +242,12 @@ def _convert_chunk_to_message_chunk(
                     else:
                         tool_call_id = raw_tool_call.get("id")
                     tool_call_chunks.append(
-                        {
-                            "name": raw_tool_call["function"].get("name"),
-                            "args": raw_tool_call["function"].get("arguments"),
-                            "id": tool_call_id,
-                            "index": raw_tool_call.get("index"),
-                        }
+                        tool_call_chunk(
+                            name=raw_tool_call["function"].get("name"),
+                            args=raw_tool_call["function"].get("arguments"),
+                            id=tool_call_id,
+                            index=raw_tool_call.get("index"),
+                        )
                     )
             except KeyError:
                 pass
@@ -228,15 +264,15 @@ def _convert_chunk_to_message_chunk(
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
-            tool_call_chunks=tool_call_chunks,
-            usage_metadata=usage_metadata,
+            tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
+            usage_metadata=usage_metadata,  # type: ignore[arg-type]
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
@@ -248,7 +284,7 @@ def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
         }
     }
     if _id := tool_call.get("id"):
-        result["id"] = _id
+        result["id"] = _convert_tool_call_id_to_mistral_compatible(_id)
 
     return result
 
@@ -262,7 +298,7 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
         }
     }
     if _id := invalid_tool_call.get("id"):
-        result["id"] = _id
+        result["id"] = _convert_tool_call_id_to_mistral_compatible(_id)
 
     return result
 
@@ -586,7 +622,7 @@ class ChatMistralAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else False
+        should_stream = stream if stream is not None else self.streaming
         if should_stream:
             stream_iter = self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -787,7 +823,7 @@ class ChatMistralAI(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         if method == "function_calling":
             if schema is None:
                 raise ValueError(
@@ -799,7 +835,8 @@ class ChatMistralAI(BaseChatModel):
             llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
                 key_name = convert_to_openai_tool(schema)["function"]["name"]
@@ -809,7 +846,7 @@ class ChatMistralAI(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )

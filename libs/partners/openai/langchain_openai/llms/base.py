@@ -110,6 +110,11 @@ class BaseOpenAI(BaseLLM):
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+    seed: Optional[int] = None
+    """Seed for generation"""
+    logprobs: Optional[int] = None
+    """Include the log probabilities on the logprobs most likely output tokens,
+     as well the chosen tokens."""
     streaming: bool = False
     """Whether to stream the results or not."""
     allowed_special: Union[Literal["all"], AbstractSet[str]] = set()
@@ -220,6 +225,8 @@ class BaseOpenAI(BaseLLM):
             "presence_penalty": self.presence_penalty,
             "n": self.n,
             "logit_bias": self.logit_bias,
+            "seed": self.seed,
+            "logprobs": self.logprobs,
         }
 
         if self.max_tokens is not None:
@@ -530,6 +537,7 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
+            "gpt-4o-mini": 128_000,
             "gpt-4o": 128_000,
             "gpt-4o-2024-05-13": 128_000,
             "gpt-4": 8192,

@@ -1,4 +1,5 @@
 """Lightweight wrapper around requests library, with async support."""
+
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict, Literal, Optional, Union
 
@@ -83,7 +84,7 @@ class Requests(BaseModel):
                     url,
                     headers=self.headers,
                     auth=self.auth,
-                    verify=self.verify,
+                    verify_ssl=self.verify,
                     **kwargs,
                 ) as response:
                     yield response
@@ -93,7 +94,7 @@ class Requests(BaseModel):
                 url,
                 headers=self.headers,
                 auth=self.auth,
-                verify=self.verify,
+                verify_ssl=self.verify,
                 **kwargs,
             ) as response:
                 yield response

@@ -4,8 +4,13 @@ This package contains helper logic to help deal with indexing data into
 a vectorstore while avoiding duplicated content and over-writing content
 if it's unchanged.
 """
+
 from langchain_core.indexing.api import IndexingResult, aindex, index
-from langchain_core.indexing.base import InMemoryRecordManager, RecordManager
+from langchain_core.indexing.base import (
+    InMemoryRecordManager,
+    RecordManager,
+    UpsertResponse,
+)
 
 __all__ = [
     "aindex",
@@ -13,4 +18,5 @@ __all__ = [
     "IndexingResult",
     "InMemoryRecordManager",
     "RecordManager",
+    "UpsertResponse",
 ]

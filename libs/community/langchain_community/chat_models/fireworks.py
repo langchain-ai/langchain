@@ -112,7 +112,7 @@ class ChatFireworks(BaseChatModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "fireworks"]
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
         try:
