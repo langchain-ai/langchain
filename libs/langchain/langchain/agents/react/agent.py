@@ -27,6 +27,8 @@ def create_react_agent(
     Based on paper "ReAct: Synergizing Reasoning and Acting in Language Models"
     (https://arxiv.org/abs/2210.03629)
 
+    Note: This is different than LangGraph's [create_react_agent](https://langchain-ai.github.io/langgraph/reference/prebuilt/) function.
+
     Args:
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
