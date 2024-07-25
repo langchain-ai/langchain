@@ -13,6 +13,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Set,
     Tuple,
     Type,
     Union,
@@ -200,12 +201,12 @@ def _convert_typed_dict_to_pydantic(type_: Type, *, depth: int = 0) -> Type:
     elif is_typeddict(type_):
         typed_dict = type_
         docstring = inspect.getdoc(typed_dict)
-        annotations = typed_dict.__annotations__
+        annotations_ = typed_dict.__annotations__
         description, arg_descriptions = _parse_google_docstring(
-            docstring, list(annotations)
+            docstring, list(annotations_)
         )
         fields: dict = {}
-        for arg, type_ in annotations.items():
+        for arg, type_ in annotations_.items():
             if get_origin(type_) is Annotated:
                 annotated_args = get_args(type_)
                 type_ = _convert_typed_dict_to_pydantic(
@@ -237,6 +238,8 @@ def _convert_typed_dict_to_pydantic(type_: Type, *, depth: int = 0) -> Type:
         model.__doc__ = description
         return model
     elif (origin := get_origin(type_)) and (type_args := get_args(type_)):
+        origin_map = {dict: Dict, list: List, tuple: Tuple, set: Set}
+        origin = origin_map.get(origin, origin)
         type_args = tuple(
             _convert_typed_dict_to_pydantic(arg, depth=depth + 1) for arg in type_args
         )
