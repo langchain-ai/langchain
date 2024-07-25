@@ -856,7 +856,7 @@ LangChain provides a standardized interface for tool calling that is consistent 
 
 The standard interface consists of:
 
-* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) here.
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) as well as [Pydantic](https://pydantic.dev/) objects.
 * `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
 
 #### Tool usage
@@ -871,7 +871,7 @@ The general flow is this:
 3. Format the result of the tool invocations as [`ToolMessages`](/docs/concepts/#toolmessage).
 4. Pass the entire list of messages back to the model so that it can generate a final answer (or call more tools).
 
-![Diagram of a complete tool calling flow](/img/tool_calling_flow)
+![Diagram of a complete tool calling flow](/img/tool_calling_flow.png)
 
 This is how tool calling [agents](/docs/concepts/#agents) perform tasks and answer queries.
 
@@ -879,7 +879,7 @@ Check out some more focused guides below:
 
 - [How to use chat models to call tools](/docs/how_to/tool_calling/)
 - [How to pass tool outputs to chat models](/docs/how_to/tool_results_pass_to_model/)
-- [LangGraph quickstart building an agent](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
+- [Building an agent with LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
 
 ### Structured output
 
