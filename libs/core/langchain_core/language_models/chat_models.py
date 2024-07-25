@@ -60,7 +60,7 @@ from langchain_core.pydantic_v1 import (
     Field,
     root_validator,
 )
-from langchain_core.rate_limiters import BaseChatModelRateLimiter
+from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
@@ -211,7 +211,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
 
-    rate_limiter: Optional[BaseChatModelRateLimiter] = None
+    rate_limiter: Optional[BaseRateLimiter] = None
     """An optional rate limiter to use for limiting the number of requests."""
 
     @root_validator(pre=True)
@@ -347,7 +347,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             generation: Optional[ChatGenerationChunk] = None
 
             if self.rate_limiter:
-                self.rate_limiter.acquire(messages, blocking=True)
+                self.rate_limiter.acquire(blocking=True)
 
             try:
                 for chunk in self._stream(messages, stop=stop, **kwargs):
@@ -421,7 +421,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         if self.rate_limiter:
-            self.rate_limiter.acquire(messages, blocking=True)
+            self.rate_limiter.acquire(blocking=True)
 
         generation: Optional[ChatGenerationChunk] = None
         try:
@@ -758,7 +758,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
         if self.rate_limiter:
-            self.rate_limiter.acquire(messages, blocking=True)
+            self.rate_limiter.acquire(blocking=True)
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
@@ -845,7 +845,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # we usually don't want to rate limit cache lookups, but
         # we do want to rate limit API requests.
         if self.rate_limiter:
-            self.rate_limiter.acquire(messages, blocking=True)
+            self.rate_limiter.acquire(blocking=True)
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
