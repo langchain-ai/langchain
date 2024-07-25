@@ -39,9 +39,6 @@ class ChatTogether(BaseChatOpenAI):
             Max number of tokens to generate.
         logprobs: Optional[bool]
             Whether to return logprobs.
-        stream_options: Dict
-            Configure streaming outputs, like whether to return token usage when
-            streaming (``{"include_usage": True}``).
 
     Key init args — client params:
         timeout: Union[float, Tuple[float, float], Any, None]
