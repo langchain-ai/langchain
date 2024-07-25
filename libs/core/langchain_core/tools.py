@@ -20,6 +20,7 @@ tool for the job.
 from __future__ import annotations
 
 import asyncio
+import copy
 import functools
 import inspect
 import json
@@ -599,6 +600,7 @@ class ChildTool(BaseTool):
             context = copy_context()
             context.run(_set_config_context, child_config)
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_kwargs = copy.deepcopy(tool_kwargs)
             if signature(self._run).parameters.get("run_manager"):
                 tool_kwargs["run_manager"] = run_manager
 
@@ -701,6 +703,7 @@ class ChildTool(BaseTool):
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            tool_kwargs = copy.deepcopy(tool_kwargs)
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
