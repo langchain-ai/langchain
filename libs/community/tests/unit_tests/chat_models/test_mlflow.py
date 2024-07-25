@@ -1,5 +1,5 @@
 import json
-from typing import Any, List
+from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
 import pytest
@@ -198,6 +198,7 @@ def test_chat_mlflow_stream(
         )
 
 
+@pytest.mark.requires("mlflow")
 def test_chat_mlflow_bind_tools(
     llm: ChatMlflow, mock_predict_stream_result: List[dict]
 ) -> None:
@@ -221,7 +222,7 @@ def test_chat_mlflow_bind_tools(
         ]
     )
 
-    def mock_func(*args, **kwargs):
+    def mock_func(*args: Any, **kwargs: Any) -> str:
         return "36939 x 8922.4 = 329,511,111.6"
 
     tools = [
@@ -233,7 +234,7 @@ def test_chat_mlflow_bind_tools(
         )
     ]
     agent = create_tool_calling_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)  # type: ignore[arg-type]
     result = agent_executor.invoke({"input": "36939 * 8922.4"})
     assert result["output"] == "36939x8922.4 = 329,511,111.6"
 
@@ -261,20 +262,20 @@ def test_convert_dict_to_message_ai() -> None:
             },
         }
     ]
-    message = {
+    message_with_tools: Dict[str, Any] = {
         "role": "assistant",
         "content": None,
         "tool_calls": tool_calls,
     }
-    result = ChatMlflow._convert_dict_to_message(message)
+    result = ChatMlflow._convert_dict_to_message(message_with_tools)
     expected_output = AIMessage(
         content="",
         additional_kwargs={"tool_calls": tool_calls},
         id="call_fb5f5e1a-bac0-4422-95e9-d06e6022ad12",
         tool_calls=[
             {
-                "name": tool_calls[0]["function"]["name"],
-                "args": json.loads(tool_calls[0]["function"]["arguments"]),
+                "name": tool_calls[0]["function"]["name"],  # type: ignore[index]
+                "args": json.loads(tool_calls[0]["function"]["arguments"]),  # type: ignore[index]
                 "id": "call_fb5f5e1a-bac0-4422-95e9-d06e6022ad12",
                 "type": "tool_call",
             }
@@ -302,15 +303,15 @@ def test_convert_delta_to_message_chunk_ai() -> None:
     expected_output = AIMessageChunk(content="foo")
     assert result == expected_output
 
-    delta = {
+    delta_with_tools: Dict[str, Any] = {
         "role": "assistant",
         "content": None,
         "tool_calls": [{"index": 0, "function": {"arguments": " }"}}],
     }
-    result = ChatMlflow._convert_delta_to_message_chunk(delta, "default_role")
+    result = ChatMlflow._convert_delta_to_message_chunk(delta_with_tools, "role")
     expected_output = AIMessageChunk(
         content="",
-        additional_kwargs={"tool_calls": delta["tool_calls"]},
+        additional_kwargs={"tool_calls": delta_with_tools["tool_calls"]},
         id=None,
         tool_call_chunks=[ToolCallChunk(name=None, args=" }", id=None, index=0)],
     )
@@ -386,7 +387,7 @@ def test_convert_message_to_dict_ai() -> None:
         tool_calls=[{"name": "name", "args": {}, "id": "id", "type": "tool_call"}],
     )
     result = ChatMlflow._convert_message_to_dict(ai_message)
-    expected_output = {
+    expected_output_with_tools: Dict[str, Any] = {
         "content": None,
         "role": "assistant",
         "tool_calls": [
@@ -397,7 +398,7 @@ def test_convert_message_to_dict_ai() -> None:
             }
         ],
     }
-    assert result == expected_output
+    assert result == expected_output_with_tools
 
 
 def test_convert_message_to_dict_tool() -> None:
@@ -415,4 +416,4 @@ def test_convert_message_to_dict_tool() -> None:
 
 def test_convert_message_to_dict_function() -> None:
     with pytest.raises(ValueError):
-        ChatMlflow._convert_message_to_dict(FunctionMessage(content=""))
+        ChatMlflow._convert_message_to_dict(FunctionMessage(content="", name="name"))
