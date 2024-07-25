@@ -88,14 +88,14 @@ class UnstructuredLoader(BaseLoader):
         # SDK parameters
         api_key: Optional[str] = None,
         client: Optional[UnstructuredClient] = None,
-        server_url: Optional[str] = None,
+        url: Optional[str] = None,
         **kwargs: Any,
     ):
         """Initialize loader."""
         if file_path is not None and file is not None:
             raise ValueError("file_path and file cannot be defined simultaneously.")
         if client is not None:
-            disallowed_params = [("api_key", api_key), ("server_url", server_url)]
+            disallowed_params = [("api_key", api_key), ("url", url)]
             bad_params = [
                 param for param, value in disallowed_params if value is not None
             ]
@@ -106,17 +106,17 @@ class UnstructuredLoader(BaseLoader):
                     f"params: {', '.join(bad_params)}."
                 )
 
-        unstructured_api_key = api_key or os.getenv("UNSTRUCTURED_API_KEY")
-        unstructured_url = server_url or os.getenv("UNSTRUCTURED_URL") or _DEFAULT_URL
-
-        self.client = client or UnstructuredClient(
-            api_key_auth=unstructured_api_key, server_url=unstructured_url
-        )
-
         self.file_path = file_path
         self.file = file
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
+
+        unstructured_api_key = api_key or os.getenv("UNSTRUCTURED_API_KEY") or ""
+        unstructured_url = url or os.getenv("UNSTRUCTURED_URL") or _DEFAULT_URL
+        self.client = client or UnstructuredClient(
+            api_key_auth=unstructured_api_key, server_url=unstructured_url
+        )
+
         self.unstructured_kwargs = kwargs
 
     def lazy_load(self) -> Iterator[Document]:
@@ -127,12 +127,11 @@ class UnstructuredLoader(BaseLoader):
         ) -> Iterator[Document]:
             """Load an individual file to the _UnstructuredBaseLoader."""
             return _SingleDocumentLoader(
+                client=self.client,
                 file=f,
                 file_path=f_path,
                 partition_via_api=self.partition_via_api,
                 post_processors=self.post_processors,
-                # SDK parameters
-                client=self.client,
                 **self.unstructured_kwargs,
             ).lazy_load()
 
@@ -170,11 +169,10 @@ class _SingleDocumentLoader(BaseLoader):
     ):
         """Initialize loader."""
         self.file_path = str(file_path) if isinstance(file_path, Path) else file_path
+        self.client = client
         self.file = file
         self.partition_via_api = partition_via_api
         self.post_processors = post_processors
-        # SDK parameters
-        self.client = client
         self.unstructured_kwargs = kwargs
 
     def lazy_load(self) -> Iterator[Document]:
