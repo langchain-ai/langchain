@@ -29,7 +29,7 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from langchain_core.tools import FILTERED_ARGS, BaseTool
+    from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -481,7 +481,7 @@ def _parse_google_docstring(
         docstring_blocks = docstring.split("\n\n")
         if error_on_invalid_docstring:
             filtered_annotations = {
-                arg for arg in args if arg not in (*(FILTERED_ARGS), "return")
+                arg for arg in args if arg not in ("run_manager", "callbacks", "return")
             }
             if filtered_annotations and (
                 len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
