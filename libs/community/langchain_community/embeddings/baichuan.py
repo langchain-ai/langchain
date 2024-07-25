@@ -25,19 +25,34 @@ BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
 class BaichuanTextEmbeddings(BaseModel, Embeddings):
     """Baichuan Text Embedding models.
 
-    To use, you should set the environment variable ``BAICHUAN_API_KEY`` to
-    your API key or pass it as a named parameter to the constructor.
+    Setup:
+        To use, you should set the environment variable ``BAICHUAN_API_KEY`` to
+        your API key or pass it as a named parameter to the constructor.
 
-    Example:
+        .. code-block:: bash
+
+            export BAICHUAN_API_KEY="your-api-key"
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.embeddings import BaichuanTextEmbeddings
 
-            baichuan = BaichuanTextEmbeddings(baichuan_api_key="my-api-key")
-    """
+            embeddings = BaichuanTextEmbeddings()
+
+    Embed:
+        .. code-block:: python
+
+            # embed the documents
+            vectors = embeddings.embed_documents([text1, text2, ...])
+
+            # embed the query
+            vectors = embeddings.embed_query(text)
+    """  # noqa: E501
 
     session: Any  #: :meta private:
     model_name: str = Field(default="Baichuan-Text-Embedding", alias="model")
+    """The model used to embed the documents."""
     baichuan_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `BAICHUAN_API_KEY` if not provided."""
     chunk_size: int = 16
