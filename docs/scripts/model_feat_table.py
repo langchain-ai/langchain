@@ -88,9 +88,10 @@ CHAT_MODEL_FEAT_TABLE = {
         "link": "/docs/integrations/chat/huggingface/",
     },
     "ChatOllama": {
+        "tool_calling": True,
         "local": True,
         "json_mode": True,
-        "package": "langchain-community",
+        "package": "langchain-ollama",
         "link": "/docs/integrations/chat/ollama/",
     },
     "vLLM Chat (via ChatOpenAI)": {
@@ -150,7 +151,13 @@ hide_table_of_contents: true
 
 ## Advanced features
 
-The following table shows all the chat models that support one or more advanced features.
+The following table shows all the chat model classes that support one or more advanced features.
+
+:::info
+While all these LangChain classes support the indicated advanced feature, you may have
+to open the provider-specific documentation to learn which hosted models or backends support
+the feature.
+:::
 
 {table}
 

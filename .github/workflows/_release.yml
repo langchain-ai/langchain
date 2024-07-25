@@ -189,7 +189,7 @@ jobs:
             --extra-index-url https://test.pypi.org/simple/ \
             "$PKG_NAME==$VERSION" || \
           ( \
-            sleep 5 && \
+            sleep 15 && \
             poetry run pip install \
               --extra-index-url https://test.pypi.org/simple/ \
               "$PKG_NAME==$VERSION" \
@@ -221,12 +221,17 @@ jobs:
         run: make tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Check for prerelease versions
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
+
       - name: Get minimum versions
         working-directory: ${{ inputs.working-directory }}
         id: min-version
         run: |
           poetry run pip install packaging
-          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml)"
+          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml release)"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
           echo "min-versions=$min_versions"
 
@@ -285,6 +290,7 @@ jobs:
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          UNSTRUCTURED_API_KEY: ${{ secrets.UNSTRUCTURED_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
