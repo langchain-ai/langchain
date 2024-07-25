@@ -420,7 +420,7 @@ def test__convert_typed_dict_to_openai_function() -> None:
         """
 
         arg1: str
-        arg2: Union[int, str]
+        arg2: Union[int, str, bool]
         arg3: Optional[List[SubTool]]
         arg4: Annotated[Literal["bar", "baz"], ..., "this does foo"]
         arg5: Annotated[Optional[float], None]
@@ -435,6 +435,7 @@ def test__convert_typed_dict_to_openai_function() -> None:
         arg12: Annotated[Dict[str, SubTool], ...]
         arg13: Annotated[Mapping[str, SubTool], ...]
         arg14: Annotated[MutableMapping[str, SubTool], ...]
+        arg15: Annotated[bool, False, "flag"]
 
     expected = {
         "name": "Tool",
@@ -443,7 +444,13 @@ def test__convert_typed_dict_to_openai_function() -> None:
             "type": "object",
             "properties": {
                 "arg1": {"description": "foo", "type": "string"},
-                "arg2": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
+                "arg2": {
+                    "anyOf": [
+                        {"type": "integer"},
+                        {"type": "string"},
+                        {"type": "boolean"},
+                    ]
+                },
                 "arg3": {
                     "type": "array",
                     "items": {
@@ -611,6 +618,7 @@ def test__convert_typed_dict_to_openai_function() -> None:
                         },
                     },
                 },
+                "arg15": {"description": "flag", "default": False, "type": "boolean"},
             },
             "required": [
                 "arg1",
