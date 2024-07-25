@@ -600,7 +600,6 @@ class ChildTool(BaseTool):
             context = copy_context()
             context.run(_set_config_context, child_config)
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            tool_kwargs = copy.deepcopy(tool_kwargs)
             if signature(self._run).parameters.get("run_manager"):
                 tool_kwargs["run_manager"] = run_manager
 
@@ -703,7 +702,6 @@ class ChildTool(BaseTool):
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            tool_kwargs = copy.deepcopy(tool_kwargs)
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
@@ -1484,8 +1482,9 @@ def _prep_run_args(
 ) -> Tuple[Union[str, Dict], Dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input)["args"]
+        input_copy = copy.deepcopy(input)
+        tool_call_id: Optional[str] = cast(ToolCall, input_copy)["id"]
+        tool_input: Union[str, dict] = cast(ToolCall, input_copy)["args"]
     else:
         tool_call_id = None
         tool_input = cast(Union[str, dict], input)
