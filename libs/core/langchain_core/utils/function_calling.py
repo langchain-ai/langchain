@@ -188,15 +188,25 @@ def convert_python_function_to_openai_function(
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescription:
-    model = cast(Type[BaseModel], _convert_typed_dict_to_pydantic(typed_dict))
+    visited = {}
+    model = cast(
+        Type[BaseModel], _convert_typed_dict_to_pydantic(typed_dict, visited=visited)
+    )
     return convert_pydantic_to_openai_function(model)
 
 
 _MAX_TYPED_DICT_RECURSION = 25
 
 
-def _convert_typed_dict_to_pydantic(type_: Type, *, depth: int = 0) -> Type:
-    if depth >= _MAX_TYPED_DICT_RECURSION:
+def _convert_typed_dict_to_pydantic(
+    type_: Type,
+    *,
+    visited: Dict,
+    depth: int = 0,
+) -> Type:
+    if type_ in visited:
+        return visited[type_]
+    elif depth >= _MAX_TYPED_DICT_RECURSION:
         return type_
     elif is_typeddict(type_):
         typed_dict = type_
@@ -206,11 +216,11 @@ def _convert_typed_dict_to_pydantic(type_: Type, *, depth: int = 0) -> Type:
             docstring, list(annotations_)
         )
         fields: dict = {}
-        for arg, type_ in annotations_.items():
-            if get_origin(type_) is Annotated:
-                annotated_args = get_args(type_)
-                type_ = _convert_typed_dict_to_pydantic(
-                    annotated_args[0], depth=depth + 1
+        for arg, arg_type in annotations_.items():
+            if get_origin(arg_type) is Annotated:
+                annotated_args = get_args(arg_type)
+                new_arg_type = _convert_typed_dict_to_pydantic(
+                    annotated_args[0], depth=depth + 1, visited=visited
                 )
                 field_kwargs = {
                     k: v for k, v in zip(("default", "description"), annotated_args[1:])
@@ -227,21 +237,25 @@ def _convert_typed_dict_to_pydantic(type_: Type, *, depth: int = 0) -> Type:
                     field_kwargs["description"] = arg_desc
                 else:
                     pass
-                fields[arg] = (type_, Field(**field_kwargs))
+                fields[arg] = (new_arg_type, Field(**field_kwargs))
             else:
-                type_ = _convert_typed_dict_to_pydantic(type_, depth=depth + 1)
+                new_arg_type = _convert_typed_dict_to_pydantic(
+                    arg_type, depth=depth + 1, visited=visited
+                )
                 field_kwargs = {"default": ...}
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                fields[arg] = (type_, Field(**field_kwargs))
+                fields[arg] = (new_arg_type, Field(**field_kwargs))
         model = create_model(typed_dict.__name__, **fields)
         model.__doc__ = description
+        visited[typed_dict] = model
         return model
     elif (origin := get_origin(type_)) and (type_args := get_args(type_)):
         origin_map = {dict: Dict, list: List, tuple: Tuple, set: Set}
         origin = origin_map.get(origin, origin)
         type_args = tuple(
-            _convert_typed_dict_to_pydantic(arg, depth=depth + 1) for arg in type_args
+            _convert_typed_dict_to_pydantic(arg, depth=depth + 1, visited=visited)
+            for arg in type_args
         )
         return origin[type_args]
     else:
