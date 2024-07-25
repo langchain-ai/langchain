@@ -9,10 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 import pydantic  # pydantic: ignore
 
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    root_validator,
-)
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 def get_pydantic_major_version() -> int:

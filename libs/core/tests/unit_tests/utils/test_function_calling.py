@@ -1,5 +1,5 @@
 # mypy: disable-error-code="annotation-unchecked"
-from typing import Any, Callable, Dict, List, Literal, Optional, Type
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  #  pydantic: ignore
@@ -11,6 +11,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
+    _convert_typed_dict_to_openai_function,
     convert_to_openai_function,
     tool_example_to_messages,
 )
@@ -107,6 +108,33 @@ def dummy_pydantic_v2() -> Type[BaseModelV2Maybe]:
 
 
 @pytest.fixture()
+def dummy_typed_dict() -> Type:
+    class dummy_function(TypedDict):
+        """dummy function"""
+
+        arg1: Annotated[int, ..., "foo"]
+        arg2: Annotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]
+
+    return dummy_function
+
+
+@pytest.fixture()
+def dummy_typed_dict_docstring() -> Type:
+    class dummy_function(TypedDict):
+        """dummy function
+
+        Args:
+            arg1: foo
+            arg2: one of 'bar', 'baz'
+        """
+
+        arg1: int
+        arg2: Literal["bar", "baz"]
+
+    return dummy_function
+
+
+@pytest.fixture()
 def json_schema() -> Dict:
     return {
         "title": "dummy_function",
@@ -155,6 +183,8 @@ def test_convert_to_openai_function(
     annotated_function: Callable,
     dummy_pydantic: Type[BaseModel],
     runnable: Runnable,
+    dummy_typed_dict: Type,
+    dummy_typed_dict_docstring: Type,
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -183,6 +213,8 @@ def test_convert_to_openai_function(
         DummyWithClassMethod.dummy_function,
         annotated_function,
         dummy_pydantic,
+        dummy_typed_dict,
+        dummy_typed_dict_docstring,
     ):
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
@@ -356,3 +388,54 @@ def test_tool_outputs() -> None:
         },
     ]
     assert messages[2].content == "Output1"
+
+
+def test__convert_typed_dict_to_openai_function() -> None:
+    class SubTool(TypedDict):
+        """Subtool docstring"""
+
+        args: Annotated[Dict[str, Any], {}, "this does bar"]
+
+    class Tool(TypedDict):
+        """Docstring
+
+        Args:
+            arg1: foo
+        """
+
+        arg1: str
+        arg2: Union[int, str]
+        arg3: Optional[List[SubTool]]
+        arg4: Annotated[str, ..., "this does foo"]
+        arg5: Annotated[Optional[float], None]
+
+    expected = {
+        "name": "Tool",
+        "description": "Docstring",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {"type": "string", "description": "foo"},
+                "arg2": {"anyOf": [{"type": "integer"}, {"type": "string"}]},
+                "arg3": {
+                    "type": "array",
+                    "items": {
+                        "description": "Subtool docstring",
+                        "type": "object",
+                        "properties": {
+                            "args": {
+                                "description": "this does bar",
+                                "default": {},
+                                "type": "object",
+                            }
+                        },
+                    },
+                },
+                "arg4": {"description": "this does foo", "type": "string"},
+                "arg5": {"type": "number"},
+            },
+            "required": ["arg1", "arg2", "arg3", "arg4"],
+        },
+    }
+    actual = _convert_typed_dict_to_openai_function(Tool)
+    assert actual == expected
