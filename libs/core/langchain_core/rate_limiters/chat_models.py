@@ -1,11 +1,4 @@
-"""Interface and implementation for time based rate limiters.
-
-This module defines an interface for rate limiting requests based on time.
-
-The interface cannot account for the size of the request or any other factors.
-
-The module also provides an in-memory implementation of the rate limiter.
-"""
+"""Interface and implementation for chat model rate limiters."""
 
 from __future__ import annotations
 
@@ -14,22 +7,16 @@ import asyncio
 import threading
 import time
 from typing import (
-    Any,
     Optional,
-    cast,
+    Sequence,
 )
 
 from langchain_core._api import beta
-from langchain_core.runnables import RunnableConfig
-from langchain_core.runnables.base import (
-    Input,
-    Output,
-    Runnable,
-)
+from langchain_core.messages import BaseMessage
 
 
 @beta(message="Introduced in 0.2.24. API subject to change.")
-class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
+class BaseChatModelRateLimiter(abc.ABC):
     """Base class for rate limiters.
 
     Usage of the base limiter is through the acquire and aacquire methods depending
@@ -41,24 +28,18 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
 
     Current limitations:
 
-    - The rate limiter is not designed to work across different processes. It is
-      an in-memory rate limiter, but it is thread safe.
-    - The rate limiter only supports time-based rate limiting. It does not take
-      into account the size of the request or any other factors.
-    - The current implementation does not handle streaming inputs well and will
-      consume all inputs even if the rate limit has not been reached. Better support
-      for streaming inputs will be added in the future.
-    - When the rate limiter is combined with another runnable via a RunnableSequence,
-      usage of .batch() or .abatch() will only respect the average rate limit.
-      There will be bursty behavior as .batch() and .abatch() wait for each step
-      to complete before starting the next step. One way to mitigate this is to
-      use batch_as_completed() or abatch_as_completed().
+    - Rate limiting information is not surfaced in tracing or callbacks. This means
+      that the total time it takes to invoke a chat model will encompass both
+      the time spent waiting for tokens and the time spent making the request.
+
 
     .. versionadded:: 0.2.24
     """
 
     @abc.abstractmethod
-    def acquire(self, *, blocking: bool = True) -> bool:
+    def acquire(
+        self, messages: Sequence[BaseMessage], *, blocking: bool = True
+    ) -> bool:
         """Attempt to acquire the necessary tokens for the rate limiter.
 
         This method blocks until the required tokens are available if `blocking`
@@ -68,6 +49,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
         of the attempt to acquire the tokens.
 
         Args:
+            messages: The message input to the chat model
             blocking: If True, the method will block until the tokens are available.
                 If False, the method will return immediately with the result of
                 the attempt. Defaults to True.
@@ -77,7 +59,9 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def aacquire(self, *, blocking: bool = True) -> bool:
+    async def aacquire(
+        self, messages: Sequence[BaseMessage], *, blocking: bool = True
+    ) -> bool:
         """Attempt to acquire the necessary tokens for the rate limiter.
 
         This method blocks until the required tokens are available if `blocking`
@@ -87,6 +71,7 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
         of the attempt to acquire the tokens.
 
         Args:
+            messages: The message input to the chat model
             blocking: If True, the method will block until the tokens are available.
                 If False, the method will return immediately with the result of
                 the attempt. Defaults to True.
@@ -95,55 +80,10 @@ class BaseRateLimiter(Runnable[Input, Output], abc.ABC):
            True if the tokens were successfully acquired, False otherwise.
         """
 
-    def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> Output:
-        """Invoke the rate limiter.
-
-        This is a blocking call that waits until the given number of tokens are
-        available.
-
-        Args:
-            input: The input to the rate limiter.
-            config: The configuration for the rate limiter.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            The output of the rate limiter.
-        """
-
-        def _invoke(input: Input) -> Output:
-            """Invoke the rate limiter. Internal function."""
-            self.acquire(blocking=True)
-            return cast(Output, input)
-
-        return self._call_with_config(_invoke, input, config, **kwargs)
-
-    async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
-    ) -> Output:
-        """Invoke the rate limiter. Async version.
-
-        This is a blocking call that waits until the given number of tokens are
-        available.
-
-        Args:
-            input: The input to the rate limiter.
-            config: The configuration for the rate limiter.
-            **kwargs: Additional keyword arguments.
-        """
-
-        async def _ainvoke(input: Input) -> Output:
-            """Invoke the rate limiter. Internal function."""
-            await self.aacquire(blocking=True)
-            return cast(Output, input)
-
-        return await self._acall_with_config(_ainvoke, input, config, **kwargs)
-
 
 @beta(message="Introduced in 0.2.24. API subject to change.")
-class InMemoryRateLimiter(BaseRateLimiter):
-    """An in memory rate limiter.
+class InMemoryChatModelRateLimiter(BaseChatModelRateLimiter):
+    """An in memory rate limiter based on a token bucket algorithm.
 
     This is an in memory rate limiter, so it cannot rate limit across
     different processes.
@@ -168,18 +108,12 @@ class InMemoryRateLimiter(BaseRateLimiter):
       an in-memory rate limiter, but it is thread safe.
     - The rate limiter only supports time-based rate limiting. It does not take
       into account the size of the request or any other factors.
-    - The current implementation does not handle streaming inputs well and will
-      consume all inputs even if the rate limit has not been reached. Better support
-      for streaming inputs will be added in the future.
-    - When the rate limiter is combined with another runnable via a RunnableSequence,
-      usage of .batch() or .abatch() will only respect the average rate limit.
-      There will be bursty behavior as .batch() and .abatch() wait for each step
-      to complete before starting the next step. One way to mitigate this is to
-      use batch_as_completed() or abatch_as_completed().
 
     Example:
 
         .. code-block:: python
+
+            from langchain_core import InMemoryRateLimiter
 
             from langchain_core.runnables import RunnableLambda, InMemoryRateLimiter
 
@@ -239,7 +173,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
         self.check_every_n_seconds = check_every_n_seconds
 
     def _consume(self) -> bool:
-        """Consume the given amount of tokens if possible.
+        """Try to consume a token.
 
         Returns:
             True means that the tokens were consumed, and the caller can proceed to
@@ -270,7 +204,9 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
             return False
 
-    def acquire(self, *, blocking: bool = True) -> bool:
+    def acquire(
+        self, messages: Sequence[BaseMessage], *, blocking: bool = True
+    ) -> bool:
         """Attempt to acquire a token from the rate limiter.
 
         This method blocks until the required tokens are available if `blocking`
@@ -294,7 +230,9 @@ class InMemoryRateLimiter(BaseRateLimiter):
             time.sleep(self.check_every_n_seconds)
         return True
 
-    async def aacquire(self, *, blocking: bool = True) -> bool:
+    async def aacquire(
+        self, messages: Sequence[BaseMessage], *, blocking: bool = True
+    ) -> bool:
         """Attempt to acquire a token from the rate limiter. Async version.
 
         This method blocks until the required tokens are available if `blocking`
