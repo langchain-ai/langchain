@@ -1,4 +1,3 @@
-import glob
 import importlib
 from pathlib import Path
 
@@ -25,7 +24,7 @@ def test_importable_all() -> None:
             continue
         try:
             module = importlib.import_module("langchain_experimental." + module_name)
-        except:
+        except ImportError:
             failures.append("langchain_experimental." + module_name)
             continue
 
@@ -33,7 +32,7 @@ def test_importable_all() -> None:
         for cls_ in all_:
             try:
                 getattr(module, cls_)
-            except:
+            except AttributeError:
                 failures.append(f"{module_name}.{cls_}")
 
         found_at_least_one = True
