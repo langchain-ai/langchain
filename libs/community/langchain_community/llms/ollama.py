@@ -8,9 +8,9 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Tuple,
     Mapping,
     Optional,
+    Tuple,
     Union,
 )
 
