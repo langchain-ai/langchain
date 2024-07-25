@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import logging
@@ -285,7 +284,7 @@ def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
         }
     }
     if _id := tool_call.get("id"):
-        result["id"] = _id
+        result["id"] = _convert_tool_call_id_to_mistral_compatible(_id)
 
     return result
 
@@ -299,7 +298,7 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
         }
     }
     if _id := invalid_tool_call.get("id"):
-        result["id"] = _id
+        result["id"] = _convert_tool_call_id_to_mistral_compatible(_id)
 
     return result
 
