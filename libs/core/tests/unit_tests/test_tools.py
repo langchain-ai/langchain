@@ -977,6 +977,16 @@ class AFooBase(FooBase):
 def test_tool_pass_config(tool: BaseTool) -> None:
     assert tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
+    # Test tool calls
+    tool_call = {
+        "name": tool.name,
+        "args": {"bar": "baz"},
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == {"bar": "baz"}
+
 
 @pytest.mark.parametrize(
     "tool", [foo, afoo, simple_foo, asimple_foo, FooBase(), AFooBase()]

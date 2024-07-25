@@ -20,6 +20,7 @@ tool for the job.
 from __future__ import annotations
 
 import asyncio
+import copy
 import functools
 import inspect
 import json
@@ -1481,8 +1482,9 @@ def _prep_run_args(
 ) -> Tuple[Union[str, Dict], Dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input)["args"]
+        input_copy = copy.deepcopy(input)
+        tool_call_id: Optional[str] = cast(ToolCall, input_copy)["id"]
+        tool_input: Union[str, dict] = cast(ToolCall, input_copy)["args"]
     else:
         tool_call_id = None
         tool_input = cast(Union[str, dict], input)
