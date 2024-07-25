@@ -3,8 +3,8 @@ from pathlib import Path
 
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.storage import LocalFileStore
+from langchain_chroma import Chroma
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 
 logging.basicConfig(level=logging.INFO)
 

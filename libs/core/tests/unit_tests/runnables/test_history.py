@@ -72,10 +72,10 @@ async def test_input_messages_async() -> None:
     store: Dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
-    config: RunnableConfig = {"configurable": {"session_id": "1_async"}}
-    output = await with_history.ainvoke([HumanMessage(content="hello")], config)
+    config = {"session_id": "1_async"}
+    output = await with_history.ainvoke([HumanMessage(content="hello")], config)  # type: ignore[arg-type]
     assert output == "you said: hello"
-    output = await with_history.ainvoke([HumanMessage(content="good bye")], config)
+    output = await with_history.ainvoke([HumanMessage(content="good bye")], config)  # type: ignore[arg-type]
     assert output == "you said: hello\ngood bye"
     assert store == {
         "1_async": InMemoryChatMessageHistory(
@@ -694,3 +694,24 @@ async def test_using_custom_config_specs_async() -> None:
             ]
         ),
     }
+
+
+def test_ignore_session_id() -> None:
+    """Test without config."""
+
+    def _fake_llm(input: List[BaseMessage]) -> List[BaseMessage]:
+        return [
+            AIMessage(
+                content="you said: "
+                + "\n".join(
+                    str(m.content) for m in input if isinstance(m, HumanMessage)
+                )
+            )
+        ]
+
+    runnable = RunnableLambda(_fake_llm)
+    history = InMemoryChatMessageHistory()
+    with_message_history = RunnableWithMessageHistory(runnable, lambda: history)  # type: ignore
+    _ = with_message_history.invoke("hello")
+    _ = with_message_history.invoke("hello again")
+    assert len(history.messages) == 4
