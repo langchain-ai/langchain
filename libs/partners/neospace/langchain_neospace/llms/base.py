@@ -235,7 +235,6 @@ class BaseOpenAI(BaseLLM):
         if self.extra_body is not None:
             normal_params["extra_body"] = self.extra_body
 
-        # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1
         if self.best_of > 1:
             normal_params["best_of"] = self.best_of

@@ -1,12 +1,9 @@
-from langchain_neospace.chat_models import AzureChatOpenAI, ChatOpenAI
-from langchain_neospace.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
-from langchain_neospace.llms import AzureOpenAI, OpenAI
+from langchain_neospace.chat_models import ChatOpenAI
+from langchain_neospace.embeddings import OpenAIEmbeddings
+from langchain_neospace.llms import OpenAI
 
 __all__ = [
     "OpenAI",
     "ChatOpenAI",
     "OpenAIEmbeddings",
-    "AzureOpenAI",
-    "AzureChatOpenAI",
-    "AzureOpenAIEmbeddings",
 ]

@@ -1,6 +1,6 @@
 from langchain_neospace.chat_models import __all__
 
-EXPECTED_ALL = ["ChatOpenAI", "AzureChatOpenAI"]
+EXPECTED_ALL = ["ChatOpenAI"]
 
 
 def test_all_imports() -> None:

@@ -1,6 +1,6 @@
 from langchain_neospace.embeddings import __all__
 
-EXPECTED_ALL = ["OpenAIEmbeddings", "AzureOpenAIEmbeddings"]
+EXPECTED_ALL = ["OpenAIEmbeddings"]
 
 
 def test_all_imports() -> None:

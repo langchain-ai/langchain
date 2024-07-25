@@ -133,7 +133,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
-    # to support Azure OpenAI Service custom endpoints
     openai_api_type: Optional[str] = None
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = None
@@ -244,14 +243,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["openai_proxy"] = get_from_dict_or_env(
             values, "openai_proxy", "OPENAI_PROXY", default=""
         )
-        if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
-            default_api_version = "2023-05-15"
-            # Azure OpenAI embedding models allow a maximum of 16 texts
-            # at a time in each batch
-            # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            values["chunk_size"] = min(values["chunk_size"], 16)
-        else:
-            default_api_version = ""
+        default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
             values,
             "openai_api_version",
@@ -264,11 +256,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
-            raise ValueError(
-                "If you are using Azure, "
-                "please use the `AzureOpenAIEmbeddings` class."
-            )
         client_params = {
             "api_key": (
                 values["openai_api_key"].get_secret_value()
