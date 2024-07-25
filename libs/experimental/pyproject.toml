@@ -22,7 +22,7 @@ exclude = [ "notebooks", "examples", "example_data",]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.10"
+langchain-core = "^0.2.23"
 langchain-community = "^0.2.6"
 
 [tool.ruff.lint]
