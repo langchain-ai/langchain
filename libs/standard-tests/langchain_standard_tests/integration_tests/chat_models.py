@@ -198,16 +198,16 @@ class ChatModelIntegrationTests(ChatModelTests):
     ) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([magic_function])
+        model_ = rate_limiter | model.bind_tools([magic_function_no_args])
 
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
-        result = model_with_tools.invoke(query)
+        result = model_.invoke(query)
         _validate_tool_call_message(result)
 
         # Test stream
         full: Optional[BaseMessageChunk] = None
-        for chunk in model_with_tools.stream(query):
+        for chunk in model_.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
@@ -218,13 +218,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        model_with_tools = model.bind_tools([magic_function_no_args])
+        model_ = rate_limiter | model.bind_tools([magic_function_no_args])
         query = "What is the value of magic_function()? Use the tool."
-        result = model_with_tools.invoke(query)
+        result = model_.invoke(query)
         _validate_tool_call_message_no_args(result)
 
         full: Optional[BaseMessageChunk] = None
-        for chunk in model_with_tools.stream(query):
+        for chunk in model_.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore
         assert isinstance(full, AIMessage)
         _validate_tool_call_message_no_args(full)
@@ -245,8 +245,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             description="Generate a greeting in a particular style of speaking.",
         )
         model_with_tools = model.bind_tools([tool_])
+        model_ = rate_limiter | model_with_tools
         query = "Using the tool, generate a Pirate greeting."
-        result = model_with_tools.invoke(query)
+        result = model_.invoke(query)
         assert isinstance(result, AIMessage)
         assert result.tool_calls
         tool_call = result.tool_calls[0]
@@ -274,19 +275,21 @@ class ChatModelIntegrationTests(ChatModelTests):
         # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
         # We'll need to do a pass updating the type signatures.
         chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
-        result = chat.invoke("Tell me a joke about cats.")
+        model_ = rate_limiter | chat
+        result = model_.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
-        for chunk in chat.stream("Tell me a joke about cats."):
+        for chunk in model_.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
 
         # Schema
         chat = model.with_structured_output(Joke.schema())
-        result = chat.invoke("Tell me a joke about cats.")
+        model_ = rate_limiter | chat
+        result = model_.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
-        for chunk in chat.stream("Tell me a joke about cats."):
+        for chunk in model_.stream("Tell me a joke about cats."):
             assert isinstance(chunk, dict)
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
@@ -309,20 +312,20 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = Field(description="answer to resolve the joke")
 
         # Pydantic class
-        chat = model.with_structured_output(Joke)
-        result = chat.invoke("Tell me a joke about cats.")
+        model_ = rate_limiter | model.with_structured_output(Joke)
+        result = model_.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
 
-        for chunk in chat.stream("Tell me a joke about cats."):
+        for chunk in model_.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.schema())
-        result = chat.invoke("Tell me a joke about cats.")
+        model_ = rate_limiter | model.with_structured_output(Joke.schema())
+        result = model_.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
 
-        for chunk in chat.stream("Tell me a joke about cats."):
+        for chunk in model_.stream("Tell me a joke about cats."):
             assert isinstance(chunk, dict)
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
@@ -338,7 +341,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([my_adder_tool])
+        model_with_tools = rate_limiter | model.bind_tools([my_adder_tool])
         function_name = "my_adder_tool"
         function_args = {"a": "1", "b": "2"}
 
@@ -376,7 +379,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([my_adder_tool])
+        model_with_tools = rate_limiter | model.bind_tools([my_adder_tool])
         function_name = "my_adder_tool"
         function_args = {"a": 1, "b": 2}
 
@@ -419,7 +422,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
+        model_with_tools = rate_limiter | model.bind_tools(
+            [my_adder_tool], tool_choice="any"
+        )
         function_name = "my_adder_tool"
         function_args = {"a": 1, "b": 2}
         function_result = json.dumps({"result": 3})
@@ -526,4 +531,4 @@ class ChatModelIntegrationTests(ChatModelTests):
                 ]
             ),
         ]
-        model.bind_tools([color_picker]).invoke(messages)
+        (rate_limiter | model.bind_tools([color_picker])).invoke(messages)
