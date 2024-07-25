@@ -30,7 +30,7 @@ class FlashrankRerank(BaseDocumentCompressor):
     """Minimum relevance threshold to return."""
     model: Optional[str] = None
     """Model to use for reranking."""
-    prefix_metadata: Optional[str] = None
+    prefix_metadata: Optional[str] = ""
     """Prefix for flashrank_rerank metadata keys"""
 
     class Config:
@@ -77,7 +77,8 @@ class FlashrankRerank(BaseDocumentCompressor):
                 doc = Document(
                     page_content=r["text"],
                     metadata={self.prefix_metadata + "id": r["id"],
-                              self.prefix_metadata + "relevance_score": r["score"], **r["meta"]},
+                              self.prefix_metadata + "relevance_score": r["score"],
+                              **r["meta"]},
                 )
                 final_results.append(doc)
         return final_results
