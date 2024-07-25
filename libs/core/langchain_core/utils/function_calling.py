@@ -192,7 +192,8 @@ def convert_python_function_to_openai_function(
 def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescription:
     visited: Dict = {}
     model = cast(
-        Type[BaseModel], _convert_typed_dict_to_pydantic(typed_dict, visited=visited)
+        Type[BaseModel],
+        _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
     return convert_pydantic_to_openai_function(model)
 
@@ -200,7 +201,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescript
 _MAX_TYPED_DICT_RECURSION = 25
 
 
-def _convert_typed_dict_to_pydantic(
+def _convert_any_typed_dicts_to_pydantic(
     type_: Type,
     *,
     visited: Dict,
@@ -221,7 +222,7 @@ def _convert_typed_dict_to_pydantic(
         for arg, arg_type in annotations_.items():
             if get_origin(arg_type) is Annotated:
                 annotated_args = get_args(arg_type)
-                new_arg_type = _convert_typed_dict_to_pydantic(
+                new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
                 )
                 field_kwargs = {
@@ -241,7 +242,7 @@ def _convert_typed_dict_to_pydantic(
                     pass
                 fields[arg] = (new_arg_type, Field(**field_kwargs))
             else:
-                new_arg_type = _convert_typed_dict_to_pydantic(
+                new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     arg_type, depth=depth + 1, visited=visited
                 )
                 field_kwargs = {"default": ...}
@@ -255,7 +256,7 @@ def _convert_typed_dict_to_pydantic(
     elif (origin := get_origin(type_)) and (type_args := get_args(type_)):
         subscriptable_origin = _py_38_safe_origin(origin)
         type_args = tuple(
-            _convert_typed_dict_to_pydantic(arg, depth=depth + 1, visited=visited)
+            _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args
         )
         return subscriptable_origin[type_args]
