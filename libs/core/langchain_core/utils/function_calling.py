@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import collections
 import inspect
 import logging
+import typing
 import uuid
 from typing import (
     TYPE_CHECKING,
@@ -188,7 +190,7 @@ def convert_python_function_to_openai_function(
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescription:
-    visited = {}
+    visited: Dict = {}
     model = cast(
         Type[BaseModel], _convert_typed_dict_to_pydantic(typed_dict, visited=visited)
     )
@@ -251,13 +253,12 @@ def _convert_typed_dict_to_pydantic(
         visited[typed_dict] = model
         return model
     elif (origin := get_origin(type_)) and (type_args := get_args(type_)):
-        origin_map = {dict: Dict, list: List, tuple: Tuple, set: Set}
-        origin = origin_map.get(origin, origin)
+        subscriptable_origin = _py_38_safe_origin(origin)
         type_args = tuple(
             _convert_typed_dict_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args
         )
-        return origin[type_args]
+        return subscriptable_origin[type_args]
     else:
         return type_
 
@@ -533,3 +534,17 @@ def _parse_google_docstring(
             elif arg:
                 arg_descriptions[arg.strip()] += " " + line.strip()
     return description, arg_descriptions
+
+
+def _py_38_safe_origin(origin: Type) -> Type:
+    origin_map: Dict[Type, Any] = {
+        dict: Dict,
+        list: List,
+        tuple: Tuple,
+        set: Set,
+        collections.abc.Iterable: typing.Iterable,
+        collections.abc.Mapping: typing.Mapping,
+        collections.abc.Sequence: typing.Sequence,
+        collections.abc.MutableMapping: typing.MutableMapping,
+    }
+    return cast(Type, origin_map.get(origin, origin))
