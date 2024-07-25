@@ -17,6 +17,7 @@ from langchain_core.messages import (
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import InMemoryRateLimiter
 from langchain_core.tools import tool
 
 from langchain_standard_tests.unit_tests.chat_models import (
@@ -59,38 +60,58 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 
 class ChatModelIntegrationTests(ChatModelTests):
-    def test_invoke(self, model: BaseChatModel) -> None:
-        result = model.invoke("Hello")
+    @pytest.fixture(scope="class")
+    def rate_limiter(self) -> Optional[InMemoryRateLimiter]:
+        """Override to provide a different rate limiter to your model."""
+        return InMemoryRateLimiter(requests_per_second=1, max_bucket_size=10)
+
+    def test_invoke(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
+        model_ = rate_limiter | model
+        result = model_.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
-    async def test_ainvoke(self, model: BaseChatModel) -> None:
-        result = await model.ainvoke("Hello")
+    async def test_ainvoke(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
+        model_ = rate_limiter | model
+        result = await model_.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
-    def test_stream(self, model: BaseChatModel) -> None:
+    def test_stream(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         num_tokens = 0
-        for token in model.stream("Hello"):
+        model_ = rate_limiter | model
+        for token in model_.stream("Hello"):
             assert token is not None
             assert isinstance(token, AIMessageChunk)
             num_tokens += len(token.content)
         assert num_tokens > 0
 
-    async def test_astream(self, model: BaseChatModel) -> None:
+    async def test_astream(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         num_tokens = 0
-        async for token in model.astream("Hello"):
+        model_ = rate_limiter | model
+        async for token in model_.astream("Hello"):
             assert token is not None
             assert isinstance(token, AIMessageChunk)
             num_tokens += len(token.content)
         assert num_tokens > 0
 
-    def test_batch(self, model: BaseChatModel) -> None:
-        batch_results = model.batch(["Hello", "Hey"])
+    def test_batch(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
+        model_ = rate_limiter | model
+        batch_results = model_.batch(["Hello", "Hey"])
         assert batch_results is not None
         assert isinstance(batch_results, list)
         assert len(batch_results) == 2
@@ -100,8 +121,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(result.content, str)
             assert len(result.content) > 0
 
-    async def test_abatch(self, model: BaseChatModel) -> None:
-        batch_results = await model.abatch(["Hello", "Hey"])
+    async def test_abatch(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
+        model_ = rate_limiter | model
+        batch_results = await model_.abatch(["Hello", "Hey"])
         assert batch_results is not None
         assert isinstance(batch_results, list)
         assert len(batch_results) == 2
@@ -111,22 +135,28 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(result.content, str)
             assert len(result.content) > 0
 
-    def test_conversation(self, model: BaseChatModel) -> None:
+    def test_conversation(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         messages = [
             HumanMessage("hello"),
             AIMessage("hello"),
             HumanMessage("how are you"),
         ]
-        result = model.invoke(messages)
+        model_ = rate_limiter | model
+        result = model_.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
-    def test_usage_metadata(self, model: BaseChatModel) -> None:
+    def test_usage_metadata(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
-        result = model.invoke("Hello")
+        model_ = rate_limiter | model
+        result = model_.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
         assert result.usage_metadata is not None
@@ -134,11 +164,14 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
-    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+    def test_usage_metadata_streaming(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
         full: Optional[BaseMessageChunk] = None
-        for chunk in model.stream("Hello"):
+        model_ = rate_limiter | model
+        for chunk in model_.stream("Hello"):
             assert isinstance(chunk, AIMessageChunk)
             full = chunk if full is None else full + chunk
         assert isinstance(full, AIMessageChunk)
@@ -147,8 +180,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full.usage_metadata["output_tokens"], int)
         assert isinstance(full.usage_metadata["total_tokens"], int)
 
-    def test_stop_sequence(self, model: BaseChatModel) -> None:
-        result = model.invoke("hi", stop=["you"])
+    def test_stop_sequence(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
+        model_ = rate_limiter | model.bind(stop=["you"])
+        result = model_.invoke("hi")
         assert isinstance(result, AIMessage)
 
         custom_model = self.chat_model_class(
@@ -157,7 +193,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
 
-    def test_tool_calling(self, model: BaseChatModel) -> None:
+    def test_tool_calling(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
         model_with_tools = model.bind_tools([magic_function])
@@ -174,7 +212,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
-    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+    def test_tool_calling_with_no_arguments(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
@@ -189,7 +229,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessage)
         _validate_tool_call_message_no_args(full)
 
-    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+    def test_bind_runnables_as_tools(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
@@ -211,7 +253,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert tool_call["args"].get("answer_style")
         assert tool_call["type"] == "tool_call"
 
-    def test_structured_output(self, model: BaseChatModel) -> None:
+    def test_structured_output(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         """Test to verify structured output with a Pydantic model."""
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -248,7 +292,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert set(chunk.keys()) == {"setup", "punchline"}
 
     @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
-    def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
+    def test_structured_output_pydantic_2_v1(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         """Test to verify compatibility with pydantic.v1.BaseModel.
 
         pydantic.v1.BaseModel is available in the pydantic 2 package.
@@ -284,6 +330,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_message_histories_string_content(
         self,
         model: BaseChatModel,
+        rate_limiter: InMemoryRateLimiter,
     ) -> None:
         """
         Test that message histories are compatible with string tool contents
@@ -321,6 +368,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_message_histories_list_content(
         self,
         model: BaseChatModel,
+        rate_limiter: InMemoryRateLimiter,
     ) -> None:
         """
         Test that message histories are compatible with list tool contents
@@ -363,7 +411,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         result_list_content = model_with_tools.invoke(messages_list_content)
         assert isinstance(result_list_content, AIMessage)
 
-    def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
+    def test_structured_few_shot_examples(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         """
         Test that model can process few-shot examples with tool calls.
         """
@@ -398,7 +448,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         result_string_content = model_with_tools.invoke(messages_string_content)
         assert isinstance(result_string_content, AIMessage)
 
-    def test_image_inputs(self, model: BaseChatModel) -> None:
+    def test_image_inputs(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         if not self.supports_image_inputs:
             return
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
@@ -414,7 +466,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         model.invoke([message])
 
-    def test_anthropic_inputs(self, model: BaseChatModel) -> None:
+    def test_anthropic_inputs(
+        self, model: BaseChatModel, rate_limiter: InMemoryRateLimiter
+    ) -> None:
         if not self.supports_anthropic_inputs:
             return
 
