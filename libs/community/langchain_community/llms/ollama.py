@@ -1,5 +1,18 @@
+from __future__ import annotations
+
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import aiohttp
 import requests
@@ -132,6 +145,10 @@ class _OllamaCommon(BaseLanguageModel):
     tokens for authentication.
     """
 
+    auth: Union[Callable, Tuple, None] = None
+    """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
+    Expects the same format, type and values as requests.request auth parameter."""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -237,6 +254,7 @@ class _OllamaCommon(BaseLanguageModel):
                 "Content-Type": "application/json",
                 **(self.headers if isinstance(self.headers, dict) else {}),
             },
+            auth=self.auth,
             json=request_payload,
             stream=True,
             timeout=self.timeout,
@@ -300,6 +318,7 @@ class _OllamaCommon(BaseLanguageModel):
                     "Content-Type": "application/json",
                     **(self.headers if isinstance(self.headers, dict) else {}),
                 },
+                auth=self.auth,
                 json=request_payload,
                 timeout=self.timeout,
             ) as response:
