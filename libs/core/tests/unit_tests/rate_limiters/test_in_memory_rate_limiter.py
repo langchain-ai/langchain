@@ -247,10 +247,8 @@ def test_rate_limit_stream() -> None:
 
 async def test_rate_limit_astream() -> None:
     """Test rate limiting astream."""
-    rate_limiter = (
-        InMemoryChatModelRateLimiter(
-            requests_per_second=20, check_every_n_seconds=0.1, max_bucket_size=10
-        )
+    rate_limiter = InMemoryChatModelRateLimiter(
+        requests_per_second=20, check_every_n_seconds=0.1, max_bucket_size=10
     )
     model = GenericFakeChatModel(
         messages=iter(["hello world", "hello world", "hello world"]),
