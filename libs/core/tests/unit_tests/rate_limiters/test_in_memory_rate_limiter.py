@@ -150,7 +150,7 @@ async def test_rate_limit_ainvoke() -> None:
     model = GenericFakeChatModel(
         messages=iter(["hello", "world", "!"]),
         rate_limiter=InMemoryChatModelRateLimiter(
-            requests_per_second=200, check_every_n_seconds=0.01, max_bucket_size=10
+            requests_per_second=20, check_every_n_seconds=0.1, max_bucket_size=10
         ),
     )
     tic = time.time()
@@ -158,14 +158,14 @@ async def test_rate_limit_ainvoke() -> None:
     toc = time.time()
     # Should be larger than check every n seconds since the token bucket starts
     # with 0 tokens.
-    assert 0.01 < toc - tic < 0.02
+    assert 0.1 < toc - tic < 0.2
 
     tic = time.time()
     await model.ainvoke("foo")
     toc = time.time()
     # The second time we call the model, we should have 1 extra token
     # to proceed immediately.
-    assert toc - tic < 0.005
+    assert toc - tic < 0.01
 
     # The third time we call the model, we need to wait again for a token
     tic = time.time()
@@ -173,7 +173,7 @@ async def test_rate_limit_ainvoke() -> None:
     toc = time.time()
     # Should be larger than check every n seconds since the token bucket starts
     # with 0 tokens.
-    assert 0.01 < toc - tic < 0.02
+    assert 0.1 < toc - tic < 0.2
 
 
 def test_rate_limit_batch() -> None:
@@ -247,19 +247,21 @@ def test_rate_limit_stream() -> None:
 
 async def test_rate_limit_astream() -> None:
     """Test rate limiting astream."""
+    rate_limiter = (
+        InMemoryChatModelRateLimiter(
+            requests_per_second=20, check_every_n_seconds=0.1, max_bucket_size=10
+        )
+    )
     model = GenericFakeChatModel(
         messages=iter(["hello world", "hello world", "hello world"]),
-        rate_limiter=InMemoryChatModelRateLimiter(
-            requests_per_second=200, check_every_n_seconds=0.01, max_bucket_size=10
-        ),
+        rate_limiter=rate_limiter,
     )
     # Check astream
     tic = time.time()
     response = [chunk async for chunk in model.astream("foo")]
     assert [msg.content for msg in response] == ["hello", " ", "world"]
     toc = time.time()
-    # Should be larger than check every n seconds since the token bucket starts
-    assert 0.01 < toc - tic < 0.02  # Slightly smaller than check every n seconds
+    assert 0.1 < toc - tic < 0.2
 
     # Second time around we should have 1 token left
     tic = time.time()
@@ -267,15 +269,14 @@ async def test_rate_limit_astream() -> None:
     assert [msg.content for msg in response] == ["hello", " ", "world"]
     toc = time.time()
     # Should be larger than check every n seconds since the token bucket starts
-    assert toc - tic < 0.005  # Slightly smaller than check every n seconds
+    assert toc - tic < 0.01  # Slightly smaller than check every n seconds
 
     # Third time around we should have 0 tokens left
     tic = time.time()
     response = [chunk async for chunk in model.astream("foo")]
     assert [msg.content for msg in response] == ["hello", " ", "world"]
     toc = time.time()
-    # Should be larger than check every n seconds since the token bucket starts
-    assert 0.01 < toc - tic < 0.02  # Slightly smaller than check every n seconds
+    assert 0.1 < toc - tic < 0.2
 
 
 def test_rate_limit_skips_cache() -> None:
