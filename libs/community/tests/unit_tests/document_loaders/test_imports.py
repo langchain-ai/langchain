@@ -142,6 +142,7 @@ EXPECTED_ALL = [
     "S3DirectoryLoader",
     "S3FileLoader",
     "ScrapflyLoader",
+    "ScrapingAntLoader",
     "SQLDatabaseLoader",
     "SRTLoader",
     "SeleniumURLLoader",

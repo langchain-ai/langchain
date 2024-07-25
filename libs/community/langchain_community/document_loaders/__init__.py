@@ -411,6 +411,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.scrapfly import (
         ScrapflyLoader,
     )
+    from langchain_community.document_loaders.scrapingant import (
+        ScrapingAntLoader,
+    )
     from langchain_community.document_loaders.sharepoint import (
         SharePointLoader,
     )
@@ -666,6 +669,7 @@ _module_lookup = {
     "S3DirectoryLoader": "langchain_community.document_loaders.s3_directory",
     "S3FileLoader": "langchain_community.document_loaders.s3_file",
     "ScrapflyLoader": "langchain_community.document_loaders.scrapfly",
+    "ScrapingAntLoader": "langchain_community.document_loaders.scrapingant",
     "SQLDatabaseLoader": "langchain_community.document_loaders.sql_database",
     "SRTLoader": "langchain_community.document_loaders.srt",
     "SeleniumURLLoader": "langchain_community.document_loaders.url_selenium",
@@ -870,6 +874,7 @@ __all__ = [
     "S3DirectoryLoader",
     "S3FileLoader",
     "ScrapflyLoader",
+    "ScrapingAntLoader",
     "SQLDatabaseLoader",
     "SRTLoader",
     "SeleniumURLLoader",
