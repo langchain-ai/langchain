@@ -94,7 +94,7 @@ def _format_oci_tool_calls(
 
 
 def _convert_oci_tool_call_to_langchain(tool_call: Any) -> ToolCall:
-    """Convert a Cohere tool call into langchain_core.messages.ToolCall"""
+    """Convert a OCI GenAI tool call into langchain_core.messages.ToolCall"""
     _id = uuid.uuid4().hex[:]
     return ToolCall(name=tool_call.name, args=tool_call.parameters, id=_id)
 
