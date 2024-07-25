@@ -243,8 +243,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/tools",
+            type: "doc",
+            id: "integrations/tools/index",
           },
         },
         {
