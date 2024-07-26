@@ -438,7 +438,7 @@ def test_chat_prompt_template_indexing() -> None:
     message1 = SystemMessage(content="foo")
     message2 = HumanMessage(content="bar")
     message3 = HumanMessage(content="baz")
-    template = ChatPromptTemplate.from_messages([message1, message2, message3])
+    template = ChatPromptTemplate([message1, message2, message3])
     assert template[0] == message1
     assert template[1] == message2
 
@@ -453,7 +453,7 @@ def test_chat_prompt_template_append_and_extend() -> None:
     message1 = SystemMessage(content="foo")
     message2 = HumanMessage(content="bar")
     message3 = HumanMessage(content="baz")
-    template = ChatPromptTemplate.from_messages([message1])
+    template = ChatPromptTemplate([message1])
     template.append(message2)
     template.append(message3)
     assert len(template) == 3
@@ -480,7 +480,7 @@ def test_convert_to_message_is_strict() -> None:
 
 
 def test_chat_message_partial() -> None:
-    template = ChatPromptTemplate.from_messages(
+    template = ChatPromptTemplate(
         [
             ("system", "You are an AI assistant named {name}."),
             ("human", "Hi I'm {user}"),
@@ -734,14 +734,14 @@ def test_messages_placeholder_with_max() -> None:
 
 
 def test_chat_prompt_message_placeholder_partial() -> None:
-    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    prompt = ChatPromptTemplate([MessagesPlaceholder("history")])
     prompt = prompt.partial(history=[("system", "foo")])
     assert prompt.format_messages() == [SystemMessage(content="foo")]
     assert prompt.format_messages(history=[("system", "bar")]) == [
         SystemMessage(content="bar")
     ]
 
-    prompt = ChatPromptTemplate.from_messages(
+    prompt = ChatPromptTemplate(
         [
             MessagesPlaceholder("history", optional=True),
         ]
@@ -752,7 +752,7 @@ def test_chat_prompt_message_placeholder_partial() -> None:
 
 
 def test_chat_prompt_message_placeholder_tuple() -> None:
-    prompt = ChatPromptTemplate.from_messages([("placeholder", "{convo}")])
+    prompt = ChatPromptTemplate([("placeholder", "{convo}")])
     assert prompt.format_messages(convo=[("user", "foo")]) == [
         HumanMessage(content="foo")
     ]
@@ -760,9 +760,7 @@ def test_chat_prompt_message_placeholder_tuple() -> None:
     assert prompt.format_messages() == []
 
     # Is optional = True
-    optional_prompt = ChatPromptTemplate.from_messages(
-        [("placeholder", ["{convo}", False])]
-    )
+    optional_prompt = ChatPromptTemplate([("placeholder", ["{convo}", False])])
     assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
         HumanMessage(content="foo")
     ]
@@ -771,7 +769,7 @@ def test_chat_prompt_message_placeholder_tuple() -> None:
 
 
 async def test_messages_prompt_accepts_list() -> None:
-    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    prompt = ChatPromptTemplate([MessagesPlaceholder("history")])
     value = prompt.invoke([("user", "Hi there")])  # type: ignore
     assert value.to_messages() == [HumanMessage(content="Hi there")]
 
@@ -779,7 +777,7 @@ async def test_messages_prompt_accepts_list() -> None:
     assert value.to_messages() == [HumanMessage(content="Hi there")]
 
     # Assert still raises a nice error
-    prompt = ChatPromptTemplate.from_messages(
+    prompt = ChatPromptTemplate(
         [("system", "You are a {foo}"), MessagesPlaceholder("history")]
     )
     with pytest.raises(TypeError):
@@ -790,7 +788,7 @@ async def test_messages_prompt_accepts_list() -> None:
 
 
 def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
-    prompt_all_required = ChatPromptTemplate.from_messages(
+    prompt_all_required = ChatPromptTemplate(
         messages=[MessagesPlaceholder("history", optional=False), ("user", "${input}")]
     )
     assert set(prompt_all_required.input_variables) == {"input", "history"}
@@ -798,7 +796,7 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     with pytest.raises(ValidationError):
         prompt_all_required.input_schema(input="")
     assert prompt_all_required.input_schema.schema() == snapshot(name="required")
-    prompt_optional = ChatPromptTemplate.from_messages(
+    prompt_optional = ChatPromptTemplate(
         messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
     )
     # input variables only lists required variables
