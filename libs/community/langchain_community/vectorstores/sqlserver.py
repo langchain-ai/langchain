@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -53,7 +53,9 @@ class SQLServer_VectorStore(VectorStore):
         self.connection_string = connection_string
         self.embedding_function = embedding_function
         self.table_name = table_name
-        self._bind = connection if connection else self._create_engine()
+        self._bind: Union[Connection, Engine] = (
+            connection if connection else self._create_engine()
+        )
         self.EmbeddingStore = self._get_embedding_store(table_name)
         self._create_table_if_not_exists()
 
@@ -62,7 +64,7 @@ class SQLServer_VectorStore(VectorStore):
 
     def _create_table_if_not_exists(self) -> None:
         logging.info("Creating table %s", self.table_name)
-        with Session(bind=self._bind) as session:
+        with Session(self._bind) as session:
             Base.metadata.create_all(session.get_bind())
 
     def _get_embedding_store(self, name: str) -> Any:
@@ -77,7 +79,7 @@ class SQLServer_VectorStore(VectorStore):
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
             custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
             query_metadata = Column(JSON, nullable=True)
-            query = Column(NVARCHAR("max"), nullable=False)
+            query = Column(NVARCHAR, nullable=False)  # defaults to NVARCHAR(MAX)
             embeddings = Column(VARBINARY, nullable=False)
 
         _embedding_store = EmbeddingStore
@@ -89,10 +91,10 @@ class SQLServer_VectorStore(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: type[VST],
+        cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: List[dict] | None = None,
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
@@ -101,7 +103,8 @@ class SQLServer_VectorStore(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        return super().similarity_search(query, k, **kwargs)
+        # placeholder
+        return []
 
     def add_texts(
         self,
@@ -157,15 +160,16 @@ class SQLServer_VectorStore(VectorStore):
             ids = [metadata.pop("id", uuid.uuid4()) for metadata in metadatas]
 
         try:
-            with Session(bind=self._bind) as session:
+            with Session(self._bind) as session:
                 documents = []
                 for idx, query in enumerate(texts):
-                    # For a query, if there is no corresponding ID, we generate a uuid and add it to the list of IDs to be returned.
-                    id = (
-                        ids[idx]
-                        if idx < len(ids)
-                        else ids.append(uuid.uuid4()) or ids[-1]
-                    )
+                    # For a query, if there is no corresponding ID,
+                    # we generate a uuid and add it to the list of IDs to be returned.
+                    if idx < len(ids):
+                        id = ids[idx]
+                    else:
+                        ids.append(str(uuid.uuid4()))
+                        id = ids[-1]
                     embedding = embeddings[idx]
                     metadata = metadatas[idx] if idx < len(metadatas) else None
 
@@ -177,7 +181,9 @@ class SQLServer_VectorStore(VectorStore):
                         bindparam(
                             "embeddingvalues",
                             json.dumps(embedding),
-                            literal_execute=True,  # render the value of the parameter into SQL statement at statement execution time
+                            # render the value of the parameter into SQL statement
+                            # at statement execution time
+                            literal_execute=True,
                         )
                     )
                     result = session.scalar(sqlquery)
@@ -190,6 +196,6 @@ class SQLServer_VectorStore(VectorStore):
                     documents.append(embedding_store)
                 session.bulk_save_objects(documents)
                 session.commit()
-            return ids
         except DBAPIError as e:
             logging.error(e.__cause__)
+        return ids
