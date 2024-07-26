@@ -64,8 +64,8 @@ def test_output_fixing_parser_parse(
     # TODO: test whether "instructions" is passed to the retry_chain
 
 
-def test_output_fixing_parser_from_llm():
-    def fake_llm(prompt: str):
+def test_output_fixing_parser_from_llm() -> None:
+    def fake_llm(prompt: str) -> AIMessage:
         return AIMessage("2024-07-08T00:00:00.000000Z")
 
     llm = RunnableLambda(fake_llm)
