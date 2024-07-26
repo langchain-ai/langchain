@@ -102,7 +102,7 @@ cassio = "^0.1.6"
 tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 fireworks-ai = "^0.9.0"
-vdms = "^0.0.20"
+vdms = ">=0.0.20"
 exllamav2 = "^0.0.18"
 
 [tool.poetry.group.lint.dependencies]
