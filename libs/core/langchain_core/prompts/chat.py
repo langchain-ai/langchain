@@ -820,6 +820,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     Examples:
 
+        .. versionchanged:: 0.2.11
+
+            You can pass any Message-like formats supported by
+            ``ChatPromptTemplate.from_messages()`` directly to ``ChatPromptTemplate()``
+            init.
+
         .. code-block:: python
 
             from langchain_core.prompts import ChatPromptTemplate
@@ -1177,29 +1183,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template.
         """
-        _messages = [
-            _convert_to_message(message, template_format) for message in messages
-        ]
-
-        # Automatically infer input variables from messages
-        input_vars: Set[str] = set()
-        optional_variables: Set[str] = set()
-        partial_vars: Dict[str, Any] = {}
-        for _message in _messages:
-            if isinstance(_message, MessagesPlaceholder) and _message.optional:
-                partial_vars[_message.variable_name] = []
-                optional_variables.add(_message.variable_name)
-            elif isinstance(
-                _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
-            ):
-                input_vars.update(_message.input_variables)
-
-        return cls(
-            input_variables=sorted(input_vars),
-            optional_variables=sorted(optional_variables),
-            messages=_messages,
-            partial_variables=partial_vars,
-        )
+        return cls(messages, template_format=template_format)
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format the chat template into a list of finalized messages.
