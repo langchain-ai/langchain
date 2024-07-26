@@ -8,6 +8,7 @@ from langchain_core.messages import (
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
+    ToolMessage,
 )
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
@@ -55,6 +56,18 @@ def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
     result = _convert_message_to_dict(message)
     expected_output = {"role": "system", "content": "foo"}
+    assert result == expected_output
+
+
+def test__convert_message_to_dict_tool() -> None:
+    message = ToolMessage(name="foo", content="bar", tool_call_id="abc123")
+    result = _convert_message_to_dict(message)
+    expected_output = {
+        "name": "foo",
+        "content": "bar",
+        "tool_call_id": "abc123",
+        "role": "tool",
+    }
     assert result == expected_output
 
 
