@@ -11,7 +11,6 @@ EXPECTED_ALL = [
     "run_in_executor",
     "patch_config",
     "RouterInput",
-    "InMemoryRateLimiter",
     "RouterRunnable",
     "Runnable",
     "RunnableSerializable",

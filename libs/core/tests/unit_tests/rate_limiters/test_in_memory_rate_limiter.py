@@ -5,8 +5,7 @@ import time
 import pytest
 from freezegun import freeze_time
 
-from langchain_core.runnables import RunnableLambda
-from langchain_core.runnables.rate_limiter import InMemoryRateLimiter
+from langchain_core.rate_limiters import InMemoryRateLimiter
 
 
 @pytest.fixture
@@ -109,37 +108,3 @@ async def test_async_wait_max_bucket_size() -> None:
         # Assert that sync wait can proceed without blocking
         # since we have enough tokens
         await rate_limiter.aacquire(blocking=True)
-
-
-def test_add_rate_limiter() -> None:
-    """Add rate limiter."""
-
-    def foo(x: int) -> int:
-        """Return x."""
-        return x
-
-    rate_limiter = InMemoryRateLimiter(
-        requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
-    )
-
-    foo_ = RunnableLambda(foo)
-    chain = rate_limiter | foo_
-    assert chain.invoke(1) == 1
-
-
-async def test_async_add_rate_limiter() -> None:
-    """Add rate limiter."""
-
-    async def foo(x: int) -> int:
-        """Return x."""
-        return x
-
-    rate_limiter = InMemoryRateLimiter(
-        requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
-    )
-
-    # mypy is unable to follow the type information when
-    # RunnableLambda is used with an async function
-    foo_ = RunnableLambda(foo)  # type: ignore
-    chain = rate_limiter | foo_
-    assert (await chain.ainvoke(1)) == 1
