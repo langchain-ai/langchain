@@ -98,7 +98,7 @@ class SQLServer_VectorStore(VectorStore):
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
-        return super().from_texts(texts, embedding, metadatas, **kwargs)
+        return None
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
