@@ -18,6 +18,10 @@ class TestChatOllama(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {"model": "llama3-groq-tool-use"}
 
+    @property
+    def supports_image_inputs(self) -> bool:
+        return True
+
     @pytest.mark.xfail(
         reason=(
             "Fails with 'AssertionError'. Ollama does not support 'tool_choice' yet."
