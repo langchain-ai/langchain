@@ -68,43 +68,40 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
         # other forms of azure credentials.
         openai_api_key = (
-            values["openai_api_key"]
+            values.get("openai_api_key")
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
         )
         values["openai_api_key"] = (
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-        values["openai_api_base"] = (
-            values["openai_api_base"]
-            if "openai_api_base" in values
-            else os.getenv("OPENAI_API_BASE")
-        )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
+        values["openai_api_base"] = values.get("openai_api_base") or os.getenv("OPENAI_API_BASE")
+            
+        values["openai_api_version"] = values.get("openai_api_version") or os.getenv(
             "OPENAI_API_VERSION", default="2023-05-15"
         )
         values["openai_api_type"] = get_from_dict_or_env(
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
         values["openai_organization"] = (
-            values["openai_organization"]
+            values.get("openai_organization")
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values, "openai_proxy", "OPENAI_PROXY", default=""
         )
-        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
+        values["azure_endpoint"] = values.get("azure_endpoint") or os.getenv(
             "AZURE_OPENAI_ENDPOINT"
         )
-        azure_ad_token = values["azure_ad_token"] or os.getenv("AZURE_OPENAI_AD_TOKEN")
+        azure_ad_token = values.get("azure_ad_token") or os.getenv("AZURE_OPENAI_AD_TOKEN")
         values["azure_ad_token"] = (
             convert_to_secret_str(azure_ad_token) if azure_ad_token else None
         )
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
         openai_api_base = values["openai_api_base"]
-        if openai_api_base and values["validate_base_url"]:
+        if openai_api_base and values.get("validate_base_url"):
             if "/openai" not in openai_api_base:
                 values["openai_api_base"] += "/openai"
                 raise ValueError(
@@ -112,7 +109,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`). "
                 )
-            if values["deployment"]:
+            if values.get("deployment"):
                 raise ValueError(
                     "As of openai>=1.0.0, if `deployment` (or alias "
                     "`azure_deployment`) is specified then "
@@ -126,12 +123,12 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "azure_deployment": values["deployment"],
             "api_key": (
                 values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
+                if values.get("openai_api_key")
                 else None
             ),
             "azure_ad_token": (
                 values["azure_ad_token"].get_secret_value()
-                if values["azure_ad_token"]
+                if values.get("azure_ad_token")
                 else None
             ),
             "azure_ad_token_provider": values["azure_ad_token_provider"],
