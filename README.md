@@ -99,7 +99,7 @@
 Библиотеку можно установить с помощью pip:
 
 ```sh
-pip install gigachain
+pip install gigachain-community
 ```
 
 ### Миграция с LangChain
@@ -107,13 +107,13 @@ pip install gigachain
 Для миграции с LangChain и начала использования GigaChain нужно удалить все компоненты библиотеки `langchain`:
 
 ```sh
-pip uninstall langchain langchain_experimental langchain_core langchain_community
+pip uninstall langchain langchain-experimental langchain-core langchain-community
 ```
 
 После чего установить библиотеку `gigachain`:
 
 ```sh
-pip install gigachain
+pip install gigachain-community
 ```
 
 ## Работа с GigaChain
@@ -275,11 +275,11 @@ pip list
 Для удаления модулей LangChain используйте команды менеджера пакетов:
 
 ```shell
-pip uninstall langchain_core
-pip uninstall langchain_community
-pip uninstall langchain_experimental
+pip uninstall langchain-core
+pip uninstall langchain-community
+pip uninstall langchain-experimental
 #Модуль langchain_openai содержит зависимости от langchain_core
-pip uninstall langchain_openai
+pip uninstall langchain-openai
 pip uninstall langchain
 ```
 
@@ -289,10 +289,10 @@ pip uninstall langchain
 Для установки последних версий модулей GigaChain используйте команды менеджера пакетов:
 
 ```shell
-pip install -U gigachain_core
-pip install -U gigachain_community
-pip install -U gigachain_experimental
-pip install -U gigachain_openai
+pip install -U gigachain-core
+pip install -U gigachain-community
+pip install -U gigachain-experimental
+pip install -U gigachain-openai
 pip install -U gigachain
 ```
 
