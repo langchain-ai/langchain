@@ -38,6 +38,8 @@ generate-files:
 
 	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
 
+	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
+
 	$(PYTHON) scripts/document_loader_feat_table.py $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
