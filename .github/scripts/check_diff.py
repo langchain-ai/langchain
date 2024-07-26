@@ -95,6 +95,11 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         # declare deps in funny way
         max_python = "3.11"
 
+    if dir_ == "libs/community" and job == "extended-tests":
+        # community extended test resolution in 3.12 is slow
+        # even in uv
+        max_python = "3.11"
+
     return [
         {"working-directory": dir_, "python-version": min_python},
         {"working-directory": dir_, "python-version": max_python},
