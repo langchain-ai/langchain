@@ -118,6 +118,9 @@ class ChatYi(BaseChatModel):
     class Config:
         allow_population_by_field_name = True
 
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         all_required_field_names = get_pydantic_field_names(cls)
