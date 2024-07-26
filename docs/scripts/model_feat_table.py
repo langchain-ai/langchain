@@ -87,6 +87,14 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-huggingface",
         "link": "/docs/integrations/chat/huggingface/",
     },
+    "ChatNVIDIA": {
+        "tool_calling": True,
+        "json_mode": False,
+        "local": True,
+        "multimodal": False,
+        "package": "langchain-nvidia-ai-endpoints",
+        "link": "/docs/integrations/chat/nvidia_ai_endpoints/",
+    },
     "ChatOllama": {
         "tool_calling": True,
         "local": True,

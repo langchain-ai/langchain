@@ -14,6 +14,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {string} [mistralParams] - Parameters for Mistral chat model. Defaults to `model="mistral-large-latest"`
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
+ * @property {string} [nvidiaParams] - Parameters for Nvidia NIM model. Defaults to `model="meta/llama3-70b-instruct"`
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
@@ -23,6 +24,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideGoogle] - Whether or not to hide Google VertexAI chat model.
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
  * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
+ * @property {boolean} [hideNvidia] - Whether or not to hide NVIDIA NIM model.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -40,6 +42,7 @@ export default function ChatModelTabs(props) {
     googleParams,
     togetherParams,
     azureParams,
+    nvidiaParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -49,6 +52,7 @@ export default function ChatModelTabs(props) {
     hideGoogle,
     hideTogether,
     hideAzure,
+    hideNvidia,
     customVarName,
   } = props;
 
@@ -69,6 +73,7 @@ export default function ChatModelTabs(props) {
   const azureParamsOrDefault =
     azureParams ??
     `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
+  const nvidiaParamsOrDefault = nvidiaParams ?? `model="meta/llama3-70b-instruct"`
 
   const llmVarName = customVarName ?? "model";
 
@@ -117,6 +122,15 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-cohere",
       default: false,
       shouldHide: hideCohere,
+    },
+    {
+      value: "NVIDIA",
+      label: "NVIDIA",
+      text: `from langchain import ChatNVIDIA\n\n${llmVarName} = ChatNVIDIA(${nvidiaParamsOrDefault})`,
+      apiKeyName: "NVIDIA_API_KEY",
+      packageName: "langchain-nvidia-ai-endpoints",
+      default: false,
+      shouldHide: hideNvidia,
     },
     {
       value: "FireworksAI",
