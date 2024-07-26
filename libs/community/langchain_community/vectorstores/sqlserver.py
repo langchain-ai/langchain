@@ -2,7 +2,7 @@ from typing import Any, Iterable, List, Optional, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
+from langchain_core.vectorstores import VST, VectorStore
 from sqlalchemy import Column, Uuid, bindparam, create_engine, text
 from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
 from sqlalchemy.engine import Connection, Engine
@@ -91,19 +91,20 @@ class SQLServer_VectorStore(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[VectorStore],
+        cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> None:
+        **kwargs: Any
+    ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
-        return None
+        return super().from_texts(texts, embedding, metadatas, **kwargs)
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> Optional[List[Document]]:
-        return None
+    ) -> List[Document]:
+        # placeholder
+        return []
 
     def add_texts(
         self,
@@ -195,7 +196,6 @@ class SQLServer_VectorStore(VectorStore):
                     documents.append(embedding_store)
                 session.bulk_save_objects(documents)
                 session.commit()
-            return ids
         except DBAPIError as e:
             logging.error(e.__cause__)
-            return
+        return ids
