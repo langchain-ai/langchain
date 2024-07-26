@@ -65,10 +65,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values.get("openai_api_base") or os.getenv(
             "OPENAI_API_BASE"
         )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
+        values["openai_api_version"] = values.get("openai_api_version") or os.getenv(
             "OPENAI_API_VERSION", default="2023-05-15"
         )
         values["openai_api_type"] = get_from_dict_or_env(
