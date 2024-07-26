@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
 
-_CONNECTION_STRING = os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING")
+_CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
 
 
 @pytest.fixture
