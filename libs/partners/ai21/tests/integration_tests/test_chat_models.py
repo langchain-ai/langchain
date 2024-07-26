@@ -1,10 +1,11 @@
 """Test ChatAI21 chat model."""
 
 import pytest
-from langchain_ai21.chat_models import ChatAI21
 from langchain_core.messages import AIMessageChunk, HumanMessage
 from langchain_core.outputs import ChatGeneration
 from langchain_core.rate_limiters import InMemoryRateLimiter
+
+from langchain_ai21.chat_models import ChatAI21
 from tests.unit_tests.conftest import J2_CHAT_MODEL_NAME, JAMBA_CHAT_MODEL_NAME
 
 rate_limiter = InMemoryRateLimiter(requests_per_second=0.5)
