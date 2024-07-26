@@ -25,7 +25,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.pydantic_v1 import Field, SecretStr,  root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
@@ -119,23 +119,17 @@ class ChatYi(BaseChatModel):
         allow_population_by_field_name = True
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.build_extra()
-        self.validate_environment()
+         super().__init__(**kwargs)
 
-    def build_extra(self) -> None:
-        all_required_field_names = get_pydantic_field_names(type(self))
-        extra = self.model_kwargs.copy()
-        for field_name in list(self.__dict__):
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        all_required_field_names = get_pydantic_field_names(cls)
+        extra = values.get("model_kwargs", {})
+        for field_name in list(values):
             if field_name in extra:
                 raise ValueError(f"Found {field_name} supplied twice.")
             if field_name not in all_required_field_names:
-                logger.warning(
-                    f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
-                )
-                extra[field_name] = self.__dict__.pop(field_name)
+                extra[field_name] = values.pop(field_name)
 
         invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
@@ -144,24 +138,28 @@ class ChatYi(BaseChatModel):
                 f"Instead they were passed in as part of `model_kwargs` parameter."
             )
 
-        self.model_kwargs = extra
+        values["model_kwargs"] = extra
+        return values
 
-    def validate_environment(self) -> None:
-        self.yi_api_key = convert_to_secret_str(
+    @root_validator(pre=True)
+    def validate_environment(cls, values: Dict) -> Dict:
+        values["yi_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
-                self.__dict__,
+                values,
                 ["yi_api_key", "api_key"],
                 "YI_API_KEY",
             )
         )
 
         # 如果未指定 yi_api_base，则根据 region 选择
-        if self.yi_api_base is None:
-            region = self.region.lower()
+        if values.get("yi_api_base") is None:
+            region = values.get("region", "cn").lower()
             if region == "global":
-                self.yi_api_base = DEFAULT_API_BASE_GLOBAL
+                values["yi_api_base"] = DEFAULT_API_BASE_GLOBAL
             else:
-                self.yi_api_base = DEFAULT_API_BASE_CN
+                values["yi_api_base"] = DEFAULT_API_BASE_CN
+
+        return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:

@@ -8,7 +8,7 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Field, SecretStr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -29,11 +29,12 @@ class YiLLM(LLM):
     yi_api_url_domestic: str = "https://api.lingyiwanwu.com/v1/chat/completions"
     yi_api_url_international: str = "https://api.01.ai/v1/chat/completions"
 
-    def __init__(self, **kwargs: Any):
-        super().__init__(**kwargs)
-        self.yi_api_key = convert_to_secret_str(
-            get_from_dict_or_env(kwargs, "yi_api_key", "YI_API_KEY")
-        )
+    @pre_init
+    def validate_environment(cls, values: Dict) -> Dict:
+         values["yi_api_key"] = convert_to_secret_str(
+             get_from_dict_or_env(values, "yi_api_key", "YI_API_KEY")
+         )
+         return values
 
     @property
     def _default_params(self) -> Dict[str, Any]:
