@@ -43,7 +43,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.query_constructors.elasticsearch import (
         ElasticsearchTranslator,
     )
-    from langchain_community.query_constructors.hanavector import HANATranslator
     from langchain_community.query_constructors.milvus import MilvusTranslator
     from langchain_community.query_constructors.mongodb_atlas import (
         MongoDBAtlasTranslator,
@@ -69,7 +68,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         DatabricksVectorSearch,
         DeepLake,
         Dingo,
-        HanaDB,
         Milvus,
         MyScale,
         OpenSearchVectorSearch,
@@ -105,7 +103,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Weaviate: WeaviateTranslator,
         Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
-        HanaDB: HANATranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
         ElasticsearchStoreCommunity: ElasticsearchTranslator,
@@ -179,6 +176,16 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         else:
             if isinstance(vectorstore, PGVector):
                 return NewPGVectorTranslator()
+
+        try:
+            # Added in langchain-community==0.2.11
+            from langchain_community.query_constructors.hanavector import HanaTranslator
+            from langchain_community.vectorstores import HanaDB
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, HanaDB):
+                return HanaTranslator()
 
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"

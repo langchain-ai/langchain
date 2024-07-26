@@ -11,7 +11,7 @@ from langchain_core.structured_query import (
 )
 
 
-class HANATranslator(Visitor):
+class HanaTranslator(Visitor):
     """
     Translate internal query language elements to valid filters params for
     HANA vectorstore.

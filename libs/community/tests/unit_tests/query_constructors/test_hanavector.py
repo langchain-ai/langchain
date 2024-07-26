@@ -9,9 +9,9 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain_community.query_constructors.hanavector import HANATranslator
+from langchain_community.query_constructors.hanavector import HanaTranslator
 
-DEFAULT_TRANSLATOR = HANATranslator()
+DEFAULT_TRANSLATOR = HanaTranslator()
 
 
 def test_visit_comparison() -> None:
