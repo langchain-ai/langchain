@@ -69,7 +69,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    role = _dict.get("role")
+    role: str = _dict["role"]
     content = _dict.get("content") or ""
 
     if role == "user" or default_class == HumanMessageChunk:
@@ -79,7 +79,7 @@ def _convert_delta_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
-        return default_class(content=content)
+        return default_class(content=content, type=role)
 
 
 @asynccontextmanager
@@ -304,7 +304,7 @@ class ChatYi(BaseChatModel):
         return res
 
     def _create_payload_parameters(
-        self, messages: List[BaseMessage], **kwargs
+        self, messages: List[BaseMessage], **kwargs: Any
     ) -> Dict[str, Any]:
         parameters = {**self._default_params, **kwargs}
         temperature = parameters.pop("temperature", 0.7)
@@ -321,7 +321,7 @@ class ChatYi(BaseChatModel):
         }
         return payload
 
-    def _create_headers_parameters(self, **kwargs) -> Dict[str, Any]:
+    def _create_headers_parameters(self, **kwargs: Any) -> Dict[str, Any]:
         parameters = {**self._default_params, **kwargs}
         default_headers = parameters.pop("headers", {})
         api_key = ""
