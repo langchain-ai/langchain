@@ -71,7 +71,7 @@ def create_react_agent(
                     "input": "what's my name?",
                     # Notice that chat_history is a string
                     # since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
+                    "chat_history": "Human: My name is Bob\\nAI: Hello Bob!",
                 }
             )
 
