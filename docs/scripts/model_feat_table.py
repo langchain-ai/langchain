@@ -89,7 +89,7 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatNVIDIA": {
         "tool_calling": True,
-        "json_mode": True,
+        "json_mode": False,
         "local": True,
         "multimodal": False,
         "package": "langchain-nvidia-ai-endpoints",
