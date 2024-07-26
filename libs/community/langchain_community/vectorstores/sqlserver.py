@@ -54,7 +54,8 @@ class SQLServer_VectorStore(VectorStore):
         self.embedding_function = embedding_function
         self.table_name = table_name
         self._bind: Union[Connection, Engine] = (
-            connection if connection else self._create_engine())
+            connection if connection else self._create_engine()
+        )
         self.EmbeddingStore = self._get_embedding_store(table_name)
         self._create_table_if_not_exists()
 
@@ -78,7 +79,7 @@ class SQLServer_VectorStore(VectorStore):
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
             custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
             query_metadata = Column(JSON, nullable=True)
-            query = Column(NVARCHAR, nullable=False)    # defaults to NVARCHAR(MAX)
+            query = Column(NVARCHAR, nullable=False)  # defaults to NVARCHAR(MAX)
             embeddings = Column(VARBINARY, nullable=False)
 
         _embedding_store = EmbeddingStore
@@ -161,6 +162,7 @@ class SQLServer_VectorStore(VectorStore):
             with Session(self._bind) as session:
                 documents = []
                 for idx, query in enumerate(texts):
+                    
                     # For a query, if there is no corresponding ID, 
                     # we generate a uuid and add it to the list of IDs to be returned.
                     if idx < len(ids):
