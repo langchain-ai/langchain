@@ -53,7 +53,7 @@ class InMemoryDocIndexer(DocumentIndex):
         )
 
 class FederatedIndex(DocumentIndex):
-    """A simple retriever that returns the first document in the index"""
+    """A federated index. Can upsert and delete from all indexes. Can search across all indexes."""
 
     indexes: List[DocumentIndex]
 
