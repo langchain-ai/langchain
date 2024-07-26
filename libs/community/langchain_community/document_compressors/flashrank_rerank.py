@@ -30,7 +30,7 @@ class FlashrankRerank(BaseDocumentCompressor):
     """Minimum relevance threshold to return."""
     model: Optional[str] = None
     """Model to use for reranking."""
-    prefix_metadata: Optional[str] = ""
+    prefix_metadata: str = ""
     """Prefix for flashrank_rerank metadata keys"""
 
     class Config:
@@ -58,10 +58,10 @@ class FlashrankRerank(BaseDocumentCompressor):
             return values
 
     def compress_documents(
-            self,
-            documents: Sequence[Document],
-            query: str,
-            callbacks: Optional[Callbacks] = None,
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         passages = [
             {"id": i, "text": doc.page_content, "meta": doc.metadata}
@@ -76,9 +76,11 @@ class FlashrankRerank(BaseDocumentCompressor):
             if r["score"] >= self.score_threshold:
                 doc = Document(
                     page_content=r["text"],
-                    metadata={self.prefix_metadata + "id": r["id"],
-                              self.prefix_metadata + "relevance_score": r["score"],
-                              **r["meta"]},
+                    metadata={
+                        self.prefix_metadata + "id": r["id"],
+                        self.prefix_metadata + "relevance_score": r["score"],
+                        **r["meta"],
+                    },
                 )
                 final_results.append(doc)
         return final_results
