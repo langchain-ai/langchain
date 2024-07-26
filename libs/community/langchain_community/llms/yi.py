@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -13,6 +13,7 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pr
 from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
+
 
 class YiLLM(LLM):
     """Yi large language models."""
@@ -70,7 +71,9 @@ class YiLLM(LLM):
                 if response.status_code == 200:
                     parsed_json = json.loads(response.text)
                     return parsed_json["choices"][0]["message"]["content"]
-                elif response.status_code != 403:  # If not a permission error, raise immediately
+                elif (
+                    response.status_code != 403
+                ):  # If not a permission error, raise immediately
                     response.raise_for_status()
             except requests.RequestException as e:
                 if url == urls[-1]:  # If this is the last URL to try

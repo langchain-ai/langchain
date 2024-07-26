@@ -657,6 +657,7 @@ def _import_yi() -> Type[BaseLLM]:
 
     return YiLLM
 
+
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()

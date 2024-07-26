@@ -1,7 +1,7 @@
 import json
 import logging
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Type
 from contextlib import asynccontextmanager
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
 from langchain_core.callbacks import (
@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_API_BASE_CN = "https://api.lingyiwanwu.com/v1/chat/completions"
 DEFAULT_API_BASE_GLOBAL = "https://api.01.ai/v1/chat/completions"
 
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
@@ -49,6 +50,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
     return message_dict
 
+
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
@@ -57,6 +59,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return AIMessage(content=_dict.get("content", "") or "")
     else:
         return ChatMessage(content=_dict["content"], role=role)
+
 
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
@@ -73,6 +76,7 @@ def _convert_delta_to_message_chunk(
     else:
         return default_class(content=content)
 
+
 @asynccontextmanager
 async def aconnect_httpx_sse(
     client: Any, method: str, url: str, **kwargs: Any
@@ -81,6 +85,7 @@ async def aconnect_httpx_sse(
 
     async with client.stream(method, url, **kwargs) as response:
         yield EventSource(response)
+
 
 class ChatYi(BaseChatModel):
     """Yi chat models API."""

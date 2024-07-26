@@ -165,14 +165,14 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.yandex import (
         ChatYandexGPT,
     )
+    from langchain_community.chat_models.yi import (
+        ChatYi,
+    )
     from langchain_community.chat_models.yuan2 import (
         ChatYuan2,
     )
     from langchain_community.chat_models.zhipuai import (
         ChatZhipuAI,
-    )
-    from langchain_community.chat_models.yi import (
-        ChatYi,
     )
 __all__ = [
     "AzureChatOpenAI",
