@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.deepinfra import (
         ChatDeepInfra,
     )
+    from langchain_community.chat_models.edenai import ChatEdenAI
     from langchain_community.chat_models.ernie import (
         ErnieBotChat,
     )
@@ -184,6 +185,7 @@ __all__ = [
     "ChatOctoAI",
     "ChatDatabricks",
     "ChatDeepInfra",
+    "ChatEdenAI",
     "ChatEverlyAI",
     "ChatFireworks",
     "ChatFriendli",
@@ -240,6 +242,7 @@ _module_lookup = {
     "ChatDatabricks": "langchain_community.chat_models.databricks",
     "ChatDeepInfra": "langchain_community.chat_models.deepinfra",
     "ChatEverlyAI": "langchain_community.chat_models.everlyai",
+    "ChatEdenAI": "langchain_community.chat_models.edenai",
     "ChatFireworks": "langchain_community.chat_models.fireworks",
     "ChatFriendli": "langchain_community.chat_models.friendli",
     "ChatGooglePalm": "langchain_community.chat_models.google_palm",
