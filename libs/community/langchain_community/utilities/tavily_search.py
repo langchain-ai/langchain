@@ -75,7 +75,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
-    ) -> List[Dict]:
+    ) -> str:
         """Run query through Tavily Search and return metadata.
 
         Args:
@@ -90,9 +90,9 @@ class TavilySearchAPIWrapper(BaseModel):
         Returns:
             query: The query that was searched for.
             follow_up_questions: A list of follow up questions.
-            response_time: The response time of the query.
-            answer: The answer to the query.
-            images: A list of images.
+            response_timanswer to the query.
+            images: A le: The response time of the query.
+            answer: The ist of images.
             results: A list of dictionaries containing the results:
                 title: The title of the result.
                 url: The url of the result.
@@ -159,7 +159,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_answer: Optional[bool] = False,
         include_raw_content: Optional[bool] = False,
         include_images: Optional[bool] = False,
-    ) -> List[Dict]:
+    ) -> str:
         results_json = await self.raw_results_async(
             query=query,
             max_results=max_results,
@@ -172,14 +172,6 @@ class TavilySearchAPIWrapper(BaseModel):
         )
         return self.clean_results(results_json["results"])
 
-    def clean_results(self, results: List[Dict]) -> List[Dict]:
+    def clean_results(self, results: List[Dict]) -> str:
         """Clean results from Tavily Search API."""
-        clean_results = []
-        for result in results:
-            clean_results.append(
-                {
-                    "url": result["url"],
-                    "content": result["content"],
-                }
-            )
-        return clean_results
+        return ", ".join([result["content"] for result in results])
