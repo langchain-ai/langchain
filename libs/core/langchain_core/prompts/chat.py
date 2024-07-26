@@ -820,7 +820,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     Examples:
 
-        .. versionchanged:: 0.2.11
+        .. versionchanged:: 0.2.24
 
             You can pass any Message-like formats supported by
             ``ChatPromptTemplate.from_messages()`` directly to ``ChatPromptTemplate()``
