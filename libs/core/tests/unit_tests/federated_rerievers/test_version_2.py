@@ -11,6 +11,7 @@ and outputs into that method.
 
 InMemoryDocIndexer.create_retriever().invoke('meow')
 """
+
 from typing import List, Sequence, Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
@@ -43,14 +44,13 @@ class InMemoryDocIndexer(DocumentIndex):
                 failed_ids.append(id)
         return sorted(set(failed_ids))
 
-    def get_by_id(self, id: str, **kwargs: Any) -> Optional[Content]:
-        return self.documents.get(id)
+    def get(self, ids: Sequence[str], **kwargs: Any) -> List[Content]:
+        return [self.documents[id] for id in ids]
 
     def search(self, query: str, **kwargs: Any) -> QueryResponse[Hit]:
         good_docs = [doc for doc in docs if "cat" in doc.text.lower()]
-        return QueryResponse(
-            hits=[Hit(score=1.0, **doc) for doc in good_docs]
-        )
+        return QueryResponse(hits=[Hit(score=1.0, **doc) for doc in good_docs])
+
 
 class FederatedIndex(DocumentIndex):
     """A simple retriever that returns the first document in the index"""
@@ -83,8 +83,6 @@ class FederatedIndex(DocumentIndex):
     ) -> List[Document]:
         docs = []
         # whatever logic
-        for retriever in self.retrievers:
-            docs.extend(
-                retriever.get_relevant_documents(query, run_manager=run_manager)
-            )
+        for index in self.indexes:
+            docs.extend(index.search(query, run_manager=run_manager))
         return docs

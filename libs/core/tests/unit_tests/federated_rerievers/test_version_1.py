@@ -28,8 +28,8 @@ class InMemoryDocIndexer(DocumentIndex):
                 failed_ids.append(id)
         return sorted(set(failed_ids))
 
-    def get_by_id(self, id: str, **kwargs: Any) -> Optional[Content]:
-        return self.documents.get(id)
+    def get(self, ids: Sequence[str], **kwargs: Any) -> List[Content]:
+        return [self.documents[id] for id in ids]
 
 
 class InMemoryCatRetriever(BaseRetriever):
