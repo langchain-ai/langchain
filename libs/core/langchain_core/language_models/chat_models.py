@@ -65,7 +65,7 @@ from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
@@ -1074,14 +1074,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
 
     def with_structured_output(
         self,
-        schema: Union[Dict, Type[BaseModel]],
+        schema: Union[Dict, Type],
         *,
         include_raw: bool = False,
         **kwargs: Any,
@@ -1089,12 +1089,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
-                then the model output will be an object of that class. If a dict then
-                the model output will be a dict. With a Pydantic class the returned
-                attributes will be validated, whereas with a dict they will not be. If
-                `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec.
+            schema: The output schema as a dict, Pydantic class, or TypedDict class. If
+                a Pydantic class then the model output will be an object of that class.
+                If a dict or TypedDict class then the model output will be a dict. With
+                a Pydantic class the returned attributes will be validated, whereas
+                with a dict they will not be.
             include_raw: If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
@@ -1118,7 +1117,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 If schema is a dict then _DictOrPydantic is a dict.
 
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+        Example: Pydantic schema (include_raw=False):
             .. code-block:: python
 
                 from langchain_core.pydantic_v1 import BaseModel
@@ -1138,7 +1137,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+        Example: Pydantic schema (include_raw=True):
             .. code-block:: python
 
                 from langchain_core.pydantic_v1 import BaseModel
@@ -1158,7 +1157,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 #     'parsing_error': None
                 # }
 
-        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+        Example: Dict schema (include_raw=False):
             .. code-block:: python
 
                 from langchain_core.pydantic_v1 import BaseModel
@@ -1194,7 +1193,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         llm = self.bind_tools([schema], tool_choice="any")
         if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[schema], first_tool_only=True
+                tools=[cast(TypeBaseModel, schema)], first_tool_only=True
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]

@@ -320,22 +320,22 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
 
 
 def convert_to_openai_function(
-    function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    function: Union[Dict[str, Any], Type, Callable, BaseTool],
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
     Args:
-        function: Either a dictionary, a pydantic.BaseModel class, or a Python function.
-            If a dictionary is passed in, it is assumed to already be a valid OpenAI
-            function or a JSON schema with top-level 'title' and 'description' keys
-            specified.
+        function: A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
+            Tool object, or a Python function. If a dictionary is passed in, it is
+            assumed to already be a valid OpenAI function or a JSON schema with
+            top-level 'title' and 'description' keys specified.
 
     Returns:
-        A dict version of the passed in function which is compatible with the
-            OpenAI function-calling API.
+        A dict version of the passed in function which is compatible with the OpenAI
+        function-calling API.
 
     Raises:
-        ValueError: If the function is not in a supported format.
+        ValueError: If function is not in a supported format.
     """
     from langchain_core.tools import BaseTool
 
