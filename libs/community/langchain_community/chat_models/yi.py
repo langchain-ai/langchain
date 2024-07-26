@@ -25,7 +25,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
@@ -117,9 +117,6 @@ class ChatYi(BaseChatModel):
 
     class Config:
         allow_population_by_field_name = True
-
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
