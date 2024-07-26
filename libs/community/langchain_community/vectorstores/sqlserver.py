@@ -162,8 +162,7 @@ class SQLServer_VectorStore(VectorStore):
             with Session(self._bind) as session:
                 documents = []
                 for idx, query in enumerate(texts):
-                    
-                    # For a query, if there is no corresponding ID, 
+                    # For a query, if there is no corresponding ID,
                     # we generate a uuid and add it to the list of IDs to be returned.
                     if idx < len(ids):
                         id = ids[idx]
