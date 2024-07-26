@@ -37,7 +37,8 @@ def test_sqlserver_add_texts(store) -> None:
 
 
 def test_sqlserver_add_texts_when_no_metadata_is_provided(store) -> None:
-    """Test that when user calls the add_texts function without providing metadata, the embedded text still get added to the vector store."""
+    """Test that when user calls the add_texts function without providing metadata,
+    the embedded text still get added to the vector store."""
     texts = [
         "Good review",
         "new books",
@@ -49,7 +50,8 @@ def test_sqlserver_add_texts_when_no_metadata_is_provided(store) -> None:
 
 
 def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(store) -> None:
-    """Test that all texts provided are added into the vector store even when metadata is not available for all the texts."""
+    """Test that all texts provided are added into the vector store
+    even when metadata is not available for all the texts."""
     # The text 'elderberry' and its embedded value should be added to the vector store.
     texts = ["rabbit", "cherry", "hamster", "cat", "elderberry"]
     metadatas = [
@@ -65,7 +67,8 @@ def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(store) ->
 def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
     store,
 ) -> None:
-    """Test that when length of given id is less than length of texts, random ids are created."""
+    """Test that when length of given id is less than length of texts,
+    random ids are created."""
     texts = [
         "Good review",
         "new books",
@@ -89,7 +92,8 @@ def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
 
 
 def test_add_document_with_sqlserver(store) -> None:
-    """Test that when add_document function is used, it integerates well with the add_text function in SQLServer Vector Store."""
+    """Test that when add_document function is used, it integrates well 
+    with the add_text function in SQLServer Vector Store."""
     docs = [
         Document(
             page_content="rabbit",
