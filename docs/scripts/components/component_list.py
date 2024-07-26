@@ -165,10 +165,10 @@ def main(
             for file_path in find_package_files(get_package_dir(package_name)):
                 class_namespace = get_class_namespace(file_path, package_name)
                 class_names = find_classes_in_file(file_path)
-                # remove private classes
                 class_fqns = [
                     f"{class_namespace}.{class_name}"
                     for class_name in class_names
+                    # remove private classes
                     if not class_name.startswith("_")
                 ]
                 all_class_fqns += [
