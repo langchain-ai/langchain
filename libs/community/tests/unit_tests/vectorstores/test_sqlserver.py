@@ -146,3 +146,79 @@ def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(
     ]
     result = store.add_documents(docs)
     assert len(result) == len(docs)
+
+def test_sqlserver_delete_text_by_id_valid_ids_provided(store):
+    """Test that delete API deletes texts by id."""
+    texts = [
+        "Good review",
+        "new books",
+        "table",
+        "Sunglasses are a form of protective eyewear.",
+        "It's a new year.",
+    ]
+
+    # List of ids is 3 and is less than len(texts) which is 5.
+    metadatas = [
+        {"id": 100, "source": "book review", "length": 11},
+        {"id": 200, "source": "random texts", "length": 9},
+        {"id": 200, "source": "household list", "length": 5},
+        {"id": 600, "source": "newspaper page", "length": 44},
+        {"id": 300, "source": "random texts", "length": 16},
+    ]
+    store.add_texts(texts, metadatas)
+
+    result = store.delete(["100","200","600"])
+    # Should return true since valid ids are given
+    assert result == True
+
+
+def test_sqlserver_delete_text_by_id_invalid_ids_provided(
+    store,
+) -> None:
+    """Test that delete API deletes texts by id."""
+    texts = [
+        "Good review",
+        "new books",
+        "table",
+        "Sunglasses are a form of protective eyewear.",
+        "It's a new year.",
+    ]
+
+    metadatas = [
+        {"id": 100, "source": "book review", "length": 11},
+        {"id": 200, "source": "random texts", "length": 9},
+        {"id": 200, "source": "household list", "length": 5},
+        {"id": 600, "source": "newspaper page", "length": 44},
+        {"id": 300, "source": "random texts", "length": 16},
+    ]
+    store.add_texts(texts, metadatas)
+
+    result = store.delete(["100000"])
+    print(result)
+    # Should return False since given id is not in DB
+    assert result == False
+
+def test_sqlserver_delete_text_by_id_no_ids_provided(
+    store,
+) -> None:
+    """Test that delete API deletes texts by id."""
+    texts = [
+        "Good review",
+        "new books",
+        "table",
+        "Sunglasses are a form of protective eyewear.",
+        "It's a new year.",
+    ]
+
+    metadatas = [
+        {"id": 100, "source": "book review", "length": 11},
+        {"id": 200, "source": "random texts", "length": 9},
+        {"id": 200, "source": "household list", "length": 5},
+        {"id": 600, "source": "newspaper page", "length": 44},
+        {"id": 300, "source": "random texts", "length": 16},
+    ]
+    store.add_texts(texts, metadatas)
+
+    # Should throw an exception since no ids are provided
+    with pytest.raises(ValueError, match="No ids provided to delete."):
+        store.delete([])
