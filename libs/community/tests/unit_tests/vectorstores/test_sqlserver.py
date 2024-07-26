@@ -12,17 +12,17 @@ _CONNECTION_STRING = os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING")
 
 
 @pytest.fixture
-def store():
+def store() -> SQLServer_VectorStore:
     """Setup resources that are needed for the duration of the test."""
     store = SQLServer_VectorStore(
         connection_string=_CONNECTION_STRING,
         embedding_function=FakeEmbeddings(size=1536),
         table_name="langchain_vector_store_tests",
     )
-    yield store  # provide this data to the test
+    return store  # provide this data to the test
 
 
-def test_sqlserver_add_texts(store) -> None:
+def test_sqlserver_add_texts(store: SQLServer_VectorStore) -> None:
     """Test that add text returns equivalent number of ids of input texts."""
     texts = ["rabbit", "cherry", "hamster", "cat", "elderberry"]
     metadatas = [
@@ -36,7 +36,9 @@ def test_sqlserver_add_texts(store) -> None:
     assert len(result) == len(texts)
 
 
-def test_sqlserver_add_texts_when_no_metadata_is_provided(store) -> None:
+def test_sqlserver_add_texts_when_no_metadata_is_provided(
+        store: SQLServer_VectorStore,
+    ) -> None:
     """Test that when user calls the add_texts function without providing metadata,
     the embedded text still get added to the vector store."""
     texts = [
@@ -49,7 +51,9 @@ def test_sqlserver_add_texts_when_no_metadata_is_provided(store) -> None:
     assert len(result) == len(texts)
 
 
-def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(store) -> None:
+def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(
+    store: SQLServer_VectorStore,
+) -> None:
     """Test that all texts provided are added into the vector store
     even when metadata is not available for all the texts."""
     # The text 'elderberry' and its embedded value should be added to the vector store.
@@ -65,7 +69,7 @@ def test_sqlserver_add_texts_when_text_length_and_metadata_length_vary(store) ->
 
 
 def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
-    store,
+    store: SQLServer_VectorStore,
 ) -> None:
     """Test that when length of given id is less than length of texts,
     random ids are created."""
@@ -91,7 +95,7 @@ def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
     assert len(result) == len(texts)
 
 
-def test_add_document_with_sqlserver(store) -> None:
+def test_add_document_with_sqlserver(store: SQLServer_VectorStore) -> None:
     """Test that when add_document function is used, it integrates well
     with the add_text function in SQLServer Vector Store."""
     docs = [
@@ -119,7 +123,9 @@ def test_add_document_with_sqlserver(store) -> None:
     assert len(result) == len(docs)
 
 
-def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(store):
+def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(
+    store: SQLServer_VectorStore,
+) -> None:
     docs = [
         Document(
             page_content="rabbit",
