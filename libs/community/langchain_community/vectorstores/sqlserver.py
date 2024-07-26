@@ -95,7 +95,7 @@ class SQLServer_VectorStore(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
         return super().from_texts(texts, embedding, metadatas, **kwargs)
