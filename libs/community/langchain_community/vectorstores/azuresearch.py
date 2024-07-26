@@ -29,6 +29,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.exceptions import LangChainException
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_env
@@ -463,7 +464,7 @@ class AzureSearch(VectorStore):
                 response = self.client.upload_documents(documents=data)
                 # Check if all documents were successfully uploaded
                 if not all(r.succeeded for r in response):
-                    raise Exception(response)
+                    raise LangChainException(response)
                 # Reset data
                 data = []
 
@@ -477,7 +478,7 @@ class AzureSearch(VectorStore):
         if all(r.succeeded for r in response):
             return ids
         else:
-            raise Exception(response)
+            raise LangChainException(response)
 
     async def aadd_embeddings(
         self,
@@ -521,7 +522,7 @@ class AzureSearch(VectorStore):
                     response = await async_client.upload_documents(documents=data)
                     # Check if all documents were successfully uploaded
                     if not all(r.succeeded for r in response):
-                        raise Exception(response)
+                        raise LangChainException(response)
                     # Reset data
                     data = []
 
@@ -536,7 +537,7 @@ class AzureSearch(VectorStore):
         if all(r.succeeded for r in response):
             return ids
         else:
-            raise Exception(response)
+            raise LangChainException(response)
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> bool:
         """Delete by vector ID.
@@ -1495,7 +1496,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     """Azure Search instance used to find similar documents."""
     search_type: str = "hybrid"
     """Type of search to perform. Options are "similarity", "hybrid",
-    "semantic_hybrid", "similarity_score_threshold", "hybrid_score_threshold", 
+    "semantic_hybrid", "similarity_score_threshold", "hybrid_score_threshold",
     or "semantic_hybrid_score_threshold"."""
     k: int = 4
     """Number of documents to return."""
