@@ -346,23 +346,26 @@ class ChatOllama(BaseChatModel):
     ) -> Sequence[Message]:
         ollama_messages: List = []
         for message in messages:
-            role: Literal["user", "assistant", "system"]
+            role: Literal["user", "assistant", "system", "tool"]
+            tool_call_id: Optional[str] = None
             tool_calls: Optional[List[Dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
                 role = "user"
-            elif isinstance(message, AIMessage) or isinstance(message, ToolMessage):
+            elif isinstance(message, AIMessage):
                 role = "assistant"
-                if isinstance(message, AIMessage):
-                    tool_calls = (
-                        [
-                            _lc_tool_call_to_openai_tool_call(tool_call)
-                            for tool_call in message.tool_calls
-                        ]
-                        if message.tool_calls
-                        else None
-                    )
+                tool_calls = (
+                    [
+                        _lc_tool_call_to_openai_tool_call(tool_call)
+                        for tool_call in message.tool_calls
+                    ]
+                    if message.tool_calls
+                    else None
+                )
             elif isinstance(message, SystemMessage):
                 role = "system"
+            elif isinstance(message, ToolMessage):
+                role = "tool"
+                tool_call_id = message.tool_call_id
             else:
                 raise ValueError("Received unsupported message type for Ollama.")
 
@@ -407,13 +410,16 @@ class ChatOllama(BaseChatModel):
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
-            msg: Message = {
+            # Should convert to ollama.Message once role includes tool, and tool_call_id is in Message # noqa: E501
+            msg: dict = {
                 "role": role,
                 "content": content,
                 "images": images,
             }
             if tool_calls:
                 msg["tool_calls"] = tool_calls  # type: ignore
+            if tool_call_id:
+                msg["tool_call_id"] = tool_call_id
             ollama_messages.append(msg)
 
         return ollama_messages
