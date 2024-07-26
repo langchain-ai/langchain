@@ -211,7 +211,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
 
-    rate_limiter: Optional[BaseRateLimiter] = None
+    rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
     """An optional rate limiter to use for limiting the number of requests."""
 
     @root_validator(pre=True)
