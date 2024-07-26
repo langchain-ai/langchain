@@ -165,7 +165,7 @@ Some important things to note:
 ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the API reference for that model.
 
 :::important
-**Tool Calling** Some chat models have been fine-tuned for tool calling and provide a dedicated API for tool calling.
+Some chat models have been fine-tuned for **tool calling** and provide a dedicated API for it.
 Generally, such models are better at tool calling than non-fine-tuned models, and are recommended for use cases that require tool calling.
 Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
 :::
@@ -255,7 +255,7 @@ This represents the result of a tool call. In addition to `role` and `content`, 
 
 #### (Legacy) FunctionMessage
 
-This is a legacy message type, corresponding to OpenAI's legacy function-calling API. ToolMessage should be used instead to correspond to the updated tool-calling API.
+This is a legacy message type, corresponding to OpenAI's legacy function-calling API. `ToolMessage` should be used instead to correspond to the updated tool-calling API.
 
 This represents the result of a function call. In addition to `role` and `content`, this message has a `name` parameter which conveys the name of the function that was called to produce this result.
 
@@ -826,6 +826,61 @@ units (like words or subwords) that carry meaning, rather than individual charac
 to learn and understand the structure of the language, including grammar and context.
 Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
 
+### Function/tool calling
+
+:::info
+We use the term tool calling interchangeably with function calling. Although
+function calling is sometimes meant to refer to invocations of a single function,
+we treat all models as though they can return multiple tool or function calls in
+each message.
+:::
+
+Tool calling allows a [chat model](/docs/concepts/#chat-models) to respond to a given prompt by generating output that
+matches a user-defined schema.
+
+While the name implies that the model is performing
+some action, this is actually not the case! The model only generates the arguments to a tool, and actually running the tool (or not) is up to the user.
+One common example where you **wouldn't** want to call a function with the generated arguments
+is if you want to [extract structured output matching some schema](/docs/concepts/#structured-output)
+from unstructured text. You would give the model an "extraction" tool that takes
+parameters matching the desired schema, then treat the generated output as your final
+result.
+
+![Diagram of a tool call by a chat model](/img/tool_call.png)
+
+Tool calling is not universal, but is supported by many popular LLM providers, including [Anthropic](/docs/integrations/chat/anthropic/), 
+[Cohere](/docs/integrations/chat/cohere/), [Google](/docs/integrations/chat/google_vertex_ai_palm/), 
+[Mistral](/docs/integrations/chat/mistralai/), [OpenAI](/docs/integrations/chat/openai/), and even for locally-running models via [Ollama](/docs/integrations/chat/ollama/).
+
+LangChain provides a standardized interface for tool calling that is consistent across different models.
+
+The standard interface consists of:
+
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) as well as [Pydantic](https://pydantic.dev/) objects.
+* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+
+#### Tool usage
+
+After the model calls tools, you can use the tool by invoking it, then passing the arguments back to the model.
+LangChain provides the [`Tool`](/docs/concepts/#tools) abstraction to help you handle this.
+
+The general flow is this:
+
+1. Generate tool calls with a chat model in response to a query.
+2. Invoke the appropriate tools using the generated tool call as arguments.
+3. Format the result of the tool invocations as [`ToolMessages`](/docs/concepts/#toolmessage).
+4. Pass the entire list of messages back to the model so that it can generate a final answer (or call more tools).
+
+![Diagram of a complete tool calling flow](/img/tool_calling_flow.png)
+
+This is how tool calling [agents](/docs/concepts/#agents) perform tasks and answer queries.
+
+Check out some more focused guides below:
+
+- [How to use chat models to call tools](/docs/how_to/tool_calling/)
+- [How to pass tool outputs to chat models](/docs/how_to/tool_results_pass_to_model/)
+- [Building an agent with LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
+
 ### Structured output
 
 LLMs are capable of generating arbitrary text. This enables the model to respond appropriately to a wide
@@ -958,48 +1013,48 @@ chain.invoke({ "question": "What is the powerhouse of the cell?" })
 
 For a full list of model providers that support JSON mode, see [this table](/docs/integrations/chat/#advanced-features).
 
-#### Function/tool calling
+#### Tool calling {#structured-output-tool-calling}
 
-:::info
-We use the term tool calling interchangeably with function calling. Although
-function calling is sometimes meant to refer to invocations of a single function,
-we treat all models as though they can return multiple tool or function calls in
-each message
-:::
+For models that support it, [tool calling](/docs/concepts/#functiontool-calling) can be very convenient for structured output. It removes the
+guesswork around how best to prompt schemas in favor of a built-in model feature.
 
-Tool calling allows a model to respond to a given prompt by generating output that
-matches a user-defined schema. While the name implies that the model is performing
-some action, this is actually not the case! The model is coming up with the
-arguments to a tool, and actually running the tool (or not) is up to the user -
-for example, if you want to [extract output matching some schema](/docs/tutorials/extraction)
-from unstructured text, you could give the model an "extraction" tool that takes
-parameters matching the desired schema, then treat the generated output as your final
-result.
+It works by first binding the desired schema either directly or via a [LangChain tool](/docs/concepts/#tools) to a
+[chat model](/docs/concepts/#chat-models) using the `.bind_tools()` method. The model will then generate an `AIMessage` containing
+a `tool_calls` field containing `args` that match the desired shape.
 
-For models that support it, tool calling can be very convenient. It removes the
-guesswork around how best to prompt schemas in favor of a built-in model feature. It can also
-more naturally support agentic flows, since you can just pass multiple tool schemas instead
-of fiddling with enums or unions.
+There are several acceptable formats you can use to bind tools to a model in LangChain. Here's one example:
 
-Many LLM providers, including [Anthropic](https://www.anthropic.com/),
-[Cohere](https://cohere.com/), [Google](https://cloud.google.com/vertex-ai),
-[Mistral](https://mistral.ai/), [OpenAI](https://openai.com/), and others,
-support variants of a tool calling feature. These features typically allow requests
-to the LLM to include available tools and their schemas, and for responses to include
-calls to these tools. For instance, given a search engine tool, an LLM might handle a
-query by first issuing a call to the search engine. The system calling the LLM can
-receive the tool call, execute it, and return the output to the LLM to inform its
-response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/)
-and supports several methods for defining your own [custom tools](/docs/how_to/custom_tools).
+```python
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_openai import ChatOpenAI
 
-LangChain provides a standardized interface for tool calling that is consistent across different models.
+class ResponseFormatter(BaseModel):
+    """Always use this tool to structure your response to the user."""
 
-The standard interface consists of:
+    answer: str = Field(description="The answer to the user's question")
+    followup_question: str = Field(description="A followup question the user could ask")
 
-* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) here.
-* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+model = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0,
+)
 
-The following how-to guides are good practical resources for using function/tool calling:
+model_with_tools = model.bind_tools([ResponseFormatter])
+
+ai_msg = model_with_tools.invoke("What is the powerhouse of the cell?")
+
+ai_msg.tool_calls[0]["args"]
+```
+
+```
+{'answer': "The powerhouse of the cell is the mitochondrion. It generates most of the cell's supply of adenosine triphosphate (ATP), which is used as a source of chemical energy.",
+ 'followup_question': 'How do mitochondria generate ATP?'}
+```
+
+Tool calling is a generally consistent way to get a model to generate structured output, and is the default technique
+used for the [`.with_structured_output()`](/docs/concepts/#with_structured_output) method when a model supports it.
+
+The following how-to guides are good practical resources for using function/tool calling for structured output:
 
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
 - [How to use a model to call tools](/docs/how_to/tool_calling)
