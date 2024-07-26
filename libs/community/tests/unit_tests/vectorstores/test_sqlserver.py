@@ -92,7 +92,7 @@ def test_sqlserver_add_texts_when_list_of_given_id_is_less_than_list_of_texts(
 
 
 def test_add_document_with_sqlserver(store) -> None:
-    """Test that when add_document function is used, it integrates well 
+    """Test that when add_document function is used, it integrates well
     with the add_text function in SQLServer Vector Store."""
     docs = [
         Document(
