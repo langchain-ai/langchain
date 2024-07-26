@@ -61,7 +61,7 @@ SEARCH_TOOL_FEAT_TABLE = {
 
 CODE_INTERPRETER_TOOL_FEAT_TABLE = {
     "Bearly Code Interpreter": {
-        "langauges": "Python",
+        "languages": "Python",
         "sandbox_lifetime": "Resets on Execution",
         "upload": True,
         "return_results": "Text",
