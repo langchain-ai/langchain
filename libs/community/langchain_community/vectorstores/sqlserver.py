@@ -96,14 +96,14 @@ class SQLServer_VectorStore(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VectorStore:
+    ) -> None:
         """Return VectorStore initialized from texts and embeddings."""
-        return super().from_texts(texts, embedding, metadatas, **kwargs)
+        return None
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        return super().similarity_search(query, k, **kwargs)
+    ) -> Optional[List[Document]]:
+        return None
 
     def add_texts(
         self,
@@ -198,3 +198,4 @@ class SQLServer_VectorStore(VectorStore):
             return ids
         except DBAPIError as e:
             logging.error(e.__cause__)
+            return
