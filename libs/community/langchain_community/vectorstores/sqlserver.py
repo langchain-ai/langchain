@@ -225,7 +225,7 @@ class SQLServer_VectorStore(VectorStore):
         Returns:
             Optional[bool]
         """
-
+                
         if ids is None or len(ids) == 0:
             logging.info(EMPTY_IDS_ERROR_MESSAGE)
             return False
