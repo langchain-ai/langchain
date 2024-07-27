@@ -122,6 +122,7 @@ class WebResearchRetriever(BaseRetriever):
             chunk_size=1500, chunk_overlap=150
         ),
         trust_env: bool = False,
+        allow_dangerous_requests: bool = False,
     ) -> "WebResearchRetriever":
         """Initialize from llm using default template.
 
@@ -162,6 +163,7 @@ class WebResearchRetriever(BaseRetriever):
             num_search_results=num_search_results,
             text_splitter=text_splitter,
             trust_env=trust_env,
+            allow_dangerous_requests=allow_dangerous_requests,
         )
 
     def clean_search_query(self, query: str) -> str:

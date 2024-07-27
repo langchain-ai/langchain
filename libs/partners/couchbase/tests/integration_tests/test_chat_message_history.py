@@ -95,8 +95,9 @@ class TestCouchbaseCache:
         # check that the messages are in the memory
         messages = memory.chat_memory.messages
         assert len(messages) == 2
-        for message in messages:
-            assert message in [ai_message, user_message]
+
+        # check that the messages are in the order of creation
+        assert messages == [ai_message, user_message]
 
         # clear the memory
         memory.chat_memory.clear()
@@ -147,9 +148,17 @@ class TestCouchbaseCache:
         messages_b = memory_b.chat_memory.messages
         assert len(messages_a) == 1
         assert len(messages_b) == 1
-        assert messages_a[0] == ai_message
-        assert messages_b[0] == user_message
+        assert messages_a == [ai_message]
+        assert messages_b == [user_message]
 
         # clear the memory
         memory_a.chat_memory.clear()
+        time.sleep(SLEEP_DURATION)
+        # ensure that only the session that is cleared is empty
+        assert memory_a.chat_memory.messages == []
+        assert memory_b.chat_memory.messages == [user_message]
+
+        # clear the other session's memory
         memory_b.chat_memory.clear()
+        time.sleep(SLEEP_DURATION)
+        assert memory_b.chat_memory.messages == []
