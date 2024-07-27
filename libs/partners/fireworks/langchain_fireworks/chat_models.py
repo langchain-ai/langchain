@@ -749,7 +749,7 @@ class ChatFireworks(BaseChatModel):
                 The output schema. Can be passed in as:
                     - an OpenAI function/tool schema,
                     - a JSON Schema,
-                    - a TypedDict class,
+                    - a TypedDict class (support added in 0.1.7),
                     - or a Pydantic class.
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -757,6 +757,11 @@ class ChatFireworks(BaseChatModel):
                 dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
+
+                .. versionchanged:: 0.1.7
+
+                        Added support for TypedDict class.
+
             method:
                 The method for steering model generation, either "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
