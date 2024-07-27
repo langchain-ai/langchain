@@ -317,6 +317,9 @@ class ChatOllama(BaseChatModel):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
+    seed: Optional[int] = None
+    """For reproducible outputs, set seed to a number."""
+
     format: Literal["", "json"] = ""
     """Specify the format of the output (options: json)"""
 
@@ -344,6 +347,7 @@ class ChatOllama(BaseChatModel):
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
                 "top_p": self.top_p,
+                "seed": self.seed,
             },
             "keep_alive": self.keep_alive,
         }
