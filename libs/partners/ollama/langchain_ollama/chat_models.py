@@ -346,7 +346,7 @@ class ChatOllama(BaseChatModel):
     ) -> Sequence[Message]:
         ollama_messages: List = []
         for message in messages:
-            role = ""
+            role: Literal["user", "assistant", "system", "tool"]
             tool_call_id: Optional[str] = None
             tool_calls: Optional[List[Dict[str, Any]]] = None
             if isinstance(message, HumanMessage):
@@ -383,11 +383,13 @@ class ChatOllama(BaseChatModel):
                         image_url = None
                         temp_image_url = content_part.get("image_url")
                         if isinstance(temp_image_url, str):
-                            image_url = content_part["image_url"]
-                        elif (
-                            isinstance(temp_image_url, dict) and "url" in temp_image_url
-                        ):
                             image_url = temp_image_url
+                        elif (
+                            isinstance(temp_image_url, dict)
+                            and "url" in temp_image_url
+                            and isinstance(temp_image_url["url"], str)
+                        ):
+                            image_url = temp_image_url["url"]
                         else:
                             raise ValueError(
                                 "Only string image_url or dict with string 'url' "
@@ -408,15 +410,16 @@ class ChatOllama(BaseChatModel):
                             "Must either have type 'text' or type 'image_url' "
                             "with a string 'image_url' field."
                         )
-            msg = {
+            # Should convert to ollama.Message once role includes tool, and tool_call_id is in Message # noqa: E501
+            msg: dict = {
                 "role": role,
                 "content": content,
                 "images": images,
             }
+            if tool_calls:
+                msg["tool_calls"] = tool_calls  # type: ignore
             if tool_call_id:
                 msg["tool_call_id"] = tool_call_id
-            if tool_calls:
-                msg["tool_calls"] = tool_calls
             ollama_messages.append(msg)
 
         return ollama_messages
