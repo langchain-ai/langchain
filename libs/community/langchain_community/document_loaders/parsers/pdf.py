@@ -17,11 +17,11 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
+import pypdf.errors
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
-import pypdf.errors
 
 if TYPE_CHECKING:
     import fitz.fitz
