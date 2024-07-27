@@ -4,6 +4,7 @@ import inspect
 import json
 import sys
 import textwrap
+import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -977,7 +978,7 @@ class AFooBase(FooBase):
 def test_tool_pass_config(tool: BaseTool) -> None:
     assert tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
-    # Test tool calls
+    # Test we don't mutate tool calls
     tool_call = {
         "name": tool.name,
         "args": {"bar": "baz"},
@@ -986,6 +987,25 @@ def test_tool_pass_config(tool: BaseTool) -> None:
     }
     _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
     assert tool_call["args"] == {"bar": "baz"}
+
+
+class FooBaseNonPickleable(FooBase):
+    def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        return True
+
+
+def test_tool_pass_config_non_pickleable() -> None:
+    tool = FooBaseNonPickleable()
+
+    args = {"bar": threading.Lock()}
+    tool_call = {
+        "name": tool.name,
+        "args": args,
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == args
 
 
 @pytest.mark.parametrize(
