@@ -537,8 +537,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         configurable = config.get("configurable", {})
 
         missing_keys = set(expected_keys) - set(configurable.keys())
+        parameter_names = _get_parameter_names(self.get_session_history)
 
-        if missing_keys:
+        if missing_keys and parameter_names:
             example_input = {self.input_messages_key: "foo"}
             example_configurable = {
                 missing_key: "[your-value-here]" for missing_key in missing_keys
@@ -551,11 +552,16 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 f"e.g., chain.invoke({example_input}, {example_config})"
             )
 
-        parameter_names = _get_parameter_names(self.get_session_history)
-
         if len(expected_keys) == 1:
-            # If arity = 1, then invoke function by positional arguments
-            message_history = self.get_session_history(configurable[expected_keys[0]])
+            if parameter_names:
+                # If arity = 1, then invoke function by positional arguments
+                message_history = self.get_session_history(
+                    configurable[expected_keys[0]]
+                )
+            else:
+                if not config:
+                    config["configurable"] = {}
+                message_history = self.get_session_history()
         else:
             # otherwise verify that names of keys patch and invoke by named arguments
             if set(expected_keys) != set(parameter_names):

@@ -388,7 +388,7 @@ def test_json_mode_structured_output() -> None:
     result = chat.invoke(
         "Tell me a joke about cats, respond in JSON with `setup` and `punchline` keys"
     )
-    assert type(result) == Joke
+    assert type(result) is Joke
     assert len(result.setup) != 0
     assert len(result.punchline) != 0
 
