@@ -21,6 +21,7 @@ from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
+import pypdf.errors
 
 if TYPE_CHECKING:
     import fitz.fitz
@@ -132,7 +133,13 @@ class PyPDFParser(BaseBlobParser):
                     )
                     for page_number, page in enumerate(pdf_reader.pages)
                 ]
-            except (pypdf.errors.PyPdfError, RecursionError) as e:
+            except (
+                pypdf.errors.PyPdfError,
+                pypdf.errors.EmptyFileError,
+                pypdf.errors.PdfReadError,
+                pypdf.errors.PdfStreamError,
+                RecursionError,
+            ) as e:
                 raise ValueError(f"Your PDF could not be read due to error {e}")
 
     def _extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
