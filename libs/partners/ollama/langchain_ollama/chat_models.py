@@ -722,10 +722,10 @@ class ChatOllama(BaseChatModel):
         Assumes model is compatible with OpenAI tool-calling API.
 
         Args:
-            tools: A list of tool definitions to bind to this chat model. 
-                Supports any tool definition handled by 
+            tools: A list of tool definitions to bind to this chat model.
+                Supports any tool definition handled by
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
-            kwargs: Any additional parameters are passed directly to 
+            kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
