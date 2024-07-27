@@ -11,13 +11,13 @@ logger = logging.getLogger(__file__)
 _DELAY = 0.5  # Interval between checks for index operations
 
 
-def _search_index_error_message():
+def _search_index_error_message() -> str:
     return (
-        f"Search index operations are not currently available on shared clusters, "
-        f"such as MO. They require dedicated clusters >= M10. "
-        f"You may still perform vector search. "
-        f"You simply must set up indexes manually. Follow the instructions here: "
-        f"https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-type/"
+        "Search index operations are not currently available on shared clusters, "
+        "such as MO. They require dedicated clusters >= M10. "
+        "You may still perform vector search. "
+        "You simply must set up indexes manually. Follow the instructions here: "
+        "https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-type/"
     )
 
 
@@ -82,7 +82,7 @@ def create_vector_search_index(
     if wait_until_complete:
         _wait_for_predicate(
             predicate=lambda: _is_index_ready(collection, index_name),
-            err=f"Index {index_name} creation did not complete in {wait_until_complete}!",
+            err=f"Index {index_name} creation did not finish in {wait_until_complete}!",
             timeout=wait_until_complete,
         )
     logger.info(result)
@@ -196,7 +196,7 @@ def _wait_for_predicate(
     Args:
         predicate (Callable[, bool]): A function that returns a boolean value
         err (str): Error message to raise if nothing occurs
-        timeout (float, optional): Length of time to wait for predicate. Defaults to TIMEOUT.
+        timeout (float, optional):  wait time for predicate. Defaults to TIMEOUT.
         interval (float, optional): Interval to check predicate. Defaults to DELAY.
 
     Raises:

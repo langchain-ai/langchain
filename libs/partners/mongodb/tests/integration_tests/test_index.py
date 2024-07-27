@@ -1,32 +1,30 @@
 """Search index commands are only supported on Atlas Clusters >=M10"""
 
 import os
-from time import sleep
 
-import pymongo.collection
 import pytest
 from pymongo import MongoClient
-from pymongo.errors import OperationFailure
+from pymongo.collection import Collection
 
 from langchain_mongodb import index
 
 
 @pytest.fixture
-def collection() -> pymongo.collection.Collection:
+def collection() -> Collection:
     """Depending on uri, this could point to any type of cluster."""
     uri = os.environ.get("MONGODB_ATLAS_URI")
-    client = MongoClient(uri)
+    client: MongoClient = MongoClient(uri)
     clxn = client["db"]["collection"]
     clxn.insert_one({"foo": "bar"})
     return clxn
 
 
-def test_search_index_commands(collection):
+def test_search_index_commands(collection: Collection) -> None:
     index_name = "vector_index"
     dimensions = 1536
     path = "embedding"
     similarity = "cosine"
-    filters = []
+    filters: list = []
     wait_until_complete = 120
 
     for index_info in collection.list_search_indexes():
