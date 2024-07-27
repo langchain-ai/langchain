@@ -67,7 +67,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         from langchain.memory.token_buffer_vectorstore_memory import (
                 ConversationVectorStoreTokenBufferMemory
         )
-        from langchain_community.vectorstores import Chroma
+        from langchain_chroma import Chroma
         from langchain_community.embeddings import HuggingFaceInstructEmbeddings
         from langchain_openai import OpenAI
 
