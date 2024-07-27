@@ -39,6 +39,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
         arbitrary_types_allowed = True
 
     @root_validator(pre=True)
+    @classmethod
     def check_examples_and_selector(cls, values: Dict) -> Dict:
         """Check that one and only one of examples/example_selector are provided.
 
@@ -49,7 +50,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
             The values if they are valid.
 
         Raises:
-            ValueError: If neither or both examples and example_selector are provided.
+            ValueError: If neither nor both examples and example_selector are provided.
             ValueError: If both examples and example_selector are provided.
         """
         examples = values.get("examples", None)
@@ -142,6 +143,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         super().__init__(**kwargs)
 
     @root_validator(pre=False, skip_on_failure=True)
+    @classmethod
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
         if values["validate_template"]:
