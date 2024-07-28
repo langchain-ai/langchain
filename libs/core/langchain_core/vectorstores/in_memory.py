@@ -8,7 +8,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Optional,
     Sequence,
@@ -74,6 +73,27 @@ class InMemoryVectorStore(VectorStore):
             "failed": [],
         }
 
+    async def aupsert(
+        self, items: Sequence[Document], /, **kwargs: Any
+    ) -> UpsertResponse:
+        vectors = await self.embedding.aembed_documents(
+            [item.page_content for item in items]
+        )
+        ids = []
+        for item, vector in zip(items, vectors):
+            doc_id = item.id if item.id else str(uuid.uuid4())
+            ids.append(doc_id)
+            self.store[doc_id] = {
+                "id": doc_id,
+                "vector": vector,
+                "text": item.page_content,
+                "metadata": item.metadata,
+            }
+        return {
+            "succeeded": ids,
+            "failed": [],
+        }
+
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         """Get documents by their ids.
 
@@ -107,14 +127,6 @@ class InMemoryVectorStore(VectorStore):
             A list of Document objects.
         """
         return self.get_by_ids(ids)
-
-    async def aadd_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        return self.add_texts(texts, metadatas, **kwargs)
 
     def _similarity_search_with_score_by_vector(
         self,
@@ -172,7 +184,13 @@ class InMemoryVectorStore(VectorStore):
     async def asimilarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(query, k, **kwargs)
+        embedding = await self.embedding.aembed_query(query)
+        docs = self.similarity_search_with_score_by_vector(
+            embedding,
+            k,
+            **kwargs,
+        )
+        return docs
 
     def similarity_search_by_vector(
         self,
@@ -200,7 +218,10 @@ class InMemoryVectorStore(VectorStore):
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        return self.similarity_search(query, k, **kwargs)
+        return [
+            doc
+            for doc, _ in await self.asimilarity_search_with_score(query, k, **kwargs)
+        ]
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -249,6 +270,23 @@ class InMemoryVectorStore(VectorStore):
             **kwargs,
         )
 
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        embedding_vector = await self.embedding.aembed_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding_vector,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
+        )
+
     @classmethod
     def from_texts(
         cls,
@@ -271,7 +309,11 @@ class InMemoryVectorStore(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "InMemoryVectorStore":
-        return cls.from_texts(texts, embedding, metadatas, **kwargs)
+        store = cls(
+            embedding=embedding,
+        )
+        await store.aadd_texts(texts=texts, metadatas=metadatas, **kwargs)
+        return store
 
     @classmethod
     def load(
