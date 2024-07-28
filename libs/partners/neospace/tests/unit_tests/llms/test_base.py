@@ -45,7 +45,7 @@ def mock_completion() -> dict:
     }
 
 
-@pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct", "text-davinci-003"])
+@pytest.mark.parametrize("model", ["7b-math-rank16", "text-davinci-003"])
 def test_get_token_ids(model: str) -> None:
     NeoSpace(model=model).get_token_ids("foo")
     return

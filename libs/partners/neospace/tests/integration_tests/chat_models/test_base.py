@@ -251,7 +251,7 @@ def test_chat_neospace_extra_kwargs() -> None:
 
     # Test that "model" cannot be specified in kwargs
     with pytest.raises(ValueError):
-        ChatNeoSpace(model_kwargs={"model": "gpt-3.5-turbo-instruct"})
+        ChatNeoSpace(model_kwargs={"model": "7b-math-rank16"})
 
 
 @pytest.mark.scheduled
@@ -546,7 +546,7 @@ class MakeASandwich(BaseModel):
 
 
 def test_tool_use() -> None:
-    llm = ChatNeoSpace(model="gpt-4-turbo", temperature=0)
+    llm = ChatNeoSpace(model="neo-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
     msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
@@ -588,7 +588,7 @@ def test_tool_use() -> None:
 
 def test_manual_tool_call_msg() -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatNeoSpace(model="neo-3.5-turbo-0125", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
     msgs: List = [
         HumanMessage("Sally has green hair, what would her username be?"),
@@ -631,7 +631,7 @@ def test_manual_tool_call_msg() -> None:
 
 def test_bind_tools_tool_choice() -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatNeoSpace(model="neo-3.5-turbo-0125", temperature=0)
     for tool_choice in ("any", "required"):
         llm_with_tools = llm.bind_tools(
             tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice
@@ -689,7 +689,7 @@ def test_neospace_response_headers_invoke() -> None:
 
 
 def test_image_token_counting_jpeg() -> None:
-    model = ChatNeoSpace(model="gpt-4o", temperature=0)
+    model = ChatNeoSpace(model="neo-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
     message = HumanMessage(
         content=[
@@ -721,7 +721,7 @@ def test_image_token_counting_jpeg() -> None:
 
 
 def test_image_token_counting_png() -> None:
-    model = ChatNeoSpace(model="gpt-4o", temperature=0)
+    model = ChatNeoSpace(model="neo-4o", temperature=0)
     image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
     message = HumanMessage(
         content=[

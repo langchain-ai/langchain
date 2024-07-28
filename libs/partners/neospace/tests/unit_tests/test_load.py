@@ -26,7 +26,7 @@ def test_load_neospace_llm() -> None:
 
 
 def test_loads_neospace_chat() -> None:
-    llm = ChatNeoSpace(model="gpt-3.5-turbo", temperature=0.5, neospace_api_key="hello")  # type: ignore[call-arg]
+    llm = ChatNeoSpace(model="neo-3.5-turbo", temperature=0.5, neospace_api_key="hello")  # type: ignore[call-arg]
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"NEOSPACE_API_KEY": "hello"})
 
@@ -37,7 +37,7 @@ def test_loads_neospace_chat() -> None:
 
 
 def test_load_neospace_chat() -> None:
-    llm = ChatNeoSpace(model="gpt-3.5-turbo", temperature=0.5, neospace_api_key="hello")  # type: ignore[call-arg]
+    llm = ChatNeoSpace(model="neo-3.5-turbo", temperature=0.5, neospace_api_key="hello")  # type: ignore[call-arg]
     llm_obj = dumpd(llm)
     llm2 = load(llm_obj, secrets_map={"NEOSPACE_API_KEY": "hello"})
 

@@ -298,7 +298,7 @@ class _AllReturnType(TypedDict):
 class BaseChatNeoSpace(BaseChatModel):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(default="gpt-3.5-turbo", alias="model")
+    model_name: str = Field(default="neo-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -806,7 +806,7 @@ class BaseChatNeoSpace(BaseChatModel):
 
     # TODO: Count bound tools as part of input.
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
+        """Calculate num tokens for neo-3.5-turbo and neo-4 with tiktoken package.
 
         **Requirements**: You must have the ``pillow`` installed if you want to count
         image tokens if you are specifying the image as a base64 string, and you must
@@ -815,16 +815,16 @@ class BaseChatNeoSpace(BaseChatModel):
         counting.
 
         NeoSpace reference: https://github.com/neospace/neospace-cookbook/blob/
-        main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
+        main/examples/How_to_format_inputs_to_NeoSpace_models.ipynb"""
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
         model, encoding = self._get_encoding_model()
-        if model.startswith("gpt-3.5-turbo-0301"):
+        if model.startswith("neo-3.5-turbo-0301"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
+        elif model.startswith("neo-3.5-turbo") or model.startswith("neo-4"):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
@@ -1085,7 +1085,7 @@ class BaseChatNeoSpace(BaseChatModel):
                     justification: str
 
 
-                llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatNeoSpace(model="neo-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -1111,7 +1111,7 @@ class BaseChatNeoSpace(BaseChatModel):
                     justification: str
 
 
-                llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatNeoSpace(model="neo-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -1141,7 +1141,7 @@ class BaseChatNeoSpace(BaseChatModel):
 
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatNeoSpace(model="neo-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
                 structured_llm.invoke(
@@ -1162,7 +1162,7 @@ class BaseChatNeoSpace(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatNeoSpace(model="neo-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -1295,7 +1295,7 @@ class ChatNeoSpace(BaseChatNeoSpace):
             from langchain_neospace import ChatNeoSpace
 
             llm = ChatNeoSpace(
-                model="gpt-4o",
+                model="neo-4o",
                 temperature=0,
                 max_tokens=None,
                 timeout=None,
@@ -1346,7 +1346,7 @@ class ChatNeoSpace(BaseChatNeoSpace):
                         "prompt_tokens": 31,
                         "total_tokens": 36,
                     },
-                    "model_name": "gpt-4o",
+                    "model_name": "neo-4o",
                     "system_fingerprint": "fp_43dfabdef1",
                     "finish_reason": "stop",
                     "logprobs": None,
@@ -1414,7 +1414,7 @@ class ChatNeoSpace(BaseChatNeoSpace):
                         "prompt_tokens": 31,
                         "total_tokens": 36,
                     },
-                    "model_name": "gpt-4o",
+                    "model_name": "neo-4o",
                     "system_fingerprint": "fp_43dfabdef1",
                     "finish_reason": "stop",
                     "logprobs": None,
@@ -1601,7 +1601,7 @@ class ChatNeoSpace(BaseChatNeoSpace):
 
         .. code-block:: python
 
-            llm = ChatNeoSpace(model="gpt-4o", stream_usage=True)
+            llm = ChatNeoSpace(model="neo-4o", stream_usage=True)
             structured_llm = llm.with_structured_output(...)
 
     Logprobs:
@@ -1677,7 +1677,7 @@ class ChatNeoSpace(BaseChatNeoSpace):
                     "prompt_tokens": 28,
                     "total_tokens": 33,
                 },
-                "model_name": "gpt-4o",
+                "model_name": "neo-4o",
                 "system_fingerprint": "fp_319be4768e",
                 "finish_reason": "stop",
                 "logprobs": None,

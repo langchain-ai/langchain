@@ -70,7 +70,7 @@ class BaseNeoSpace(BaseLLM):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(default="gpt-3.5-turbo-instruct", alias="model")
+    model_name: str = Field(default="7b-math-rank16", alias="model")
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -533,24 +533,24 @@ class BaseNeoSpace(BaseLLM):
         Example:
             .. code-block:: python
 
-                max_tokens = neospace.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+                max_tokens = neospace.modelname_to_contextsize("7b-math-rank16")
         """
         model_token_mapping = {
-            "gpt-4o-mini": 128_000,
-            "gpt-4o": 128_000,
-            "gpt-4o-2024-05-13": 128_000,
-            "gpt-4": 8192,
-            "gpt-4-0314": 8192,
-            "gpt-4-0613": 8192,
-            "gpt-4-32k": 32768,
-            "gpt-4-32k-0314": 32768,
-            "gpt-4-32k-0613": 32768,
-            "gpt-3.5-turbo": 4096,
-            "gpt-3.5-turbo-0301": 4096,
-            "gpt-3.5-turbo-0613": 4096,
-            "gpt-3.5-turbo-16k": 16385,
-            "gpt-3.5-turbo-16k-0613": 16385,
-            "gpt-3.5-turbo-instruct": 4096,
+            "neo-4o-mini": 128_000,
+            "neo-4o": 128_000,
+            "neo-4o-2024-05-13": 128_000,
+            "neo-4": 8192,
+            "neo-4-0314": 8192,
+            "neo-4-0613": 8192,
+            "neo-4-32k": 32768,
+            "neo-4-32k-0314": 32768,
+            "neo-4-32k-0613": 32768,
+            "neo-3.5-turbo": 4096,
+            "neo-3.5-turbo-0301": 4096,
+            "neo-3.5-turbo-0613": 4096,
+            "neo-3.5-turbo-16k": 16385,
+            "neo-3.5-turbo-16k-0613": 16385,
+            "7b-math-rank16": 4096,
             "text-ada-001": 2049,
             "ada": 2049,
             "text-babbage-001": 2040,
@@ -617,7 +617,7 @@ class NeoSpace(BaseNeoSpace):
 
             from langchain_neospace import NeoSpace
 
-            model = NeoSpace(model_name="gpt-3.5-turbo-instruct")
+            model = NeoSpace(model_name="7b-math-rank16")
     """
 
     @classmethod

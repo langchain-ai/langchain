@@ -178,7 +178,7 @@ def mock_completion() -> dict:
         "id": "chatcmpl-7fcZavknQda3SQ",
         "object": "chat.completion",
         "created": 1689989000,
-        "model": "gpt-3.5-turbo-0613",
+        "model": "neo-3.5-turbo-0613",
         "choices": [
             {
                 "index": 0,
@@ -246,12 +246,12 @@ async def test_neospace_ainvoke(mock_async_client: AsyncMock) -> None:
 @pytest.mark.parametrize(
     "model",
     [
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "gpt-3.5-0125",
-        "gpt-4-0125-preview",
-        "gpt-4-turbo-preview",
-        "gpt-4-vision-preview",
+        "neo-3.5-turbo",
+        "neo-4",
+        "neo-3.5-0125",
+        "neo-4-0125-preview",
+        "neo-4-turbo-preview",
+        "neo-4-vision-preview",
     ],
 )
 def test__get_encoding_model(model: str) -> None:
@@ -345,19 +345,19 @@ class MakeASandwich(BaseModel):
 )
 def test_bind_tools_tool_choice(tool_choice: Any) -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatNeoSpace(model="neo-3.5-turbo-0125", temperature=0)
     llm.bind_tools(tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice)
 
 
 @pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
 def test_with_structured_output(schema: Union[Type[BaseModel], dict]) -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatNeoSpace(model="neo-3.5-turbo-0125", temperature=0)
     llm.with_structured_output(schema)
 
 
 def test_get_num_tokens_from_messages() -> None:
-    llm = ChatNeoSpace(model="gpt-4o")
+    llm = ChatNeoSpace(model="neo-4o")
     messages = [
         SystemMessage("you're a good assistant"),
         HumanMessage("how are you"),
