@@ -28,7 +28,7 @@ class FireCrawlLoader(BaseLoader):
             api_key: The Firecrawl API key. If not specified will be read from env var
                 FIRECRAWL_API_KEY. Get an API key
             api_url: The Firecrawl API URL. If not specified will be read from env var
-                FIRECRAWL_API_URL or defaults to https://api.firecrawl.dev. 
+                FIRECRAWL_API_URL or defaults to https://api.firecrawl.dev.
             mode: The mode to run the loader in. Default is "crawl".
                  Options include "scrape" (single url) and
                  "crawl" (all accessible sub pages).
