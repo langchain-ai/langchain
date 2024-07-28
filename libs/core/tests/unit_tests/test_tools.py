@@ -1429,6 +1429,36 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     }
 
 
+def _get_parametrized_tools() -> list:
+    def my_tool(x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]) -> str:
+        """my_tool."""
+        return some_tool
+
+    async def my_async_tool(
+        x: int, y: str, *, some_tool: Annotated[Any, InjectedToolArg]
+    ) -> str:
+        """my_tool."""
+        return some_tool
+
+    return [my_tool, my_async_tool]
+
+
+@pytest.mark.parametrize("tool_", _get_parametrized_tools())
+def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
+    assert convert_to_openai_function(tool_) == {
+        "name": tool_.__name__,
+        "description": "my_tool.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "x": {"type": "integer"},
+                "y": {"type": "string"},
+            },
+            "required": ["x", "y"],
+        },
+    }
+
+
 def generate_models() -> List[Any]:
     """Generate a list of base models depending on the pydantic version."""
     from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
