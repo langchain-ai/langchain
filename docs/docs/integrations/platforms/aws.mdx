@@ -197,6 +197,24 @@ See a [usage example](/docs/integrations/vectorstores/documentdb).
 ```python
 from langchain.vectorstores import DocumentDBVectorSearch
 ```
+### Amazon MemoryDB 
+[Amazon MemoryDB](https://aws.amazon.com/memorydb/) is a durable, in-memory database service that delivers ultra-fast performance. MemoryDB is compatible with Redis OSS, a popular open source data store, 
+enabling you to quickly build applications using the same flexible and friendly Redis OSS APIs, and commands that they already use today. 
+
+InMemoryVectorStore class provides a vectorstore to connect with Amazon MemoryDB.
+
+```python
+from langchain_aws.vectorstores.inmemorydb import InMemoryVectorStore
+
+vds = InMemoryVectorStore.from_documents(
+            chunks,
+            embeddings,
+            redis_url="rediss://cluster_endpoint:6379/ssl=True ssl_cert_reqs=none",
+            vector_schema=vector_schema,
+            index_name=INDEX_NAME,
+        )
+```
+See a [usage example](/docs/integrations/vectorstores/memorydb).
 
 ## Retrievers
 
