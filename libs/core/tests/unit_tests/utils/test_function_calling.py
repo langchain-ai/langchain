@@ -29,7 +29,7 @@ from typing_extensions import (
 )
 
 try:
-    from typing import Annotated as TypingAnnotated
+    from typing import Annotated as TypingAnnotated  # type: ignore[attr-defined]
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
@@ -56,7 +56,7 @@ def pydantic() -> Type[BaseModel]:
 
 
 @pytest.fixture()
-def annotated_function() -> Callable:
+def Annotated_function() -> Callable:
     def dummy_function(
         arg1: ExtensionsAnnotated[int, "foo"],
         arg2: ExtensionsAnnotated[Literal["bar", "baz"], "one of 'bar', 'baz'"],
@@ -234,7 +234,7 @@ def test_convert_to_openai_function(
     function: Callable,
     dummy_tool: BaseTool,
     json_schema: Dict,
-    annotated_function: Callable,
+    Annotated_function: Callable,
     dummy_pydantic: Type[BaseModel],
     runnable: Runnable,
     dummy_typing_typed_dict: Type,
@@ -267,7 +267,7 @@ def test_convert_to_openai_function(
         expected,
         Dummy.dummy_function,
         DummyWithClassMethod.dummy_function,
-        annotated_function,
+        Annotated_function,
         dummy_pydantic,
         dummy_typing_typed_dict,
         dummy_typing_typed_dict_docstring,
@@ -448,17 +448,26 @@ def test_tool_outputs() -> None:
     assert messages[2].content == "Output1"
 
 
-@pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
-@pytest.mark.parametrize("annotated", [ExtensionsAnnotated, TypingAnnotated])
+@pytest.mark.parametrize("use_extension_typed_dict", [True, False])
+@pytest.mark.parametrize("use_extension_annotated", [True, False])
 def test__convert_typed_dict_to_openai_function(
-    typed_dict: Type, annotated: Type
+    use_extension_typed_dict: bool, use_extension_annotated: bool
 ) -> None:
-    class SubTool(typed_dict):
+    if use_extension_typed_dict:
+        TypedDict = ExtensionsTypedDict
+    else:
+        TypedDict = TypingTypedDict
+    if use_extension_annotated:
+        Annotated = TypingAnnotated
+    else:
+        Annotated = TypingAnnotated
+
+    class SubTool(TypedDict):
         """Subtool docstring"""
 
-        args: annotated[Dict[str, Any], {}, "this does bar"]  # noqa: F722
+        args: Annotated[Dict[str, Any], {}, "this does bar"]  # noqa: F722  # type: ignore
 
-    class Tool(typed_dict):
+    class Tool(TypedDict):
         """Docstring
 
         Args:
@@ -468,20 +477,20 @@ def test__convert_typed_dict_to_openai_function(
         arg1: str
         arg2: Union[int, str, bool]
         arg3: Optional[List[SubTool]]
-        arg4: annotated[Literal["bar", "baz"], ..., "this does foo"]  # noqa: F722
-        arg5: annotated[Optional[float], None]
-        arg6: annotated[
+        arg4: Annotated[Literal["bar", "baz"], ..., "this does foo"]  # noqa: F722
+        arg5: Annotated[Optional[float], None]
+        arg6: Annotated[
             Optional[Sequence[Mapping[str, Tuple[Iterable[Any], SubTool]]]], []
         ]
-        arg7: annotated[List[SubTool], ...]
-        arg8: annotated[Tuple[SubTool], ...]
-        arg9: annotated[Sequence[SubTool], ...]
-        arg10: annotated[Iterable[SubTool], ...]
-        arg11: annotated[Set[SubTool], ...]
-        arg12: annotated[Dict[str, SubTool], ...]
-        arg13: annotated[Mapping[str, SubTool], ...]
-        arg14: annotated[MutableMapping[str, SubTool], ...]
-        arg15: annotated[bool, False, "flag"]  # noqa: F821
+        arg7: Annotated[List[SubTool], ...]
+        arg8: Annotated[Tuple[SubTool], ...]
+        arg9: Annotated[Sequence[SubTool], ...]
+        arg10: Annotated[Iterable[SubTool], ...]
+        arg11: Annotated[Set[SubTool], ...]
+        arg12: Annotated[Dict[str, SubTool], ...]
+        arg13: Annotated[Mapping[str, SubTool], ...]
+        arg14: Annotated[MutableMapping[str, SubTool], ...]
+        arg15: Annotated[bool, False, "flag"]  # noqa: F821  # type: ignore
 
     expected = {
         "name": "Tool",

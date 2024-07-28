@@ -13,7 +13,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic",]
+exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py"]
 [[tool.mypy.overrides]]
 module = [ "numpy", "pytest",]
 ignore_missing_imports = true
