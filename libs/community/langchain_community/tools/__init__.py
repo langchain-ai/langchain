@@ -153,11 +153,9 @@ if TYPE_CHECKING:
     from langchain_community.tools.interaction.tool import (
         StdInInquireTool,
     )
+    from langchain_community.tools.jina_search.tool import JinaSearch
     from langchain_community.tools.jira.tool import (
         JiraAction,
-    )
-    from langchain_community.tools.jina_search.tool import (
-        JinaSearch
     )
     from langchain_community.tools.json.tool import (
         JsonGetValueTool,

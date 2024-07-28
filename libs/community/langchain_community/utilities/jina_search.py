@@ -1,9 +1,10 @@
 import json
 from typing import List
-from yarl import URL
+
 import requests
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel
+from yarl import URL
 
 
 class JinaSearchAPIWrapper(BaseModel):
@@ -27,7 +28,7 @@ class JinaSearchAPIWrapper(BaseModel):
                 "title": item.get("title"),
                 "link": item.get("url"),
                 "snippet": item.get("description"),
-                "content": item.get("content")
+                "content": item.get("content"),
             }
             for item in web_search_results
         ]
@@ -46,7 +47,11 @@ class JinaSearchAPIWrapper(BaseModel):
         return [
             Document(
                 page_content=item.get("content"),  # type: ignore[arg-type]
-                metadata={"title": item.get("title"), "link": item.get("url"), "description": item.get("description")},
+                metadata={
+                    "title": item.get("title"),
+                    "link": item.get("url"),
+                    "description": item.get("description"),
+                },
             )
             for item in results
         ]
