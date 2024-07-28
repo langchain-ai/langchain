@@ -318,7 +318,7 @@ class ChatFireworks(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.0
     """What sampling temperature to use."""
-    stop: Optional[Union[str, List[str]]] = Field(None, alias="stop_sequences")
+    stop: Optional[Union[str, List[str]]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
