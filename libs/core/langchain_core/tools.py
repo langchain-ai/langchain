@@ -120,6 +120,7 @@ def _get_filtered_args(
     func: Callable,
     *,
     filter_args: Sequence[str],
+    include_injected: bool = True,
 ) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
@@ -127,7 +128,9 @@ def _get_filtered_args(
     return {
         k: schema[k]
         for i, (k, param) in enumerate(valid_keys.items())
-        if k not in filter_args and (i > 0 or param.name not in ("self", "cls"))
+        if k not in filter_args
+        and (i > 0 or param.name not in ("self", "cls"))
+        and (include_injected or not _is_injected_arg_type(param.annotation))
     }
 
 
@@ -247,6 +250,7 @@ def create_schema_from_function(
     filter_args: Optional[Sequence[str]] = None,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
+    include_injected: bool = True,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
 
@@ -260,6 +264,9 @@ def create_schema_from_function(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to False.
+        include_injected: Whether to include injected arguments in the schema.
+            Defaults to True, since we want to include them in the schema
+            when *validating* tool inputs.
 
     Returns:
         A pydantic model with the same arguments as the function.
@@ -277,7 +284,9 @@ def create_schema_from_function(
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
+    valid_properties = _get_filtered_args(
+        inferred_model, func, filter_args=filter_args, include_injected=include_injected
+    )
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,

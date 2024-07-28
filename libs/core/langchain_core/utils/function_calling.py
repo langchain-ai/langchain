@@ -179,6 +179,7 @@ def convert_python_function_to_openai_function(
         filter_args=(),
         parse_docstring=True,
         error_on_invalid_docstring=False,
+        include_injected=False,
     )
     return convert_pydantic_to_openai_function(
         model,
