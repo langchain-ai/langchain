@@ -1435,7 +1435,7 @@ def _get_parametrized_tools() -> list:
         return some_tool
 
     async def my_async_tool(
-        x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]
+        x: int, y: str, *, some_tool: Annotated[Any, InjectedToolArg]
     ) -> str:
         """my_tool."""
         return some_tool
