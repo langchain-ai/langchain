@@ -292,7 +292,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "Cannot specify 'openai_proxy' if one of "
                 "'http_client'/'http_async_client' is already specified. Received:\n"
-                f"{openai_proxy=}\n{http_client=}\n{http_async_client}"
+                f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
         if not values.get("client"):
             if values["openai_proxy"] and not values["http_client"]:
