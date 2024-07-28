@@ -509,7 +509,7 @@ description = "The official Python library for the neospace API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "neospace-1.37.0-py3-none-any.whl", hash = "sha256:56ffc8fd6128077fb3254c6ef4a420d2bd52e4347ba79964ae01d98836804374"},
+    {file = "neospace-1.37.0-py3-none-any.whl", hash = "sha256:cc172d0dac043f227d5daf992a22c645c8a15cc7b81c33fcaefccab7da5a67a9"},
 ]
 
 [package.dependencies]
@@ -525,8 +525,8 @@ typing-extensions = ">=4.7,<5"
 datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
 
 [package.source]
-type = "file"
-url = "dist/neospace-1.37.0-py3-none-any.whl"
+type = "url"
+url = "https://github.com/neospace-ai/neospace-python/releases/download/v1.0.0-MTuBbe5M/neospace-1.37.0-py3-none-any.whl"
 
 [[package]]
 name = "numpy"
@@ -1436,4 +1436,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "fd72afb69362a57dea4c6ed56b1930e551f8139c34ab61692173cc551335ae9a"
+content-hash = "f51b7e8fb053607299ecf29f0ae057c1b7ab3ab07998dcbe5c8df545c35fa936"

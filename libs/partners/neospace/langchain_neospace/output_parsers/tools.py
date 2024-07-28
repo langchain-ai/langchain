@@ -1,4 +1,4 @@
-from langchain_core.output_parsers.neospace_tools import (
+from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
     PydanticToolsParser,

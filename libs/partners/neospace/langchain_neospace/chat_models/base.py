@@ -66,7 +66,7 @@ from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
-from langchain_core.output_parsers.neospace_tools import (
+from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
     make_invalid_tool_call,
@@ -83,8 +83,8 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import (
-    convert_to_neospace_function,
-    convert_to_neospace_tool,
+    convert_to_openai_function,
+    convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import build_extra_kwargs
@@ -197,9 +197,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
         if message.tool_calls or message.invalid_tool_calls:
             message_dict["tool_calls"] = [
-                _lc_tool_call_to_neospace_tool_call(tc) for tc in message.tool_calls
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
             ] + [
-                _lc_invalid_tool_call_to_neospace_tool_call(tc)
+                _lc_invalid_tool_call_to_openai_tool_call(tc)
                 for tc in message.invalid_tool_calls
             ]
         elif "tool_calls" in message.additional_kwargs:
@@ -910,7 +910,7 @@ class BaseChatNeoSpace(BaseChatModel):
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
-        formatted_functions = [convert_to_neospace_function(fn) for fn in functions]
+        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
         if function_call is not None:
             function_call = (
                 {"name": function_call}
@@ -967,7 +967,7 @@ class BaseChatNeoSpace(BaseChatModel):
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
-        formatted_tools = [convert_to_neospace_tool(tool) for tool in tools]
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
@@ -1130,7 +1130,7 @@ class BaseChatNeoSpace(BaseChatModel):
 
                 from langchain_neospace import ChatNeoSpace
                 from langchain_core.pydantic_v1 import BaseModel
-                from langchain_core.utils.function_calling import convert_to_neospace_tool
+                from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
                 class AnswerWithJustification(BaseModel):
@@ -1140,7 +1140,7 @@ class BaseChatNeoSpace(BaseChatModel):
                     justification: str
 
 
-                dict_schema = convert_to_neospace_tool(AnswerWithJustification)
+                dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = ChatNeoSpace(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
@@ -1210,7 +1210,7 @@ class BaseChatNeoSpace(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            tool_name = convert_to_neospace_tool(schema)["function"]["name"]
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
             llm = self.bind_tools(
                 [schema], tool_choice=tool_name, parallel_tool_calls=False
             )
@@ -1769,7 +1769,7 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
-def _lc_tool_call_to_neospace_tool_call(tool_call: ToolCall) -> dict:
+def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
     return {
         "type": "function",
         "id": tool_call["id"],
@@ -1780,7 +1780,7 @@ def _lc_tool_call_to_neospace_tool_call(tool_call: ToolCall) -> dict:
     }
 
 
-def _lc_invalid_tool_call_to_neospace_tool_call(
+def _lc_invalid_tool_call_to_openai_tool_call(
     invalid_tool_call: InvalidToolCall,
 ) -> dict:
     return {

@@ -117,10 +117,10 @@ def convert_pydantic_to_openai_function(
 
 @deprecated(
     "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_neospace_function()",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
     removal="0.3.0",
 )
-def convert_pydantic_to_neospace_function(
+def convert_pydantic_to_openai_function(
     model: Type[BaseModel],
     *,
     name: Optional[str] = None,
@@ -231,7 +231,7 @@ def convert_python_function_to_openai_function(
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
     removal="0.3.0",
 )
-def convert_python_function_to_neospace_function(
+def convert_python_function_to_openai_function(
     function: Callable,
 ) -> FunctionDescription:
     """Convert a Python function to an NeoSpace function-calling API compatible dict.
@@ -302,10 +302,10 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
 @deprecated(
     "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_neospace_function()",
+    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
     removal="0.3.0",
 )
-def format_tool_to_neospace_function(tool: BaseTool) -> FunctionDescription:
+def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the NeoSpace function API.
 
     Args:
@@ -315,7 +315,7 @@ def format_tool_to_neospace_function(tool: BaseTool) -> FunctionDescription:
         The function description.
     """
     if tool.tool_call_schema:
-        return convert_pydantic_to_neospace_function(
+        return convert_pydantic_to_openai_function(
             tool.tool_call_schema, name=tool.name, description=tool.description
         )
     else:
@@ -404,7 +404,7 @@ def convert_to_openai_function(
             " 'title' and 'description' keys."
         )
 
-def convert_to_neospace_function(
+def convert_to_openai_function(
     function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an NeoSpace function.
@@ -440,11 +440,11 @@ def convert_to_neospace_function(
             "parameters": function,
         }
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        return cast(Dict, convert_pydantic_to_neospace_function(function))
+        return cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        return cast(Dict, format_tool_to_neospace_function(function))
+        return cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        return cast(Dict, convert_python_function_to_neospace_function(function))
+        return cast(Dict, convert_python_function_to_openai_function(function))
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -474,7 +474,7 @@ def convert_to_openai_tool(
     function = convert_to_openai_function(tool)
     return {"type": "function", "function": function}
 
-def convert_to_neospace_tool(
+def convert_to_openai_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an NeoSpace tool.
@@ -491,7 +491,7 @@ def convert_to_neospace_tool(
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
-    function = convert_to_neospace_function(tool)
+    function = convert_to_openai_function(tool)
     return {"type": "function", "function": function}
 
 
