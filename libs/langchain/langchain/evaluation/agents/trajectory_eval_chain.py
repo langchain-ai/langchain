@@ -283,8 +283,7 @@ The following is the expected answer. Use this to measure correctness:
 
     def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
         """Validate and prep inputs."""
-        if "reference" not in inputs:
-            inputs["reference"] = self._format_reference(inputs.get("reference"))
+        inputs["reference"] = self._format_reference(inputs.get("reference"))
         return super().prep_inputs(inputs)
 
     def _call(
