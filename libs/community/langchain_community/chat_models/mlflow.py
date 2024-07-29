@@ -417,10 +417,10 @@ class ChatMlflow(BaseChatModel):
                 Options are:
                 name of the tool (str): calls corresponding tool;
                 "auto": automatically selects a tool (including no tool);
-                "none": does not call a tool;
-                "any": force at least one tool to be called;
-                True: forces tool call (requires `tools` be length 1);
-                False: no effect;
+                "none": model does not generate any tool calls and instead must
+                    generate a standard assistant message;
+                "required": the model picks the most relevant tool in tools and
+                    must generate a tool call;
 
                 or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
@@ -431,18 +431,11 @@ class ChatMlflow(BaseChatModel):
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
-                if tool_choice not in ("auto", "none", "any"):
+                if tool_choice not in ("auto", "none", "required"):
                     tool_choice = {
                         "type": "function",
                         "function": {"name": tool_choice},
                     }
-            elif isinstance(tool_choice, bool):
-                if len(formatted_tools) > 1:
-                    raise ValueError(
-                        "tool_choice=True can only be specified when a single tool is "
-                        f"passed in. Received {len(formatted_tools)} tools."
-                    )
-                tool_choice = formatted_tools[0]
             elif isinstance(tool_choice, dict):
                 tool_names = [
                     formatted_tool["function"]["name"]
