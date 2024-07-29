@@ -122,8 +122,8 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
     system = None
     formatted_messages = []
 
-    human_messages = filter(lambda msg: isinstance(msg, HumanMessage), messages)
-    last_human_message = list(human_messages)[-1] if human_messages else ""
+    human_messages = list(filter(lambda msg: isinstance(msg, HumanMessage), messages))
+    last_human_message = human_messages[-1] if human_messages else ""
 
     tool_results, other_messages = _extract_edenai_tool_results_from_messages(messages)
     for i, message in enumerate(other_messages):
