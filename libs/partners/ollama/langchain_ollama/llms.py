@@ -305,7 +305,9 @@ class OllamaLLM(BaseLLM):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
                     text=(
-                        stream_resp.get("response","")
+                        stream_resp["message"]["content"]
+                        if "message" in stream_resp
+                        else ""
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
@@ -329,7 +331,9 @@ class OllamaLLM(BaseLLM):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
                     text=(
-                        stream_resp.get("response","")
+                        stream_resp["message"]["content"]
+                        if "message" in stream_resp
+                        else ""
                     ),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
