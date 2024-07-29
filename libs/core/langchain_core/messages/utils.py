@@ -436,7 +436,7 @@ def merge_message_runs(
     Args:
         messages: Sequence Message-like objects to merge.
         with_newline_separator: Whether to separate merged messages with a newline.
-        Default is True.
+            Default is True.
 
     Returns:
         List of BaseMessages with consecutive runs of message types merged into single
