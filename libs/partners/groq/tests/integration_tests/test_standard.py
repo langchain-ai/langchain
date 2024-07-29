@@ -4,11 +4,14 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import (  # type: ignore[import-not-found]
-    ChatModelIntegrationTests,  # type: ignore[import-not-found]
+from langchain_core.rate_limiters import InMemoryRateLimiter
+from langchain_standard_tests.integration_tests import (
+    ChatModelIntegrationTests,
 )
 
 from langchain_groq import ChatGroq
+
+rate_limiter = InMemoryRateLimiter(requests_per_second=0.45)
 
 
 class BaseTestGroq(ChatModelIntegrationTests):
@@ -27,6 +30,7 @@ class TestGroqLlama(BaseTestGroq):
         return {
             "model": "llama-3.1-8b-instant",
             "temperature": 0,
+            "rate_limiter": rate_limiter,
         }
 
     @pytest.mark.xfail(
