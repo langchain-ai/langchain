@@ -425,6 +425,8 @@ def filter_messages(
 @_runnable_support
 def merge_message_runs(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    *,
+    with_newline_separator: bool = True,
 ) -> List[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
@@ -433,13 +435,16 @@ def merge_message_runs(
 
     Args:
         messages: Sequence Message-like objects to merge.
+        with_newline_separator: Whether to separate merged messages with a newline.
+        Default is True.
 
     Returns:
         List of BaseMessages with consecutive runs of message types merged into single
-        messages. If two messages being merged both have string contents, the merged
-        content is a concatenation of the two strings with a new-line separator. If at
-        least one of the messages has a list of content blocks, the merged content is a
-        list of content blocks.
+        messages. By default, if two messages being merged both have string contents,
+        the merged content is a concatenation of the two strings with a new-line separator,
+        unless ```with_newline_separator=False```, in which case no new-line is inserted.
+        If at least one of the messages has a list of content blocks, the merged content is
+        a list of content blocks.
 
     Example:
         .. code-block:: python
@@ -503,8 +508,10 @@ def merge_message_runs(
         else:
             last_chunk = _msg_to_chunk(last)
             curr_chunk = _msg_to_chunk(curr)
-            if isinstance(last_chunk.content, str) and isinstance(
-                curr_chunk.content, str
+            if (
+                isinstance(last_chunk.content, str)
+                and isinstance(curr_chunk.content, str)
+                and with_newline_separator
             ):
                 last_chunk.content += "\n"
             merged.append(_chunk_to_msg(last_chunk + curr_chunk))

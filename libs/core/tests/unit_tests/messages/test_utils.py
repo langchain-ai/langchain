@@ -27,6 +27,18 @@ def test_merge_message_runs_str(msg_cls: Type[BaseMessage]) -> None:
     assert messages == messages_copy
 
 
+@pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
+def test_merge_message_runs_str_without_newline_separator(
+    msg_cls: Type[BaseMessage],
+) -> None:
+    messages = [msg_cls("foo"), msg_cls("bar"), msg_cls("baz")]
+    messages_copy = [m.copy(deep=True) for m in messages]
+    expected = [msg_cls("foobarbaz")]
+    actual = merge_message_runs(messages, with_newline_separator=False)
+    assert actual == expected
+    assert messages == messages_copy
+
+
 def test_merge_message_runs_content() -> None:
     messages = [
         AIMessage("foo", id="1"),
