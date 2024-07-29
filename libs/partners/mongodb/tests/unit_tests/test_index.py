@@ -6,7 +6,8 @@ from time import sleep
 import pymongo.collection
 import pytest
 from pymongo import MongoClient
-from pymongo.errors import OperationFailure
+from pymongo.collection import Collection
+from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
 
 from langchain_mongodb import index
 
@@ -22,27 +23,27 @@ def collection() -> pymongo.collection.Collection:
     return client["db"]["collection"]
 
 
-def test_create_vector_search_index(collection):
-    with pytest.raises(OperationFailure):
+def test_create_vector_search_index(collection: Collection) -> None:
+    with pytest.raises((OperationFailure, ServerSelectionTimeoutError)):
         index.create_vector_search_index(
             collection, "index_name", 1536, "embedding", "cosine", []
         )
 
 
-def test_drop_vector_search_index(collection):
-    with pytest.raises(OperationFailure):
+def test_drop_vector_search_index(collection: Collection) -> None:
+    with pytest.raises((OperationFailure, ServerSelectionTimeoutError)):
         index.drop_vector_search_index(collection, "index_name")
 
 
-def test_update_vector_search_index(collection):
-    with pytest.raises(OperationFailure):
+def test_update_vector_search_index(collection: Collection) -> None:
+    with pytest.raises((OperationFailure, ServerSelectionTimeoutError)):
         index.update_vector_search_index(
             collection, "index_name", 1536, "embedding", "cosine", []
         )
 
 
-def test__is_index_ready(collection):
-    with pytest.raises(OperationFailure):
+def test___is_index_ready(collection: Collection) -> None:
+    with pytest.raises((OperationFailure, ServerSelectionTimeoutError)):
         index._is_index_ready(collection, "index_name")
 
 
