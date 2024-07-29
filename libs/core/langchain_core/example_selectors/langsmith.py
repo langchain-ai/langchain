@@ -171,11 +171,7 @@ class LangSmithCustomExampleSelector(
     ) -> ChatPromptValue:
         # TODO: Ideally there would be a search_examples API with similar interface to
         # list_examples plus a query and top_k.
-        docs = self.index.similarity_search(
-            _stringify(
-                input,
-            )
-        )
+        docs = self.index.similarity_search(_stringify(input), k=self.top_k)
         examples = [doc.metadata for doc in docs]
         messages = []
         for example in examples:
