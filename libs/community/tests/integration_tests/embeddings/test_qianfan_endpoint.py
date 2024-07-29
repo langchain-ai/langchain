@@ -50,7 +50,7 @@ def test_initialization_with_alias() -> None:
     secret_key = "your-secret-key"
 
     embeddings = QianfanEmbeddingsEndpoint(  # type: ignore[arg-type, call-arg]
-        api_key=api_key,
+        api_key=api_key,  # type: ignore[arg-type]
         secret_key=secret_key,  # type: ignore[arg-type]
     )
 
