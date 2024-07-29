@@ -82,6 +82,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                     auth_identities = self.authorized_identities(file_id)
                 if self.load_extended_metadata is True:
                     extended_metadata = self.get_extended_metadata(file_id)
+                    extended_metadata.update({"source_full_url": target_folder.web_url})
                 for parsed_blob in blob_parser.lazy_parse(blob):
                     if self.load_auth is True:
                         parsed_blob.metadata["authorized_identities"] = auth_identities
@@ -98,6 +99,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                     auth_identities = self.authorized_identities(file_id)
                 if self.load_extended_metadata is True:
                     extended_metadata = self.get_extended_metadata(file_id)
+                    extended_metadata.update({"source_full_url": target_folder.web_url})
                 for parsed_blob in blob_parser.lazy_parse(blob):
                     if self.load_auth is True:
                         parsed_blob.metadata["authorized_identities"] = auth_identities
@@ -125,6 +127,9 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             for blob in self._load_from_folder(target_folder):
                 for blob_part in blob_parser.lazy_parse(blob):
                     blob_part.metadata.update(blob.metadata)
+                    blob_part.metadata.update(
+                        {"source_full_url": target_folder.web_url}
+                    )
                     yield blob_part
 
     def authorized_identities(self, file_id: str) -> List:

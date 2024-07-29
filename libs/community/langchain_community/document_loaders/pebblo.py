@@ -68,6 +68,7 @@ class PebbloSafeLoader(BaseLoader):
         self.source_aggregate_size = 0
         self.classifier_url = classifier_url or CLASSIFIER_URL
         self.classifier_location = classifier_location
+        self.loader_details_updated = False
         self.loader_details = {
             "loader": loader_name,
             "source_path": self.source_path,
@@ -158,11 +159,16 @@ class PebbloSafeLoader(BaseLoader):
         for doc in doc_content:
             doc_metadata = doc.get("metadata", {})
             doc_authorized_identities = doc_metadata.get("authorized_identities", [])
-            doc_source_path = get_full_path(
-                doc_metadata.get(
-                    "full_path", doc_metadata.get("source", self.source_path)
+            if self.loader.__class__.__name__ == "SharePointLoader":
+                doc_source_path = get_full_path(
+                    doc_metadata.get("source", self.source_path)
                 )
-            )
+            else:
+                doc_source_path = get_full_path(
+                    doc_metadata.get(
+                        "full_path", doc_metadata.get("source", self.source_path)
+                    )
+                )
             doc_source_owner = doc_metadata.get(
                 "owner", PebbloSafeLoader.get_file_owner_from_path(doc_source_path)
             )
@@ -192,6 +198,12 @@ class PebbloSafeLoader(BaseLoader):
                     ),
                 }
             )
+        if (
+            self.loader.__class__.__name__ == "SharePointLoader"
+            and not self.loader_details_updated
+        ):
+            self.loader_details["source_path"] = doc_metadata.get("source_full_url")
+            self.loader_details_updated = True
         payload: Dict[str, Any] = {
             "name": self.app_name,
             "owner": self.owner,
@@ -526,11 +538,16 @@ class PebbloSafeLoader(BaseLoader):
         """Add Pebblo specific metadata to documents."""
         for doc in self.docs_with_id:
             doc_metadata = doc.metadata
-            doc_metadata["full_path"] = get_full_path(
-                doc_metadata.get(
-                    "full_path", doc_metadata.get("source", self.source_path)
+            if self.loader.__class__.__name__ == "SharePointLoader":
+                doc_metadata["full_path"] = get_full_path(
+                    doc_metadata.get("source", self.source_path)
                 )
-            )
+            else:
+                doc_metadata["full_path"] = get_full_path(
+                    doc_metadata.get(
+                        "full_path", doc_metadata.get("source", self.source_path)
+                    )
+                )
             doc_metadata["pb_id"] = doc.pb_id
             doc_metadata["pb_checksum"] = classified_docs.get(doc.pb_id, {}).get(
                 "pb_checksum", None
