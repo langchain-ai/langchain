@@ -15,8 +15,6 @@ from datetime import date, datetime
 from typing import Any, Dict, List, Union
 
 import numpy as np
-from bson import ObjectId
-from bson.errors import InvalidId
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +93,7 @@ def maximal_marginal_relevance(
     return idxs
 
 
-def str_to_oid(str_repr: str) -> ObjectId | str:
+def str_to_oid(str_repr: str) -> Any | str:
     """Attempt to cast string representation of id to MongoDB's internal BSON ObjectId.
 
     To be consistent with ObjectId, input must be a 24 character hex string.
@@ -108,6 +106,9 @@ def str_to_oid(str_repr: str) -> ObjectId | str:
     Returns:
         ObjectID
     """
+    from bson import ObjectId
+    from bson.errors import InvalidId
+
     try:
         return ObjectId(str_repr)
     except InvalidId:
@@ -118,7 +119,7 @@ def str_to_oid(str_repr: str) -> ObjectId | str:
         return str_repr
 
 
-def oid_to_str(oid: ObjectId) -> str:
+def oid_to_str(oid: Any) -> str:
     """Convert MongoDB's internal BSON ObjectId into a simple str for compatibility.
 
     Instructive helper to show where data is coming out of MongoDB.
@@ -136,6 +137,8 @@ def make_serializable(
     obj: Dict[str, Any],
 ) -> None:
     """Recursively cast values in a dict to a form able to json.dump"""
+    from bson import ObjectId
+
     for k, v in obj.items():
         if isinstance(v, dict):
             make_serializable(v)
