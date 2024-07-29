@@ -305,7 +305,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         return create_model(
             self.get_name("Input"),
-            __root__=(root_type, None),
+            __root__=root_type,
         )
 
     @property

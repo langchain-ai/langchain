@@ -9,6 +9,9 @@ import textwrap
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
+from pydantic import BaseModel, ConfigDict, RootModel
+from pydantic import create_model as _create_model_base
+from pydantic.json_schema import DEFAULT_REF_TEMPLATE
 from typing import (
     Any,
     AsyncIterable,
@@ -29,9 +32,6 @@ from typing import (
     TypeVar,
     Union,
 )
-
-from pydantic import BaseModel, ConfigDict, RootModel
-from pydantic import create_model as _create_model_base
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent
@@ -694,6 +694,37 @@ class _RootEventFilter:
 
 _SchemaConfig = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
+NO_DEFAULT = object()
+
+
+def create_base_class(name: str, type_, default_=NO_DEFAULT) -> Type:
+    if default_ is NO_DEFAULT:
+
+        class FixedNameRootModel(RootModel):
+            root: type_
+
+            @classmethod
+            def schema(  # noqa: D102
+                cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
+            ) -> Dict[str, Any]:
+                schema_ = super().schema(by_alias=by_alias, ref_template=ref_template)
+                schema_["title"] = name
+                return schema_
+    else:
+
+        class FixedNameRootModel(RootModel):
+            root: type_ = default_
+
+            @classmethod
+            def schema(  # noqa: D102
+                cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
+            ) -> Dict[str, Any]:
+                schema_ = super().schema(by_alias=by_alias, ref_template=ref_template)
+                schema_["title"] = name
+                return schema_
+
+    return FixedNameRootModel
+
 
 def create_model(
     __model_name: str,
@@ -718,18 +749,11 @@ def create_model(
             )
 
         arg = field_definitions["__root__"]
-        foo = _create_model_base(
-            __model_name,
-            __base__=RootModel,
-        )
-        return foo[arg]
-        #
-        # try:
-        # except TypeError:
-        #     foo = _create_model_base(
-        #         __model_name, __base__=RootModel, __config__=_SchemaConfig
-        #     )
-        #     return foo[arg]
+        if isinstance(arg, tuple):
+            named_root_model = create_base_class(__model_name, arg[0], arg[1])
+        else:
+            named_root_model = create_base_class(__model_name, arg)
+        return named_root_model
     try:
         return _create_model_cached(__model_name, **field_definitions)
     except TypeError:
