@@ -1,0 +1,34 @@
+# Amadeus
+
+>[Amadeus Travel APIs](https://developers.amadeus.com/). Get instant access to over 400 airlines, 150,000 hotels, 300,000 tours & activities.
+
+## Installation and Setup
+
+To use the `Amadeus` integration, you need to have an `API key` from `Amadeus`.
+See [instructions here](https://developers.amadeus.com/get-started/get-started-with-self-service-apis-335).
+
+We have to install the `amadeus` python package:
+
+```bash
+pip install amadeus
+```
+
+## Tools
+
+Tools that help you interact with the `Amadeus travel APIs`. They are all included
+in the `Amadeus` toolkit.
+
+See a [usage example](/docs/integrations/toolkits/amadeus).
+
+```python
+from langchain_community.tools.amadeus import AmadeusClosestAirport
+from langchain_community.tools.amadeus import AmadeusFlightSearch
+```
+
+## Toolkit
+
+See a [usage example](/docs/integrations/toolkits/amadeus).
+
+```python
+from langchain_community.agent_toolkits.amadeus.toolkit import AmadeusToolkit
+```

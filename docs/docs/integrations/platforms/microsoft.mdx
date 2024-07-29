@@ -279,8 +279,6 @@ Below are two available Azure Cosmos DB APIs that can provide vector store funct
 > You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
 > Use vector search in Azure Cosmos DB for MongoDB vCore to seamlessly integrate your AI-based applications with your data that's stored in Azure Cosmos DB.
 
-#### Installation and Setup
-
 See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db).
 
 We need to install `pymongo` python package.
@@ -288,14 +286,6 @@ We need to install `pymongo` python package.
 ```bash
 pip install pymongo
 ```
-
-#### Deploy Azure Cosmos DB on Microsoft Azure
-
-Azure Cosmos DB for MongoDB vCore provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture.
-
-With Cosmos DB for MongoDB vCore, developers can enjoy the benefits of native Azure integrations, low total cost of ownership (TCO), and the familiar vCore architecture when migrating existing applications or building new ones.
-
-[Sign Up](https://azure.microsoft.com/en-us/free/) for free to get started today.
 
 See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
 
@@ -307,12 +297,7 @@ from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 
 >[Azure Cosmos DB for NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search) now offers vector indexing and search in preview.
 This feature is designed to handle high-dimensional vectors, enabling efficient and accurate vector search at any scale. You can now store vectors
-directly in the documents alongside your data. This means that each document in your database can contain not only traditional schema-free data,
-but also high-dimensional vectors as other properties of the documents. This colocation of data and vectors allows for efficient indexing and searching,
-as the vectors are stored in the same logical unit as the data they represent. This simplifies data management, AI application architectures, and the
-efficiency of vector-based operations.
-
-#### Installation and Setup
+directly in the documents alongside your data. 
 
 See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
 
@@ -321,13 +306,6 @@ We need to install `azure-cosmos` python package.
 ```bash
 pip install azure-cosmos
 ```
-
-#### Deploy Azure Cosmos DB on Microsoft Azure
-
-Azure Cosmos DB offers a solution for modern apps and intelligent workloads by being very responsive with dynamic and elastic autoscale. It is available
-in every Azure region and can automatically replicate data closer to users. It has SLA guaranteed low-latency and high availability.
-
-[Sign Up](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?pivots=devcontainer-codespace) for free to get started today.
 
 See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
 
@@ -506,6 +484,20 @@ from langchain_community.tools.playwright import ExtractTextTool
 from langchain_community.tools.playwright import GetElementsTool
 from langchain_community.tools.playwright import NavigateTool
 from langchain_community.tools.playwright import NavigateBackTool
+```
+
+## Memory
+
+### Azure CosmosDB Chat Message History
+
+We need to install a python package.
+
+```bash
+pip install azure-cosmos
+```
+
+```python
+from langchain_community.chat_message_histories import CosmosDBChatMessageHistory
 ```
 
 ## Graphs

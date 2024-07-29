@@ -13,6 +13,22 @@ You need to install `ain-py` python package.
 pip install ain-py
 ```
 You need to set the `AIN_BLOCKCHAIN_ACCOUNT_PRIVATE_KEY` environmental variable to your AIN Blockchain Account Private Key.
+
+## Tools
+
+Tools that help you interact with the `AINetwork` blockchain. They are all included
+in the `AINetworkToolkit` toolkit.
+
+See a [usage example](/docs/integrations/toolkits/ainetwork).
+
+```python
+from langchain_community.tools import AINAppOps
+from langchain_community.tools import AINOwnerOps
+from langchain_community.tools import AINRuleOps
+from langchain_community.tools import AINTransfer
+from langchain_community.tools import AINValueOps
+```
+
 ## Toolkit
 
 See a [usage example](/docs/integrations/tools/ainetwork).
