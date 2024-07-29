@@ -291,6 +291,11 @@ class ChatOllama(BaseChatModel):
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
+    seed: Optional[int] = None
+    """Sets the random number seed to use for generation. Setting this
+    to a specific number will make the model generate the same text for
+    the same prompt."""
+
     stop: Optional[List[str]] = None
     """Sets the stop tokens to use."""
 
@@ -335,6 +340,7 @@ class ChatOllama(BaseChatModel):
                 "repeat_last_n": self.repeat_last_n,
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
+                "seed": self.seed,
                 "stop": self.stop,
                 "tfs_z": self.tfs_z,
                 "top_k": self.top_k,
