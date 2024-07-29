@@ -190,7 +190,7 @@ class ChatLiteLLM(BaseChatModel):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = None
     temperature: Optional[float] = 1
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Run inference with this temperature. Must by in the closed
+    """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
