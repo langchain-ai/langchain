@@ -84,7 +84,7 @@ class Requests(BaseModel):
                     url,
                     headers=self.headers,
                     auth=self.auth,
-                    verify=self.verify,
+                    verify_ssl=self.verify,
                     **kwargs,
                 ) as response:
                     yield response
@@ -94,7 +94,7 @@ class Requests(BaseModel):
                 url,
                 headers=self.headers,
                 auth=self.auth,
-                verify=self.verify,
+                verify_ssl=self.verify,
                 **kwargs,
             ) as response:
                 yield response

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import re
 import uuid
 from operator import itemgetter
 from typing import (
@@ -63,13 +65,22 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
+
+# Mistral enforces a specific pattern for tool call IDs
+TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 
 
 def _create_retry_decorator(
@@ -84,6 +95,39 @@ def _create_retry_decorator(
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
+
+
+def _is_valid_mistral_tool_call_id(tool_call_id: str) -> bool:
+    """Check if tool call ID is nine character string consisting of a-z, A-Z, 0-9"""
+    return bool(TOOL_CALL_ID_PATTERN.match(tool_call_id))
+
+
+def _base62_encode(num: int) -> str:
+    """Encodes a number in base62 and ensures result is of a specified length."""
+    base62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if num == 0:
+        return base62[0]
+    arr = []
+    base = len(base62)
+    while num:
+        num, rem = divmod(num, base)
+        arr.append(base62[rem])
+    arr.reverse()
+    return "".join(arr)
+
+
+def _convert_tool_call_id_to_mistral_compatible(tool_call_id: str) -> str:
+    """Convert a tool call ID to a Mistral-compatible format"""
+    if _is_valid_mistral_tool_call_id(tool_call_id):
+        return tool_call_id
+    else:
+        hash_bytes = hashlib.sha256(tool_call_id.encode()).digest()
+        hash_int = int.from_bytes(hash_bytes, byteorder="big")
+        base62_str = _base62_encode(hash_int)
+        if len(base62_str) >= 9:
+            return base62_str[:9]
+        else:
+            return base62_str.rjust(9, "0")
 
 
 def _convert_mistral_chat_message_to_message(
@@ -240,7 +284,7 @@ def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
         }
     }
     if _id := tool_call.get("id"):
-        result["id"] = _id
+        result["id"] = _convert_tool_call_id_to_mistral_compatible(_id)
 
     return result
 
@@ -254,7 +298,7 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
         }
     }
     if _id := invalid_tool_call.get("id"):
-        result["id"] = _id
+        result["id"] = _convert_tool_call_id_to_mistral_compatible(_id)
 
     return result
 
@@ -779,7 +823,7 @@ class ChatMistralAI(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         if method == "function_calling":
             if schema is None:
                 raise ValueError(

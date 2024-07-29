@@ -55,11 +55,17 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    root_validator,
+)
+from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
@@ -205,6 +211,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
 
+    rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
+    """An optional rate limiter to use for limiting the number of requests."""
+
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used.
@@ -336,6 +345,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 batch_size=1,
             )
             generation: Optional[ChatGenerationChunk] = None
+
+            if self.rate_limiter:
+                self.rate_limiter.acquire(blocking=True)
+
             try:
                 for chunk in self._stream(messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
@@ -406,6 +419,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_id=config.pop("run_id", None),
             batch_size=1,
         )
+
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
 
         generation: Optional[ChatGenerationChunk] = None
         try:
@@ -737,6 +753,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
+
+        # Apply the rate limiter after checking the cache, since
+        # we usually don't want to rate limit cache lookups, but
+        # we do want to rate limit API requests.
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
         if type(self)._stream != BaseChatModel._stream and kwargs.pop(
@@ -817,6 +840,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
+
+        # Apply the rate limiter after checking the cache, since
+        # we usually don't want to rate limit cache lookups, but
+        # we do want to rate limit API requests.
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
         if (
@@ -1162,7 +1192,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 "with_structured_output is not implemented for this model."
             )
         llm = self.bind_tools([schema], tool_choice="any")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
