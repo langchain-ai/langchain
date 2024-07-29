@@ -14,8 +14,7 @@ def collection() -> Collection:
     """Depending on uri, this could point to any type of cluster."""
     uri = os.environ.get("MONGODB_ATLAS_URI")
     client: MongoClient = MongoClient(uri)
-    clxn = client["db"]["collection"]
-    clxn.insert_one({"foo": "bar"})
+    clxn = client["db"].create_collection("collection")
     return clxn
 
 
