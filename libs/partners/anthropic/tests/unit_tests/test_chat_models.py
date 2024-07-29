@@ -139,7 +139,7 @@ def test__merge_messages() -> None:
                 },
             ]
         ),
-        ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
+        ToolMessage("buz output", tool_call_id="1", status="error"),  # type: ignore[misc]
         ToolMessage(
             content=[
                 {
@@ -180,7 +180,12 @@ def test__merge_messages() -> None:
         ),
         HumanMessage(  # type: ignore[misc]
             [
-                {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
+                {
+                    "type": "tool_result",
+                    "content": "buz output",
+                    "tool_use_id": "1",
+                    "is_error": True,
+                },
                 {
                     "type": "tool_result",
                     "content": [
@@ -194,6 +199,7 @@ def test__merge_messages() -> None:
                         },
                     ],
                     "tool_use_id": "2",
+                    "is_error": False,
                 },
                 {"type": "text", "text": "next thing"},
             ]
@@ -215,7 +221,12 @@ def test__merge_messages() -> None:
     expected = [
         HumanMessage(  # type: ignore[misc]
             [
-                {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
+                {
+                    "type": "tool_result",
+                    "content": "buz output",
+                    "tool_use_id": "1",
+                    "is_error": False,
+                },
                 {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
             ]
         )
@@ -382,7 +393,12 @@ def test__format_messages_with_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
@@ -421,7 +437,12 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
@@ -455,7 +476,12 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
@@ -502,7 +528,12 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],

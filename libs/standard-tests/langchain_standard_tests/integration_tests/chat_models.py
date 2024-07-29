@@ -467,6 +467,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                                 "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
                             }
                         ],
+                        "is_error": False,
                     },
                     {"type": "text", "text": "what's my sister's favorite color"},
                 ]
