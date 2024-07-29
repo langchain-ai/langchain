@@ -1,11 +1,10 @@
 import datetime
-from typing import Optional, Union, Tuple, Any, Iterator, Sequence, Callable
+from typing import Any, Callable, Iterator, Optional, Sequence, Tuple, Union
 from uuid import UUID
 
 import requests
-from urllib3 import Retry
-
 from langsmith import Client as LangSmithClient
+from urllib3 import Retry
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
@@ -27,17 +26,17 @@ class LangSmithLoader(BaseLoader):
     """
 
     def __init__(
-            self,
-            *,
-            client: Optional[LangSmithClient] = None,
-            api_url: Optional[str] = None,
-            api_key: Optional[str] = None,
-            retry_config: Optional[Retry] = None,
-            timeout_ms: Optional[Union[int, Tuple[int, int]]] = None,
-            session: Optional[requests.Session] = None,
-            content_key: Optional[str] = None,
-            format_content: Optional[Callable[..., str]]=None,
-            **list_examples_params: Any
+        self,
+        *,
+        client: Optional[LangSmithClient] = None,
+        api_url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        retry_config: Optional[Retry] = None,
+        timeout_ms: Optional[Union[int, Tuple[int, int]]] = None,
+        session: Optional[requests.Session] = None,
+        content_key: Optional[str] = None,
+        format_content: Optional[Callable[..., str]] = None,
+        **list_examples_params: Any,
     ) -> None:
         """Init loader.
 
@@ -58,9 +57,7 @@ class LangSmithLoader(BaseLoader):
         self._format_content = format_content
 
     def lazy_load(self) -> Iterator[Document]:
-        for example in self._client.list_examples(
-            **self._list_examples_params
-        ):
+        for example in self._client.list_examples(**self._list_examples_params):
             content = example.inputs
             for key in self._content_key:
                 content = content[key]

@@ -166,15 +166,15 @@ class LangSmithCustomExampleSelector(
     """LangSmith client."""
 
     def __init__(
-            self,
-            *,
-            client: Optional[LangSmithClient] = None,
-            api_url: Optional[str] = None,
-            api_key: Optional[str] = None,
-            retry_config: Optional[Retry] = None,
-            timeout_ms: Optional[Union[int, Tuple[int, int]]] = None,
-            session: Optional[requests.Session] = None,
-            **kwargs: Any,
+        self,
+        *,
+        client: Optional[LangSmithClient] = None,
+        api_url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        retry_config: Optional[Retry] = None,
+        timeout_ms: Optional[Union[int, Tuple[int, int]]] = None,
+        session: Optional[requests.Session] = None,
+        **kwargs: Any,
     ) -> None:
         if not client:
             client = LangSmithClient(
@@ -187,8 +187,7 @@ class LangSmithCustomExampleSelector(
         super().__init__(client=client, **kwargs)  # type: ignore[call-arg]
 
     def invoke(
-            self, input: Union[Dict[str, Any], str],
-            config: Optional[RunnableConfig] = None
+        self, input: Union[Dict[str, Any], str], config: Optional[RunnableConfig] = None
     ) -> ChatPromptValue:
         # TODO: Ideally there would be a search_examples API with similar interface to
         # list_examples plus a query and top_k.
