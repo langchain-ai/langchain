@@ -1,6 +1,5 @@
-import datetime
-from typing import Any, Callable, Iterator, Optional, Sequence, Tuple, Union
-from uuid import UUID
+import json
+from typing import Any, Callable, Iterator, Optional, Tuple, Union
 
 import requests
 from langsmith import Client as LangSmithClient
@@ -54,13 +53,22 @@ class LangSmithLoader(BaseLoader):
         self._client = client
         self._list_examples_params = list_examples_params
         self._content_key = list(content_key.split(".")) if content_key else []
-        self._format_content = format_content
+        self._format_content = format_content or _stringify
 
     def lazy_load(self) -> Iterator[Document]:
         for example in self._client.list_examples(**self._list_examples_params):
-            content = example.inputs
+            content: Any = example.inputs
             for key in self._content_key:
                 content = content[key]
-            if self._format_content:
-                content = self._format_content(content)
-            yield Document(content, metadata=example.dict())
+            content_str = self._format_content(content)
+            yield Document(content_str, metadata=example.dict())
+
+
+def _stringify(x: Union[str, dict]) -> str:
+    if isinstance(x, str):
+        return x
+    else:
+        try:
+            return json.dumps(x, indent=2)
+        except Exception:
+            return str(x)
