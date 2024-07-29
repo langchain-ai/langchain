@@ -15,6 +15,7 @@ from typing import (
 )
 
 from langchain_community.chat_models.ollama import ChatOllama
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -132,6 +133,9 @@ def parse_response(message: BaseMessage) -> str:
     raise ValueError(f"`message` is not an instance of `AIMessage`: {message}")
 
 
+@deprecated(  # type: ignore[arg-type]
+    since="0.0.64", removal="0.4.0", alternative_import="langchain_ollama.ChatOllama"
+)
 class OllamaFunctions(ChatOllama):
     """Function chat model that uses Ollama API."""
 
