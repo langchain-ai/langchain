@@ -1,23 +1,50 @@
 # How to use LangChain with different Pydantic versions
 
-- Pydantic v2 was released in June, 2023 (https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/)
-- v2 contains has a number of breaking changes (https://docs.pydantic.dev/2.0/migration/)
+- Pydantic v2 was released in June, 2023 (https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/).
+- v2 contains has a number of breaking changes (https://docs.pydantic.dev/2.0/migration/).
 
-As of `langchain>=0.0.267`, LangChain allow users to install either Pydantic V1 or V2.
+As of `langchain>=0.0.267`, LangChain allows users to install either Pydantic V1 or V2.
 
-Internally, LangChain continues to use the [Pydantic V1](https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features).
+Internally, LangChain continues to use the [Pydantic V1](https://docs.pydantic.dev/latest/migration/#continue-using-pydantic-v1-features) via
+the v1 namespace of Pydantic 2.
 
-As a result users must be aware of a few different issues.
+Because Pydantic does not support mixing .v1 and .v2 objects, users should be aware of a number of issues
+when using LangChain with Pydantic.
+
+:::note
+
+Pydantic 1 End of Life was in June 2024. LangChain will be dropping support for Pydantic 1 in the near future, 
+and likely migrating internally to Pydantic 2. The timeline is tentatively September.
+
+:::
 
 ## 1. Passing Pydantic objects to LangChain APIs
 
-| API                                    | Pydantic 1 | Pydantic 2                                                |
-|----------------------------------------|------------|-----------------------------------------------------------|
-| `BaseChatModel.bind_tools`             | Yes        | langchain-core>=0.2.23, recent version of partner package |
-| `BaseChatModel.with_structured_output` | Yes        | langchain-core>=0.2.23, recent version of partner package |
-| `Tool.from_function`                   | Yes        | langchain-core>=0.2.23                                    |
-| `StructuredTool.from_function`         | Yes        | langchain-core>=0.2.23                                    |
+Most LangChain APIs that accept Pydantic objects have been updated to accept both Pydantic v1 and v2 objects.
 
+* Pydantic v1 objects correspond to subclasses of `pydantic.BaseModel` if `pydantic 1` is installed or subclasses of `pydantic.v1.BaseModel` if `pydantic 2` is installed.
+* Pydantic v2 objects correspond to subclasses of `pydantic.BaseModel` if `pydantic 2` is installed.
+
+
+| API                                    | Pydantic 1 | Pydantic 2                                                     |
+|----------------------------------------|------------|----------------------------------------------------------------|
+| `BaseChatModel.bind_tools`             | Yes        | langchain-core>=0.2.23, appropriate version of partner package |
+| `BaseChatModel.with_structured_output` | Yes        | langchain-core>=0.2.23, appropriate version of partner package |
+| `Tool.from_function`                   | Yes        | langchain-core>=0.2.23                                         |
+| `StructuredTool.from_function`         | Yes        | langchain-core>=0.2.23                                         |
+
+
+Partner packages that accept pydantic v2 objects via `bind_tools` or `with_structured_output` APIs:
+
+| Package Name        | pydantic v1 | pydantic v2 |
+|---------------------|-------------|-------------|
+| langchain-mistralai | Yes         | >=0.1.11    |
+| langchain-anthropic | Yes         | >=0.1.21    |
+| langchain-robocorp  | Yes         | >=0.0.10    |
+| langchain-openai    | Yes         | >=0.1.19    |
+| langchain-fireworks | Yes         | >=0.1.5     |
+
+Additional partner packages will be updated to accept Pydantic v2 objects in the future.
 
 If you are still seeing issues with these APIs or other APIs that accept Pydantic objects, please open an issue, and we'll
 address it.
@@ -148,7 +175,3 @@ or else to use the `APIHandler` object in LangChain to manually create the
 routes for your API.
 
 See: https://python.langchain.com/v0.2/docs/langserve/#pydantic
-
-
-
-
