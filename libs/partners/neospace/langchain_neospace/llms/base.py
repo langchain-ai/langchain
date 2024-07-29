@@ -19,6 +19,7 @@ from typing import (
     Union,
 )
 
+from langchain_neospace.helpers import validate_extra_body
 import neospace
 import tiktoken
 from langchain_core.callbacks import (
@@ -143,8 +144,17 @@ class BaseNeoSpace(BaseLLM):
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
     extra_body: Optional[Mapping[str, Any]] = None
-    """Optional additional JSON properties to include in the request parameters when
-    making requests to NeoSpace compatible APIs, such as vLLM."""
+    """Additional JSON properties to include in the request parameters when
+    making requests to NeoSpace compatible APIs, such as vLLM.
+
+    Session_id is required in extra_body, if not specified, ValueError is raised.
+    {
+        "session_id": "your_session_id", # required
+        "customer_id" "your_customer_id", # recommended for tracking
+        "channel_id": "your_channel_id", # recommended for tracking 
+        **your_additional_properties
+    }
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -233,7 +243,9 @@ class BaseNeoSpace(BaseLLM):
             normal_params["max_tokens"] = self.max_tokens
 
         if self.extra_body is not None:
-            normal_params["extra_body"] = self.extra_body
+            normal_params["extra_body"] = validate_extra_body(self.extra_body)
+        else:
+            raise ValueError("extra_body parameter needs to be set.")
 
         # don't specify best_of if it is 1
         if self.best_of > 1:

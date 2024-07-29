@@ -31,6 +31,7 @@ from typing import (
 )
 from urllib.parse import urlparse
 
+from langchain_neospace.helpers import validate_extra_body
 import neospace
 import tiktoken
 from langchain_core.callbacks import (
@@ -366,8 +367,17 @@ class BaseChatNeoSpace(BaseChatModel):
     stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
-    """Optional additional JSON properties to include in the request parameters when
-    making requests to NeoSpace compatible APIs, such as vLLM."""
+    """Additional JSON properties to include in the request parameters when
+    making requests to NeoSpace compatible APIs, such as vLLM.
+
+    Session_id is required in extra_body, if not specified, ValueError is raised.
+    {
+        "session_id": "your_session_id", # required
+        "customer_id" "your_customer_id", # recommended for tracking
+        "channel_id": "your_channel_id", # recommended for tracking 
+        **your_additional_properties
+    }
+    """
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
 
@@ -458,6 +468,9 @@ class BaseChatNeoSpace(BaseChatModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling NeoSpace API."""
+        if self.extra_body is None:
+            raise ValueError("extra_body parameter needs to be set.")
+        
         exclude_if_none = {
             "presence_penalty": self.presence_penalty,
             "frequency_penalty": self.frequency_penalty,
@@ -468,7 +481,7 @@ class BaseChatNeoSpace(BaseChatModel):
             "logit_bias": self.logit_bias,
             "stop": self.stop or None,  # also exclude empty list for this
             "max_tokens": self.max_tokens,
-            "extra_body": self.extra_body,
+            "extra_body": validate_extra_body(self.extra_body),
         }
 
         params = {
