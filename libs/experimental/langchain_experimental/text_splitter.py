@@ -109,14 +109,14 @@ class SemanticChunker(BaseDocumentTransformer):
     """
 
     def __init__(
-            self,
-            embeddings: Embeddings,
-            buffer_size: int = 1,
-            add_start_index: bool = False,
-            breakpoint_threshold_type: BreakpointThresholdType = "percentile",
-            breakpoint_threshold_amount: Optional[float] = None,
-            number_of_chunks: Optional[int] = None,
-            sentence_split_regex: str = r"(?<=[.?!])\s+",
+        self,
+        embeddings: Embeddings,
+        buffer_size: int = 1,
+        add_start_index: bool = False,
+        breakpoint_threshold_type: BreakpointThresholdType = "percentile",
+        breakpoint_threshold_amount: Optional[float] = None,
+        number_of_chunks: Optional[int] = None,
+        sentence_split_regex: str = r"(?<=[.?!])\s+",
     ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
@@ -132,7 +132,7 @@ class SemanticChunker(BaseDocumentTransformer):
             self.breakpoint_threshold_amount = breakpoint_threshold_amount
 
     def _calculate_breakpoint_threshold(
-            self, distances: List[float]
+        self, distances: List[float]
     ) -> Tuple[float, List[float]]:
         if self.breakpoint_threshold_type == "percentile":
             return cast(
@@ -186,7 +186,7 @@ class SemanticChunker(BaseDocumentTransformer):
         return cast(float, np.percentile(distances, y))
 
     def _calculate_sentence_distances(
-            self, single_sentences_list: List[str]
+        self, single_sentences_list: List[str]
     ) -> Tuple[List[float], List[dict]]:
         """Split text into multiple components."""
 
@@ -203,8 +203,8 @@ class SemanticChunker(BaseDocumentTransformer):
         return calculate_cosine_distances(sentences)
 
     def split_text(
-            self,
-            text: str,
+        self,
+        text: str,
     ) -> List[str]:
         # Splitting the essay (by default on '.', '?', and '!')
         single_sentences_list = re.split(self.sentence_split_regex, text)
@@ -252,7 +252,7 @@ class SemanticChunker(BaseDocumentTransformer):
         return chunks
 
     def create_documents(
-            self, texts: List[str], metadatas: Optional[List[dict]] = None
+        self, texts: List[str], metadatas: Optional[List[dict]] = None
     ) -> List[Document]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
@@ -277,7 +277,7 @@ class SemanticChunker(BaseDocumentTransformer):
         return self.create_documents(texts, metadatas=metadatas)
 
     def transform_documents(
-            self, documents: Sequence[Document], **kwargs: Any
+        self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         """Transform sequence of documents by splitting them."""
         return self.split_documents(list(documents))
