@@ -4,12 +4,16 @@ from langchain_ollama.llms import OllamaLLM
 
 MODEL_NAME = "llama3"
 
+class TestOllamaLLM(LLMIntegrationTests):
+    pass
 
+'''
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     for token in llm.stream("I'm Pickle Rick"):
+        print(len(token) > 0)
         assert isinstance(token, str)
 
 
@@ -64,3 +68,4 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result, str)
+'''
