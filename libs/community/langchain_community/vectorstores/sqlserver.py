@@ -219,19 +219,19 @@ class SQLServer_VectorStore(VectorStore):
         if result == 0:
             logging.info("Provided ids not found in the DB.")
             return False
-        
+
         logging.info(result, " rows affected.")
-        return True  
+        return True
 
     def delete_texts_by_ids(self, ids: Optional[List[str]] = None) -> int:
         try:
             with Session(bind=self._bind) as session:
-                result = session.query(_embedding_store).filter(
-                    _embedding_store.custom_id.in_(ids)
-                ).delete()
+                result = (
+                    session.query(_embedding_store)
+                    .filter(_embedding_store.custom_id.in_(ids))
+                    .delete()
+                )
                 session.commit()
-
-                return result
-
         except DBAPIError as e:
             logging.error(e.__cause__)
+        return result
