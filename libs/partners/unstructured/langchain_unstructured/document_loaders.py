@@ -88,14 +88,14 @@ class UnstructuredLoader(BaseLoader):
         # SDK parameters
         api_key: Optional[str] = None,
         client: Optional[UnstructuredClient] = None,
-        server_url: Optional[str] = None,
+        url: Optional[str] = None,
         **kwargs: Any,
     ):
         """Initialize loader."""
         if file_path is not None and file is not None:
             raise ValueError("file_path and file cannot be defined simultaneously.")
         if client is not None:
-            disallowed_params = [("api_key", api_key), ("server_url", server_url)]
+            disallowed_params = [("api_key", api_key), ("url", url)]
             bad_params = [
                 param for param, value in disallowed_params if value is not None
             ]
@@ -106,8 +106,8 @@ class UnstructuredLoader(BaseLoader):
                     f"params: {', '.join(bad_params)}."
                 )
 
-        unstructured_api_key = api_key or os.getenv("UNSTRUCTURED_API_KEY")
-        unstructured_url = server_url or os.getenv("UNSTRUCTURED_URL") or _DEFAULT_URL
+        unstructured_api_key = api_key or os.getenv("UNSTRUCTURED_API_KEY") or ""
+        unstructured_url = url or os.getenv("UNSTRUCTURED_URL") or _DEFAULT_URL
 
         self.client = client or UnstructuredClient(
             api_key_auth=unstructured_api_key, server_url=unstructured_url
@@ -165,7 +165,6 @@ class _SingleDocumentLoader(BaseLoader):
         file: Optional[IO[bytes]] = None,
         partition_via_api: bool = False,
         post_processors: Optional[list[Callable[[str], str]]] = None,
-        # SDK parameters
         **kwargs: Any,
     ):
         """Initialize loader."""
