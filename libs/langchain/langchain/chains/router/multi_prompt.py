@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 
@@ -15,8 +16,78 @@ from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParse
 from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
 
 
+@deprecated(
+    since="0.2.12",
+    removal="0.4.0",
+    message=(
+        "Use RunnableBranch to select from multiple prompt templates. See example "
+        "in API reference: "
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.router.multi_prompt.MultiPromptChain.html"  # noqa: E501
+    ),
+)
 class MultiPromptChain(MultiRouteChain):
-    """A multi-route chain that uses an LLM router chain to choose amongst prompts."""
+    """A multi-route chain that uses an LLM router chain to choose amongst prompts.
+
+    This class is deprecated in favor of ``RunnableBranch``, which offers several
+    benefits, including streaming and batch support.
+
+    Below is an example implementation:
+
+        .. code-block:: python
+
+            from operator import itemgetter
+            from typing import Literal
+
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableBranch, RunnablePassthrough
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+
+            prompt_1 = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are an expert on animals."),
+                    ("human", "{query}"),
+                ]
+            )
+            prompt_2 = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are an expert on vegetables."),
+                    ("human", "{query}"),
+                ]
+            )
+
+            chain_1 = prompt_1 | llm | StrOutputParser()
+            chain_2 = prompt_2 | llm | StrOutputParser()
+
+            route_system = "Route the user's query to either the animal or vegetable expert."
+            route_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", route_system),
+                    ("human", "{query}"),
+                ]
+            )
+
+            def route_query(destination: Literal["animal", "vegetable"]) -> None:
+                \"\"\"Route query to destination.\"\"\"
+                pass
+
+            route_chain = (
+                route_prompt
+                | llm.with_structured_output(route_query)
+                | itemgetter("destination")
+            )
+
+            chain = RunnablePassthrough().assign(
+                destination=route_chain
+            ) | RunnableBranch(
+                (lambda x: x["destination"] == "animal", chain_1),
+                chain_2,
+            )
+
+            chain.invoke({"query": "what color are carrots"})
+    """  # noqa: E501
 
     @property
     def output_keys(self) -> List[str]:
