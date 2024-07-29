@@ -58,4 +58,3 @@ def test_chat_generation_chunk() -> None:
             generation_info={"foo": "bar", "baz": "foo"},
         )
     ), "GenerationChunk + GenerationChunk should be a GenerationChunk with merged generation_info"  # noqa: E501
-

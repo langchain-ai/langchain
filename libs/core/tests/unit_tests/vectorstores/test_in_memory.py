@@ -1,16 +1,14 @@
 from pathlib import Path
 
 import pytest
-
-from langchain_core.documents import Document
-from langchain_core.embeddings.fake import DeterministicFakeEmbedding
-from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_standard_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
-from langchain_core.documents import Document
-from tests.unit_tests.stubs import AnyStr
+
+from langchain_core.embeddings.fake import DeterministicFakeEmbedding
+from langchain_core.vectorstores import InMemoryVectorStore
+from tests.unit_tests.stubs import _AnyIdDocument
 
 
 class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
@@ -25,26 +23,26 @@ class TestAsyncInMemoryReadWriteTestSuite(AsyncReadWriteTestSuite):
         return InMemoryVectorStore(embedding=self.get_embeddings())
 
 
-
 async def test_inmemory() -> None:
     """Test end to end construction and search."""
     store = await InMemoryVectorStore.afrom_texts(
         ["foo", "bar", "baz"], DeterministicFakeEmbedding(size=6)
     )
     output = await store.asimilarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", id=AnyStr())]
+    assert output == [_AnyIdDocument(page_content="foo")]
 
     output = await store.asimilarity_search("bar", k=2)
     assert output == [
-        Document(page_content="bar", id=AnyStr()),
-        Document(page_content="baz", id=AnyStr()),
+        _AnyIdDocument(page_content="bar"),
+        _AnyIdDocument(page_content="baz"),
     ]
 
     output2 = await store.asimilarity_search_with_score("bar", k=2)
     assert output2[0][1] > output2[1][1]
 
+
 async def test_foo() -> None:
-    d = Document(page_content="h", id=AnyStr())
+    d = _AnyIdDocument(page_content="h")
     raise ValueError(type(d.foo))
 
 
@@ -71,8 +69,8 @@ async def test_inmemory_mmr() -> None:
         "foo", k=10, lambda_mult=0.1
     )
     assert len(output) == len(texts)
-    assert output[0] == Document(page_content="foo", id=AnyStr())
-    assert output[1] == Document(page_content="foy", id=AnyStr())
+    assert output[0] == _AnyIdDocument(page_content="foo")
+    assert output[1] == _AnyIdDocument(page_content="foy")
 
 
 async def test_inmemory_dump_load(tmp_path: Path) -> None:
@@ -100,4 +98,4 @@ async def test_inmemory_filter() -> None:
     output = await store.asimilarity_search(
         "baz", filter=lambda doc: doc.metadata["id"] == 1
     )
-    assert output == [Document(page_content="foo", metadata={"id": 1}, id=AnyStr())]
+    assert output == [_AnyIdDocument(page_content="foo", metadata={"id": 1})]
