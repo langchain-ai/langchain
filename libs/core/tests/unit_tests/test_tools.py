@@ -977,6 +977,16 @@ class AFooBase(FooBase):
 def test_tool_pass_config(tool: BaseTool) -> None:
     assert tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
+    # Test tool calls
+    tool_call = {
+        "name": tool.name,
+        "args": {"bar": "baz"},
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == {"bar": "baz"}
+
 
 @pytest.mark.parametrize(
     "tool", [foo, afoo, simple_foo, asimple_foo, FooBase(), AFooBase()]
@@ -1415,6 +1425,36 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
             "type": "object",
             "properties": {"x": {"type": "integer", "description": "abc"}},
             "required": ["x"],
+        },
+    }
+
+
+def _get_parametrized_tools() -> list:
+    def my_tool(x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]) -> str:
+        """my_tool."""
+        return some_tool
+
+    async def my_async_tool(
+        x: int, y: str, *, some_tool: Annotated[Any, InjectedToolArg]
+    ) -> str:
+        """my_tool."""
+        return some_tool
+
+    return [my_tool, my_async_tool]
+
+
+@pytest.mark.parametrize("tool_", _get_parametrized_tools())
+def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
+    assert convert_to_openai_function(tool_) == {
+        "name": tool_.__name__,
+        "description": "my_tool.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "x": {"type": "integer"},
+                "y": {"type": "string"},
+            },
+            "required": ["x", "y"],
         },
     }
 
