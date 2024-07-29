@@ -52,9 +52,13 @@ def pre_init(func: Callable) -> Any:
                     if cls.Config.allow_population_by_field_name:
                         if field_info.alias in values:
                             values[name] = values.pop(field_info.alias)
+            if hasattr(cls, "model_config"):
+                if cls.model_config.get("populate_by_name"):
+                    if field_info.alias in values:
+                        values[name] = values.pop(field_info.alias)
 
             if name not in values or values[name] is None:
-                if not field_info.required:
+                if not field_info.is_required():
                     if field_info.default_factory is not None:
                         values[name] = field_info.default_factory()
                     else:
