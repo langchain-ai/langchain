@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
@@ -15,6 +16,14 @@ from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.chains.llm import LLMChain
 
 
+@deprecated(
+    since="0.2.12",
+    removal="0.4.0",
+    message=(
+        "Refer here for how to create agents that query vector stores: "
+        "https://python.langchain.com/v0.2/docs/how_to/#qa-with-rag"
+    ),
+)
 def create_vectorstore_agent(
     llm: BaseLanguageModel,
     toolkit: VectorStoreToolkit,
