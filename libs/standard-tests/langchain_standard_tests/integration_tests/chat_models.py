@@ -237,7 +237,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.schema())
+        chat = model.with_structured_output(Joke.model_json_schema())
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -467,6 +467,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                                 "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
                             }
                         ],
+                        "is_error": False,
                     },
                     {"type": "text", "text": "what's my sister's favorite color"},
                 ]
