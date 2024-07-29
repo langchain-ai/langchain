@@ -34,7 +34,8 @@ class DocumentDBSimilarityType(str, Enum):
     """Euclidean distance"""
 
 
-DocumentDBDocumentType = TypeVar("DocumentDBDocumentType", bound=Dict[str, Any])
+DocumentDBDocumentType = TypeVar(
+    "DocumentDBDocumentType", bound=Dict[str, Any])
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +238,8 @@ class DocumentDBVectorSearch(VectorStore):
             texts_batch.append(text)
             metadatas_batch.append(metadata)
             if (i + 1) % batch_size == 0:
-                result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
+                result_ids.extend(self._insert_texts(
+                    texts_batch, metadatas_batch))
                 texts_batch = []
                 metadatas_batch = []
         if texts_batch:
@@ -327,6 +329,10 @@ class DocumentDBVectorSearch(VectorStore):
         Returns:
             A list of documents closest to the query vector
         """
+        # $match can't be null, so intializes to {} when None to avoid
+        # "the match filter must be an expression in an object"
+        if not filter:
+            filter = {}
         pipeline: List[dict[str, Any]] = [
             {"$match": filter},
             {
