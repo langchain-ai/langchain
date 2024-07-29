@@ -664,7 +664,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Split along function definitions
                 "\nfunction ",
                 # Split along parameter declarations (escape parentheses)
-                "\nparam\(",
+                "\nparam ",
                 # Split along control flow statements
                 "\nif ",
                 "\nforeach ",
