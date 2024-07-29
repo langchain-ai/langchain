@@ -304,11 +304,7 @@ class OllamaLLM(BaseLLM):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
-                    text=(
-                        stream_resp["message"]["content"]
-                        if "message" in stream_resp
-                        else ""
-                    ),
+                    text=(stream_resp.get("response", "")),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
@@ -330,11 +326,7 @@ class OllamaLLM(BaseLLM):
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
-                    text=(
-                        stream_resp["message"]["content"]
-                        if "message" in stream_resp
-                        else ""
-                    ),
+                    text=(stream_resp.get("response", "")),
                     generation_info=(
                         dict(stream_resp) if stream_resp.get("done") is True else None
                     ),
