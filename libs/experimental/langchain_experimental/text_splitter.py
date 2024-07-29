@@ -144,7 +144,7 @@ class SemanticChunker(BaseDocumentTransformer):
                 float,
                 np.mean(distances)
                 + self.breakpoint_threshold_amount * np.std(distances),
-                ), distances
+            ), distances
         elif self.breakpoint_threshold_type == "interquartile":
             q1, q3 = np.percentile(distances, [25, 75])
             iqr = q3 - q1
