@@ -77,7 +77,7 @@ class TavilySearchResults(BaseTool):
                         ],
                     'results': [
                         {
-                            'title': 'Djokovic ...', 
+                            'title': 'Djokovic ...',
                             'url': 'https://www.nytimes.com...',
                             'content': "Novak...",
                             'score': 0.99505633,
