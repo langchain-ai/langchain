@@ -19,7 +19,7 @@ def test_visualize_simple_graph():
     )
     doc2 = Document(
         id="b",
-        page_content="some more content",
+        page_content="<some\n more content>",
         metadata={
             METADATA_LINKS_KEY: [
                 Link.incoming("href", "b"),
@@ -33,12 +33,12 @@ def test_visualize_simple_graph():
     assert render_graphviz([doc1, doc2]).source == (
         "digraph {\n"
         "\tnode [style=filled]\n"
-        "\ta [label=a fillcolor=white shape=note]\n"
+        '\ta [label=a fillcolor=white shape=note tooltip="some content"]\n'
         '\thref_a [label="href:a"]\n'
         "\ta -> href_a [dir=back]\n"
         '\tkw_foo [label="kw:foo"]\n'
         "\ta -> kw_foo [dir=both]\n"
-        "\tb [label=b fillcolor=white shape=note]\n"
+        '\tb [label=b fillcolor=white shape=note tooltip="<some\n more content>"]\n'
         '\thref_b [label="href:b"]\n'
         "\tb -> href_b [dir=back]\n"
         "\tb -> href_a [dir=forward]\n"
@@ -51,12 +51,12 @@ def test_visualize_simple_graph():
     assert render_graphviz([doc1, doc2], node_colors={"a": "gold"}).source == (
         "digraph {\n"
         "\tnode [style=filled]\n"
-        "\ta [label=a fillcolor=gold shape=note]\n"
+        '\ta [label=a fillcolor=gold shape=note tooltip="some content"]\n'
         '\thref_a [label="href:a"]\n'
         "\ta -> href_a [dir=back]\n"
         '\tkw_foo [label="kw:foo"]\n'
         "\ta -> kw_foo [dir=both]\n"
-        "\tb [label=b fillcolor=white shape=note]\n"
+        '\tb [label=b fillcolor=white shape=note tooltip="<some\n more content>"]\n'
         '\thref_b [label="href:b"]\n'
         "\tb -> href_b [dir=back]\n"
         "\tb -> href_a [dir=forward]\n"
