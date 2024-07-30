@@ -420,7 +420,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
-        if map_input_schema:
+        if not issubclass(map_input_schema, RootModel):
             # ie. it's a dict
             return map_input_schema
 
