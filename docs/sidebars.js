@@ -76,6 +76,11 @@ module.exports = {
         "versions/release_policy",
         "versions/packages",
         {
+          type: 'doc',
+          id: "docs/how/pydantic_compatibility",
+          label: "Pydantic compatibility",
+        },
+        {
           type: "category",
           label: "v0.2",
           link: {type: 'doc', id: 'versions/v0_2/index'},
