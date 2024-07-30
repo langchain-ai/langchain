@@ -239,16 +239,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_BASE"
         )
         values["openai_api_type"] = get_from_dict_or_env(
-            values,
-            "openai_api_type",
-            "OPENAI_API_TYPE",
-            default="",
+            values, "openai_api_type", "OPENAI_API_TYPE", default=""
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2023-05-15"
@@ -288,12 +282,44 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
         }
+
+        if values["openai_proxy"] and (
+            values["http_client"] or values["http_async_client"]
+        ):
+            openai_proxy = values["openai_proxy"]
+            http_client = values["http_client"]
+            http_async_client = values["http_async_client"]
+            raise ValueError(
+                "Cannot specify 'openai_proxy' if one of "
+                "'http_client'/'http_async_client' is already specified. Received:\n"
+                f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
+            )
         if not values.get("client"):
+            if values["openai_proxy"] and not values["http_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
             sync_specific = {"http_client": values["http_client"]}
             values["client"] = openai.OpenAI(
                 **client_params, **sync_specific
             ).embeddings
         if not values.get("async_client"):
+            if values["openai_proxy"] and not values["http_async_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_async_client"] = httpx.AsyncClient(
+                    proxy=values["openai_proxy"]
+                )
             async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific
@@ -520,10 +546,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
             for text in texts:
-                response = self.client.create(
-                    input=text,
-                    **self._invocation_params,
-                )
+                response = self.client.create(input=text, **self._invocation_params)
                 if not isinstance(response, dict):
                     response = response.dict()
                 embeddings.extend(r["embedding"] for r in response["data"])
@@ -551,8 +574,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             embeddings: List[List[float]] = []
             for text in texts:
                 response = await self.async_client.create(
-                    input=text,
-                    **self._invocation_params,
+                    input=text, **self._invocation_params
                 )
                 if not isinstance(response, dict):
                     response = response.dict()

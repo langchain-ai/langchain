@@ -21,8 +21,10 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.utilities.requests import Requests
 
@@ -80,7 +82,7 @@ class BaseOCIModelDeployment(Serializable):
     max_retries: int = 3
     """Maximum number of retries to make when generating."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(  # pylint: disable=no-self-argument
         cls, values: Dict
     ) -> Dict:
@@ -772,7 +774,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     sampling and Top-p sampling.
     """
 
-    watermark = True
+    watermark: bool = True
     """Watermarking with `A Watermark for Large Language Models <https://arxiv.org/abs/2301.10226>`_.
     Defaults to True."""
 

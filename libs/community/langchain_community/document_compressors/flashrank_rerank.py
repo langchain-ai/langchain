@@ -26,8 +26,12 @@ class FlashrankRerank(BaseDocumentCompressor):
     """Flashrank client to use for compressing documents"""
     top_n: int = 3
     """Number of documents to return."""
+    score_threshold: float = 0.0
+    """Minimum relevance threshold to return."""
     model: Optional[str] = None
     """Model to use for reranking."""
+    prefix_metadata: str = ""
+    """Prefix for flashrank_rerank metadata keys"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -38,17 +42,20 @@ class FlashrankRerank(BaseDocumentCompressor):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        try:
-            from flashrank import Ranker
-        except ImportError:
-            raise ImportError(
-                "Could not import flashrank python package. "
-                "Please install it with `pip install flashrank`."
-            )
+        if "client" in values:
+            return values
+        else:
+            try:
+                from flashrank import Ranker
+            except ImportError:
+                raise ImportError(
+                    "Could not import flashrank python package. "
+                    "Please install it with `pip install flashrank`."
+                )
 
-        values["model"] = values.get("model", DEFAULT_MODEL_NAME)
-        values["client"] = Ranker(model_name=values["model"])
-        return values
+            values["model"] = values.get("model", DEFAULT_MODEL_NAME)
+            values["client"] = Ranker(model_name=values["model"])
+            return values
 
     def compress_documents(
         self,
@@ -66,11 +73,14 @@ class FlashrankRerank(BaseDocumentCompressor):
         final_results = []
 
         for r in rerank_response:
-            metadata = r["meta"]
-            metadata["relevance_score"] = r["score"]
-            doc = Document(
-                page_content=r["text"],
-                metadata=metadata,
-            )
-            final_results.append(doc)
+            if r["score"] >= self.score_threshold:
+                doc = Document(
+                    page_content=r["text"],
+                    metadata={
+                        self.prefix_metadata + "id": r["id"],
+                        self.prefix_metadata + "relevance_score": r["score"],
+                        **r["meta"],
+                    },
+                )
+                final_results.append(doc)
         return final_results

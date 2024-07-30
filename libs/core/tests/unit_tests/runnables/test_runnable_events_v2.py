@@ -1,6 +1,9 @@
 """Module that contains tests for runnable.astream_events API."""
+
+import asyncio
 import sys
 import uuid
+from functools import partial
 from itertools import cycle
 from typing import (
     Any,
@@ -38,6 +41,7 @@ from langchain_core.runnables import (
     RunnableConfig,
     RunnableGenerator,
     RunnableLambda,
+    chain,
     ensure_config,
 )
 from langchain_core.runnables.config import get_callback_manager_for_config
@@ -45,6 +49,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import tool
+from langchain_core.utils.aiter import aclosing
 from tests.unit_tests.stubs import AnyStr
 
 
@@ -341,6 +346,22 @@ async def test_event_stream_with_triple_lambda() -> None:
             "tags": [],
         },
     ]
+
+
+async def test_event_stream_exception() -> None:
+    def step(name: str, err: Optional[str], val: str) -> str:
+        if err:
+            raise ValueError(err)
+        return val + name[-1]
+
+    chain = (
+        RunnableLambda(partial(step, "step1", None))
+        | RunnableLambda(partial(step, "step2", "ERR"))
+        | RunnableLambda(partial(step, "step3", None))
+    )
+
+    with pytest.raises(ValueError, match="ERR"):
+        await _collect_events(chain.astream_events("X", version="v2"))
 
 
 async def test_event_stream_with_triple_lambda_test_filtering() -> None:
@@ -2195,3 +2216,382 @@ async def test_with_explicit_config() -> None:
         for event in events
         if event["event"] == "on_chat_model_stream"
     ] == ["hello", " ", "world"]
+
+
+async def test_break_astream_events() -> None:
+    class AwhileMaker:
+        def __init__(self) -> None:
+            self.reset()
+
+        async def __call__(self, input: Any) -> Any:
+            self.started = True
+            try:
+                await asyncio.sleep(0.5)
+                return input
+            except asyncio.CancelledError:
+                self.cancelled = True
+                raise
+
+        def reset(self) -> None:
+            self.started = False
+            self.cancelled = False
+
+    alittlewhile = AwhileMaker()
+    awhile = AwhileMaker()
+    anotherwhile = AwhileMaker()
+
+    outer_cancelled = False
+
+    @chain
+    async def sequence(input: Any) -> Any:
+        try:
+            yield await alittlewhile(input)
+            yield await awhile(input)
+            yield await anotherwhile(input)
+        except asyncio.CancelledError:
+            nonlocal outer_cancelled
+            outer_cancelled = True
+            raise
+
+    # test interrupting astream_events v2
+
+    got_event = False
+    thread2: RunnableConfig = {"configurable": {"thread_id": 2}}
+    async with aclosing(
+        sequence.astream_events({"value": 1}, thread2, version="v2")
+    ) as stream:
+        async for chunk in stream:
+            if chunk["event"] == "on_chain_stream":
+                got_event = True
+                assert chunk["data"]["chunk"] == {"value": 1}
+                break
+
+    # did break
+    assert got_event
+    # did cancel outer chain
+    assert outer_cancelled
+
+    # node "alittlewhile" starts, not cancelled
+    assert alittlewhile.started is True
+    assert alittlewhile.cancelled is False
+
+    # node "awhile" starts but is cancelled
+    assert awhile.started is True
+    assert awhile.cancelled is True
+
+    # node "anotherwhile" should never start
+    assert anotherwhile.started is False
+
+
+async def test_cancel_astream_events() -> None:
+    class AwhileMaker:
+        def __init__(self) -> None:
+            self.reset()
+
+        async def __call__(self, input: Any) -> Any:
+            self.started = True
+            try:
+                await asyncio.sleep(0.5)
+                return input
+            except asyncio.CancelledError:
+                self.cancelled = True
+                raise
+
+        def reset(self) -> None:
+            self.started = False
+            self.cancelled = False
+
+    alittlewhile = AwhileMaker()
+    awhile = AwhileMaker()
+    anotherwhile = AwhileMaker()
+
+    outer_cancelled = False
+
+    @chain
+    async def sequence(input: Any) -> Any:
+        try:
+            yield await alittlewhile(input)
+            yield await awhile(input)
+            yield await anotherwhile(input)
+        except asyncio.CancelledError:
+            nonlocal outer_cancelled
+            outer_cancelled = True
+            raise
+
+    got_event = False
+
+    async def aconsume(stream: AsyncIterator[Any]) -> None:
+        nonlocal got_event
+        # here we don't need aclosing as cancelling the task is propagated
+        # to the async generator being consumed
+        async for chunk in stream:
+            if chunk["event"] == "on_chain_stream":
+                got_event = True
+                assert chunk["data"]["chunk"] == {"value": 1}
+                task.cancel()
+
+    thread2: RunnableConfig = {"configurable": {"thread_id": 2}}
+    task = asyncio.create_task(
+        aconsume(sequence.astream_events({"value": 1}, thread2, version="v2"))
+    )
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    # did break
+    assert got_event
+    # did cancel outer chain
+    assert outer_cancelled
+
+    # node "alittlewhile" starts, not cancelled
+    assert alittlewhile.started is True
+    assert alittlewhile.cancelled is False
+
+    # node "awhile" starts but is cancelled
+    assert awhile.started is True
+    assert awhile.cancelled is True
+
+    # node "anotherwhile" should never start
+    assert anotherwhile.started is False
+
+
+async def test_custom_event() -> None:
+    """Test adhoc event."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo", config=config)
+        return x + 1
+
+    uuid1 = uuid.UUID(int=7)
+
+    events = await _collect_events(
+        foo.astream_events(
+            1,
+            version="v2",
+            config={"run_id": uuid1},
+        ),
+        with_nulled_ids=False,
+    )
+
+    run_id = str(uuid1)
+    assert events == [
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"x": 1},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": "foo",
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event2",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": 2},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+    ]
+
+
+async def test_custom_event_nested() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo", config=config)
+        return x + 1
+
+    run_id = uuid.UUID(int=7)
+    child_run_id = uuid.UUID(int=8)
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def bar(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        return await foo.ainvoke(
+            x,  # type: ignore[arg-type]
+            {"run_id": child_run_id, **config},
+        )
+
+    events = await _collect_events(
+        bar.astream_events(
+            1,
+            version="v2",
+            config={"run_id": run_id},
+        ),
+        with_nulled_ids=False,
+    )
+
+    run_id = str(run_id)  # type: ignore[assignment]
+    child_run_id = str(child_run_id)  # type: ignore[assignment]
+
+    assert events == [
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"x": 1},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": "foo",
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event2",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"input": 1, "output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": 2},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+        {
+            "data": {"output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+    ]
+
+
+async def test_custom_event_root_dispatch() -> None:
+    """Test adhoc event in a nested chain."""
+    # This just tests that nothing breaks on the path.
+    # It shouldn't do anything at the moment, since the tracer isn't configured
+    # to handle adhoc events.
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Expected behavior is that the event cannot be dispatched
+    with pytest.raises(RuntimeError):
+        await adispatch_custom_event("event1", {"x": 1})
+
+
+IS_GTE_3_11 = sys.version_info >= (3, 11)
+
+
+# Test relies on automatically picking up RunnableConfig from contextvars
+@pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
+async def test_custom_event_root_dispatch_with_in_tool() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+    from langchain_core.tools import tool
+
+    @tool
+    async def foo(x: int) -> int:
+        """Foo"""
+        await adispatch_custom_event("event1", {"x": x})
+        return x + 1
+
+    # Ignoring type due to @tool not returning correct type annotations
+    events = await _collect_events(
+        foo.astream_events({"x": 2}, version="v2")  # type: ignore[attr-defined]
+    )
+    assert events == [
+        {
+            "data": {"input": {"x": 2}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"x": 2},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": 3},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+    ]

@@ -18,7 +18,7 @@ class RedisStore(ByteStore):
             from langchain_community.utilities.redis import get_client
 
             client = get_client('redis://localhost:6379')
-            redis_store = RedisStore(client)
+            redis_store = RedisStore(client=client)
 
             # Set values for keys
             redis_store.mset([("key1", b"value1"), ("key2", b"value2")])
@@ -64,11 +64,14 @@ class RedisStore(ByteStore):
                 "pip install redis"
             ) from e
 
-        if client and redis_url or client and client_kwargs:
+        if client and (redis_url or client_kwargs):
             raise ValueError(
                 "Either a Redis client or a redis_url with optional client_kwargs "
                 "must be provided, but not both."
             )
+
+        if not client and not redis_url:
+            raise ValueError("Either a Redis client or a redis_url must be provided.")
 
         if client:
             if not isinstance(client, Redis):
@@ -86,7 +89,7 @@ class RedisStore(ByteStore):
         self.client = _client
 
         if not isinstance(ttl, int) and ttl is not None:
-            raise TypeError(f"Expected int or None, got {type(ttl)} instead.")
+            raise TypeError(f"Expected int or None, got {type(ttl)=} instead.")
 
         self.ttl = ttl
         self.namespace = namespace

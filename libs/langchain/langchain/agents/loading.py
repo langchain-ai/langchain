@@ -48,6 +48,9 @@ def load_agent_from_config(
 
     Returns:
         An agent executor.
+
+    Raises:
+        ValueError: If agent type is not specified in the config.
     """
     if "_type" not in config:
         raise ValueError("Must specify an agent Type in config")
@@ -99,6 +102,10 @@ def load_agent(
 
     Returns:
         An agent executor.
+
+    Raises:
+        RuntimeError: If loading from the deprecated github-based
+            Hub is attempted.
     """
     if isinstance(path, str) and path.startswith("lc://"):
         raise RuntimeError(

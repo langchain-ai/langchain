@@ -103,6 +103,8 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
 
     This chain is used to evaluate ReAct style agents by reasoning about
     the sequence of actions taken and their outcomes.
+    Based on the paper "ReAct: Synergizing Reasoning and Acting in Language Models"
+    (https://arxiv.org/abs/2210.03629)
 
     Example:
 
@@ -281,8 +283,7 @@ The following is the expected answer. Use this to measure correctness:
 
     def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
         """Validate and prep inputs."""
-        if "reference" not in inputs:
-            inputs["reference"] = self._format_reference(inputs.get("reference"))
+        inputs["reference"] = self._format_reference(inputs.get("reference"))
         return super().prep_inputs(inputs)
 
     def _call(

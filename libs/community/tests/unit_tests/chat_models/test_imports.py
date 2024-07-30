@@ -11,6 +11,7 @@ EXPECTED_ALL = [
     "ChatDatabricks",
     "ChatDeepInfra",
     "ChatEverlyAI",
+    "ChatEdenAI",
     "ChatFireworks",
     "ChatFriendli",
     "ChatGooglePalm",
@@ -21,6 +22,7 @@ EXPECTED_ALL = [
     "ChatKonko",
     "ChatLiteLLM",
     "ChatLiteLLMRouter",
+    "ChatLlamaCpp",
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
@@ -29,6 +31,7 @@ EXPECTED_ALL = [
     "ChatOCIModelDeploymentEndpoint",
     "ChatOCIModelDeploymentEndpointVLLM",
     "ChatOCIModelDeploymentEndpointTGI",
+    "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
@@ -53,6 +56,8 @@ EXPECTED_ALL = [
     "QianfanChatEndpoint",
     "VolcEngineMaasChat",
     "ChatOctoAI",
+    "ChatSnowflakeCortex",
+    "ChatYi",
 ]
 
 

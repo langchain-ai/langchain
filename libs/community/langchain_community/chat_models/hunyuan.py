@@ -29,6 +29,7 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
 
 logger = logging.getLogger(__name__)
@@ -90,7 +91,7 @@ def _signature(secret_key: SecretStr, url: str, payload: Dict[str, Any]) -> str:
         value = payload[key]
 
         if isinstance(value, list) or isinstance(value, dict):
-            value = json.dumps(value, separators=(",", ":"))
+            value = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
         elif isinstance(value, float):
             value = "%g" % value
 
@@ -190,7 +191,7 @@ class ChatHunyuan(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         values["hunyuan_api_base"] = get_from_dict_or_env(
             values,
@@ -266,6 +267,11 @@ class ChatHunyuan(BaseChatModel):
 
         default_chunk_class = AIMessageChunk
         for chunk in res.iter_lines():
+            chunk = chunk.decode(encoding="UTF-8", errors="strict").replace(
+                "data: ", ""
+            )
+            if len(chunk) == 0:
+                continue
             response = json.loads(chunk)
             if "error" in response:
                 raise ValueError(f"Error from Hunyuan api response: {response}")
