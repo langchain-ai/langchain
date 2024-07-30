@@ -45,8 +45,8 @@ class CassandraGraphVectorStore(GraphVectorStore):
             from ragstack_knowledge_store import EmbeddingModel, graph_store
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
-                "Could not import ragstack-knowledge-store python package. "
-                "Please install it with `pip install ragstack-knowledge-store`."
+                "Could not import ragstack_knowledge_store python package. "
+                "Please install it with `pip install ragstack-ai-knowledge-store`."
             )
 
         self._embedding = embedding
