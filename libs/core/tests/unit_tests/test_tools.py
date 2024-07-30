@@ -852,15 +852,13 @@ async def test_async_validation_error_handling_non_validation_error(
 
 def test_optional_subset_model_rewrite() -> None:
     class MyModel(BaseModel):
-        a: Optional[str]
+        a: Optional[str] = None
         b: str
-        c: Optional[List[Optional[str]]]
+        c: Optional[List[Optional[str]]] = None
 
     model2 = _create_subset_model("model2", MyModel, ["a", "b", "c"])
 
-    assert "a" not in model2.schema()["required"]  # should be optional
-    assert "b" in model2.schema()["required"]  # should be required
-    assert "c" not in model2.schema()["required"]  # should be optional
+    assert set(model2.schema()["required"]) == {"b"}
 
 
 @pytest.mark.parametrize(
