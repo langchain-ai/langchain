@@ -144,6 +144,13 @@ custom_edit_url:
 
 # LLMs
 
+:::info
+
+If you'd like to write your own LLM, see [this how-to](/docs/how_to/custom_llm/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+
+:::
+
 ## Features (natively supported)
 All LLMs implement the Runnable interface, which comes with default implementations of all methods, ie. `ainvoke`, `batch`, `abatch`, `stream`, `astream`. This gives all LLMs basic support for async, streaming and batch, which by default is implemented as below:
 - *Async* support defaults to calling the respective sync method in asyncio's default thread pool executor. This lets other async functions in your application make progress while the LLM is being executed, by moving this call to a background thread.
@@ -168,6 +175,13 @@ hide_table_of_contents: true
 # Chat models
 
 ## Advanced features
+
+:::info
+
+If you'd like to write your own chat model, see [this how-to](/docs/how_to/custom_chat_model/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+
+:::
 
 The following table shows all the chat model classes that support one or more advanced features.
 
