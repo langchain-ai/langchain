@@ -173,7 +173,7 @@ def create_doc(
     Creates a new integration doc.
     """
     try:
-        replacements = _process_name(name)
+        replacements = _process_name(name, community=component_type=="Tool")
     except ValueError as e:
         typer.echo(e)
         raise typer.Exit(code=1)
