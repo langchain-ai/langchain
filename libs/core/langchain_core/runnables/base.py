@@ -34,7 +34,7 @@ from typing import (
     overload,
 )
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import Literal, get_args
 
 from langchain_core._api import beta_decorator
@@ -2395,7 +2395,7 @@ def _seq_input_schema(
         return first.get_input_schema(config)
     elif isinstance(first, RunnableAssign):
         next_input_schema = _seq_input_schema(steps[1:], config)
-        if next_input_schema:
+        if not issubclass(next_input_schema, RootModel):
             # it's a dict as expected
             return create_model(  # type: ignore[call-overload]
                 "RunnableSequenceInput",
@@ -2422,7 +2422,7 @@ def _seq_output_schema(
     elif isinstance(last, RunnableAssign):
         mapper_output_schema = last.mapper.get_output_schema(config)
         prev_output_schema = _seq_output_schema(steps[:-1], config)
-        if prev_output_schema:
+        if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
             return create_model(  # type: ignore[call-overload]
                 "RunnableSequenceOutput",
@@ -2439,7 +2439,7 @@ def _seq_output_schema(
             )
     elif isinstance(last, RunnablePick):
         prev_output_schema = _seq_output_schema(steps[:-1], config)
-        if prev_output_schema:
+        if not issubclass(prev_output_schema, RootModel):
             # it's a dict as expected
             if isinstance(last.keys, list):
                 return create_model(  # type: ignore[call-overload]

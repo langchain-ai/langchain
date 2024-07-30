@@ -13,7 +13,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
@@ -370,7 +370,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         super_schema = super().get_input_schema(config)
-        if super_schema.__custom_root_type__ or not super_schema.schema().get(
+        if issubclass(super_schema, RootModel) or not super_schema.schema().get(
             "properties"
         ):
             from langchain_core.messages import BaseMessage
