@@ -228,7 +228,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             A Runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
-        return RunnableAssign(RunnableParallel(kwargs))
+        return RunnableAssign(RunnableParallel[Dict[str, Any]](kwargs))
 
     def invoke(
         self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
