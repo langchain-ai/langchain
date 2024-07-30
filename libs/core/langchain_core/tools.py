@@ -20,7 +20,6 @@ tool for the job.
 from __future__ import annotations
 
 import asyncio
-import copy
 import functools
 import inspect
 import json
@@ -626,23 +625,27 @@ class ChildTool(BaseTool):
                 content, artifact = response
             else:
                 content = response
+            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
+            status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+            status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
+            status = "error"
 
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
-        output = _format_output(content, artifact, tool_call_id, self.name)
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -738,24 +741,28 @@ class ChildTool(BaseTool):
                 content, artifact = response
             else:
                 content = response
+            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
+            status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+            status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
+            status = "error"
 
         if error_to_raise:
             await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
-        output = _format_output(content, artifact, tool_call_id, self.name)
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -1491,9 +1498,8 @@ def _prep_run_args(
 ) -> Tuple[Union[str, Dict], Dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
-        input_copy = copy.deepcopy(input)
-        tool_call_id: Optional[str] = cast(ToolCall, input_copy)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input_copy)["args"]
+        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
+        tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
     else:
         tool_call_id = None
         tool_input = cast(Union[str, dict], input)
@@ -1513,7 +1519,7 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, artifact: Any, tool_call_id: Optional[str], name: str
+    content: Any, artifact: Any, tool_call_id: Optional[str], name: str, status: str
 ) -> Union[ToolMessage, Any]:
     if tool_call_id:
         # NOTE: This will fail to stringify lists which aren't actually content blocks
@@ -1526,7 +1532,11 @@ def _format_output(
         ):
             content = _stringify(content)
         return ToolMessage(
-            content, artifact=artifact, tool_call_id=tool_call_id, name=name
+            content,
+            artifact=artifact,
+            tool_call_id=tool_call_id,
+            name=name,
+            status=status,
         )
     else:
         return content
