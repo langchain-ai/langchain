@@ -5,14 +5,14 @@ import responses
 from langchain_core.messages import AIMessage, HumanMessage
 from pytest_mock import MockerFixture
 
-from langchain_community.chat_models import ChatOCIModelDeploymentEndpoint
+from langchain_community.chat_models import ChatOCIModelDeployment
 
 
 @pytest.mark.requires("ads")
 def test_initialization(mocker: MockerFixture) -> None:
     """Test chat model initialization."""
     mocker.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
-    chat = ChatOCIModelDeploymentEndpoint(
+    chat = ChatOCIModelDeployment(
         model="odsc",
         endpoint="test_endpoint",
         model_kwargs={"temperature": 0.2},
@@ -62,7 +62,7 @@ def test_call(mocker: MockerFixture) -> None:
     )
     mocker.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
 
-    chat = ChatOCIModelDeploymentEndpoint(endpoint=endpoint)
+    chat = ChatOCIModelDeployment(endpoint=endpoint)
     output = chat.invoke("this is a test.")
     assert isinstance(output, AIMessage)
     assert output.response_metadata == {
@@ -85,7 +85,7 @@ def test_construct_json_body(mocker: MockerFixture) -> None:
     messages = [
         HumanMessage(content="User message"),
     ]
-    chat = ChatOCIModelDeploymentEndpoint(
+    chat = ChatOCIModelDeployment(
         endpoint="test_endpoint", model_kwargs={"temperature": 0.2}
     )
     payload = chat._construct_json_body(messages, chat._invocation_params(stop=None))

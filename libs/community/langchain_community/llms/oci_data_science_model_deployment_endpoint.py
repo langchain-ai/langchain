@@ -21,8 +21,6 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.utils import get_from_dict_or_env
-from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.pydantic_v1 import Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
@@ -49,7 +47,7 @@ class ServerError(Exception):
 
 
 def _create_retry_decorator(
-    llm,
+    llm: "BaseOCIModelDeployment",
     *,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
@@ -106,7 +104,9 @@ class BaseOCIModelDeployment(Serializable):
         )
         return values
 
-    def _headers(self, is_async=False, body=None) -> Dict:
+    def _headers(
+        self, is_async: Optional[bool] = False, body: Optional[dict] = None
+    ) -> Dict:
         """Construct and return the headers for a request.
 
         Args:
@@ -120,8 +120,8 @@ class BaseOCIModelDeployment(Serializable):
         """
         if is_async:
             signer = self.auth["signer"]
-            req = requests.Request("POST", self.endpoint, json=body)
-            req = req.prepare()
+            _req = requests.Request("POST", self.endpoint, json=body)
+            req = _req.prepare()
             req = signer(req)
             headers = {}
             for key, value in req.headers.items():
@@ -212,9 +212,9 @@ class BaseOCIModelDeployment(Serializable):
                         url=self.endpoint,
                         data=data,
                         timeout=request_timeout,
-                    ) as response:
-                        self._check_response(response)
-                        data = await response.json()
+                    ) as resp:
+                        self._check_response(resp)
+                        data = await resp.json()
                         return data
             except TokenExpiredError as e:
                 raise e
@@ -230,13 +230,11 @@ class BaseOCIModelDeployment(Serializable):
 
         return await _completion_with_retry(**kwargs)
 
-    def _check_response(
-        self, response: Union[requests.Response, aiohttp.ClientResponse]
-    ) -> None:
+    def _check_response(self, response: Any) -> None:
         """Handle server error by checking the response status.
 
         Args:
-            response (Union[requests.Response, aiohttp.ClientResponse]):
+            response:
                 The response object from either `requests` or `aiohttp` library.
 
         Raises:
@@ -308,18 +306,18 @@ class BaseOCIModelDeployment(Serializable):
         """
         line = line.strip()
         if line:
-            line = line.decode("utf-8")
-            if "[DONE]" in line:
+            _line = line.decode("utf-8")
+            if "[DONE]" in _line:
                 return None
 
-            if line.lower().startswith("data:"):
-                return line[5:].lstrip()
+            if _line.lower().startswith("data:"):
+                return _line[5:].lstrip()
         return None
 
     async def _aiter_sse(
         self,
-        async_cntx_mgr,
-    ) -> AsyncIterator[Dict]:
+        async_cntx_mgr: Any,
+    ) -> AsyncIterator[str]:
         """Asynchronously iterate over server-sent events (SSE).
 
         Args:
@@ -327,15 +325,15 @@ class BaseOCIModelDeployment(Serializable):
                 response object.
 
         Yields:
-            AsyncIterator[Dict]: An asynchronous iterator that yields parsed server-sent
-                event lines as dictionaries.
+            AsyncIterator[str]: An asynchronous iterator that yields parsed server-sent
+                event lines as json string.
         """
         async with async_cntx_mgr as client_resp:
             self._check_response(client_resp)
             async for line in self._parse_stream_async(client_resp.content):
                 yield line
 
-    def _refresh_signer(self) -> None:
+    def _refresh_signer(self) -> bool:
         """Attempt to refresh the security token using the signer.
 
         Returns:
@@ -489,7 +487,6 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
                 response = llm.invoke("Tell me a joke.")
                 response = llm.generate(["Tell me a joke."])
         """
-        prompts = [prompts] if isinstance(prompts, str) else prompts
         generations: List[List[Generation]] = []
         params = self._invocation_params(stop, **kwargs)
         for prompt in prompts:
@@ -514,7 +511,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to OCI Data Science Model Deployment endpoint async with k unique prompts.
@@ -532,7 +529,6 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
                 response = await llm.ainvoke("Tell me a joke.")
                 response = await llm.agenerate(["Tell me a joke."])
         """  # noqa: E501
-        prompts = [prompts] if isinstance(prompts, str) else prompts
         generations: List[List[Generation]] = []
         params = self._invocation_params(stop, **kwargs)
         for prompt in prompts:
@@ -639,7 +635,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
         ):
             chunk = self._handle_sse_line(line)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
 
     def _construct_json_body(self, prompt: str, params: dict) -> dict:
@@ -701,7 +697,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
 
         return generations
 
-    def _generate_info(self, choice: dict) -> dict:
+    def _generate_info(self, choice: dict) -> Any:
         """Extracts generation info from the response."""
         gen_info = {}
         finish_reason = choice.get("finish_reason", None)
@@ -721,7 +717,7 @@ class OCIModelDeploymentLLM(BaseLLM, BaseOCIModelDeployment):
             obj = json.loads(line)
             return self._process_stream_response(obj)
         except Exception:
-            return GenerationChunk()
+            return GenerationChunk(text="")
 
 
 class OCIModelDeploymentTGI(OCIModelDeploymentLLM):

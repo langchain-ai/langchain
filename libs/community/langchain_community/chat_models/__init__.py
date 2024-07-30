@@ -123,9 +123,9 @@ if TYPE_CHECKING:
         ChatMLX,
     )
     from langchain_community.chat_models.oci_data_science import (
-        ChatOCIModelDeploymentEndpoint,
-        ChatOCIModelDeploymentEndpointTGI,
-        ChatOCIModelDeploymentEndpointVLLM,
+        ChatOCIModelDeployment,
+        ChatOCIModelDeploymentTGI,
+        ChatOCIModelDeploymentVLLM,
     )
     from langchain_community.chat_models.oci_generative_ai import (
         ChatOCIGenAI,  # noqa: F401
@@ -206,9 +206,9 @@ __all__ = [
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
-    "ChatOCIModelDeploymentEndpoint",
-    "ChatOCIModelDeploymentEndpointVLLM",
-    "ChatOCIModelDeploymentEndpointTGI",
+    "ChatOCIModelDeployment",
+    "ChatOCIModelDeploymentVLLM",
+    "ChatOCIModelDeploymentTGI",
     "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
@@ -265,9 +265,9 @@ _module_lookup = {
     "ChatMLX": "langchain_community.chat_models.mlx",
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
-    "ChatOCIModelDeploymentEndpoint": "langchain_community.chat_models.oci_data_science",  # noqa: E501
-    "ChatOCIModelDeploymentEndpointVLLM": "langchain_community.chat_models.oci_data_science",  # noqa: E501
-    "ChatOCIModelDeploymentEndpointTGI": "langchain_community.chat_models.oci_data_science",  # noqa: E501
+    "ChatOCIModelDeployment": "langchain_community.chat_models.oci_data_science",
+    "ChatOCIModelDeploymentVLLM": "langchain_community.chat_models.oci_data_science",
+    "ChatOCIModelDeploymentTGI": "langchain_community.chat_models.oci_data_science",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
     "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
     "ChatOllama": "langchain_community.chat_models.ollama",

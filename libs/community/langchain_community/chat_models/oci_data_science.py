@@ -23,7 +23,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -49,7 +49,7 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and issubclass(obj, BaseModel)
 
 
-class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
+class ChatOCIModelDeployment(BaseChatModel, BaseOCIModelDeployment):
     """OCI Data Science Model Deployment chat model integration.
 
     To use, you must provide the model HTTP endpoint from your deployed
@@ -65,9 +65,9 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
     Instantiate:
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatOCIModelDeploymentEndpoint
+            from langchain_community.chat_models import ChatOCIModelDeployment
 
-            chat = ChatOCIModelDeploymentEndpoint(
+            chat = ChatOCIModelDeployment(
                 endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
                 model="odsc-llm",
                 streaming=True,
@@ -144,7 +144,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
 
             Joke(setup='Why did the cat get stuck in the tree?',punchline='Because it was chasing its tail!')
 
-        See ``ChatOCIModelDeploymentEndpoint.with_structured_output()`` for more.
+        See ``ChatOCIModelDeployment.with_structured_output()`` for more.
 
     Customized Usage:
 
@@ -153,7 +153,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
 
         .. code-block:: python
 
-            class MyChatModel(ChatOCIModelDeploymentEndpoint):
+            class MyChatModel(ChatOCIModelDeployment):
                 def _process_stream_response(self, response_json: dict) -> ChatGenerationChunk:
                     print("My customized streaming result handler.")
                     return GenerationChunk(...)
@@ -423,7 +423,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
         ):
             chunk = self._handle_sse_line(line, default_chunk_class)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
 
     def with_structured_output(
@@ -507,7 +507,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
         return {**params, **_model_kwargs, **kwargs}
 
     def _handle_sse_line(
-        self, line: str, default_chunk_cls: AIMessageChunk
+        self, line: str, default_chunk_cls: Type[BaseMessageChunk] = AIMessageChunk
     ) -> ChatGenerationChunk:
         """Handle a single Server-Sent Events (SSE) line and process it into
         a chat generation chunk.
@@ -524,8 +524,9 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
         try:
             obj = json.loads(line)
             return self._process_stream_response(obj, default_chunk_cls)
-        except Exception:
-            return ChatGenerationChunk()
+        except Exception as e:
+            logger.debug(f"Error occurs when processing line={line}: {str(e)}")
+            return ChatGenerationChunk(message=AIMessageChunk(content=""))
 
     def _construct_json_body(self, messages: list, params: dict) -> dict:
         """Constructs the request body as a dictionary (JSON).
@@ -547,7 +548,9 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
         }
 
     def _process_stream_response(
-        self, response_json: dict, default_chunk_cls=AIMessageChunk
+        self,
+        response_json: dict,
+        default_chunk_cls: Type[BaseMessageChunk] = AIMessageChunk,
     ) -> ChatGenerationChunk:
         """Formats streaming response in OpenAI spec.
 
@@ -634,7 +637,7 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel, BaseOCIModelDeployment):
         return ChatResult(generations=generations, llm_output=llm_output)
 
 
-class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
+class ChatOCIModelDeploymentVLLM(ChatOCIModelDeployment):
     """OCI large language chat models deployed with vLLM.
 
     To use, you must provide the model HTTP endpoint from your deployed
@@ -651,9 +654,9 @@ class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
 
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatOCIModelDeploymentEndpointVLLM
+            from langchain_community.chat_models import ChatOCIModelDeploymentVLLM
 
-            chat = ChatOCIModelDeploymentEndpointVLLM(
+            chat = ChatOCIModelDeploymentVLLM(
                 endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
                 frequency_penalty=0.1,
                 max_tokens=512,
@@ -785,7 +788,7 @@ class ChatOCIModelDeploymentEndpointVLLM(ChatOCIModelDeploymentEndpoint):
         ]
 
 
-class ChatOCIModelDeploymentEndpointTGI(ChatOCIModelDeploymentEndpoint):
+class ChatOCIModelDeploymentTGI(ChatOCIModelDeployment):
     """OCI large language chat models deployed with Text Generation Inference.
 
     To use, you must provide the model HTTP endpoint from your deployed
@@ -802,9 +805,9 @@ class ChatOCIModelDeploymentEndpointTGI(ChatOCIModelDeploymentEndpoint):
 
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatOCIModelDeploymentEndpointTGI
+            from langchain_community.chat_models import ChatOCIModelDeploymentTGI
 
-            chat = ChatOCIModelDeploymentEndpointTGI(
+            chat = ChatOCIModelDeploymentTGI(
                 endpoint="https://modeldeployment.us-ashburn-1.oci.customer-oci.com/<ocid>/predict",
                 max_token=512,
                 temperature=0.2,
