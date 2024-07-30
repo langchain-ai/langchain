@@ -1,6 +1,7 @@
 """Tool for the Tavily search API."""
 
-from typing import Dict, List, Literal, Optional, Type, Union
+import json
+from typing import Dict, List, Literal, Optional, Tuple, Type, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -33,49 +34,61 @@ class TavilySearchResults(BaseTool):
 
         .. code-block:: python
 
-            from langchain_community.tools.tavily_search import TavilySearchResults
+            from langchain_community.tools import TavilySearchResults
 
             tool = TavilySearchResults(
-                # max_results= 5
-                # search_depth = "advanced"
+                version="v2",
+                max_results=5,
+                include_answer=True,
+                include_raw_content=True,
+                include_images=True,
+                # search_depth="advanced",
                 # include_domains = []
                 # exclude_domains = []
-                # include_answer = False
-                # include_raw_content = False
-                # include_images = False
             )
 
-    Invoke:
+    Invoke directly with args:
 
         .. code-block:: python
 
-            tool = TavilySearchResults(max_results=3)
-            tool.invoke("What is the weather?")
+            tool.invoke({'query': 'who won the last french open'})
 
         .. code-block:: python
 
-            [{'url': 'https://www.weatherapi.com/',
-            'content': "{'location': {'name': 'Current', 'region': 'Harbour Island', 'country': 'Bahamas', 'lat': 25.43, 'lon': -76.78, 'tz_id': 'America/Nassau', 'localtime_epoch': 1718077801, 'localtime': '2024-06-10 23:50'}, 'current': {'last_updated_epoch': 1718077500, 'last_updated': '2024-06-10 23:45', 'temp_c': 27.9, 'temp_f': 82.1, 'is_day': 0, 'condition': {'text': 'Patchy rain nearby', 'icon': '//cdn.weatherapi.com/weather/64x64/night/176.png', 'code': 1063}, 'wind_mph': 14.5, 'wind_kph': 23.4, 'wind_degree': 161, 'wind_dir': 'SSE', 'pressure_mb': 1014.0, 'pressure_in': 29.94, 'precip_mm': 0.01, 'precip_in': 0.0, 'humidity': 88, 'cloud': 74, 'feelslike_c': 33.1, 'feelslike_f': 91.5, 'windchill_c': 27.9, 'windchill_f': 82.1, 'heatindex_c': 33.1, 'heatindex_f': 91.5, 'dewpoint_c': 25.6, 'dewpoint_f': 78.1, 'vis_km': 10.0, 'vis_miles': 6.0, 'uv': 1.0, 'gust_mph': 20.4, 'gust_kph': 32.9}}"},
-            {'url': 'https://www.localconditions.com/weather-ninnescah-kansas/67069/',
-            'content': 'The following chart reports what the hourly Ninnescah, KS temperature has been today, from 12:56 AM to 3:56 AM Tue, May 21st 2024. The lowest temperature reading has been 73.04 degrees fahrenheit at 3:56 AM, while the highest temperature is 75.92 degrees fahrenheit at 12:56 AM. Ninnescah KS detailed current weather report for 67069 in Kansas.'},
-            {'url': 'https://www.weather.gov/forecastmaps/',
-            'content': 'Short Range Forecasts. Short range forecast products depicting pressure patterns, circulation centers and fronts, and types and extent of precipitation. 12 Hour | 24 Hour | 36 Hour | 48 Hour.'}]
-
-        When converting ``TavilySearchResults`` to a tool, you may want to not return all of the content resulting from ``invoke``. You can select what parts of the response to keep depending on your use case.
+            '{\n  "answer": "Novak Djokovic won the last French Open by beating Casper Ruud in three sets (7-6(1), 6-3, 7-5) on Sunday, June 11, 2023.",\n  "results": [\n    {\n      "title": "Djokovic wins French Open, record 23rd Grand Slam title",\n      "url": "https://www.nytimes.com/athletic/4600616/2023/06/11/novak-djokovic-french-open-mens-final/",\n      "content": "Novak Djokovic beat Casper Ruud in three sets (7-6(1), 6-3, 7-5) Sunday to win the French Open men\'s final and capture his record-breaking 23rd Grand Slam title."\n    },\n    {\n      "title": "Novak Djokovic wins his 23rd Grand Slam title by beating Casper Ruud in ...",\n      "url": "https://apnews.com/article/djokovic-ruud-french-open-roland-garros-final-d7bda9f570b010ea48cf8a05b397291e",\n      "content": "Novak Djokovic wins his 23rd Grand Slam title by beating Casper Ruud in the French Open final\\nSerbia\\u2019s Novak Djokovic celebrates winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023. Serbia\\u2019s Novak Djokovic wears the number 23 on his garment for his 23rd Grand Slam Singles title as he kisses the trophy after winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023. Serbia\\u2019s Novak Djokovic wears the number 23 on his garment for his 23rd Grand Slam Singles title as he kisses the trophy after winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023. Serbia\\u2019s Novak Djokovic wears the number 23 on his garment for his 23rd Grand Slam Singles title as he kisses the trophy after winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023. Serbia\\u2019s Novak Djokovic kisses the trophy as he celebrates winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023."\n    },\n    {\n      "title": "Novak Djokovic wins his 23rd Grand Slam title : NPR",\n      "url": "https://www.npr.org/2023/06/11/1181568367/novak-djokovic-tennis-french-open-grand-slam",\n      "content": "Sports\\nNovak Djokovic wins the French Open men\'s singles, securing his 23rd Grand Slam title\\nBy\\nThe Associated Press\\nSerbia\'s Novak Djokovic celebrates winning the men\'s singles final match of the French Open tennis tournament against Norway\'s Casper Ruud in three sets at the Roland Garros stadium in Paris, Sunday.\\n Thibault Camus/AP\\nhide caption\\nSerbia\'s Novak Djokovic celebrates winning the men\'s singles final match of the French Open tennis tournament against Norway\'s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris on Sunday.\\n Thibault Camus/AP\\nhide caption\\nSerbia\'s Novak Djokovic celebrates winning the men\'s singles final match of the French Open tennis tournament against Norway\'s Casper Ruud in three sets at the Roland Garros stadium in Paris, Sunday.\\n At 20 days past his 36th birthday, Djokovic is the oldest singles champion at Roland Garros, considered the most grueling of the majors because of the lengthy, grinding points required by the red clay, which is slower than the grass or hard courts underfoot elsewhere.\\n Djokovic came close to pulling off that feat in 2021, when he won the Australian Open, French Open and Wimbledon and made it all the way to the title match at the U.S. Open before losing to Daniil Medvedev.\\n"\n    },\n    {\n      "title": "Winners of the Men\'s French Open - Topend Sports",\n      "url": "https://www.topendsports.com/events/tennis-grand-slam/french-open/winners-men.htm",\n      "content": "Here are all the winners of the French Tennis Open men\'s title since the first tournament in 1925. The recent tournaments have been dominated by Spanish player Rafael Nadal."\n    },\n    {\n      "title": "Carlos Alcaraz wins the French Open, earning a third Grand Slam title",\n      "url": "https://www.npr.org/2024/06/09/nx-s1-4997726/carlos-alcaraz-wins-french-open-third-grand-slam-title",\n      "content": "PARIS \\u2014 As Carlos Alcaraz began constructing his comeback in Sunday\'s French Open final, a 6-3, 2-6, 5-7, 6-1, 6-2 victory over Alexander Zverev for a first championship at Roland Garros and ..."\n    }\n  ]\n}',
 
     Invoke with tool call:
 
         .. code-block:: python
 
-            tool = TavilySearchResults(max_results=1)
-            tool_msg = tool.invoke({"args": {'query': 'weather in sfx?'}, "type": "tool_call", "id": "foo", "name": "tavily"})
-            print(tool_msg.content,"\n",tool_msg.artifact)
+            tool.invoke({"args": {'query': 'who won the last french open'}, "type": "tool_call", "id": "foo", "name": "tavily"})
 
         .. code-block:: python
 
-            "{'location': {'name': 'San Francisco', 'region': 'California', 'country': 'United States of America', 'lat': 37.78, 'lon': -122.42, 'tz_id': 'America/Los_Angeles', 'localtime_epoch': 1722018708, 'localtime': '2024-07-26 11:31'}, 'current': {'last_updated_epoch': 1722018600, 'last_updated': '2024-07-26 11:30', 'temp_c': 16.5, 'temp_f': 61.8, 'is_day': 1, 'condition': {'text': 'Sunny', 'icon': '//cdn.weatherapi.com/weather/64x64/day/113.png', 'code': 1000}, 'wind_mph': 10.1, 'wind_kph': 16.2, 'wind_degree': 241, 'wind_dir': 'WSW', 'pressure_mb': 1014.0, 'pressure_in': 29.94, 'precip_mm': 0.0, 'precip_in': 0.0, 'humidity': 70, 'cloud': 0, 'feelslike_c': 16.5, 'feelslike_f': 61.7, 'windchill_c': 16.5, 'windchill_f': 61.7, 'heatindex_c': 16.5, 'heatindex_f': 61.8, 'dewpoint_c': 11.2, 'dewpoint_f': 52.1, 'vis_km': 10.0, 'vis_miles': 6.0, 'uv': 5.0, 'gust_mph': 12.1, 'gust_kph': 19.5}}"
-            {'query': 'weather in sf? short articles', 'follow_up_questions': None, 'answer': None, 'images': [], 'results': [{'title': 'Weather in San Francisco', 'url': 'https://www.weatherapi.com/', 'content': "{'location': {'name': 'San Francisco', 'region': 'California', 'country': 'United States of America', 'lat': 37.78, 'lon': -122.42, 'tz_id': 'America/Los_Angeles', 'localtime_epoch': 1722001684, 'localtime': '2024-07-26 6:48'}, 'current': {'last_updated_epoch': 1722001500, 'last_updated': '2024-07-26 06:45', 'temp_c': 13.0, 'temp_f': 55.5, 'is_day': 1, 'condition': {'text': 'Clear', 'icon': '//cdn.weatherapi.com/weather/64x64/day/113.png', 'code': 1000}, 'wind_mph': 6.0, 'wind_kph': 9.7, 'wind_degree': 231, 'wind_dir': 'SW', 'pressure_mb': 1014.0, 'pressure_in': 29.94, 'precip_mm': 0.0, 'precip_in': 0.0, 'humidity': 86, 'cloud': 5, 'feelslike_c': 12.3, 'feelslike_f': 54.2, 'windchill_c': 12.3, 'windchill_f': 54.2, 'heatindex_c': 13.0, 'heatindex_f': 55.5, 'dewpoint_c': 10.6, 'dewpoint_f': 51.0, 'vis_km': 10.0, 'vis_miles': 6.0, 'uv': 1.0, 'gust_mph': 9.6, 'gust_kph': 15.5}}", 'score': 0.9882677, 'raw_content': None}], 'response_time': 2.01}
-
+            ToolMessage(
+                content='{\n  "answer": "Novak Djokovic won the last French Open by beating Casper Ruud in three sets (7-6(1), 6-3, 7-5) on Sunday, June 11, 2023.",\n  "results": [\n    {\n      "title": "Djokovic wins French Open, record 23rd Grand Slam title",\n      "url": "https://www.nytimes.com/athletic/4600616/2023/06/11/novak-djokovic-french-open-mens-final/",\n      "content": "Novak Djokovic beat Casper Ruud in three sets (7-6(1), 6-3, 7-5) Sunday to win the French Open men\'s final and capture his record-breaking 23rd Grand Slam title."\n    },\n    {\n      "title": "Novak Djokovic wins his 23rd Grand Slam title by beating Casper Ruud in ...",\n      "url": "https://apnews.com/article/djokovic-ruud-french-open-roland-garros-final-d7bda9f570b010ea48cf8a05b397291e",\n      "content": "Novak Djokovic wins his 23rd Grand Slam title by beating Casper Ruud in the French Open final\\nSerbia\\u2019s Novak Djokovic celebrates winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023. Serbia\\u2019s Novak Djokovic wears the number 23 on his garment for his 23rd Grand Slam Singles title as he kisses the trophy after winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023. Serbia\\u2019s Novak Djokovic wears the number 23 on his garment for his 23rd Grand Slam Singles title as he kisses the trophy after winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023. Serbia\\u2019s Novak Djokovic wears the number 23 on his garment for his 23rd Grand Slam Singles title as he kisses the trophy after winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023. Serbia\\u2019s Novak Djokovic kisses the trophy as he celebrates winning the men\\u2019s singles final match of the French Open tennis tournament against Norway\\u2019s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris, Sunday, June 11, 2023."\n    },\n    {\n      "title": "Novak Djokovic wins his 23rd Grand Slam title : NPR",\n      "url": "https://www.npr.org/2023/06/11/1181568367/novak-djokovic-tennis-french-open-grand-slam",\n      "content": "Sports\\nNovak Djokovic wins the French Open men\'s singles, securing his 23rd Grand Slam title\\nBy\\nThe Associated Press\\nSerbia\'s Novak Djokovic celebrates winning the men\'s singles final match of the French Open tennis tournament against Norway\'s Casper Ruud in three sets at the Roland Garros stadium in Paris, Sunday.\\n Thibault Camus/AP\\nhide caption\\nSerbia\'s Novak Djokovic celebrates winning the men\'s singles final match of the French Open tennis tournament against Norway\'s Casper Ruud in three sets, 7-6, (7-1), 6-3, 7-5, at the Roland Garros stadium in Paris on Sunday.\\n Thibault Camus/AP\\nhide caption\\nSerbia\'s Novak Djokovic celebrates winning the men\'s singles final match of the French Open tennis tournament against Norway\'s Casper Ruud in three sets at the Roland Garros stadium in Paris, Sunday.\\n At 20 days past his 36th birthday, Djokovic is the oldest singles champion at Roland Garros, considered the most grueling of the majors because of the lengthy, grinding points required by the red clay, which is slower than the grass or hard courts underfoot elsewhere.\\n Djokovic came close to pulling off that feat in 2021, when he won the Australian Open, French Open and Wimbledon and made it all the way to the title match at the U.S. Open before losing to Daniil Medvedev.\\n"\n    },\n    {\n      "title": "Winners of the Men\'s French Open - Topend Sports",\n      "url": "https://www.topendsports.com/events/tennis-grand-slam/french-open/winners-men.htm",\n      "content": "Here are all the winners of the French Tennis Open men\'s title since the first tournament in 1925. The recent tournaments have been dominated by Spanish player Rafael Nadal."\n    },\n    {\n      "title": "Carlos Alcaraz wins the French Open, earning a third Grand Slam title",\n      "url": "https://www.npr.org/2024/06/09/nx-s1-4997726/carlos-alcaraz-wins-french-open-third-grand-slam-title",\n      "content": "PARIS \\u2014 As Carlos Alcaraz began constructing his comeback in Sunday\'s French Open final, a 6-3, 2-6, 5-7, 6-1, 6-2 victory over Alexander Zverev for a first championship at Roland Garros and ..."\n    }\n  ]\n}',
+                artifact={
+                    'query': 'who won the last french open',
+                    'follow_up_questions': None,
+                    'answer': 'Novak ...',
+                    'images': [
+                        'https://www.amny.com/wp-content/uploads/2023/06/AP23162622181176-1200x800.jpg',
+                        ...
+                        ],
+                    'results': [
+                        {
+                            'title': 'Djokovic ...', 'url': 'https://www.nytimes.com...',
+                            'content': "Novak...",
+                            'score': 0.99505633,
+                            'raw_content': 'Tennis\nNovak ...'
+                        },
+                        ...
+                    ],
+                    'response_time': 2.92
+                },
+                tool_call_id='1',
+                name='tavily_search_results_json',
+            )
 
     """  # noqa: E501
 
@@ -85,7 +98,26 @@ class TavilySearchResults(BaseTool):
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query."
     )
-    api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
+    args_schema: Type[BaseModel] = TavilyInput
+    """The tool response format."""
+
+    version: Literal["v1", "v2"] = "v1"
+    """The version of the tool to use. 
+
+    Recommended usage is 'v2', but default is 'v1' for backwards compatibility.
+
+    With 'v2' the tool automatically outputs a string, which can be used as the content
+    of a ToolMessage. If ``include_answer`` is False, the string is a json dump of a 
+    list of dicts. Each represents a search result and can have the 'content', 'url', 
+    and 'title' key-values. If ``include_answer`` is True, the string is a json dump
+    of a dictionary that has an "answer" key-value and a "results" key-value. "results"
+    contains the list of dicts which is otherwise directly json-ified.
+
+    With 'v1' tool outputs a list of dicts, which must be converted
+    to a string before being passed back to the model. The dicts only contain the 'url' 
+    and 'content' key-values for each result.
+    """
+
     max_results: int = 5
     """Max search results to return, default is 5"""
     search_depth: str = "advanced"
@@ -100,18 +132,19 @@ class TavilySearchResults(BaseTool):
     """Include cleaned and parsed HTML of each site search results. Default is False."""
     include_images: bool = False
     """Include a list of query related images in the response. Default is False."""
-    args_schema: Type[BaseModel] = TavilyInput
-    """The tool response format."""
-    response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
+
+    api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _run(
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[List[Dict], str]:
+    ) -> Tuple[Union[List[Dict[str, str]], str], Dict]:
         """Use the tool."""
+        # TODO: remove try/except, should be handled by BaseTool
         try:
-            raw_result = self.api_wrapper.raw_results(
+            raw_results = self.api_wrapper.raw_results(
                 query,
                 self.max_results,
                 self.search_depth,
@@ -122,18 +155,17 @@ class TavilySearchResults(BaseTool):
                 self.include_images,
             )
         except Exception as e:
-            return repr(e)
-        content = self.api_wrapper.clean_results(raw_result["results"])
-        return content, raw_result  # type: ignore
+            return repr(e), {}
+        return self._format_content(raw_results), raw_results
 
     async def _arun(
         self,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> Union[List[Dict], str]:
+    ) -> Tuple[Union[List[Dict[str, str]], str], Dict]:
         """Use the tool asynchronously."""
         try:
-            raw_result = await self.api_wrapper.raw_results_async(
+            raw_results = await self.api_wrapper.raw_results_async(
                 query,
                 self.max_results,
                 self.search_depth,
@@ -144,9 +176,20 @@ class TavilySearchResults(BaseTool):
                 self.include_images,
             )
         except Exception as e:
-            return repr(e)
-        content = self.api_wrapper.clean_results(raw_result["results"])
-        return content, raw_result  # type: ignore
+            return repr(e), {}
+        return self._format_content(raw_results), raw_results
+
+    def _format_content(self, raw_results: dict) -> Union[List[Dict[str, str]], str]:
+        if self.version == "v2":
+            results: Union[list, dict] = [
+                {k: res[k] for k in ("title", "url", "content") if k in res}
+                for res in raw_results["results"]
+            ]
+            if self.include_answer:
+                results = {"answer": raw_results.get("answer", ""), "results": results}
+            return json.dumps(results, indent=2)
+        else:
+            return self.api_wrapper.clean_results(raw_results["results"])
 
 
 class TavilyAnswer(BaseTool):
