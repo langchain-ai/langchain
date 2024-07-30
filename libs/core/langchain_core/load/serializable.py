@@ -258,7 +258,23 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     field = inst.__fields__.get(key)
     if not field:
         return False
-    return field.is_required() is True or value or field.get_default() != value
+
+    if field.is_required():
+        return True
+
+    if value:
+        return True
+
+    # Value is still falsy here!
+    if field.default_factory is dict and isinstance(value, dict):
+        return False
+
+    # Value is still falsy here!
+    if field.default_factory is list and isinstance(value, list):
+        return False
+
+    # If value is falsy and does not match the default
+    return field.get_default() != value
 
 
 def _replace_secrets(
