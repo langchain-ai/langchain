@@ -65,22 +65,25 @@ def maximal_marginal_relevance(
 ) -> List[int]:
     """Compute Maximal Marginal Relevance (MMR).
 
-    MMR is a technique used to select documents that are both relevant to the query and diverse among themselves.
-    This function returns the indices of the top-k embeddings that maximize the marginal relevance.
+    MMR is a technique used to select documents that are both relevant to the query
+    and diverse among themselves. This function returns the indices
+    of the top-k embeddings that maximize the marginal relevance.
 
     Args:
         query_embedding (np.ndarray): The embedding vector of the query.
-        embedding_list (list of np.ndarray): A list containing the embedding vectors of the candidate documents.
-        lambda_mult (float, optional): The trade-off parameter between relevance and diversity. Defaults to 0.5.
+        embedding_list (list of np.ndarray): A list containing the embedding vectors
+            of the candidate documents.
+        lambda_mult (float, optional): The trade-off parameter between
+            relevance and diversity. Defaults to 0.5.
         k (int, optional): The number of embeddings to select. Defaults to 4.
 
     Returns:
-        list of int: The indices of the selected embeddings that maximize the marginal relevance.
+        list of int: The indices of the embeddings that maximize the marginal relevance.
 
     Notes:
         The Maximal Marginal Relevance (MMR) is computed using the following formula:
 
-        MMR = argmax_{D_i ∈ R \ S} [ λ * Sim(D_i, Q) - (1 - λ) * max_{D_j ∈ S} Sim(D_i, D_j) ]
+    MMR = argmax_{D_i ∈ R \ S} [λ * Sim(D_i, Q) - (1 - λ) * max_{D_j ∈ S} Sim(D_i, D_j)]
 
         where:
         - R is the set of candidate documents,
@@ -124,7 +127,7 @@ def make_serializable(obj: Dict[str, Any]) -> None:
         Changes are made *in-place*.
 
        Follows format used in bson.json_util.loads
-        e.g. loads('{"_id": {"$oid": "664..."}}') == {'_id': ObjectId('664..')} # noqa: E501
+        e.g. loads('{"_id": {"$oid": "664..."}}') == {'_id': ObjectId('664..')}
 
     Args:
         obj: Any dict that might contain a bson.ObjectID
