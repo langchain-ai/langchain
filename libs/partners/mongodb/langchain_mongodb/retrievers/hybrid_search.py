@@ -1,5 +1,4 @@
 from typing import (
-    TYPE_CHECKING,
     List,
     Optional,
 )
@@ -15,6 +14,7 @@ from langchain_mongodb.pipelines import (
     combine_pipelines,
     final_hybrid_stage,
     reciprocal_rank_stage,
+    text_search_stage,
     vector_search_stage,
 )
 from langchain_mongodb.utils import make_serializable
@@ -31,34 +31,12 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """Text-embedding model, e.g. langchain_openai.OpenAIEmbeddings"""
     vector_search_index_name: str
     """Atlas Vector Search Index name"""
+    search_index_name: str
+    """Atlas Search Index name"""
     page_content_field: str
     """Field containing text content to embed"""
     embedding_field: str = "embedding"
     """Field in Collection containing embedding vectors"""
-    search_index_name: str
-    """Atlas Search Index name"""
-    search_query: MongoDBDocument
-    """An Atlas $search query is composed of an index, an operator, and a query.
-    Example:
-        .. code-block:: python
-            {"$search": { 
-              "index": search_index_name,
-              operator: query
-              }
-            }
-            ## such as 
-            {"$search": {
-                "index": index_name,
-                "text": {"query": ["new", "old"], "path": "titles"}
-            }
-    
-    See :role:`Atlas Search Overview <https://www.mongodb.com/docs/atlas/atlas-search>`
-    """
-    search_operator: str
-    """Operator like text, phrase, regex, compound.
-    
-    If the operator is `compound` then the query may be nested.
-    """
     top_k: int = 4
     """Number of documents to return."""
     oversampling_factor: int = 10
@@ -110,18 +88,13 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
         combine_pipelines(pipeline, vector_pipeline, self.collection.name)
 
         # Full-Text Search stage  # TODO Compare with index.text_search_stage and move
-        text_pipeline = [
-            {
-                "$search": {
-                    "index": self.search_index_name,
-                    self.search_operator: self.search_query,
-                }
-            }
-        ]
-        if self.pre_filter:
-            text_pipeline.append({"$match": {"$and": self.pre_filter}})
-
-        text_pipeline.append({"$limit": self.top_k})
+        text_pipeline = text_search_stage(
+            query=query,
+            search_field=self.page_content_field,
+            index_name=self.search_index_name,
+            limit=self.top_k,
+            pre_filter=self.pre_filter,
+        )
 
         text_pipeline += reciprocal_rank_stage("fulltext_score", self.fulltext_penalty)
 
@@ -148,8 +121,3 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
             make_serializable(res)
             docs.append(Document(page_content=text, metadata=res))
         return docs
-
-
-# TODO
-#   - Add validation of search_query
-#   - Build docs

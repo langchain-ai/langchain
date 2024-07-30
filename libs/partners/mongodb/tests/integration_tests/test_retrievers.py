@@ -66,7 +66,7 @@ def collection_with_two_indexes() -> Collection:
 
     clxn.delete_many({})
 
-    if all([VECTOR_INDEX_NAME != ix["name"] for ix in clxn.list_search_indexes()]):
+    if not any([VECTOR_INDEX_NAME == ix["name"] for ix in clxn.list_search_indexes()]):
         index.create_vector_search_index(
             collection=clxn,
             index_name=VECTOR_INDEX_NAME,
@@ -75,7 +75,8 @@ def collection_with_two_indexes() -> Collection:
             similarity="cosine",
             wait_until_complete=TIMEOUT,
         )
-    if all([SEARCH_INDEX_NAME != ix["name"] for ix in clxn.list_search_indexes()]):
+
+    if not any([SEARCH_INDEX_NAME == ix["name"] for ix in clxn.list_search_indexes()]):
         index.create_search_index(
             collection=clxn,
             index_name=SEARCH_INDEX_NAME,
@@ -108,18 +109,17 @@ def test_retriever(
         collection=collection_with_two_indexes,
         embedding_model=embedding_openai,
         vector_search_index_name=VECTOR_INDEX_NAME,
+        search_index_name=SEARCH_INDEX_NAME,
         page_content_field=PAGE_CONTENT_FIELD,
         embedding_field=EMBEDDING_FIELD,
-        search_index_name=SEARCH_INDEX_NAME,
-        search_query={"query": "new", "path": "text"},
-        search_operator="text",
         top_k=3,
-        vector_penalty=3.0,
-        fulltext_penalty=4.0,
     )
 
-    query = "What was the latest city that I visited?"
-
-    results = retriever.invoke(query)
+    query1 = "What was the latest city that I visited?"
+    results = retriever.invoke(query1)
     assert len(results) == 3
-    assert "New York" in results[0].page_content
+    assert "Paris" in results[0].page_content
+
+    query2 = "When was the last time I visited new orleans?"
+    results = retriever.invoke(query2)
+    assert "New Orleans" in results[0].page_content

@@ -671,7 +671,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     fulltext_search_query,
                     self._text_key,
                     self._text_index_name,
-                    fulltext_search_operator,
                     **kwargs,
                 ),
                 {"$match": {"$and": pre_filter} if pre_filter else {}},

@@ -7,29 +7,43 @@ MongoDBDocument = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 
 def text_search_stage(
-    query: str, search_field, index_name: str, operator: str = "phrase", **kwargs: Any
+    query: str,
+    search_field,
+    index_name: str,
+    limit: Optional[int] = None,
+    pre_filter: Optional[MongoDBDocument] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
-    """Full-Text search.
+    """Full-Text search using Lucene's standard (BM25) analyzer
 
     Args:
         query: Input text to search for
         search_field: Field in Collection that will be searched
         index_name: Atlas Search Index name
-        operator: A number of operators are available in the text search stage.
+        limit: Maximum number of documents to return. Default of no limit
+        pre_filter: Any MQL match expression comparing an indexed field
 
     Returns:
-        Dictionary defining the $search
+        Dictionary defining the $search stage
 
     See Also:
         - MongoDB Full-Text Search <https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search>
         - MongoDB Operators <https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref>
     """
-    return {
-        "$search": {
-            "index": index_name,
-            operator: {"query": query, "path": search_field},
+    pipeline = [
+        {
+            "$search": {
+                "index": index_name,
+                "text": {"query": query, "path": search_field},
+            }
         }
-    }
+    ]
+    if pre_filter:
+        pipeline.append({"$match": {"$and": pre_filter}})
+    if limit:
+        pipeline.append({"$limit": limit})
+
+    return pipeline
 
 
 def vector_search_stage(
