@@ -107,11 +107,6 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-openai",
         "link": "/docs/integrations/chat/vllm/",
     },
-    "ChatEdenAI": {
-        "tool_calling": True,
-        "package": "langchain-community",
-        "link": "/docs/integrations/chat/edenai/",
-    },
     "ChatLlamaCpp": {
         "tool_calling": True,
         "local": True,
