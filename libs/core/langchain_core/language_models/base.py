@@ -95,7 +95,7 @@ class BaseLanguageModel(
     
     Caching is not currently supported for streaming methods of models.
     """
-    verbose: bool = Field(default_factory=_get_verbosity)
+    verbose: bool = Field(default_factory=_get_verbosity, exclude=True)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
