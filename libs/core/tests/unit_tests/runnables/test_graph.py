@@ -30,12 +30,14 @@ def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_mermaid() == snapshot(name="mermaid")
 
     graph.trim_first_node()
-    assert graph.first_node() is not None
-    assert graph.first_node().data == runnable
+    first_node = graph.first_node()
+    assert first_node is not None
+    assert first_node.data == runnable
 
     graph.trim_last_node()
-    assert graph.last_node() is not None
-    assert graph.last_node().data == runnable
+    last_node = graph.last_node()
+    assert last_node is not None
+    assert last_node.data == runnable
 
 
 def test_trim(snapshot: SnapshotAssertion) -> None:
