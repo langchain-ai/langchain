@@ -4,10 +4,10 @@ import os
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.runnables.config import run_in_executor
-from langchain_core._api.deprecation import deprecated
 
 
 @deprecated(
