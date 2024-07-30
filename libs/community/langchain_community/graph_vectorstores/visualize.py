@@ -72,16 +72,16 @@ def render_graphviz(
         color = node_colors.get(id) or node_color
         graph.node(
             escaped_id,
-            label=f"{id}",
+            label=graphviz.escape(id),
             shape="note",
             fillcolor=color,
-            tooltip=document.page_content,
+            tooltip=graphviz.escape(document.page_content),
         )
 
         for link in get_links(document):
             tag = f"{link.kind}_{link.tag}"
             if tag not in tags:
-                graph.node(tag, label=f"{link.kind}:{link.tag}")
+                graph.node(tag, label=graphviz.escape(f"{link.kind}:{link.tag}"))
                 tags.add(tag)
 
             graph.edge(escaped_id, tag, dir=_EDGE_DIRECTION[link.direction])
