@@ -243,8 +243,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/tools",
+            type: "doc",
+            id: "integrations/tools/index",
           },
         },
         {
@@ -339,7 +339,7 @@ module.exports = {
         },
         {
           type: "category",
-          label: "Stores",
+          label: "Key-value stores",
           collapsed: true,
           items: [
             {

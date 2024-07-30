@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from operator import itemgetter
@@ -39,11 +40,17 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +72,27 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, (FunctionMessage, ToolMessage)):
         message_dict = {
             "role": "function",
-            "content": message.content,
+            "content": _create_tool_content(message.content),
             "name": message.name or message.additional_kwargs.get("name"),
         }
     else:
         raise TypeError(f"Got unknown type {message}")
 
     return message_dict
+
+
+def _create_tool_content(content: Union[str, List[Union[str, Dict[Any, Any]]]]) -> str:
+    """Convert tool content to dict scheme."""
+    if isinstance(content, str):
+        try:
+            if isinstance(json.loads(content), dict):
+                return content
+            else:
+                return json.dumps({"tool_result": content})
+        except json.JSONDecodeError:
+            return json.dumps({"tool_result": content})
+    else:
+        return json.dumps({"tool_result": content})
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
@@ -754,7 +775,7 @@ class QianfanChatEndpoint(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         llm = self.bind_tools([schema])
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(

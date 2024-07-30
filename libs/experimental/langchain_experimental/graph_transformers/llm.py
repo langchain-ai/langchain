@@ -333,6 +333,7 @@ def create_simple_model(
             ),
         ),
     }
+
     if node_properties:
         if isinstance(node_properties, list) and "id" in node_properties:
             raise ValueError("The node property 'id' is reserved and cannot be used.")
@@ -348,6 +349,7 @@ def create_simple_model(
                 node_properties_mapped,
                 description="Property key.",
                 input_type="property",
+                llm_type=llm_type,
             )
             value: str = Field(..., description="value")
 
@@ -371,6 +373,7 @@ def create_simple_model(
                 node_labels,
                 description="The type or label of the source node.",
                 input_type="node",
+                llm_type=llm_type,
             ),
         ),
         "target_node_id": (
@@ -386,6 +389,7 @@ def create_simple_model(
                 node_labels,
                 description="The type or label of the target node.",
                 input_type="node",
+                llm_type=llm_type,
             ),
         ),
         "type": (
@@ -394,6 +398,7 @@ def create_simple_model(
                 rel_types,
                 description="The type of the relationship.",
                 input_type="relationship",
+                llm_type=llm_type,
             ),
         ),
     }
@@ -417,6 +422,7 @@ def create_simple_model(
                 relationship_properties_mapped,
                 description="Property key.",
                 input_type="property",
+                llm_type=llm_type,
             )
             value: str = Field(..., description="value")
 
