@@ -601,23 +601,23 @@ class OracleVS(VectorStore):
         docs: List[Tuple[Any, Any, Any, Any]]
         if self.insert_mode == "clob":
             docs = [
-                (id_, text, json.dumps(metadata), json.dumps(embedding))
-                for id_, text, metadata, embedding in zip(
-                    processed_ids, texts, metadatas, embeddings
+                (id_, json.dumps(embedding), json.dumps(metadata), text)
+                for id_, embedding, metadata, text in zip(
+                    processed_ids, embeddings, metadatas, texts
                 )
             ]
         else:
             docs = [
-                (id_, text, json.dumps(metadata), array.array("f", embedding))
-                for id_, text, metadata, embedding in zip(
-                    processed_ids, texts, metadatas, embeddings
+                (id_, array.array("f", embedding), json.dumps(metadata), text)
+                for id_, embedding, metadata, text in zip(
+                    processed_ids, embeddings, metadatas, texts
                 )
             ]
 
         with self.client.cursor() as cursor:
             cursor.executemany(
-                f"INSERT INTO {self.table_name} (id, text, metadata, "
-                f"embedding) VALUES (:1, :2, :3, :4)",
+                f"INSERT INTO {self.table_name} (id, embedding, metadata, "
+                f"text) VALUES (:1, :2, :3, :4)",
                 docs,
             )
             self.client.commit()
