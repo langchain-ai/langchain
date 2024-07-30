@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
+from pydantic import Field
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
@@ -66,6 +67,11 @@ class ToolMessage(BaseMessage):
     
     .. versionadded:: 0.2.17
     """
+
+    additional_kwargs: dict = Field(default_factory=dict, repr=False)
+    """Currently inherited from BaseMessage, but not used."""
+    response_metadata: dict = Field(default_factory=dict, repr=False)
+    """Currently inherited from BaseMessage, but not used."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
