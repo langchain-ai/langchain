@@ -7,8 +7,14 @@ import numpy as np
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.runnables.config import run_in_executor
+from langchain_core._api.deprecation import deprecated
 
 
+@deprecated(
+    since="0.2.11",
+    removal="0.4.0",
+    alternative_import="langchain_aws.BedrockEmbeddings",
+)
 class BedrockEmbeddings(BaseModel, Embeddings):
     """Bedrock embedding models.
 
