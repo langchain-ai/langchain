@@ -59,6 +59,7 @@ def _process_path(doc_path: Path):
             integration_type, notebook_name
         )
         if related_links_section:
+            content = content + "\n\n" + related_links_section
             content = re.sub(
                 r"## Related\n",
                 related_links_section,
