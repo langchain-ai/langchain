@@ -50,9 +50,6 @@ class ToolMessage(BaseMessage):
 
     tool_call_id: str
     """Tool call that this message is responding to."""
-    # TODO: Add is_error param?
-    # is_error: bool = False
-    # """Whether the tool errored."""
 
     type: Literal["tool"] = "tool"
     """The type of the message (used for serialization). Defaults to "tool"."""
@@ -65,6 +62,12 @@ class ToolMessage(BaseMessage):
     output is needed in other parts of the code.
     
     .. versionadded:: 0.2.17
+    """
+
+    status: Literal["success", "error"] = "success"
+    """Status of the tool invocation.
+
+    .. versionadded:: 0.2.24
     """
 
     @classmethod
@@ -119,6 +122,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
                     self.response_metadata, other.response_metadata
                 ),
                 id=self.id,
+                status=_merge_status(self.status, other.status),
             )
 
         return super().__add__(other)
@@ -280,3 +284,9 @@ def default_tool_chunk_parser(raw_tool_calls: List[dict]) -> List[ToolCallChunk]
         )
         tool_call_chunks.append(parsed)
     return tool_call_chunks
+
+
+def _merge_status(
+    left: Literal["success", "error"], right: Literal["success", "error"]
+) -> Literal["success", "error"]:
+    return "error" if "error" in (left, right) else "success"

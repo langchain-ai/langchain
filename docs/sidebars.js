@@ -76,6 +76,11 @@ module.exports = {
         "versions/release_policy",
         "versions/packages",
         {
+          type: 'doc',
+          id: "how_to/pydantic_compatibility",
+          label: "Pydantic",
+        },
+        {
           type: "category",
           label: "v0.2",
           link: {type: 'doc', id: 'versions/v0_2/index'},
@@ -243,8 +248,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/tools",
+            type: "doc",
+            id: "integrations/tools/index",
           },
         },
         {
@@ -339,7 +344,7 @@ module.exports = {
         },
         {
           type: "category",
-          label: "Stores",
+          label: "Key-value stores",
           collapsed: true,
           items: [
             {
