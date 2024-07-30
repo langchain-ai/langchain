@@ -9,9 +9,6 @@ import textwrap
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
-from pydantic import BaseModel, ConfigDict, RootModel
-from pydantic import create_model as _create_model_base
-from pydantic.json_schema import DEFAULT_REF_TEMPLATE
 from typing import (
     Any,
     AsyncIterable,
@@ -32,6 +29,10 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from pydantic import BaseModel, ConfigDict, RootModel
+from pydantic import create_model as _create_model_base
+from pydantic.json_schema import DEFAULT_REF_TEMPLATE
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent
@@ -697,7 +698,7 @@ _SchemaConfig = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 NO_DEFAULT = object()
 
 
-def create_base_class(name: str, type_, default_=NO_DEFAULT) -> Type:
+def create_base_class(name: str, type_, default_=NO_DEFAULT) -> Type[BaseModel]:
     if default_ is NO_DEFAULT:
 
         class FixedNameRootModel(RootModel):

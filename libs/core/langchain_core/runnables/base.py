@@ -337,7 +337,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         return create_model(
             self.get_name("Output"),
-            __root__=(root_type, None),
+            __root__=root_type,
         )
 
     @property
@@ -383,7 +383,7 @@ class Runnable(Generic[Input, Output], ABC):
             self.get_name("Config"),
             **({"configurable": (configurable, None)} if configurable else {}),
             **{
-                field_name: (field_type, None)
+                field_name: field_type
                 for field_name, field_type in RunnableConfig.__annotations__.items()
                 if field_name in [i for i in include if i != "configurable"]
             },
@@ -577,7 +577,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         from langchain_core.runnables.passthrough import RunnableAssign
 
-        return self | RunnableAssign(RunnableParallel(kwargs))
+        return self | RunnableAssign(RunnableParallel[Dict[str, Any]](kwargs))
 
     """ --- Public API --- """
 
@@ -2395,7 +2395,7 @@ def _seq_input_schema(
         return first.get_input_schema(config)
     elif isinstance(first, RunnableAssign):
         next_input_schema = _seq_input_schema(steps[1:], config)
-        if not next_input_schema.__custom_root_type__:
+        if next_input_schema:
             # it's a dict as expected
             return create_model(  # type: ignore[call-overload]
                 "RunnableSequenceInput",
@@ -2422,7 +2422,7 @@ def _seq_output_schema(
     elif isinstance(last, RunnableAssign):
         mapper_output_schema = last.mapper.get_output_schema(config)
         prev_output_schema = _seq_output_schema(steps[:-1], config)
-        if not prev_output_schema.__custom_root_type__:
+        if prev_output_schema:
             # it's a dict as expected
             return create_model(  # type: ignore[call-overload]
                 "RunnableSequenceOutput",
@@ -2439,7 +2439,7 @@ def _seq_output_schema(
             )
     elif isinstance(last, RunnablePick):
         prev_output_schema = _seq_output_schema(steps[:-1], config)
-        if not prev_output_schema.__custom_root_type__:
+        if prev_output_schema:
             # it's a dict as expected
             if isinstance(last.keys, list):
                 return create_model(  # type: ignore[call-overload]
@@ -3407,11 +3407,8 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         Returns:
             The output schema of the Runnable.
         """
-        # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            self.get_name("Output"),
-            **{k: (v.OutputType, None) for k, v in self.steps__.items()},
-        )
+        fields = {k: (v.OutputType, ...) for k, v in self.steps__.items()}
+        return create_model(self.get_name("Output"), **fields)
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -4086,7 +4083,6 @@ class RunnableLambda(Runnable[Input, Output]):
             The input schema for this Runnable.
         """
         func = getattr(self, "func", None) or getattr(self, "afunc")
-
         if isinstance(func, itemgetter):
             # This is terrible, but afaict it's not possible to access _items
             # on itemgetter objects, so we have to parse the repr
@@ -4094,15 +4090,13 @@ class RunnableLambda(Runnable[Input, Output]):
             if all(
                 item[0] == "'" and item[-1] == "'" and len(item) > 2 for item in items
             ):
+                fields = {item[1:-1]: (Any, ...) for item in items}
                 # It's a dict, lol
-                return create_model(
-                    self.get_name("Input"),
-                    **{item[1:-1]: (Any, None) for item in items},  # type: ignore
-                )
+                return create_model(self.get_name("Input"), **fields)
             else:
                 return create_model(
                     self.get_name("Input"),
-                    __root__=(List[Any], None),
+                    __root__=List[Any],
                 )
 
         if self.InputType != Any:
@@ -4111,7 +4105,7 @@ class RunnableLambda(Runnable[Input, Output]):
         if dict_keys := get_function_first_arg_dict_keys(func):
             return create_model(
                 self.get_name("Input"),
-                **{key: (Any, None) for key in dict_keys},  # type: ignore
+                **{key: Any for key in dict_keys},  # type: ignore
             )
 
         return super().get_input_schema(config)
@@ -4664,13 +4658,7 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         schema = self.bound.get_output_schema(config)
-        return create_model(
-            self.get_name("Output"),
-            __root__=(
-                List[schema],  # type: ignore
-                None,
-            ),
-        )
+        return create_model(self.get_name("Output"), __root__=List[schema])
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:

@@ -38,7 +38,6 @@ from langchain_core.language_models import (
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
 from langchain_core.messages import (
-    AIMessage,
     AIMessageChunk,
     HumanMessage,
     SystemMessage,
@@ -620,12 +619,25 @@ def test_with_types_with_type_generics() -> None:
     )
 
 
+def test_schema_with_itemgetter() -> None:
+    """Test runnable with itemgetter."""
+    foo = RunnableLambda(itemgetter("hello"))
+    assert foo.input_schema.schema() == {
+        "properties": {"hello": {"title": "Hello"}},
+        "required": ["hello"],
+        "title": "RunnableLambdaInput",
+        "type": "object",
+    }
+    prompt = ChatPromptTemplate.from_template("what is {language}?")
+    chain: Runnable = {"language": itemgetter("language")} | prompt
+    assert chain.input_schema.schema() == {}
+
+
 def test_schema_complex_seq() -> None:
     prompt1 = ChatPromptTemplate.from_template("what is the city {person} is from?")
     prompt2 = ChatPromptTemplate.from_template(
         "what country is the city {city} in? respond in {language}"
     )
-
     model = FakeListChatModel(responses=[""])
 
     chain1: Runnable = RunnableSequence(
@@ -648,8 +660,8 @@ def test_schema_complex_seq() -> None:
             "person": {"title": "Person", "type": "string"},
             "language": {"title": "Language"},
         },
+        "required": ["person", "language"],
     }
-
     assert chain2.output_schema.schema() == {
         "title": "StrOutputParserOutput",
         "type": "string",
@@ -3072,6 +3084,43 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert len(map_run.child_runs) == 3
 
 
+def test_schemas_2():
+    prompt = (
+        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+        + "{question}"
+    )
+
+    chat_res = "i'm a chatbot"
+    # sleep to better simulate a real stream
+
+    llm_res = "i'm a textbot"
+    # sleep to better simulate a real stream
+    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+
+    chain: Runnable = prompt | {
+        "llm": llm,
+        "passthrough": RunnablePassthrough(),
+    }
+    chain_pick_one = chain.pick("llm")
+
+    assert chain_pick_one.output_schema.schema() == {
+        "title": "RunnableSequenceOutput",
+        "type": "string",
+    }
+
+
+def test_foo():
+    """Test create model."""
+    from pydantic import RootModel, create_model
+
+    class Foo(RootModel):
+        pass
+
+    meow = Foo[str]
+    model = create_model("meow", **{"llm": (meow, ...)})
+    pass
+
+
 def test_map_stream() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -3164,7 +3213,7 @@ def test_map_stream() -> None:
 
     assert streamed_chunks[0] in [
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(llm_res) + len(chat_res)
 
