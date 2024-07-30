@@ -1993,7 +1993,7 @@ if (Test-Path $filePath) {
     chunks = splitter.split_text(code)
     assert chunks == [
         '# Check if a file exists\n$filePath = "C:\\temp\\file.txt"',
-        "if (Test-Path $filePath) {\n# File exists\n} else {",
+        "if (Test-Path $filePath) {\n    # File exists\n} else {",
         "# File does not exist\n}",
     ]
 
@@ -2021,8 +2021,9 @@ $csvContent | ForEach-Object {
         "# Get a list of all processes and export to CSV",
         "$processes = Get-Process",
         '$processes | Export-Csv -Path "C:\\temp\\processes.csv"',
-        " -NoTypeInformation" "# Read the CSV file and display its content",
+        "-NoTypeInformation",
+        "# Read the CSV file and display its content",
         '$csvContent = Import-Csv -Path "C:\\temp\\processes.csv"',
-        "$csvContent | ForEach-Object {\n$_.ProcessName\n}",
+        "$csvContent | ForEach-Object {\n    $_.ProcessName\n}",
         "# End of script",
     ]
