@@ -102,6 +102,13 @@ def init_chat_model(
 
     .. versionchanged:: 0.2.8
 
+        Support for ``configurable_fields`` and ``config_prefix`` added.
+
+    .. versionchanged:: 0.2.12
+
+        Support for Ollama via langchain-ollama package added. Previously
+        langchain-community version of Ollama (now deprecated) was installed by default.
+
     Args:
         model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
         model_provider: The model provider. Supported model_provider values and the
@@ -118,7 +125,7 @@ def init_chat_model(
                 - mistralai (langchain-mistralai)
                 - huggingface (langchain-huggingface)
                 - groq (langchain-groq)
-                - ollama (langchain-ollama)
+                - ollama (langchain-ollama)  [support added in langchain==0.2.12]
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -340,8 +347,16 @@ def _init_chat_model_helper(
             _check_pkg("langchain_ollama")
             from langchain_ollama import ChatOllama
         except ImportError:
+            pass
+
+        # For backwards compatibility
+        try:
             _check_pkg("langchain_community")
-            from langchain_community import ChatOllama
+            from langchain_community.chat_models import ChatOllama
+        except ImportError:
+            # If both langchain-ollama and langchain-community aren't available, raise
+            # an error related to langchain-ollama
+            _check_pkg("langchain_ollama")
 
         return ChatOllama(model=model, **kwargs)
     elif model_provider == "together":
