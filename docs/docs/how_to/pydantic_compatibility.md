@@ -2,6 +2,8 @@
 
 - Pydantic v2 was released in June, 2023 (https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/).
 - v2 contains has a number of breaking changes (https://docs.pydantic.dev/2.0/migration/).
+- Pydantic 1 End of Life was in June 2024. LangChain will be dropping support for Pydantic 1 in the near future,
+and likely migrating internally to Pydantic 2. The timeline is tentatively September. This change will be accompanied by a minor version bump in the main langchain packages to version 0.3.x.
 
 As of `langchain>=0.0.267`, LangChain allows users to install either Pydantic V1 or V2.
 
@@ -10,13 +12,6 @@ the v1 namespace of Pydantic 2.
 
 Because Pydantic does not support mixing .v1 and .v2 objects, users should be aware of a number of issues
 when using LangChain with Pydantic.
-
-:::note
-
-Pydantic 1 End of Life was in June 2024. LangChain will be dropping support for Pydantic 1 in the near future, 
-and likely migrating internally to Pydantic 2. The timeline is tentatively September.
-
-:::
 
 ## 1. Passing Pydantic objects to LangChain APIs
 
