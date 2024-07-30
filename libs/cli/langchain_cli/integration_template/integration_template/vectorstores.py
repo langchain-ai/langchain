@@ -94,7 +94,7 @@ class __ModuleName__VectorStore(VectorStore):
     Search:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1,filter={"source":"https://example.com"})
+            results = vector_store.similarity_search(query="thud",k=1)
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
@@ -106,7 +106,7 @@ class __ModuleName__VectorStore(VectorStore):
     Search with score:
         .. code-block:: python
 
-            results = vector_store.similarity_search_with_score(query="thud",k=1,filter={"source":"https://example.com"})
+            results = vector_store.similarity_search_with_score(query="thud",k=1)
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
@@ -118,7 +118,10 @@ class __ModuleName__VectorStore(VectorStore):
     Use as Retriever:
         .. code-block:: python
 
-            retriever = vector_store.as_retriever()
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 10, "lambda_mult": 0.5},
+            )
             retriever.invoke("thud")
 
         .. code-block:: python
