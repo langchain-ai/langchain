@@ -156,8 +156,8 @@ def create_doc(
         str,
         typer.Option(
             help=(
-                "The type of component. Currently only 'ChatModel', 'DocumentLoader' "
-                "supported."
+                "The type of component. Currently only 'ChatModel', "
+                "'DocumentLoader', 'VectorStore' supported."
             ),
         ),
     ] = "ChatModel",
@@ -212,6 +212,10 @@ def create_doc(
         raise ValueError(
             f"Unrecognized {component_type=}. Expected one of 'ChatModel', "
             f"'DocumentLoader', 'Tool'."
+        )
+    elif component_type == "VectorStore":
+        docs_template = (
+            Path(__file__).parents[1] / "integration_template/docs/vectorstores.ipynb"
         )
     shutil.copy(docs_template, destination_path)
 
