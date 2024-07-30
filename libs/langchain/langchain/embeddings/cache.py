@@ -6,16 +6,18 @@ embeddings for the same text.
 
 The text is hashed and the hash is used as the key in the cache.
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
 import uuid
 from functools import partial
-from typing import Callable, List, Sequence, Union, cast
+from typing import Callable, List, Optional, Sequence, Union, cast
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.stores import BaseStore, ByteStore
+from langchain_core.utils.iter import batch_iterate
 
 from langchain.storage.encoder_backed import EncoderBackedStore
 
@@ -58,6 +60,9 @@ class CacheBackedEmbeddings(Embeddings):
     If need be, the interface can be extended to accept other implementations
     of the value serializer and deserializer, as well as the key encoder.
 
+    Note that by default only document embeddings are cached. To cache query
+    embeddings too, pass in a query_embedding_store to constructor.
+
     Examples:
 
         .. code-block: python
@@ -84,16 +89,24 @@ class CacheBackedEmbeddings(Embeddings):
         self,
         underlying_embeddings: Embeddings,
         document_embedding_store: BaseStore[str, List[float]],
+        *,
+        batch_size: Optional[int] = None,
+        query_embedding_store: Optional[BaseStore[str, List[float]]] = None,
     ) -> None:
         """Initialize the embedder.
 
         Args:
             underlying_embeddings: the embedder to use for computing embeddings.
             document_embedding_store: The store to use for caching document embeddings.
+            batch_size: The number of documents to embed between store updates.
+            query_embedding_store: The store to use for caching query embeddings.
+                If None, query embeddings are not cached.
         """
         super().__init__()
         self.document_embedding_store = document_embedding_store
+        self.query_embedding_store = query_embedding_store
         self.underlying_embeddings = underlying_embeddings
+        self.batch_size = batch_size
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of texts.
@@ -111,12 +124,12 @@ class CacheBackedEmbeddings(Embeddings):
         vectors: List[Union[List[float], None]] = self.document_embedding_store.mget(
             texts
         )
-        missing_indices: List[int] = [
+        all_missing_indices: List[int] = [
             i for i, vector in enumerate(vectors) if vector is None
         ]
-        missing_texts = [texts[i] for i in missing_indices]
 
-        if missing_texts:
+        for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
+            missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
             self.document_embedding_store.mset(
                 list(zip(missing_texts, missing_vectors))
@@ -144,12 +157,14 @@ class CacheBackedEmbeddings(Embeddings):
         vectors: List[
             Union[List[float], None]
         ] = await self.document_embedding_store.amget(texts)
-        missing_indices: List[int] = [
+        all_missing_indices: List[int] = [
             i for i, vector in enumerate(vectors) if vector is None
         ]
-        missing_texts = [texts[i] for i in missing_indices]
 
-        if missing_texts:
+        # batch_iterate supports None batch_size which returns all elements at once
+        # as a single batch.
+        for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
+            missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = await self.underlying_embeddings.aembed_documents(
                 missing_texts
             )
@@ -166,14 +181,8 @@ class CacheBackedEmbeddings(Embeddings):
     def embed_query(self, text: str) -> List[float]:
         """Embed query text.
 
-        This method does not support caching at the moment.
-
-        Support for caching queries is easily to implement, but might make
-        sense to hold off to see the most common patterns.
-
-        If the cache has an eviction policy, we may need to be a bit more careful
-        about sharing the cache between documents and queries. Generally,
-        one is OK evicting query caches, but document caches should be kept.
+        By default, this method does not cache queries. To enable caching, set the
+        `cache_query` parameter to `True` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -181,19 +190,22 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             The embedding for the given text.
         """
-        return self.underlying_embeddings.embed_query(text)
+        if not self.query_embedding_store:
+            return self.underlying_embeddings.embed_query(text)
+
+        (cached,) = self.query_embedding_store.mget([text])
+        if cached is not None:
+            return cached
+
+        vector = self.underlying_embeddings.embed_query(text)
+        self.query_embedding_store.mset([(text, vector)])
+        return vector
 
     async def aembed_query(self, text: str) -> List[float]:
         """Embed query text.
 
-        This method does not support caching at the moment.
-
-        Support for caching queries is easily to implement, but might make
-        sense to hold off to see the most common patterns.
-
-        If the cache has an eviction policy, we may need to be a bit more careful
-        about sharing the cache between documents and queries. Generally,
-        one is OK evicting query caches, but document caches should be kept.
+        By default, this method does not cache queries. To enable caching, set the
+        `cache_query` parameter to `True` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -201,7 +213,16 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             The embedding for the given text.
         """
-        return await self.underlying_embeddings.aembed_query(text)
+        if not self.query_embedding_store:
+            return await self.underlying_embeddings.aembed_query(text)
+
+        (cached,) = await self.query_embedding_store.amget([text])
+        if cached is not None:
+            return cached
+
+        vector = await self.underlying_embeddings.aembed_query(text)
+        await self.query_embedding_store.amset([(text, vector)])
+        return vector
 
     @classmethod
     def from_bytes_store(
@@ -210,6 +231,8 @@ class CacheBackedEmbeddings(Embeddings):
         document_embedding_cache: ByteStore,
         *,
         namespace: str = "",
+        batch_size: Optional[int] = None,
+        query_embedding_cache: Union[bool, ByteStore] = False,
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 
@@ -220,13 +243,34 @@ class CacheBackedEmbeddings(Embeddings):
             namespace: The namespace to use for document cache.
                        This namespace is used to avoid collisions with other caches.
                        For example, set it to the name of the embedding model used.
+            batch_size: The number of documents to embed between store updates.
+            query_embedding_cache: The cache to use for storing query embeddings.
+                True to use the same cache as document embeddings.
+                False to not cache query embeddings.
         """
         namespace = namespace
         key_encoder = _create_key_encoder(namespace)
-        encoder_backed_store = EncoderBackedStore[str, List[float]](
+        document_embedding_store = EncoderBackedStore[str, List[float]](
             document_embedding_cache,
             key_encoder,
             _value_serializer,
             _value_deserializer,
         )
-        return cls(underlying_embeddings, encoder_backed_store)
+        if query_embedding_cache is True:
+            query_embedding_store = document_embedding_store
+        elif query_embedding_cache is False:
+            query_embedding_store = None
+        else:
+            query_embedding_store = EncoderBackedStore[str, List[float]](
+                query_embedding_cache,
+                key_encoder,
+                _value_serializer,
+                _value_deserializer,
+            )
+
+        return cls(
+            underlying_embeddings,
+            document_embedding_store,
+            batch_size=batch_size,
+            query_embedding_store=query_embedding_store,
+        )

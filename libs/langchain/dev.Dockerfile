@@ -14,10 +14,14 @@ ARG PYTHON_VIRTUALENV_HOME=/home/vscode/langchain-py-env \
 ENV POETRY_VIRTUALENVS_IN_PROJECT=false \
     POETRY_NO_INTERACTION=true 
 
-# Create a Python virtual environment for Poetry and install it
+# Install Poetry outside of the v`irtual environment to avoid conflicts
+RUN python3 -m pip install --user pipx && \
+    python3 -m pipx ensurepath && \
+    pipx install poetry==${POETRY_VERSION}
+
+# Create a Python virtual environment for the project
 RUN python3 -m venv ${PYTHON_VIRTUALENV_HOME} && \
-    $PYTHON_VIRTUALENV_HOME/bin/pip install --upgrade pip && \
-    $PYTHON_VIRTUALENV_HOME/bin/pip install poetry==${POETRY_VERSION}
+    $PYTHON_VIRTUALENV_HOME/bin/pip install --upgrade pip
 
 ENV PATH="$PYTHON_VIRTUALENV_HOME/bin:$PATH" \
     VIRTUAL_ENV=$PYTHON_VIRTUALENV_HOME
@@ -35,7 +39,7 @@ FROM langchain-dev-base AS langchain-dev-dependencies
 ARG PYTHON_VIRTUALENV_HOME
 
 # Copy only the dependency files for installation
-COPY libs/langchain/pyproject.toml libs/langchain/poetry.toml ./
+COPY libs/langchain/pyproject.toml libs/langchain/poetry.toml libs/langchain/poetry.lock ./
 
 # Copy the langchain library for installation
 COPY libs/langchain/ libs/langchain/
@@ -45,6 +49,15 @@ COPY libs/core ../core
 
 # Copy the community library for installation
 COPY libs/community/ ../community/
+
+# Copy the text-splitters library for installation
+COPY libs/text-splitters/ ../text-splitters/
+
+# Copy the partners library for installation
+COPY libs/partners ../partners/
+
+# Copy the standard-tests library for installation
+COPY libs/standard-tests ../standard-tests/
 
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
 RUN poetry install --no-interaction --no-ansi --with dev,test,docs

@@ -5,7 +5,7 @@ rag = CohereRagRetriever(llm=ChatCohere())
 
 
 def get_docs_message(message):
-    docs = rag.get_relevant_documents(message)
+    docs = rag.invoke(message)
     message_doc = next(
         (x for x in docs if x.metadata.get("type") == "model_response"), None
     )

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -26,6 +27,11 @@ DEFAULT_API_ENDPOINT = "https://api.docugami.com/v1preview1"
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.24",
+    removal="0.3.0",
+    alternative_import="docugami_langchain.DocugamiLoader",
+)
 class DocugamiLoader(BaseLoader, BaseModel):
     """Load from `Docugami`.
 
@@ -75,7 +81,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
     include_project_metadata_in_doc_metadata: bool = True
     """Set to True if you want to include the project metadata in the doc metadata."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_local_or_remote(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either local file paths are given, or remote API docset ID.
 

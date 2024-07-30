@@ -1,10 +1,11 @@
 """Toolkit for interacting with Spark SQL."""
+
 from typing import List
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools import BaseTool
 from langchain_community.tools.spark_sql.tool import (
     InfoSparkSQLTool,
@@ -16,7 +17,12 @@ from langchain_community.utilities.spark_sql import SparkSQL
 
 
 class SparkSQLToolkit(BaseToolkit):
-    """Toolkit for interacting with Spark SQL."""
+    """Toolkit for interacting with Spark SQL.
+
+    Parameters:
+        db: SparkSQL. The Spark SQL database.
+        llm: BaseLanguageModel. The language model.
+    """
 
     db: SparkSQL = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)

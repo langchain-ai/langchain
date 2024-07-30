@@ -56,7 +56,7 @@ See the [usage example](/docs/integrations/memory/astradb_chat_message_history#e
 
 ```python
 from langchain.globals import set_llm_cache
-from langchain_community.cache import AstraDBCache
+from langchain_astradb import AstraDBCache
 
 set_llm_cache(AstraDBCache(
     api_endpoint=ASTRA_DB_API_ENDPOINT,
@@ -64,14 +64,14 @@ set_llm_cache(AstraDBCache(
 ))
 ```
 
-Learn more in the [example notebook](/docs/integrations/llms/llm_caching#astra-db-caches) (scroll to the Astra DB section).
+Learn more in the [example notebook](/docs/integrations/llm_caching#astra-db-caches) (scroll to the Astra DB section).
 
 
 ## Semantic LLM Cache
 
 ```python
 from langchain.globals import set_llm_cache
-from langchain_community.cache import 
+from langchain_astradb import AstraDBSemanticCache
 
 set_llm_cache(AstraDBSemanticCache(
     embedding=my_embedding,
@@ -80,7 +80,7 @@ set_llm_cache(AstraDBSemanticCache(
 ))
 ```
 
-Learn more in the [example notebook](/docs/integrations/llms/llm_caching#astra-db-caches) (scroll to the appropriate section).
+Learn more in the [example notebook](/docs/integrations/llm_caching#astra-db-caches) (scroll to the appropriate section).
 
 Learn more in the [example notebook](/docs/integrations/memory/astradb_chat_message_history).
 

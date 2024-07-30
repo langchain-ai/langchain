@@ -96,7 +96,7 @@ class E2BDataAnalysisToolArguments(BaseModel):
 class E2BDataAnalysisTool(BaseTool):
     """Tool for running python code in a sandboxed environment for data analysis."""
 
-    name = "e2b_data_analysis"
+    name: str = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
     session: Any
     description: str
@@ -234,7 +234,7 @@ class E2BDataAnalysisTool(BaseTool):
         ]
         self.description = self.description + "\n" + self.uploaded_files_description
 
-    def as_tool(self) -> Tool:
+    def as_tool(self) -> Tool:  # type: ignore[override]
         return Tool.from_function(
             func=self._run,
             name=self.name,

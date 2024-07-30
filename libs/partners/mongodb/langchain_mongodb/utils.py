@@ -8,14 +8,22 @@ are duplicated in this utility respectively from modules:
     - "libs/community/langchain_community/utils/math.py"
 """
 
+from __future__ import annotations
+
 import logging
-from typing import List, Union
+from datetime import date, datetime
+from typing import Any, Dict, List, Union
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
+
+
+class FailCode:
+    INDEX_NOT_FOUND = 27
+    INDEX_ALREADY_EXISTS = 68
 
 
 def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
@@ -35,12 +43,10 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
 
         X = np.array(X, dtype=np.float32)
         Y = np.array(Y, dtype=np.float32)
-        Z = 1 - simd.cdist(X, Y, metric="cosine")
-        if isinstance(Z, float):
-            return np.array([Z])
+        Z = 1 - np.array(simd.cdist(X, Y, metric="cosine"))
         return Z
     except ImportError:
-        logger.info(
+        logger.debug(
             "Unable to import simsimd, defaulting to NumPy implementation. If you want "
             "to use simsimd please install with `pip install simsimd`."
         )
@@ -85,3 +91,60 @@ def maximal_marginal_relevance(
         idxs.append(idx_to_add)
         selected = np.append(selected, [embedding_list[idx_to_add]], axis=0)
     return idxs
+
+
+def str_to_oid(str_repr: str) -> Any | str:
+    """Attempt to cast string representation of id to MongoDB's internal BSON ObjectId.
+
+    To be consistent with ObjectId, input must be a 24 character hex string.
+    If it is not, MongoDB will happily use the string in the main _id index.
+    Importantly, the str representation that comes out of MongoDB will have this form.
+
+    Args:
+        str_repr: id as string.
+
+    Returns:
+        ObjectID
+    """
+    from bson import ObjectId
+    from bson.errors import InvalidId
+
+    try:
+        return ObjectId(str_repr)
+    except InvalidId:
+        logger.debug(
+            "ObjectIds must be 12-character byte or 24-character hex strings. "
+            "Examples: b'heres12bytes', '6f6e6568656c6c6f68656768'"
+        )
+        return str_repr
+
+
+def oid_to_str(oid: Any) -> str:
+    """Convert MongoDB's internal BSON ObjectId into a simple str for compatibility.
+
+    Instructive helper to show where data is coming out of MongoDB.
+
+    Args:
+        oid: bson.ObjectId
+
+    Returns:
+        24 character hex string.
+    """
+    return str(oid)
+
+
+def make_serializable(
+    obj: Dict[str, Any],
+) -> None:
+    """Recursively cast values in a dict to a form able to json.dump"""
+    from bson import ObjectId
+
+    for k, v in obj.items():
+        if isinstance(v, dict):
+            make_serializable(v)
+        elif isinstance(v, list) and v and isinstance(v[0], (ObjectId, date, datetime)):
+            obj[k] = [oid_to_str(item) for item in v]
+        elif isinstance(v, ObjectId):
+            obj[k] = oid_to_str(v)
+        elif isinstance(v, (datetime, date)):
+            obj[k] = v.isoformat()

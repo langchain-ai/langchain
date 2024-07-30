@@ -22,9 +22,9 @@ from langchain_community.llms.loading import load_llm
 def test_gpt2_call() -> None:
     """Test valid call to GPT2."""
     llm = AzureMLOnlineEndpoint(
-        endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
-        endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
-        deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
+        endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),  # type: ignore[arg-type]
+        endpoint_url=os.getenv("OSS_ENDPOINT_URL"),  # type: ignore[arg-type]
+        deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
         content_formatter=OSSContentFormatter(),
     )
     output = llm.invoke("Foo")
@@ -34,9 +34,9 @@ def test_gpt2_call() -> None:
 def test_hf_call() -> None:
     """Test valid call to HuggingFace Foundation Model."""
     llm = AzureMLOnlineEndpoint(
-        endpoint_api_key=os.getenv("HF_ENDPOINT_API_KEY"),
-        endpoint_url=os.getenv("HF_ENDPOINT_URL"),
-        deployment_name=os.getenv("HF_DEPLOYMENT_NAME"),
+        endpoint_api_key=os.getenv("HF_ENDPOINT_API_KEY"),  # type: ignore[arg-type]
+        endpoint_url=os.getenv("HF_ENDPOINT_URL"),  # type: ignore[arg-type]
+        deployment_name=os.getenv("HF_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
         content_formatter=HFContentFormatter(),
     )
     output = llm.invoke("Foo")
@@ -46,9 +46,9 @@ def test_hf_call() -> None:
 def test_dolly_call() -> None:
     """Test valid call to dolly-v2."""
     llm = AzureMLOnlineEndpoint(
-        endpoint_api_key=os.getenv("DOLLY_ENDPOINT_API_KEY"),
-        endpoint_url=os.getenv("DOLLY_ENDPOINT_URL"),
-        deployment_name=os.getenv("DOLLY_DEPLOYMENT_NAME"),
+        endpoint_api_key=os.getenv("DOLLY_ENDPOINT_API_KEY"),  # type: ignore[arg-type]
+        endpoint_url=os.getenv("DOLLY_ENDPOINT_URL"),  # type: ignore[arg-type]
+        deployment_name=os.getenv("DOLLY_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
         content_formatter=DollyContentFormatter(),
     )
     output = llm.invoke("Foo")
@@ -77,9 +77,9 @@ def test_custom_formatter() -> None:
             return response_json[0]["summary_text"]
 
     llm = AzureMLOnlineEndpoint(
-        endpoint_api_key=os.getenv("BART_ENDPOINT_API_KEY"),
-        endpoint_url=os.getenv("BART_ENDPOINT_URL"),
-        deployment_name=os.getenv("BART_DEPLOYMENT_NAME"),
+        endpoint_api_key=os.getenv("BART_ENDPOINT_API_KEY"),  # type: ignore[arg-type]
+        endpoint_url=os.getenv("BART_ENDPOINT_URL"),  # type: ignore[arg-type]
+        deployment_name=os.getenv("BART_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
         content_formatter=CustomFormatter(),
     )
     output = llm.invoke("Foo")
@@ -90,9 +90,9 @@ def test_missing_content_formatter() -> None:
     """Test AzureML LLM without a content_formatter attribute"""
     with pytest.raises(AttributeError):
         llm = AzureMLOnlineEndpoint(
-            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
-            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
-            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
+            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),  # type: ignore[arg-type]
+            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),  # type: ignore[arg-type]
+            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
         )
         llm.invoke("Foo")
 
@@ -119,9 +119,9 @@ def test_invalid_request_format() -> None:
 
     with pytest.raises(HTTPError):
         llm = AzureMLOnlineEndpoint(
-            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
-            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
-            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
+            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),  # type: ignore[arg-type]
+            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),  # type: ignore[arg-type]
+            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
             content_formatter=CustomContentFormatter(),
         )
         llm.invoke("Foo")
@@ -131,9 +131,9 @@ def test_incorrect_url() -> None:
     """Testing AzureML Endpoint for an incorrect URL"""
     with pytest.raises(ValidationError):
         llm = AzureMLOnlineEndpoint(
-            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
+            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),  # type: ignore[arg-type]
             endpoint_url="https://endpoint.inference.com",
-            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
+            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
             content_formatter=OSSContentFormatter(),
         )
         llm.invoke("Foo")
@@ -142,10 +142,10 @@ def test_incorrect_url() -> None:
 def test_incorrect_api_type() -> None:
     with pytest.raises(ValidationError):
         llm = AzureMLOnlineEndpoint(
-            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),
-            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
-            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
-            endpoint_api_type="serverless",
+            endpoint_api_key=os.getenv("OSS_ENDPOINT_API_KEY"),  # type: ignore[arg-type]
+            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),  # type: ignore[arg-type]
+            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
+            endpoint_api_type="serverless",  # type: ignore[arg-type]
             content_formatter=OSSContentFormatter(),
         )
         llm.invoke("Foo")
@@ -155,9 +155,9 @@ def test_incorrect_key() -> None:
     """Testing AzureML Endpoint for incorrect key"""
     with pytest.raises(HTTPError):
         llm = AzureMLOnlineEndpoint(
-            endpoint_api_key="incorrect-key",
-            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),
-            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),
+            endpoint_api_key="incorrect-key",  # type: ignore[arg-type]
+            endpoint_url=os.getenv("OSS_ENDPOINT_URL"),  # type: ignore[arg-type]
+            deployment_name=os.getenv("OSS_DEPLOYMENT_NAME"),  # type: ignore[arg-type]
             content_formatter=OSSContentFormatter(),
         )
         llm.invoke("Foo")

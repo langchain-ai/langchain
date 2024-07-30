@@ -3,14 +3,15 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra, Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
     retry,
@@ -69,6 +70,9 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     return _completion_with_retry(**kwargs)
 
 
+@deprecated(
+    since="0.0.30", removal="0.3.0", alternative_import="langchain_cohere.BaseCohere"
+)
 class BaseCohere(Serializable):
     """Base class for Cohere models."""
 
@@ -91,7 +95,7 @@ class BaseCohere(Serializable):
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:
@@ -117,6 +121,9 @@ class BaseCohere(Serializable):
         return values
 
 
+@deprecated(
+    since="0.1.14", removal="0.3.0", alternative_import="langchain_cohere.Cohere"
+)
 class Cohere(LLM, BaseCohere):
     """Cohere large language models.
 

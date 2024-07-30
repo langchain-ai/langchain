@@ -7,6 +7,11 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+      dangerous-nonmaster-release:
+        required: false
+        type: boolean
+        default: false
+        description: "Release from a non-master branch (danger!)"
 
 env:
   POETRY_VERSION: "1.7.1"
@@ -14,7 +19,7 @@ env:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     runs-on: ubuntu-latest
 
     outputs:

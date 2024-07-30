@@ -6,7 +6,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -69,6 +69,23 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         """Return whether this model can be serialized by Langchain."""
         return False
 
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="ollama",
+            ls_model_name=self.model,
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_max_tokens := params.get("num_predict", self.num_predict):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None) or self.stop:
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
+
     @deprecated("0.0.3", alternative="_convert_messages_to_ollama_messages")
     def _format_message_as_text(self, message: BaseMessage) -> str:
         if isinstance(message, ChatMessage):
@@ -120,18 +137,28 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                     if content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "image_url":
-                        if isinstance(content_part.get("image_url"), str):
-                            image_url_components = content_part["image_url"].split(",")
-                            # Support data:image/jpeg;base64,<image> format
-                            # and base64 strings
-                            if len(image_url_components) > 1:
-                                images.append(image_url_components[1])
-                            else:
-                                images.append(image_url_components[0])
+                        image_url = None
+                        temp_image_url = content_part.get("image_url")
+                        if isinstance(temp_image_url, str):
+                            image_url = content_part["image_url"]
+                        elif (
+                            isinstance(temp_image_url, dict) and "url" in temp_image_url
+                        ):
+                            image_url = temp_image_url["url"]
                         else:
                             raise ValueError(
-                                "Only string image_url " "content parts are supported."
+                                "Only string image_url or dict with string 'url' "
+                                "inside content parts are supported."
                             )
+
+                        image_url_components = image_url.split(",")
+                        # Support data:image/jpeg;base64,<image> format
+                        # and base64 strings
+                        if len(image_url_components) > 1:
+                            images.append(image_url_components[1])
+                        else:
+                            images.append(image_url_components[0])
+
                     else:
                         raise ValueError(
                             "Unsupported message content type. "
@@ -156,6 +183,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         **kwargs: Any,
     ) -> Iterator[str]:
         payload = {
+            "model": self.model,
             "messages": self._convert_messages_to_ollama_messages(messages),
         }
         yield from self._create_stream(
@@ -169,6 +197,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         payload = {
+            "model": self.model,
             "messages": self._convert_messages_to_ollama_messages(messages),
         }
         async for stream_resp in self._acreate_stream(

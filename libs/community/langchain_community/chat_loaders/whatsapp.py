@@ -4,10 +4,9 @@ import re
 import zipfile
 from typing import Iterator, List, Union
 
+from langchain_core.chat_loaders import BaseChatLoader
 from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import AIMessage, HumanMessage
-
-from langchain_community.chat_loaders.base import BaseChatLoader
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +73,7 @@ class WhatsAppChatLoader(BaseChatLoader):
                 timestamp, sender, text = result.groups()
                 if not self._ignore_lines.match(text.strip()):
                     results.append(
-                        HumanMessage(
+                        HumanMessage(  # type: ignore[call-arg]
                             role=sender,
                             content=text,
                             additional_kwargs={

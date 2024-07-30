@@ -2,7 +2,7 @@
 
 import os
 import random
-from typing import List
+from typing import Any, Dict, List
 
 import numpy as np
 import pytest
@@ -12,6 +12,23 @@ from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    DOCUMENTS,
+    TYPE_1_FILTERING_TEST_CASES,
+    TYPE_2_FILTERING_TEST_CASES,
+    TYPE_3_FILTERING_TEST_CASES,
+    TYPE_4_FILTERING_TEST_CASES,
+    TYPE_5_FILTERING_TEST_CASES,
+)
+
+TYPE_4B_FILTERING_TEST_CASES = [
+    # Test $nin, which is missing in TYPE_4_FILTERING_TEST_CASES
+    (
+        {"name": {"$nin": ["adam", "bob"]}},
+        [3],
+    ),
+]
+
 
 try:
     from hdbcli import dbapi
@@ -48,6 +65,7 @@ test_setup = ConfigData()
 
 
 def generateSchemaName(cursor):  # type: ignore[no-untyped-def]
+    # return "Langchain"
     cursor.execute(
         "SELECT REPLACE(CURRENT_UTCDATE, '-', '') || '_' || BINTOHEX(SYSUUID) FROM "
         "DUMMY;"
@@ -68,6 +86,7 @@ def setup_module(module):  # type: ignore[no-untyped-def]
         password=os.environ.get("HANA_DB_PASSWORD"),
         autocommit=True,
         sslValidateCertificate=False,
+        # encrypt=True
     )
     try:
         cur = test_setup.conn.cursor()
@@ -83,6 +102,7 @@ def setup_module(module):  # type: ignore[no-untyped-def]
 
 
 def teardown_module(module):  # type: ignore[no-untyped-def]
+    # return
     try:
         cur = test_setup.conn.cursor()
         sql_str = f"DROP SCHEMA {test_setup.schema_name} CASCADE"
@@ -95,7 +115,7 @@ def teardown_module(module):  # type: ignore[no-untyped-def]
 
 @pytest.fixture
 def texts() -> List[str]:
-    return ["foo", "bar", "baz"]
+    return ["foo", "bar", "baz", "bak", "cat"]
 
 
 @pytest.fixture
@@ -104,6 +124,8 @@ def metadatas() -> List[str]:
         {"start": 0, "end": 100, "quality": "good", "ready": True},  # type: ignore[list-item]
         {"start": 100, "end": 200, "quality": "bad", "ready": False},  # type: ignore[list-item]
         {"start": 200, "end": 300, "quality": "ugly", "ready": True},  # type: ignore[list-item]
+        {"start": 200, "quality": "ugly", "ready": True, "Owner": "Steve"},  # type: ignore[list-item]
+        {"start": 300, "quality": "ugly", "Owner": "Steve"},  # type: ignore[list-item]
     ]
 
 
@@ -623,14 +645,14 @@ def test_hanavector_delete_with_filter(texts: List[str], metadatas: List[dict]) 
         table_name=table_name,
     )
 
-    search_result = vectorDB.similarity_search(texts[0], 3)
-    assert len(search_result) == 3
+    search_result = vectorDB.similarity_search(texts[0], 10)
+    assert len(search_result) == 5
 
     # Delete one of the three entries
     assert vectorDB.delete(filter={"start": 100, "end": 200})
 
-    search_result = vectorDB.similarity_search(texts[0], 3)
-    assert len(search_result) == 2
+    search_result = vectorDB.similarity_search(texts[0], 10)
+    assert len(search_result) == 4
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -650,14 +672,14 @@ async def test_hanavector_delete_with_filter_async(
         table_name=table_name,
     )
 
-    search_result = vectorDB.similarity_search(texts[0], 3)
-    assert len(search_result) == 3
+    search_result = vectorDB.similarity_search(texts[0], 10)
+    assert len(search_result) == 5
 
     # Delete one of the three entries
     assert await vectorDB.adelete(filter={"start": 100, "end": 200})
 
-    search_result = vectorDB.similarity_search(texts[0], 3)
-    assert len(search_result) == 2
+    search_result = vectorDB.similarity_search(texts[0], 10)
+    assert len(search_result) == 4
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -844,7 +866,7 @@ def test_hanavector_filter_prepared_statement_params(
     sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
-    assert len(rows) == 2
+    assert len(rows) == 3
 
     # query_value = False
     query_value = "false"  # type: ignore[assignment]
@@ -890,3 +912,523 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
     except ValueError:
         exception_occured = True
     assert exception_occured
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_table_mixed_case_names(texts: List[str]) -> None:
+    table_name = "MyTableName"
+    content_column = "TextColumn"
+    metadata_column = "MetaColumn"
+    vector_column = "VectorColumn"
+
+    vectordb = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        distance_strategy=DistanceStrategy.COSINE,
+        table_name=table_name,
+        content_column=content_column,
+        metadata_column=metadata_column,
+        vector_column=vector_column,
+    )
+
+    vectordb.add_texts(texts=texts)
+
+    # check that embeddings have been created in the table
+    number_of_texts = len(texts)
+    number_of_rows = -1
+    sql_str = f'SELECT COUNT(*) FROM "{table_name}"'
+    cur = test_setup.conn.cursor()
+    cur.execute(sql_str)
+    if cur.has_result_set():
+        rows = cur.fetchall()
+        number_of_rows = rows[0][0]
+    assert number_of_rows == number_of_texts
+
+    # check results of similarity search
+    assert texts[0] == vectordb.similarity_search(texts[0], 1)[0].page_content
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_enhanced_filter_1() -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_1"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_1(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_1"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_2_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_2(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_2"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_3_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_3(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_3"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_4_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_4(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_4"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_4B_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_4b(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_4B"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_5_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_5(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_5"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_metadata_fill(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "PREEXISTING_FILTER_COLUMNS"
+    # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"Owner" NVARCHAR(100), '
+        f'"quality" NVARCHAR(100));'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+        specific_metadata_columns=["Owner", "quality"],
+    )
+
+    c = 0
+    try:
+        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "quality"=' f"'ugly'"
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+        if cur.has_result_set():
+            rows = cur.fetchall()
+            c = rows[0][0]
+    finally:
+        cur.close()
+    assert c == 3
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100})
+    assert len(docs) == 1
+    assert docs[0].page_content == "bar"
+
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 100, "quality": "good"}
+    )
+    assert len(docs) == 0
+
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 0, "quality": "good"}
+    )
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_metadata_via_array(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "PREEXISTING_FILTER_COLUMNS_VIA_ARRAY"
+    # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"Owner" NVARCHAR(100), '
+        f'"quality" NVARCHAR(100));'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+        specific_metadata_columns=["quality"],
+    )
+
+    c = 0
+    try:
+        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "quality"=' f"'ugly'"
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+        if cur.has_result_set():
+            rows = cur.fetchall()
+            c = rows[0][0]
+    finally:
+        cur.close()
+    assert c == 3
+
+    try:
+        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "Owner"=' f"'Steve'"
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+        if cur.has_result_set():
+            rows = cur.fetchall()
+            c = rows[0][0]
+    finally:
+        cur.close()
+    assert c == 0
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100})
+    assert len(docs) == 1
+    assert docs[0].page_content == "bar"
+
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 100, "quality": "good"}
+    )
+    assert len(docs) == 0
+
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 0, "quality": "good"}
+    )
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_metadata_multiple_columns(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "PREEXISTING_FILTER_MULTIPLE_COLUMNS"
+    # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" NVARCHAR(100), '
+        f'"start" INTEGER);'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+        specific_metadata_columns=["quality", "start"],
+    )
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100})
+    assert len(docs) == 1
+    assert docs[0].page_content == "bar"
+
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 100, "quality": "good"}
+    )
+    assert len(docs) == 0
+
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 0, "quality": "good"}
+    )
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_metadata_empty_columns(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "PREEXISTING_FILTER_MULTIPLE_COLUMNS_EMPTY"
+    # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" NVARCHAR(100), '
+        f'"ready" BOOLEAN, '
+        f'"start" INTEGER);'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+        specific_metadata_columns=["quality", "ready", "start"],
+    )
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100})
+    assert len(docs) == 1
+    assert docs[0].page_content == "bar"
+
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 100, "quality": "good"}
+    )
+    assert len(docs) == 0
+
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 0, "quality": "good"}
+    )
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"ready": True})
+    assert len(docs) == 3
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_metadata_wrong_type_or_non_existing(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "PREEXISTING_FILTER_COLUMNS_WRONG_TYPE"
+    # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" INTEGER); '
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    # Check if table is created
+    exception_occured = False
+    try:
+        HanaDB.from_texts(
+            connection=test_setup.conn,
+            texts=texts,
+            metadatas=metadatas,
+            embedding=embedding,
+            table_name=table_name,
+            specific_metadata_columns=["quality"],
+        )
+        exception_occured = False
+    except dbapi.Error:  # Nothing we should do here, hdbcli will throw an error
+        exception_occured = True
+    assert exception_occured  # Check if table is created
+
+    exception_occured = False
+    try:
+        HanaDB.from_texts(
+            connection=test_setup.conn,
+            texts=texts,
+            metadatas=metadatas,
+            embedding=embedding,
+            table_name=table_name,
+            specific_metadata_columns=["NonExistingColumn"],
+        )
+        exception_occured = False
+    except AttributeError:  # Nothing we should do here, hdbcli will throw an error
+        exception_occured = True
+    assert exception_occured
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_returned_metadata_completeness(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "PREEXISTING_FILTER_COLUMNS_METADATA_COMPLETENESS"
+    # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" NVARCHAR(100), '
+        f'"NonExisting" NVARCHAR(100), '
+        f'"ready" BOOLEAN, '
+        f'"start" INTEGER);'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+        specific_metadata_columns=["quality", "ready", "start", "NonExisting"],
+    )
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+    assert docs[0].metadata["end"] == 100
+    assert docs[0].metadata["start"] == 0
+    assert docs[0].metadata["quality"] == "good"
+    assert docs[0].metadata["ready"]
+    assert "NonExisting" not in docs[0].metadata.keys()

@@ -307,7 +307,46 @@ class ContextSet(RunnableSerializable):
 
 
 class Context:
-    """Context for a runnable."""
+    """
+    Context for a runnable.
+
+    The `Context` class provides methods for creating context scopes,
+    getters, and setters within a runnable. It allows for managing
+    and accessing contextual information throughout the execution
+    of a program.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.beta.runnables.context import Context
+            from langchain_core.runnables.passthrough import RunnablePassthrough
+            from langchain_core.prompts.prompt import PromptTemplate
+            from langchain_core.output_parsers.string import StrOutputParser
+            from tests.unit_tests.fake.llm import FakeListLLM
+
+            chain = (
+                Context.setter("input")
+                | {
+                    "context": RunnablePassthrough()
+                            | Context.setter("context"),
+                    "question": RunnablePassthrough(),
+                }
+                | PromptTemplate.from_template("{context} {question}")
+                | FakeListLLM(responses=["hello"])
+                | StrOutputParser()
+                | {
+                    "result": RunnablePassthrough(),
+                    "context": Context.getter("context"),
+                    "input": Context.getter("input"),
+                }
+            )
+
+            # Use the chain
+            output = chain.invoke("What's your name?")
+            print(output["result"])  # Output: "hello"
+            print(output["context"])  # Output: "What's your name?"
+            print(output["input"])  # Output: "What's your name?
+    """
 
     @staticmethod
     def create_scope(scope: str, /) -> "PrefixContext":

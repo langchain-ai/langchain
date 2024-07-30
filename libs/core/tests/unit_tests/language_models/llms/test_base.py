@@ -6,7 +6,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.llms import BaseLLM
+from langchain_core.language_models import BaseLLM, FakeListLLM, FakeStreamingListLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
@@ -14,7 +14,6 @@ from tests.unit_tests.fake.callbacks import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
-from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
 def test_batch() -> None:
@@ -61,7 +60,7 @@ def test_batch_size() -> None:
 
     llm = FakeListLLM(responses=["foo"] * 1)
     with collect_runs() as cb:
-        llm.predict("foo")
+        llm.invoke("foo")
         assert len(cb.traced_runs) == 1
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
 

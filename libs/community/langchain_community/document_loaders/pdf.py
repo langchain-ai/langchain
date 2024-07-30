@@ -26,6 +26,7 @@ from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.dedoc import DedocBaseLoader
 from langchain_community.document_loaders.parsers.pdf import (
     AmazonTextractPDFParser,
     DocumentIntelligenceParser,
@@ -80,14 +81,14 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
+    def __init__(self, file_path: Union[str, Path], *, headers: Optional[Dict] = None):
         """Initialize with a file path.
 
         Args:
             file_path: Either a local, S3 or web path to a PDF file.
             headers: Headers to use for GET request to download a file from a web path.
         """
-        self.file_path = file_path
+        self.file_path = str(file_path)
         self.web_path = None
         self.headers = headers
         if "~" in self.file_path:
@@ -171,6 +172,9 @@ class PyPDFLoader(BasePDFLoader):
         password: Optional[Union[str, bytes]] = None,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
+        *,
+        extraction_mode: str = "plain",
+        extraction_kwargs: Optional[Dict] = None,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -180,16 +184,21 @@ class PyPDFLoader(BasePDFLoader):
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
         super().__init__(file_path, headers=headers)
-        self.parser = PyPDFParser(password=password, extract_images=extract_images)
+        self.parser = PyPDFParser(
+            password=password,
+            extract_images=extract_images,
+            extraction_mode=extraction_mode,
+            extraction_kwargs=extraction_kwargs,
+        )
 
     def lazy_load(
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         yield from self.parser.parse(blob)
 
 
@@ -212,9 +221,9 @@ class PyPDFium2Loader(BasePDFLoader):
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         yield from self.parser.parse(blob)
 
 
@@ -226,7 +235,7 @@ class PyPDFDirectoryLoader(BaseLoader):
 
     def __init__(
         self,
-        path: str,
+        path: Union[str, Path],
         glob: str = "**/[!.]*.pdf",
         silent_errors: bool = False,
         load_hidden: bool = False,
@@ -301,9 +310,9 @@ class PDFMinerLoader(BasePDFLoader):
     ) -> Iterator[Document]:
         """Lazily load documents."""
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         yield from self.parser.parse(blob)
 
 
@@ -378,9 +387,9 @@ class PyMuPDFLoader(BasePDFLoader):
             text_kwargs=text_kwargs, extract_images=self.extract_images
         )
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         yield from parser.lazy_parse(blob)
 
     def load(self, **kwargs: Any) -> List[Document]:
@@ -574,9 +583,9 @@ class PDFPlumberLoader(BasePDFLoader):
             extract_images=self.extract_images,
         )
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         return parser.parse(blob)
 
 
@@ -632,9 +641,9 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
 
         try:
-            import textractcaller as tc  # noqa: F401
+            import textractcaller as tc
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import amazon-textract-caller python package. "
                 "Please install it with `pip install amazon-textract-caller`."
             )
@@ -662,7 +671,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 client = session.client("textract", **client_params)
 
             except ImportError:
-                raise ModuleNotFoundError(
+                raise ImportError(
                     "Could not import boto3 python package. "
                     "Please install it with `pip install boto3`."
                 )
@@ -670,7 +679,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 raise ValueError(
                     "Could not load credentials to authenticate with AWS client. "
                     "Please check that credentials in the specified "
-                    "profile name are valid."
+                    f"profile name are valid. {e}"
                 ) from e
         self.parser = AmazonTextractPDFParser(
             textract_features=features,
@@ -691,9 +700,9 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         # raises ValueError when multi-page and not on S3"""
 
         if self.web_path and self._is_s3_url(self.web_path):
-            blob = Blob(path=self.web_path)
+            blob = Blob(path=self.web_path)  # type: ignore[call-arg] # type: ignore[misc]
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
             if AmazonTextractPDFLoader._get_number_of_pages(blob) > 1:
                 raise ValueError(
                     f"the file {blob.path} is a multi-page document, \
@@ -704,34 +713,132 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         yield from self.parser.parse(blob)
 
     @staticmethod
-    def _get_number_of_pages(blob: Blob) -> int:
+    def _get_number_of_pages(blob: Blob) -> int:  # type: ignore[valid-type]
         try:
             import pypdf
             from PIL import Image, ImageSequence
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import pypdf or Pilloe python package. "
                 "Please install it with `pip install pypdf Pillow`."
             )
-        if blob.mimetype == "application/pdf":
-            with blob.as_bytes_io() as input_pdf_file:
+        if blob.mimetype == "application/pdf":  # type: ignore[attr-defined]
+            with blob.as_bytes_io() as input_pdf_file:  # type: ignore[attr-defined]
                 pdf_reader = pypdf.PdfReader(input_pdf_file)
                 return len(pdf_reader.pages)
-        elif blob.mimetype == "image/tiff":
+        elif blob.mimetype == "image/tiff":  # type: ignore[attr-defined]
             num_pages = 0
-            img = Image.open(blob.as_bytes())
+            img = Image.open(blob.as_bytes())  # type: ignore[attr-defined]
             for _, _ in enumerate(ImageSequence.Iterator(img)):
                 num_pages += 1
             return num_pages
-        elif blob.mimetype in ["image/png", "image/jpeg"]:
+        elif blob.mimetype in ["image/png", "image/jpeg"]:  # type: ignore[attr-defined]
             return 1
         else:
-            raise ValueError(f"unsupported mime type: {blob.mimetype}")
+            raise ValueError(f"unsupported mime type: {blob.mimetype}")  # type: ignore[attr-defined]
+
+
+class DedocPDFLoader(DedocBaseLoader):
+    """
+    DedocPDFLoader document loader integration to load PDF files using `dedoc`.
+    The file loader can automatically detect the correctness of a textual layer in the
+        PDF document.
+    Note that `__init__` method supports parameters that differ from ones of
+        DedocBaseLoader.
+
+    Setup:
+        Install ``dedoc`` package.
+
+        .. code-block:: bash
+
+            pip install -U dedoc
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import DedocPDFLoader
+
+            loader = DedocPDFLoader(
+                file_path="example.pdf",
+                # split=...,
+                # with_tables=...,
+                # pdf_with_text_layer=...,
+                # pages=...,
+                # ...
+            )
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Some text
+            {
+                'file_name': 'example.pdf',
+                'file_type': 'application/pdf',
+                # ...
+            }
+
+    Parameters used for document parsing via `dedoc`
+        (https://dedoc.readthedocs.io/en/latest/parameters/pdf_handling.html):
+
+        with_attachments: enable attached files extraction
+        recursion_deep_attachments: recursion level for attached files extraction,
+            works only when with_attachments==True
+        pdf_with_text_layer: type of handler for parsing, available options
+            ["true", "false", "tabby", "auto", "auto_tabby" (default)]
+        language: language of the document for PDF without a textual layer,
+            available options ["eng", "rus", "rus+eng" (default)], the list of
+            languages can be extended, please see
+            https://dedoc.readthedocs.io/en/latest/tutorials/add_new_language.html
+        pages: page slice to define the reading range for parsing
+        is_one_column_document: detect number of columns for PDF without a textual
+            layer, available options ["true", "false", "auto" (default)]
+        document_orientation: fix document orientation (90, 180, 270 degrees) for PDF
+            without a textual layer, available options ["auto" (default), "no_change"]
+        need_header_footer_analysis: remove headers and footers from the output result
+        need_binarization: clean pages background (binarize) for PDF without a textual
+            layer
+        need_pdf_table_analysis: parse tables for PDF without a textual layer
+    """
+
+    def _make_config(self) -> dict:
+        from dedoc.utils.langchain import make_manager_pdf_config
+
+        return make_manager_pdf_config(
+            file_path=self.file_path,
+            parsing_params=self.parsing_parameters,
+            split=self.split,
+        )
 
 
 class DocumentIntelligenceLoader(BasePDFLoader):
-    """Loads a PDF with Azure Document Intelligence"""
+    """Load a PDF with Azure Document Intelligence"""
 
     def __init__(
         self,
@@ -778,7 +885,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)
+        blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         yield from self.parser.parse(blob)
 
 

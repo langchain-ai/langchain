@@ -12,6 +12,8 @@ python = ">=3.8.1,<4.0"
 langchain = "^0.1"
 neo4j = ">5.12"
 openai = "<2"
+langchain-openai = "^0.1.3"
+langchain-community = "^0.0.33"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"

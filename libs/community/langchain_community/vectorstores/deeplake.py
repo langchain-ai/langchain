@@ -913,7 +913,7 @@ class DeepLake(VectorStore):
         try:
             import deeplake
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import deeplake python package. "
                 "Please install it with `pip install deeplake`."
             )

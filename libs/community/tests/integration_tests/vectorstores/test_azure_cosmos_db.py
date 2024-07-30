@@ -1,4 +1,5 @@
 """Test AzureCosmosDBVectorSearch functionality."""
+
 import logging
 import os
 from time import sleep
@@ -24,7 +25,7 @@ model_name = os.getenv("OPENAI_EMBEDDINGS_MODEL_NAME", "text-embedding-ada-002")
 INDEX_NAME = "langchain-test-index"
 INDEX_NAME_VECTOR_HNSW = "langchain-test-index-hnsw"
 NAMESPACE = "langchain_test_db.langchain_test_collection"
-CONNECTION_STRING: str = os.environ.get("MONGODB_VCORE_URI", "")
+CONNECTION_STRING: str = "mongodb+srv://akataria:Basket24ball@akataria-vector-search-testing.mongocluster.cosmos.azure.com/?tls=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000"
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 
 num_lists = 3
@@ -35,6 +36,7 @@ m = 16
 ef_construction = 64
 ef_search = 40
 score_threshold = 0.1
+application_name = "LANGCHAIN_PYTHON"
 
 
 def prepare_collection() -> Any:
@@ -73,7 +75,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # insure the test collection is empty
         collection = prepare_collection()
-        assert collection.count_documents({}) == 0  # type: ignore[index]  # noqa: E501
+        assert collection.count_documents({}) == 0  # type: ignore[index]
 
     @classmethod
     def teardown_class(cls) -> None:
@@ -108,6 +110,7 @@ class TestAzureCosmosDBVectorSearch:
             azure_openai_embeddings,
             collection=collection,
             index_name=INDEX_NAME,
+            application_name=application_name,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
@@ -911,6 +914,7 @@ class TestAzureCosmosDBVectorSearch:
                 NAMESPACE,
                 azure_openai_embeddings,
                 index_name=INDEX_NAME,
+                application_name=application_name,
             )
         )
 
@@ -926,6 +930,7 @@ class TestAzureCosmosDBVectorSearch:
                 NAMESPACE,
                 azure_openai_embeddings,
                 index_name=INDEX_NAME,
+                application_name=application_name,
             )
         )
 

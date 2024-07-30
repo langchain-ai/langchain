@@ -63,7 +63,7 @@ class OpenLLM(LLM):
                 model_name='flan-t5',
                 model_id='google/flan-t5-large',
             )
-            llm("What is the difference between a duck and a goose?")
+            llm.invoke("What is the difference between a duck and a goose?")
 
     For all available supported models, you can run 'openllm models'.
 
@@ -93,9 +93,9 @@ class OpenLLM(LLM):
     """Keyword arguments to be passed to openllm.LLM"""
 
     _runner: Optional[openllm.LLMRunner] = PrivateAttr(default=None)
-    _client: Union[
-        openllm.client.HTTPClient, openllm.client.GrpcClient, None
-    ] = PrivateAttr(default=None)
+    _client: Union[openllm.client.HTTPClient, openllm.client.GrpcClient, None] = (
+        PrivateAttr(default=None)
+    )
 
     class Config:
         extra = "forbid"
@@ -108,8 +108,7 @@ class OpenLLM(LLM):
         model_id: Optional[str] = ...,
         embedded: Literal[True, False] = ...,
         **llm_kwargs: Any,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -118,8 +117,7 @@ class OpenLLM(LLM):
         server_url: str = ...,
         server_type: Literal["grpc", "http"] = ...,
         **llm_kwargs: Any,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(
         self,
@@ -155,7 +153,7 @@ class OpenLLM(LLM):
             client = client_cls(server_url, timeout)
 
             super().__init__(
-                **{
+                **{  # type: ignore[arg-type]
                     "server_url": server_url,
                     "timeout": timeout,
                     "server_type": server_type,
@@ -180,7 +178,7 @@ class OpenLLM(LLM):
                 **llm_kwargs,
             )
             super().__init__(
-                **{
+                **{  # type: ignore[arg-type]
                     "model_name": model_name,
                     "model_id": model_id,
                     "embedded": embedded,
@@ -308,10 +306,12 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            async_client = openllm.client.AsyncHTTPClient(self.server_url)
+            async_client = openllm.client.AsyncHTTPClient(self.server_url, self.timeout)
             res = (
-                await async_client.generate(prompt, **config.model_dump(flatten=True))
-            ).responses[0]
+                (await async_client.generate(prompt, **config.model_dump(flatten=True)))
+                .outputs[0]
+                .text
+            )
         else:
             assert self._runner is not None
             (
