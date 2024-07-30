@@ -3114,18 +3114,6 @@ def test_schemas_2():
     }
 
 
-def test_foo():
-    """Test create model."""
-    from pydantic import RootModel, create_model
-
-    class Foo(RootModel):
-        pass
-
-    meow = Foo[str]
-    model = create_model("meow", **{"llm": (meow, ...)})
-    pass
-
-
 def test_map_stream() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
