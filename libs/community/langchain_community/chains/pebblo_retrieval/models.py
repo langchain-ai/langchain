@@ -129,6 +129,7 @@ class Context(BaseModel):
     retrieved_from: Optional[str]
     doc: Optional[str]
     vector_db: str
+    pb_checksum: Optional[str]
 
 
 class Prompt(BaseModel):

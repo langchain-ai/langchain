@@ -50,7 +50,12 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import (
     Runnable,
     RunnableMap,
@@ -63,6 +68,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -121,6 +127,7 @@ def _merge_messages(
                             "type": "tool_result",
                             "content": curr.content,
                             "tool_use_id": curr.tool_call_id,
+                            "is_error": curr.status == "error",
                         }
                     ]
                 )
@@ -994,7 +1001,7 @@ class ChatAnthropic(BaseChatModel):
 
         tool_name = convert_to_anthropic_tool(schema)["name"]
         llm = self.bind_tools([schema], tool_choice=tool_name)
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
