@@ -426,7 +426,7 @@ def filter_messages(
 def merge_message_runs(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
-    with_newline_separator: bool = True,
+    chunk_separator: str = "\n",
 ) -> List[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
@@ -435,8 +435,8 @@ def merge_message_runs(
 
     Args:
         messages: Sequence Message-like objects to merge.
-        with_newline_separator: Whether to separate merged messages with a newline.
-            Default is True.
+        chunk_separator: Specify the string to be inserted between message chunks.
+        Default is "\n".
 
     Returns:
         List of BaseMessages with consecutive runs of message types merged into single
@@ -508,12 +508,10 @@ def merge_message_runs(
         else:
             last_chunk = _msg_to_chunk(last)
             curr_chunk = _msg_to_chunk(curr)
-            if (
-                isinstance(last_chunk.content, str)
-                and isinstance(curr_chunk.content, str)
-                and with_newline_separator
+            if isinstance(last_chunk.content, str) and isinstance(
+                curr_chunk.content, str
             ):
-                last_chunk.content += "\n"
+                last_chunk.content += chunk_separator
             merged.append(_chunk_to_msg(last_chunk + curr_chunk))
     return merged
 
