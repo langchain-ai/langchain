@@ -441,10 +441,10 @@ def merge_message_runs(
     Returns:
         List of BaseMessages with consecutive runs of message types merged into single
         messages. By default, if two messages being merged both have string contents,
-        the merged content is a concatenation of the two strings with a new-line separator,
-        unless ```with_newline_separator=False```, in which case no new-line is inserted.
-        If at least one of the messages has a list of content blocks, the merged content is
-        a list of content blocks.
+        the merged content is a concatenation of the two strings with a new-line separator.
+        The separator inserted between message chunks can be controlled by specifying
+        any string with ``chunk_separator``. If at least one of the messages has a list of
+        content blocks, the merged content is a list of content blocks.
 
     Example:
         .. code-block:: python
