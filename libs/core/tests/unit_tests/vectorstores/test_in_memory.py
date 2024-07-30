@@ -41,11 +41,6 @@ async def test_inmemory() -> None:
     assert output2[0][1] > output2[1][1]
 
 
-async def test_foo() -> None:
-    d = _AnyIdDocument(page_content="h")
-    raise ValueError(type(d.foo))
-
-
 async def test_add_by_ids() -> None:
     vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=6))
 
