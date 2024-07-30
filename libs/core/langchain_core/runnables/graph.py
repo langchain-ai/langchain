@@ -23,6 +23,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
+from langchain_core.utils.pydantic import _IgnoreUnserializable
+
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
 
@@ -233,7 +235,9 @@ def node_data_json(
         json = (
             {
                 "type": "schema",
-                "data": node.data.schema(),
+                "data": node.data.model_json_schema(
+                    schema_generator=_IgnoreUnserializable
+                ),
             }
             if with_schemas
             else {

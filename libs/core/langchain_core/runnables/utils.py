@@ -704,6 +704,8 @@ def create_base_class(name: str, type_, default_=NO_DEFAULT) -> Type[BaseModel]:
         class FixedNameRootModel(RootModel):
             root: type_
 
+            model_config = ConfigDict(arbitrary_types_allowed=True)
+
             @classmethod
             def schema(  # noqa: D102
                 cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
@@ -715,6 +717,8 @@ def create_base_class(name: str, type_, default_=NO_DEFAULT) -> Type[BaseModel]:
 
         class FixedNameRootModel(RootModel):
             root: type_ = default_
+
+            model_config = ConfigDict(arbitrary_types_allowed=True)
 
             @classmethod
             def schema(  # noqa: D102

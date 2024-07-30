@@ -4,6 +4,8 @@ from functools import wraps
 from typing import Any, Callable, Dict, Type
 
 from pydantic import BaseModel, root_validator
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+from pydantic_core import core_schema
 
 
 def get_pydantic_major_version() -> int:
@@ -68,3 +70,15 @@ def pre_init(func: Callable) -> Any:
         return func(cls, values)
 
     return wrapper
+
+
+class _IgnoreUnserializable(GenerateJsonSchema):
+    """A JSON schema generator that ignores unknown types.
+
+    https://docs.pydantic.dev/latest/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """
+
+    def handle_invalid_for_json_schema(
+        self, schema: core_schema.CoreSchema, error_info: str
+    ) -> JsonSchemaValue:
+        return {}

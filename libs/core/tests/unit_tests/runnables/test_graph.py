@@ -7,7 +7,7 @@ from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.runnables.base import Runnable, RunnableConfig
+from langchain_core.runnables.base import Runnable, RunnableConfig, RunnableParallel
 from langchain_core.runnables.graph_mermaid import _escape_node_label
 
 
@@ -146,6 +146,20 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
     }
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
+def test_runnable_lambda_output():
+    from langchain_core.output_parsers import CommaSeparatedListOutputParser
+    from langchain_core.runnables import RunnableLambda, RunnableParallel
+
+    class A:
+        pass
+
+    @RunnableLambda
+    def foo(input: str) -> A:
+        pass
+
+    foo.get_output_schema().schema()
 
 
 def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
