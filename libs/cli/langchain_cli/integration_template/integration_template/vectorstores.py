@@ -101,7 +101,7 @@ class __ModuleName__VectorStore(VectorStore):
         .. code-block:: python
 
             # TODO: Example output
-    
+
     # TODO: Fill out with relevant variables and example output.
     Search with score:
         .. code-block:: python
@@ -125,7 +125,7 @@ class __ModuleName__VectorStore(VectorStore):
 
             # TODO: Example output
 
-    """ # noqa: E501
+    """  # noqa: E501
 
     def add_texts(
         self,
