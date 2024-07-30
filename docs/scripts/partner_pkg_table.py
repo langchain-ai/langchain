@@ -1,4 +1,5 @@
 import glob
+import sys
 from pathlib import Path
 
 PARTNER_DIR = Path(__file__).parents[2] / "libs" / "partners"
@@ -128,5 +129,6 @@ Click [here](/docs/integrations/providers/) to see all providers.
 
 
 if __name__ == "__main__":
-    with open(DOCS_DIR / "docs" / "integrations" / "platforms" / "index.mdx", "w") as f:
+    output_dir = Path(sys.argv[1]) / "integrations" / "platforms"
+    with open(output_dir / "index.mdx", "w") as f:
         f.write(doc())
