@@ -118,7 +118,7 @@ def init_chat_model(
                 - mistralai (langchain-mistralai)
                 - huggingface (langchain-huggingface)
                 - groq (langchain-groq)
-                - ollama (langchain-community)
+                - ollama (langchain-ollama)
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -336,8 +336,12 @@ def _init_chat_model_helper(
 
         return ChatFireworks(model=model, **kwargs)
     elif model_provider == "ollama":
-        _check_pkg("langchain_community")
-        from langchain_community.chat_models import ChatOllama
+        try:
+            _check_pkg("langchain_ollama")
+            from langchain_ollama import ChatOllama
+        except ImportError:
+            _check_pkg("langchain_community")
+            from langchain_community import ChatOllama
 
         return ChatOllama(model=model, **kwargs)
     elif model_provider == "together":
