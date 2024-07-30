@@ -7,7 +7,9 @@ from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableConfig
+from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.graph_mermaid import _escape_node_label
 
 
@@ -26,6 +28,42 @@ def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
     assert graph.edges[1].target == last_node.id
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+    graph.trim_first_node()
+    first_node = graph.first_node()
+    assert first_node is not None
+    assert first_node.data == runnable
+
+    graph.trim_last_node()
+    last_node = graph.last_node()
+    assert last_node is not None
+    assert last_node.data == runnable
+
+
+def test_trim(snapshot: SnapshotAssertion) -> None:
+    runnable = StrOutputParser()
+
+    class Schema(BaseModel):
+        a: int
+
+    graph = Graph()
+    start = graph.add_node(Schema, id="__start__")
+    ask = graph.add_node(runnable, id="ask_question")
+    answer = graph.add_node(runnable, id="answer_question")
+    end = graph.add_node(Schema, id="__end__")
+    graph.add_edge(start, ask)
+    graph.add_edge(ask, answer)
+    graph.add_edge(answer, ask, conditional=True)
+    graph.add_edge(answer, end, conditional=True)
+
+    assert graph.to_json() == snapshot
+    assert graph.first_node() is start
+    assert graph.last_node() is end
+    # can't trim start or end node
+    graph.trim_first_node()
+    assert graph.first_node() is start
+    graph.trim_last_node()
+    assert graph.last_node() is end
 
 
 def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
