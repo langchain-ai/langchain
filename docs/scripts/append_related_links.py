@@ -60,12 +60,6 @@ def _process_path(doc_path: Path):
         )
         if related_links_section:
             content = content + "\n\n" + related_links_section
-            content = re.sub(
-                r"## Related\n",
-                related_links_section,
-                content,
-                count=1,
-            )
             doc_path.write_text(content)
 
 
