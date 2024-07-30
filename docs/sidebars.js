@@ -77,7 +77,7 @@ module.exports = {
         "versions/packages",
         {
           type: 'doc',
-          id: "docs/how/pydantic_compatibility",
+          id: "docs/how_to/pydantic_compatibility",
           label: "Pydantic compatibility",
         },
         {
