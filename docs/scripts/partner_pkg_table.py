@@ -69,25 +69,37 @@ CUSTOM_NAME = {
     "aws": "AWS",
     "airbyte": "Airbyte",
 }
-CUSTOM_LINKS = {
+CUSTOM_PROVIDER_PAGES = {
     "azure-dynamic-sessions": "/docs/integrations/platforms/microsoft/",
     "google-community": "/docs/integrations/platforms/google/",
     "google-genai": "/docs/integrations/platforms/google/",
     "google-vertexai": "/docs/integrations/platforms/google/",
     "nvidia-ai-endpoints": "/docs/integrations/providers/nvidia/",
+    "exa": "/docs/integrations/providers/exa_search/",
+    "mongodb": "/docs/integrations/providers/mongodb_atlas/",
 }
-CUSTOM_LINKS.update(
-    {name: f"/docs/integrations/platforms/{name}/" for name in PLATFORMS}
-)
+PLATFORM_PAGES = {name: f"/docs/integrations/platforms/{name}/" for name in PLATFORMS}
+PROVIDER_PAGES = {
+    name: f"/docs/integrations/providers/{name}/"
+    for name in ALL_PACKAGES
+    if glob.glob(str(DOCS_DIR / f"docs/integrations/providers/{name}.*"))
+}
+PROVIDER_PAGES = {
+    **PROVIDER_PAGES,
+    **PLATFORM_PAGES,
+    **CUSTOM_PROVIDER_PAGES,
+}
+print(PROVIDER_PAGES)
 
 
 def package_row(name: str) -> str:
     js = "✅" if name in JS_PACKAGES else "❌"
-    link = CUSTOM_LINKS.get(name) or f"/docs/integrations/providers/{name}/"
+    link = PROVIDER_PAGES.get(name)
     title = CUSTOM_NAME.get(name) or name.title().replace("-", " ").replace(
         "db", "DB"
     ).replace("Db", "DB").replace("ai", "AI").replace("Ai", "AI")
-    return f"| [{title}]({link}) | [langchain-{name}](https://api.python.langchain.com/en/latest/{name.replace('-', '_')}_api_reference.html) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-{name}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-{name}?style=flat-square&label=%20&color=orange) | {js} |"
+    provider = f"[{title}({link})]" if link else title
+    return f"| {provider} | [langchain-{name}](https://api.python.langchain.com/en/latest/{name.replace('-', '_')}_api_reference.html) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-{name}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-{name}?style=flat-square&label=%20&color=orange) | {js} |"
 
 
 def table() -> str:
