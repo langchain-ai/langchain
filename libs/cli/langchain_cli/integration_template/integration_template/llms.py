@@ -2,18 +2,15 @@
 
 from typing import (
     Any,
-    AsyncIterator,
-    Iterator,
     List,
     Optional,
 )
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseLLM
-from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.outputs import LLMResult
 
 
 class __ModuleName__LLM(BaseLLM):
@@ -110,11 +107,6 @@ class __ModuleName__LLM(BaseLLM):
             # TODO: Example output.
     """
 
-    @property
-    def _llm_type(self) -> str:
-        """Return type of LLM."""
-        return "__package_name_short__-llm"
-
     # TODO: This method must be implemented to generate text completions.
     def _generate(
         self,
@@ -127,32 +119,37 @@ class __ModuleName__LLM(BaseLLM):
 
     # TODO: Implement if __ModuleName__LLM supports async generation. Otherwise
     # delete method.
-    async def _agenerate(
-        self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> LLMResult:
-        raise NotImplementedError
+    # async def _agenerate(
+    #     self,
+    #     prompts: List[str],
+    #     stop: Optional[List[str]] = None,
+    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    #     **kwargs: Any,
+    # ) -> LLMResult:
+    #     raise NotImplementedError
 
     # TODO: Implement if __ModuleName__LLM supports streaming. Otherwise delete method.
-    def _stream(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[GenerationChunk]:
-        raise NotImplementedError
+    # def _stream(
+    #     self,
+    #     prompt: str,
+    #     stop: Optional[List[str]] = None,
+    #     run_manager: Optional[CallbackManagerForLLMRun] = None,
+    #     **kwargs: Any,
+    # ) -> Iterator[GenerationChunk]:
+    #     raise NotImplementedError
 
     # TODO: Implement if __ModuleName__LLM supports async streaming. Otherwise delete
     # method.
-    async def _astream(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[GenerationChunk]:
-        raise NotImplementedError
+    # async def _astream(
+    #     self,
+    #     prompt: str,
+    #     stop: Optional[List[str]] = None,
+    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    #     **kwargs: Any,
+    # ) -> AsyncIterator[GenerationChunk]:
+    #     raise NotImplementedError
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of LLM."""
+        return "__package_name_short__-llm"
