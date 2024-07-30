@@ -4105,7 +4105,7 @@ class RunnableLambda(Runnable[Input, Output]):
         if dict_keys := get_function_first_arg_dict_keys(func):
             return create_model(
                 self.get_name("Input"),
-                **{key: Any for key in dict_keys},  # type: ignore
+                **{key: (Any, ...) for key in dict_keys},  # type: ignore
             )
 
         return super().get_input_schema(config)

@@ -497,6 +497,7 @@ def test_lambda_schemas() -> None:
         "title": "RunnableLambdaInput",
         "type": "object",
         "properties": {"hello": {"title": "Hello"}},
+        "required": ["hello"],
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
@@ -504,6 +505,7 @@ def test_lambda_schemas() -> None:
         "title": "RunnableLambdaInput",
         "type": "object",
         "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+        "required": ["bye", "hello"],
     }
 
     def get_value(input):  # type: ignore[no-untyped-def]
@@ -513,6 +515,7 @@ def test_lambda_schemas() -> None:
         "title": "get_value_input",
         "type": "object",
         "properties": {"variable_name": {"title": "Variable Name"}},
+        "required": ["variable_name"],
     }
 
     async def aget_value(input):  # type: ignore[no-untyped-def]
@@ -525,6 +528,7 @@ def test_lambda_schemas() -> None:
             "another": {"title": "Another"},
             "variable_name": {"title": "Variable Name"},
         },
+        "required": ["another", "variable_name"],
     }
 
     async def aget_values(input):  # type: ignore[no-untyped-def]
@@ -541,6 +545,7 @@ def test_lambda_schemas() -> None:
             "variable_name": {"title": "Variable Name"},
             "yo": {"title": "Yo"},
         },
+        "required": ["variable_name", "yo"],
     }
 
     class InputType(TypedDict):
@@ -562,7 +567,7 @@ def test_lambda_schemas() -> None:
     assert (
         RunnableLambda(
             aget_values_typed  # type: ignore[arg-type]
-        ).input_schema.schema()
+        ).input_schema.model_json_schema()
         == {
             "title": "aget_values_typed_input",
             "$ref": "#/definitions/InputType",
@@ -583,7 +588,7 @@ def test_lambda_schemas() -> None:
         }
     )
 
-    assert RunnableLambda(aget_values_typed).output_schema.schema() == {  # type: ignore[arg-type]
+    assert RunnableLambda(aget_values_typed).output_schema.model_json_schema() == {  # type: ignore[arg-type]
         "title": "aget_values_typed_output",
         "$ref": "#/definitions/OutputType",
         "definitions": {

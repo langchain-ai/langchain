@@ -32,7 +32,11 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict, RootModel
 from pydantic import create_model as _create_model_base
-from pydantic.json_schema import DEFAULT_REF_TEMPLATE
+from pydantic.json_schema import (
+    DEFAULT_REF_TEMPLATE,
+    GenerateJsonSchema,
+    JsonSchemaMode,
+)
 from typing_extensions import TypeGuard
 
 from langchain_core.runnables.schema import StreamEvent
@@ -346,7 +350,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
-        return list(visitor.keys) if visitor.keys else None
+        return sorted(visitor.keys) if visitor.keys else None
     except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
@@ -713,6 +717,23 @@ def create_base_class(name: str, type_, default_=NO_DEFAULT) -> Type[BaseModel]:
                 schema_ = super().schema(by_alias=by_alias, ref_template=ref_template)
                 schema_["title"] = name
                 return schema_
+
+            @classmethod
+            def model_json_schema(
+                cls,
+                by_alias: bool = True,
+                ref_template: str = DEFAULT_REF_TEMPLATE,
+                schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+                mode: JsonSchemaMode = "validation",
+            ) -> Dict[str, Any]:
+                schema_ = super().model_json_schema(
+                    by_alias=by_alias,
+                    ref_template=ref_template,
+                    schema_generator=schema_generator,
+                    mode=mode,
+                )
+                schema_["title"] = name
+                return schema_
     else:
 
         class FixedNameRootModel(RootModel):
@@ -725,6 +746,23 @@ def create_base_class(name: str, type_, default_=NO_DEFAULT) -> Type[BaseModel]:
                 cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
             ) -> Dict[str, Any]:
                 schema_ = super().schema(by_alias=by_alias, ref_template=ref_template)
+                schema_["title"] = name
+                return schema_
+
+            @classmethod
+            def model_json_schema(
+                cls,
+                by_alias: bool = True,
+                ref_template: str = DEFAULT_REF_TEMPLATE,
+                schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+                mode: JsonSchemaMode = "validation",
+            ) -> Dict[str, Any]:
+                schema_ = super().model_json_schema(
+                    by_alias=by_alias,
+                    ref_template=ref_template,
+                    schema_generator=schema_generator,
+                    mode=mode,
+                )
                 schema_["title"] = name
                 return schema_
 
