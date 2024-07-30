@@ -1,12 +1,10 @@
 """Search index commands are only supported on Atlas Clusters >=M10"""
 
 import os
-from time import sleep
 
 import pymongo.collection
 import pytest
 from pymongo import MongoClient
-from pymongo.errors import OperationFailure
 
 from langchain_mongodb import index
 
