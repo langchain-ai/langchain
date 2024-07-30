@@ -208,14 +208,12 @@ def create_doc(
         docs_template = template_dir / "document_loaders.ipynb"
     elif component_type == "Tool":
         docs_template = template_dir / "tools.ipynb"
+    elif component_type == "VectorStore":
+        docs_template = template_dir / "vectorstores.ipynb"
     else:
         raise ValueError(
             f"Unrecognized {component_type=}. Expected one of 'ChatModel', "
             f"'DocumentLoader', 'Tool'."
-        )
-    elif component_type == "VectorStore":
-        docs_template = (
-            Path(__file__).parents[1] / "integration_template/docs/vectorstores.ipynb"
         )
     shutil.copy(docs_template, destination_path)
 
