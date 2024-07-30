@@ -5,9 +5,8 @@ from typing import (
 
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
-from pymongo.collection import Collection
+
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.pipelines import (
     MongoDBDocument,
@@ -43,7 +42,6 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """Penalty applied to full-text search results in RRF: scores=1/(rank + penalty)"""
     show_embeddings: float = False
     """If true, returned Document metadata will include vectors."""
-
 
     @property
     def collection(self):

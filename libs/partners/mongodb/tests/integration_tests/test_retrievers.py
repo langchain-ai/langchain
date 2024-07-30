@@ -1,21 +1,13 @@
 import os
-from time import monotonic, sleep
-from typing import Any, Dict, List, Optional
+from time import sleep
 
-import pytest  # type: ignore[import-not-found]
+import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.runnables.base import RunnableLambda
-from langchain_openai import ChatOpenAI
 from pymongo import MongoClient
 from pymongo.collection import Collection
-from pymongo.errors import OperationFailure
-from pymongo.operations import SearchIndexModel
 
-from langchain_mongodb import MongoDBAtlasVectorSearch, index
+from langchain_mongodb import index
 from langchain_mongodb.retrievers import MongoDBAtlasHybridSearchRetriever
 
 from ..utils import ConsistentFakeEmbeddings, PatchedMongoDBAtlasVectorSearch
@@ -87,12 +79,12 @@ def collection_with_two_indexes() -> Collection:
     return clxn
 
 
-def test_retriever(
+def test_hybrid_retriever(
     embedding_openai: Embeddings,
     collection_with_two_indexes: Collection,
     example_documents,
 ) -> None:
-    """Demonstrate usage and parity of VectorStore similarity_search with Retriever.invoke."""
+    """Test basic usage of MongoDBAtlasHybridSearchRetriever"""
 
     vectorstore = PatchedMongoDBAtlasVectorSearch(
         collection=collection_with_two_indexes,
