@@ -695,7 +695,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 )
             ]
             vector_pipeline.extend(
-                reciprocal_rank_stage(self._text_key, "vector_score", vector_penalty)
+                reciprocal_rank_stage("vector_score", vector_penalty)
             )
             combine_pipelines(pipeline, vector_pipeline, self._collection.name)
 
@@ -712,9 +712,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     {"$limit": k},
                 ]
                 text_pipeline.extend(
-                    reciprocal_rank_stage(
-                        self._text_key, "fulltext_score", fulltext_penalty
-                    )
+                    reciprocal_rank_stage("fulltext_score", fulltext_penalty)
                 )
                 combine_pipelines(pipeline, text_pipeline, self._collection.name)
             else:

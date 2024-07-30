@@ -20,6 +20,7 @@ from pymongo.errors import OperationFailure
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.index import drop_vector_search_index
+
 from ..utils import ConsistentFakeEmbeddings, PatchedMongoDBAtlasVectorSearch
 
 INDEX_NAME = "langchain-test-index-vectorstores"

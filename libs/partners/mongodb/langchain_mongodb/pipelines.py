@@ -1,9 +1,9 @@
 """Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Search.
 
 """
-from typing import Any, Dict, List, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar
 
-MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
+MongoDBDocument = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 
 def text_search_stage(
@@ -36,9 +36,9 @@ def vector_search_stage(
     query_vector: List[float],
     search_field: str,
     index_name: str,
-    limit: int = 4,
-    filter: MongoDBDocumentType = None,
-    oversampling_factor=10,
+    top_k: int = 4,
+    filter: Optional[MongoDBDocument] = None,
+    oversampling_factor: int = 10,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Vector Search Stage without Scores.
@@ -51,23 +51,23 @@ def vector_search_stage(
         query_vector: List of embedding vector
         search_field: Field in Collection containing embedding vectors
         index_name: Name of Atlas Vector Search Index tied to Collection
-        limit: Number of documents to return
+        top_k: Number of documents to return
         oversampling_factor: this times limit is the number of candidates
-        filters: Any MQL match expression comparing an indexed field
+        filter: Any MQL match expression comparing an indexed field
 
     Returns:
         Dictionary defining the $vectorSearch
     """
-    return {
-        "$vectorSearch": {
-            "index": index_name,
-            "path": search_field,
-            "queryVector": query_vector,
-            "numCandidates": limit * oversampling_factor,
-            "limit": limit,
-            "filter": filter,
-        }
+    stage = {
+        "index": index_name,
+        "path": search_field,
+        "queryVector": query_vector,
+        "numCandidates": top_k * oversampling_factor,
+        "limit": top_k,
     }
+    if filter:
+        stage["filter"] = filter
+    return {"$vectorSearch": stage}
 
 
 def combine_pipelines(
@@ -82,7 +82,7 @@ def combine_pipelines(
 
 
 def reciprocal_rank_stage(
-    text_field, score_field: str, penalty: float = 0, **kwargs: Any
+    score_field: str, penalty: float = 0, **kwargs: Any
 ) -> List[Dict[str, Any]]:
     """Stage adds Reciprocal Rank Fusion weighting.
 
@@ -91,7 +91,6 @@ def reciprocal_rank_stage(
         the rank to each and applies the penalty.
 
     Args:
-        text_field: Collection field containing relevant to text per VectorStore API
         score_field: A unique string to identify the search being ranked
         penalty: A non-negative float.
         extra_fields: Any fields other than text_field that one wishes to keep.

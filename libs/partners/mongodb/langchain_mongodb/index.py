@@ -207,3 +207,44 @@ def _wait_for_predicate(
         if monotonic() - start > timeout:
             raise TimeoutError(err)
         sleep(interval)
+
+
+def create_search_index(
+    collection: Collection,
+    index_name: str,
+    field: str,
+    wait_until_complete: Optional[float] = None,
+) -> None:
+    """Experimental Utility function to create an Atlas Search index
+
+    Args:
+        collection (Collection): MongoDB Collection
+        index_name (str): Name of Index
+        field (str): to index
+        wait_until_complete (Optional[float]): If provided, number of seconds to wait
+            until search index is ready.
+    """
+    logger.info("Creating Search Index %s on %s", index_name, collection.name)
+
+    definition = {
+        "mappings": {"dynamic": False, "fields": {field: [{"type": "string"}]}}
+    }
+
+    try:
+        result = collection.create_search_index(
+            SearchIndexModel(
+                definition=definition,
+                name=index_name,
+                type="search",
+            )
+        )
+    except OperationFailure as e:
+        raise OperationFailure(_search_index_error_message()) from e
+
+    if wait_until_complete:
+        _wait_for_predicate(
+            predicate=lambda: _is_index_ready(collection, index_name),
+            err=f"{index_name=} did not complete in {wait_until_complete}!",
+            timeout=wait_until_complete,
+        )
+    logger.info(result)
