@@ -66,7 +66,6 @@ if TYPE_CHECKING:
     from langchain_community.tools.bearly.tool import (
         BearlyInterpreterTool,
     )
-    from langchain_community.tools.tavily_search import TavilyAnswer, TavilySearchResults
     from langchain_community.tools.bing_search.tool import (
         BingSearchResults,
         BingSearchRun,
@@ -295,6 +294,10 @@ if TYPE_CHECKING:
     )
     from langchain_community.tools.steamship_image_generation import (
         SteamshipImageGenerationTool,
+    )
+    from langchain_community.tools.tavily_search import (
+        TavilyAnswer,
+        TavilySearchResults,
     )
     from langchain_community.tools.vectorstore.tool import (
         VectorStoreQATool,
