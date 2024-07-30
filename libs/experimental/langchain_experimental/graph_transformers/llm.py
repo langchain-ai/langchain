@@ -712,9 +712,7 @@ class LLMGraphTransformer:
             self.chain = prompt | structured_llm
 
     def process_response(
-        self, 
-        document: Document, 
-        config: Optional[RunnableConfig] = None
+        self, document: Document, config: Optional[RunnableConfig] = None
     ) -> GraphDocument:
         """
         Processes a single document, transforming it into a graph document using
@@ -770,9 +768,7 @@ class LLMGraphTransformer:
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     def convert_to_graph_documents(
-        self, 
-        documents: Sequence[Document], 
-        config: Optional[RunnableConfig] = None
+        self, documents: Sequence[Document], config: Optional[RunnableConfig] = None
     ) -> List[GraphDocument]:
         """Convert a sequence of documents into graph documents.
 
@@ -786,9 +782,7 @@ class LLMGraphTransformer:
         return [self.process_response(document, config) for document in documents]
 
     async def aprocess_response(
-        self, 
-        document: Document, 
-        config: Optional[RunnableConfig] = None
+        self, document: Document, config: Optional[RunnableConfig] = None
     ) -> GraphDocument:
         """
         Asynchronously processes a single document, transforming it into a
