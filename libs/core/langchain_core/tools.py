@@ -286,18 +286,43 @@ def create_schema_from_function(
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+    sig = inspect.signature(func)
+
+    has_args = False
+    has_kwargs = False
+
+    for param in sig.parameters.values():
+        if param.kind == param.VAR_POSITIONAL:
+            has_args = True
+        elif param.kind == param.VAR_KEYWORD:
+            has_kwargs = True
+
     inferred_model = validated.model  # type: ignore
     filter_args = filter_args if filter_args is not None else FILTERED_ARGS
     for arg in filter_args:
         if arg in inferred_model.__fields__:
             del inferred_model.__fields__[arg]
+
     description, arg_descriptions = _infer_arg_descriptions(
         func,
         parse_docstring=parse_docstring,
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
+    valid_properties = []
+    for field in inferred_model.__fields__:
+        if not has_args:
+            if field == "args":
+                continue
+        if not has_kwargs:
+            if field == "kwargs":
+                continue
+
+        if field == "v__duplicate_kwargs":  # Internal pydantic field
+            continue
+        if field not in filter_args:
+            valid_properties.append(field)
+
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
