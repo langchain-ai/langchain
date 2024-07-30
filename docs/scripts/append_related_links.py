@@ -1,8 +1,8 @@
-from pathlib import Path
+import itertools
+import multiprocessing
 import re
 import sys
-import multiprocessing
-import itertools
+from pathlib import Path
 
 
 def _generate_related_links_section(integration_type: str, notebook_name: str):
