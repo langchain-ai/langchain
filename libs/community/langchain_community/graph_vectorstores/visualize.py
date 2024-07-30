@@ -1,9 +1,15 @@
-from typing import Dict, Iterable, Optional, Set
+from typing import TYPE_CHECKING, Dict, Iterable, Optional
+
 from langchain_core.documents import Document
 from langchain_core.graph_vectorstores.links import get_links
 
+if TYPE_CHECKING:
+    import graphviz
+
+
 def _escape_id(id: str) -> str:
-    return id.replace(':', '_')
+    return id.replace(":", "_")
+
 
 _EDGE_DIRECTION = {
     "in": "back",
@@ -11,10 +17,11 @@ _EDGE_DIRECTION = {
     "bidir": "both",
 }
 
+
 def render_graphviz(
-        documents: Iterable[Document],
-        node_color: str = "white",
-        node_colors: Optional[Dict[str, str]] = {},
+    documents: Iterable[Document],
+    node_color: str = "white",
+    node_colors: Optional[Dict[str, str]] = {},
 ) -> "graphviz.Digraph":
     """Render a collection of GraphVectorStore documents to GraphViz format.
 
@@ -63,7 +70,13 @@ def render_graphviz(
             raise ValueError(f"Illegal graph document without ID: {document}")
         escaped_id = _escape_id(id)
         color = node_colors.get(id) or node_color
-        graph.node(escaped_id, label = f"{id}", shape="note", fillcolor=color)
+        graph.node(
+            escaped_id,
+            label=f"{id}",
+            shape="note",
+            fillcolor=color,
+            tooltip=document.page_content,
+        )
 
         for link in get_links(document):
             tag = f"{link.kind}_{link.tag}"
@@ -73,4 +86,3 @@ def render_graphviz(
 
             graph.edge(escaped_id, tag, dir=_EDGE_DIRECTION[link.direction])
     return graph
-
