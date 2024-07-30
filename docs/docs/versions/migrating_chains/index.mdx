@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+
+# How to migrate chains to LCEL
+
+:::info Prerequisites
+
+This guide assumes familiarity with the following concepts:
+- [LangChain Expression Language](/docs/concepts#langchain-expression-language-lcel)
+
+:::
+
+LCEL is designed to streamline the process of building useful apps with LLMs and combining related components. It does this by providing:
+
+1. **A unified interface**: Every LCEL object implements the `Runnable` interface, which defines a common set of invocation methods (`invoke`, `batch`, `stream`, `ainvoke`, ...). This makes it possible to also automatically and consistently support useful operations like streaming of intermediate steps and batching, since every chain composed of LCEL objects is itself an LCEL object.
+2. **Composition primitives**: LCEL provides a number of primitives that make it easy to compose chains, parallelize components, add fallbacks, dynamically configure chain internals, and more.
+
+LangChain maintains a number of legacy abstractions. Many of these can be reimplemented via short combinations of LCEL primitives. Doing so confers some general advantages:
+
+- The resulting chains typically implement the full `Runnable` interface, including streaming and asynchronous support where appropriate;
+- The chains may be more easily extended or modified;
+- The parameters of the chain are typically surfaced for easier customization (e.g., prompts) over previous versions, which tended to be subclasses and had opaque parameters and internals.
+
+The LCEL implementations can be slightly more verbose, but there are significant benefits in transparency and customizability.
+
+The below pages assist with migration from various specific chains to LCEL:
+
+- [LLMChain](/docs/versions/migrating_chains/llm_chain)
+- [ConversationChain](/docs/versions/migrating_chains/conversation_chain)
+- [RetrievalQA](/docs/versions/migrating_chains/retrieval_qa)
+- [ConversationalRetrievalChain](/docs/versions/migrating_chains/conversation_retrieval_chain)
+
+Check out the [LCEL conceptual docs](/docs/concepts/#langchain-expression-language-lcel) for more background information.
