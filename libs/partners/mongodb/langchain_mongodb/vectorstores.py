@@ -94,13 +94,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         self._collection = collection
         self._embedding = embedding
-        self._vector_index_name = vector_index_name
+        self._index_name = index_name
         self._text_key = text_key
         self._embedding_key = embedding_key
         self._relevance_score_fn = relevance_score_fn
-        self._text_index_name = fulltext_index_name
-        if index_name is not None:
-            logger.warning("index_name is deprecated. Please use vector_index_name")
 
     @property
     def embeddings(self) -> Embeddings:
@@ -655,7 +652,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 vector_search_stage(
                     query_vector,
                     self._embedding_key,
-                    self._vector_index_name,
+                    self._index_name,
                     k,
                     pre_filter,
                     oversampling_factor,
@@ -686,7 +683,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 vector_search_stage(
                     query_vector,
                     self._embedding_key,
-                    self._vector_index_name,
+                    self._index_name,
                     k,
                     pre_filter,
                     oversampling_factor,

@@ -97,7 +97,7 @@ def test_retriever(
     vectorstore = PatchedMongoDBAtlasVectorSearch(
         collection=collection_with_two_indexes,
         embedding=embedding_openai,
-        vector_index_name=VECTOR_INDEX_NAME,
+        index_name=VECTOR_INDEX_NAME,
         text_key=PAGE_CONTENT_FIELD,
     )
 
@@ -106,12 +106,8 @@ def test_retriever(
     sleep(TIMEOUT)  # Wait for documents to be sync'd
 
     retriever = MongoDBAtlasHybridSearchRetriever(
-        collection=collection_with_two_indexes,
-        embedding_model=embedding_openai,
-        vector_search_index_name=VECTOR_INDEX_NAME,
+        vectorstore=vectorstore,
         search_index_name=SEARCH_INDEX_NAME,
-        page_content_field=PAGE_CONTENT_FIELD,
-        embedding_field=EMBEDDING_FIELD,
         top_k=3,
     )
 

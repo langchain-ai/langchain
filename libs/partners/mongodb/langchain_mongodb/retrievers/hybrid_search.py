@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from pymongo.collection import Collection
-
+from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.pipelines import (
     MongoDBDocument,
     combine_pipelines,
@@ -25,18 +25,10 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     weighting them the via Reciprocal Rank Fusion algorithm.
     """
 
-    collection: Collection
-    """Collection on Atlas cluster."""
-    embedding_model: Embeddings
-    """Text-embedding model, e.g. langchain_openai.OpenAIEmbeddings"""
-    vector_search_index_name: str
-    """Atlas Vector Search Index name"""
+    vectorstore: MongoDBAtlasVectorSearch
+    """MongoDBAtlas VectorStore"""
     search_index_name: str
     """Atlas Search Index name"""
-    page_content_field: str
-    """Field containing text content to embed"""
-    embedding_field: str = "embedding"
-    """Field in Collection containing embedding vectors"""
     top_k: int = 4
     """Number of documents to return."""
     oversampling_factor: int = 10
@@ -51,6 +43,11 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """Penalty applied to full-text search results in RRF: scores=1/(rank + penalty)"""
     show_embeddings: float = False
     """If true, returned Document metadata will include vectors."""
+
+
+    @property
+    def collection(self):
+        return self.vectorstore._collection
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -67,7 +64,7 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
             List of relevant documents
         """
 
-        query_vector = self.embedding_model.embed_query(query)
+        query_vector = self.vectorstore._embedding.embed_query(query)
 
         scores_fields = ["vector_score", "fulltext_score"]
         pipeline = []
@@ -76,8 +73,8 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
         vector_pipeline = [
             vector_search_stage(
                 query_vector,
-                self.embedding_field,
-                self.vector_search_index_name,
+                self.vectorstore._embedding_key,
+                self.vectorstore._index_name,
                 self.top_k,
                 self.pre_filter,
                 self.oversampling_factor,
@@ -87,10 +84,10 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
 
         combine_pipelines(pipeline, vector_pipeline, self.collection.name)
 
-        # Full-Text Search stage  # TODO Compare with index.text_search_stage and move
+        # Full-Text Search stage
         text_pipeline = text_search_stage(
             query=query,
-            search_field=self.page_content_field,
+            search_field=self.vectorstore._text_key,
             index_name=self.search_index_name,
             limit=self.top_k,
             pre_filter=self.pre_filter,
@@ -105,7 +102,7 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
 
         # Removal of embeddings unless requested.
         if not self.show_embeddings:
-            pipeline.append({"$project": {self.embedding_field: 0}})
+            pipeline.append({"$project": {self.vectorstore._embedding_key: 0}})
         # Post filtering
         if self.post_filter is not None:
             pipeline.extend(self.post_filter)
@@ -116,7 +113,7 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
         # Formatting
         docs = []
         for res in cursor:
-            text = res.pop(self.page_content_field)
+            text = res.pop(self.vectorstore._text_key)
             # score = res.pop("score")  # The score remains buried!
             make_serializable(res)
             docs.append(Document(page_content=text, metadata=res))
