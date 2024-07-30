@@ -134,72 +134,11 @@ def _modify_frontmatter(
         return f"---\ncustom_edit_url: {edit_url}\n---\n{body}"
 
 
-def _generate_related_links_section(integration_type: str, notebook_name: str):
-    concept_display_name = None
-    concept_heading = None
-    if integration_type == "chat":
-        concept_display_name = "Chat model"
-        concept_heading = "chat-models"
-    elif integration_type == "llms":
-        concept_display_name = "LLM"
-        concept_heading = "llms"
-    elif integration_type == "text_embedding":
-        concept_display_name = "Embedding model"
-        concept_heading = "embedding-models"
-    elif integration_type == "document_loaders":
-        concept_display_name = "Document loader"
-        concept_heading = "document-loaders"
-    elif integration_type == "vectorstores":
-        concept_display_name = "Vector store"
-        concept_heading = "vector-stores"
-    elif integration_type == "retrievers":
-        concept_display_name = "Retriever"
-        concept_heading = "retrievers"
-    elif integration_type == "tools":
-        concept_display_name = "Tool"
-        concept_heading = "tools"
-    elif integration_type == "stores":
-        concept_display_name = "Key-value store"
-        concept_heading = "key-value-stores"
-        # Special case because there are no key-value store how-tos yet
-        return f"""## Related
-
-- [{concept_display_name} conceptual guide](/docs/concepts/#{concept_heading})
-"""
-    else:
-        return None
-    return f"""## Related
-
-- {concept_display_name} [conceptual guide](/docs/concepts/#{concept_heading})
-- {concept_display_name} [how-to guides](/docs/how_to/#{concept_heading})
-"""
-
-
-def _append_related_links_cell(
-    nb: nbformat.NotebookNode, integration_type: str, notebook_name: str
-):
-    cell_content = _generate_related_links_section(integration_type, notebook_name)
-    if cell_content is None:
-        return nb
-    new_cell = nbformat.v4.new_markdown_cell(
-        source=cell_content,
-    )
-    nb.cells.append(new_cell)
-    return nb
-
-
 def _convert_notebook(
     notebook_path: Path, output_path: Path, intermediate_docs_dir: Path
 ) -> Path:
     with open(notebook_path) as f:
         nb = nbformat.read(f, as_version=4)
-
-    pattern = r"/docs/integrations/([^/]+)/([^/]+).ipynb"
-    match = re.search(pattern, str(notebook_path))
-    if match and match.group(2) != "index":
-        integration_type = match.group(1)
-        notebook_name = match.group(2)
-        _append_related_links_cell(nb, integration_type, notebook_name)
 
     body, resources = exporter.from_notebook_node(nb)
 
