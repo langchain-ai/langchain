@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Dict, Iterable, Optional
+import re
 
 from langchain_core.documents import Document
 from langchain_core.graph_vectorstores.links import get_links
@@ -17,6 +18,21 @@ _EDGE_DIRECTION = {
     "bidir": "both",
 }
 
+_WORD_RE = re.compile('\s*\S+')
+
+def _split_prefix(s: str, max_chars: int = 50) -> str:
+    words = _WORD_RE.finditer(s)
+
+    split = min(len(s), max_chars)
+    for word in words:
+        if word.end(0) > max_chars:
+            break
+        split = word.end(0)
+
+    if split ==  len(s):
+        return s
+    else:
+        return f"{s[0:split]}..."
 
 def render_graphviz(
     documents: Iterable[Document],
@@ -70,9 +86,12 @@ def render_graphviz(
             raise ValueError(f"Illegal graph document without ID: {document}")
         escaped_id = _escape_id(id)
         color = node_colors.get(id) or node_color
+
+
+        node_label=f"{graphviz.escape(id)}\n{graphviz.escape(_split_prefix(document.page_content))}"
         graph.node(
             escaped_id,
-            label=graphviz.escape(id),
+            label=node_label,
             shape="note",
             fillcolor=color,
             tooltip=graphviz.escape(document.page_content),
