@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.bearly.tool import (
         BearlyInterpreterTool,
     )
+    from langchain_community.tools.tavily_search import TavilyAnswer, TavilySearchResults
     from langchain_community.tools.bing_search.tool import (
         BingSearchResults,
         BingSearchRun,
@@ -450,6 +451,8 @@ __all__ = [
     "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
     "StructuredTool",
+    "TavilyAnswer",
+    "TavilySearchResults",
     "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
@@ -599,6 +602,8 @@ _module_lookup = {
     "SteamWebAPIQueryRun": "langchain_community.tools.steam.tool",
     "SteamshipImageGenerationTool": "langchain_community.tools.steamship_image_generation",  # noqa: E501
     "StructuredTool": "langchain_core.tools",
+    "TavilyAnswer": "langchain_community.tools.tavily_search",
+    "TavilySearchResults": "langchain_community.tools.tavily_search",
     "Tool": "langchain_core.tools",
     "VectorStoreQATool": "langchain_community.tools.vectorstore.tool",
     "VectorStoreQAWithSourcesTool": "langchain_community.tools.vectorstore.tool",
