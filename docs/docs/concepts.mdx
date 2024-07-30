@@ -498,6 +498,29 @@ Retrievers accept a string query as input and return a list of Document's as out
 
 For specifics on how to use retrievers, see the [relevant how-to guides here](/docs/how_to/#retrievers).
 
+### Key-value stores
+
+For some techniques, such as [indexing and retrieval with multiple vectors per document](/docs/how_to/multi_vector/), having some sort of key-value (KV) storage is helpful.
+
+LangChain includes a [`BaseStore`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) interface,
+which allows for storage of arbitrary data. However, LangChain components that require KV-storage accept a
+more specific `BaseStore[str, bytes]` instance that stores binary data (referred to as a `ByteStore`), and internally take care of
+encoding and decoding data for their specific needs.
+
+This means that as a user, you only need to think about one type of store rather than different ones for different types of data.
+
+#### Interface
+
+All [`BaseStores`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) support the following interface. Note that the interface allows
+for modifying **multiple** key-value pairs at once:
+
+- `mget(key: Sequence[str]) -> List[Optional[bytes]]`: get the contents of multiple keys, returning `None` if the key does not exist
+- `mset(key_value_pairs: Sequence[Tuple[str, bytes]]) -> None`: set the contents of multiple keys
+- `mdelete(key: Sequence[str]) -> None`: delete multiple keys
+- `yield_keys(prefix: Optional[str] = None) -> Iterator[str]`: yield all keys in the store, optionally filtering by a prefix
+
+For key-value store implementations, see [this section](/docs/integrations/stores/).
+
 ### Tools
 <span data-heading-keywords="tool,tools"></span>
 
