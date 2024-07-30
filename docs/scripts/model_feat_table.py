@@ -279,7 +279,11 @@ def get_chat_model_table() -> str:
         for h in header[1:]:
             value = feats.get(h)
             if h == "package":
-                row.append(value or "langchain-community")
+                value = value or "langchain-community"
+                name = value[len("langchain-") :]
+                link = f"https://api.python.langchain.com/en/latest/{name}_api_reference.html"
+                value = f"[{value}]({link})"
+                row.append(value)
             else:
                 if value == "partial":
                     row.append("🟡")
