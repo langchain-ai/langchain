@@ -103,7 +103,7 @@ def package_row(name: str) -> str:
 
 
 def table() -> str:
-    header = """| Provider | API ref | Package downloads | Package latest | JS support |
+    header = """| Provider | Package | Downloads | Latest | [JS](https://js.langchain.com/v0.2/docs/integrations/platforms/) |
 | :--- | :---: | :---: | :---: | :---: |
 """
     return header + "\n".join(package_row(name) for name in sorted(ALL_PACKAGES))
