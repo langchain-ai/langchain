@@ -3,10 +3,10 @@
 import random
 import re
 import string
-import contractions
 from pathlib import Path
 from typing import Any, List
 
+import contractions
 import pytest
 from langchain_core.documents import Document
 
@@ -1976,6 +1976,7 @@ def test_split_json_many_calls() -> None:
     assert chunk0 == chunk0_output
     assert chunk1 == chunk1_output
 
+
 paragraph_en = (
     "The National Basketball Association (NBA) is a professional basketball league in North America. "
     "The league is composed of 30 teams and is one of the major professional sports leagues in the United States and Canada. "
@@ -2000,107 +2001,92 @@ paragraph_pt = (
     "A liga foi fundada na cidade de Nova York em 6 de junho de 1946, como a Basketball Association of America (BAA)."
 )
 
-@pytest.mark.parametrize("paragraph, language", [
-    (paragraph_en, "en"),
-    (paragraph_es, "es"),
-    (paragraph_pt, "pt")
-])
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
 def test_splitter_with_normalization(paragraph: str, language: str) -> None:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=100,
-        chunk_overlap=10,
-        normalize=True,
-        language=language
+        chunk_size=100, chunk_overlap=10, normalize=True, language=language
     )
     chunks = splitter.split_text(paragraph)
     assert isinstance(chunks, list)
     assert len(chunks) > 0
 
-@pytest.mark.parametrize("paragraph, language", [
-    (paragraph_en, "en"),
-    (paragraph_es, "es"),
-    (paragraph_pt, "pt")
-])
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
 def test_splitter_with_correct_spelling(paragraph: str, language: str) -> None:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=100,
-        chunk_overlap=10,
-        correct_spelling=True,
-        language=language
+        chunk_size=100, chunk_overlap=10, correct_spelling=True, language=language
     )
     chunks = splitter.split_text(paragraph)
     assert isinstance(chunks, list)
     assert len(chunks) > 0
 
-@pytest.mark.parametrize("paragraph, language", [
-    (paragraph_en, "en"),
-    (paragraph_es, "es"),
-    (paragraph_pt, "pt")
-])
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
 def test_splitter_with_expand_contractions(paragraph: str, language: str) -> None:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=100,
-        chunk_overlap=10,
-        expand_contractions=True,
-        language=language
+        chunk_size=100, chunk_overlap=10, expand_contractions=True, language=language
     )
     chunks = splitter.split_text(paragraph)
     assert isinstance(chunks, list)
     assert len(chunks) > 0
 
-@pytest.mark.parametrize("paragraph, language", [
-    (paragraph_en, "en"),
-    (paragraph_es, "es"),
-    (paragraph_pt, "pt")
-])
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
 def test_splitter_with_remove_punctuation(paragraph: str, language: str) -> None:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=100,
-        chunk_overlap=10,
-        remove_punctuation=True,
-        language=language
+        chunk_size=100, chunk_overlap=10, remove_punctuation=True, language=language
     )
     chunks = splitter.split_text(paragraph)
     assert isinstance(chunks, list)
     assert len(chunks) > 0
 
-@pytest.mark.parametrize("paragraph, language", [
-    (paragraph_en, "en"),
-    (paragraph_es, "es"),
-    (paragraph_pt, "pt")
-])
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
 def test_splitter_with_lemmatization(paragraph: str, language: str) -> None:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=100,
-        chunk_overlap=10,
-        lemmatize=True,
-        language=language
+        chunk_size=100, chunk_overlap=10, lemmatize=True, language=language
     )
     chunks = splitter.split_text(paragraph)
     assert isinstance(chunks, list)
     assert len(chunks) > 0
 
-@pytest.mark.parametrize("paragraph, language", [
-    (paragraph_en, "en"),
-    (paragraph_es, "es"),
-    (paragraph_pt, "pt")
-])
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
 def test_splitter_with_enhance_semantics(paragraph: str, language: str) -> None:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=100,
         chunk_overlap=10,
         enhance_semantics="paraphrase",
-        language=language
+        language=language,
     )
     chunks = splitter.split_text(paragraph)
     assert isinstance(chunks, list)
     assert len(chunks) > 0
 
-@pytest.mark.parametrize("paragraph, language", [
-    (paragraph_en, "en"),
-    (paragraph_es, "es"),
-    (paragraph_pt, "pt")
-])
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
 def test_splitter_with_all_preprocessing(paragraph: str, language: str) -> None:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=100,
@@ -2111,17 +2097,17 @@ def test_splitter_with_all_preprocessing(paragraph: str, language: str) -> None:
         remove_punctuation=True,
         lemmatize=True,
         enhance_semantics="paraphrase",
-        language=language
+        language=language,
     )
     chunks = splitter.split_text(paragraph)
     assert isinstance(chunks, list)
     assert len(chunks) > 0
 
-@pytest.mark.parametrize("paragraph, language", [
-    (paragraph_en, "en"),
-    (paragraph_es, "es"),
-    (paragraph_pt, "pt")
-])
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
 def test_splitter_with_individual_preprocessing(paragraph: str, language: str) -> None:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=100,
@@ -2130,7 +2116,7 @@ def test_splitter_with_individual_preprocessing(paragraph: str, language: str) -
         expand_contractions=True,
         remove_punctuation=True,
         lemmatize=True,
-        language=language
+        language=language,
     )
     chunks = splitter.split_text(paragraph)
     assert isinstance(chunks, list)
