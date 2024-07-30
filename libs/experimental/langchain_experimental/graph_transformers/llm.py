@@ -785,7 +785,11 @@ class LLMGraphTransformer:
         """
         return [self.process_response(document, config) for document in documents]
 
-    async def aprocess_response(self, document: Document, config: Optional[RunnableConfig] = None) -> GraphDocument:
+    async def aprocess_response(
+        self, 
+        document: Document, 
+        config: Optional[RunnableConfig] = None
+    ) -> GraphDocument:
         """
         Asynchronously processes a single document, transforming it into a
         graph document.
