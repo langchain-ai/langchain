@@ -336,7 +336,7 @@ def _init_chat_model_helper(
 
         return ChatFireworks(model=model, **kwargs)
     elif model_provider == "ollama":
-        _check_pkg("langchain_community")
+        _check_pkg("langchain_ollama")
         from langchain_ollama import ChatOllama
 
         return ChatOllama(model=model, **kwargs)
