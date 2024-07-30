@@ -107,16 +107,26 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-openai",
         "link": "/docs/integrations/chat/vllm/",
     },
-    "ChatEdenAI": {
-        "tool_calling": True,
-        "package": "langchain-community",
-        "link": "/docs/integrations/chat/edenai/",
-    },
     "ChatLlamaCpp": {
         "tool_calling": True,
         "local": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/llamacpp",
+    },
+    "ChatAI21": {
+        "tool_calling": True,
+        "package": "langchain-ai21",
+        "link": "/docs/integrations/chat/ai21",
+    },
+    "ChatWatsonx": {
+        "tool_calling": True,
+        "package": "langchain-ibm",
+        "link": "/docs/integrations/chat/ibm_watsonx",
+    },
+    "ChatUpstage": {
+        "tool_calling": True,
+        "package": "langchain-upstage",
+        "link": "/docs/integrations/chat/upstage",
     },
 }
 
