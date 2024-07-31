@@ -17,11 +17,11 @@ For specifics on how to use retrievers, see the [relevant how-to guides here](/d
 This table lists common retrievers.
 
 
-| Namespace 🔻 | Class |
-|------------|---------|
-| langchain_aws.retrievers | [AmazonKnowledgeBasesRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html) |
-| langchain_community.retrievers | [AzureAISearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html) |
-| langchain_elasticsearch | [ElasticsearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html) |
-| langchain_milvus | [MilvusCollectionHybridSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_milvus.retrievers.milvus_hybrid_search.MilvusCollectionHybridSearchRetriever.html) |
-| langchain_community.retrievers | [TavilySearchAPIRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html) |
-| langchain_google_community.vertex_ai_search | [VertexAISearchRetriever](https://api.python.langchain.com/en/latest/vertex_ai_search/langchain_google_community.vertex_ai_search.VertexAISearchRetriever.html) |
+| Retriever | Namespace | Native async | Local |
+|-----------|-----------|---------------|------|
+| [AmazonKnowledgeBasesRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html) | langchain_aws.retrievers | ❌ | ❌ |
+| [AzureAISearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html) | langchain_community.retrievers | ✅ | ❌ |
+| [ElasticsearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html) | langchain_elasticsearch | ❌ | ❌ |
+| [MilvusCollectionHybridSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_milvus.retrievers.milvus_hybrid_search.MilvusCollectionHybridSearchRetriever.html) | langchain_milvus | ❌ | ❌ |
+| [TavilySearchAPIRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html) | langchain_community.retrievers | ❌ | ❌ |
+| [VertexAISearchRetriever](https://api.python.langchain.com/en/latest/vertex_ai_search/langchain_google_community.vertex_ai_search.VertexAISearchRetriever.html) | langchain_google_community.vertex_ai_search | ❌ | ❌ |
