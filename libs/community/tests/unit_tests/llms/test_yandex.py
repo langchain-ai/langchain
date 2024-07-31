@@ -1,8 +1,6 @@
 import pytest
-from langchain.chains import LLMChain
-from langchain_core.prompts import PromptTemplate
 
-from langchain_community.llms.yandex import YandexGPT, _BaseYandexGPT
+from langchain_community.llms.yandex import YandexGPT
 
 
 def test_yandexgpt_initialization() -> None:
