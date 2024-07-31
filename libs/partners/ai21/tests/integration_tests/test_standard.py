@@ -5,11 +5,12 @@ from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import (  # type: ignore[import-not-found]
-    ChatModelIntegrationTests,  # type: ignore[import-not-found]
-)
+from langchain_core.rate_limiters import InMemoryRateLimiter
+from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_ai21 import ChatAI21
+
+rate_limiter = InMemoryRateLimiter(requests_per_second=0.5)
 
 
 class BaseTestAI21(ChatModelIntegrationTests):
@@ -31,6 +32,7 @@ class TestAI21J2(BaseTestAI21):
     def chat_model_params(self) -> dict:
         return {
             "model": "j2-ultra",
+            "rate_limiter": rate_limiter,
         }
 
     @pytest.mark.xfail(reason="Streaming is not supported for Jurassic models.")

@@ -1,13 +1,26 @@
 import json
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Type
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -22,13 +35,28 @@ from langchain_core.messages import (
     ChatMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+    ToolMessage,
+)
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
+)
+from langchain_core.utils.function_calling import convert_to_openai_tool
+
+from langchain_community.chat_models.llamacpp import (
+    _lc_invalid_tool_call_to_openai_tool_call,
+    _lc_tool_call_to_openai_tool_call,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,12 +66,33 @@ DEFAULT_API_BASE = "https://api.baichuan-ai.com/v1/chat/completions"
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
+    content = message.content
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict = {"role": message.role, "content": content}
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {"role": "user", "content": content}
     elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict = {"role": "assistant", "content": content}
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+
+        elif message.tool_calls or message.invalid_tool_calls:
+            message_dict["tool_calls"] = [
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ] + [
+                _lc_invalid_tool_call_to_openai_tool_call(tc)
+                for tc in message.invalid_tool_calls
+            ]
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "tool_call_id": message.tool_call_id,
+            "content": content,
+            "name": message.name or message.additional_kwargs.get("name"),
+        }
+
+    elif isinstance(message, SystemMessage):
+        message_dict = {"role": "system", "content": content}
     else:
         raise TypeError(f"Got unknown type {message}")
 
@@ -52,12 +101,43 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
+    content = _dict.get("content", "")
     if role == "user":
-        return HumanMessage(content=_dict["content"])
+        return HumanMessage(content=content)
     elif role == "assistant":
-        return AIMessage(content=_dict.get("content", "") or "")
+        tool_calls = []
+        invalid_tool_calls = []
+        additional_kwargs = {}
+
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,  # type: ignore[arg-type]
+            invalid_tool_calls=invalid_tool_calls,
+        )
+    elif role == "tool":
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return ToolMessage(
+            content=content,
+            tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
+            additional_kwargs=additional_kwargs,
+        )
+    elif role == "system":
+        return SystemMessage(content=content)
     else:
-        return ChatMessage(content=_dict["content"], role=role)
+        return ChatMessage(content=content, role=role)
 
 
 def _convert_delta_to_message_chunk(
@@ -70,6 +150,8 @@ def _convert_delta_to_message_chunk(
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
@@ -98,10 +180,163 @@ async def aconnect_httpx_sse(
 
 
 class ChatBaichuan(BaseChatModel):
-    """Baichuan chat models API by Baichuan Intelligent Technology.
+    """Baichuan chat model integration.
 
-    For more information, see https://platform.baichuan-ai.com/docs/api
-    """
+    Setup:
+        To use, you should have the environment variable``BAICHUAN_API_KEY`` set with
+    your API KEY.
+
+        .. code-block:: bash
+
+            export BAICHUAN_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: Optional[str]
+            Name of Baichuan model to use.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        streaming: Optional[bool]
+            Whether to stream the results or not.
+        temperature: Optional[float]
+            Sampling temperature.
+        top_p: Optional[float]
+            What probability mass to use.
+        top_k: Optional[int]
+            What search sampling control to use.
+
+    Key init args — client params:
+        api_key: Optional[str]
+            MiniMax API key. If not passed in will be read from env var BAICHUAN_API_KEY.
+        base_url: Optional[str]
+            Base URL for API requests.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatBaichuan
+
+            chat = ChatBaichuan(
+                api_key=api_key,
+                model='Baichuan4',
+                # temperature=...,
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'token_usage': {
+                        'prompt_tokens': 93,
+                        'completion_tokens': 5,
+                        'total_tokens': 98
+                    },
+                    'model': 'Baichuan4'
+                },
+                id='run-944ff552-6a93-44cf-a861-4e4d849746f9-0'
+            )
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-f99fcd6f-dd31-46d5-be8f-0b6a22bf77d8'
+            content=' enjoy programming.' id='run-f99fcd6f-dd31-46d5-be8f-0b6a22bf77d8
+
+        .. code-block:: python
+
+            stream = chat.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(
+                content='I like programming.',
+                id='run-74689970-dc31-461d-b729-3b6aa93508d2'
+            )
+
+    Async:
+        .. code-block:: python
+
+            await chat.ainvoke(messages)
+
+            # stream
+            # async for chunk in chat.astream(messages):
+            #     print(chunk)
+
+            # batch
+            # await chat.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'token_usage': {
+                        'prompt_tokens': 93,
+                        'completion_tokens': 5,
+                        'total_tokens': 98
+                    },
+                    'model': 'Baichuan4'
+                },
+                id='run-952509ed-9154-4ff9-b187-e616d7ddfbba-0'
+            )
+    Tool calling:
+
+        .. code-block:: python
+            class get_current_weather(BaseModel):
+                '''Get current weather.'''
+
+                location: str = Field('City or province, such as Shanghai')
+
+
+            llm_with_tools = ChatBaichuan(model='Baichuan3-Turbo').bind_tools([get_current_weather])
+            llm_with_tools.invoke('How is the weather today?')
+
+        .. code-block:: python
+
+            [{'name': 'get_current_weather',
+            'args': {'location': 'New York'},
+            'id': '3951017OF8doB0A',
+            'type': 'tool_call'}]
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {
+                'token_usage': {
+                    'prompt_tokens': 93,
+                    'completion_tokens': 5,
+                    'total_tokens': 98
+                },
+                'model': 'Baichuan4'
+            }
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -113,7 +348,7 @@ class ChatBaichuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    baichuan_api_base: str = Field(default=DEFAULT_API_BASE)
+    baichuan_api_base: str = Field(default=DEFAULT_API_BASE, alias="base_url")
     """Baichuan custom endpoints"""
     baichuan_api_key: SecretStr = Field(alias="api_key")
     """Baichuan API Key"""
@@ -121,6 +356,8 @@ class ChatBaichuan(BaseChatModel):
     """[DEPRECATED, keeping it for for backward compatibility] Baichuan Secret Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
+    max_tokens: Optional[int] = None
+    """Maximum number of tokens to generate."""
     request_timeout: int = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
     model: str = "Baichuan2-Turbo-192K"
@@ -133,7 +370,8 @@ class ChatBaichuan(BaseChatModel):
     top_p: float = 0.85
     """What probability mass to use."""
     with_search_enhance: bool = False
-    """Whether to use search enhance, default is False."""
+    """[DEPRECATED, keeping it for for backward compatibility], 
+    Whether to use search enhance, default is False."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for API call not explicitly specified."""
 
@@ -193,8 +431,8 @@ class ChatBaichuan(BaseChatModel):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k": self.top_k,
-            "with_search_enhance": self.with_search_enhance,
             "stream": self.streaming,
+            "max_tokens": self.max_tokens,
         }
 
         return {**normal_params, **self.model_kwargs}
@@ -340,6 +578,7 @@ class ChatBaichuan(BaseChatModel):
         model = parameters.pop("model")
         with_search_enhance = parameters.pop("with_search_enhance", False)
         stream = parameters.pop("stream", False)
+        tools = parameters.pop("tools", [])
 
         payload = {
             "model": model,
@@ -349,7 +588,9 @@ class ChatBaichuan(BaseChatModel):
             "temperature": temperature,
             "with_search_enhance": with_search_enhance,
             "stream": stream,
+            "tools": tools,
         }
+
         return payload
 
     def _create_headers_parameters(self, **kwargs) -> Dict[str, Any]:  # type: ignore[no-untyped-def]
@@ -380,3 +621,23 @@ class ChatBaichuan(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "baichuan-chat"
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be a dictionary, pydantic model, callable, or BaseTool.
+                Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)

@@ -4,6 +4,7 @@ import inspect
 import json
 import sys
 import textwrap
+import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -17,7 +18,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -26,13 +27,15 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import (
     BaseTool,
+    InjectedToolArg,
     SchemaAnnotationError,
     StructuredTool,
     Tool,
     ToolException,
-    _create_subset_model,
     tool,
 )
+from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.pydantic import _create_subset_model
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
@@ -975,6 +978,35 @@ class AFooBase(FooBase):
 def test_tool_pass_config(tool: BaseTool) -> None:
     assert tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
+    # Test we don't mutate tool calls
+    tool_call = {
+        "name": tool.name,
+        "args": {"bar": "baz"},
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == {"bar": "baz"}
+
+
+class FooBaseNonPickleable(FooBase):
+    def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        return True
+
+
+def test_tool_pass_config_non_pickleable() -> None:
+    tool = FooBaseNonPickleable()
+
+    args = {"bar": threading.Lock()}
+    tool_call = {
+        "name": tool.name,
+        "args": args,
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == args
+
 
 @pytest.mark.parametrize(
     "tool", [foo, afoo, simple_foo, asimple_foo, FooBase(), AFooBase()]
@@ -1137,7 +1169,9 @@ def test_tool_call_input_tool_message_output() -> None:
         "type": "tool_call",
     }
     tool = _MockStructuredTool()
-    expected = ToolMessage("1 True {'img': 'base64string...'}", tool_call_id="123")
+    expected = ToolMessage(
+        "1 True {'img': 'base64string...'}", tool_call_id="123", name="structured_api"
+    )
     actual = tool.invoke(tool_call)
     assert actual == expected
 
@@ -1176,7 +1210,9 @@ def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
         "id": "123",
         "type": "tool_call",
     }
-    expected = ToolMessage("1 True", artifact=tool_call["args"], tool_call_id="123")
+    expected = ToolMessage(
+        "1 True", artifact=tool_call["args"], tool_call_id="123", name="structured_api"
+    )
     actual = tool.invoke(tool_call)
     assert actual == expected
 
@@ -1218,10 +1254,22 @@ def test_convert_from_runnable_dict() -> None:
     assert as_tool.name == "my tool"
     assert as_tool.description == "test description"
 
-    # Dict without typed input-- must supply arg types
+    # Dict without typed input-- must supply schema
     def g(x: Dict[str, Any]) -> str:
         return str(x["a"] * max(x["b"]))
 
+    # Specify via args_schema:
+    class GSchema(BaseModel):
+        """Apply a function to an integer and list of integers."""
+
+        a: int = Field(..., description="Integer")
+        b: List[int] = Field(..., description="List of ints")
+
+    runnable = RunnableLambda(g)
+    as_tool = runnable.as_tool(GSchema)
+    as_tool.invoke({"a": 3, "b": [1, 2]})
+
+    # Specify via arg_types:
     runnable = RunnableLambda(g)
     as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
     result = as_tool.invoke({"a": 3, "b": [1, 2]})
@@ -1268,3 +1316,310 @@ def test_convert_from_runnable_other() -> None:
     as_tool = runnable.as_tool()
     result = as_tool.invoke("b", config={"configurable": {"foo": "not-bar"}})
     assert result == "ba"
+
+
+@tool("foo", parse_docstring=True)
+def injected_tool(x: int, y: Annotated[str, InjectedToolArg]) -> str:
+    """foo.
+
+    Args:
+        x: abc
+        y: 123
+    """
+    return y
+
+
+class InjectedTool(BaseTool):
+    name: str = "foo"
+    description: str = "foo."
+
+    def _run(self, x: int, y: Annotated[str, InjectedToolArg]) -> Any:
+        """foo.
+
+        Args:
+            x: abc
+            y: 123
+        """
+        return y
+
+
+class fooSchema(BaseModel):
+    """foo."""
+
+    x: int = Field(..., description="abc")
+    y: Annotated[str, "foobar comment", InjectedToolArg()] = Field(
+        ..., description="123"
+    )
+
+
+class InjectedToolWithSchema(BaseTool):
+    name: str = "foo"
+    description: str = "foo."
+    args_schema: Type[BaseModel] = fooSchema
+
+    def _run(self, x: int, y: str) -> Any:
+        return y
+
+
+@tool("foo", args_schema=fooSchema)
+def injected_tool_with_schema(x: int, y: str) -> str:
+    return y
+
+
+@pytest.mark.parametrize("tool_", [InjectedTool()])
+def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
+    assert tool_.get_input_schema().schema() == {
+        "title": "fooSchema",
+        "description": "foo.\n\nArgs:\n    x: abc\n    y: 123",
+        "type": "object",
+        "properties": {
+            "x": {"title": "X", "type": "integer"},
+            "y": {"title": "Y", "type": "string"},
+        },
+        "required": ["x", "y"],
+    }
+    assert tool_.tool_call_schema.schema() == {
+        "title": "foo",
+        "description": "foo.",
+        "type": "object",
+        "properties": {"x": {"title": "X", "type": "integer"}},
+        "required": ["x"],
+    }
+    assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
+    assert tool_.invoke(
+        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    expected_error = (
+        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
+    )
+    with pytest.raises(expected_error):
+        tool_.invoke({"x": 5})
+
+    assert convert_to_openai_function(tool_) == {
+        "name": "foo",
+        "description": "foo.",
+        "parameters": {
+            "type": "object",
+            "properties": {"x": {"type": "integer"}},
+            "required": ["x"],
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "tool_",
+    [injected_tool, injected_tool_with_schema, InjectedToolWithSchema()],
+)
+def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
+    assert tool_.get_input_schema().schema() == {
+        "title": "fooSchema",
+        "description": "foo.",
+        "type": "object",
+        "properties": {
+            "x": {"description": "abc", "title": "X", "type": "integer"},
+            "y": {"description": "123", "title": "Y", "type": "string"},
+        },
+        "required": ["x", "y"],
+    }
+    assert tool_.tool_call_schema.schema() == {
+        "title": "foo",
+        "description": "foo.",
+        "type": "object",
+        "properties": {"x": {"description": "abc", "title": "X", "type": "integer"}},
+        "required": ["x"],
+    }
+    assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
+    assert tool_.invoke(
+        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    expected_error = (
+        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
+    )
+    with pytest.raises(expected_error):
+        tool_.invoke({"x": 5})
+
+    assert convert_to_openai_function(tool_) == {
+        "name": "foo",
+        "description": "foo.",
+        "parameters": {
+            "type": "object",
+            "properties": {"x": {"type": "integer", "description": "abc"}},
+            "required": ["x"],
+        },
+    }
+
+
+def _get_parametrized_tools() -> list:
+    def my_tool(x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]) -> str:
+        """my_tool."""
+        return some_tool
+
+    async def my_async_tool(
+        x: int, y: str, *, some_tool: Annotated[Any, InjectedToolArg]
+    ) -> str:
+        """my_tool."""
+        return some_tool
+
+    return [my_tool, my_async_tool]
+
+
+@pytest.mark.parametrize("tool_", _get_parametrized_tools())
+def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
+    assert convert_to_openai_function(tool_) == {
+        "name": tool_.__name__,
+        "description": "my_tool.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "x": {"type": "integer"},
+                "y": {"type": "string"},
+            },
+            "required": ["x", "y"],
+        },
+    }
+
+
+def generate_models() -> List[Any]:
+    """Generate a list of base models depending on the pydantic version."""
+    from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
+
+    class FooProper(BaseModelProper):
+        a: int
+        b: str
+
+    return [FooProper]
+
+
+def generate_backwards_compatible_v1() -> List[Any]:
+    """Generate a model with pydantic 2 from the v1 namespace."""
+    from pydantic.v1 import BaseModel as BaseModelV1  # pydantic: ignore
+
+    class FooV1Namespace(BaseModelV1):
+        a: int
+        b: str
+
+    return [FooV1Namespace]
+
+
+# This generates a list of models that can be used for testing that our APIs
+# behave well with either pydantic 1 proper,
+# pydantic v1 from pydantic 2,
+# or pydantic 2 proper.
+TEST_MODELS = generate_models() + generate_backwards_compatible_v1()
+
+
+@pytest.mark.parametrize("pydantic_model", TEST_MODELS)
+def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
+    class SomeTool(BaseTool):
+        args_schema: Type[pydantic_model] = pydantic_model
+
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(
+        name="some_tool", description="some description", args_schema=pydantic_model
+    )
+
+    assert tool.get_input_schema().schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": pydantic_model.__name__,
+        "type": "object",
+    }
+
+    assert tool.tool_call_schema.schema() == {
+        "description": "some description",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "some_tool",
+        "type": "object",
+    }
+
+
+def test_args_schema_explicitly_typed() -> None:
+    """This should test that one can type the args schema as a pydantic model.
+
+    Please note that this will test using pydantic 2 even though BaseTool
+    is a pydantic 1 model!
+    """
+    # Check with whatever pydantic model is passed in and not via v1 namespace
+    from pydantic import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        a: int
+        b: str
+
+    class SomeTool(BaseTool):
+        # type ignoring here since we're allowing overriding a type
+        # signature of pydantic.v1.BaseModel with pydantic.BaseModel
+        # for pydantic 2!
+        args_schema: Type[BaseModel] = Foo  # type: ignore[assignment]
+
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(name="some_tool", description="some description")
+
+    assert tool.get_input_schema().schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "Foo",
+        "type": "object",
+    }
+
+    assert tool.tool_call_schema.schema() == {
+        "description": "some description",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": "some_tool",
+        "type": "object",
+    }
+
+
+@pytest.mark.parametrize("pydantic_model", TEST_MODELS)
+def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -> None:
+    """This should test that one can type the args schema as a pydantic model."""
+    from langchain_core.tools import StructuredTool
+
+    def foo(a: int, b: str) -> str:
+        """Hahaha"""
+        return "foo"
+
+    foo_tool = StructuredTool.from_function(
+        func=foo,
+        args_schema=pydantic_model,
+    )
+
+    assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
+
+    assert foo_tool.args_schema.schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": pydantic_model.__name__,
+        "type": "object",
+    }
+
+    assert foo_tool.get_input_schema().schema() == {
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "string"},
+        },
+        "required": ["a", "b"],
+        "title": pydantic_model.__name__,
+        "type": "object",
+    }

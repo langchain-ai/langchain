@@ -88,6 +88,11 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
+from langchain_core.utils.pydantic import (
+    TypeBaseModel,
+    _create_subset_model,
+    is_basemodel_subclass,
+)
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -100,43 +105,13 @@ def _is_annotated_type(typ: Type[Any]) -> bool:
     return get_origin(typ) is Annotated
 
 
-def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
+def _get_annotation_description(arg_type: Type) -> str | None:
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
-        arg_type = annotated_args[0]
-        if len(annotated_args) > 1:
-            for annotation in annotated_args[1:]:
-                if isinstance(annotation, str):
-                    return annotation
+        for annotation in annotated_args[1:]:
+            if isinstance(annotation, str):
+                return annotation
     return None
-
-
-def _create_subset_model(
-    name: str,
-    model: Type[BaseModel],
-    field_names: list,
-    *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
-    """Create a pydantic model with only a subset of model's fields."""
-    fields = {}
-
-    for field_name in field_names:
-        field = model.__fields__[field_name]
-        t = (
-            # this isn't perfect but should work for most functions
-            field.outer_type_
-            if field.required and not field.allow_none
-            else Optional[field.outer_type_]
-        )
-        if descriptions and field_name in descriptions:
-            field.field_info.description = descriptions[field_name]
-        fields[field_name] = (t, field.field_info)
-
-    rtn = create_model(name, **fields)  # type: ignore
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
-    return rtn
 
 
 def _get_filtered_args(
@@ -144,6 +119,7 @@ def _get_filtered_args(
     func: Callable,
     *,
     filter_args: Sequence[str],
+    include_injected: bool = True,
 ) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
@@ -151,7 +127,9 @@ def _get_filtered_args(
     return {
         k: schema[k]
         for i, (k, param) in enumerate(valid_keys.items())
-        if k not in filter_args and (i > 0 or param.name not in ("self", "cls"))
+        if k not in filter_args
+        and (i > 0 or param.name not in ("self", "cls"))
+        and (include_injected or not _is_injected_arg_type(param.annotation))
     }
 
 
@@ -243,13 +221,22 @@ def _infer_arg_descriptions(
     for arg, arg_type in annotations.items():
         if arg in arg_descriptions:
             continue
-        if desc := _get_annotation_description(arg, arg_type):
+        if desc := _get_annotation_description(arg_type):
             arg_descriptions[arg] = desc
     return description, arg_descriptions
 
 
 class _SchemaConfig:
-    """Configuration for the pydantic model."""
+    """Configuration for the pydantic model.
+
+    This is used to configure the pydantic model created from
+    a function's signature.
+
+    Parameters:
+        extra: Whether to allow extra fields in the model.
+        arbitrary_types_allowed: Whether to allow arbitrary types in the model.
+            Defaults to True.
+    """
 
     extra: Any = Extra.forbid
     arbitrary_types_allowed: bool = True
@@ -262,18 +249,26 @@ def create_schema_from_function(
     filter_args: Optional[Sequence[str]] = None,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
+    include_injected: bool = True,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
+
     Args:
-        model_name: Name to assign to the generated pydandic schema
-        func: Function to generate the schema from
-        filter_args: Optional list of arguments to exclude from the schema
+        model_name: Name to assign to the generated pydantic schema.
+        func: Function to generate the schema from.
+        filter_args: Optional list of arguments to exclude from the schema.
+            Defaults to FILTERED_ARGS.
         parse_docstring: Whether to parse the function's docstring for descriptions
-            for each argument.
-        error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+            for each argument. Defaults to False.
+        error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
+            Defaults to False.
+        include_injected: Whether to include injected arguments in the schema.
+            Defaults to True, since we want to include them in the schema
+            when *validating* tool inputs.
+
     Returns:
-        A pydantic model with the same arguments as the function
+        A pydantic model with the same arguments as the function.
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
@@ -288,7 +283,9 @@ def create_schema_from_function(
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
+    valid_properties = _get_filtered_args(
+        inferred_model, func, filter_args=filter_args, include_injected=include_injected
+    )
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
@@ -345,11 +342,19 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[Type[BaseModel]] = None
-    """Pydantic model class to validate and parse the tool's input arguments."""
-    return_direct: bool = False
-    """Whether to return the tool's output directly. Setting this to True means
+    args_schema: Optional[TypeBaseModel] = None
+    """Pydantic model class to validate and parse the tool's input arguments.
     
+    Args schema should be either: 
+    
+    - A subclass of pydantic.BaseModel.
+    or 
+    - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
+    """
+    return_direct: bool = False
+    """Whether to return the tool's output directly. 
+    
+    Setting this to True means    
     that after the tool is called, the AgentExecutor will stop looping.
     """
     verbose: bool = False
@@ -360,13 +365,13 @@ class ChildTool(BaseTool):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """Deprecated. Please use callbacks instead."""
     tags: Optional[List[str]] = None
-    """Optional list of tags associated with the tool. Defaults to None
+    """Optional list of tags associated with the tool. Defaults to None.
     These tags will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
     """
     metadata: Optional[Dict[str, Any]] = None
-    """Optional metadata associated with the tool. Defaults to None
+    """Optional metadata associated with the tool. Defaults to None.
     This metadata will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
@@ -383,12 +388,22 @@ class ChildTool(BaseTool):
     """Handle the content of the ValidationError thrown."""
 
     response_format: Literal["content", "content_and_artifact"] = "content"
-    """The tool response format. 
+    """The tool response format. Defaults to 'content'.
 
     If "content" then the output of the tool is interpreted as the contents of a 
     ToolMessage. If "content_and_artifact" then the output is expected to be a 
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the tool."""
+        if "args_schema" in kwargs and kwargs["args_schema"] is not None:
+            if not is_basemodel_subclass(kwargs["args_schema"]):
+                raise TypeError(
+                    f"args_schema must be a subclass of pydantic BaseModel. "
+                    f"Got: {kwargs['args_schema']}."
+                )
+        super().__init__(**kwargs)
 
     class Config(Serializable.Config):
         """Configuration for this pydantic object."""
@@ -403,18 +418,32 @@ class ChildTool(BaseTool):
 
     @property
     def args(self) -> dict:
-        if self.args_schema is not None:
-            return self.args_schema.schema()["properties"]
-        else:
-            schema = create_schema_from_function(self.name, self._run)
-            return schema.schema()["properties"]
+        return self.get_input_schema().schema()["properties"]
+
+    @property
+    def tool_call_schema(self) -> Type[BaseModel]:
+        full_schema = self.get_input_schema()
+        fields = []
+        for name, type_ in full_schema.__annotations__.items():
+            if not _is_injected_arg_type(type_):
+                fields.append(name)
+        return _create_subset_model(
+            self.name, full_schema, fields, fn_description=self.description
+        )
 
     # --- Runnable ---
 
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        """The tool's input schema."""
+        """The tool's input schema.
+
+        Args:
+            config: The configuration for the tool.
+
+        Returns:
+            The input schema for the tool.
+        """
         if self.args_schema is not None:
             return self.args_schema
         else:
@@ -441,7 +470,11 @@ class ChildTool(BaseTool):
     # --- Tool ---
 
     def _parse_input(self, tool_input: Union[str, Dict]) -> Union[str, Dict[str, Any]]:
-        """Convert tool input to pydantic model."""
+        """Convert tool input to a pydantic model.
+
+        Args:
+            tool_input: The input to the tool.
+        """
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
@@ -460,7 +493,14 @@ class ChildTool(BaseTool):
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
-        """Raise deprecation warning if callback_manager is used."""
+        """Raise deprecation warning if callback_manager is used.
+
+        Args:
+            values: The values to validate.
+
+        Returns:
+            The validated values.
+        """
         if values.get("callback_manager") is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
@@ -514,7 +554,28 @@ class ChildTool(BaseTool):
         tool_call_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run the tool."""
+        """Run the tool.
+
+        Args:
+            tool_input: The input to the tool.
+            verbose: Whether to log the tool's progress. Defaults to None.
+            start_color: The color to use when starting the tool. Defaults to 'green'.
+            color: The color to use when ending the tool. Defaults to 'green'.
+            callbacks: Callbacks to be called during tool execution. Defaults to None.
+            tags: Optional list of tags associated with the tool. Defaults to None.
+            metadata: Optional metadata associated with the tool. Defaults to None.
+            run_name: The name of the run. Defaults to None.
+            run_id: The id of the run. Defaults to None.
+            config: The configuration for the tool. Defaults to None.
+            tool_call_id: The id of the tool call. Defaults to None.
+            kwargs: Additional arguments to pass to the tool
+
+        Returns:
+            The output of the tool.
+
+        Raises:
+            ToolException: If an error occurs during tool execution.
+        """
         callback_manager = CallbackManager.configure(
             callbacks,
             self.callbacks,
@@ -564,23 +625,27 @@ class ChildTool(BaseTool):
                 content, artifact = response
             else:
                 content = response
+            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
+            status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+            status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
+            status = "error"
 
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
-        output = _format_output(content, artifact, tool_call_id)
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -600,7 +665,28 @@ class ChildTool(BaseTool):
         tool_call_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run the tool asynchronously."""
+        """Run the tool asynchronously.
+
+        Args:
+            tool_input: The input to the tool.
+            verbose: Whether to log the tool's progress. Defaults to None.
+            start_color: The color to use when starting the tool. Defaults to 'green'.
+            color: The color to use when ending the tool. Defaults to 'green'.
+            callbacks: Callbacks to be called during tool execution. Defaults to None.
+            tags: Optional list of tags associated with the tool. Defaults to None.
+            metadata: Optional metadata associated with the tool. Defaults to None.
+            run_name: The name of the run. Defaults to None.
+            run_id: The id of the run. Defaults to None.
+            config: The configuration for the tool. Defaults to None.
+            tool_call_id: The id of the tool call. Defaults to None.
+            kwargs: Additional arguments to pass to the tool
+
+        Returns:
+            The output of the tool.
+
+        Raises:
+            ToolException: If an error occurs during tool execution.
+        """
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
             self.callbacks,
@@ -655,24 +741,28 @@ class ChildTool(BaseTool):
                 content, artifact = response
             else:
                 content = response
+            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
+            status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+            status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
+            status = "error"
 
         if error_to_raise:
             await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
-        output = _format_output(content, artifact, tool_call_id)
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -709,7 +799,11 @@ class Tool(BaseTool):
 
     @property
     def args(self) -> dict:
-        """The tool's input arguments."""
+        """The tool's input arguments.
+
+        Returns:
+            The input arguments for the tool.
+        """
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
         # For backwards compatibility, if the function signature is ambiguous,
@@ -788,7 +882,23 @@ class Tool(BaseTool):
         ] = None,  # This is last for compatibility, but should be after func
         **kwargs: Any,
     ) -> Tool:
-        """Initialize tool from a function."""
+        """Initialize tool from a function.
+
+        Args:
+            func: The function to create the tool from.
+            name: The name of the tool.
+            description: The description of the tool.
+            return_direct: Whether to return the output directly. Defaults to False.
+            args_schema: The schema of the tool's input arguments. Defaults to None.
+            coroutine: The asynchronous version of the function. Defaults to None.
+            **kwargs: Additional arguments to pass to the tool.
+
+        Returns:
+            The tool.
+
+        Raises:
+            ValueError: If the function is not provided.
+        """
         if func is None and coroutine is None:
             raise ValueError("Function and/or coroutine must be provided")
         return cls(
@@ -806,7 +916,7 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: Type[BaseModel] = Field(..., description="The tool schema.")
+    args_schema: TypeBaseModel = Field(..., description="The tool schema.")
     """The input arguments' schema."""
     func: Optional[Callable[..., Any]]
     """The function to run when the tool is called."""
@@ -893,25 +1003,34 @@ class StructuredTool(BaseTool):
         A classmethod that helps to create a tool from a function.
 
         Args:
-            func: The function from which to create a tool
-            coroutine: The async function from which to create a tool
-            name: The name of the tool. Defaults to the function name
-            description: The description of the tool. Defaults to the function docstring
-            return_direct: Whether to return the result directly or as a callback
-            args_schema: The schema of the tool's input arguments
-            infer_schema: Whether to infer the schema from the function's signature
+            func: The function from which to create a tool.
+            coroutine: The async function from which to create a tool.
+            name: The name of the tool. Defaults to the function name.
+            description: The description of the tool.
+                Defaults to the function docstring.
+            return_direct: Whether to return the result directly or as a callback.
+                Defaults to False.
+            args_schema: The schema of the tool's input arguments. Defaults to None.
+            infer_schema: Whether to infer the schema from the function's signature.
+                Defaults to True.
             response_format: The tool response format. If "content" then the output of
                 the tool is interpreted as the contents of a ToolMessage. If
                 "content_and_artifact" then the output is expected to be a two-tuple
                 corresponding to the (content, artifact) of a ToolMessage.
+                Defaults to "content".
             parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt
                 to parse parameter descriptions from Google Style function docstrings.
-            error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+                Defaults to False.
+            error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
                 whether to raise ValueError on invalid Google Style docstrings.
+                Defaults to False.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
-            The tool
+            The tool.
+
+        Raises:
+            ValueError: If the function is not provided.
 
         Examples:
 
@@ -931,9 +1050,20 @@ class StructuredTool(BaseTool):
         else:
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
-        description_ = description or source_function.__doc__
+        if args_schema is None and infer_schema:
+            # schema name is appended within function
+            args_schema = create_schema_from_function(
+                name,
+                source_function,
+                parse_docstring=parse_docstring,
+                error_on_invalid_docstring=error_on_invalid_docstring,
+                filter_args=_filter_schema_args(source_function),
+            )
+        description_ = description
+        if description is None and not parse_docstring:
+            description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
-            description_ = args_schema.__doc__
+            description_ = args_schema.__doc__ or None
         if description_ is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."
@@ -945,29 +1075,11 @@ class StructuredTool(BaseTool):
         # Description example:
         # search_api(query: str) - Searches the API for the query.
         description_ = f"{description_.strip()}"
-        _args_schema = args_schema
-        if _args_schema is None and infer_schema:
-            if config_param := _get_runnable_config_param(source_function):
-                filter_args: Tuple[str, ...] = (
-                    config_param,
-                    "run_manager",
-                    "callbacks",
-                )
-            else:
-                filter_args = ("run_manager", "callbacks")
-            # schema name is appended within function
-            _args_schema = create_schema_from_function(
-                name,
-                source_function,
-                parse_docstring=parse_docstring,
-                error_on_invalid_docstring=error_on_invalid_docstring,
-                filter_args=filter_args,
-            )
         return cls(
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,  # type: ignore[arg-type]
+            args_schema=args_schema,  # type: ignore[arg-type]
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
@@ -989,19 +1101,27 @@ def tool(
     Args:
         *args: The arguments to the tool.
         return_direct: Whether to return directly from the tool rather
-            than continuing the agent loop.
-        args_schema: optional argument schema for user to specify
+            than continuing the agent loop. Defaults to False.
+        args_schema: optional argument schema for user to specify.
+            Defaults to None.
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
+            Defaults to True.
         response_format: The tool response format. If "content" then the output of
             the tool is interpreted as the contents of a ToolMessage. If
             "content_and_artifact" then the output is expected to be a two-tuple
             corresponding to the (content, artifact) of a ToolMessage.
+            Defaults to "content".
         parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt to
             parse parameter descriptions from Google Style function docstrings.
-        error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+            Defaults to False.
+        error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
+            Defaults to True.
+
+    Returns:
+        The tool.
 
     Requires:
         - Function must be of type (str) -> str
@@ -1230,9 +1350,11 @@ def create_retriever_tool(
             so should be unique and somewhat descriptive.
         description: The description for the tool. This will be passed to the language
             model, so should be descriptive.
+        document_prompt: The prompt to use for the document. Defaults to None.
+        document_separator: The separator to use between documents. Defaults to "\n\n".
 
     Returns:
-        Tool class to pass to an agent
+        Tool class to pass to an agent.
     """
     document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
     func = partial(
@@ -1262,6 +1384,12 @@ ToolsRenderer = Callable[[List[BaseTool]], str]
 def render_text_description(tools: List[BaseTool]) -> str:
     """Render the tool name and description in plain text.
 
+    Args:
+        tools: The tools to render.
+
+    Returns:
+        The rendered text.
+
     Output will be in the format of:
 
     .. code-block:: markdown
@@ -1283,6 +1411,12 @@ def render_text_description(tools: List[BaseTool]) -> str:
 
 def render_text_description_and_args(tools: List[BaseTool]) -> str:
     """Render the tool name, description, and args in plain text.
+
+    Args:
+        tools: The tools to render.
+
+    Returns:
+        The rendered text.
 
     Output will be in the format of:
 
@@ -1365,7 +1499,7 @@ def _prep_run_args(
     config = ensure_config(config)
     if _is_tool_call(input):
         tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input)["args"]
+        tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
     else:
         tool_call_id = None
         tool_input = cast(Union[str, dict], input)
@@ -1385,7 +1519,7 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, artifact: Any, tool_call_id: Optional[str]
+    content: Any, artifact: Any, tool_call_id: Optional[str], name: str, status: str
 ) -> Union[ToolMessage, Any]:
     if tool_call_id:
         # NOTE: This will fail to stringify lists which aren't actually content blocks
@@ -1397,7 +1531,13 @@ def _format_output(
             and isinstance(content[0], (str, dict))
         ):
             content = _stringify(content)
-        return ToolMessage(content, artifact=artifact, tool_call_id=tool_call_id)
+        return ToolMessage(
+            content,
+            artifact=artifact,
+            tool_call_id=tool_call_id,
+            name=name,
+            status=status,
+        )
     else:
         return content
 
@@ -1436,11 +1576,26 @@ def _get_schema_from_runnable_and_arg_types(
 
 def convert_runnable_to_tool(
     runnable: Runnable,
+    args_schema: Optional[Type[BaseModel]] = None,
+    *,
     name: Optional[str] = None,
     description: Optional[str] = None,
     arg_types: Optional[Dict[str, Type]] = None,
 ) -> BaseTool:
-    """Convert a Runnable into a BaseTool."""
+    """Convert a Runnable into a BaseTool.
+
+    Args:
+        runnable: The runnable to convert.
+        args_schema: The schema for the tool's input arguments. Defaults to None.
+        name: The name of the tool. Defaults to None.
+        description: The description of the tool. Defaults to None.
+        arg_types: The types of the arguments. Defaults to None.
+
+    Returns:
+        The tool.
+    """
+    if args_schema:
+        runnable = runnable.with_types(input_type=args_schema)
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
@@ -1482,15 +1637,40 @@ def convert_runnable_to_tool(
         )
 
 
-def _get_runnable_config_param(func: Callable) -> Optional[str]:
+def _get_type_hints(func: Callable) -> Optional[Dict[str, Type]]:
     if isinstance(func, functools.partial):
         func = func.func
     try:
-        type_hints = get_type_hints(func)
+        return get_type_hints(func)
     except Exception:
         return None
-    else:
-        for name, type_ in type_hints.items():
-            if type_ is RunnableConfig:
-                return name
+
+
+def _get_runnable_config_param(func: Callable) -> Optional[str]:
+    type_hints = _get_type_hints(func)
+    if not type_hints:
+        return None
+    for name, type_ in type_hints.items():
+        if type_ is RunnableConfig:
+            return name
     return None
+
+
+class InjectedToolArg:
+    """Annotation for a Tool arg that is **not** meant to be generated by a model."""
+
+
+def _is_injected_arg_type(type_: Type) -> bool:
+    return any(
+        isinstance(arg, InjectedToolArg)
+        or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
+        for arg in get_args(type_)[1:]
+    )
+
+
+def _filter_schema_args(func: Callable) -> List[str]:
+    filter_args = list(FILTERED_ARGS)
+    if config_param := _get_runnable_config_param(func):
+        filter_args.append(config_param)
+    # filter_args.extend(_get_non_model_params(type_hints))
+    return filter_args

@@ -14,7 +14,7 @@ class LinkExtractor(ABC, Generic[InputT]):
     """Interface for extracting links (incoming, outgoing, bidirectional)."""
 
     @abstractmethod
-    def extract_one(self, input: InputT) -> set[Link]:  # noqa: A002
+    def extract_one(self, input: InputT) -> Set[Link]:
         """Add edges from each `input` to the corresponding documents.
 
         Args:

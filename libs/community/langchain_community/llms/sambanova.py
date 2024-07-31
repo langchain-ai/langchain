@@ -190,6 +190,7 @@ class Sambaverse(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1.0,
                 "top_k": 50,
+                "process_prompt": False
             },
         )
     """
@@ -672,7 +673,7 @@ class SambaStudio(LLM):
     Example:
     .. code-block:: python
 
-        from langchain_community.llms.sambanova  import Sambaverse
+        from langchain_community.llms.sambanova  import SambaStudio
         SambaStudio(
             sambastudio_base_url="your-SambaStudio-environment-URL",
             sambastudio_base_uri="your-SambaStudio-base-URI",
@@ -687,6 +688,8 @@ class SambaStudio(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1,
                 "top_k": 50,
+                #"process_prompt": False,
+                #"select_expert": "Meta-Llama-3-8B-Instruct"
             },
         )
     """
@@ -741,7 +744,7 @@ class SambaStudio(LLM):
             values,
             "sambastudio_base_uri",
             "SAMBASTUDIO_BASE_URI",
-            default="api/predict/nlp",
+            default="api/predict/generic",
         )
         values["sambastudio_project_id"] = get_from_dict_or_env(
             values, "sambastudio_project_id", "SAMBASTUDIO_PROJECT_ID"

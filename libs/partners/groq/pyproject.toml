@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-groq"
-version = "0.1.6"
+version = "0.1.8"
 description = "An integration package connecting Groq and LangChain"
 authors = []
 readme = "README.md"
@@ -16,10 +16,11 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/groq"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-groq%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.2.2,<0.3"
+langchain-core = ">=0.2.24,<0.3"	
 groq = ">=0.4.1,<1"
 
 [tool.ruff.lint]
