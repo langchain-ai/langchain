@@ -36,8 +36,8 @@ class HuggingFaceModelLoader(BaseLoader):
                 print(doc.metadata)      # Metadata of the model
     """
 
-    BASE_URL = "https://huggingface.co/api/models"
-    README_BASE_URL = "https://huggingface.co/{model_id}/raw/main/README.md"
+    BASE_URL: str = "https://huggingface.co/api/models"
+    README_BASE_URL: str = "https://huggingface.co/{model_id}/raw/main/README.md"
 
     def __init__(
         self,

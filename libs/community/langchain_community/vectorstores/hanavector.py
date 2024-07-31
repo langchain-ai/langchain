@@ -14,7 +14,7 @@ from typing import (
     List,
     Optional,
     Tuple,
-    Type,
+    Type, Pattern,
 )
 
 import numpy as np
@@ -223,7 +223,7 @@ class HanaDB(VectorStore):
         return embedding
 
     # Compile pattern only once, for better performance
-    _compiled_pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
+    _compiled_pattern: Pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
 
     @staticmethod
     def _sanitize_metadata_keys(metadata: dict) -> dict:
