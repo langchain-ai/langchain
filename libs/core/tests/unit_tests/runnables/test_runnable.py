@@ -640,7 +640,12 @@ def test_schema_with_itemgetter() -> None:
     }
     prompt = ChatPromptTemplate.from_template("what is {language}?")
     chain: Runnable = {"language": itemgetter("language")} | prompt
-    assert _schema(chain.input_schema) == {}
+    assert _schema(chain.input_schema) == {
+        "properties": {"language": {"title": "Language"}},
+        "required": ["language"],
+        "title": "RunnableParallel<language>Input",
+        "type": "object",
+    }
 
 
 def test_schema_complex_seq() -> None:

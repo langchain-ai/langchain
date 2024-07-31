@@ -13,4 +13,21 @@ def _schema(obj: Type[BaseModel]) -> dict:
     if "$defs" in schema_:
         schema_["definitions"] = schema_["$defs"]
         del schema_["$defs"]
+
+    if "properties" in schema_:
+        properties = schema_["properties"]
+        if "configurable" in properties:
+            configurable = properties["configurable"]
+
+            if "allOf" in configurable:
+                allOf = configurable["allOf"]
+                del configurable["allOf"]
+                configurable["$ref"] = allOf[0]["$ref"]
+                if "default" in configurable:
+                    del configurable["default"]
+
+    if "allOf" in schema_:
+        allOf = schema_["allOf"]
+        del schema_["allOf"]
+        schema_["$ref"] = allOf[0]["$ref"]
     return schema_
