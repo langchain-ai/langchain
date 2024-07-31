@@ -39,7 +39,8 @@ def test_visualize_simple_graph():
         "\ta -> href_a [dir=back]\n"
         '\tkw_foo [label="kw:foo"]\n'
         "\ta -> kw_foo [dir=both]\n"
-        '\tb [label="b\n<some\n more content>" shape=note tooltip="<some\n more content>"]\n'
+        '\tb [label="b\n<some\n more content>" '
+        'shape=note tooltip="<some\n more content>"]\n'
         '\thref_b [label="href:b"]\n'
         "\tb -> href_b [dir=back]\n"
         "\tb -> href_a [dir=forward]\n"
@@ -55,12 +56,14 @@ def test_visualize_simple_graph():
         "digraph {\n"
         "\trankdir=LR\n"
         "\tnode [style=filled]\n"
-        '\ta [label="a\nsome content" fillcolor=gold shape=note tooltip="some content"]\n'
+        '\ta [label="a\nsome content" fillcolor=gold '
+        'shape=note tooltip="some content"]\n'
         '\thref_a [label="href:a"]\n'
         "\ta -> href_a [dir=back]\n"
         '\tkw_foo [label="kw:foo"]\n'
         "\ta -> kw_foo [dir=both]\n"
-        '\tb [label="b\n<some\n more content>" shape=note tooltip="<some\n more content>"]\n'
+        '\tb [label="b\n<some\n more content>" '
+        'shape=note tooltip="<some\n more content>"]\n'
         '\thref_b [label="href:b"]\n'
         "\tb -> href_b [dir=back]\n"
         "\tb -> href_a [dir=forward]\n"
@@ -70,7 +73,9 @@ def test_visualize_simple_graph():
         "}\n"
     )
 
-    assert render_graphviz([doc1, doc2], node_color = "gold", node_colors={"a": None}).source == (
+    assert render_graphviz(
+        [doc1, doc2], node_color="gold", node_colors={"a": None}
+    ).source == (
         "digraph {\n"
         "\trankdir=LR\n"
         "\tnode [style=filled]\n"
@@ -79,7 +84,8 @@ def test_visualize_simple_graph():
         "\ta -> href_a [dir=back]\n"
         '\tkw_foo [label="kw:foo"]\n'
         "\ta -> kw_foo [dir=both]\n"
-        '\tb [label="b\n<some\n more content>" fillcolor=gold shape=note tooltip="<some\n more content>"]\n'
+        '\tb [label="b\n<some\n more content>" fillcolor=gold '
+        'shape=note tooltip="<some\n more content>"]\n'
         '\thref_b [label="href:b"]\n'
         "\tb -> href_b [dir=back]\n"
         "\tb -> href_a [dir=forward]\n"
