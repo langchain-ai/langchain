@@ -469,6 +469,7 @@ def test_passthrough_assign_schema() -> None:
         "properties": {"question": {"title": "Question", "type": "string"}},
         "title": "RunnableSequenceInput",
         "type": "object",
+        "required": ["question"],
     }
     assert _schema(seq_w_assign.output_schema) == {
         "title": "FakeListLLMOutput",
@@ -486,6 +487,7 @@ def test_passthrough_assign_schema() -> None:
         "properties": {"question": {"title": "Question"}},
         "title": "RunnableParallel<context>Input",
         "type": "object",
+        "required": ["question"],
     }
 
 
@@ -566,9 +568,11 @@ def test_lambda_schemas() -> None:
         }
 
     assert (
-        RunnableLambda(
-            aget_values_typed  # type: ignore[arg-type]
-        ).input_schema.model_json_schema()
+        _schema(
+            RunnableLambda(
+                aget_values_typed  # type: ignore[arg-type]
+            ).input_schema
+        )
         == {
             "title": "aget_values_typed_input",
             "$ref": "#/definitions/InputType",
@@ -589,7 +593,7 @@ def test_lambda_schemas() -> None:
         }
     )
 
-    assert RunnableLambda(aget_values_typed).output_schema.model_json_schema() == {  # type: ignore[arg-type]
+    assert _schema(RunnableLambda(aget_values_typed).output_schema) == {  # type: ignore[arg-type]
         "title": "aget_values_typed_output",
         "$ref": "#/definitions/OutputType",
         "definitions": {
@@ -3196,6 +3200,7 @@ def test_map_stream() -> None:
             "hello": {"title": "Hello", "type": "string"},
             "llm": {"title": "Llm", "type": "string"},
         },
+        "required": ["llm", "hello"],
     }
 
     stream = chain_pick_two.stream({"question": "What is your name?"})
@@ -3209,10 +3214,12 @@ def test_map_stream() -> None:
         else:
             final_value += chunk
 
-    assert streamed_chunks[0] in [
-        {"llm": "i"},
-        {"chat": _AnyIdAIMessageChunk(content="i")},
-    ]
+    if not (
+        streamed_chunks[0] == {"llm": "i"}
+        or {"chat": _AnyIdAIMessageChunk(content="i")}
+    ):
+        raise AssertionError(f"Got an unexpected chunk: {streamed_chunks[0]}")
+
     assert len(streamed_chunks) == len(llm_res) + len(chat_res)
 
 
