@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
@@ -9,8 +10,6 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.orm import Session
 
-from langchain_community.vectorstores.utils import DistanceStrategy
-
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
@@ -20,9 +19,28 @@ import json
 import logging
 import uuid
 
+
+class DistanceStrategy(str, Enum):
+    """Enumerator of the distance strategies for calculating distances
+    between vectors.
+    """
+
+    EUCLIDEAN = "euclidean"
+    COSINE = "cosine"
+    DOT = "dot"
+
+
 Base = declarative_base()  # type: Any
 
 _embedding_store: Any = None
+
+DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
+DEFAULT_EMBEDDING_LENGTH = 8000
+VECTOR_DISTANCE_QUERY = """
+VECTOR_DISTANCE(:distancestrategy, JSON_ARRAY_TO_VECTOR(:embedding), embeddings) 
+AS distance"""
+EMBEDDING = "embedding"
+DISTANCE_STRATEGY = "distancestrategy"
 
 
 class SQLServer_VectorStore(VectorStore):
@@ -38,9 +56,9 @@ class SQLServer_VectorStore(VectorStore):
         *,
         connection: Optional[Connection] = None,
         connection_string: str,
-        distance_strategy: DistanceStrategy = DistanceStrategy.COSINE,
+        distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         embedding_function: Embeddings,
-        embedding_length: int = 8000,
+        embedding_length: int = DEFAULT_EMBEDDING_LENGTH,
         table_name: str,
     ) -> None:
         """Initialize the SQL Server vector store.
@@ -105,12 +123,18 @@ class SQLServer_VectorStore(VectorStore):
     @property
     def distance_strategy(self) -> str:
         # Value of distance strategy passed in should be one of the supported values.
-        if self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-            return "euclidean"
-        elif self._distance_strategy == DistanceStrategy.COSINE:
-            return "cosine"
-        elif self._distance_strategy == DistanceStrategy.DOT_PRODUCT:
-            return "dot"
+        if isinstance(self._distance_strategy, DistanceStrategy):
+            return self._distance_strategy.value
+
+        # Match string value with appropriate enum value, if supported.
+        distance_strategy_lower = str.lower(self._distance_strategy)
+
+        if distance_strategy_lower == DistanceStrategy.EUCLIDEAN.value:
+            return DistanceStrategy.EUCLIDEAN.value
+        elif distance_strategy_lower == DistanceStrategy.COSINE.value:
+            return DistanceStrategy.COSINE.value
+        elif distance_strategy_lower == DistanceStrategy.DOT.value:
+            return DistanceStrategy.DOT.value
         else:
             raise ValueError(f"{self._distance_strategy} is not supported.")
 
@@ -133,9 +157,10 @@ class SQLServer_VectorStore(VectorStore):
         Args:
             query: Text to look up the most similar embedding to.
             k: Number of Documents to return. Defaults to 4.
+            **kwargs: Values for filtering on metadata during similarity search.
 
         Returns:
-            List of Documents most similar to the query.
+            List of Documents most similar to the query provided.
         """
         embedded_query = self.embedding_function.embed_query(query)
         return self.similarity_search_by_vector(embedded_query, k, **kwargs)
@@ -148,9 +173,10 @@ class SQLServer_VectorStore(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            **kwargs: Values for filtering on metadata during similarity search.
 
         Returns:
-            List of Documents most similar to the query vector.
+            List of Documents most similar to the embedding provided.
         """
         similar_docs_with_scores = self.similarity_search_by_vector_with_score(
             embedding, k, **kwargs
@@ -166,10 +192,11 @@ class SQLServer_VectorStore(VectorStore):
         Args:
             query: Text to look up the most similar embedding to.
             k: Number of Documents to return. Defaults to 4.
+            **kwargs: Values for filtering on metadata during similarity search.
 
         Returns:
-            List of Documents most similar to the query vector
-            and an accompanying score for each vector.
+            List of tuple of Document and an accompanying score in order of
+            similarity to the query provided.
         """
         embedded_query = self.embedding_function.embed_query(query)
         return self.similarity_search_by_vector_with_score(embedded_query, k, **kwargs)
@@ -183,10 +210,11 @@ class SQLServer_VectorStore(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            **kwargs: Values for filtering on metadata during similarity search.
 
         Returns:
-            List of Documents most similar to the query vector
-            and an accompanying score for each vector.
+            List of tuple of Document and an accompanying score in order of
+            similarity to the embedding provided.
         """
         similar_docs = self._search_store(embedding, k, **kwargs)
         docs = self._docs_and_scores_from_result(similar_docs)
@@ -206,7 +234,7 @@ class SQLServer_VectorStore(VectorStore):
             texts: Iterable of strings to add into the vectorstore.
             metadatas: List of metadatas (python dicts) associated with the input texts.
             ids: List of IDs for the input texts.
-            kwargs: vectorstore specific parameters.
+            **kwargs: vectorstore specific parameters.
 
         Returns:
             List of IDs generated from adding the texts into the vectorstore.
@@ -232,31 +260,31 @@ class SQLServer_VectorStore(VectorStore):
     def _search_store(
         self, embedding: List[float], k: int, filter: Optional[dict] = None
     ) -> List[Any]:
-        # The filter variable will be passed as an argument to the filter function
-        # filter_clause = self._create_filter_clause(filter)
-        with Session(self._bind) as session:
-            results = (
-                session.query(
-                    _embedding_store,
-                    text(
-                        """VECTOR_DISTANCE(:distancestrategy, 
-                        JSON_ARRAY_TO_VECTOR(:embedding), embeddings) AS distance"""
-                    ).bindparams(
-                        bindparam(
-                            "distancestrategy",
-                            self.distance_strategy,
-                            literal_execute=True,
+        try:
+            # The filter variable will be passed as an argument to the filter function
+            # filter_clause = self._create_filter_clause(filter)
+            with Session(self._bind) as session:
+                results = (
+                    session.query(
+                        _embedding_store,
+                        text(VECTOR_DISTANCE_QUERY).bindparams(
+                            bindparam(
+                                DISTANCE_STRATEGY,
+                                self.distance_strategy,
+                                literal_execute=True,
+                            ),
+                            bindparam(
+                                EMBEDDING, json.dumps(embedding), literal_execute=True
+                            ),
                         ),
-                        bindparam(
-                            "embedding", json.dumps(embedding), literal_execute=True
-                        ),
-                    ),
+                    )
+                    .filter()
+                    .order_by(asc(text("distance")))
+                    .limit(k)
+                    .all()
                 )
-                .filter()
-                .order_by(asc(text("distance")))
-                .limit(k)
-                .all()
-            )
+        except ProgrammingError as e:
+            logging.error(f"An error has occurred during the search.\n {e.__cause__}")
         return results
 
     def _create_filter_clause(self, filter: dict) -> None:
@@ -297,7 +325,7 @@ class SQLServer_VectorStore(VectorStore):
             embeddings: List of list of embeddings.
             metadatas: List of metadatas (python dicts) associated with the input texts.
             ids: List of IDs for the input texts.
-            kwargs: vectorstore specific parameters.
+            **kwargs: vectorstore specific parameters.
 
         Returns:
             List of IDs generated from adding the texts into the vectorstore.
