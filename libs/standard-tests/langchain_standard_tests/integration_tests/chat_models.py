@@ -237,7 +237,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             assert isinstance(chunk, Joke)
 
         # Schema
-        chat = model.with_structured_output(Joke.schema())
+        chat = model.with_structured_output(Joke.model_json_schema())
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
         assert set(result.keys()) == {"setup", "punchline"}
@@ -247,7 +247,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
-    @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, "Test requires pydantic 2.")
+    @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         """Test to verify compatibility with pydantic.v1.BaseModel.
 
@@ -467,6 +467,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                                 "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
                             }
                         ],
+                        "is_error": False,
                     },
                     {"type": "text", "text": "what's my sister's favorite color"},
                 ]
