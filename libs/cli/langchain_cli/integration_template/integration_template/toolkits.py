@@ -1,4 +1,4 @@
-"""__ModuleName__ chat models."""
+"""__ModuleName__ toolkits."""
 
 from typing import List
 from langchain_core.tools import BaseTool, BaseToolKit
@@ -6,7 +6,7 @@ from langchain_core.tools import BaseTool, BaseToolKit
 
 class __ModuleName__Toolkit(BaseToolKit):
     # TODO: Replace all TODOs in docstring. See example docstring:
-    # https://github.com/langchain-ai/langchain/blob/a6d1fb4275801a4850e62b6209cfbf096a24f93f/libs/community/langchain_community/agent_toolkits/sql/toolkit.py#L20
+    # https://github.com/langchain-ai/langchain/blob/c123cb2b304f52ab65db4714eeec46af69a861ec/libs/community/langchain_community/agent_toolkits/sql/toolkit.py#L19
     """__ModuleName__ toolkit.
 
     # TODO: Replace with relevant packages, env vars, etc.
@@ -66,6 +66,6 @@ class __ModuleName__Toolkit(BaseToolKit):
 
     """  # noqa: E501
 
-    # TODO: This method must be implemented to generate chat responses.
+    # TODO: This method must be implemented to list tools.
     def get_tools(self) -> List[BaseTool]:
         raise NotImplementedError()
