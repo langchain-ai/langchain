@@ -9,6 +9,13 @@ class AnyStr(str):
         return isinstance(other, str)
 
 
+# The code below creates version of pydantic models
+# that will work in unit tests with AnyStr as id field
+# Please note that the `id` field is assigned AFTER the model is created
+# to workaround an issue with pydantic ignoring the __eq__ method on
+# subclassed strings.
+
+
 def _AnyIdDocument(**kwargs) -> Document:
     """Create a document with an id field."""
     message = Document(**kwargs)
