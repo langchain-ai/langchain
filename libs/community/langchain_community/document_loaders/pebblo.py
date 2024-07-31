@@ -13,6 +13,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.utilities.pebblo import (
     APP_DISCOVER_URL,
+    BATCH_SIZE_BYTES,
     CLASSIFIER_URL,
     LOADER_DOC_URL,
     PEBBLO_CLOUD_URL,
@@ -20,6 +21,7 @@ from langchain_community.utilities.pebblo import (
     App,
     Doc,
     IndexedDocument,
+    generate_size_based_batches,
     get_full_path,
     get_loader_full_path,
     get_loader_type,
@@ -69,6 +71,7 @@ class PebbloSafeLoader(BaseLoader):
         self.classifier_url = classifier_url or CLASSIFIER_URL
         self.classifier_location = classifier_location
         self.loader_details_updated = False
+        self.batch_size = BATCH_SIZE_BYTES
         self.loader_details = {
             "loader": loader_name,
             "source_path": self.source_path,
@@ -90,14 +93,36 @@ class PebbloSafeLoader(BaseLoader):
             list: Documents fetched from load method of the wrapped `loader`.
         """
         self.docs = self.loader.load()
-        self.docs_with_id = self._index_docs()
-        classified_docs = self._classify_doc(loading_end=True)
-        self._add_pebblo_specific_metadata(classified_docs)
-        if self.load_semantic:
-            self.docs = self._add_semantic_to_docs(classified_docs)
-        else:
-            self.docs = self._unindex_docs()  # type: ignore
+        # Classify docs in batches
+        self.classify_in_batches()
         return self.docs
+
+    def classify_in_batches(self) -> None:
+        """
+        Classify documents in batches.
+        This is to avoid API timeouts when sending large number of documents.
+        Batches are generated based on the page_content size.
+        """
+        batches: List[List[Document]] = generate_size_based_batches(
+            self.docs, self.batch_size
+        )
+
+        processed_docs: List[Document] = []
+
+        total_batches = len(batches)
+        for i, batch in enumerate(batches):
+            is_last_batch: bool = i == total_batches - 1
+            self.docs = batch
+            self.docs_with_id = self._index_docs()
+            classified_docs = self._classify_doc(loading_end=is_last_batch)
+            self._add_pebblo_specific_metadata(classified_docs)
+            if self.load_semantic:
+                batch_processed_docs = self._add_semantic_to_docs(classified_docs)
+            else:
+                batch_processed_docs = self._unindex_docs()
+            processed_docs.extend(batch_processed_docs)
+
+        self.docs = processed_docs
 
     def lazy_load(self) -> Iterator[Document]:
         """Load documents in lazy fashion.
@@ -200,7 +225,8 @@ class PebbloSafeLoader(BaseLoader):
             )
             if (
                 self.loader.__class__.__name__ == "SharePointLoader"
-                and not self.loader_details_updated
+                and not self.
+              
             ):
                 self.loader_details["source_path"] = doc_metadata.get("source_full_url")
                 self.loader_details_updated = True
@@ -538,17 +564,11 @@ class PebbloSafeLoader(BaseLoader):
         """Add Pebblo specific metadata to documents."""
         for doc in self.docs_with_id:
             doc_metadata = doc.metadata
-            if self.loader.__class__.__name__ == "SharePointLoader":
-                doc_metadata["full_path"] = get_full_path(
-                    doc_metadata.get("source", self.source_path)
+            doc_metadata["full_path"] = get_full_path(
+                doc_metadata.get(
+                    "full_path", doc_metadata.get("source", self.source_path)
                 )
-            else:
-                doc_metadata["full_path"] = get_full_path(
-                    doc_metadata.get(
-                        "full_path", doc_metadata.get("source", self.source_path)
-                    )
-                )
-            doc_metadata["pb_id"] = doc.pb_id
+            )
             doc_metadata["pb_checksum"] = classified_docs.get(doc.pb_id, {}).get(
                 "pb_checksum", None
             )
