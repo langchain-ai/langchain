@@ -12,7 +12,7 @@ from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP

@@ -8,7 +8,7 @@ from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.tools import BaseTool, Tool
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser

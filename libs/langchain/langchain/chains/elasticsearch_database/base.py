@@ -9,7 +9,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseLLMOutputParser
 from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT

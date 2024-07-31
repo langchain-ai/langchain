@@ -8,7 +8,7 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,

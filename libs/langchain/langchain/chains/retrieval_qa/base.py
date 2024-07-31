@@ -16,7 +16,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 

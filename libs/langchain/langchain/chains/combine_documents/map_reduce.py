@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, root_validator
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.utils import create_model
 

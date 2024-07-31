@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from langchain_core.load.dump import dumps
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator
 
 
 class Person(Serializable):

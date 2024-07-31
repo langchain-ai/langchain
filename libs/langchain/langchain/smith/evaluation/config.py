@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from langsmith import RunEvaluator
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
 from langsmith.schemas import Example, Run

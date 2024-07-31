@@ -11,7 +11,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.outputs import Generation
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.retrievers import BaseRetriever
 
 from langchain.chains.base import Chain

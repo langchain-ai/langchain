@@ -14,7 +14,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
+from pydantic import Extra, root_validator
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain

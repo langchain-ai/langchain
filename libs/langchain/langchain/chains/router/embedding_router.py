@@ -8,7 +8,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra
+from pydantic import Extra
 from langchain_core.vectorstores import VectorStore
 
 from langchain.chains.router.base import RouterChain

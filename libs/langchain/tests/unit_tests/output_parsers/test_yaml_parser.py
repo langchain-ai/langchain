@@ -5,7 +5,7 @@ from typing import Optional
 
 import pytest
 from langchain_core.exceptions import OutputParserException
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain.output_parsers.yaml import YamlOutputParser
 

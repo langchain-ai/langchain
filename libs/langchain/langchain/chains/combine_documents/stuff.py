@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from pydantic import Extra, Field, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.chains.combine_documents.base import (

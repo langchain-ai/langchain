@@ -8,7 +8,7 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator

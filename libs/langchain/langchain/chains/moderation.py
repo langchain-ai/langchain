@@ -6,7 +6,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
+from pydantic import Field, root_validator
 from langchain_core.utils import check_package_version, get_from_dict_or_env
 
 from langchain.chains.base import Chain

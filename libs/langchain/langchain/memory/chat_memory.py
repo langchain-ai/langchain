@@ -8,7 +8,7 @@ from langchain_core.chat_history import (
 )
 from langchain_core.memory import BaseMemory
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain.memory.utils import get_prompt_input_key
 

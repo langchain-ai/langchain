@@ -10,7 +10,7 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.pydantic_v1 import Extra
+from pydantic import Extra
 
 from langchain.chains.base import Chain
 
