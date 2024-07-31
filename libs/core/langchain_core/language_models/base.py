@@ -95,7 +95,11 @@ class BaseLanguageModel(
     
     Caching is not currently supported for streaming methods of models.
     """
-    verbose: bool = Field(default_factory=_get_verbosity, exclude=True)
+    # Repr = False is consistent with pydantic 1 if verbose = False
+    # We can relax this for pydantic 2?
+    # TODO(Team): decide what to do here.
+    # Modified just to get unit tests to pass.
+    verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
