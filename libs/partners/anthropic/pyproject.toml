@@ -4,23 +4,24 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-anthropic"
-version = "0.1.21"
+version = "0.1.22"
 description = "An integration package connecting AnthropicMessages and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
 
+[tool.mypy]
+disallow_untyped_defs = "True"
+
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-anthropic%3D%3D0%22&expanded=true"
 
-[tool.mypy]
-disallow_untyped_defs = "True"
-
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 anthropic = ">=0.28.0,<1"
+langchain-core = "^0.2.26"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
@@ -32,9 +33,6 @@ omit = [ "tests/*",]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
 markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
-
-[tool.poetry.dependencies.langchain-core]
-version = ">=0.2.24,<0.3"
 
 [tool.poetry.dependencies.defusedxml]
 version = "^0.7.1"
