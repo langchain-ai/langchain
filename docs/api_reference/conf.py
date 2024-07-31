@@ -159,10 +159,10 @@ html_theme_options = {
 #     "show_prev_next": False,
     "search_bar_text": "Search the docs ...",
     # "navigation_with_keys": False,
-    "collapse_navigation": False,
+    "collapse_navigation": True,
     "navigation_depth": 2,
     "show_nav_level": 1,
-    "show_toc_level": 1,
+    "show_toc_level": 2,
     "navbar_align": "left",
     "header_links_before_dropdown": 5,
     "header_dropdown_text": "More",
@@ -198,7 +198,7 @@ html_theme_options = {
     "article_footer_items": ["prev-next"],
     "content_footer_items": [],
 #     # Use html_sidebars that map page patterns to list of sidebar templates
-    "primary_sidebar_end": [],
+#     "primary_sidebar_end": [],
     "footer_start": ["copyright"],
     "footer_center": [],
     "footer_end": [],
@@ -209,6 +209,9 @@ html_theme_options = {
     "secondary_sidebar_items": {"**": ["page-toc", "sourcelink"]},
     "show_version_warning_banner": True,
 #     "announcement": None,
+}
+html_sidebars = {
+    "**": []
 }
 
 # Add any paths that contain custom themes here, relative to this directory.

@@ -107,10 +107,10 @@ Other = TypeVar("Other")
 
 class Runnable(Generic[Input, Output], ABC):
     """A unit of work that can be invoked, batched, streamed, transformed and composed.
-
-     Key Methods
-     ===========
-
+    
+    Key Methods
+    ===========
+    
     - **invoke/ainvoke**: Transforms a single input into an output.
     - **batch/abatch**: Efficiently transforms multiple inputs into outputs.
     - **stream/astream**: Streams output from a single input as it's produced.

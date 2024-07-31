@@ -247,7 +247,7 @@ def _construct_doc(
     """
     full_doc = f"""\
 =======================
-``{package_namespace}`` {package_version}
+{package_namespace} {package_version}
 =======================
 
 """
@@ -259,7 +259,7 @@ def _construct_doc(
         functions = [el for el in _members["functions"] if el["is_public"]]
         if not (classes or functions):
             continue
-        section = f":mod:`{package_namespace}.{module}`"
+        section = f":mod:`{module}`"
         underline = "=" * (len(section) + 1)
         full_doc += f"""\
 {section}
@@ -273,8 +273,8 @@ def _construct_doc(
 
         if classes:
             full_doc += f"""\
-Classes
---------------
+**Classes**
+
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
@@ -306,8 +306,8 @@ Classes
             _functions = [f["qualified_name"] for f in functions]
             fstring = "\n    ".join(sorted(_functions))
             full_doc += f"""\
-Functions
---------------
+**Functions**
+
 .. currentmodule:: {package_namespace}
 
 .. autosummary::

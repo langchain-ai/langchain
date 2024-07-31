@@ -1,5 +1,5 @@
-:mod:`{{module}}`.{{objname}}
-{{ underline }}==============
+{{ objname }}
+==============
 
 .. NOTE:: {{objname}} implements the standard :py:class:`Runnable Interface <langchain_core.runnables.base.Runnable>`. 🏃
 
