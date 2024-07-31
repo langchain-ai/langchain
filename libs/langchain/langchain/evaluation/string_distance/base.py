@@ -8,7 +8,8 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import pre_init
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -63,7 +64,7 @@ class _RapidFuzzChainMixin(Chain):
     """Whether to normalize the score to a value between 0 and 1.
     Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
-    @root_validator
+    @pre_init
     def validate_dependencies(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validate that the rapidfuzz library is installed.

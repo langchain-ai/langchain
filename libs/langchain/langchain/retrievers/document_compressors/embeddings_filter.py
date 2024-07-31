@@ -4,7 +4,8 @@ import numpy as np
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import pre_init
 
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
@@ -45,7 +46,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @pre_init
     def validate_params(cls, values: Dict) -> Dict:
         """Validate similarity parameters."""
         if values["k"] is None and values["similarity_threshold"] is None:
