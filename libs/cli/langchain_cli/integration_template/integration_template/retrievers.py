@@ -63,14 +63,20 @@ class __ModuleName__Retriever(BaseRetriever):
 
             Question: {question}\"\"\"
             )
+
+            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+
+            def format_docs(docs):
+                return "\n\n".join(doc.page_content for doc in docs)
+
             chain = (
-                RunnablePassthrough.assign(context=(lambda x: x["question"]) | retriever)
+                {"context": retriever | format_docs, "question": RunnablePassthrough()}
                 | prompt
-                | ChatOpenAI(model="gpt-3.5-turbo-0125")
+                | llm
                 | StrOutputParser()
             )
 
-            chain.invoke({"question": "..."})
+            chain.invoke("...")
 
         .. code-block:: python
 
