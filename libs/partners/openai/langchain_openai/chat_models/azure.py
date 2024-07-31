@@ -652,7 +652,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
@@ -703,20 +703,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
-                then the model output will be an object of that class. If a dict then
-                the model output will be a dict. With a Pydantic class the returned
-                attributes will be validated, whereas with a dict they will not be. If
-                `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec or be a valid JSON schema
-                with top level 'title' and 'description' keys specified.
-            method: The method for steering model generation, either "function_calling"
+            schema:
+                The output schema. Can be passed in as:
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class,
+                    - or a Pydantic class.
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+            method:
+                The method for steering model generation, either "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If "json_mode" then OpenAI's JSON mode will be
                 used. Note that if using "json_mode" then you must include instructions
                 for formatting the output into the desired schema into the model call.
-            include_raw: If False then only the parsed structured output is returned. If
+            include_raw:
+                If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
@@ -724,36 +731,40 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 with keys "raw", "parsed", and "parsing_error".
 
         Returns:
-            A Runnable that takes any ChatModel input and returns as output:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-                If include_raw is True then a dict with keys:
-                    raw: BaseMessage
-                    parsed: Optional[_DictOrPydantic]
-                    parsing_error: Optional[BaseException]
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object).
 
-                If include_raw is False then just _DictOrPydantic is returned,
-                where _DictOrPydantic depends on the schema:
+            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
-                    class.
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+                - ``"raw"``: BaseMessage
+                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``"parsing_error"``: Optional[BaseException]
 
-                If schema is a dict then _DictOrPydantic is a dict.
-
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+        Example: schema=Pydantic class, method="function_calling", include_raw=False:
             .. code-block:: python
 
+                from typing import Optional
+
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_core.pydantic_v1 import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: str
+                    # If we provide default values and/or descriptions for fields, these will be passed
+                    # to the model. This is an important part of improving a model's ability to
+                    # correctly return structured outputs.
+                    justification: Optional[str] = Field(
+                        default=None, description="A justification for the answer."
+                    )
 
 
-                llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo", temperature=0)
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -765,7 +776,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+        Example: schema=Pydantic class, method="function_calling", include_raw=True:
             .. code-block:: python
 
                 from langchain_openai import AzureChatOpenAI
@@ -779,7 +790,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     justification: str
 
 
-                llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo", temperature=0)
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -793,24 +804,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
 
-        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+        Example: schema=TypedDict class, method="function_calling", include_raw=False:
             .. code-block:: python
 
+                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
+                # from typing_extensions, not from typing.
+                from typing_extensions import Annotated, TypedDict
+
                 from langchain_openai import AzureChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
-                from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
-                class AnswerWithJustification(BaseModel):
+                class AnswerWithJustification(TypedDict):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: str
+                    justification: Annotated[
+                        Optional[str], None, "A justification for the answer."
+                    ]
 
 
-                dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo", temperature=0)
-                structured_llm = llm.with_structured_output(dict_schema)
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
@@ -820,7 +834,36 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
+        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                from langchain_openai import AzureChatOpenAI
+
+                oai_schema = {
+                    'name': 'AnswerWithJustification',
+                    'description': 'An answer to the user question along with justification for the answer.',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'answer': {'type': 'string'},
+                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                        },
+                       'required': ['answer']
+                   }
+               }
+
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(oai_schema)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+        Example: schema=Pydantic class, method="json_mode", include_raw=True:
             .. code-block::
 
                 from langchain_openai import AzureChatOpenAI
@@ -830,7 +873,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     answer: str
                     justification: str
 
-                llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo", temperature=0)
+                llm = AzureChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -848,7 +891,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
 
-        Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
+        Example: schema=None, method="json_mode", include_raw=True:
             .. code-block::
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
@@ -866,8 +909,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     },
                 #     'parsing_error': None
                 # }
-
-
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
