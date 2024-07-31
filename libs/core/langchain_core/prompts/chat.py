@@ -1055,8 +1055,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         messages = values["messages"]
         input_vars = set()
-        inferred_opt_vars = set()  # Variables inferred from messages
+        provided_opt_vars = set(values.get("optional_variables", []))        
         input_types: Dict[str, Any] = values.get("input_types", {})
+        inferred_opt_vars = set()  # Variables inferred from messages
         for message in messages:
             if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
                 input_vars.update(message.input_variables)
@@ -1068,15 +1069,15 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     and message.variable_name not in values["partial_variables"]
                 ):
                     values["partial_variables"][message.variable_name] = []
-                    optional_variables.add(message.variable_name)
+                    inferred_opt_vars.add(message.variable_name)
                 if message.variable_name not in input_types:
                     input_types[message.variable_name] = List[AnyMessage]
         # Combine explicitly passed optional variables with detected ones
-        provided_opt_vars = set(values.get("optional_variables", []))
+        
         all_opt_vars = inferred_opt_vars.union(provided_opt_vars)
         if "partial_variables" in values:
             input_vars = input_vars - set(values["partial_variables"])
-        if optional_variables:
+        if all_opt_vars:
             input_vars = input_vars - all_opt_vars
         if "input_variables" in values and values.get("validate_template"):
             if input_vars != set(values["input_variables"]):
@@ -1087,8 +1088,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 )
         else:
             values["input_variables"] = sorted(input_vars)
-        if optional_variables:
-            values["optional_variables"] = sorted(optional_variables)
+        if all_opt_vars:
+            values["optional_variables"] = sorted(all_opt_vars)
         values["input_types"] = input_types
         return values
 

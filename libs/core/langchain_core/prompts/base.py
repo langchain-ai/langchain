@@ -151,12 +151,18 @@ class BasePromptTemplate(
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
         _inner_input = self._validate_input(inner_input)
+        opt_vars_not_in_input = set(self.optional_variables) - set(inner_input.keys())
+        for k in opt_vars_not_in_input:           
+            inner_input[k] = ''
         return self.format_prompt(**_inner_input)
 
     async def _aformat_prompt_with_error_handling(
         self, inner_input: Dict
     ) -> PromptValue:
         _inner_input = self._validate_input(inner_input)
+        opt_vars_not_in_input = set(self.optional_variables) - set(inner_input.keys())
+        for k in opt_vars_not_in_input:           
+            inner_input[k] = ''
         return await self.aformat_prompt(**_inner_input)
 
     def invoke(
