@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from langchain_core.retrievers import BaseRetriever, Document
 
@@ -24,3 +24,6 @@ class SequentialRetriever(BaseRetriever):
         query: str,
     ) -> List[Document]:
         return self._get_relevant_documents(query)
+
+
+SequentialRetriever.model_rebuild()

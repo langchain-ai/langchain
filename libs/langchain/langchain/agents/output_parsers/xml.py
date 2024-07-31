@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 
@@ -50,3 +50,6 @@ class XMLAgentOutputParser(AgentOutputParser):
     @property
     def _type(self) -> str:
         return "xml-agent"
+
+
+XMLAgentOutputParser.model_rebuild()

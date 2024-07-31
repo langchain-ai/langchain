@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Union
+from typing import Optional, Pattern, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -17,7 +17,7 @@ class ChatOutputParser(AgentOutputParser):
     format_instructions: str = FORMAT_INSTRUCTIONS
     """Default formatting instructions"""
 
-    pattern = re.compile(r"^.*?`{3}(?:json)?\n(.*?)`{3}.*?$", re.DOTALL)
+    pattern: Pattern = re.compile(r"^.*?`{3}(?:json)?\n(.*?)`{3}.*?$", re.DOTALL)
     """Regex pattern to parse the output."""
 
     def get_format_instructions(self) -> str:
@@ -68,3 +68,6 @@ class ChatOutputParser(AgentOutputParser):
     @property
     def _type(self) -> str:
         return "chat"
+
+
+ChatOutputParser.model_rebuild()

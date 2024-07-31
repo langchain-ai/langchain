@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 from langchain_core.exceptions import OutputParserException
@@ -22,9 +22,15 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
         return "parsed"
 
 
+SuccessfulParseAfterRetries.model_rebuild()
+
+
 class SuccessfulParseAfterRetriesWithGetFormatInstructions(SuccessfulParseAfterRetries):  # noqa
     def get_format_instructions(self) -> str:
         return "instructions"
+
+
+SuccessfulParseAfterRetriesWithGetFormatInstructions.model_rebuild()
 
 
 @pytest.mark.parametrize(

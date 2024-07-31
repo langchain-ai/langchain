@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Type, TypeVar
+from typing import Optional, Type, TypeVar
 
 import yaml
 from langchain_core.exceptions import OutputParserException
@@ -64,3 +64,6 @@ class YamlOutputParser(BaseOutputParser[T]):
     @property
     def OutputType(self) -> Type[T]:
         return self.pydantic_object
+
+
+YamlOutputParser.model_rebuild()

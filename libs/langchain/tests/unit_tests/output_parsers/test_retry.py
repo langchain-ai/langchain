@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 from langchain_core.prompt_values import StringPromptValue
@@ -26,6 +26,9 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
         if self.parse_count <= self.attemp_count_before_success:
             raise OutputParserException(self.error_msg)
         return "parsed"
+
+
+SuccessfulParseAfterRetries.model_rebuild()
 
 
 def test_retry_output_parser_parse_with_prompt() -> None:

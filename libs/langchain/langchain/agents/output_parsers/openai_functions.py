@@ -1,6 +1,6 @@
 import json
 from json import JSONDecodeError
-from typing import List, Union
+from typing import List, Optional, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -86,3 +86,6 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         raise ValueError("Can only parse messages")
+
+
+OpenAIFunctionsAgentOutputParser.model_rebuild()

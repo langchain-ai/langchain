@@ -1,6 +1,6 @@
 """Chain that carries on a conversation and calls an LLM."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
@@ -144,3 +144,6 @@ class ConversationChain(LLMChain):
                 f"memory, and {input_key} as the normal input key."
             )
         return values
+
+
+ConversationChain.model_rebuild()

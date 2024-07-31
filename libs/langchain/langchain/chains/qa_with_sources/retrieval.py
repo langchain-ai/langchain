@@ -7,8 +7,8 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from langchain_core.documents import Document
-from pydantic import Field
 from langchain_core.retrievers import BaseRetriever
+from pydantic import Field
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain

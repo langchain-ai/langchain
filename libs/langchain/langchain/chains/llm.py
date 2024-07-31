@@ -23,7 +23,6 @@ from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from pydantic import Extra, Field
 from langchain_core.runnables import (
     Runnable,
     RunnableBinding,
@@ -32,6 +31,7 @@ from langchain_core.runnables import (
 )
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
+from pydantic import Extra, Field
 
 from langchain.chains.base import Chain
 

@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.messages import BaseMessage
@@ -63,3 +63,6 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
 
     def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
         raise ValueError("Can only parse messages")
+
+
+OpenAIToolsAgentOutputParser.model_rebuild()

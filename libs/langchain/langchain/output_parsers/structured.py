@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.output_parsers.json import parse_and_check_json_markdown
@@ -99,3 +99,6 @@ class StructuredOutputParser(BaseOutputParser[Dict[str, Any]]):
     @property
     def _type(self) -> str:
         return "structured"
+
+
+StructuredOutputParser.model_rebuild()

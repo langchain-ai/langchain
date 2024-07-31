@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 from langchain_core.output_parsers import BaseOutputParser
 
@@ -49,3 +50,6 @@ class BooleanOutputParser(BaseOutputParser[bool]):
     def _type(self) -> str:
         """Snake-case string identifier for an output parser type."""
         return "boolean_output_parser"
+
+
+BooleanOutputParser.model_rebuild()

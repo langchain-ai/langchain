@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, Union
+from typing import Annotated, Any, Optional, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
@@ -8,6 +8,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableSerializable
+from pydantic import SkipValidation
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
@@ -41,7 +42,7 @@ class RetryOutputParser(BaseOutputParser[T]):
     LLM, and telling it the completion did not satisfy criteria in the prompt.
     """
 
-    parser: BaseOutputParser[T]
+    parser: Annotated[BaseOutputParser[T], SkipValidation()]
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Union[RunnableSerializable, Any]
@@ -162,6 +163,9 @@ class RetryOutputParser(BaseOutputParser[T]):
         return self.parser.OutputType
 
 
+RetryOutputParser.model_rebuild()
+
+
 class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """Wrap a parser and try to fix parsing errors.
 
@@ -172,7 +176,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     LLM, which in theory should give it more information on how to fix it.
     """
 
-    parser: BaseOutputParser[T]
+    parser: Annotated[BaseOutputParser[T], SkipValidation]
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains  # noqa: E501
     retry_chain: Union[RunnableSerializable, Any]
@@ -275,3 +279,6 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     @property
     def OutputType(self) -> type[T]:
         return self.parser.OutputType
+
+
+RetryWithErrorOutputParser.model_rebuild()

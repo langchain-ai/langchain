@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -157,3 +157,6 @@ class PandasDataFrameOutputParser(BaseOutputParser[Dict[str, Any]]):
         return PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS.format(
             columns=", ".join(self.dataframe.columns)
         )
+
+
+PandasDataFrameOutputParser.model_rebuild()

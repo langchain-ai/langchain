@@ -1,3 +1,5 @@
+from langchain_core.utils import pre_init
+
 """String distance evaluators based on the RapidFuzz library."""
 
 from enum import Enum
@@ -63,7 +65,7 @@ class _RapidFuzzChainMixin(Chain):
     """Whether to normalize the score to a value between 0 and 1.
     Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
-    @root_validator
+    @pre_init
     def validate_dependencies(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validate that the rapidfuzz library is installed.

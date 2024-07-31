@@ -28,8 +28,8 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import BaseOutputParser
-from pydantic import Extra, Field
 from langchain_core.tools import BaseTool
+from pydantic import Extra, Field
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.agents.trajectory_eval_prompt import (

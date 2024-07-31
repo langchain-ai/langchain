@@ -1,3 +1,5 @@
+from langchain_core.utils import pre_init
+
 """A chain for comparing the output of two models using embeddings."""
 
 from enum import Enum
@@ -68,7 +70,7 @@ class _EmbeddingDistanceChainMixin(Chain):
     embeddings: Embeddings = Field(default_factory=_embedding_factory)
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
 
-    @root_validator(pre=False)
+    @pre_init
     def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the TikTok library is installed.
 

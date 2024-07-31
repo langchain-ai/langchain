@@ -1,8 +1,9 @@
 from enum import Enum
-from typing import Dict, List, Type
+from typing import Dict, List, Optional, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.utils import pre_init
 from pydantic import root_validator
 
 
@@ -12,7 +13,7 @@ class EnumOutputParser(BaseOutputParser[Enum]):
     enum: Type[Enum]
     """The enum to parse. Its values must be strings."""
 
-    @root_validator()
+    @pre_init
     def raise_deprecation(cls, values: Dict) -> Dict:
         enum = values["enum"]
         if not all(isinstance(e.value, str) for e in enum):
@@ -38,3 +39,6 @@ class EnumOutputParser(BaseOutputParser[Enum]):
     @property
     def OutputType(self) -> Type[Enum]:
         return self.enum
+
+
+EnumOutputParser.model_rebuild()

@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Union
 
 from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.utils import pre_init
 from pydantic import root_validator
 
 from langchain.memory.chat_memory import BaseChatMemory
@@ -43,7 +44,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
             )
         return {self.memory_key: final_buffer}
 
-    @root_validator()
+    @pre_init
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""
         prompt_variables = values["prompt"].input_variables

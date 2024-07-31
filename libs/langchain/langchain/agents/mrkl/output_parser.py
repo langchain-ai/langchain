@@ -1,5 +1,5 @@
 import re
-from typing import Union
+from typing import Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -97,3 +97,6 @@ class MRKLOutputParser(AgentOutputParser):
     @property
     def _type(self) -> str:
         return "mrkl"
+
+
+MRKLOutputParser.model_rebuild()

@@ -6,10 +6,10 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from pydantic import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore, ByteStore
 from langchain_core.vectorstores import VectorStore
+from pydantic import Field, root_validator
 
 from langchain.storage._lc_store import create_kv_docstore
 

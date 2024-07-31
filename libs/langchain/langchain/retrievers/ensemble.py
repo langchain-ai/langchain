@@ -25,7 +25,6 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
-from pydantic import root_validator
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.config import ensure_config, patch_config
@@ -33,6 +32,7 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     get_unique_config_specs,
 )
+from pydantic import root_validator
 
 T = TypeVar("T")
 H = TypeVar("H", bound=Hashable)

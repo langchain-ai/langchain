@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
+from typing import Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -59,3 +59,6 @@ class JSONAgentOutputParser(AgentOutputParser):
     @property
     def _type(self) -> str:
         return "json-agent"
+
+
+JSONAgentOutputParser.model_rebuild()

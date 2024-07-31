@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -18,3 +18,6 @@ class FakeParrotRetriever(BaseRetriever):
         query: str,
     ) -> List[Document]:
         return [Document(page_content=query)]
+
+
+FakeParrotRetriever.model_rebuild()

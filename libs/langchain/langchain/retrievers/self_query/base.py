@@ -9,11 +9,11 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_core.structured_query import StructuredQuery, Visitor
 from langchain_core.vectorstores import VectorStore
+from pydantic import Field, root_validator
 
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.schema import AttributeInfo

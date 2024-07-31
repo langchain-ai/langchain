@@ -6,6 +6,7 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
+from langchain_core.utils import pre_init
 from pydantic import BaseModel, root_validator
 
 from langchain.chains.llm import LLMChain
@@ -73,7 +74,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
             buffer = self.buffer
         return {self.memory_key: buffer}
 
-    @root_validator()
+    @pre_init
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""
         prompt_variables = values["prompt"].input_variables

@@ -21,7 +21,6 @@ from langchain_core.callbacks import (
 from langchain_core.load.dump import dumpd
 from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
-from pydantic import BaseModel, Field, root_validator, validator
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableSerializable,
@@ -29,6 +28,7 @@ from langchain_core.runnables import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import create_model
+from pydantic import BaseModel, Field, root_validator, validator
 
 from langchain.schema import RUN_KEY
 

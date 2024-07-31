@@ -3,9 +3,9 @@
 from typing import List
 
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool, BaseToolkit
 from langchain_core.vectorstores import VectorStore
+from pydantic import BaseModel, Field
 
 
 class VectorStoreInfo(BaseModel):

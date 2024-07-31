@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Union
+from typing import Optional, Pattern, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -42,7 +42,7 @@ class ReActJsonSingleInputOutputParser(AgentOutputParser):
 
     """
 
-    pattern = re.compile(r"^.*?`{3}(?:json)?\n?(.*?)`{3}.*?$", re.DOTALL)
+    pattern: Pattern = re.compile(r"^.*?`{3}(?:json)?\n?(.*?)`{3}.*?$", re.DOTALL)
     """Regex pattern to parse the output."""
 
     def get_format_instructions(self) -> str:
@@ -76,3 +76,6 @@ class ReActJsonSingleInputOutputParser(AgentOutputParser):
     @property
     def _type(self) -> str:
         return "react-json-single-input"
+
+
+ReActJsonSingleInputOutputParser.model_rebuild()

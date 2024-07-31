@@ -1,4 +1,4 @@
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -47,3 +47,6 @@ class SelfAskOutputParser(AgentOutputParser):
     @property
     def _type(self) -> str:
         return "self_ask"
+
+
+SelfAskOutputParser.model_rebuild()

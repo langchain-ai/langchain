@@ -8,8 +8,8 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from langchain_core.documents import Document
-from pydantic import Field, root_validator
 from langchain_core.vectorstores import VectorStore
+from pydantic import Field, root_validator
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain

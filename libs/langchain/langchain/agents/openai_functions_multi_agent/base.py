@@ -21,8 +21,8 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from pydantic import root_validator
 from langchain_core.tools import BaseTool
+from pydantic import root_validator
 
 from langchain.agents import BaseMultiActionAgent
 from langchain.agents.format_scratchpad.openai_functions import (

@@ -6,8 +6,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from pydantic import Extra, root_validator
 from langchain_core.utils.input import get_color_mapping
+from pydantic import Extra, root_validator
 
 from langchain.chains.base import Chain
 

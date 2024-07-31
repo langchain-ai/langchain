@@ -1,5 +1,5 @@
 import re
-from typing import Union
+from typing import Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -47,3 +47,6 @@ class ConvoOutputParser(AgentOutputParser):
     @property
     def _type(self) -> str:
         return "conversational"
+
+
+ConvoOutputParser.model_rebuild()
