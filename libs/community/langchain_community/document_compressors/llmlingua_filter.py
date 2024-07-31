@@ -1,7 +1,7 @@
 # LLM Lingua Document Compressor
 
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Pattern, Sequence, Tuple
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
@@ -24,8 +24,8 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
 
     # Pattern to match ref tags at the beginning or end of the string,
     # allowing for malformed tags
-    _pattern_beginning = re.compile(r"\A(?:<#)?(?:ref)?(\d+)(?:#>?)?")
-    _pattern_ending = re.compile(r"(?:<#)?(?:ref)?(\d+)(?:#>?)?\Z")
+    _pattern_beginning: Pattern = re.compile(r"\A(?:<#)?(?:ref)?(\d+)(?:#>?)?")
+    _pattern_ending: Pattern = re.compile(r"(?:<#)?(?:ref)?(\d+)(?:#>?)?\Z")
 
     model_name: str = "NousResearch/Llama-2-7b-hf"
     """The hugging face model to use"""

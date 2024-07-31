@@ -51,7 +51,7 @@ class DeepLake(VectorStore):
                 vectorstore = DeepLake("langchain_store", embeddings.embed_query)
     """
 
-    _LANGCHAIN_DEFAULT_DEEPLAKE_PATH = "./deeplake/"
+    _LANGCHAIN_DEFAULT_DEEPLAKE_PATH: str = "./deeplake/"
     _valid_search_kwargs = ["lambda_mult"]
 
     def __init__(

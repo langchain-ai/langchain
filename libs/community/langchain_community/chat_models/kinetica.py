@@ -9,7 +9,7 @@ import os
 import re
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Pattern, cast
 
 from langchain_core.utils import pre_init
 
@@ -164,7 +164,7 @@ class _KineticaLlmFileContextParser:
     """Parser for Kinetica LLM context datafiles."""
 
     # parse line into a dict containing role and content
-    PARSER = re.compile(r"^<\|(?P<role>\w+)\|>\W*(?P<content>.*)$", re.DOTALL)
+    PARSER: Pattern = re.compile(r"^<\|(?P<role>\w+)\|>\W*(?P<content>.*)$", re.DOTALL)
 
     @classmethod
     def _removesuffix(cls, text: str, suffix: str) -> str:

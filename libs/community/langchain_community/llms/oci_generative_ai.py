@@ -26,7 +26,7 @@ class Provider(ABC):
 
 
 class CohereProvider(Provider):
-    stop_sequence_key = "stop_sequences"
+    stop_sequence_key: str = "stop_sequences"
 
     def __init__(self) -> None:
         from oci.generative_ai_inference import models
@@ -38,7 +38,7 @@ class CohereProvider(Provider):
 
 
 class MetaProvider(Provider):
-    stop_sequence_key = "stop"
+    stop_sequence_key: str = "stop"
 
     def __init__(self) -> None:
         from oci.generative_ai_inference import models

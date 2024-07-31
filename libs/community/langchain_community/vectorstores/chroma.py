@@ -66,7 +66,7 @@ class Chroma(VectorStore):
                 vectorstore = Chroma("langchain_store", embeddings)
     """
 
-    _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
+    _LANGCHAIN_DEFAULT_COLLECTION_NAME: str = "langchain"
 
     def __init__(
         self,

@@ -85,8 +85,8 @@ class Qdrant(VectorStore):
             qdrant = Qdrant(client, collection_name, embedding_function)
     """
 
-    CONTENT_KEY = "page_content"
-    METADATA_KEY = "metadata"
+    CONTENT_KEY: str = "page_content"
+    METADATA_KEY: str = "metadata"
     VECTOR_NAME = None
 
     def __init__(

@@ -16,7 +16,7 @@ class SVEndpointHandler:
     :param str host_url: Base URL of the DaaS API service
     """
 
-    API_BASE_PATH = "/api/predict"
+    API_BASE_PATH: str = "/api/predict"
 
     def __init__(self, host_url: str):
         """
