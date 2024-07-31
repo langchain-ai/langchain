@@ -3,6 +3,29 @@ from typing import Any, Type
 from pydantic import BaseModel
 
 
+# Function to replace allOf with $ref
+def replace_all_of_with_ref(schema):
+    if isinstance(schema, dict):
+        # If the schema has an allOf key with a single item that contains a $ref
+        if (
+            "allOf" in schema
+            and len(schema["allOf"]) == 1
+            and "$ref" in schema["allOf"][0]
+        ):
+            schema["$ref"] = schema["allOf"][0]["$ref"]
+            del schema["allOf"]
+            if "default" in schema and schema["default"] is None:
+                del schema["default"]
+        else:
+            # Recursively process nested schemas
+            for key, value in schema.items():
+                if isinstance(value, (dict, list)):
+                    replace_all_of_with_ref(value)
+    elif isinstance(schema, list):
+        for item in schema:
+            replace_all_of_with_ref(item)
+
+
 def _schema(obj: Type[BaseModel]) -> dict:
     """Return the schema of the object."""
     # Remap to old style schema
@@ -14,20 +37,6 @@ def _schema(obj: Type[BaseModel]) -> dict:
         schema_["definitions"] = schema_["$defs"]
         del schema_["$defs"]
 
-    if "properties" in schema_:
-        properties = schema_["properties"]
-        if "configurable" in properties:
-            configurable = properties["configurable"]
+    replace_all_of_with_ref(schema_)
 
-            if "allOf" in configurable:
-                allOf = configurable["allOf"]
-                del configurable["allOf"]
-                configurable["$ref"] = allOf[0]["$ref"]
-                if "default" in configurable:
-                    del configurable["default"]
-
-    if "allOf" in schema_:
-        allOf = schema_["allOf"]
-        del schema_["allOf"]
-        schema_["$ref"] = allOf[0]["$ref"]
     return schema_
