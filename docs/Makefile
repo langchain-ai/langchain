@@ -42,6 +42,8 @@ generate-files:
 
 	$(PYTHON) scripts/document_loader_feat_table.py $(INTERMEDIATE_DIR)
 
+	$(PYTHON) scripts/kv_store_feat_table.py $(INTERMEDIATE_DIR)
+
 	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
