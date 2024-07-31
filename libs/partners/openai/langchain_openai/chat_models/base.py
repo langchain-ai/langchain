@@ -423,10 +423,19 @@ class BaseChatOpenAI(BaseChatModel):
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
         }
-
-        openai_proxy = values["openai_proxy"]
+        if values["openai_proxy"] and (
+            values["http_client"] or values["http_async_client"]
+        ):
+            openai_proxy = values["openai_proxy"]
+            http_client = values["http_client"]
+            http_async_client = values["http_async_client"]
+            raise ValueError(
+                "Cannot specify 'openai_proxy' if one of "
+                "'http_client'/'http_async_client' is already specified. Received:\n"
+                f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
+            )
         if not values.get("client"):
-            if openai_proxy and not values["http_client"]:
+            if values["openai_proxy"] and not values["http_client"]:
                 try:
                     import httpx
                 except ImportError as e:
@@ -434,13 +443,13 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_client"] = httpx.Client(proxy=openai_proxy)
+                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
             sync_specific = {"http_client": values["http_client"]}
             values["client"] = openai.OpenAI(
                 **client_params, **sync_specific
             ).chat.completions
         if not values.get("async_client"):
-            if openai_proxy and not values["http_async_client"]:
+            if values["openai_proxy"] and not values["http_async_client"]:
                 try:
                     import httpx
                 except ImportError as e:
@@ -448,7 +457,9 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_async_client"] = httpx.AsyncClient(proxy=openai_proxy)
+                values["http_async_client"] = httpx.AsyncClient(
+                    proxy=values["openai_proxy"]
+                )
             async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific
