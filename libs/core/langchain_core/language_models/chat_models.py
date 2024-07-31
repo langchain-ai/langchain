@@ -1093,7 +1093,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 The output schema. Can be passed in as:
                     - an OpenAI function/tool schema,
                     - a JSON Schema,
-                    - a TypedDict class (support added in 0.2.25),
+                    - a TypedDict class (support added in 0.2.26),
                     - or a Pydantic class.
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -1102,7 +1102,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.2.25
+                .. versionchanged:: 0.2.26
 
                         Added support for TypedDict class.
 
