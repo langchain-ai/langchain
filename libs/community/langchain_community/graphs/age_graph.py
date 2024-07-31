@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from hashlib import md5
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Tuple, Union, Pattern
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Pattern, Tuple, Union
 
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore

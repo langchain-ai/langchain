@@ -1,7 +1,7 @@
 # LLM Lingua Document Compressor
 
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Pattern
+from typing import Any, Dict, List, Optional, Pattern, Sequence, Tuple
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document

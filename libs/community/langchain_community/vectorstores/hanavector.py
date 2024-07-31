@@ -13,8 +13,9 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Pattern,
     Tuple,
-    Type, Pattern,
+    Type,
 )
 
 import numpy as np

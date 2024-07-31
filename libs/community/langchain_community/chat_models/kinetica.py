@@ -9,7 +9,7 @@ import os
 import re
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast, Pattern
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Pattern, cast
 
 from langchain_core.utils import pre_init
 
