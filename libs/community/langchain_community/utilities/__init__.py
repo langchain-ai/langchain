@@ -165,7 +165,7 @@ if TYPE_CHECKING:
         WolframAlphaAPIWrapper,
     )
     from langchain_community.utilities.yandex_search import (
-        YandexSearchAPIClient,
+        YandexSearchAPIWrapper,
     )
     from langchain_community.utilities.you import (
         YouSearchAPIWrapper,
@@ -233,7 +233,7 @@ __all__ = [
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
-    "YandexSearchAPIClient",
+    "YandexSearchAPIWrapper",
     "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
 ]
@@ -297,7 +297,7 @@ _module_lookup = {
     "TwilioAPIWrapper": "langchain_community.utilities.twilio",
     "WikipediaAPIWrapper": "langchain_community.utilities.wikipedia",
     "WolframAlphaAPIWrapper": "langchain_community.utilities.wolfram_alpha",
-    "YandexSearchAPIClient": "langchain_community.utilities.yandex_search",
+    "YandexSearchAPIWrapper": "langchain_community.utilities.yandex_search",
     "YouSearchAPIWrapper": "langchain_community.utilities.you",
     "ZapierNLAWrapper": "langchain_community.utilities.zapier",
 }

@@ -61,7 +61,7 @@ EXPECTED_ALL = [
     "ZapierNLAWrapper",
     "MerriamWebsterAPIWrapper",
     "MojeekSearchAPIWrapper",
-    "YandexSearchAPIClient",
+    "YandexSearchAPIWrapper",
 ]
 
 
