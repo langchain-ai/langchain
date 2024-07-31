@@ -1,12 +1,13 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
-from typing import Any, List, Type, Union
+from typing import Any, Dict, List, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     FunctionMessage,
     HumanMessage,
     InvalidToolCall,
@@ -266,6 +267,7 @@ async def test_glm4_astream(mock_glm4_completion) -> None:
     usage_metadata = {}
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
 
@@ -288,6 +290,7 @@ def test_glm4_stream(mock_glm4_completion) -> None:
     usage_metadata = {}
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
@@ -316,7 +319,7 @@ DEEPSEEK_STREAM_DATA = """{"id":"d3610c24e6b42518a7883ea57c3ea2c3","choices":[{"
 
 
 @pytest.fixture
-def mock_deepseek_completion():
+def mock_deepseek_completion() -> List[Dict]:
     list_chunk_data = DEEPSEEK_STREAM_DATA.split("\n")
     result_list = []
     for msg in list_chunk_data:
@@ -339,6 +342,7 @@ async def test_deepseek_astream(mock_deepseek_completion) -> None:
     usage_metadata = {}
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
 
@@ -378,7 +382,7 @@ OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":
 
 
 @pytest.fixture
-def mock_openai_completion():
+def mock_openai_completion() -> List[Dict]:
     list_chunk_data = OPENAI_STREAM_DATA.split("\n")
     result_list = []
     for msg in list_chunk_data:
