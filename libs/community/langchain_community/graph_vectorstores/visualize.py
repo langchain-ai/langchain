@@ -36,6 +36,7 @@ def _split_prefix(s: str, max_chars: int = 50) -> str:
 
 def render_graphviz(
     documents: Iterable[Document],
+    engine: Optional[str] = None,
     node_color: Optional[str] = None,
     node_colors: Optional[Dict[str, Optional[str]]] = {},
 ) -> "graphviz.Digraph":
@@ -43,6 +44,7 @@ def render_graphviz(
 
     Args:
         documents: The documents to render.
+        engine: GraphViz layout engine to use. `None` uses the default.
         node_color: General node color. Defaults to `white`.
         node_colors: Dictionary specifying colors of specific nodes. Useful for
             emphasizing nodes that were selected by MMR, or differ from other
@@ -78,7 +80,7 @@ def render_graphviz(
 
     tags = set()
 
-    graph = graphviz.Digraph()
+    graph = graphviz.Digraph(engine=engine)
     graph.attr(rankdir="LR")
     graph.attr("node", style="filled")
     for document in documents:

@@ -49,6 +49,8 @@ def test_visualize_simple_graph():
         "}\n"
     )
 
+    assert render_graphviz([doc1, doc2], engine="fdp").engine == "fdp"
+
     assert render_graphviz([doc1, doc2], node_colors={"a": "gold"}).source == (
         "digraph {\n"
         "\trankdir=LR\n"
