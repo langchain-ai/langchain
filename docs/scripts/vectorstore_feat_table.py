@@ -236,7 +236,7 @@ def get_vectorstore_table():
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for vs, feats in sorted(vectorstore_feat_table.items()):
-        rows += [[vs, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
+        rows += [[vs, "✅"] + [("✅" if feats.get(h) else "❌") if h != "Local/Cloud" else feats.get(h) for h in header[1:]]]
     return "\n".join(["|".join(row) for row in rows])
     
 
