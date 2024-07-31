@@ -25,7 +25,7 @@ If you'd like to contribute an integration, see [Contributing integrations](/doc
 
 ## Features
 
-The following table shows the information on all available key-value stores.
+The following table shows information on all available key-value stores.
 
 {table}
 
@@ -82,8 +82,8 @@ DEPRECATED = []
 def get_kv_store_table() -> str:
     """Get the table of KV stores."""
 
-    header = ["name", "local", "package", "downloads"]
-    title = ["Class", "Local", "Package", "Downloads"]
+    header = ["name", "package", "local", "downloads"]
+    title = ["Class", "Package", "Local",  "Downloads"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for loader, feats in sorted(KV_STORE_FEAT_TABLE.items()):
         if not feats or loader in DEPRECATED:
