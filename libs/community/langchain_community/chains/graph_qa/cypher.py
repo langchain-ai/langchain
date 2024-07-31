@@ -311,12 +311,15 @@ class GraphCypherQAChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         question = inputs[self.input_key]
+        args = {
+            "question": question,
+            "schema": self.graph_schema,
+        }
+        args.update(inputs)
 
         intermediate_steps: List = []
 
-        generated_cypher = self.cypher_generation_chain.run(
-            {"question": question, "schema": self.graph_schema}, callbacks=callbacks
-        )
+        generated_cypher = self.cypher_generation_chain.run(args, callbacks=callbacks)
 
         # Extract Cypher code if it is wrapped in backticks
         generated_cypher = extract_cypher(generated_cypher)

@@ -105,6 +105,20 @@ class RunnableConfig(TypedDict, total=False):
     """
 
 
+CONFIG_KEYS = [
+    "tags",
+    "metadata",
+    "callbacks",
+    "run_name",
+    "max_concurrency",
+    "recursion_limit",
+    "configurable",
+    "run_id",
+]
+
+DEFAULT_RECURSION_LIMIT = 25
+
+
 var_child_runnable_config = ContextVar(
     "child_runnable_config", default=RunnableConfig()
 )
@@ -143,16 +157,20 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         tags=[],
         metadata={},
         callbacks=None,
-        recursion_limit=25,
+        recursion_limit=DEFAULT_RECURSION_LIMIT,
+        configurable={},
     )
     if var_config := var_child_runnable_config.get():
         empty.update(
             cast(RunnableConfig, {k: v for k, v in var_config.items() if v is not None})
         )
     if config is not None:
-        empty.update(
-            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None})
-        )
+        for k, v in config.items():
+            if v is not None:
+                if k in CONFIG_KEYS:
+                    empty[k] = v  # type: ignore[literal-required]
+                else:
+                    empty["configurable"][k] = v
     for key, value in empty.get("configurable", {}).items():
         if (
             not key.startswith("__")
@@ -265,7 +283,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
     base: RunnableConfig = {}
     # Even though the keys aren't literals, this is correct
     # because both dicts are the same type
-    for config in (c for c in configs if c is not None):
+    for config in (ensure_config(c) for c in configs if c is not None):
         for key in config:
             if key == "metadata":
                 base[key] = {  # type: ignore
@@ -340,6 +358,9 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                             manager.add_handler(handler, inherit=True)
 
                         base["callbacks"] = manager
+            elif key == "recursion_limit":
+                if config["recursion_limit"] != DEFAULT_RECURSION_LIMIT:
+                    base["recursion_limit"] = config["recursion_limit"]
             else:
                 base[key] = config[key] or base.get(key)  # type: ignore
     return base

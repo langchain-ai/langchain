@@ -9,6 +9,7 @@ license = "MIT"
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/__package_name_short__"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22__package_name_short__%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -77,8 +78,7 @@ build-backend = "poetry.core.masonry.api"
 #                       section of the configuration file raise errors.
 #
 # https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+addopts = "--strict-markers --strict-config --durations=5"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [

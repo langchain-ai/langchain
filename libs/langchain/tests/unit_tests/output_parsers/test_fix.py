@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, Optional, TypeVar
 
 import pytest
 from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import AIMessage
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from pytest_mock import MockerFixture
@@ -61,6 +62,22 @@ def test_output_fixing_parser_parse(
     assert parser.parse("completion") == "parsed"
     assert base_parser.parse_count == n + 1
     # TODO: test whether "instructions" is passed to the retry_chain
+
+
+def test_output_fixing_parser_from_llm() -> None:
+    def fake_llm(prompt: str) -> AIMessage:
+        return AIMessage("2024-07-08T00:00:00.000000Z")
+
+    llm = RunnableLambda(fake_llm)
+
+    n = 1
+    parser = OutputFixingParser.from_llm(
+        llm=llm,
+        parser=DatetimeOutputParser(),
+        max_retries=n,
+    )
+
+    assert parser.parse("not a date")
 
 
 @pytest.mark.parametrize(
