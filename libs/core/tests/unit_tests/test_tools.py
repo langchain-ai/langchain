@@ -1668,6 +1668,4 @@ def test__is_message_content_block(obj: Any, expected: bool) -> None:
     ],
 )
 def test__is_message_content_type(obj: Any, expected: bool) -> None:
-    assert _is_message_content_type("foo") is True
-    assert _is_message_content_type(valid_tool_result_blocks) is True
-    assert _is_message_content_type(invalid_tool_result_blocks) is False
+    assert _is_message_content_type(obj) is expected
