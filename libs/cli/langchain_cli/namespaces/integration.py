@@ -137,6 +137,7 @@ TEMPLATE_MAP: dict[str, str] = {
     "LLM": "llms.ipynb",
     "Provider": "provider.ipynb",
     "Toolkit": "toolkits.ipynb",
+    "Retriever": "retrievers.ipynb",
 }
 
 
