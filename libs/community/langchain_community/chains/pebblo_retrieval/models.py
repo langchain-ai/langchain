@@ -123,6 +123,7 @@ class App(BaseModel):
     framework: Framework
     chains: List[Chains]
     plugin_version: str
+    client_version: Framework
 
 
 class Context(BaseModel):
@@ -133,7 +134,10 @@ class Context(BaseModel):
 
 
 class Prompt(BaseModel):
-    data: str
+    data: Optional[Union[list, str]]
+    entityCount: Optional[int]
+    entities: Optional[dict]
+    prompt_gov_enabled: Optional[bool]
 
 
 class Qa(BaseModel):
