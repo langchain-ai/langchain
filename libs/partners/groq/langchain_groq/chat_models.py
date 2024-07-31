@@ -66,7 +66,12 @@ from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -78,6 +83,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 class ChatGroq(BaseChatModel):
@@ -88,13 +94,6 @@ class ChatGroq(BaseChatModel):
 
     Any parameters that are valid to be passed to the groq.create call
     can be passed in, even if not explicitly saved on this class.
-
-    Example:
-        .. code-block:: python
-
-            from langchain_groq import ChatGroq
-
-            model = ChatGroq(model_name="mixtral-8x7b-32768")
 
     Setup:
         Install ``langchain-groq`` and set environment variable
@@ -137,12 +136,12 @@ class ChatGroq(BaseChatModel):
 
             from langchain_groq import ChatGroq
 
-            model = ChatGroq(
+            llm = ChatGroq(
                 model="mixtral-8x7b-32768",
                 temperature=0.0,
                 max_retries=2,
                 # other params...
-                )
+            )
 
     Invoke:
         .. code-block:: python
@@ -152,7 +151,7 @@ class ChatGroq(BaseChatModel):
                 sentence to French."),
                 ("human", "I love programming."),
             ]
-            model.invoke(messages)
+            llm.invoke(messages)
 
         .. code-block:: python
 
@@ -169,7 +168,7 @@ class ChatGroq(BaseChatModel):
     Stream:
         .. code-block:: python
 
-            for chunk in model.stream(messages):
+            for chunk in llm.stream(messages):
                 print(chunk)
 
         .. code-block:: python
@@ -186,7 +185,7 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            stream = model.stream(messages)
+            stream = llm.stream(messages)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -209,7 +208,7 @@ class ChatGroq(BaseChatModel):
     Async:
         .. code-block:: python
 
-            await model.ainvoke(messages)
+            await llm.ainvoke(messages)
 
         .. code-block:: python
 
@@ -241,7 +240,7 @@ class ChatGroq(BaseChatModel):
                 location: str = Field(..., description="The city and state,
                 e.g. San Francisco, CA")
 
-            model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+            model_with_tools = llm.bind_tools([GetWeather, GetPopulation])
             ai_msg = model_with_tools.invoke("What is the population of NY?")
             ai_msg.tool_calls
 
@@ -268,7 +267,7 @@ class ChatGroq(BaseChatModel):
                 rating: Optional[int] = Field(description="How funny the joke
                 is, from 1 to 10")
 
-            structured_model = model.with_structured_output(Joke)
+            structured_model = llm.with_structured_output(Joke)
             structured_model.invoke("Tell me a joke about cats")
 
         .. code-block:: python
@@ -281,7 +280,7 @@ class ChatGroq(BaseChatModel):
     Response metadata
         .. code-block:: python
 
-            ai_msg = model.invoke(messages)
+            ai_msg = llm.invoke(messages)
             ai_msg.response_metadata
 
         .. code-block:: python
@@ -1053,7 +1052,7 @@ class ChatGroq(BaseChatModel):
 
 
 def _is_pydantic_class(obj: Any) -> bool:
-    return isinstance(obj, type) and issubclass(obj, BaseModel)
+    return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
 class _FunctionCall(TypedDict):

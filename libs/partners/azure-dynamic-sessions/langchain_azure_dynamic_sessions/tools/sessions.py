@@ -127,7 +127,7 @@ class SessionsPythonREPLTool(BaseTool):
     session_id: str = str(uuid4())
     """The session ID to use for the code interpreter. Defaults to a random UUID."""
 
-    response_format: Literal["content_and_raw_output"] = "content_and_raw_output"
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _build_url(self, path: str) -> str:
         pool_management_endpoint = self.pool_management_endpoint

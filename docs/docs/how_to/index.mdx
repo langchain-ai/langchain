@@ -31,6 +31,8 @@ This highlights functionality that is core to using LangChain.
 
 [**LCEL cheatsheet**](/docs/how_to/lcel_cheatsheet/): For a quick overview of how to use the main LCEL primitives.
 
+[**Migration guide**](/docs/versions/migrating_chains): For migrating legacy chain abstractions to LCEL.
+
 - [How to: chain runnables](/docs/how_to/sequence)
 - [How to: stream runnables](/docs/how_to/streaming)
 - [How to: invoke runnables in parallel](/docs/how_to/parallel/)
@@ -43,7 +45,7 @@ This highlights functionality that is core to using LangChain.
 - [How to: create a dynamic (self-constructing) chain](/docs/how_to/dynamic_chain/)
 - [How to: inspect runnables](/docs/how_to/inspect)
 - [How to: add fallbacks to a runnable](/docs/how_to/fallbacks)
-- [How to: migrate chains to LCEL](/docs/how_to/migrate_chains)
+- [How to: pass runtime secrets to a runnable](/docs/how_to/runnable_runtime_secrets)
 
 ## Components
 
@@ -80,11 +82,11 @@ These are the core building blocks you can use when building applications.
 - [How to: stream a response back](/docs/how_to/chat_streaming)
 - [How to: track token usage](/docs/how_to/chat_token_usage_tracking)
 - [How to: track response metadata across providers](/docs/how_to/response_metadata)
-- [How to: let your end users choose their model](/docs/how_to/chat_models_universal_init/)
 - [How to: use chat model to call tools](/docs/how_to/tool_calling)
 - [How to: stream tool calls](/docs/how_to/tool_streaming)
+- [How to: handle rate limits](/docs/how_to/chat_model_rate_limiting)
 - [How to: few shot prompt tool behavior](/docs/how_to/tools_few_shot)
-- [How to: bind model-specific formated tools](/docs/how_to/tools_model_specific)
+- [How to: bind model-specific formatted tools](/docs/how_to/tools_model_specific)
 - [How to: force a specific tool call](/docs/how_to/tool_choice)
 - [How to: init any model in one line](/docs/how_to/chat_models_universal_init/)
 
@@ -185,17 +187,21 @@ Indexing is the process of keeping your vectorstore in-sync with the underlying 
 
 LangChain [Tools](/docs/concepts/#tools) contain a description of the tool (to pass to the language model) as well as the implementation of the function to call. Refer [here](/docs/integrations/tools/) for a list of pre-buit tools. 
 
-- [How to: create custom tools](/docs/how_to/custom_tools)
-- [How to: use built-in tools and built-in toolkits](/docs/how_to/tools_builtin)
-- [How to: convert Runnables to tools](/docs/how_to/convert_runnable_to_tool)
-- [How to: use chat model to call tools](/docs/how_to/tool_calling)
-- [How to: pass tool results back to model](/docs/how_to/tool_results_pass_to_model)
-- [How to: add ad-hoc tool calling capability to LLMs and chat models](/docs/how_to/tools_prompting)
+- [How to: create tools](/docs/how_to/custom_tools)
+- [How to: use built-in tools and toolkits](/docs/how_to/tools_builtin)
+- [How to: use chat models to call tools](/docs/how_to/tool_calling)
+- [How to: pass tool outputs to chat models](/docs/how_to/tool_results_pass_to_model)
 - [How to: pass run time values to tools](/docs/how_to/tool_runtime)
-- [How to: add a human in the loop to tool usage](/docs/how_to/tools_human)
-- [How to: handle errors when calling tools](/docs/how_to/tools_error)
-- [How to: disable parallel tool calling](/docs/how_to/tool_choice)
-- [How to: stream events from within a tool](/docs/how_to/tool_stream_events)
+- [How to: add a human-in-the-loop for tools](/docs/how_to/tools_human)
+- [How to: handle tool errors](/docs/how_to/tools_error)
+- [How to: force models to call a tool](/docs/how_to/tool_choice)
+- [How to: disable parallel tool calling](/docs/how_to/tool_calling_parallel)
+- [How to: access the `RunnableConfig` from a tool](/docs/how_to/tool_configure)
+- [How to: stream events from a tool](/docs/how_to/tool_stream_events)
+- [How to: return artifacts from a tool](/docs/how_to/tool_artifacts/)
+- [How to: convert Runnables to tools](/docs/how_to/convert_runnable_to_tool)
+- [How to: add ad-hoc tool calling capability to models](/docs/how_to/tools_prompting)
+- [How to: pass in runtime secrets](/docs/how_to/runnable_runtime_secrets)
 
 ### Multimodal
 
@@ -223,6 +229,7 @@ For in depth how-to guides for agents, please check out [LangGraph](https://lang
 - [How to: pass callbacks into a module constructor](/docs/how_to/callbacks_constructor)
 - [How to: create custom callback handlers](/docs/how_to/custom_callbacks)
 - [How to: use callbacks in async environments](/docs/how_to/callbacks_async)
+- [How to: dispatch custom callback events](/docs/how_to/callbacks_custom_events)
 
 ### Custom
 
@@ -235,6 +242,7 @@ All of LangChain components can easily be extended to support your own versions.
 - [How to: write a custom output parser class](/docs/how_to/output_parser_custom)
 - [How to: create custom callback handlers](/docs/how_to/custom_callbacks)
 - [How to: define a custom tool](/docs/how_to/custom_tools)
+- [How to: dispatch custom callback events](/docs/how_to/callbacks_custom_events)
 
 ### Serialization
 - [How to: save and load LangChain objects](/docs/how_to/serialization)
