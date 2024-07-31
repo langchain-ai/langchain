@@ -174,14 +174,14 @@ hide_table_of_contents: true
 
 # Chat models
 
-## Advanced features
-
 :::info
 
 If you'd like to write your own chat model, see [this how-to](/docs/how_to/custom_chat_model/).
 If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
 
 :::
+
+## Advanced features
 
 The following table shows all the chat model classes that support one or more advanced features.
 
