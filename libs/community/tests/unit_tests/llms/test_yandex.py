@@ -5,7 +5,7 @@ from langchain_community.llms.yandex import YandexGPT
 
 def test_yandexgpt_initialization() -> None:
     llm = YandexGPT(
-        iam_token="your_iam_token",
+        iam_token="your_iam_token",  # type: ignore[arg-type]
         api_key="your_api_key",  # type: ignore[arg-type]
         folder_id="your_folder_id",
     )
