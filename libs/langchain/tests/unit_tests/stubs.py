@@ -16,28 +16,28 @@ class AnyStr(str):
 # subclassed strings.
 
 
-def _AnyIdDocument(**kwargs) -> Document:
+def _AnyIdDocument(**kwargs: Any) -> Document:
     """Create a document with an id field."""
     message = Document(**kwargs)
     message.id = AnyStr()
     return message
 
 
-def _AnyIdAIMessage(**kwargs) -> AIMessage:
+def _AnyIdAIMessage(**kwargs: Any) -> AIMessage:
     """Create ai message with an any id field."""
     message = AIMessage(**kwargs)
     message.id = AnyStr()
     return message
 
 
-def _AnyIdAIMessageChunk(**kwargs) -> AIMessageChunk:
+def _AnyIdAIMessageChunk(**kwargs: Any) -> AIMessageChunk:
     """Create ai message with an any id field."""
     message = AIMessageChunk(**kwargs)
     message.id = AnyStr()
     return message
 
 
-def _AnyIdHumanMessage(**kwargs) -> HumanMessage:
+def _AnyIdHumanMessage(**kwargs: Any) -> HumanMessage:
     """Create a human with an any id field."""
     message = HumanMessage(**kwargs)
     message.id = AnyStr()
