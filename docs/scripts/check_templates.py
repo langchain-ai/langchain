@@ -1,13 +1,14 @@
+import json
 import re
 import sys
-from pathlib import Path
-from typing import Union
-import json
 from functools import cache
-from typing import Iterable, List, Dict
+from pathlib import Path
+from typing import Dict, Iterable, List, Union
 
 CURR_DIR = Path(__file__).parent.absolute()
-CLI_TEMPLATE_DIR = CURR_DIR.parent / "libs/cli/langchain_cli/integration_template/docs"
+CLI_TEMPLATE_DIR = (
+    CURR_DIR.parent.parent / "libs/cli/langchain_cli/integration_template/docs"
+)
 
 INFO_BY_DIR: Dict[str, Dict[str, Union[int, str]]] = {
     "chat": {
