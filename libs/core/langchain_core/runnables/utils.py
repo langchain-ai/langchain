@@ -28,6 +28,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from pydantic import BaseModel, ConfigDict, RootModel
@@ -702,71 +703,44 @@ _SchemaConfig = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 NO_DEFAULT = object()
 
 
-def create_base_class(name: str, type_, default_=NO_DEFAULT) -> Type[BaseModel]:
-    if default_ is NO_DEFAULT:
+def create_base_class(name: str, type_: Any, default_=NO_DEFAULT) -> Type[BaseModel]:
+    """Create a base class."""
 
-        class FixedNameRootModel(RootModel):
-            root: type_
+    def schema(
+        cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
+    ) -> Dict[str, Any]:
+        schema_ = super(cls, cls).schema(by_alias=by_alias, ref_template=ref_template)
+        schema_["title"] = name
+        return schema_
 
-            model_config = ConfigDict(arbitrary_types_allowed=True)
+    def model_json_schema(
+        cls,
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        mode: JsonSchemaMode = "validation",
+    ) -> Dict[str, Any]:
+        schema_ = super(cls, cls).model_json_schema(
+            by_alias=by_alias,
+            ref_template=ref_template,
+            schema_generator=schema_generator,
+            mode=mode,
+        )
+        schema_["title"] = name
+        return schema_
 
-            @classmethod
-            def schema(  # noqa: D102
-                cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
-            ) -> Dict[str, Any]:
-                schema_ = super().schema(by_alias=by_alias, ref_template=ref_template)
-                schema_["title"] = name
-                return schema_
+    base_class_attributes = {
+        "__annotations__": {"root": type_},
+        "model_config": ConfigDict(arbitrary_types_allowed=True),
+        "schema": classmethod(schema),
+        "model_json_schema": classmethod(model_json_schema),
+        "__module__": "langchain_core.runnables.utils",
+    }
 
-            @classmethod
-            def model_json_schema(
-                cls,
-                by_alias: bool = True,
-                ref_template: str = DEFAULT_REF_TEMPLATE,
-                schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-                mode: JsonSchemaMode = "validation",
-            ) -> Dict[str, Any]:
-                schema_ = super().model_json_schema(
-                    by_alias=by_alias,
-                    ref_template=ref_template,
-                    schema_generator=schema_generator,
-                    mode=mode,
-                )
-                schema_["title"] = name
-                return schema_
-    else:
-
-        class FixedNameRootModel(RootModel):
-            root: type_ = default_
-
-            model_config = ConfigDict(arbitrary_types_allowed=True)
-
-            @classmethod
-            def schema(  # noqa: D102
-                cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
-            ) -> Dict[str, Any]:
-                schema_ = super().schema(by_alias=by_alias, ref_template=ref_template)
-                schema_["title"] = name
-                return schema_
-
-            @classmethod
-            def model_json_schema(
-                cls,
-                by_alias: bool = True,
-                ref_template: str = DEFAULT_REF_TEMPLATE,
-                schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-                mode: JsonSchemaMode = "validation",
-            ) -> Dict[str, Any]:
-                schema_ = super().model_json_schema(
-                    by_alias=by_alias,
-                    ref_template=ref_template,
-                    schema_generator=schema_generator,
-                    mode=mode,
-                )
-                schema_["title"] = name
-                return schema_
-
-    return FixedNameRootModel
+    if default_ is not NO_DEFAULT:
+        base_class_attributes["root"] = default_
+    custom_root_type = type(name, (RootModel,), base_class_attributes)
+    return cast(Type[BaseModel], custom_root_type)
 
 
 def create_model(
