@@ -36,8 +36,8 @@ def _split_prefix(s: str, max_chars: int = 50) -> str:
 
 def render_graphviz(
     documents: Iterable[Document],
-    node_color: str = "white",
-    node_colors: Optional[Dict[str, str]] = {},
+    node_color: Optional[str] = None,
+    node_colors: Optional[Dict[str, Optional[str]]] = {},
 ) -> "graphviz.Digraph":
     """Render a collection of GraphVectorStore documents to GraphViz format.
 
@@ -79,14 +79,14 @@ def render_graphviz(
     tags = set()
 
     graph = graphviz.Digraph()
+    graph.attr(rankdir="LR")
     graph.attr("node", style="filled")
     for document in documents:
         id = document.id
         if id is None:
             raise ValueError(f"Illegal graph document without ID: {document}")
         escaped_id = _escape_id(id)
-        color = node_colors.get(id) or node_color
-
+        color = node_colors[id] if id in node_colors else node_color
 
         node_label=f"{graphviz.escape(id)}\n{graphviz.escape(_split_prefix(document.page_content))}"
         graph.node(
