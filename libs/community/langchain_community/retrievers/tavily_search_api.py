@@ -64,14 +64,20 @@ class TavilySearchAPIRetriever(BaseRetriever):
 
             Question: {question}\"\"\"
             )
+
+            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+
+            def format_docs(docs):
+                return "\n\n".join(doc.page_content for doc in docs)
+
             chain = (
-                RunnablePassthrough.assign(context=(lambda x: x["question"]) | retriever)
+                {"context": retriever | format_docs, "question": RunnablePassthrough()}
                 | prompt
-                | ChatOpenAI(model="gpt-3.5-turbo-0125")
+                | llm
                 | StrOutputParser()
             )
 
-            chain.invoke({"question": "how many units did bretch of the wild sell in 2020"})
+            chain.invoke("how many units did bretch of the wild sell in 2020")
 
     """  # noqa: E501
 
