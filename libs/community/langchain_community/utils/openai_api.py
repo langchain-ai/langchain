@@ -15,50 +15,68 @@ logging.basicConfig(
 
 
 # schema for token usage tracking returned as part of the response
-class Usage(BaseModel):
-    prompt_tokens: int = Field(0, description="The number of tokens in the prompt.")
+class OpenAIAPIUsage(BaseModel):
+    prompt_tokens: int = Field(
+        0, description="The number of tokens in the user's prompt."
+    )
     completion_tokens: int = Field(
-        0, description="The number of tokens in the completion."
+        0, description="The number of tokens in the chat completion."
     )
     total_tokens: int = Field(
-        0, description="The total number of tokens in the prompt and completion."
+        0,
+        description="The total number of tokens together in the prompt and the completion.",
     )
 
 
 # schema for messages used in the request as well as response
-class Message(BaseModel):
-    role: str = Field(..., description="The role of the message provider.")
+class OpenAIAPIMessage(BaseModel):
+    role: str = Field(..., description="The role of the message provider/generator.")
     content: str = Field(..., description="The content of the message.")
 
 
 # schema for the chat completion choices
-class Choices(BaseModel):
-    index: int = Field(..., description="Index of the choice.")
-    message: Message = Field(..., description="Generated message's role and content.")
-    finish_reason: str = Field(..., description="Finish reason for the generation.")
+class OpenAIAPIChoices(BaseModel):
+    index: int = Field(
+        ..., description="0-indexed number of the choice in the response."
+    )
+    message: OpenAIAPIMessage = Field(
+        ..., description="Generated message of type OpenAIAPIMessage."
+    )
+    finish_reason: str = Field(
+        ..., description="The reason for finishing the chat completion."
+    )
 
 
 # request schema for generating chat completions
-class GenerateRequest(BaseModel):
-    model: str = Field(..., description="Model name used for the generation.")
-    user: str = Field(
-        ..., description="User name of the user who made the generation request."
+class ChatCompletionRequest(BaseModel):
+    model: str = Field(
+        ..., description="Name of the model to be used for the chat completion."
     )
-    messages: list[Message] = Field(
-        ..., description="List of messages used for the generation."
+    user: str = Field(
+        ...,
+        description="Name / human-readable ID of the user who made the chat completion request.",
+    )
+    messages: list[OpenAIAPIMessage] = Field(
+        ..., description="List of messages used as input for the chat completion."
     )
 
 
 # response schema containing the generated response
-class GeneratedResponse(BaseModel):
-    id: str = Field(..., description="Unique identifier for the generation.")
+class ChatCompletionResponse(BaseModel):
+    id: str = Field(..., description="Unique identifier for the chat completion.")
     object: str = Field(
         ..., description="Name of the object type (should be 'chat.completion')."
     )
-    created: int = Field(..., description="Timestamp when the generation was created.")
-    model: str = Field(..., description="Model ID used for the generation.")
-    choices: list[Choices] = Field(..., description="Generated text and finish reason.")
-    usage: Usage = Field(..., description="Usage statistics for the generation.")
+    created: int = Field(
+        ..., description="Timestamp for when the chat completion was created."
+    )
+    model: str = Field(..., description="Model ID used for the chat completion.")
+    choices: list[OpenAIAPIChoices] = Field(
+        ..., description="Generated text and finish reason."
+    )
+    usage: OpenAIAPIUsage = Field(
+        ..., description="OpenAIAPIUsage statistics for the chat completion."
+    )
 
 
 class OpenAIChatCompletionAPI:
@@ -86,7 +104,7 @@ class OpenAIChatCompletionAPI:
         self.app.post("/chat/completions")(self.chat_completion)
 
     # for health check
-    async def health_check(self) -> JSONResponse:
+    async def liveness_check(self) -> JSONResponse:
         """
         Endpoint for health check.
 
@@ -96,15 +114,17 @@ class OpenAIChatCompletionAPI:
         return JSONResponse(status_code=200, content={"status": "ok"})
 
     # OpenAI compatible chat completion endpoint
-    async def chat_completion(self, request: GenerateRequest) -> GeneratedResponse:
+    async def chat_completion(
+        self, request: ChatCompletionRequest
+    ) -> ChatCompletionResponse:
         """
         Endpoint for generating chat completions based on the provided request.
 
         Args:
-            request (GenerateRequest): The request containing model, user, and messages.
+            request (ChatCompletionRequest): The request containing model, user, and messages.
 
         Returns:
-            GeneratedResponse: The generated response including id, object, created timestamp, model, choices, and usage.
+            ChatCompletionResponse: The generated response including id, object, created timestamp, model, choices, and usage.
         """
         self.logger.info(f"Received request: {request}")
         self.logger.info(
@@ -115,9 +135,9 @@ class OpenAIChatCompletionAPI:
         timestamp = int(datetime.now().timestamp())
         res_id = generation["kwargs"]["id"]
         model = self.langchain_runnable.model_name
-        message = Message(role="AI", content=generation["kwargs"]["content"])
-        choices = Choices(index=0, message=message, finish_reason="stop")
-        usage = Usage(
+        message = OpenAIAPIMessage(role="AI", content=generation["kwargs"]["content"])
+        choices = OpenAIAPIChoices(index=0, message=message, finish_reason="stop")
+        usage = OpenAIAPIUsage(
             prompt_tokens=generation["kwargs"]["response_metadata"]["usage_metadata"][
                 "prompt_token_count"
             ],
@@ -128,7 +148,7 @@ class OpenAIChatCompletionAPI:
                 "total_token_count"
             ],
         )
-        res = GeneratedResponse(
+        res = ChatCompletionResponse(
             id=res_id,
             object="chat.completion",
             created=timestamp,

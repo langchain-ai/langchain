@@ -2,7 +2,8 @@
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
-from oss.openai_api import OpenAIChatCompletionAPI, Runnable
+
+from langchain_community.utils.openai_api import OpenAIChatCompletionAPI, Runnable
 
 
 # Mock the Runnable class
@@ -34,7 +35,7 @@ api = OpenAIChatCompletionAPI(langchain_runnable=mock_runnable)
 client = TestClient(api.app)
 
 
-def test_health_check():
+def test_liveness_check():
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
