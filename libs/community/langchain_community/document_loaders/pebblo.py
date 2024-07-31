@@ -226,7 +226,6 @@ class PebbloSafeLoader(BaseLoader):
             if (
                 self.loader.__class__.__name__ == "SharePointLoader"
                 and not self.loader_details_updated
-
             ):
                 self.loader_details["source_path"] = doc_metadata.get("source_full_url")
                 self.loader_details_updated = True
