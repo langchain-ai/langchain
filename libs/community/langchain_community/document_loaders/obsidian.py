@@ -2,7 +2,7 @@ import functools
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterator, Union
+from typing import Any, Dict, Iterator, Pattern, Union
 
 import yaml
 from langchain_core.documents import Document
@@ -15,12 +15,16 @@ logger = logging.getLogger(__name__)
 class ObsidianLoader(BaseLoader):
     """Load `Obsidian` files from directory."""
 
-    FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
-    TEMPLATE_VARIABLE_REGEX = re.compile(r"{{(.*?)}}", re.DOTALL)
-    TAG_REGEX = re.compile(r"[^\S\/]#([a-zA-Z_]+[-_/\w]*)")
-    DATAVIEW_LINE_REGEX = re.compile(r"^\s*(\w+)::\s*(.*)$", re.MULTILINE)
-    DATAVIEW_INLINE_BRACKET_REGEX = re.compile(r"\[(\w+)::\s*(.*)\]", re.MULTILINE)
-    DATAVIEW_INLINE_PAREN_REGEX = re.compile(r"\((\w+)::\s*(.*)\)", re.MULTILINE)
+    FRONT_MATTER_REGEX: Pattern = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
+    TEMPLATE_VARIABLE_REGEX: Pattern = re.compile(r"{{(.*?)}}", re.DOTALL)
+    TAG_REGEX: Pattern = re.compile(r"[^\S\/]#([a-zA-Z_]+[-_/\w]*)")
+    DATAVIEW_LINE_REGEX: Pattern = re.compile(r"^\s*(\w+)::\s*(.*)$", re.MULTILINE)
+    DATAVIEW_INLINE_BRACKET_REGEX: Pattern = re.compile(
+        r"\[(\w+)::\s*(.*)\]", re.MULTILINE
+    )
+    DATAVIEW_INLINE_PAREN_REGEX: Pattern = re.compile(
+        r"\((\w+)::\s*(.*)\)", re.MULTILINE
+    )
 
     def __init__(
         self,
