@@ -1,20 +1,38 @@
-from typing import (
-    List,
-)
+from typing import List, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pymongo.collection import Collection
 
+from langchain_mongodb.pipelines import MongoDBDocument, text_search_stage
+from langchain_mongodb.utils import make_serializable
+
 
 class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
+    """Hybrid Search Retriever performs full-text searches
+    using Lucene's standard (BM25) analyzer.
+    """
+
     collection: Collection
+    """MongoDB Collection on an Atlas cluster"""
+    search_index_name: str
+    """Atlas Search Index name"""
+    search_field: str
+    """Collection field that contains the text to be searched. It must be indexed"""
+    top_k: int = None
+    """Number of documents to return. Default is no limit"""
+    pre_filter: Optional[MongoDBDocument] = None
+    """(Optional) Any MQL match expression comparing an indexed field"""
+    post_filter: Optional[MongoDBDocument] = None
+    """(Optional) Pipeline of MongoDB aggregation stages for postprocessing"""
+    show_embeddings: float = False
+    """If true, returned Document metadata will include vectors"""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        """Get documents relevant to a query.
+        """Retrieve documents that are highest scoring / most similar  to query.
 
         Args:
             query: String to find relevant documents for
@@ -22,3 +40,30 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
         Returns:
             List of relevant documents
         """
+
+        pipeline = text_search_stage(
+            query=query,
+            search_field=self.search_field,
+            index_name=self.search_index_name,
+            limit=self.top_k,
+            pre_filter=self.pre_filter,
+        )
+
+        # Removal of embeddings unless requested.
+        if not self.show_embeddings:
+            pipeline.append({"$project": {self.vectorstore._embedding_key: 0}})
+        # Post filtering
+        if self.post_filter is not None:
+            pipeline.extend(self.post_filter)
+
+        # Execution
+        cursor = self.collection.aggregate(pipeline)  # type: ignore[arg-type]
+
+        # Formatting
+        docs = []
+        for res in cursor:
+            text = res.pop(self.vectorstore._text_key)
+            # score = res.pop("score")  # The score remains buried!
+            make_serializable(res)
+            docs.append(Document(page_content=text, metadata=res))
+        return docs
