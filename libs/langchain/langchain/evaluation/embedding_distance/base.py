@@ -11,6 +11,7 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import pre_init
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -68,7 +69,7 @@ class _EmbeddingDistanceChainMixin(Chain):
     embeddings: Embeddings = Field(default_factory=_embedding_factory)
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
 
-    @root_validator(pre=False)
+    @pre_init
     def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the TikTok library is installed.
 
