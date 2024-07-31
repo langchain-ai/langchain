@@ -32,6 +32,8 @@ from langchain_core.tools import (
     StructuredTool,
     Tool,
     ToolException,
+    _is_message_content_block,
+    _is_message_content_type,
     tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
@@ -1623,3 +1625,47 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
         "title": pydantic_model.__name__,
         "type": "object",
     }
+
+
+valid_tool_result_blocks = [
+    "foo",
+    {"type": "text", "text": "foo"},
+    {"type": "text", "blah": "foo"},  # note, only 'type' key is currently checked
+    {"type": "image_url", "image_url": {}},  # openai format
+    {
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": "image/jpeg",
+            "data": "123",
+        },
+    },  # anthropic format
+    {"type": "json", "json": {}},  # bedrock format
+]
+invalid_tool_result_blocks = [
+    {"text": "foo"},  # missing type
+    {"results": "foo"},  # not content blocks
+]
+
+
+@pytest.mark.parametrize(
+    ("obj", "expected"),
+    [
+        *([[block, True] for block in valid_tool_result_blocks]),
+        *([[block, False] for block in invalid_tool_result_blocks]),
+    ],
+)
+def test__is_message_content_block(obj: Any, expected: bool) -> None:
+    assert _is_message_content_block(obj) is expected
+
+
+@pytest.mark.parametrize(
+    ("obj", "expected"),
+    [
+        ["foo", True],
+        [valid_tool_result_blocks, True],
+        [invalid_tool_result_blocks, False],
+    ],
+)
+def test__is_message_content_type(obj: Any, expected: bool) -> None:
+    assert _is_message_content_type(obj) is expected
