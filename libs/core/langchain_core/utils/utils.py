@@ -13,7 +13,6 @@ from requests import HTTPError, Response
 
 from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils.pydantic import (
-    PYDANTIC_MAJOR_VERSION,
     is_pydantic_v1_subclass,
 )
 
