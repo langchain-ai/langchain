@@ -10,7 +10,7 @@ from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
 from langchain_core.utils import pre_init
 
 from langchain.chains.base import Chain

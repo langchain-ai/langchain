@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Union
 
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import pre_init
 
 from langchain.memory.chat_memory import BaseChatMemory
