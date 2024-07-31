@@ -208,7 +208,7 @@ class SQLServer_VectorStore(VectorStore):
             kwargs: vectorstore specific parameters.
 
         Returns:
-            None
+            Optional[bool]
         """
 
         if ids is None or len(ids) == 0:

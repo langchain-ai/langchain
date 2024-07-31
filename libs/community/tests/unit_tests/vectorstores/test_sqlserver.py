@@ -160,7 +160,6 @@ def test_sqlserver_delete_text_by_id_valid_ids_provided(
         "It's a new year.",
     ]
 
-    # List of ids is 3 and is less than len(texts) which is 5.
     metadatas = [
         {"id": 100, "source": "book review", "length": 11},
         {"id": 200, "source": "random texts", "length": 9},
@@ -171,6 +170,33 @@ def test_sqlserver_delete_text_by_id_valid_ids_provided(
     store.add_texts(texts, metadatas)
 
     result = store.delete(["100", "200", "600"])
+    # Should return true since valid ids are given
+    if result:
+        pass
+
+
+def test_sqlserver_delete_text_by_id_valid_id_and_invalid_ids_provided(
+    store: SQLServer_VectorStore,
+) -> None:
+    """Test that delete API deletes texts by id."""
+    texts = [
+        "Good review",
+        "new books",
+        "table",
+        "Sunglasses are a form of protective eyewear.",
+        "It's a new year.",
+    ]
+
+    metadatas = [
+        {"id": 100, "source": "book review", "length": 11},
+        {"id": 200, "source": "random texts", "length": 9},
+        {"id": 200, "source": "household list", "length": 5},
+        {"id": 600, "source": "newspaper page", "length": 44},
+        {"id": 300, "source": "random texts", "length": 16},
+    ]
+    store.add_texts(texts, metadatas)
+
+    result = store.delete(["100", "200", "600", "900"])
     # Should return true since valid ids are given
     if result:
         pass
