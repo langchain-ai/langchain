@@ -4,8 +4,8 @@ from datetime import datetime
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse as JSONResponse
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable
-from pydantic import BaseModel, Field
 
 logging.basicConfig(
     format="[%(asctime)s.%(msecs)03d %(levelname)s:%(name)s] %(message)s",
