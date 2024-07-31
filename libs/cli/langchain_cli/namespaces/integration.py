@@ -127,6 +127,20 @@ def new(
     )
 
 
+TEMPLATE_MAP: dict[str, str] = {
+    "ChatModel": "chat.ipynb",
+    "DocumentLoader": "document_loaders.ipynb",
+    "Tool": "tools.ipynb",
+    "VectorStore": "vectorstores.ipynb",
+    "Embeddings": "text_embedding.ipynb",
+    "ByteStore": "kv_store.ipynb",
+    "LLM": "llms.ipynb",
+    "Provider": "provider.ipynb",
+    "Toolkit": "toolkits.ipynb",
+    "Retriever": "retrievers.ipynb",
+}
+
+
 @integration_cli.command()
 def create_doc(
     name: Annotated[
@@ -173,7 +187,7 @@ def create_doc(
     Creates a new integration doc.
     """
     try:
-        replacements = _process_name(name, community=component_type=="Tool")
+        replacements = _process_name(name, community=component_type == "Tool")
     except ValueError as e:
         typer.echo(e)
         raise typer.Exit(code=1)
@@ -202,14 +216,8 @@ def create_doc(
 
     # copy over template from ../integration_template
     template_dir = Path(__file__).parents[1] / "integration_template" / "docs"
-    if component_type == "ChatModel":
-        docs_template = template_dir / "chat.ipynb"
-    elif component_type == "DocumentLoader":
-        docs_template = template_dir / "document_loaders.ipynb"
-    elif component_type == "Tool":
-        docs_template = template_dir / "tools.ipynb"
-    elif component_type == "VectorStore":
-        docs_template = template_dir / "vectorstores.ipynb"
+    if component_type in TEMPLATE_MAP:
+        docs_template = template_dir / TEMPLATE_MAP[component_type]
     else:
         raise ValueError(
             f"Unrecognized {component_type=}. Expected one of 'ChatModel', "
