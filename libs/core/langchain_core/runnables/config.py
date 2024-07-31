@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import uuid
 import warnings
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
@@ -161,9 +162,10 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         configurable={},
     )
     if var_config := var_child_runnable_config.get():
-        empty.update(
-            cast(RunnableConfig, {k: v for k, v in var_config.items() if v is not None})
+        deep_copied_config = copy.deepcopy(
+            {k: v for k, v in var_config.items() if v is not None}
         )
+        empty.update(cast(RunnableConfig, deep_copied_config))        
     if config is not None:
         for k, v in config.items():
             if v is not None:
