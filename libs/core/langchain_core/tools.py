@@ -1513,7 +1513,7 @@ def _is_message_content_block(obj: Any) -> bool:
     if isinstance(obj, str):
         return True
     elif isinstance(obj, dict):
-        return obj.get("type", None) in ("text", "image_url", "image", "tool_use")
+        return obj.get("type", None) in ("text", "image_url", "image", "json")
     else:
         return False
 
