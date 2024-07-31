@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from typing_extensions import Literal
 
@@ -31,7 +31,8 @@ class GoogleSerperAPIWrapper(BaseModel):
     # "places" and "images" is available from Serper but not implemented in the
     # parser of run(). They can be used in results()
     type: Literal["news", "search", "places", "images"] = "search"
-    result_key_for_type = {
+    # TODO[pydantic]: add type annotation
+    result_key_for_type: Dict[str, Any] = {
         "news": "news",
         "places": "places",
         "images": "images",
@@ -41,11 +42,7 @@ class GoogleSerperAPIWrapper(BaseModel):
     tbs: Optional[str] = None
     serper_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Type, cast
 
-from langchain_core.pydantic_v1 import Extra, root_validator
+from pydantic import ConfigDict, root_validator
 from langchain_core.tools import BaseTool, BaseToolkit
 
 from langchain_community.tools.playwright.base import (
@@ -67,12 +67,7 @@ class PlayWrightBrowserToolkit(BaseToolkit):
 
     sync_browser: Optional["SyncBrowser"] = None
     async_browser: Optional["AsyncBrowser"] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def validate_imports_and_browser_provided(cls, values: dict) -> dict:

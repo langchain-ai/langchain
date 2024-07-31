@@ -25,7 +25,7 @@ from langchain_core.outputs import (
     ChatResult,
     LLMResult,
 )
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator
 
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_community.llms.huggingface_hub import HuggingFaceHub

@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -10,17 +10,13 @@ from langchain_core.utils import get_from_dict_or_env
 class JiraAPIWrapper(BaseModel):
     """Wrapper for Jira API."""
 
-    jira: Any  #: :meta private:
-    confluence: Any
+    jira: Any = None  #: :meta private:
+    confluence: Any = None
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
     jira_cloud: Optional[bool] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

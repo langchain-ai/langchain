@@ -10,7 +10,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
+from pydantic import ConfigDict, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.utilities.requests import Requests
@@ -65,11 +65,7 @@ class Together(LLM):
     """An integer that specifies how many top token log probabilities are included in 
         the response for each token generation step.
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

@@ -44,7 +44,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     get_from_dict_or_env,
@@ -243,11 +243,7 @@ class ChatOpenAI(BaseChatModel):
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

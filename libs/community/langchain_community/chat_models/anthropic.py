@@ -22,6 +22,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.prompt_values import PromptValue
 
 from langchain_community.llms.anthropic import _AnthropicCommon
+from pydantic import ConfigDict
 
 
 def _convert_one_message_to_text(
@@ -90,12 +91,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
             from langchain_community.chat_models import ChatAnthropic
             model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

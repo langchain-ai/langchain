@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Type
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools import Tool
 
@@ -38,7 +38,7 @@ class BearlyInterpreterToolArguments(BaseModel):
 
     python_code: str = Field(
         ...,
-        example="print('Hello World')",
+        examples=["print('Hello World')"],
         description=(
             "The pure python script to be evaluated. "
             "The contents will be in main.py. "

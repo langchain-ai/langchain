@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
@@ -244,7 +244,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     """Watermarking with `A Watermark for Large Language Models <https://arxiv.org/abs/2301.10226>`_.
     Defaults to True."""
 
-    return_full_text = False
+    return_full_text: bool = False
     """Whether to prepend the prompt to the generated text. Defaults to False."""
 
     @property

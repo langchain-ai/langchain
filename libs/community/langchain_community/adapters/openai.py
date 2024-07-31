@@ -25,7 +25,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from typing_extensions import Literal
 
 

@@ -132,9 +132,8 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
+from pydantic import (
+    ConfigDict, BaseModel,
     Field,
     PrivateAttr,
     root_validator,
@@ -257,11 +256,7 @@ class SearxSearchWrapper(BaseModel):
         values["searx_host"] = searx_host
 
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _searx_api_query(self, params: dict) -> SearxResults:
         """Actual request to searx API."""

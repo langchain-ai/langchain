@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from requests import Request, Session
 
@@ -44,11 +44,7 @@ class ZapierNLAWrapper(BaseModel):
     zapier_nla_api_key: str
     zapier_nla_oauth_access_token: str
     zapier_nla_api_base: str = "https://nla.zapier.com/api/v1/"
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _format_headers(self) -> Dict[str, str]:
         """Format headers for requests."""

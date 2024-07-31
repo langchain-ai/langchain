@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Optional, final
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -119,12 +119,7 @@ class NutritionAIAPI(BaseModel):
     nutritionai_api_url: str = Field(default=DEFAULT_NUTRITIONAI_API_URL)
     more_kwargs: dict = Field(default_factory=dict)
     auth_: ManagedPassioLifeAuth
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @retry(
         retry=retry_if_result(is_http_retryable),

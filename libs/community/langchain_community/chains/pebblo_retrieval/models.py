@@ -2,7 +2,7 @@
 
 from typing import Any, List, Optional, Union
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class AuthContext(BaseModel):
@@ -89,17 +89,17 @@ class Framework(BaseModel):
 
 
 class Model(BaseModel):
-    vendor: Optional[str]
-    name: Optional[str]
+    vendor: Optional[str] = None
+    name: Optional[str] = None
 
 
 class PkgInfo(BaseModel):
-    project_home_page: Optional[str]
-    documentation_url: Optional[str]
-    pypi_url: Optional[str]
-    liscence_type: Optional[str]
-    installed_via: Optional[str]
-    location: Optional[str]
+    project_home_page: Optional[str] = None
+    documentation_url: Optional[str] = None
+    pypi_url: Optional[str] = None
+    liscence_type: Optional[str] = None
+    installed_via: Optional[str] = None
+    location: Optional[str] = None
 
 
 class VectorDB(BaseModel):
@@ -111,14 +111,14 @@ class VectorDB(BaseModel):
 
 class Chains(BaseModel):
     name: str
-    model: Optional[Model]
-    vector_dbs: Optional[List[VectorDB]]
+    model: Optional[Model] = None
+    vector_dbs: Optional[List[VectorDB]] = None
 
 
 class App(BaseModel):
     name: str
     owner: str
-    description: Optional[str]
+    description: Optional[str] = None
     runtime: Runtime
     framework: Framework
     chains: List[Chains]
@@ -126,8 +126,8 @@ class App(BaseModel):
 
 
 class Context(BaseModel):
-    retrieved_from: Optional[str]
-    doc: Optional[str]
+    retrieved_from: Optional[str] = None
+    doc: Optional[str] = None
     vector_db: str
 
 
@@ -138,9 +138,9 @@ class Prompt(BaseModel):
 class Qa(BaseModel):
     name: str
     context: Union[List[Optional[Context]], Optional[Context]]
-    prompt: Optional[Prompt]
-    response: Optional[Prompt]
+    prompt: Optional[Prompt] = None
+    response: Optional[Prompt] = None
     prompt_time: str
     user: str
-    user_identities: Optional[List[str]]
+    user_identities: Optional[List[str]] = None
     classifier_location: str

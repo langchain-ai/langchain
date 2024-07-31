@@ -10,7 +10,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from langchain_core.pydantic_v1 import Field
+from pydantic import ConfigDict, Field
 from langchain_core.retrievers import BaseRetriever
 
 if TYPE_CHECKING:
@@ -60,12 +60,7 @@ class CohereRagRetriever(BaseRetriever):
 
     llm: BaseChatModel
     """Cohere ChatModel to use."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-        """Allow arbitrary types."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any

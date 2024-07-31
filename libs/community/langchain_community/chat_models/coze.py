@@ -19,7 +19,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from pydantic import ConfigDict, Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
@@ -110,11 +110,7 @@ class ChatCoze(BaseChatModel):
     true: set to true, partial message deltas will be sent .
     "Streaming response" will provide real-time response of the model to the client, and
     the client needs to assemble the final reply based on the type of message. """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

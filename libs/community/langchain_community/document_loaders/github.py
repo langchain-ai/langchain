@@ -5,7 +5,7 @@ from typing import Callable, Dict, Iterator, List, Literal, Optional, Union
 
 import requests
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
+from pydantic import BaseModel, root_validator, validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -181,7 +181,7 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
     file_extension: str = ".md"
     branch: str = "main"
 
-    file_filter: Optional[Callable[[str], bool]]
+    file_filter: Optional[Callable[[str], bool]] = None
 
     def get_file_paths(self) -> List[Dict]:
         base_url = (

@@ -2,7 +2,7 @@
 
 from typing import Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -45,11 +45,7 @@ class GoogleScholarAPIWrapper(BaseModel):
     hl: str = "en"
     lr: str = "lang_en"
     serp_api_key: Optional[str] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

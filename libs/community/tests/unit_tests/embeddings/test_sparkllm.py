@@ -2,7 +2,7 @@ import os
 from typing import cast
 
 import pytest
-from langchain_core.pydantic_v1 import SecretStr, ValidationError
+from pydantic import SecretStr, ValidationError
 
 from langchain_community.embeddings import SparkLLMTextEmbeddings
 

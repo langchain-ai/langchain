@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -26,11 +26,7 @@ class SearchApiAPIWrapper(BaseModel):
     engine: str = "google"
     searchapi_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

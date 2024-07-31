@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.runnables.config import run_in_executor
 
 
@@ -40,7 +40,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     """Bedrock client."""
     region_name: Optional[str] = None
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
@@ -67,11 +67,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
 
     normalize: bool = False
     """Whether the embeddings should be normalized to unit vectors"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:

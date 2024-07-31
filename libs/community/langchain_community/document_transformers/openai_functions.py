@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Sequence, Type, Union
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
@@ -46,7 +46,7 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
                 enhanced_documents = document_transformer.transform_documents(original_documents)
     """  # noqa: E501
 
-    tagging_chain: Any
+    tagging_chain: Any = None
     """The chain used to extract metadata from each document."""
 
     def transform_documents(

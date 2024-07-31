@@ -6,7 +6,7 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.llms import BaseLLM
@@ -67,8 +67,8 @@ class GooglePalm(BaseLLM, BaseModel):
     Google PaLM models.
     """
 
-    client: Any  #: :meta private:
-    google_api_key: Optional[SecretStr]
+    client: Any = None  #: :meta private:
+    google_api_key: Optional[SecretStr] = None
     model_name: str = "models/text-bison-001"
     """Model name to use."""
     temperature: float = 0.7

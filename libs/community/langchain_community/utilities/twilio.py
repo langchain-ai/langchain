@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -26,7 +26,7 @@ class TwilioAPIWrapper(BaseModel):
             twilio.run('test', '+12484345508')
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     account_sid: Optional[str] = None
     """Twilio account string identifier."""
     auth_token: Optional[str] = None
@@ -42,12 +42,7 @@ class TwilioAPIWrapper(BaseModel):
         cell phone number. If you are using `messaging_service_sid`, this parameter 
         must be empty.
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = False
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=False)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_core.documents.compressor import (
     BaseDocumentCompressor,
 )
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import ConfigDict, root_validator
 
 DEFAULT_LLM_LINGUA_INSTRUCTION = (
     "Given this documents, please answer the final question"
@@ -70,12 +70,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
                 open_api_config=values.get("open_api_config", {}),
             )
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = "forbid"
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @staticmethod
     def _format_context(docs: Sequence[Document]) -> List[str]:

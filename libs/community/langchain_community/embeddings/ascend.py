@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 
 class AscendEmbeddings(Embeddings, BaseModel):
@@ -30,8 +30,8 @@ class AscendEmbeddings(Embeddings, BaseModel):
     document_instruction: str = ""
     use_fp16: bool = True
     pooling_method: Optional[str] = "cls"
-    model: Any
-    tokenizer: Any
+    model: Any = None
+    tokenizer: Any = None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

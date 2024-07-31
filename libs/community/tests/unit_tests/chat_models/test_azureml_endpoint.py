@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture, FixtureRequest
 
 from langchain_community.chat_models.azureml_endpoint import AzureMLChatOnlineEndpoint

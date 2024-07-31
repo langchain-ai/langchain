@@ -6,7 +6,7 @@ from typing import Any, List, Optional, Type, Union
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)

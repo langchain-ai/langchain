@@ -8,8 +8,8 @@ from typing import Any, Dict, Iterable, List, Optional, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseSettings
 from langchain_core.vectorstores import VectorStore
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -55,11 +55,7 @@ class ManticoreSearchSettings(BaseSettings):
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
-
-    class Config:
-        env_file = ".env"
-        env_prefix = "manticore_"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="manticore_", env_file_encoding="utf-8")
 
 
 class ManticoreSearch(VectorStore):

@@ -21,7 +21,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
@@ -231,7 +231,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_name: str = "models/chat-bison-001"
     """Model name to use."""
     google_api_key: Optional[SecretStr] = None

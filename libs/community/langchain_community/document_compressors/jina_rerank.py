@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 import requests
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-from langchain_core.pydantic_v1 import Extra, root_validator
+from pydantic import ConfigDict, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 JINA_API_URL: str = "https://api.jina.ai/v1/rerank"
@@ -26,12 +26,7 @@ class JinaRerank(BaseDocumentCompressor):
         JINA_API_KEY."""
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

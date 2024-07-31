@@ -16,7 +16,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from requests import Response
 from requests.exceptions import HTTPError
 

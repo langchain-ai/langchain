@@ -8,7 +8,7 @@ from typing import Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -110,7 +110,7 @@ class App(BaseModel):
     """Name of the app."""
     owner: str
     """Owner of the app."""
-    description: Optional[str]
+    description: Optional[str] = None
     """Description of the app."""
     load_id: str
     """Unique load_id of the app instance."""

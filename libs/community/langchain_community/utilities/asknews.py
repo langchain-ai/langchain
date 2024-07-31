@@ -5,24 +5,20 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
 class AskNewsAPIWrapper(BaseModel):
     """Wrapper for AskNews API."""
 
-    asknews_sync: Any  #: :meta private:
-    asknews_async: Any  #: :meta private:
+    asknews_sync: Any = None  #: :meta private:
+    asknews_async: Any = None  #: :meta private:
     asknews_client_id: Optional[str] = None
     """Client ID for the AskNews API."""
     asknews_client_secret: Optional[str] = None
     """Client Secret for the AskNews API."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

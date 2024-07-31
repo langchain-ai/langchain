@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -34,14 +34,9 @@ class GooglePlacesAPIWrapper(BaseModel):
     """
 
     gplaces_api_key: Optional[str] = None
-    google_map_client: Any  #: :meta private:
+    google_map_client: Any = None  #: :meta private:
     top_k_results: Optional[int] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

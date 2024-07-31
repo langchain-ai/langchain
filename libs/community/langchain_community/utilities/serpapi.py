@@ -8,7 +8,7 @@ import sys
 from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -40,7 +40,7 @@ class SerpAPIWrapper(BaseModel):
             serpapi = SerpAPIWrapper()
     """
 
-    search_engine: Any  #: :meta private:
+    search_engine: Any = None  #: :meta private:
     params: dict = Field(
         default={
             "engine": "google",
@@ -51,12 +51,7 @@ class SerpAPIWrapper(BaseModel):
     )
     serpapi_api_key: Optional[str] = None
     aiosession: Optional[aiohttp.ClientSession] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

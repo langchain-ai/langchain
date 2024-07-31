@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Field
+from pydantic import ConfigDict, Field
 from langchain_core.tools import BaseToolkit
 
 from langchain_community.tools import BaseTool
@@ -25,12 +25,7 @@ class AmadeusToolkit(BaseToolkit):
 
     client: Client = Field(default_factory=authenticate)
     llm: Optional[BaseLanguageModel] = Field(default=None)
-
-    class Config:
-        """Pydantic config."""
-
-        # Allow extra fields. This is needed for the `client` field.
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

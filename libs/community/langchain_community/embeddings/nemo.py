@@ -8,7 +8,7 @@ import aiohttp
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.utils import pre_init
 
 

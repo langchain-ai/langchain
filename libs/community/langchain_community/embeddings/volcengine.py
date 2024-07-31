@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
     chunk_size: int = 100
     """Chunk size when multiple texts are input"""
 
-    client: Any
+    client: Any = None
     """volcano client"""
 
     @pre_init

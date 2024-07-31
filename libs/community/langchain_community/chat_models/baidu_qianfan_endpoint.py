@@ -39,7 +39,7 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from pydantic import ConfigDict, BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -351,11 +351,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

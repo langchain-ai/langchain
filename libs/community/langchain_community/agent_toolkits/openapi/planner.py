@@ -9,7 +9,7 @@ import yaml
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.tools import BaseTool, Tool
 
 from langchain_community.agent_toolkits.openapi.planner_prompt import (
@@ -69,6 +69,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_get"
     """Tool name."""
+    # TODO[pydantic]: add type annotation
     description = REQUESTS_GET_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
@@ -103,6 +104,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_post"
     """Tool name."""
+    # TODO[pydantic]: add type annotation
     description = REQUESTS_POST_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
@@ -134,6 +136,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_patch"
     """Tool name."""
+    # TODO[pydantic]: add type annotation
     description = REQUESTS_PATCH_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
@@ -167,6 +170,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_put"
     """Tool name."""
+    # TODO[pydantic]: add type annotation
     description = REQUESTS_PUT_TOOL_DESCRIPTION
     """Tool description."""
     response_length: int = MAX_RESPONSE_LENGTH
@@ -198,6 +202,7 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
 
     name: str = "requests_delete"
     """The name of the tool."""
+    # TODO[pydantic]: add type annotation
     description = REQUESTS_DELETE_TOOL_DESCRIPTION
     """The description of the tool."""
 

@@ -8,7 +8,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
 )
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 
 from langchain_community.chat_models.hunyuan import (
     _convert_delta_to_message_chunk,

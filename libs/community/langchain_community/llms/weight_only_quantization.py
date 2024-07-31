@@ -3,7 +3,7 @@ from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -71,11 +71,7 @@ class WeightOnlyQuantPipeline(LLM):
 
     pipeline_kwargs: Optional[dict] = None
     """Key word arguments passed to the pipeline."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.allow
+    model_config = ConfigDict(extra="allow")
 
     @classmethod
     def from_model_id(

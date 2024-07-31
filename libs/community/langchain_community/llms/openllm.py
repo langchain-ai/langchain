@@ -20,7 +20,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import PrivateAttr
+from pydantic import ConfigDict, PrivateAttr
 
 if TYPE_CHECKING:
     import openllm
@@ -96,9 +96,7 @@ class OpenLLM(LLM):
     _client: Union[openllm.client.HTTPClient, openllm.client.GrpcClient, None] = (
         PrivateAttr(default=None)
     )
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
     @overload
     def __init__(

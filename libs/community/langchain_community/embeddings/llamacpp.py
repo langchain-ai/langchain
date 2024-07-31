@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
@@ -18,7 +18,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             llama = LlamaCppEmbeddings(model_path="/path/to/model.bin")
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model_path: str
 
     n_ctx: int = Field(512, alias="n_ctx")
@@ -56,11 +56,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
     verbose: bool = Field(True, alias="verbose")
     """Print verbose output to stderr."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:

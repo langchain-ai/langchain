@@ -7,7 +7,7 @@ import urllib.request
 from typing import Any, Dict, Iterator, List
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class PubMedAPIWrapper(BaseModel):
         email: email address to be used for the PubMed API.
     """
 
-    parse: Any  #: :meta private:
+    parse: Any = None  #: :meta private:
 
     base_url_esearch: str = (
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"

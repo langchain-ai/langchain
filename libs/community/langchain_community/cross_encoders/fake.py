@@ -1,7 +1,7 @@
 from difflib import SequenceMatcher
 from typing import List, Tuple
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 from langchain_community.cross_encoders.base import BaseCrossEncoder
 

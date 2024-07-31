@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 
 DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
@@ -31,9 +31,9 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    ov_model: Any
+    ov_model: Any = None
     """OpenVINO model object."""
-    tokenizer: Any
+    tokenizer: Any = None
     """Tokenizer for embedding model."""
     model_name_or_path: str
     """HuggingFace model id."""
@@ -253,11 +253,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             all_embeddings = all_embeddings[0]
 
         return all_embeddings
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.

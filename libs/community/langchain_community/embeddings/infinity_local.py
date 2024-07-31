@@ -5,7 +5,7 @@ from logging import getLogger
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 
 __all__ = ["InfinityEmbeddingsLocal"]
 
@@ -55,14 +55,8 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
 
     engine: Any = None  #: :meta private:
     """Infinity's AsyncEmbeddingEngine."""
+    model_config = ConfigDict(extra="forbid")
 
-    # LLM call kwargs
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 

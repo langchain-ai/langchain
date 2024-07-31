@@ -3,7 +3,7 @@
 
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import (
@@ -21,6 +21,8 @@ class BaseSparkSQLTool(BaseModel):
 
     db: SparkSQL = Field(exclude=True)
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseTool.Config):
         pass
 
@@ -85,7 +87,7 @@ class QueryCheckerTool(BaseSparkSQLTool, BaseTool):
 
     template: str = QUERY_CHECKER
     llm: BaseLanguageModel
-    llm_chain: Any = Field(init=False)
+    llm_chain: Any = Field(None, init=False)
     name: str = "query_checker_sql_db"
     description: str = """
     Use this tool to double check if your query is correct before executing it.

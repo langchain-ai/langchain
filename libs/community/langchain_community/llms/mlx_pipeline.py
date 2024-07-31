@@ -6,7 +6,7 @@ from typing import Any, Callable, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 DEFAULT_MODEL_ID = "mlx-community/quantized-gemma-2b"
 
@@ -74,11 +74,7 @@ class MLXPipeline(LLM):
           top-p filtering, default is 1.0.
 
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @classmethod
     def from_model_id(

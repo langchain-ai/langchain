@@ -9,8 +9,8 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.pydantic_v1.dataclasses import dataclass
+from pydantic import root_validator
+from pydantic.dataclasses import dataclass
 
 from langchain_community.document_loaders.base import BaseLoader
 

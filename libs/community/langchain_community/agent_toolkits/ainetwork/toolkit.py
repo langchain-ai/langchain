@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Literal, Optional
 
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import ConfigDict, root_validator
 from langchain_core.tools import BaseToolkit
 
 from langchain_community.tools import BaseTool
@@ -52,14 +52,7 @@ class AINetworkToolkit(BaseToolkit):
         if not values.get("interface"):
             values["interface"] = authenticate(network=values.get("network", "testnet"))
         return values
-
-    class Config:
-        """Pydantic config."""
-
-        # Allow extra fields. This is needed for the `interface` field.
-        validate_all = True
-        # Allow arbitrary types. This is needed for the `interface` field.
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(validate_default=True, arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

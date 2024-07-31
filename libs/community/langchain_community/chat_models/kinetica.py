@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from langchain_core.utils import pre_init
+from pydantic import ConfigDict
 
 if TYPE_CHECKING:
     import gpudb
@@ -26,7 +27,7 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers.transform import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult, Generation
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 LOG = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ class _KdtSuggestContext(BaseModel):
 class _KdtSuggestPayload(BaseModel):
     """pydantic API request type"""
 
-    question: Optional[str]
+    question: Optional[str] = None
     context: List[_KdtSuggestContext]
 
     def get_system_str(self) -> str:
@@ -542,11 +543,7 @@ class KineticaSqlResponse(BaseModel):
     # dataframe: "pd.DataFrame" = Field(default=None)
     dataframe: Any = Field(default=None)
     """The Pandas dataframe containing the fetched data."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
@@ -583,11 +580,7 @@ class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
 
     kdbc: Any = Field(exclude=True)
     """ Kinetica DB connection. """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def parse(self, text: str) -> KineticaSqlResponse:
         df = self.kdbc.to_df(text)

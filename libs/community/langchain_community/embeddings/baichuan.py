@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import ConfigDict, BaseModel, Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from requests import RequestException
 
 BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
@@ -36,20 +36,16 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
             baichuan = BaichuanTextEmbeddings(baichuan_api_key="my-api-key")
     """
 
-    session: Any  #: :meta private:
+    session: Any = None  #: :meta private:
     model_name: str = Field(default="Baichuan-Text-Embedding", alias="model")
     baichuan_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `BAICHUAN_API_KEY` if not provided."""
     chunk_size: int = 16
     """Chunk size when multiple texts are input"""
+    model_config = ConfigDict(populate_by_name=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-
-    @root_validator(allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @pre_init
+    def pre_init(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         try:
             baichuan_api_key = convert_to_secret_str(

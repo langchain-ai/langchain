@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Type
 
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator
 from langchain_core.tools import BaseToolkit
 
 from langchain_community.tools import BaseTool

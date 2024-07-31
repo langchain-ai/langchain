@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, validator
 from langchain_core.tools import BaseTool
 
 
@@ -30,13 +30,13 @@ class DetectorAPI(str, Enum):
 class ZenGuardInput(BaseModel):
     prompts: List[str] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         min_length=1,
         description="Prompt to check",
     )
     detectors: List[Detector] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="List of detectors by which you want to check the prompt",
     )
     in_parallel: bool = Field(

@@ -35,9 +35,8 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
+from pydantic import (
+    ConfigDict, BaseModel,
     Field,
     SecretStr,
 )
@@ -239,14 +238,8 @@ class ChatPremAI(BaseChatModel, BaseModel):
     streaming: Optional[bool] = False
     """Whether to stream the responses or not."""
 
-    client: Any
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    client: Any = None
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, arbitrary_types_allowed=True)
 
     @pre_init
     def validate_environments(cls, values: Dict) -> Dict:

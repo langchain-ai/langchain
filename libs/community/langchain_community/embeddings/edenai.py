@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
+from pydantic import (
+    ConfigDict, BaseModel,
     Field,
     SecretStr,
 )
@@ -28,11 +27,7 @@ class EdenAiEmbeddings(BaseModel, Embeddings):
     model name for above provider (eg: 'gpt-3.5-turbo-instruct' for openai)
     available models are shown on https://docs.edenai.co/ under 'available providers'
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

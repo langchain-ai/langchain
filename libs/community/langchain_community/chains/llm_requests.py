@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
 from langchain_core.callbacks import CallbackManagerForChainRun
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from pydantic import ConfigDict, Field, root_validator
 
 from langchain_community.utilities.requests import TextRequestsWrapper
 
@@ -37,12 +37,7 @@ class LLMRequestsChain(Chain):
     requests_key: str = "requests_result"  #: :meta private:
     input_key: str = "url"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @property
     def input_keys(self) -> List[str]:

@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr
+from pydantic import ConfigDict, BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from requests.adapters import HTTPAdapter, Retry
 from typing_extensions import NotRequired, TypedDict
@@ -55,11 +55,7 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
     max_retries: Optional[int] = 3
     """request timeout in seconds"""
     timeout: Optional[int] = 30
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -23,12 +23,12 @@ class RedditSearchAPIWrapper(BaseModel):
             reddit_search = RedditSearchAPIWrapper()
     """
 
-    reddit_client: Any
+    reddit_client: Any = None
 
     # Values required to access Reddit API via praw
-    reddit_client_id: Optional[str]
-    reddit_client_secret: Optional[str]
-    reddit_user_agent: Optional[str]
+    reddit_client_id: Optional[str] = None
+    reddit_client_secret: Optional[str] = None
+    reddit_user_agent: Optional[str] = None
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

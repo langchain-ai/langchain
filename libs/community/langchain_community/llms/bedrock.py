@@ -21,7 +21,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -295,7 +295,7 @@ class LLMInputOutputAdapter:
 class BedrockBase(BaseModel, ABC):
     """Base class for Bedrock models."""
 
-    client: Any = Field(exclude=True)  #: :meta private:
+    client: Any = Field(None, exclude=True)  #: :meta private:
 
     region_name: Optional[str] = None
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
@@ -777,11 +777,7 @@ class Bedrock(LLM, BedrockBase):
             attributes["region_name"] = self.region_name
 
         return attributes
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _stream(
         self,

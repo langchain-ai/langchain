@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator, validator
 from requests.exceptions import Timeout
 
 logger = logging.getLogger(__name__)
@@ -39,11 +39,7 @@ class PowerBIDataset(BaseModel):
     sample_rows_in_table_info: int = Field(default=1, gt=0, le=10)
     schemas: Dict[str, str] = Field(default_factory=dict)
     aiosession: Optional[aiohttp.ClientSession] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @validator("table_names", allow_reuse=True)
     def fix_table_names(cls, table_names: List[str]) -> List[str]:

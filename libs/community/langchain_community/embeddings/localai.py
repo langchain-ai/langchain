@@ -16,7 +16,7 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -141,7 +141,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model
     openai_api_version: Optional[str] = None
@@ -165,11 +165,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     """Whether to show a progress bar when embedding."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

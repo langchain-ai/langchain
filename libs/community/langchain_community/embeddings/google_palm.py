@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
@@ -55,8 +55,8 @@ def embed_with_retry(
 class GooglePalmEmbeddings(BaseModel, Embeddings):
     """Google's PaLM Embeddings APIs."""
 
-    client: Any
-    google_api_key: Optional[str]
+    client: Any = None
+    google_api_key: Optional[str] = None
     model_name: str = "models/embedding-gecko-001"
     """Model name to use."""
     show_progress_bar: bool = False

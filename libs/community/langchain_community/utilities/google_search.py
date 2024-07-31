@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -51,16 +51,12 @@ class GoogleSearchAPIWrapper(BaseModel):
 
     """
 
-    search_engine: Any  #: :meta private:
+    search_engine: Any = None  #: :meta private:
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
     k: int = 10
     siterestrict: bool = False
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def _google_search_results(self, search_term: str, **kwargs: Any) -> List[dict]:
         cse = self.search_engine.cse()

@@ -7,7 +7,7 @@ from typing import Dict
 from urllib.request import HTTPError
 
 import pytest
-from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 
 from langchain_community.llms.azureml_endpoint import (
     AzureMLOnlineEndpoint,

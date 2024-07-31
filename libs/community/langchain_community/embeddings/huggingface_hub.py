@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
@@ -34,8 +34,8 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any  #: :meta private:
-    async_client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model: Optional[str] = None
     """Model name to use."""
     repo_id: Optional[str] = None
@@ -46,11 +46,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     """Keyword arguments to pass to the model."""
 
     huggingfacehub_api_token: Optional[str] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

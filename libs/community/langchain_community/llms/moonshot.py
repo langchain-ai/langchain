@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from pydantic import ConfigDict, BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -39,15 +39,11 @@ class MoonshotCommon(BaseModel):
     """Moonshot API key. Get it here: https://platform.moonshot.cn/console/api-keys"""
     model_name: str = Field(default="moonshot-v1-8k", alias="model")
     """Model name. Available models listed here: https://platform.moonshot.cn/pricing"""
-    max_tokens = 1024
+    max_tokens: int = 1024
     """Maximum number of tokens to generate."""
-    temperature = 0.3
+    temperature: float = 0.3
     """Temperature parameter (higher values make the model more creative)."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @property
     def lc_secrets(self) -> dict:
@@ -113,11 +109,7 @@ class Moonshot(MoonshotCommon, LLM):
 
             moonshot = Moonshot(model="moonshot-v1-8k")
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     def _call(
         self,

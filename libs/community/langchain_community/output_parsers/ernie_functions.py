@@ -13,7 +13,7 @@ from langchain_core.outputs.chat_generation import (
     ChatGeneration,
     Generation,
 )
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):

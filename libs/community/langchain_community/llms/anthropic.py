@@ -20,7 +20,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from pydantic import ConfigDict, Field, SecretStr, root_validator
 from langchain_core.utils import (
     check_package_version,
     get_from_dict_or_env,
@@ -179,12 +179,7 @@ class Anthropic(LLM, _AnthropicCommon):
             prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
             response = model.invoke(prompt)
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
     @pre_init
     def raise_warning(cls, values: Dict) -> Dict:

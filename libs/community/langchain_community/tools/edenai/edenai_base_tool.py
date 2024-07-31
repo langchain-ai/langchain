@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
@@ -29,7 +29,6 @@ class EdenaiTool(BaseTool):
     providers: List[str]
     """provider to use for the API call."""
 
-    @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["edenai_api_key"] = get_from_dict_or_env(

@@ -3,9 +3,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
+from pydantic import (
+    ConfigDict, BaseModel,
     Field,
     SecretStr,
     root_validator,
@@ -41,11 +40,7 @@ class PipelineAI(LLM, BaseModel):
     explicitly specified."""
 
     pipeline_api_key: Optional[SecretStr] = None
-
-    class Config:
-        """Configuration for this pydantic config."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

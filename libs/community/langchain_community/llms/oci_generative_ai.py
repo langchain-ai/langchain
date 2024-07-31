@@ -8,7 +8,7 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 from langchain_core.utils import pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -61,7 +61,7 @@ class OCIAuthType(Enum):
 class OCIGenAIBase(BaseModel, ABC):
     """Base class for OCI GenAI models"""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     auth_type: Optional[str] = "API_KEY"
     """Authentication type, could be 
@@ -229,11 +229,7 @@ class OCIGenAI(LLM, OCIGenAIBase):
                     compartment_id="MY_OCID"
                 )
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @property
     def _llm_type(self) -> str:

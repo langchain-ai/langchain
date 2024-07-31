@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional, cast
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from pydantic import ConfigDict, BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
@@ -22,13 +22,9 @@ class GoogleFinanceAPIWrapper(BaseModel):
         google_Finance.run('langchain')
     """
 
-    serp_search_engine: Any
+    serp_search_engine: Any = None
     serp_api_key: Optional[SecretStr] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

@@ -6,7 +6,7 @@ import re
 from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,8 @@ class ArxivAPIWrapper(BaseModel):
             arxiv.run("tree of thought llm")
     """
 
-    arxiv_search: Any  #: :meta private:
-    arxiv_exceptions: Any  # :meta private:
+    arxiv_search: Any = None  #: :meta private:
+    arxiv_exceptions: Any = None  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH: int = 300
     continue_on_failure: bool = False

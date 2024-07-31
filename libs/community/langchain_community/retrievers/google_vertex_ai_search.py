@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env
 
@@ -244,13 +244,9 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 
     _client: SearchServiceClient
     _serving_config: str
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
-        arbitrary_types_allowed = True
-        underscore_attrs_are_private = True
+    # TODO[pydantic]: The following keys were removed: `underscore_attrs_are_private`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(extra="ignore", arbitrary_types_allowed=True, underscore_attrs_are_private=True)
 
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
@@ -411,13 +407,9 @@ class GoogleVertexAIMultiTurnSearchRetriever(
 
     _client: ConversationalSearchServiceClient
     _serving_config: str
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
-        arbitrary_types_allowed = True
-        underscore_attrs_are_private = True
+    # TODO[pydantic]: The following keys were removed: `underscore_attrs_are_private`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(extra="ignore", arbitrary_types_allowed=True, underscore_attrs_are_private=True)
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

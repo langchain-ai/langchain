@@ -12,7 +12,7 @@ from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.manager import CallbackManager, CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 
 from langchain_community.chains.graph_qa.prompts import (
     GRAPHDB_QA_PROMPT,

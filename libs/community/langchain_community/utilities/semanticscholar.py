@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +34,12 @@ class SemanticScholarAPIWrapper(BaseModel):
     ss.run("biases in large language models")
     """
 
-    semanticscholar_search: Any  #: :meta private:
+    semanticscholar_search: Any = None  #: :meta private:
     top_k_results: int = 5
     S2_MAX_QUERY_LENGTH: int = 300
     load_max_docs: int = 100
     doc_content_chars_max: Optional[int] = 4000
+    # TODO[pydantic]: add type annotation
     returned_fields = [
         "title",
         "abstract",

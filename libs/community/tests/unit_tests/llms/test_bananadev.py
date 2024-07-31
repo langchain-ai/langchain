@@ -2,14 +2,14 @@
 
 from typing import cast
 
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_community.llms.bananadev import Banana
 
 
 def test_api_key_is_secret_string() -> None:
-    llm = Banana(banana_api_key="secret-api-key")  # type: ignore[arg-type]
+    llm = Banana(banana_api_key="secret-api-key")
     assert isinstance(llm.banana_api_key, SecretStr)
 
 

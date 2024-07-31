@@ -31,7 +31,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -371,11 +371,7 @@ class ChatZhipuAI(BaseChatModel):
     """Whether to stream the results or not."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:

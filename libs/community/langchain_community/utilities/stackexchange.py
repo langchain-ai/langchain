@@ -1,13 +1,13 @@
 import html
 from typing import Any, Dict, Literal
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 
 class StackExchangeAPIWrapper(BaseModel):
     """Wrapper for Stack Exchange API."""
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     max_results: int = 3
     """Max number of results to include in output."""
     query_type: Literal["all", "title", "body"] = "all"

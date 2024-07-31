@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from packaging.version import parse
 
@@ -48,14 +48,8 @@ class GradientEmbeddings(BaseModel, Embeddings):
 
     client: Any = None  #: :meta private:
     """Gradient client."""
+    model_config = ConfigDict(extra="forbid")
 
-    # LLM call kwargs
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-
-    @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 

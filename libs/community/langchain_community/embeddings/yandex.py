@@ -7,7 +7,7 @@ import time
 from typing import Any, Callable, Dict, List, Sequence
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from pydantic import ConfigDict, BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
@@ -70,11 +70,7 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     """YandexGPT API logs all request data by default. 
     If you provide personal data, confidential information, disable logging."""
     _grpc_metadata: Sequence
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

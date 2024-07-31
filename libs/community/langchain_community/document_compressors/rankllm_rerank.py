@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, Field, PrivateAttr, root_validator
+from pydantic import ConfigDict, Field, PrivateAttr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -35,12 +35,7 @@ class RankLLMRerank(BaseDocumentCompressor):
     gpt_model: str = Field(default="gpt-3.5-turbo")
     """OpenAI model name."""
     _retriever: Any = PrivateAttr()
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

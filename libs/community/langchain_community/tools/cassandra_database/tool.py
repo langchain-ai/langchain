@@ -6,7 +6,7 @@ import traceback
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.cassandra_database import CassandraDatabase
@@ -20,6 +20,8 @@ class BaseCassandraDatabaseTool(BaseModel):
 
     db: CassandraDatabase = Field(exclude=True)
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseTool.Config):
         pass
 

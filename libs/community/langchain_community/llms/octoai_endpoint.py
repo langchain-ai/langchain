@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from langchain_core.pydantic_v1 import Field, SecretStr
+from pydantic import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.openai import BaseOpenAI

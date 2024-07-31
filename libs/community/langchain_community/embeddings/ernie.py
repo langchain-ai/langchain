@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
@@ -27,8 +27,9 @@ class ErnieEmbeddings(BaseModel, Embeddings):
 
     chunk_size: int = 16
 
-    model_name = "ErnieBot-Embedding-V1"
+    model_name: str = "ErnieBot-Embedding-V1"
 
+    # TODO[pydantic]: add type annotation
     _lock = threading.Lock()
 
     @pre_init

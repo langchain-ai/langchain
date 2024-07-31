@@ -12,7 +12,7 @@ from wsgiref.handlers import format_date_time
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from pydantic import ConfigDict, BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from numpy import ndarray
 
@@ -73,13 +73,8 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     """This parameter is used for which Embedding this time belongs to.
     If "para"(default), it belongs to document Embedding. 
     If "query", it belongs to query Embedding."""
+    model_config = ConfigDict(populate_by_name=True)
 
-    class Config:
-        """Configuration for this pydantic object"""
-
-        allow_population_by_field_name = True
-
-    @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         values["spark_app_id"] = convert_to_secret_str(

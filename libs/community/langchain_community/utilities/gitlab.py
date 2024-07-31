@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 class GitLabAPIWrapper(BaseModel):
     """Wrapper for GitLab API."""
 
-    gitlab: Any  #: :meta private:
-    gitlab_repo_instance: Any  #: :meta private:
+    gitlab: Any = None  #: :meta private:
+    gitlab_repo_instance: Any = None  #: :meta private:
     gitlab_repository: Optional[str] = None
     """The name of the GitLab repository, in the form {username}/{repo-name}."""
     gitlab_personal_access_token: Optional[str] = None
@@ -29,11 +29,7 @@ class GitLabAPIWrapper(BaseModel):
     """The base branch in the GitLab repository, used for comparisons. 
         Usually 'main' or 'master'. Defaults to 'main'.
     """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

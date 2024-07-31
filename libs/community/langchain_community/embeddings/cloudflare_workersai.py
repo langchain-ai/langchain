@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 
 DEFAULT_MODEL_NAME = "@cf/baai/bge-base-en-v1.5"
 
@@ -42,11 +42,7 @@ class CloudflareWorkersAIEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         self.headers = {"Authorization": f"Bearer {self.api_token}"}
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using Cloudflare Workers AI.

@@ -16,7 +16,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -219,11 +219,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         print(response.response_metadata)
 
     """  # noqa: E501
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @property
     def _llm_type(self) -> str:

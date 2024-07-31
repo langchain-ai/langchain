@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
+from pydantic import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 JINA_API_URL: str = "https://api.jina.ai/v1/embeddings"
@@ -42,7 +42,7 @@ def get_bytes_str(file_path: str) -> str:
 class JinaEmbeddings(BaseModel, Embeddings):
     """Jina embedding models."""
 
-    session: Any  #: :meta private:
+    session: Any = None  #: :meta private:
     model_name: str = "jina-embeddings-v2-base-en"
     jina_api_key: Optional[SecretStr] = None
 

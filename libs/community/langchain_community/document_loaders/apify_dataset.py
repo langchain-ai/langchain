@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -26,7 +26,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
             documents = loader.load()
     """  # noqa: E501
 
-    apify_client: Any
+    apify_client: Any = None
     """An instance of the ApifyClient class from the apify-client Python package."""
     dataset_id: str
     """The ID of the dataset on the Apify platform."""

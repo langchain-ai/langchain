@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 from langchain_core.utils import pre_init
 
 
@@ -33,12 +33,12 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     Unknown behavior for values > 512.
     """
 
-    cache_dir: Optional[str]
+    cache_dir: Optional[str] = None
     """The path to the cache directory.
     Defaults to `local_cache` in the parent directory
     """
 
-    threads: Optional[int]
+    threads: Optional[int] = None
     """The number of threads single onnxruntime session can use.
     Defaults to None
     """
@@ -48,12 +48,8 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     The available options are: "default" and "passage"
     """
 
-    _model: Any  # : :meta private:
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    _model: Any = None  # : :meta private:
+    model_config = ConfigDict(extra="forbid")
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

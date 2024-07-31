@@ -15,7 +15,7 @@ from typing import (
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import pre_init
 
@@ -43,12 +43,7 @@ class QdrantSparseVectorRetriever(BaseRetriever):
     """Payload field containing the document metadata. Defaults to 'metadata'."""
     search_options: Dict[str, Any] = {}
     """Additional search options to pass to qdrant_client.QdrantClient.search()."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

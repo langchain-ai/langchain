@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +84,8 @@ class WikidataAPIWrapper(BaseModel):
     It limits the Document content by doc_content_chars_max.
     """
 
-    wikidata_mw: Any  #: :meta private:
-    wikidata_rest: Any  # : :meta private:
+    wikidata_mw: Any = None  #: :meta private:
+    wikidata_rest: Any = None  # : :meta private:
     top_k_results: int = 2
     load_all_available_meta: bool = False
     doc_content_chars_max: int = 4000

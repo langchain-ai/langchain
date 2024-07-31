@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 
 class GPT4AllEmbeddings(BaseModel, Embeddings):
@@ -26,7 +26,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
     n_threads: Optional[int] = None
     device: Optional[str] = "cpu"
     gpt4all_kwargs: Optional[dict] = {}
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

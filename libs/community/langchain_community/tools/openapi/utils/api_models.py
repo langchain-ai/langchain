@@ -16,7 +16,7 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from langchain_community.tools.openapi.utils.openapi_utils import HTTPVerb, OpenAPISpec
 
@@ -361,7 +361,7 @@ class APIRequestBodyProperty(APIPropertyBase):
 class APIRequestBody(BaseModel):
     """A model for a request body."""
 
-    description: Optional[str] = Field(alias="description")
+    description: Optional[str] = Field(None, alias="description")
     """The description of the request body."""
 
     properties: List[APIRequestBodyProperty] = Field(alias="properties")
@@ -448,7 +448,7 @@ class APIOperation(BaseModel):
     operation_id: str = Field(alias="operation_id")
     """The unique identifier of the operation."""
 
-    description: Optional[str] = Field(alias="description")
+    description: Optional[str] = Field(None, alias="description")
     """The description of the operation."""
 
     base_url: str = Field(alias="base_url")
@@ -467,7 +467,7 @@ class APIOperation(BaseModel):
     # """The properties of the operation."""
     # components: Dict[str, BaseModel] = Field(alias="components")
 
-    request_body: Optional[APIRequestBody] = Field(alias="request_body")
+    request_body: Optional[APIRequestBody] = Field(None, alias="request_body")
     """The request body of the operation."""
 
     @staticmethod

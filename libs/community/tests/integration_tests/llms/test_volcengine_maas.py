@@ -3,7 +3,7 @@
 from typing import Generator
 
 from langchain_core.outputs import LLMResult
-from langchain_core.pydantic_v1 import SecretStr
+from pydantic import SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.llms.volcengine_maas import (

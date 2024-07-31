@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class WikipediaAPIWrapper(BaseModel):
     It limits the Document content by doc_content_chars_max.
     """
 
-    wiki_client: Any  #: :meta private:
+    wiki_client: Any = None  #: :meta private:
     top_k_results: int = 3
     lang: str = "en"
     load_all_available_meta: bool = False

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -15,8 +15,8 @@ class ApifyWrapper(BaseModel):
     `apify_api_token` as a named parameter to the constructor.
     """
 
-    apify_client: Any
-    apify_client_async: Any
+    apify_client: Any = None
+    apify_client_async: Any = None
     apify_api_token: Optional[str] = None
 
     @root_validator(pre=True)

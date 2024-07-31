@@ -30,7 +30,7 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from pydantic import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.adapters.openai import (
@@ -150,7 +150,7 @@ class GPTRouter(BaseChatModel):
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
-    models_priority_list: List[GPTRouterModel] = Field(min_items=1)
+    models_priority_list: List[GPTRouterModel] = Field(min_length=1)
     gpt_router_api_base: str = Field(default=None)
     """WriteSonic GPTRouter custom endpoint"""
     gpt_router_api_key: Optional[SecretStr] = None
@@ -167,7 +167,6 @@ class GPTRouter(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: int = 256
 
-    @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["gpt_router_api_base"] = get_from_dict_or_env(
             values,

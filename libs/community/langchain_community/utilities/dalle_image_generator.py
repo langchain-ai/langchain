@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -26,7 +26,7 @@ class DallEAPIWrapper(BaseModel):
     2. save your OPENAI_API_KEY in an environment variable
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="dall-e-2", alias="model")
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -58,11 +58,7 @@ class DallEAPIWrapper(BaseModel):
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

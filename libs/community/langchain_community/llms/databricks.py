@@ -7,9 +7,8 @@ from typing import Any, Callable, Dict, List, Mapping, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
+from pydantic import (
+    ConfigDict, BaseModel,
     Field,
     PrivateAttr,
     root_validator,
@@ -395,10 +394,9 @@ class Databricks(LLM):
     """
 
     _client: _DatabricksClientBase = PrivateAttr()
-
-    class Config:
-        extra = Extra.forbid
-        underscore_attrs_are_private = True
+    # TODO[pydantic]: The following keys were removed: `underscore_attrs_are_private`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(extra="forbid", underscore_attrs_are_private=True)
 
     @property
     def _llm_params(self) -> Dict[str, Any]:

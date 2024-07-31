@@ -2,7 +2,7 @@
 from langchain_core.utils import pre_init
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 from langchain_core.utils import pre_init
-from langchain_core.pydantic_v1 import root_validator
+from pydantic import root_validator
 from langchain_core.utils import pre_init
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,

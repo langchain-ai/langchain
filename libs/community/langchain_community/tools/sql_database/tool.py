@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from sqlalchemy.engine import Result
 
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import (
@@ -16,16 +16,20 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.tools import BaseTool
 from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
+from pydantic import ConfigDict
 
 
 class BaseSQLDatabaseTool(BaseModel):
     """Base tool for interacting with a SQL database."""
 
     db: SQLDatabase = Field(exclude=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config(BaseTool.Config):
-        pass
-
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    # class Config(BaseTool.Config):
+    #     pass
+    #
 
 class _QuerySQLDataBaseToolInput(BaseModel):
     query: str = Field(..., description="A detailed and correct SQL query.")
@@ -109,7 +113,7 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
 
     template: str = QUERY_CHECKER
     llm: BaseLanguageModel
-    llm_chain: Any = Field(init=False)
+    llm_chain: Any = Field(None, init=False)
     name: str = "sql_db_query_checker"
     description: str = """
     Use this tool to double check if your query is correct before executing it.

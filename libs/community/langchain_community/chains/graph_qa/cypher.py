@@ -22,7 +22,7 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain_core.pydantic_v1 import Field
+from pydantic import Field
 from langchain_core.runnables import Runnable
 
 from langchain_community.chains.graph_qa.cypher_utils import (

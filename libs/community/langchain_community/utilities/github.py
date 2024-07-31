@@ -6,7 +6,7 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -29,18 +29,14 @@ def _import_tiktoken() -> Any:
 class GitHubAPIWrapper(BaseModel):
     """Wrapper for GitHub API."""
 
-    github: Any  #: :meta private:
-    github_repo_instance: Any  #: :meta private:
+    github: Any = None  #: :meta private:
+    github_repo_instance: Any = None  #: :meta private:
     github_repository: Optional[str] = None
     github_app_id: Optional[str] = None
     github_app_private_key: Optional[str] = None
     active_branch: Optional[str] = None
     github_base_branch: Optional[str] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

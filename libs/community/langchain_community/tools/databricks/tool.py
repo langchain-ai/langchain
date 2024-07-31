@@ -4,7 +4,7 @@ from decimal import Decimal
 from hashlib import md5
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from pydantic import ConfigDict, BaseModel, Field, create_model
 from langchain_core.tools import BaseTool, BaseToolkit, StructuredTool
 from typing_extensions import Self
 
@@ -140,9 +140,7 @@ class UCFunctionToolkit(BaseToolkit):
     )
 
     tools: Dict[str, BaseTool] = Field(default_factory=dict)
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def include(self, *function_names: str, **kwargs: Any) -> Self:
         """

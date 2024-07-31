@@ -13,7 +13,7 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import Field
+from pydantic import ConfigDict, Field
 from langchain_core.tools import BaseToolkit
 
 from langchain_community.tools import BaseTool
@@ -62,11 +62,7 @@ class PowerBIToolkit(BaseToolkit):
     callback_manager: Optional[BaseCallbackManager] = None
     output_token_limit: Optional[int] = None
     tiktoken_model_name: Optional[str] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

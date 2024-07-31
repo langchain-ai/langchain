@@ -54,7 +54,7 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
