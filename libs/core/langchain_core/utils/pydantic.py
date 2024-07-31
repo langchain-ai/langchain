@@ -41,6 +41,18 @@ else:
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
+def is_pydantic_v1_subclass(cls: Type) -> bool:
+    """Check if the installed Pydantic version is 1.x-like."""
+    if PYDANTIC_MAJOR_VERSION == 1:
+        return True
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import BaseModel as BaseModelV1
+
+        if issubclass(cls, BaseModelV1):
+            return True
+    return False
+
+
 def is_basemodel_subclass(cls: Type) -> bool:
     """Check if the given class is a subclass of Pydantic BaseModel.
 
