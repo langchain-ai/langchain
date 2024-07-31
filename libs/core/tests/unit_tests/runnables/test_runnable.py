@@ -37,7 +37,6 @@ from langchain_core.language_models import (
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
 from langchain_core.messages import (
-    AIMessage,
     AIMessageChunk,
     HumanMessage,
     SystemMessage,
@@ -90,7 +89,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.stubs import AnyStr, _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
 class FakeTracer(BaseTracer):
@@ -1825,7 +1824,7 @@ def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo", id=AnyStr())
+    ) == _AnyIdAIMessage(content="foo")
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1850,8 +1849,8 @@ def test_prompt_with_chat_model(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo", id=AnyStr()),
-        AIMessage(content="foo", id=AnyStr()),
+        _AnyIdAIMessage(content="foo"),
+        _AnyIdAIMessage(content="foo"),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -1891,9 +1890,9 @@ def test_prompt_with_chat_model(
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
     ] == [
-        AIMessageChunk(content="f", id=AnyStr()),
-        AIMessageChunk(content="o", id=AnyStr()),
-        AIMessageChunk(content="o", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="f"),
+        _AnyIdAIMessageChunk(content="o"),
+        _AnyIdAIMessageChunk(content="o"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1931,7 +1930,7 @@ async def test_prompt_with_chat_model_async(
     tracer = FakeTracer()
     assert await chain.ainvoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo", id=AnyStr())
+    ) == _AnyIdAIMessage(content="foo")
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1956,8 +1955,8 @@ async def test_prompt_with_chat_model_async(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo", id=AnyStr()),
-        AIMessage(content="foo", id=AnyStr()),
+        _AnyIdAIMessage(content="foo"),
+        _AnyIdAIMessage(content="foo"),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -2000,9 +1999,9 @@ async def test_prompt_with_chat_model_async(
             {"question": "What is your name?"}, dict(callbacks=[tracer])
         )
     ] == [
-        AIMessageChunk(content="f", id=AnyStr()),
-        AIMessageChunk(content="o", id=AnyStr()),
-        AIMessageChunk(content="o", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="f"),
+        _AnyIdAIMessageChunk(content="o"),
+        _AnyIdAIMessageChunk(content="o"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2669,7 +2668,7 @@ def test_prompt_with_chat_model_and_parser(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
+    assert parser_spy.call_args.args[1] == _AnyIdAIMessage(content="foo, bar")
 
     assert tracer.runs == snapshot
 
@@ -2804,7 +2803,7 @@ What is your name?"""
             ),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
+    assert parser_spy.call_args.args[1] == _AnyIdAIMessage(content="foo, bar")
     assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 4
@@ -2850,7 +2849,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
+        "chat": _AnyIdAIMessage(content="i'm a chatbot"),
         "llm": "i'm a textbot",
     }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -3060,7 +3059,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
+        "chat": _AnyIdAIMessage(content="i'm a chatbot"),
         "llm": "i'm a textbot",
         "passthrough": ChatPromptValue(
             messages=[
@@ -3269,7 +3268,7 @@ async def test_map_astream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i", id=AnyStr())},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
