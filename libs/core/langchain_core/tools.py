@@ -88,6 +88,7 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
+from langchain_core.utils.function_calling import _parse_google_docstring
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
@@ -140,50 +141,12 @@ def _parse_python_function_docstring(
 
     Assumes the function docstring follows Google Python style guide.
     """
-    invalid_docstring_error = ValueError(
-        f"Found invalid Google-Style docstring for {function}."
-    )
     docstring = inspect.getdoc(function)
-    if docstring:
-        docstring_blocks = docstring.split("\n\n")
-        if error_on_invalid_docstring:
-            filtered_annotations = {
-                arg for arg in annotations if arg not in (*(FILTERED_ARGS), "return")
-            }
-            if filtered_annotations and (
-                len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
-            ):
-                raise (invalid_docstring_error)
-        descriptors = []
-        args_block = None
-        past_descriptors = False
-        for block in docstring_blocks:
-            if block.startswith("Args:"):
-                args_block = block
-                break
-            elif block.startswith("Returns:") or block.startswith("Example:"):
-                # Don't break in case Args come after
-                past_descriptors = True
-            elif not past_descriptors:
-                descriptors.append(block)
-            else:
-                continue
-        description = " ".join(descriptors)
-    else:
-        if error_on_invalid_docstring:
-            raise (invalid_docstring_error)
-        description = ""
-        args_block = None
-    arg_descriptions = {}
-    if args_block:
-        arg = None
-        for line in args_block.split("\n")[1:]:
-            if ":" in line:
-                arg, desc = line.split(":", maxsplit=1)
-                arg_descriptions[arg.strip()] = desc.strip()
-            elif arg:
-                arg_descriptions[arg.strip()] += " " + line.strip()
-    return description, arg_descriptions
+    return _parse_google_docstring(
+        docstring,
+        list(annotations),
+        error_on_invalid_docstring=error_on_invalid_docstring,
+    )
 
 
 def _validate_docstring_args_against_annotations(

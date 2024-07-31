@@ -100,6 +100,10 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         # even in uv
         max_python = "3.11"
 
+    if dir_ == "libs/community" and job == "compile-integration-tests":
+        # community integration deps are slow in 3.12
+        max_python = "3.11"
+
     return [
         {"working-directory": dir_, "python-version": min_python},
         {"working-directory": dir_, "python-version": max_python},
