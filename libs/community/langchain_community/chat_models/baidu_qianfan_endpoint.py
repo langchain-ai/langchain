@@ -145,6 +145,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
 
     return ret
 
+
 class QianfanChatEndpoint(BaseChatModel):
     """Baidu Qianfan chat model integration.
 
@@ -624,7 +625,7 @@ class QianfanChatEndpoint(BaseChatModel):
                                 index=None,
                             )
                             for tc in msg.tool_calls
-                        ]
+                        ],
                     ),
                     generation_info=msg.additional_kwargs,
                 )
