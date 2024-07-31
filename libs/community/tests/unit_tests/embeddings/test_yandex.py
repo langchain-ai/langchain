@@ -22,3 +22,14 @@ def test_init() -> None:
         assert embeddings.doc_model_uri == "emb://bar/text-search-doc/latest"
         assert embeddings.model_name == "text-search-query"
         assert embeddings.doc_model_name == "text-search-doc"
+
+def test_yandexgptembeddings_grpc_metadata() -> None:
+    llm = YandexGPTEmbeddings(
+        iam_token="your_iam_token",
+        folder_id="your_folder_id",
+    )
+    expected_metadata = [
+        ("authorization", "Bearer your_iam_token"),
+        ("x-folder-id", "your_folder_id")
+    ]
+    assert llm.grpc_metadata == expected_metadata
