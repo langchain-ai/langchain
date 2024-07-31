@@ -556,7 +556,6 @@ class PebbloSafeLoader(BaseLoader):
                     "full_path", doc_metadata.get("source", self.source_path)
                 )
             )
-            doc_metadata["pb_id"] = doc.pb_id
             doc_metadata["pb_checksum"] = classified_docs.get(doc.pb_id, {}).get(
                 "pb_checksum", None
             )
