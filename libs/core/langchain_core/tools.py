@@ -1499,6 +1499,7 @@ def _format_output(
 
 
 def _is_message_content_type(obj: Any) -> bool:
+    """Check for OpenAI or Anthropic format tool message content."""
     if isinstance(obj, str):
         return True
     elif isinstance(obj, list) and all(_is_message_content_block(e) for e in obj):
@@ -1508,6 +1509,7 @@ def _is_message_content_type(obj: Any) -> bool:
 
 
 def _is_message_content_block(obj: Any) -> bool:
+    """Check for OpenAI or Anthropic format tool message content blocks."""
     if isinstance(obj, str):
         return True
     elif isinstance(obj, dict):
