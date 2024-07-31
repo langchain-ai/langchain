@@ -26,7 +26,7 @@ class TavilySearchResults(BaseTool):
 
         .. code-block:: bash
 
-            pip install -U langchain-openai
+            pip install -U langchain-community tavily-python
             export TAVILY_API_KEY="your-api-key"
 
     Instantiate:
@@ -75,17 +75,45 @@ class TavilySearchResults(BaseTool):
     max_results: int = 5
     """Max search results to return, default is 5"""
     search_depth: str = "advanced"
-    '''The depth of the search. It can be "basic" or "advanced"'''
+    """The depth of the search. It can be "basic" or "advanced"
+    
+    .. versionadded:: 0.2.5
+    """
     include_domains: List[str] = []
-    """A list of domains to specifically include in the search results. Default is None, which includes all domains."""  # noqa: E501
+    """A list of domains to specifically include in the search results. 
+    
+    Default is None, which includes all domains.
+    
+    .. versionadded:: 0.2.5
+    """
     exclude_domains: List[str] = []
-    """A list of domains to specifically exclude from the search results. Default is None, which doesn't exclude any domains."""  # noqa: E501
+    """A list of domains to specifically exclude from the search results. 
+    
+    Default is None, which doesn't exclude any domains.
+    
+    .. versionadded:: 0.2.5
+    """
     include_answer: bool = False
-    """Include a short answer to original query in the search results. Default is False."""  # noqa: E501
+    """Include a short answer to original query in the search results. 
+    
+    Default is False.
+    
+    .. versionadded:: 0.2.5
+    """
     include_raw_content: bool = False
-    """Include cleaned and parsed HTML of each site search results. Default is False."""
+    """Include cleaned and parsed HTML of each site search results. 
+    
+    Default is False.
+    
+    .. versionadded:: 0.2.5
+    """
     include_images: bool = False
-    """Include a list of query related images in the response. Default is False."""
+    """Include a list of query related images in the response. 
+    
+    Default is False.
+    
+    .. versionadded:: 0.2.5
+    """
     args_schema: Type[BaseModel] = TavilyInput
 
     def _run(
