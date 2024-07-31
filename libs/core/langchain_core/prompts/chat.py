@@ -1055,7 +1055,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         messages = values["messages"]
         input_vars = set()
-        optional_variables = set()
+        inferred_opt_vars = set()  # Variables inferred from messages
         input_types: Dict[str, Any] = values.get("input_types", {})
         for message in messages:
             if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
@@ -1071,10 +1071,13 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     optional_variables.add(message.variable_name)
                 if message.variable_name not in input_types:
                     input_types[message.variable_name] = List[AnyMessage]
+        # Combine explicitly passed optional variables with detected ones
+        provided_opt_vars = set(values.get("optional_variables", []))
+        all_opt_vars = inferred_opt_vars.union(provided_opt_vars)
         if "partial_variables" in values:
             input_vars = input_vars - set(values["partial_variables"])
         if optional_variables:
-            input_vars = input_vars - optional_variables
+            input_vars = input_vars - all_opt_vars
         if "input_variables" in values and values.get("validate_template"):
             if input_vars != set(values["input_variables"]):
                 raise ValueError(
