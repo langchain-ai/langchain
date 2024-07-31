@@ -34,6 +34,7 @@ from langchain_core.tools import (
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
+from tests.unit_tests.pydantic_utils import _schema
 
 
 def test_unnamed_decorator() -> None:
@@ -161,8 +162,8 @@ def test_decorated_function_schema_equivalent() -> None:
     assert isinstance(structured_tool_input, BaseTool)
     assert structured_tool_input.args_schema is not None
     assert (
-        structured_tool_input.args_schema.schema()["properties"]
-        == _MockSchema.schema()["properties"]
+        _schema(structured_tool_input.args_schema)["properties"]
+        == _schema(_MockSchema)["properties"]
         == structured_tool_input.args
     )
 
@@ -331,7 +332,7 @@ def test_structured_tool_from_function_docstring() -> None:
         "baz": {"title": "Baz", "type": "string"},
     }
 
-    assert structured_tool.args_schema.schema() == {
+    assert _schema(structured_tool.args_schema) == {
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
@@ -369,7 +370,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
         },
     }
 
-    assert structured_tool.args_schema.schema() == {
+    assert _schema(structured_tool.args_schema) == {
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {
@@ -474,7 +475,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
         "baz": {"title": "Baz", "type": "string"},
     }
 
-    assert structured_tool.args_schema.schema() == {
+    assert _schema(structured_tool.args_schema) == {
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
@@ -711,7 +712,7 @@ def test_structured_tool_from_function() -> None:
         "baz": {"title": "Baz", "type": "string"},
     }
 
-    assert structured_tool.args_schema.schema() == {
+    assert _schema(structured_tool.args_schema) == {
         "title": "fooSchema",
         "type": "object",
         "description": inspect.getdoc(foo),
@@ -858,7 +859,7 @@ def test_optional_subset_model_rewrite() -> None:
 
     model2 = _create_subset_model("model2", MyModel, ["a", "b", "c"])
 
-    assert set(model2.schema()["required"]) == {"b"}
+    assert set(_schema(model2)["required"]) == {"b"}
 
 
 @pytest.mark.parametrize(
@@ -1007,7 +1008,7 @@ def test_tool_arg_descriptions() -> None:
         return bar
 
     foo1 = tool(foo)
-    args_schema = foo1.args_schema.schema()  # type: ignore
+    args_schema = _schema(foo1.args_schema)  # type: ignore
     assert args_schema == {
         "title": "fooSchema",
         "type": "object",
@@ -1021,7 +1022,7 @@ def test_tool_arg_descriptions() -> None:
 
     # Test parses docstring
     foo2 = tool(foo, parse_docstring=True)
-    args_schema = foo2.args_schema.schema()  # type: ignore
+    args_schema = _schema(foo2.args_schema)  # type: ignore
     expected = {
         "title": "fooSchema",
         "description": "The foo.",
@@ -1047,7 +1048,7 @@ def test_tool_arg_descriptions() -> None:
         return bar
 
     as_tool = tool(foo3, parse_docstring=True)
-    args_schema = as_tool.args_schema.schema()  # type: ignore
+    args_schema = _schema(as_tool.args_schema)  # type: ignore
     assert args_schema["description"] == expected["description"]
     assert args_schema["properties"] == expected["properties"]
 
@@ -1058,7 +1059,7 @@ def test_tool_arg_descriptions() -> None:
         return "bar"
 
     as_tool = tool(foo4, parse_docstring=True)
-    args_schema = as_tool.args_schema.schema()  # type: ignore
+    args_schema = _schema(as_tool.args_schema)  # type: ignore
     assert args_schema["description"] == expected["description"]
 
     def foo5(run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
@@ -1066,7 +1067,7 @@ def test_tool_arg_descriptions() -> None:
         return "bar"
 
     as_tool = tool(foo5, parse_docstring=True)
-    args_schema = as_tool.args_schema.schema()  # type: ignore
+    args_schema = _schema(as_tool.args_schema)  # type: ignore
     assert args_schema["description"] == expected["description"]
 
 
@@ -1110,7 +1111,7 @@ def test_tool_annotated_descriptions() -> None:
         return bar
 
     foo1 = tool(foo)
-    args_schema = foo1.args_schema.schema()  # type: ignore
+    args_schema = _schema(foo1.args_schema)  # type: ignore
     assert args_schema == {
         "title": "fooSchema",
         "type": "object",
@@ -1203,7 +1204,7 @@ def test_convert_from_runnable_dict() -> None:
     as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is not None
-    assert args_schema.schema() == {
+    assert _schema(args_schema) == {
         "title": "f",
         "type": "object",
         "properties": {

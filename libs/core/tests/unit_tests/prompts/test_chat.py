@@ -30,6 +30,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
+from tests.unit_tests.pydantic_utils import _schema
 
 
 @pytest.fixture
@@ -798,10 +799,10 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     prompt_all_required.optional_variables == {"history"}
     with pytest.raises(ValidationError):
         prompt_all_required.input_schema(input="")
-    assert prompt_all_required.input_schema.schema() == snapshot(name="required")
+    assert _schema(prompt_all_required.input_schema) == snapshot(name="required")
     prompt_optional = ChatPromptTemplate.from_messages(
         messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
     )
     prompt_optional.input_variables == {"history", "input"}
     prompt_optional.input_schema(input="")  # won't raise error
-    prompt_optional.input_schema.schema() == snapshot(name="partial")
+    _schema(prompt_optional.input_schema) == snapshot(name="partial")

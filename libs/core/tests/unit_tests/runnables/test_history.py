@@ -13,6 +13,7 @@ from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec
+from tests.unit_tests.pydantic_utils import _schema
 
 
 def test_interfaces() -> None:
@@ -435,9 +436,8 @@ def test_get_input_schema_input_dict() -> None:
         history_messages_key="history",
         output_messages_key="output",
     )
-    assert (
-        with_history.get_input_schema().schema()
-        == RunnableWithChatHistoryInput.schema()
+    assert _schema(with_history.get_input_schema()) == _schema(
+        RunnableWithChatHistoryInput
     )
 
 
@@ -466,9 +466,8 @@ def test_get_input_schema_input_messages() -> None:
     with_history = RunnableWithMessageHistory(
         runnable, get_session_history, output_messages_key="output"
     )
-    assert (
-        with_history.get_input_schema().schema()
-        == RunnableWithChatHistoryInput.schema()
+    assert _schema(with_history.get_input_schema()) == _schema(
+        RunnableWithMessageHistoryInput
     )
 
 
