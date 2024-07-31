@@ -69,10 +69,13 @@ render:
 md-sync:
 	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --include="*/_category_.yml" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
+append-related:
+	$(PYTHON) scripts/append_related_links.py $(OUTPUT_NEW_DOCS_DIR)
+
 generate-references:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)
 
-build: install-py-deps generate-files copy-infra render md-sync
+build: install-py-deps generate-files copy-infra render md-sync append-related
 
 vercel-build: install-vercel-deps build generate-references
 	rm -rf docs
