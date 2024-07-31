@@ -52,8 +52,8 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     ) -> List[Document]:
         """Retrieve documents that are highest scoring / most similar  to query.
 
-        Note that the query is embedded for vector search,
-        but the text search component must be included in constructor.
+        Note that the same query is used in both searches,
+        embedded for vector search, and as-is for full-text search.
 
         Args:
             query: String to find relevant documents for
