@@ -75,7 +75,7 @@ class Arcee(LLM):
             model_name=self.model,
         )
 
-    @root_validator(pre=False)
+    @root_validator(pre=True)
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate Arcee environment variables."""
 
