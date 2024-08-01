@@ -143,7 +143,8 @@ class NotionDBLoader(BaseLoader):
                         name = item.get("name")
                         if not name:
                             logger.warning(
-                                f"Missing 'name' in 'people' property for page {page_id}"
+                                "Missing 'name' in 'people' property "
+                                f"for page {page_id}"
                             )
                         value.append(name)
             elif prop_type == "date":
