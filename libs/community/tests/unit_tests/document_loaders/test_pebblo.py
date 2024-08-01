@@ -69,7 +69,6 @@ def test_csv_loader_load_valid_data(mocker: MockerFixture) -> None:
                 "source": full_file_path,
                 "row": 0,
                 "full_path": full_file_path,
-                "pb_id": "0",
                 # For UT as here we are not calculating checksum
                 "pb_checksum": None,
             },
@@ -80,7 +79,6 @@ def test_csv_loader_load_valid_data(mocker: MockerFixture) -> None:
                 "source": full_file_path,
                 "row": 1,
                 "full_path": full_file_path,
-                "pb_id": "1",
                 # For UT as here we are not calculating checksum
                 "pb_checksum": None,
             },
