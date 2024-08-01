@@ -41,7 +41,12 @@ logger = logging.getLogger()
 
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient, SearchItemPaged
-    from azure.search.documents.aio import SearchClient as AsyncSearchClient, AsyncSearchItemPaged
+    from azure.search.documents.aio import (
+        AsyncSearchItemPaged,
+    )
+    from azure.search.documents.aio import (
+        SearchClient as AsyncSearchClient,
+    )
     from azure.search.documents.indexes.models import (
         CorsOptions,
         ScoringProfile,
@@ -1330,9 +1335,7 @@ class AzureSearch(VectorStore):
                         ),
                         **{
                             "captions": {
-                                "text": result.get("@search.captions", [{}])[
-                                    0
-                                ].text,
+                                "text": result.get("@search.captions", [{}])[0].text,
                                 "highlights": result.get("@search.captions", [{}])[
                                     0
                                 ].highlights,
@@ -1627,6 +1630,7 @@ def _results_to_documents(
         for result in results
     ]
     return docs
+
 
 async def _aresults_to_documents(
     results: AsyncSearchItemPaged[Dict],
