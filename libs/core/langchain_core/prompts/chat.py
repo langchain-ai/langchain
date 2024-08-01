@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     Dict,
     List,
@@ -21,7 +22,7 @@ from typing import (
     overload,
 )
 
-from pydantic import Field, PositiveInt, root_validator
+from pydantic import Field, PositiveInt, SkipValidation, root_validator
 
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable
@@ -917,7 +918,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     """  # noqa: E501
 
-    messages: List[MessageLike]
+    messages: Annotated[List[MessageLike], SkipValidation]
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""
