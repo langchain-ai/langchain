@@ -3,8 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import List, Optional, Union
 
-from langchain_core.outputs.chat_generation import ChatGeneration
-from langchain_core.outputs.generation import Generation
+from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.generation import Generation, GenerationChunk
 from langchain_core.outputs.run_info import RunInfo
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -17,7 +17,9 @@ class LLMResult(BaseModel):
     wants to return.
     """
 
-    generations: Union[List[List[Generation]], List[List[ChatGeneration]]]
+    generations: List[
+        List[Union[Generation, ChatGeneration, GenerationChunk, ChatGenerationChunk]]
+    ]
     """Generated outputs.
     
     The first dimension of the list represents completions for different input
@@ -28,6 +30,9 @@ class LLMResult(BaseModel):
     
     When returned from an LLM the type is List[List[Generation]].
     When returned from a chat model the type is List[List[ChatGeneration]].
+    
+    The type has been annotated as List of List of Union rather than Union of List
+    of List to avoid mypy issues.
     
     ChatGeneration is a subclass of Generation that has a field for a structured
     chat message.
@@ -63,7 +68,11 @@ class LLMResult(BaseModel):
             if i == 0:
                 llm_results.append(
                     LLMResult(
-                        generations=[gen_list],
+                        # pydantic is correctly complaining about the usage of
+                        # an outer union rather than an inner union in the type.
+                        # Type ignoring here since it **should** be the correct
+                        # type in practice.
+                        generations=[gen_list],  # type: ignore[arg-type]
                         llm_output=self.llm_output,
                     )
                 )
@@ -75,7 +84,11 @@ class LLMResult(BaseModel):
                     llm_output = None
                 llm_results.append(
                     LLMResult(
-                        generations=[gen_list],
+                        # pydantic is correctly complaining about the usage of
+                        # an outer union rather than an inner union in the type.
+                        # Type ignoring here since it **should** be the correct
+                        # type in practice.
+                        generations=[gen_list],  # type: ignore[arg-type]
                         llm_output=llm_output,
                     )
                 )

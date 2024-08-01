@@ -31,6 +31,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
+    Generation,
     GenerationChunk,
     LLMResult,
 )
@@ -285,6 +286,7 @@ class _TracerCore(ABC):
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         llm_run.outputs = response.dict()
         for i, generations in enumerate(response.generations):
+            generations = cast(List[Union[Generation, ChatGeneration]], generations)
             for j, generation in enumerate(generations):
                 output_generation = llm_run.outputs["generations"][i][j]
                 if "message" in output_generation:

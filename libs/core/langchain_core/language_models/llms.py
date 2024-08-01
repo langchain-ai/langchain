@@ -56,7 +56,13 @@ from langchain_core.messages import (
     convert_to_messages,
     get_buffer_string,
 )
-from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
+from langchain_core.outputs import (
+    ChatGeneration,
+    Generation,
+    GenerationChunk,
+    LLMResult,
+    RunInfo,
+)
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
@@ -222,7 +228,9 @@ async def aget_prompts(
 
 def update_cache(
     cache: Union[BaseCache, bool, None],
-    existing_prompts: Dict[int, List],
+    existing_prompts: Dict[
+        int, Union[List[List[Generation]], List[List[ChatGeneration]]]
+    ],
     llm_string: str,
     missing_prompt_idxs: List[int],
     new_results: LLMResult,
@@ -246,7 +254,7 @@ def update_cache(
     """
     llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
-        existing_prompts[missing_prompt_idxs[i]] = result
+        existing_prompts[missing_prompt_idxs[i]] = result  # type: ignore
         prompt = prompts[missing_prompt_idxs[i]]
         if llm_cache is not None:
             llm_cache.update(prompt, llm_string, result)
