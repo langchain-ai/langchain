@@ -387,7 +387,7 @@ class ChildTool(BaseTool):
     def tool_call_schema(self) -> Type[BaseModel]:
         full_schema = self.get_input_schema()
         fields = []
-        for name, type_ in full_schema.__annotations__.items():
+        for name, type_ in _get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
         return _create_subset_model(
@@ -1650,3 +1650,11 @@ def _filter_schema_args(func: Callable) -> List[str]:
         filter_args.append(config_param)
     # filter_args.extend(_get_non_model_params(type_hints))
     return filter_args
+
+
+def _get_all_basemodel_annotations(cls: TypeBaseModel) -> Dict[str, Type]:
+    annotations = {}
+    for parent in inspect.getmro(cls):
+        if is_basemodel_subclass(parent):
+            annotations = {**getattr(parent, "__annotations__", {}), **annotations}
+    return annotations
