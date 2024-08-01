@@ -2,8 +2,8 @@ from enum import Enum
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 

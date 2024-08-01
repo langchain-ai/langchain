@@ -1,7 +1,7 @@
 import json
 from typing import Any, Callable, Dict, Optional
 
-from pydantic import ConfigDict, BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, root_validator
 
 
 class GraphQLAPIWrapper(BaseModel):

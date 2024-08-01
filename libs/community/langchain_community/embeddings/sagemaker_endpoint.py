@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 from langchain_community.llms.sagemaker_endpoint import ContentHandlerBase
 

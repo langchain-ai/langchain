@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, root_validator
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)

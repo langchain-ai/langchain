@@ -4,12 +4,13 @@ from urllib.parse import quote
 
 import aiohttp
 import requests
-from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, Field, root_validator
 
 
 class DataForSeoAPIWrapper(BaseModel):
     """Wrapper around the DataForSeo API."""
+
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     default_params: dict = Field(

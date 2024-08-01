@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from pydantic import ConfigDict, BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, root_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -42,7 +42,9 @@ class SolarCommon(BaseModel):
     """Model name. Available models listed here: https://console.upstage.ai/services/solar"""
     max_tokens: int = Field(default=1024)
     temperature: float = 0.3
-    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True, extra="ignore")
+    model_config = ConfigDict(
+        populate_by_name=True, arbitrary_types_allowed=True, extra="ignore"
+    )
 
     @property
     def lc_secrets(self) -> dict:
@@ -95,6 +97,7 @@ class Solar(SolarCommon, LLM):
     ``SOLAR_API_KEY`` set with your API key.
     Referenced from https://console.upstage.ai/services/solar
     """
+
     model_config = ConfigDict(populate_by_name=True)
 
     def _call(

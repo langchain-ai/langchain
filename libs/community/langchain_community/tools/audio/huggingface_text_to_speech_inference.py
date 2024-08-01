@@ -6,8 +6,8 @@ from typing import Callable, Literal, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from pydantic import SecretStr
 from langchain_core.tools import BaseTool
+from pydantic import SecretStr
 
 logger = logging.getLogger(__name__)
 

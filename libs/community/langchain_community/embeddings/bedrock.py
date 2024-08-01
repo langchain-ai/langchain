@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.runnables.config import run_in_executor
+from pydantic import BaseModel, ConfigDict, root_validator
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):

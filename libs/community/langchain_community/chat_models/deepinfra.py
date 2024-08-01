@@ -54,11 +54,11 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from pydantic import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel, Field, root_validator
 
 from langchain_community.utilities.requests import Requests
 

@@ -4,11 +4,11 @@ import logging
 import os
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
-from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from pydantic import BaseModel, ConfigDict, Field, root_validator
 
 from langchain_community.utils.openai import is_openai_v1
 

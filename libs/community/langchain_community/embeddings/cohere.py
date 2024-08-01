@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, root_validator
 
 from langchain_community.llms.cohere import _create_retry_decorator
 

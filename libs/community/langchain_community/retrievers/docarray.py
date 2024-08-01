@@ -6,9 +6,9 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
-from pydantic import ConfigDict
 
 
 class SearchType(str, Enum):

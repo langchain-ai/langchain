@@ -70,6 +70,7 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
                 open_api_config=values.get("open_api_config", {}),
             )
         return values
+
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @staticmethod

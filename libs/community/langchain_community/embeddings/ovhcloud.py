@@ -4,7 +4,7 @@ from typing import Any, List
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 

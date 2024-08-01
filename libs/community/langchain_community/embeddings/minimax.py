@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,

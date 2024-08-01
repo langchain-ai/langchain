@@ -10,8 +10,8 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from pydantic import ConfigDict, Field
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict, Field
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage

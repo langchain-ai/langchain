@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pydantic import ConfigDict, BaseModel, Field, root_validator
+from pydantic import BaseModel, ConfigDict, Field, root_validator
 
 if TYPE_CHECKING:
     from cassandra.cluster import ResultSet, Session

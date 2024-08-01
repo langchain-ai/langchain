@@ -8,8 +8,8 @@ import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import ConfigDict
 from langchain_core.utils import get_pydantic_field_names
+from pydantic import ConfigDict
 
 
 class Llamafile(LLM):

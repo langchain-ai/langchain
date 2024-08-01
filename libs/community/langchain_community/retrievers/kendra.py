@@ -13,6 +13,7 @@ from typing import (
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 from pydantic import (
     BaseModel,
     Extra,
@@ -20,7 +21,6 @@ from pydantic import (
     root_validator,
     validator,
 )
-from langchain_core.retrievers import BaseRetriever
 from typing_extensions import Annotated
 
 

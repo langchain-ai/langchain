@@ -18,7 +18,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatResult,
 )
-from pydantic import ConfigDict, BaseModel, Extra, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Extra, Field, SecretStr
 
 logger = logging.getLogger(__name__)
 

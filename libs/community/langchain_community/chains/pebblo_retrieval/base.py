@@ -19,8 +19,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import ConfigDict, Field, validator
 from langchain_core.vectorstores import VectorStoreRetriever
+from pydantic import ConfigDict, Field, validator
 
 from langchain_community.chains.pebblo_retrieval.enforcement_filters import (
     SUPPORTED_VECTORSTORES,
@@ -184,7 +184,10 @@ class PebbloRetrievalQA(Chain):
             return {self.output_key: answer, "source_documents": docs}
         else:
             return {self.output_key: answer}
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True, populate_by_name=True)
+
+    model_config = ConfigDict(
+        extra="forbid", arbitrary_types_allowed=True, populate_by_name=True
+    )
 
     @property
     def input_keys(self) -> List[str]:

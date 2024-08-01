@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import ConfigDict, BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, root_validator
 
 from langchain_community.cross_encoders.base import BaseCrossEncoder
 

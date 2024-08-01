@@ -3,8 +3,8 @@
 from typing import List
 
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import ConfigDict, Field
 from langchain_core.tools import BaseToolkit
+from pydantic import ConfigDict, Field
 
 from langchain_community.tools import BaseTool
 from langchain_community.tools.sql_database.tool import (
@@ -31,6 +31,7 @@ class SQLDatabaseToolkit(BaseToolkit):
     def dialect(self) -> str:
         """Return string representation of SQL dialect to use."""
         return self.db.dialect
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:

@@ -1,8 +1,8 @@
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel
 
 
 class NLPCloudEmbeddings(BaseModel, Embeddings):

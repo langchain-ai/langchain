@@ -8,8 +8,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from pydantic import ConfigDict, Field, validator
 from langchain_core.tools import BaseTool
+from pydantic import ConfigDict, Field, validator
 
 from langchain_community.chat_models.openai import _import_tiktoken
 from langchain_community.tools.powerbi.prompt import (

@@ -7,8 +7,8 @@ import time
 from typing import Any, Callable, Dict, List, Sequence
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from tenacity import (
     before_sleep_log,
     retry,

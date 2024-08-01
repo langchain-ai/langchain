@@ -231,6 +231,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
             attributes["region_name"] = self.region_name
 
         return attributes
+
     model_config = ConfigDict(extra="forbid")
 
     def _stream(

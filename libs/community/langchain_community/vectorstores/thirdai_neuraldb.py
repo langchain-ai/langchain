@@ -6,9 +6,9 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict, root_validator
 
 
 class NeuralDBVectorStore(VectorStore):

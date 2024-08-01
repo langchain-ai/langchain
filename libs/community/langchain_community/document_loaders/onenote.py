@@ -5,13 +5,10 @@ from typing import Dict, Iterator, List, Optional
 
 import requests
 from langchain_core.documents import Document
-from pydantic import (
-    BaseModel,
-    Field,
-    FilePath,
-    SecretStr)
+from pydantic import BaseModel, Field, FilePath, SecretStr
 
 from langchain_community.document_loaders.base import BaseLoader
+
 # from pydantic_settings import BaseSettings, SettingsConfigDict
 
 #
@@ -20,6 +17,7 @@ from langchain_community.document_loaders.base import BaseLoader
 #     client_secret: SecretStr = Field(..., validation_alias="MS_GRAPH_CLIENT_SECRET")
 #     model_config = SettingsConfigDict(env_prefix="", case_sentive=False, env_file=".env")
 #
+
 
 class OneNoteLoader(BaseLoader, BaseModel):
     """Load pages from OneNote notebooks."""

@@ -3,9 +3,9 @@ from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
+from pydantic import ConfigDict
 
 from langchain_community.utilities.graphql import GraphQLAPIWrapper
-from pydantic import ConfigDict
 
 
 class BaseGraphQLTool(BaseTool):

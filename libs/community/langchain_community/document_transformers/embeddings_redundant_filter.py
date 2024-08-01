@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Sequence
 import numpy as np
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.utils.math import cosine_similarity
 

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.cross_encoders.base import BaseCrossEncoder
 
@@ -44,6 +44,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
         self.client = sentence_transformers.CrossEncoder(
             self.model_name, **self.model_kwargs
         )
+
     model_config = ConfigDict(extra="forbid")
 
     def score(self, text_pairs: List[Tuple[str, str]]) -> List[float]:

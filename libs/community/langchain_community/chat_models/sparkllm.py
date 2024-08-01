@@ -35,11 +35,11 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from pydantic import ConfigDict, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from pydantic import ConfigDict, Field, root_validator
 
 logger = logging.getLogger(__name__)
 

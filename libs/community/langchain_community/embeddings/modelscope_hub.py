@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelScopeEmbeddings(BaseModel, Embeddings):
@@ -38,6 +38,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
             model=self.model_id,
             model_revision=self.model_revision,
         )
+
     model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

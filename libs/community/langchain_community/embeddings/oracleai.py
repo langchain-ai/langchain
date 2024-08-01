@@ -14,7 +14,7 @@ import traceback
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
     from oracledb import Connection
@@ -36,6 +36,7 @@ class OracleEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
+
     model_config = ConfigDict(extra="forbid")
 
     """

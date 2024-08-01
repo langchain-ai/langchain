@@ -19,9 +19,9 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from pydantic import ConfigDict
 
 from langchain_community.llms.cohere import BaseCohere
-from pydantic import ConfigDict
 
 
 def get_role(message: BaseMessage) -> str:
@@ -117,6 +117,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             messages = [HumanMessage(content="knock knock")]
             chat.invoke(messages)
     """
+
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
     @property

@@ -29,10 +29,10 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict, root_validator
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 

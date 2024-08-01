@@ -3,7 +3,7 @@ import sys
 from typing import Any, List
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class JohnSnowLabsEmbeddings(BaseModel, Embeddings):
@@ -57,6 +57,7 @@ class JohnSnowLabsEmbeddings(BaseModel, Embeddings):
                 self.model = nlp.to_nlu_pipe(model)
         except Exception as exc:
             raise Exception("Failure loading model") from exc
+
     model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

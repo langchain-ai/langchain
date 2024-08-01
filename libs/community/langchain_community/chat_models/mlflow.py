@@ -19,11 +19,11 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.runnables import RunnableConfig
 from pydantic import (
     Field,
     PrivateAttr,
 )
-from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
 

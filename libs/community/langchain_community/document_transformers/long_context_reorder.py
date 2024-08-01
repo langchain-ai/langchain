@@ -3,7 +3,7 @@
 from typing import Any, List, Sequence
 
 from langchain_core.documents import BaseDocumentTransformer, Document
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 def _litm_reordering(documents: List[Document]) -> List[Document]:
@@ -28,6 +28,7 @@ class LongContextReorder(BaseDocumentTransformer, BaseModel):
     Performance degrades when models must access relevant information
     in the middle of long contexts.
     See: https://arxiv.org/abs//2307.03172"""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def transform_documents(

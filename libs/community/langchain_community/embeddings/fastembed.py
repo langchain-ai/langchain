@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel, ConfigDict
 
 
 class FastEmbedEmbeddings(BaseModel, Embeddings):

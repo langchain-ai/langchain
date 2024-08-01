@@ -31,6 +31,7 @@ class BaseSQLDatabaseTool(BaseModel):
     #     pass
     #
 
+
 class _QuerySQLDataBaseToolInput(BaseModel):
     query: str = Field(..., description="A detailed and correct SQL query.")
 

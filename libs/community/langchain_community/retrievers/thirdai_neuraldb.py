@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from pydantic import ConfigDict, SecretStr
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict, SecretStr
 
 
 class NeuralDBRetriever(BaseRetriever):

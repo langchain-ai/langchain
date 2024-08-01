@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import ConfigDict, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict, SecretStr
 
 from langchain_community.llms.utils import enforce_stop_tokens
 

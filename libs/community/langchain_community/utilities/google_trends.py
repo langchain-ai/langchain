@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, Optional, cast
 
-from pydantic import ConfigDict, BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, SecretStr, root_validator
 
 
 class GoogleTrendsAPIWrapper(BaseModel):

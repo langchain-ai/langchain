@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional
 
 from langchain_core.language_models import BaseLanguageModel
-from pydantic import ConfigDict, Field
 from langchain_core.tools import BaseToolkit
+from pydantic import ConfigDict, Field
 
 from langchain_community.tools import BaseTool
 from langchain_community.tools.amadeus.closest_airport import AmadeusClosestAirport

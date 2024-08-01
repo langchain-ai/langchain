@@ -3,8 +3,8 @@
 from typing import Dict, List
 
 import requests
-from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, Field, root_validator
 
 # BING_SEARCH_ENDPOINT is the default endpoint for Bing Web Search API.
 # Currently There are two web-based Bing Search services available on Azure,

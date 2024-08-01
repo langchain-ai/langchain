@@ -1,7 +1,7 @@
 from typing import List
 
-from pydantic import root_validator
 from langchain_core.tools import BaseTool, BaseToolkit
+from pydantic import root_validator
 
 from langchain_community.tools.connery import ConneryService
 

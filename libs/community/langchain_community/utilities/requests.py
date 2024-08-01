@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Dict, Literal, Optional, Union
 
 import aiohttp
 import requests
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 from requests import Response
 
 

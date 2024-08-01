@@ -4,8 +4,8 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from pydantic import ConfigDict, Field
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict, Field
 
 
 def default_preprocessing_func(text: str) -> List[str]:

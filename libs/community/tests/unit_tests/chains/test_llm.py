@@ -1,7 +1,7 @@
 """Test LLM chain."""
 
 from tempfile import TemporaryDirectory
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -18,6 +18,9 @@ class FakeOutputParser(BaseOutputParser):
     def parse(self, text: str) -> Union[str, List[str], Dict[str, str]]:
         """Parse by splitting."""
         return text.split()
+
+
+FakeOutputParser.model_rebuild()
 
 
 @pytest.fixture

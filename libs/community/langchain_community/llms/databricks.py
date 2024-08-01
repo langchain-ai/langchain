@@ -8,7 +8,8 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from pydantic import (
-    ConfigDict, BaseModel,
+    BaseModel,
+    ConfigDict,
     Field,
     PrivateAttr,
     root_validator,

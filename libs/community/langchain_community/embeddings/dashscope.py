@@ -10,8 +10,8 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, root_validator
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,

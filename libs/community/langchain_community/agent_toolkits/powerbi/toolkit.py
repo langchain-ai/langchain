@@ -13,8 +13,8 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from pydantic import ConfigDict, Field
 from langchain_core.tools import BaseToolkit
+from pydantic import ConfigDict, Field
 
 from langchain_community.tools import BaseTool
 from langchain_community.tools.powerbi.prompt import (

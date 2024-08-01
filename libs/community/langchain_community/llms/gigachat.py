@@ -329,4 +329,5 @@ class GigaChat(_BaseGigaChat, BaseLLM):
                 yield GenerationChunk(text=content)
                 if run_manager:
                     await run_manager.on_llm_new_token(content)
+
     model_config = ConfigDict(extra="allow")

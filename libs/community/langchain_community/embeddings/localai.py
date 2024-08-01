@@ -16,12 +16,12 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import BaseModel, ConfigDict, Field, root_validator
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,

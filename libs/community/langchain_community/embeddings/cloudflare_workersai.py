@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 DEFAULT_MODEL_NAME = "@cf/baai/bge-base-en-v1.5"
 
@@ -42,6 +42,7 @@ class CloudflareWorkersAIEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         self.headers = {"Authorization": f"Bearer {self.api_token}"}
+
     model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

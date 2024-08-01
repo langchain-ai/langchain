@@ -5,8 +5,8 @@ from typing import Dict, Iterator, List, Optional
 from urllib.parse import quote
 
 import requests
-from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, root_validator
 
 MERRIAM_WEBSTER_API_URL = (
     "https://www.dictionaryapi.com/api/v3/references/collegiate/json"

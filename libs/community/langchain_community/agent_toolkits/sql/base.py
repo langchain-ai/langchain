@@ -33,8 +33,8 @@ if TYPE_CHECKING:
     from langchain_core.callbacks import BaseCallbackManager
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.tools import BaseTool
-    from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 
+    from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
     from langchain_community.utilities.sql_database import SQLDatabase
 
 
@@ -112,10 +112,6 @@ def create_sql_agent(
 
     """  # noqa: E501
 
-    from langchain_community.tools.sql_database.tool import (
-        InfoSQLDatabaseTool,
-        ListSQLDatabaseTool,
-    )
     from langchain.agents import (
         create_openai_functions_agent,
         create_openai_tools_agent,
@@ -128,6 +124,11 @@ def create_sql_agent(
         RunnableMultiActionAgent,
     )
     from langchain.agents.agent_types import AgentType
+
+    from langchain_community.tools.sql_database.tool import (
+        InfoSQLDatabaseTool,
+        ListSQLDatabaseTool,
+    )
 
     if toolkit is None and db is None:
         raise ValueError(

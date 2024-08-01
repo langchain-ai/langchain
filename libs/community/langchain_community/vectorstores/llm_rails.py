@@ -11,8 +11,8 @@ from typing import Any, Iterable, List, Optional, Tuple
 import requests
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from pydantic import Field
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from pydantic import Field
 
 
 class LLMRails(VectorStore):

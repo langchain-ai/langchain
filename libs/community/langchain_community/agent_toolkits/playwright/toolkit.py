@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Type, cast
 
-from pydantic import ConfigDict, root_validator
 from langchain_core.tools import BaseTool, BaseToolkit
+from pydantic import ConfigDict, root_validator
 
 from langchain_community.tools.playwright.base import (
     BaseBrowserTool,

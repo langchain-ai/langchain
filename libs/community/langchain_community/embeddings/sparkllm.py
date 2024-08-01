@@ -12,9 +12,9 @@ from wsgiref.handlers import format_date_time
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from numpy import ndarray
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, root_validator
 
 # SparkLLMTextEmbeddings is an embedding model provided by iFLYTEK Co., Ltd.. (https://iflytek.com/en/).
 

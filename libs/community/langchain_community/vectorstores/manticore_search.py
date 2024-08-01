@@ -55,7 +55,10 @@ class ManticoreSearchSettings(BaseSettings):
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="manticore_", env_file_encoding="utf-8")
+
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="manticore_", env_file_encoding="utf-8"
+    )
 
 
 class ManticoreSearch(VectorStore):

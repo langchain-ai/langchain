@@ -15,9 +15,9 @@ from typing import (
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from pydantic import ConfigDict
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import pre_init
+from pydantic import ConfigDict
 
 from langchain_community.vectorstores.qdrant import Qdrant, QdrantException
 

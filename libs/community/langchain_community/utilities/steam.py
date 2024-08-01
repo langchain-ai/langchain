@@ -2,7 +2,7 @@
 
 from typing import Any, List
 
-from pydantic import ConfigDict, BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, root_validator
 
 
 class SteamWebAPIWrapper(BaseModel):

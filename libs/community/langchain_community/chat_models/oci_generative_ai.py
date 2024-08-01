@@ -219,6 +219,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         print(response.response_metadata)
 
     """  # noqa: E501
+
     model_config = ConfigDict(extra="forbid")
 
     @property

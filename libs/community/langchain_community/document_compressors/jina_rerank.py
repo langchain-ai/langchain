@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 import requests
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-from pydantic import ConfigDict, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict, root_validator
 
 JINA_API_URL: str = "https://api.jina.ai/v1/rerank"
 

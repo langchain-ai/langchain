@@ -11,8 +11,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from pydantic import ConfigDict, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict, Field, root_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 

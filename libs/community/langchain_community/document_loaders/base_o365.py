@@ -10,18 +10,14 @@ from enum import Enum
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
-from pydantic import (
-    BaseModel,
-    Field,
-    FilePath,
-    SecretStr)
+from pydantic import BaseModel, Field, FilePath, SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders.file_system import (
     FileSystemBlobLoader,
 )
 from langchain_community.document_loaders.blob_loaders.schema import Blob
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 if TYPE_CHECKING:
     from O365 import Account
@@ -35,7 +31,9 @@ CHUNK_SIZE = 1024 * 1024 * 5
 class _O365Settings(BaseSettings):
     client_id: str = Field(..., validation_alias="O365_CLIENT_ID")
     client_secret: SecretStr = Field(..., validation_alias="O365_CLIENT_SECRET")
-    model_config = SettingsConfigDict(env_prefix="", case_sentive=False, env_file=".env")
+    model_config = SettingsConfigDict(
+        env_prefix="", case_sentive=False, env_file=".env"
+    )
 
 
 class _O365TokenStorage(BaseSettings):

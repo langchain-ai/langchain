@@ -22,8 +22,8 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from pydantic import Field
 from langchain_core.runnables import Runnable
+from pydantic import Field
 
 from langchain_community.chains.graph_qa.cypher_utils import (
     CypherQueryCorrector,

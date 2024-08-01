@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Union
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class TakeoffEmbeddingException(Exception):
@@ -23,6 +23,7 @@ class Device(str, Enum):
 
 class ReaderConfig(BaseModel):
     """Configuration for the reader to be deployed in Takeoff."""
+
     model_config = ConfigDict(protected_namespaces=())
 
     model_name: str

@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import ConfigDict, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import ConfigDict, Field, SecretStr, root_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -65,7 +65,6 @@ class Banana(LLM):
         )
         values["banana_api_key"] = banana_api_key
         return values
-
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

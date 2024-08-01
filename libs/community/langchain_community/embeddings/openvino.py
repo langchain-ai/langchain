@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
@@ -253,6 +253,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             all_embeddings = all_embeddings[0]
 
         return all_embeddings
+
     model_config = ConfigDict(extra="forbid")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

@@ -7,8 +7,8 @@ from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVa
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import ConfigDict
 from langchain_core.utils import pre_init
+from pydantic import ConfigDict
 
 from langchain_community.llms.utils import enforce_stop_tokens
 

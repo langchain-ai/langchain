@@ -5,8 +5,8 @@ from functools import cached_property
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel
 from langchain_core.utils import pre_init
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

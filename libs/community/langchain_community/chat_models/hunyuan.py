@@ -24,13 +24,13 @@ from langchain_core.messages import (
     HumanMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from pydantic import ConfigDict, Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import ConfigDict, Field, SecretStr, root_validator
 
 logger = logging.getLogger(__name__)
 

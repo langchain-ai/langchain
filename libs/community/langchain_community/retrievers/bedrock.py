@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from pydantic import BaseModel, root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import BaseModel, root_validator
 
 
 class VectorSearchConfig(BaseModel, extra="allow"):  # type: ignore[call-arg]

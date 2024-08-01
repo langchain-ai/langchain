@@ -1,5 +1,5 @@
 import os
-from typing import Literal, Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Literal, Mapping, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -30,13 +30,15 @@ class Predibase(LLM):
     adapter_id: Optional[str] = None
     adapter_version: Optional[int] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    default_options_for_generation: Literal[{
-            "max_new_tokens": 256,
-            "temperature": 0.1,
-        }] = {
+    default_options_for_generation: Literal[
+        {
             "max_new_tokens": 256,
             "temperature": 0.1,
         }
+    ] = {
+        "max_new_tokens": 256,
+        "temperature": 0.1,
+    }
 
     @property
     def _llm_type(self) -> str:

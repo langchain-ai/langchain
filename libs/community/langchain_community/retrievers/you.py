@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -37,3 +37,6 @@ class YouRetriever(BaseRetriever, YouSearchAPIWrapper):
             query, run_manager=run_manager.get_child(), **kwargs
         )
         return results
+
+
+YouRetriever.model_rebuild()

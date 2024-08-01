@@ -22,8 +22,8 @@ from langchain_core.output_parsers import (
     BaseOutputParser,
 )
 from langchain_core.prompts import BasePromptTemplate
-from pydantic import BaseModel
 from langchain_core.runnables import Runnable
+from pydantic import BaseModel
 
 from langchain_community.output_parsers.ernie_functions import (
     JsonOutputFunctionsParser,

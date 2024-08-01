@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from pydantic import ConfigDict, BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, root_validator
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -109,6 +109,7 @@ class Moonshot(MoonshotCommon, LLM):
 
             moonshot = Moonshot(model="moonshot-v1-8k")
     """
+
     model_config = ConfigDict(populate_by_name=True)
 
     def _call(

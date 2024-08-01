@@ -8,8 +8,8 @@ import aiohttp
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, root_validator
 
 __all__ = ["InfinityEmbeddings"]
 

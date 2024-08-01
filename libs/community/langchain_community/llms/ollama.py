@@ -378,6 +378,7 @@ class Ollama(BaseLLM, _OllamaCommon):
             from langchain_community.llms import Ollama
             ollama = Ollama(model="llama2")
     """
+
     model_config = ConfigDict(extra="forbid")
 
     @property

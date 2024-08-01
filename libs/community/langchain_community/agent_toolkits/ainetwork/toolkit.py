@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Literal, Optional
 
-from pydantic import ConfigDict, root_validator
 from langchain_core.tools import BaseToolkit
+from pydantic import ConfigDict, root_validator
 
 from langchain_community.tools import BaseTool
 from langchain_community.tools.ainetwork.app import AINAppOps
@@ -52,6 +52,7 @@ class AINetworkToolkit(BaseToolkit):
         if not values.get("interface"):
             values["interface"] = authenticate(network=values.get("network", "testnet"))
         return values
+
     model_config = ConfigDict(validate_default=True, arbitrary_types_allowed=True)
 
     def get_tools(self) -> List[BaseTool]:

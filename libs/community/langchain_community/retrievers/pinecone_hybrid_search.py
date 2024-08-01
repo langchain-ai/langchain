@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import pre_init
+from pydantic import ConfigDict
 
 
 def hash_text(text: str) -> str:

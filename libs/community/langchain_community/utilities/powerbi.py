@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 import aiohttp
 import requests
 from aiohttp import ServerTimeoutError
-from pydantic import ConfigDict, BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, ConfigDict, Field, root_validator, validator
 from requests.exceptions import Timeout
 
 logger = logging.getLogger(__name__)

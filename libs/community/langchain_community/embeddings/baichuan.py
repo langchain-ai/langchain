@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, root_validator
 from requests import RequestException
 
 BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"

@@ -16,8 +16,8 @@ from typing import (
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, SecretStr, root_validator
 from tenacity import (
     before_sleep_log,
     retry,

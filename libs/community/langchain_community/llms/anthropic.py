@@ -20,7 +20,6 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
-from pydantic import ConfigDict, Field, SecretStr, root_validator
 from langchain_core.utils import (
     check_package_version,
     get_from_dict_or_env,
@@ -28,6 +27,7 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
+from pydantic import ConfigDict, Field, SecretStr, root_validator
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -179,6 +179,7 @@ class Anthropic(LLM, _AnthropicCommon):
             prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
             response = model.invoke(prompt)
     """
+
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
     @pre_init

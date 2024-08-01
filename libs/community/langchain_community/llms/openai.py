@@ -28,13 +28,13 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from pydantic import ConfigDict, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import ConfigDict, Field, root_validator
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -257,6 +257,7 @@ class BaseOpenAI(BaseLLM):
             )
             return OpenAIChat(**data)
         return super().__new__(cls)
+
     model_config = ConfigDict(populate_by_name=True)
 
     @root_validator(pre=True)

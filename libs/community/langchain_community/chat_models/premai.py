@@ -35,12 +35,13 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.utils import get_from_dict_or_env, pre_init
 from pydantic import (
-    ConfigDict, BaseModel,
+    BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
 )
-from langchain_core.utils import get_from_dict_or_env, pre_init
 
 if TYPE_CHECKING:
     from premai.api.chat_completions.v1_chat_completions_create import (
@@ -239,7 +240,9 @@ class ChatPremAI(BaseChatModel, BaseModel):
     """Whether to stream the responses or not."""
 
     client: Any = None
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        extra="forbid", populate_by_name=True, arbitrary_types_allowed=True
+    )
 
     @pre_init
     def validate_environments(cls, values: Dict) -> Dict:

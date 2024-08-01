@@ -5,8 +5,8 @@ from uuid import uuid4
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from pydantic import ConfigDict, root_validator
 from langchain_core.retrievers import BaseRetriever
+from pydantic import ConfigDict, root_validator
 
 
 class WeaviateHybridSearchRetriever(BaseRetriever):
@@ -64,6 +64,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
                 values["client"].schema.create_class(class_obj)
 
         return values
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # added text_key

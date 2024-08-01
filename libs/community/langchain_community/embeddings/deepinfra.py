@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from pydantic import ConfigDict, BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
+from pydantic import BaseModel, ConfigDict
 
 DEFAULT_MODEL_ID = "sentence-transformers/clip-ViT-B-32"
 MAX_BATCH_SIZE = 1024

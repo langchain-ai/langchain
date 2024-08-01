@@ -4,8 +4,8 @@ import json
 from typing import Dict, Optional
 
 import requests
-from pydantic import ConfigDict, BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, root_validator
 
 GOLDEN_BASE_URL = "https://golden.com"
 GOLDEN_TIMEOUT = 5000

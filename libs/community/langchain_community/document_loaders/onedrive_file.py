@@ -4,7 +4,7 @@ import tempfile
 from typing import TYPE_CHECKING, List
 
 from langchain_core.documents import Document
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
