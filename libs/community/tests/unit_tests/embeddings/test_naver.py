@@ -5,7 +5,7 @@ from typing import cast
 
 from pydantic.v1 import SecretStr
 
-from langchain_naver.embeddings import ClovaXEmbeddings
+from langchain_community.embeddings.naver import ClovaXEmbeddings
 
 os.environ["NCP_CLOVASTUDIO_API_KEY"] = "test_api_key"
 os.environ["NCP_APIGW_API_KEY"] = "test_gw_key"

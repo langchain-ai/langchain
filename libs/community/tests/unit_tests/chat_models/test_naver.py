@@ -1,8 +1,8 @@
 """Test chat model integration."""
 import json
 import os
-from typing import Any, cast, Generator, AsyncGenerator, Dict
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any, cast, Generator, AsyncGenerator
+from unittest.mock import patch
 
 import pytest
 from httpx_sse import ServerSentEvent
@@ -16,7 +16,7 @@ from langchain_core.messages import (
 )
 
 from langchain_naver import ChatClovaX
-from langchain_naver.chat_models import (
+from langchain_community.chat_models.naver import (
     _convert_naver_chat_message_to_message,
     _convert_message_to_naver_chat_message
 )
