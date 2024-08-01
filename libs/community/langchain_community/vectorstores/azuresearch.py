@@ -368,25 +368,28 @@ class AzureSearch(VectorStore):
 
     def __del__(self):
         # Close the sync client
-        self.client.close()
+        if hasattr(self, "client") and self.client:
+            self.client.close()
 
         # Close the async client
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Schedule the coroutine to close the async client
-                loop.create_task(self.async_client.close())
-            else:
-                # If no event loop is running, run the coroutine directly
-                loop.run_until_complete(self.async_client.close())
-        except RuntimeError:
-            # Handle the case where there's no event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        if hasattr(self, "async_client") and self.async_client:
+            # Check if we're in an existing event loop
             try:
-                loop.run_until_complete(self.async_client.close())
-            finally:
-                loop.close()
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Schedule the coroutine to close the async client
+                    loop.create_task(self.async_client.close())
+                else:
+                    # If no event loop is running, run the coroutine directly
+                    loop.run_until_complete(self.async_client.close())
+            except RuntimeError:
+                # Handle the case where there's no event loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(self.async_client.close())
+                finally:
+                    loop.close()
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
