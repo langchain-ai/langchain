@@ -9,10 +9,6 @@ from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
 
-if TYPE_CHECKING:
-    from langchainhub import Client
-
-
 def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Any:
     try:
         from langsmith import Client
