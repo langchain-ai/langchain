@@ -50,7 +50,7 @@ from langchain_core.tools import (
     tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain_core.utils.pydantic import _create_subset_model
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
@@ -1743,11 +1743,12 @@ def test__is_message_content_type(obj: Any, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
 
 
-@pytest.mark.parametrize("pydantic_version", ["v1", "v2"])
-def test__get_all_basemodel_annotations(pydantic_version: str) -> None:
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
+@pytest.mark.parametrize("use_v1_namespace", [True, False])
+def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
-    if pydantic_version == "v1":
+    if use_v1_namespace:
 
         class ModelA(BaseModel, Generic[A]):
             a: A
@@ -1755,6 +1756,28 @@ def test__get_all_basemodel_annotations(pydantic_version: str) -> None:
 
         class ModelA(BaseModelProper, Generic[A]):  # type: ignore[no-redef]
             a: A
+
+    class ModelB(ModelA[str]):
+        b: Annotated[ModelA[Dict[str, Any]], "foo"]
+
+    class Mixin(object):
+        def foo(self) -> str:
+            return "foo"
+
+    class ModelC(Mixin, ModelB):
+        c: dict
+
+    expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"], "c": dict}
+    actual = _get_all_basemodel_annotations(ModelC)
+    assert actual == expected
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Testing pydantic v1.")
+def test__get_all_basemodel_annotations_v1() -> None:
+    A = TypeVar("A")
+
+    class ModelA(BaseModel, Generic[A]):
+        a: A
 
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
