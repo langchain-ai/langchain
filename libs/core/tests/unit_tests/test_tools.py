@@ -8,11 +8,22 @@ import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import pytest
 from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -1734,17 +1745,19 @@ def test__is_message_content_type(obj: Any, expected: bool) -> None:
 
 @pytest.mark.parametrize("pydantic_version", ["v1", "v2"])
 def test__get_all_basemodel_annotations(pydantic_version: str) -> None:
+    A = TypeVar("A")
+
     if pydantic_version == "v1":
 
-        class ModelA(BaseModel):
-            a: str
+        class ModelA(BaseModel, Generic[A]):
+            a: A
     else:
 
-        class ModelA(BaseModelProper):
-            a: str
+        class ModelA(BaseModelProper, Generic[A]):
+            a: A
 
-    class ModelB(ModelA):
-        b: Annotated[ModelA, "foo"]
+    class ModelB(ModelA[str]):
+        b: Annotated[ModelA[Dict[str, Any]], "foo"]
 
     class Mixin(object):
         def foo(self) -> str:
@@ -1753,6 +1766,6 @@ def test__get_all_basemodel_annotations(pydantic_version: str) -> None:
     class ModelC(Mixin, ModelB):
         c: dict
 
-    expected = {"a": str, "b": Annotated[ModelA, "foo"], "c": dict}
+    expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"], "c": dict}
     actual = _get_all_basemodel_annotations(ModelC)
     assert actual == expected

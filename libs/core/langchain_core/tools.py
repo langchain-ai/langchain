@@ -45,7 +45,7 @@ from typing import (
     get_type_hints,
 )
 
-from typing_extensions import Annotated, cast, get_args, get_origin
+from typing_extensions import Annotated, TypeVar, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -88,11 +88,15 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
-from langchain_core.utils.function_calling import _parse_google_docstring
+from langchain_core.utils.function_calling import (
+    _parse_google_docstring,
+    _py_38_safe_origin,
+)
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
     is_basemodel_subclass,
+    is_pydantic_v1_subclass,
 )
 
 FILTERED_ARGS = ("run_manager", "callbacks")
@@ -1654,7 +1658,27 @@ def _filter_schema_args(func: Callable) -> List[str]:
 
 def _get_all_basemodel_annotations(cls: TypeBaseModel) -> Dict[str, Type]:
     annotations: Dict[str, Type] = {}
-    for parent in inspect.getmro(cls):
-        if is_basemodel_subclass(parent):
-            annotations = {**getattr(parent, "__annotations__", {}), **annotations}
+    for name, param in inspect.signature(cls).parameters.items():
+        annotations[name] = param.annotation
+    if is_pydantic_v1_subclass(cls):
+        # Check for unresolved generics
+        for parent in getattr(cls, "__orig_bases__", tuple()):
+            parent_origin = get_origin(parent)
+            generic_type_vars = getattr(parent_origin, "__parameters__", tuple())
+            generic_map = {
+                type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
+            }
+            for field, ann in parent_origin.__annotations__.items():
+                annotations[field] = _replace_type_vars(ann, generic_map)
     return annotations
+
+
+def _replace_type_vars(type_: Type, generic_map: Dict[TypeVar, Type]) -> Type:
+    if isinstance(type_, TypeVar):
+        return generic_map[type_]
+    elif args := get_args(type_):
+        origin = _py_38_safe_origin(type_)
+        new_args = [_replace_type_vars(arg, generic_map) for arg in args]
+        return origin[new_args]
+    else:
+        return type_
