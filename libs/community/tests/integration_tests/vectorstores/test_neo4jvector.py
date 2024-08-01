@@ -75,7 +75,7 @@ class FakeHuggingFaceEmbeddings(FakeEmbeddings):
         embeddings = [[float(1.0)] * 9 + [float(i)] for i in range(len(texts))]
         return self.mock_encode(embeddings)
 
-    def mock_encode(self, all_embeddings):
+    def mock_encode(self, all_embeddings: List[List[float]]) -> List[List[float]]:
         """Mock of HuggingFace's SentenceTransformer#encode
         method.  Mimics raising IndexError if all_embeddings is empty"""
         # See https://github.com/UKPLab/sentence-transformers/blob/master/sentence_transformers/SentenceTransformer.py#L629
