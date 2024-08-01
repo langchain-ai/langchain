@@ -6,25 +6,64 @@ from langchain_core.utils import get_from_dict_or_env
 
 
 class ZhipuAIEmbeddings(BaseModel, Embeddings):
-    """ZhipuAI embedding models.
+    """ZhipuAI embedding model integration.
 
-    To use, you should have the ``zhipuai`` python package installed, and the
-    environment variable ``ZHIPU_API_KEY`` set with your API key or pass it
-    as a named parameter to the constructor.
+    Setup:
 
-    More instructions about ZhipuAi Embeddings, you can get it
-    from  https://open.bigmodel.cn/dev/api#vector
+        To use, you should have the ``zhipuai`` python package installed, and the
+        environment variable ``ZHIPU_API_KEY`` set with your API KEY.
 
-    Example:
+        More instructions about ZhipuAi Embeddings, you can get it
+        from  https://open.bigmodel.cn/dev/api#vector
+
+        .. code-block:: bash
+
+            pip install -U zhipuai
+            export ZHIPU_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: Optional[str]
+            Name of ZhipuAI model to use.
+        api_key: str
+            Automatically inferred from env var `ZHIPU_API_KEY` if not provided.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+
         .. code-block:: python
 
             from langchain_community.embeddings import ZhipuAIEmbeddings
-            embeddings = ZhipuAIEmbeddings(api_key="your-api-key")
-            text = "This is a test query."
-            query_result = embeddings.embed_query(text)
-            # texts = ["This is a test query1.", "This is a test query2."]
-            # query_result = embeddings.embed_query(texts)
-    """
+
+            embed = ZhipuAIEmbeddings(
+                model="embedding-2",
+                # api_key="...",
+            )
+
+    Embed single text:
+        .. code-block:: python
+
+            input_text = "The meaning of life is 42"
+            embed.embed_query(input_text)
+
+        .. code-block:: python
+
+            [-0.003832892, 0.049372625, -0.035413884, -0.019301128, 0.0068899863, 0.01248398, -0.022153955, 0.006623926, 0.00778216, 0.009558191, ...]
+
+
+    Embed multiple text:
+        .. code-block:: python
+
+            input_texts = ["This is a test query1.", "This is a test query2."]
+            embed.embed_documents(input_texts)
+
+        .. code-block:: python
+
+            [
+                [0.0083934665, 0.037985895, -0.06684559, -0.039616987, 0.015481004, -0.023952313, ...],
+                [-0.02713102, -0.005470169, 0.032321047, 0.042484466, 0.023290444, 0.02170547, ...]
+            ]
+    """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = Field(default="embedding-2")
