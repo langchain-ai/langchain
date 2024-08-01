@@ -333,7 +333,7 @@ class Runnable(Generic[Input, Output], ABC):
 
                 print(runnable.get_input_jsonschema())
 
-        ..note:: JSON Schema has different versions
+        .. note:: JSON Schema has different versions
 
             The JSON schema is currently formatted according to pydnatic.v1
             which returns draft 7 JSON schema.
@@ -402,7 +402,7 @@ class Runnable(Generic[Input, Output], ABC):
 
                 print(runnable.get_input_jsonschema())
 
-        ..note:: JSON Schema has different versions
+        .. note:: JSON Schema has different versions
 
             The JSON schema is currently formatted according to pydnatic.v1
             which returns draft 7 JSON schema.
@@ -475,7 +475,7 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A JSON schema that represents the output of the Runnable.
 
-        ..note:: JSON Schema has different versions
+        .. note:: JSON Schema has different versions
 
             The JSON schema is currently formatted according to pydnatic.v1
             which returns draft 7 JSON schema.
