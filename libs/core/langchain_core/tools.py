@@ -42,6 +42,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    _GenericAlias,
     get_type_hints,
 )
 
@@ -97,6 +98,7 @@ from langchain_core.utils.pydantic import (
     _create_subset_model,
     is_basemodel_subclass,
     is_pydantic_v1_subclass,
+    is_pydantic_v2_subclass,
 )
 
 FILTERED_ARGS = ("run_manager", "callbacks")
@@ -1656,13 +1658,23 @@ def _filter_schema_args(func: Callable) -> List[str]:
     return filter_args
 
 
-def _get_all_basemodel_annotations(cls: TypeBaseModel) -> Dict[str, Type]:
+def _get_all_basemodel_annotations(
+    cls: Union[TypeBaseModel, _GenericAlias],
+) -> Dict[str, Type]:
     annotations: Dict[str, Type] = {}
-    for name, param in inspect.signature(cls).parameters.items():
+    if isinstance(cls, type):
+        type_ = cls
+        orig_bases = getattr(cls, "__orig_bases__", tuple())
+    else:
+        type_ = get_origin(cls)
+        orig_bases = (cls,)
+
+    for name, param in inspect.signature(type_).parameters.items():
         annotations[name] = param.annotation
-    if isinstance(cls, type) and is_pydantic_v1_subclass(cls):
+
+    if not (isinstance(cls, type) and is_pydantic_v2_subclass(cls)):
         # Check for unresolved generics
-        for parent in getattr(cls, "__orig_bases__", tuple()):
+        for parent in orig_bases:
             parent_origin = get_origin(parent)
             if not parent_origin:
                 continue
@@ -1672,18 +1684,21 @@ def _get_all_basemodel_annotations(cls: TypeBaseModel) -> Dict[str, Type]:
             }
             for field in getattr(parent_origin, "__annotations__", dict()):
                 annotations[field] = _replace_type_vars(annotations[field], generic_map)
-    for field in annotations:
-        if isinstance(annotations[field], TypeVar):
-            annotations[field] = annotations[field].__bound__ or Any
-    return annotations
+    return {k: _replace_type_vars(v) for k, v in annotations.items()}
 
 
-def _replace_type_vars(type_: Type, generic_map: Dict[TypeVar, Type]) -> Type:
+def _replace_type_vars(
+    type_: Type, generic_map: Optional[Dict[TypeVar, Type]] = None
+) -> Type:
+    generic_map = generic_map or {}
     if isinstance(type_, TypeVar):
-        return generic_map[type_]
+        if type_ in generic_map:
+            return generic_map[type_]
+        else:
+            return type_.__bound__ or Any
     elif args := get_args(type_):
-        origin = _py_38_safe_origin(type_)
-        new_args = [_replace_type_vars(arg, generic_map) for arg in args]
+        origin = _py_38_safe_origin(get_origin(type_))
+        new_args = tuple(_replace_type_vars(arg, generic_map) for arg in args)
         return origin[new_args]
     else:
         return type_
