@@ -366,7 +366,7 @@ class AzureSearch(VectorStore):
         self._user_agent = user_agent
         self._cors_options = cors_options
 
-    def __del__(self):
+    def __del__(self) -> None:
         # Close the sync client
         if hasattr(self, "client") and self.client:
             self.client.close()
