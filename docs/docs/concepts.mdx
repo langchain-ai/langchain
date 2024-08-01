@@ -500,7 +500,8 @@ For specifics on how to use retrievers, see the [relevant how-to guides here](/d
 
 ### Key-value stores
 
-For some techniques, such as [indexing and retrieval with multiple vectors per document](/docs/how_to/multi_vector/), having some sort of key-value (KV) storage is helpful.
+For some techniques, such as [indexing and retrieval with multiple vectors per document](/docs/how_to/multi_vector/) or
+[caching embeddings](/docs/how_to/caching_embeddings/), having a form of key-value (KV) storage is helpful.
 
 LangChain includes a [`BaseStore`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) interface,
 which allows for storage of arbitrary data. However, LangChain components that require KV-storage accept a
