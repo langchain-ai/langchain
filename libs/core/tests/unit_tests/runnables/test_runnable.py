@@ -5402,7 +5402,7 @@ def test_listeners() -> None:
 
     shared_state = {}
     value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
-    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "two"}, "outputs": {"name": "two"}}
 
     def on_start(run: Run) -> None:
         shared_state[run.id] = {"inputs": run.inputs}
@@ -5432,7 +5432,7 @@ async def test_listeners_async() -> None:
 
     shared_state = {}
     value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
-    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "two"}, "outputs": {"name": "two"}}
 
     def on_start(run: Run) -> None:
         shared_state[run.id] = {"inputs": run.inputs}
