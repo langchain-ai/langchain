@@ -523,21 +523,19 @@ class AzureSearch(VectorStore):
             ids.append(key)
             # Upload data in batches
             if len(data) == MAX_UPLOAD_BATCH_SIZE:
-                async with self.async_client as async_client:
-                    response = await async_client.upload_documents(documents=data)
-                    # Check if all documents were successfully uploaded
-                    if not all(r.succeeded for r in response):
-                        raise LangChainException(response)
-                    # Reset data
-                    data = []
+                response = await self.async_client.upload_documents(documents=data)
+                # Check if all documents were successfully uploaded
+                if not all(r.succeeded for r in response):
+                    raise LangChainException(response)
+                # Reset data
+                data = []
 
         # Considering case where data is an exact multiple of batch-size entries
         if len(data) == 0:
             return ids
 
         # Upload data to index
-        async with self.async_client as async_client:
-            response = await async_client.upload_documents(documents=data)
+        response = await self.async_client.upload_documents(documents=data)
         # Check if all documents were successfully uploaded
         if all(r.succeeded for r in response):
             return ids
@@ -571,9 +569,8 @@ class AzureSearch(VectorStore):
             False otherwise.
         """
         if ids:
-            async with self.async_client as async_client:
-                res = await async_client.delete_documents([{"id": i} for i in ids])
-                return len(res) > 0
+            res = await self.async_client.delete_documents([{"id": i} for i in ids])
+            return len(res) > 0
         else:
             return False
 
