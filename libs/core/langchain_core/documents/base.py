@@ -15,7 +15,7 @@ PathLike = Union[str, PurePath]
 class BaseMedia(Serializable):
     """Use to represent media content.
 
-    Media objets can be used to represent raw data, such as text or binary data.
+    Media objects can be used to represent raw data, such as text or binary data.
 
     LangChain Media objects allow associating metadata and an optional identifier
     with the content.
