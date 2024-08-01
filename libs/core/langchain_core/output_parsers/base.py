@@ -166,10 +166,10 @@ class BaseOutputParser(
         Raises:
             TypeError: If the class doesn't have an inferable OutputType.
         """
-        for base in self.__class__.__bases__:
+        for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
-                if "args" in metadata:
+                if "args" in metadata and len(metadata["args"]) > 0:
                     return metadata["args"][0]
 
         raise TypeError(
