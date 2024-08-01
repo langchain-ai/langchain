@@ -275,8 +275,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/toolkits",
+            type: "doc",
+            id: "integrations/toolkits/index",
           },
         },
         {
