@@ -9,9 +9,7 @@ They're meant to be used in the following way:
 3) Stop using the utility code
 """
 
-from typing import Any, Type
-
-from pydantic import BaseModel
+from typing import Any
 
 
 # Function to replace allOf with $ref
@@ -67,7 +65,7 @@ def _remove_bad_none_defaults(schema: Any) -> None:
             _remove_bad_none_defaults(item)
 
 
-def _schema(obj: Type[BaseModel]) -> dict:
+def _schema(obj: Any) -> dict:
     """Get the schema of a pydantic model in the pydantic v1 style.
 
     This will attempt to map the schema as close as possible to the pydantic v1 schema.
