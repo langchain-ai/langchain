@@ -82,6 +82,7 @@ def push(
 def pull(
     owner_repo_commit: str,
     *,
+    include_model: bool = False,
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
 ) -> Any:
@@ -98,7 +99,7 @@ def pull(
 
     # Then it's langsmith
     if hasattr(client, "pull_prompt"):
-        response = client.pull_prompt(owner_repo_commit)
+        response = client.pull_prompt(owner_repo_commit, include_model=include_model)
         return response
 
     # Then it's langchainhub
