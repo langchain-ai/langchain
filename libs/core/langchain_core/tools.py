@@ -286,7 +286,15 @@ def create_schema_from_function(
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+
     sig = inspect.signature(func)
+
+    # Let's ignore `self` and `cls` arguments for class and instance methods
+    if func.__qualname__ and "." in func.__qualname__:
+        # Then it likely belongs in a class namespace
+        in_class = True
+    else:
+        in_class = False
 
     has_args = False
     has_kwargs = False
@@ -298,8 +306,18 @@ def create_schema_from_function(
             has_kwargs = True
 
     inferred_model = validated.model  # type: ignore
-    filter_args = filter_args if filter_args is not None else FILTERED_ARGS
-    for arg in filter_args:
+
+    if filter_args:
+        filter_args_ = filter_args
+    else:
+        # Handle classmethods and instance methods
+        existing_params = list(sig.parameters.keys())
+        if existing_params and existing_params[0] in ("self", "cls") and in_class:
+            filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
+        else:
+            filter_args_ = FILTERED_ARGS
+
+    for arg in filter_args_:
         if arg in inferred_model.__fields__:
             del inferred_model.__fields__[arg]
 
@@ -320,7 +338,7 @@ def create_schema_from_function(
 
         if field == "v__duplicate_kwargs":  # Internal pydantic field
             continue
-        if field not in filter_args:
+        if field not in filter_args_:
             valid_properties.append(field)
 
     return _create_subset_model(
