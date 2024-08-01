@@ -30,7 +30,7 @@ from langchain_core.runnables import (
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
@@ -461,7 +461,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b"},
             "name": "my_model",
@@ -470,7 +470,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b"},
             "name": "my_model",
@@ -479,7 +479,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b"},
             "name": "my_model",
@@ -488,7 +488,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"output": AIMessageChunk(content="hello world!", id=AnyStr())},
+            "data": {"output": _AnyIdAIMessageChunk(content="hello world!")},
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
             "name": "my_model",
@@ -526,7 +526,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -535,7 +535,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -544,7 +544,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -560,9 +560,7 @@ async def test_astream_events_from_model() -> None:
                         [
                             {
                                 "generation_info": None,
-                                "message": AIMessage(
-                                    content="hello world!", id=AnyStr()
-                                ),
+                                "message": _AnyIdAIMessage(content="hello world!"),
                                 "text": "hello world!",
                                 "type": "ChatGeneration",
                             }
@@ -580,7 +578,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessage(content="hello world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessage(content="hello world!")},
             "event": "on_chain_stream",
             "metadata": {},
             "name": "i_dont_stream",
@@ -589,7 +587,7 @@ async def test_astream_events_from_model() -> None:
             "tags": [],
         },
         {
-            "data": {"output": AIMessage(content="hello world!", id=AnyStr())},
+            "data": {"output": _AnyIdAIMessage(content="hello world!")},
             "event": "on_chain_end",
             "metadata": {},
             "name": "i_dont_stream",
@@ -627,7 +625,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -636,7 +634,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -645,7 +643,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -661,9 +659,7 @@ async def test_astream_events_from_model() -> None:
                         [
                             {
                                 "generation_info": None,
-                                "message": AIMessage(
-                                    content="hello world!", id=AnyStr()
-                                ),
+                                "message": _AnyIdAIMessage(content="hello world!"),
                                 "text": "hello world!",
                                 "type": "ChatGeneration",
                             }
@@ -681,7 +677,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessage(content="hello world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessage(content="hello world!")},
             "event": "on_chain_stream",
             "metadata": {},
             "name": "ai_dont_stream",
@@ -690,7 +686,7 @@ async def test_astream_events_from_model() -> None:
             "tags": [],
         },
         {
-            "data": {"output": AIMessage(content="hello world!", id=AnyStr())},
+            "data": {"output": _AnyIdAIMessage(content="hello world!")},
             "event": "on_chain_end",
             "metadata": {},
             "name": "ai_dont_stream",
