@@ -9,7 +9,11 @@ from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
 
-def _get_client(api_key: Optional[str] = None, api_url: Optional[str] = None, ) -> Any:
+
+def _get_client(
+    api_key: Optional[str] = None,
+    api_url: Optional[str] = None,
+) -> Any:
     try:
         from langsmith import Client
     except ImportError:
