@@ -1,7 +1,9 @@
-from typing import Any, Dict, List, Optional
 import logging
+from typing import Any, Dict, List, Optional
+
 import requests
 from langchain_core.documents import Document
+
 from langchain_community.document_loaders.base import BaseLoader
 
 NOTION_BASE_URL = "https://api.notion.com/v1"
@@ -37,12 +39,12 @@ class NotionDBLoader(BaseLoader):
     """
 
     def __init__(
-            self,
-            integration_token: str,
-            database_id: str,
-            request_timeout_sec: Optional[int] = 10,
-            *,
-            filter_object: Optional[Dict[str, Any]] = None
+        self,
+        integration_token: str,
+        database_id: str,
+        request_timeout_sec: Optional[int] = 10,
+        *,
+        filter_object: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize with parameters."""
         if not integration_token:
@@ -69,7 +71,7 @@ class NotionDBLoader(BaseLoader):
         return list(self.load_page(page_summary) for page_summary in page_summaries)
 
     def _retrieve_page_summaries(
-            self, query_dict: Dict[str, Any] = {"page_size": 100}
+        self, query_dict: Dict[str, Any] = {"page_size": 100}
     ) -> List[Dict[str, Any]]:
         """
         Get all the pages from a Notion database
@@ -139,7 +141,9 @@ class NotionDBLoader(BaseLoader):
                 for item in prop_data["people"]:
                     name = item.get("name")
                     if not name:
-                        logger.warning(f"Missing 'name' in 'people' property for page {page_id}")
+                        logger.warning(
+                            f"Missing 'name' in 'people' property for page {page_id}"
+                        )
                     value.append(name)
             elif prop_type == "date":
                 value = prop_data["date"] if prop_data["date"] else None
@@ -203,12 +207,12 @@ class NotionDBLoader(BaseLoader):
         return "\n".join(result_lines_arr)
 
     def _request(
-            self,
-            url: str,
-            method: str = "GET",
-            query_dict: Dict[str, Any] = {},
-            *,
-            filter_object: Optional[Dict[str, Any]] = None,
+        self,
+        url: str,
+        method: str = "GET",
+        query_dict: Dict[str, Any] = {},
+        *,
+        filter_object: Optional[Dict[str, Any]] = None,
     ) -> Any:
         json_payload = query_dict.copy()
         if filter_object:
