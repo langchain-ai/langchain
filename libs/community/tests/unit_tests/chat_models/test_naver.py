@@ -15,7 +15,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 
-from langchain_naver import ChatClovaX
+from langchain_community.chat_models import ChatClovaX
 from langchain_community.chat_models.naver import (
     _convert_naver_chat_message_to_message,
     _convert_message_to_naver_chat_message
@@ -172,7 +172,7 @@ class MyCustomHandler(BaseCallbackHandler):
         self.last_token = token
 
 
-@patch("langchain_naver.chat_models.ChatClovaX._completion_with_retry", new=mock_chat_stream)
+@patch("langchain_community.chat_models.ChatClovaX._completion_with_retry", new=mock_chat_stream)
 def test_stream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatClovaX(callbacks=[callback])
@@ -180,7 +180,7 @@ def test_stream_with_callback() -> None:
         assert callback.last_token == token.content
 
 
-@patch("langchain_naver.chat_models.ChatClovaX._acompletion_with_retry", new=mock_chat_astream)
+@patch("langchain_community.chat_models.ChatClovaX._acompletion_with_retry", new=mock_chat_astream)
 async def test_astream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatClovaX(callbacks=[callback])

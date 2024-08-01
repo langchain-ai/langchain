@@ -121,6 +121,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.mlx import (
         ChatMLX,
     )
+    from langchain_community.chat_models.naver import (
+        ChatClovaX,
+    )
     from langchain_community.chat_models.oci_generative_ai import (
         ChatOCIGenAI,  # noqa: F401
     )
@@ -177,6 +180,7 @@ __all__ = [
     "ChatAnthropic",
     "ChatAnyscale",
     "ChatBaichuan",
+    "ChatClovaX",
     "ChatCohere",
     "ChatCoze",
     "ChatOctoAI",
@@ -232,6 +236,7 @@ _module_lookup = {
     "ChatAnthropic": "langchain_community.chat_models.anthropic",
     "ChatAnyscale": "langchain_community.chat_models.anyscale",
     "ChatBaichuan": "langchain_community.chat_models.baichuan",
+    "ChatClovaX": "langchain_community.chat_models.naver",
     "ChatCohere": "langchain_community.chat_models.cohere",
     "ChatCoze": "langchain_community.chat_models.coze",
     "ChatDatabricks": "langchain_community.chat_models.databricks",

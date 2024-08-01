@@ -1,5 +1,5 @@
 """Test ChatNaver chat model."""
-from langchain_community.chat_models.naver import ChatClovaX
+from langchain_community.chat_models import ChatClovaX
 
 
 def test_stream() -> None:

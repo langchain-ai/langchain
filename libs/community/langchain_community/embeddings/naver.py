@@ -45,7 +45,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain_naver import ClovaXEmbeddings
+            from langchain_community import ClovaXEmbeddings
 
             model = ClovaXEmbeddings(model="clir-emb-dolphin")
             output = embedding.embed_documents(documents)
