@@ -66,6 +66,7 @@ class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
         """Return simple embeddings."""
         return [float(1.0)] * (OS_TOKEN_COUNT - 1) + [float(texts.index(text) + 1)]
 
+
 class FakeHuggingFaceEmbeddings(FakeEmbeddings):
     """Fake embeddings designed to produce similar restrictions as huggingface."""
 
@@ -562,6 +563,7 @@ def test_neo4jvector_from_existing_graph() -> None:
 
     drop_vector_indexes(existing)
 
+
 def test_neo4jvector_from_existing_graph_with_hugging_face() -> None:
     """Test that throw hugging face error when documents already embedded."""
     Neo4jVector.from_documents(
@@ -578,12 +580,13 @@ def test_neo4jvector_from_existing_graph_with_hugging_face() -> None:
             password=password,
             text_node_properties=["name"],
             embedding_node_property="embedding",
-            node_label='Test',
-            index_name="vector"
+            node_label="Test",
+            index_name="vector",
         )
         drop_vector_indexes(existing)
     except Exception as e:
         assert False, f"'Neo4jVector.from_existing_graph' raised an exception {e}"
+
 
 def test_neo4jvector_from_existing_graph_hybrid() -> None:
     """Test from_existing_graph hybrid with a single property."""
