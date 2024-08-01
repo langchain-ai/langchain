@@ -1521,7 +1521,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         name="some_tool", description="some description", args_schema=pydantic_model
     )
 
-    assert _schema(tool.get_input_schema()) == {
+    assert tool.get_input_schema().schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1531,7 +1531,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         "type": "object",
     }
 
-    assert _schema(tool.tool_call_schema) == {
+    assert tool.tool_call_schema.schema() == {
         "description": "some description",
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1567,7 +1567,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     tool = SomeTool(name="some_tool", description="some description")
 
-    assert _schema(tool.get_input_schema()) == {
+    assert tool.get_input_schema().schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1577,7 +1577,7 @@ def test_args_schema_explicitly_typed() -> None:
         "type": "object",
     }
 
-    assert _schema(tool.tool_call_schema) == {
+    assert tool.tool_call_schema.schema() == {
         "description": "some description",
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -1605,7 +1605,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    assert _schema(foo_tool.args_schema) == {
+    assert foo_tool.args_schema.schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -1615,7 +1615,7 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
         "type": "object",
     }
 
-    assert _schema(foo_tool.get_input_schema()) == {
+    assert foo_tool.get_input_schema().schema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
