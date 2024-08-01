@@ -24,7 +24,7 @@ class LineListOutputParser(BaseOutputParser[List[str]]):
 
     def parse(self, text: str) -> List[str]:
         lines = text.strip().split("\n")
-        return lines
+        return list(filter(None, lines))  # Remove empty lines
 
 
 # Default prompt

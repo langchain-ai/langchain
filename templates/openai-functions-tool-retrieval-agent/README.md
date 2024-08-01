@@ -4,7 +4,7 @@ The novel idea introduced in this template is the idea of using retrieval to sel
 
 In this template we will create a somewhat contrived example. We will have one legitimate tool (search) and then 99 fake tools which are just nonsense. We will then add a step in the prompt template that takes the user input and retrieves tool relevant to the query.
 
-This template is based on [this Agent How-To](https://python.langchain.com/docs/modules/agents/how_to/custom_agent_with_tool_retrieval).
+This template is based on [this Agent How-To](https://python.langchain.com/v0.2/docs/templates/openai-functions-agent/).
 
 ## Environment Setup
 

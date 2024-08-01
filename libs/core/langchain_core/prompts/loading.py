@@ -18,7 +18,17 @@ logger = logging.getLogger(__name__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
-    """Load prompt from Config Dict."""
+    """Load prompt from Config Dict.
+
+    Args:
+        config: Dict containing the prompt configuration.
+
+    Returns:
+        A PromptTemplate object.
+
+    Raises:
+        ValueError: If the prompt type is not supported.
+    """
     if "_type" not in config:
         logger.warning("No `_type` key found, defaulting to `prompt`.")
     config_type = config.pop("_type", "prompt")

@@ -62,7 +62,21 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Start a trace for an LLM run."""
+        """Start a trace for an LLM run.
+
+        Args:
+            serialized: The serialized model.
+            messages: The messages to start the chat with.
+            run_id: The run ID.
+            tags: The tags for the run. Defaults to None.
+            parent_run_id: The parent run ID. Defaults to None.
+            metadata: The metadata for the run. Defaults to None.
+            name: The name of the run.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         chat_model_run = self._create_chat_model_run(
             serialized=serialized,
             messages=messages,
@@ -89,7 +103,21 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Start a trace for an LLM run."""
+        """Start a trace for an LLM run.
+
+        Args:
+            serialized: The serialized model.
+            prompts: The prompts to start the LLM with.
+            run_id: The run ID.
+            tags: The tags for the run. Defaults to None.
+            parent_run_id: The parent run ID. Defaults to None.
+            metadata: The metadata for the run. Defaults to None.
+            name: The name of the run.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         llm_run = self._create_llm_run(
             serialized=serialized,
             prompts=prompts,
@@ -113,7 +141,18 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Run:
-        """Run on new LLM token. Only available when streaming is enabled."""
+        """Run on new LLM token. Only available when streaming is enabled.
+
+        Args:
+            token: The token.
+            chunk: The chunk. Defaults to None.
+            run_id: The run ID.
+            parent_run_id: The parent run ID. Defaults to None.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         # "chat_model" is only used for the experimental new streaming_events format.
         # This change should not affect any existing tracers.
         llm_run = self._llm_run_with_token_event(
@@ -133,6 +172,16 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
+        """Run on retry.
+
+        Args:
+            retry_state: The retry state.
+            run_id: The run ID.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         llm_run = self._llm_run_with_retry_event(
             retry_state=retry_state,
             run_id=run_id,
@@ -140,7 +189,16 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         return llm_run
 
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
-        """End a trace for an LLM run."""
+        """End a trace for an LLM run.
+
+        Args:
+            response: The response.
+            run_id: The run ID.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         # "chat_model" is only used for the experimental new streaming_events format.
         # This change should not affect any existing tracers.
         llm_run = self._complete_llm_run(
@@ -158,7 +216,16 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
-        """Handle an error for an LLM run."""
+        """Handle an error for an LLM run.
+
+        Args:
+            error: The error.
+            run_id: The run ID.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         # "chat_model" is only used for the experimental new streaming_events format.
         # This change should not affect any existing tracers.
         llm_run = self._errored_llm_run(
@@ -182,7 +249,22 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Start a trace for a chain run."""
+        """Start a trace for a chain run.
+
+        Args:
+            serialized: The serialized chain.
+            inputs: The inputs for the chain.
+            run_id: The run ID.
+            tags: The tags for the run. Defaults to None.
+            parent_run_id: The parent run ID. Defaults to None.
+            metadata: The metadata for the run. Defaults to None.
+            run_type: The type of the run. Defaults to None.
+            name: The name of the run.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         chain_run = self._create_chain_run(
             serialized=serialized,
             inputs=inputs,
@@ -206,7 +288,17 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Run:
-        """End a trace for a chain run."""
+        """End a trace for a chain run.
+
+        Args:
+            outputs: The outputs for the chain.
+            run_id: The run ID.
+            inputs: The inputs for the chain. Defaults to None.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         chain_run = self._complete_chain_run(
             outputs=outputs,
             run_id=run_id,
@@ -225,7 +317,17 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
-        """Handle an error for a chain run."""
+        """Handle an error for a chain run.
+
+        Args:
+            error: The error.
+            inputs: The inputs for the chain. Defaults to None.
+            run_id: The run ID.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         chain_run = self._errored_chain_run(
             error=error,
             run_id=run_id,
@@ -249,7 +351,22 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Run:
-        """Start a trace for a tool run."""
+        """Start a trace for a tool run.
+
+        Args:
+            serialized: The serialized tool.
+            input_str: The input string.
+            run_id: The run ID.
+            tags: The tags for the run. Defaults to None.
+            parent_run_id: The parent run ID. Defaults to None.
+            metadata: The metadata for the run. Defaults to None.
+            name: The name of the run.
+            inputs: The inputs for the tool.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         tool_run = self._create_tool_run(
             serialized=serialized,
             input_str=input_str,
@@ -266,7 +383,16 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         return tool_run
 
     def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> Run:
-        """End a trace for a tool run."""
+        """End a trace for a tool run.
+
+        Args:
+            output: The output for the tool.
+            run_id: The run ID.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         tool_run = self._complete_tool_run(
             output=output,
             run_id=run_id,
@@ -283,7 +409,16 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
-        """Handle an error for a tool run."""
+        """Handle an error for a tool run.
+
+        Args:
+            error: The error.
+            run_id: The run ID.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         tool_run = self._errored_tool_run(
             error=error,
             run_id=run_id,
@@ -304,7 +439,21 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Run when Retriever starts running."""
+        """Run when the Retriever starts running.
+
+        Args:
+            serialized: The serialized retriever.
+            query: The query.
+            run_id: The run ID.
+            parent_run_id: The parent run ID. Defaults to None.
+            tags: The tags for the run. Defaults to None.
+            metadata: The metadata for the run. Defaults to None.
+            name: The name of the run.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         retrieval_run = self._create_retrieval_run(
             serialized=serialized,
             query=query,
@@ -326,7 +475,16 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
-        """Run when Retriever errors."""
+        """Run when Retriever errors.
+
+        Args:
+            error: The error.
+            run_id: The run ID.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         retrieval_run = self._errored_retrieval_run(
             error=error,
             run_id=run_id,
@@ -339,7 +497,16 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     def on_retriever_end(
         self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
     ) -> Run:
-        """Run when Retriever ends running."""
+        """Run when the Retriever ends running.
+
+        Args:
+            documents: The documents.
+            run_id: The run ID.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The run.
+        """
         retrieval_run = self._complete_retrieval_run(
             documents=documents,
             run_id=run_id,

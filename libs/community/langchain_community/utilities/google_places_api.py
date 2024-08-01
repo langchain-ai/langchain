@@ -43,7 +43,7 @@ class GooglePlacesAPIWrapper(BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key is in your environment variable."""
         gplaces_api_key = get_from_dict_or_env(

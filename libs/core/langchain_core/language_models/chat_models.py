@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import json
 import uuid
 import warnings
 from abc import ABC, abstractmethod
@@ -54,38 +55,56 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    root_validator,
+)
+from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
-    from langchain_core.pydantic_v1 import BaseModel
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
 
 
 class LangSmithParams(TypedDict, total=False):
+    """LangSmith parameters for tracing."""
+
     ls_provider: str
+    """Provider of the model."""
     ls_model_name: str
+    """Name of the model."""
     ls_model_type: Literal["chat"]
+    """Type of the model. Should be 'chat'."""
     ls_temperature: Optional[float]
+    """Temperature for generation."""
     ls_max_tokens: Optional[int]
+    """Max tokens for generation."""
     ls_stop: Optional[List[str]]
+    """Stop words for generation."""
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
-    """Generate from a stream."""
+    """Generate from a stream.
 
-    generation: Optional[ChatGenerationChunk] = None
-    for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
+    Args:
+        stream: Iterator of ChatGenerationChunk.
+
+    Returns:
+        ChatResult: Chat result.
+    """
+
+    generation = next(stream, None)
+    if generation:
+        generation += list(stream)
+    if generation is None:
+        raise ValueError("No generations found in stream.")
     return ChatResult(
         generations=[
             ChatGeneration(
@@ -99,23 +118,17 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
 async def agenerate_from_stream(
     stream: AsyncIterator[ChatGenerationChunk],
 ) -> ChatResult:
-    """Async generate from a stream."""
+    """Async generate from a stream.
 
-    generation: Optional[ChatGenerationChunk] = None
-    async for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=message_chunk_to_message(generation.message),
-                generation_info=generation.generation_info,
-            )
-        ]
-    )
+    Args:
+        stream: Iterator of ChatGenerationChunk.
+
+    Returns:
+        ChatResult: Chat result.
+    """
+
+    chunks = [chunk async for chunk in stream]
+    return await run_in_executor(None, generate_from_stream, iter(chunks))
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
@@ -198,9 +211,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
 
+    rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
+    """An optional rate limiter to use for limiting the number of requests."""
+
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
-        """Raise deprecation warning if callback_manager is used."""
+        """Raise deprecation warning if callback_manager is used.
+
+        Args:
+            values (Dict): Values to validate.
+
+        Returns:
+            Dict: Validated values.
+
+        Raises:
+            DeprecationWarning: If callback_manager is used.
+        """
         if values.get("callback_manager") is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
@@ -319,6 +345,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 batch_size=1,
             )
             generation: Optional[ChatGenerationChunk] = None
+
+            if self.rate_limiter:
+                self.rate_limiter.acquire(blocking=True)
+
             try:
                 for chunk in self._stream(messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
@@ -390,6 +420,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             batch_size=1,
         )
 
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+
         generation: Optional[ChatGenerationChunk] = None
         try:
             async for chunk in self._astream(
@@ -449,7 +482,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.is_lc_serializable():
             params = {**kwargs, **{"stop": stop}}
             param_string = str(sorted([(k, v) for k, v in params.items()]))
-            llm_string = dumps(self)
+            # This code is not super efficient as it goes back and forth between
+            # json and dict.
+            serialized_repr = dumpd(self)
+            _cleanup_llm_representation(serialized_repr, 1)
+            llm_string = json.dumps(serialized_repr, sort_keys=True)
             return llm_string + "---" + param_string
         else:
             params = self._get_invocation_params(stop=stop, **kwargs)
@@ -716,6 +753,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
+
+        # Apply the rate limiter after checking the cache, since
+        # we usually don't want to rate limit cache lookups, but
+        # we do want to rate limit API requests.
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
         if type(self)._stream != BaseChatModel._stream and kwargs.pop(
@@ -796,6 +840,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
+
+        # Apply the rate limiter after checking the cache, since
+        # we usually don't want to rate limit cache lookups, but
+        # we do want to rate limit API requests.
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
         if (
@@ -1141,7 +1192,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 "with_structured_output is not implemented for this model."
             )
         llm = self.bind_tools([schema], tool_choice="any")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
@@ -1216,3 +1267,25 @@ def _gen_info_and_msg_metadata(
         **(generation.generation_info or {}),
         **generation.message.response_metadata,
     }
+
+
+def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
+    """Remove non-serializable objects from a serialized object."""
+    if depth > 100:  # Don't cooperate for pathological cases
+        return
+
+    if not isinstance(serialized, dict):
+        return
+
+    if "type" in serialized and serialized["type"] == "not_implemented":
+        if "repr" in serialized:
+            del serialized["repr"]
+
+    if "graph" in serialized:
+        del serialized["graph"]
+
+    if "kwargs" in serialized:
+        kwargs = serialized["kwargs"]
+
+        for value in kwargs.values():
+            _cleanup_llm_representation(value, depth + 1)
