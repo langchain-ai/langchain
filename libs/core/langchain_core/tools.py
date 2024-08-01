@@ -1660,28 +1660,43 @@ def _filter_schema_args(func: Callable) -> List[str]:
 def _get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
 ) -> Dict[str, Type]:
+    # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
         annotations: Dict[str, Type] = {}
         for name, param in inspect.signature(cls).parameters.items():
             annotations[name] = param.annotation
         orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
+    # cls has subscript specifying some type for a TypeVar: cls = FooBar[int]
     else:
         annotations = _get_all_basemodel_annotations(
             get_origin(cls), default_to_bound=False
         )
         orig_bases = (cls,)
 
+    # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
     if not (isinstance(cls, type) and is_pydantic_v2_subclass(cls)):
-        # Check for unresolved generics
+        # if cls = FooBar inherits from Baz[str], orig_bases will contain Baz[str]
+        # if cls = FooBar inherits from Baz, orig_bases will contain Baz
+        # if cls = FooBar[int], orig_bases will contain FooBar[int]
         for parent in orig_bases:
+            # if class = FooBar inherits from Baz, parent = Baz
             if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
                 annotations.update(
                     _get_all_basemodel_annotations(parent, default_to_bound=False)
                 )
                 continue
+
             parent_origin = get_origin(parent)
+
+            # if class = FooBar inherits from non-pydantic class
             if not parent_origin:
                 continue
+
+            # if class = FooBar inherits from Baz[str]:
+            # parent = Baz[str],
+            # parent_origin = Baz,
+            # generic_type_vars = (type vars in Baz)
+            # generic_map = {type var in Baz: str}
             generic_type_vars: Tuple = getattr(parent_origin, "__parameters__", tuple())
             generic_map = {
                 type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
