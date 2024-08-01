@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import itertools
 import json
@@ -364,6 +365,28 @@ class AzureSearch(VectorStore):
         self._default_fields = default_fields
         self._user_agent = user_agent
         self._cors_options = cors_options
+
+    def __del__(self):
+        # Close the sync client
+        self.client.close()
+
+        # Close the async client
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Schedule the coroutine to close the async client
+                loop.create_task(self.async_client.close())
+            else:
+                # If no event loop is running, run the coroutine directly
+                loop.run_until_complete(self.async_client.close())
+        except RuntimeError:
+            # Handle the case where there's no event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_until_complete(self.async_client.close())
+            finally:
+                loop.close()
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
