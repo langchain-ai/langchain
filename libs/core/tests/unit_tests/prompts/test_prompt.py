@@ -73,7 +73,7 @@ def test_mustache_prompt_from_template() -> None:
     assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"foo": {"title": "Foo", "type": "string", "default": None}},
+        "properties": {"foo": {"title": "Foo", "type": "string"}},
     }
 
     # Multiple input variables.
@@ -85,8 +85,8 @@ def test_mustache_prompt_from_template() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {
-            "bar": {"title": "Bar", "type": "string", "default": None},
-            "foo": {"title": "Foo", "type": "string", "default": None},
+            "bar": {"title": "Bar", "type": "string"},
+            "foo": {"title": "Foo", "type": "string"},
         },
     }
 
@@ -99,8 +99,8 @@ def test_mustache_prompt_from_template() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {
-            "bar": {"title": "Bar", "type": "string", "default": None},
-            "foo": {"title": "Foo", "type": "string", "default": None},
+            "bar": {"title": "Bar", "type": "string"},
+            "foo": {"title": "Foo", "type": "string"},
         },
     }
 
@@ -123,8 +123,8 @@ def test_mustache_prompt_from_template() -> None:
                 "title": "obj",
                 "type": "object",
                 "properties": {
-                    "foo": {"title": "Foo", "type": "string", "default": None},
-                    "bar": {"title": "Bar", "type": "string", "default": None},
+                    "foo": {"title": "Foo", "type": "string"},
+                    "bar": {"title": "Bar", "type": "string"},
                 },
             }
         },
