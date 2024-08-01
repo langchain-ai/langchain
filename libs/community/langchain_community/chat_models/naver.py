@@ -132,7 +132,7 @@ class ChatClovaX(BaseChatModel):
 
             from langchain_core.messages import HumanMessage
 
-            from langchain_naver import ChatClovaX
+            from langchain_community import ChatClovaX
 
             model = ChatClovaX()
             model.invoke([HumanMessage(content="Come up with 10 names for a song about parrots.")])

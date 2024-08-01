@@ -1,5 +1,5 @@
 """Test Naver embeddings."""
-from langchain_community.embeddings.naver import ClovaXEmbeddings
+from langchain_community.embeddings import ClovaXEmbeddings
 
 
 def test_langchain_naver_embedding_documents() -> None:
