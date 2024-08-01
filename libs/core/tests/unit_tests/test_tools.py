@@ -1741,7 +1741,7 @@ def test__get_all_basemodel_annotations() -> None:
 
     class Mixin(object):
         def foo(self) -> str:
-            pass
+            return "foo"
 
     class ModelC(Mixin, ModelB):
         c: dict

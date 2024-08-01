@@ -1653,7 +1653,7 @@ def _filter_schema_args(func: Callable) -> List[str]:
 
 
 def _get_all_basemodel_annotations(cls: TypeBaseModel) -> Dict[str, Type]:
-    annotations = {}
+    annotations: Dict[str, Type] = {}
     for parent in inspect.getmro(cls):
         if is_basemodel_subclass(parent):
             annotations = {**getattr(parent, "__annotations__", {}), **annotations}
