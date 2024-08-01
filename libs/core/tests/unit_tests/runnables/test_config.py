@@ -1,6 +1,7 @@
 import json
+import uuid
 from contextvars import copy_context
-from typing import Any, cast
+from typing import Any, Dict, cast
 
 import pytest
 
@@ -19,7 +20,8 @@ from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
 
 def test_ensure_config() -> None:
-    arg: RunnableConfig = {
+    run_id = uuid.uuid4()
+    arg: Dict = {
         "something": "else",
         "metadata": {"foo": "bar"},
         "configurable": {"baz": "qux"},
@@ -27,7 +29,7 @@ def test_ensure_config() -> None:
         "tags": ["tag1", "tag2"],
         "max_concurrency": 1,
         "recursion_limit": 100,
-        "run_id": "123",
+        "run_id": run_id,
         "run_name": "test",
     }
     arg_str = json.dumps({**arg, "callbacks": []})
@@ -41,7 +43,7 @@ def test_ensure_config() -> None:
             "tags": ["tag3", "tag4"],
         },
     )
-    config = ctx.run(ensure_config, arg)
+    config = ctx.run(ensure_config, cast(RunnableConfig, arg))
     assert (
         len(arg["callbacks"]) == 1
     ), "ensure_config should not modify the original config"
@@ -59,7 +61,7 @@ def test_ensure_config() -> None:
         "recursion_limit": 100,
         "configurable": {"baz": "qux", "something": "else"},
         "max_concurrency": 1,
-        "run_id": "123",
+        "run_id": run_id,
         "run_name": "test",
     }
 

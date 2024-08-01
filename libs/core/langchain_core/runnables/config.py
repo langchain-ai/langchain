@@ -169,19 +169,25 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     )
     if var_config := var_child_runnable_config.get():
         empty.update(
-            {
-                k: v.copy() if k in COPIABLE_KEYS else v
-                for k, v in var_config.items()
-                if v is not None
-            }
+            cast(
+                RunnableConfig,
+                {
+                    k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
+                    for k, v in var_config.items()
+                    if v is not None
+                },
+            )
         )
     if config is not None:
         empty.update(
-            {
-                k: v.copy() if k in COPIABLE_KEYS else v
-                for k, v in config.items()
-                if v is not None and k in CONFIG_KEYS
-            }
+            cast(
+                RunnableConfig,
+                {
+                    k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
+                    for k, v in config.items()
+                    if v is not None and k in CONFIG_KEYS
+                },
+            )
         )
     if config is not None:
         for k, v in config.items():
@@ -377,8 +383,8 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
             elif key == "recursion_limit":
                 if config["recursion_limit"] != DEFAULT_RECURSION_LIMIT:
                     base["recursion_limit"] = config["recursion_limit"]
-            elif key in COPIABLE_KEYS and config[key] is not None:
-                base[key] = config[key].copy()
+            elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
+                base[key] = config[key].copy()  # type: ignore[literal-required]
             else:
                 base[key] = config[key] or base.get(key)  # type: ignore
     return base
