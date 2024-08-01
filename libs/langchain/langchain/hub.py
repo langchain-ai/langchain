@@ -15,14 +15,14 @@ def _get_client(
     api_url: Optional[str] = None,
 ) -> Any:
     try:
-        from langsmith import Client
+        from langsmith import Client as LangSmithClient
 
-        return Client(api_url, api_key=api_key)
+        return LangSmithClient(api_url, api_key=api_key)
     except ImportError:
         try:
-            from langchainhub import Client
+            from langchainhub import Client as LangChainHubClient
 
-            return Client(api_url, api_key=api_key)
+            return LangChainHubClient(api_url, api_key=api_key)
         except ImportError as e:
             raise ImportError(
                 "Could not import langsmith or langchainhub (deprecated),"
