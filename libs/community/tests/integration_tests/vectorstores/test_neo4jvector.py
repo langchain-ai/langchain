@@ -78,7 +78,7 @@ class FakeHuggingFaceEmbeddings(FakeEmbeddings):
         """Mock of HuggingFace's SentenceTransformer#encode
         method.  Mimics raising IndexError if all_embeddings is empty"""
         # See https://github.com/UKPLab/sentence-transformers/blob/master/sentence_transformers/SentenceTransformer.py#L629
-        if type(all_embeddings[0]) is float:
+        if isinstance(all_embeddings[0], float):
             return all_embeddings
         else:
             return all_embeddings
