@@ -16,14 +16,25 @@ For specifics on how to use retrievers, see the [relevant how-to guides here](/d
 
 Note that all [vector stores](/docs/concepts/#vector-stores) can be [cast to retrievers](/docs/how_to/vectorstore_retriever/).
 Refer to the vector store [integration docs](/docs/integrations/vectorstores/) for available vector stores.
-This table lists custom retrievers, implemented via subclassing [BaseRetriever](/docs/how_to/custom_retriever/).
+This page lists custom retrievers, implemented via subclassing [BaseRetriever](/docs/how_to/custom_retriever/).
 
+## Bring-your-own documents
 
-| Retriever | Bring your own docs | Self-host | Cloud offering | Package |
-|-----------|---------------------|-----------|----------------|---------|
-| [AmazonKnowledgeBasesRetriever](/docs/integrations/retrievers/bedrock) | ✅ | ❌ | ✅ | [langchain_aws](https://api.python.langchain.com/en/latest/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html) |
-| [AzureAISearchRetriever](/docs/integrations/retrievers/azure_ai_search) | ✅ | ❌ | ✅ | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html) |
-| [ElasticsearchRetriever](/docs/integrations/retrievers/elasticsearch_retriever) | ✅ | ✅ | ✅ | [langchain_elasticsearch](https://api.python.langchain.com/en/latest/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html) |
-| [MilvusCollectionHybridSearchRetriever](/docs/integrations/retrievers/milvus_hybrid_search) | ✅ | ❌ | ✅ | [langchain_milvus](https://api.python.langchain.com/en/latest/retrievers/langchain_milvus.retrievers.milvus_hybrid_search.MilvusCollectionHybridSearchRetriever.html) |
-| [TavilySearchAPIRetriever](/docs/integrations/retrievers/tavily) | ❌ | ❌ | ❌ | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html) |
-| [VertexAISearchRetriever](/docs/integrations/retrievers/google_vertex_ai_search) | ✅ | ❌ | ✅ | [langchain_google_community](https://api.python.langchain.com/en/latest/vertex_ai_search/langchain_google_community.vertex_ai_search.VertexAISearchRetriever.html) |
+The below retrievers allow you to index and search a custom corpus of documents.
+
+| Retriever | Self-host | Cloud offering | Package |
+|-----------|-----------|----------------|---------|
+| [AmazonKnowledgeBasesRetriever](/docs/integrations/retrievers/bedrock) | ❌ | ✅ | [langchain_aws](https://api.python.langchain.com/en/latest/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html) |
+| [AzureAISearchRetriever](/docs/integrations/retrievers/azure_ai_search) | ❌ | ✅ | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html) |
+| [ElasticsearchRetriever](/docs/integrations/retrievers/elasticsearch_retriever) | ✅ | ✅ | [langchain_elasticsearch](https://api.python.langchain.com/en/latest/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html) |
+| [MilvusCollectionHybridSearchRetriever](/docs/integrations/retrievers/milvus_hybrid_search) | ✅ | ❌ | [langchain_milvus](https://api.python.langchain.com/en/latest/retrievers/langchain_milvus.retrievers.milvus_hybrid_search.MilvusCollectionHybridSearchRetriever.html) |
+| [VertexAISearchRetriever](/docs/integrations/retrievers/google_vertex_ai_search) | ❌ | ✅ | [langchain_google_community](https://api.python.langchain.com/en/latest/vertex_ai_search/langchain_google_community.vertex_ai_search.VertexAISearchRetriever.html) |
+
+## External index
+
+The below retrievers will search over an external index (e.g., constructed from Internet data or similar).
+
+| Retriever | Source | Package |
+|-----------|--------|---------|
+| [ArxivRetriever](/docs/integrations/retrievers/arxiv) | Scholarly articles on [arxiv.org](https://arxiv.org/) | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.arxiv.ArxivRetriever.html) |
+| [TavilySearchAPIRetriever](/docs/integrations/retrievers/tavily) | Internet search | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html) |
