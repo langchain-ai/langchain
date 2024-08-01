@@ -313,12 +313,14 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     "metadata": {"title": "Metadata", "type": "object"},
                     "id": {
                         "title": "Id",
-                        "type": "string",
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
                     },
                     "type": {
                         "title": "Type",
                         "enum": ["Document"],
                         "default": "Document",
+                        "const": "Document",
                         "type": "string",
                     },
                 },
