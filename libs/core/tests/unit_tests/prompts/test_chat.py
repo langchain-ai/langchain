@@ -795,14 +795,15 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     prompt_all_required = ChatPromptTemplate.from_messages(
         messages=[MessagesPlaceholder("history", optional=False), ("user", "${input}")]
     )
-    prompt_all_required.input_variables == {"input"}
-    prompt_all_required.optional_variables == {"history"}
+    assert set(prompt_all_required.input_variables) == {"input", "history"}
+    assert prompt_all_required.optional_variables == []
     with pytest.raises(ValidationError):
         prompt_all_required.input_schema(input="")
     assert _schema(prompt_all_required.input_schema) == snapshot(name="required")
-    prompt_optional = ChatPromptTemplate.from_messages(
+    prompt_optional = ChatPromptTemplate(
         messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
     )
-    prompt_optional.input_variables == {"history", "input"}
+    # input variables only lists required variables
+    assert set(prompt_optional.input_variables) == {"input"}
     prompt_optional.input_schema(input="")  # won't raise error
-    _schema(prompt_optional.input_schema) == snapshot(name="partial")
+    assert _schema(prompt_optional.input_schema) == snapshot(name="partial")
