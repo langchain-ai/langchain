@@ -45,7 +45,7 @@ from typing import (
     get_type_hints,
 )
 
-from typing_extensions import Annotated, TypeVar, cast, get_args, get_origin
+from typing_extensions import Annotated, Generic, TypeVar, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -1660,16 +1660,21 @@ def _get_all_basemodel_annotations(cls: TypeBaseModel) -> Dict[str, Type]:
     annotations: Dict[str, Type] = {}
     for name, param in inspect.signature(cls).parameters.items():
         annotations[name] = param.annotation
-    if is_pydantic_v1_subclass(cls):
+    if isinstance(cls, type) and is_pydantic_v1_subclass(cls):
         # Check for unresolved generics
         for parent in getattr(cls, "__orig_bases__", tuple()):
             parent_origin = get_origin(parent)
+            if not parent_origin:
+                continue
             generic_type_vars: Tuple = getattr(parent_origin, "__parameters__", tuple())
             generic_map = {
                 type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
             }
-            for field, ann in parent_origin.__annotations__.items():
-                annotations[field] = _replace_type_vars(ann, generic_map)
+            for field in getattr(parent_origin, "__annotations__", dict()):
+                annotations[field] = _replace_type_vars(annotations[field], generic_map)
+    for field in annotations:
+        if isinstance(annotations[field], TypeVar):
+            annotations[field] = annotations[field].__bound__ or Any
     return annotations
 
 

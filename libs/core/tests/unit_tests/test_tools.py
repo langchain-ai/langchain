@@ -1771,6 +1771,23 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     actual = _get_all_basemodel_annotations(ModelC)
     assert actual == expected
 
+    expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"]}
+    actual = _get_all_basemodel_annotations(ModelB)
+    assert actual == expected
+
+    expected = {"a": Any}
+    actual = _get_all_basemodel_annotations(ModelA)
+    assert actual == expected
+
+    expected = {"a": int}
+    actual = _get_all_basemodel_annotations(ModelA[int])
+    assert actual == expected
+
+    D = TypeVar("D", bound=Union[str, int])
+
+    class ModelD(ModelC, Generic[D]):
+        d: Optional[D]
+
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Testing pydantic v1.")
 def test__get_all_basemodel_annotations_v1() -> None:
