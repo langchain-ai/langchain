@@ -45,9 +45,9 @@ class Epsilla(VectorStore):
             epsilla = Epsilla(client, embeddings, db_path, db_name)
     """
 
-    _LANGCHAIN_DEFAULT_DB_NAME = "langchain_store"
-    _LANGCHAIN_DEFAULT_DB_PATH = "/tmp/langchain-epsilla"
-    _LANGCHAIN_DEFAULT_TABLE_NAME = "langchain_collection"
+    _LANGCHAIN_DEFAULT_DB_NAME: str = "langchain_store"
+    _LANGCHAIN_DEFAULT_DB_PATH: str = "/tmp/langchain-epsilla"
+    _LANGCHAIN_DEFAULT_TABLE_NAME: str = "langchain_collection"
 
     def __init__(
         self,

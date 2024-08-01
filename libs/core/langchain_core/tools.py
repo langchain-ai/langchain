@@ -88,6 +88,7 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
+from langchain_core.utils.function_calling import _parse_google_docstring
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
@@ -119,6 +120,7 @@ def _get_filtered_args(
     func: Callable,
     *,
     filter_args: Sequence[str],
+    include_injected: bool = True,
 ) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
@@ -126,7 +128,9 @@ def _get_filtered_args(
     return {
         k: schema[k]
         for i, (k, param) in enumerate(valid_keys.items())
-        if k not in filter_args and (i > 0 or param.name not in ("self", "cls"))
+        if k not in filter_args
+        and (i > 0 or param.name not in ("self", "cls"))
+        and (include_injected or not _is_injected_arg_type(param.annotation))
     }
 
 
@@ -137,50 +141,12 @@ def _parse_python_function_docstring(
 
     Assumes the function docstring follows Google Python style guide.
     """
-    invalid_docstring_error = ValueError(
-        f"Found invalid Google-Style docstring for {function}."
-    )
     docstring = inspect.getdoc(function)
-    if docstring:
-        docstring_blocks = docstring.split("\n\n")
-        if error_on_invalid_docstring:
-            filtered_annotations = {
-                arg for arg in annotations if arg not in (*(FILTERED_ARGS), "return")
-            }
-            if filtered_annotations and (
-                len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
-            ):
-                raise (invalid_docstring_error)
-        descriptors = []
-        args_block = None
-        past_descriptors = False
-        for block in docstring_blocks:
-            if block.startswith("Args:"):
-                args_block = block
-                break
-            elif block.startswith("Returns:") or block.startswith("Example:"):
-                # Don't break in case Args come after
-                past_descriptors = True
-            elif not past_descriptors:
-                descriptors.append(block)
-            else:
-                continue
-        description = " ".join(descriptors)
-    else:
-        if error_on_invalid_docstring:
-            raise (invalid_docstring_error)
-        description = ""
-        args_block = None
-    arg_descriptions = {}
-    if args_block:
-        arg = None
-        for line in args_block.split("\n")[1:]:
-            if ":" in line:
-                arg, desc = line.split(":", maxsplit=1)
-                arg_descriptions[arg.strip()] = desc.strip()
-            elif arg:
-                arg_descriptions[arg.strip()] += " " + line.strip()
-    return description, arg_descriptions
+    return _parse_google_docstring(
+        docstring,
+        list(annotations),
+        error_on_invalid_docstring=error_on_invalid_docstring,
+    )
 
 
 def _validate_docstring_args_against_annotations(
@@ -246,6 +212,7 @@ def create_schema_from_function(
     filter_args: Optional[Sequence[str]] = None,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
+    include_injected: bool = True,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
 
@@ -259,6 +226,9 @@ def create_schema_from_function(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to False.
+        include_injected: Whether to include injected arguments in the schema.
+            Defaults to True, since we want to include them in the schema
+            when *validating* tool inputs.
 
     Returns:
         A pydantic model with the same arguments as the function.
@@ -276,7 +246,9 @@ def create_schema_from_function(
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
+    valid_properties = _get_filtered_args(
+        inferred_model, func, filter_args=filter_args, include_injected=include_injected
+    )
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
@@ -616,23 +588,27 @@ class ChildTool(BaseTool):
                 content, artifact = response
             else:
                 content = response
+            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
+            status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+            status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
+            status = "error"
 
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
-        output = _format_output(content, artifact, tool_call_id, self.name)
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -728,24 +704,28 @@ class ChildTool(BaseTool):
                 content, artifact = response
             else:
                 content = response
+            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
+            status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+            status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
+            status = "error"
 
         if error_to_raise:
             await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
-        output = _format_output(content, artifact, tool_call_id, self.name)
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -1482,7 +1462,7 @@ def _prep_run_args(
     config = ensure_config(config)
     if _is_tool_call(input):
         tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input)["args"]
+        tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
     else:
         tool_call_id = None
         tool_input = cast(Union[str, dict], input)
@@ -1502,23 +1482,40 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, artifact: Any, tool_call_id: Optional[str], name: str
+    content: Any, artifact: Any, tool_call_id: Optional[str], name: str, status: str
 ) -> Union[ToolMessage, Any]:
     if tool_call_id:
-        # NOTE: This will fail to stringify lists which aren't actually content blocks
-        # but whose first element happens to be a string or dict. Tools should avoid
-        # returning such contents.
-        if not isinstance(content, str) and not (
-            isinstance(content, list)
-            and content
-            and isinstance(content[0], (str, dict))
-        ):
+        if not _is_message_content_type(content):
             content = _stringify(content)
         return ToolMessage(
-            content, artifact=artifact, tool_call_id=tool_call_id, name=name
+            content,
+            artifact=artifact,
+            tool_call_id=tool_call_id,
+            name=name,
+            status=status,
         )
     else:
         return content
+
+
+def _is_message_content_type(obj: Any) -> bool:
+    """Check for OpenAI or Anthropic format tool message content."""
+    if isinstance(obj, str):
+        return True
+    elif isinstance(obj, list) and all(_is_message_content_block(e) for e in obj):
+        return True
+    else:
+        return False
+
+
+def _is_message_content_block(obj: Any) -> bool:
+    """Check for OpenAI or Anthropic format tool message content blocks."""
+    if isinstance(obj, str):
+        return True
+    elif isinstance(obj, dict):
+        return obj.get("type", None) in ("text", "image_url", "image", "json")
+    else:
+        return False
 
 
 def _stringify(content: Any) -> str:
