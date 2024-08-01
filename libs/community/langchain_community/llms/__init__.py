@@ -652,6 +652,18 @@ def _import_sparkllm() -> Type[BaseLLM]:
     return SparkLLM
 
 
+def _import_you() -> Type[BaseLLM]:
+    from langchain_community.llms.you import You
+
+    return You
+
+
+def _import_yi() -> Type[BaseLLM]:
+    from langchain_community.llms.yi import YiLLM
+
+    return YiLLM
+
+
 def __getattr__(name: str) -> Any:
     if name == "AI21":
         return _import_ai21()
@@ -849,14 +861,18 @@ def __getattr__(name: str) -> Any:
         return _import_yuan2()
     elif name == "VolcEngineMaasLLM":
         return _import_volcengine_maas()
+    elif name == "SparkLLM":
+        return _import_sparkllm()
+    elif name == "YiLLM":
+        return _import_yi()
+    elif name == "You":
+        return _import_you()
     elif name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
             k: v() for k, v in get_type_to_cls_dict().items()
         }
         return type_to_cls_dict
-    elif name == "SparkLLM":
-        return _import_sparkllm()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -960,6 +976,8 @@ __all__ = [
     "Xinference",
     "YandexGPT",
     "Yuan2",
+    "YiLLM",
+    "You",
 ]
 
 
@@ -1058,4 +1076,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "yuan2": _import_yuan2,
         "VolcEngineMaasLLM": _import_volcengine_maas,
         "SparkLLM": _import_sparkllm,
+        "yi": _import_yi,
+        "you": _import_you,
     }

@@ -1,4 +1,5 @@
 """Apache Cassandra Toolkit."""
+
 from typing import List
 
 from langchain_core.pydantic_v1 import Field
@@ -14,13 +15,19 @@ from langchain_community.utilities.cassandra_database import CassandraDatabase
 
 
 class CassandraDatabaseToolkit(BaseToolkit):
-    """Toolkit for interacting with an Apache Cassandra database."""
+    """Toolkit for interacting with an Apache Cassandra database.
+
+    Parameters:
+        db: CassandraDatabase. The Cassandra database to interact
+            with.
+    """
 
     db: CassandraDatabase = Field(exclude=True)
 
     class Config:
         """Configuration for this pydantic object."""
 
+        # Allow arbitrary types. This is needed for the `db` field.
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

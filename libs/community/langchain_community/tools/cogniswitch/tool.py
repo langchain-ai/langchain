@@ -24,7 +24,7 @@ class CogniswitchKnowledgeRequest(BaseTool):
     cs_token: str
     OAI_token: str
     apiKey: str
-    api_url = "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeRequest"
+    api_url: str = "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeRequest"
 
     def _run(
         self,

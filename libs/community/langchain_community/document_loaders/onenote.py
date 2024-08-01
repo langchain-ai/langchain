@@ -31,7 +31,7 @@ class _OneNoteGraphSettings(BaseSettings):
 class OneNoteLoader(BaseLoader, BaseModel):
     """Load pages from OneNote notebooks."""
 
-    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)
+    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)  # type: ignore[arg-type]
     """Settings for the Microsoft Graph API client."""
     auth_with_token: bool = False
     """Whether to authenticate with a token or not. Defaults to False."""
@@ -39,7 +39,7 @@ class OneNoteLoader(BaseLoader, BaseModel):
     """Personal access token"""
     onenote_api_base_url: str = "https://graph.microsoft.com/v1.0/me/onenote"
     """URL of Microsoft Graph API for OneNote"""
-    authority_url = "https://login.microsoftonline.com/consumers/"
+    authority_url: str = "https://login.microsoftonline.com/consumers/"
     """A URL that identifies a token authority"""
     token_path: FilePath = Path.home() / ".credentials" / "onenote_graph_token.txt"
     """Path to the file where the access token is stored"""

@@ -152,6 +152,8 @@ class TFIDFRetriever(BaseRetriever):
 
         # Load docs and tfidf array as pickle.
         with open(path / f"{file_name}.pkl", "rb") as f:
-            docs, tfidf_array = pickle.load(f)
+            # This code path can only be triggered if the user
+            # passed allow_dangerous_deserialization=True
+            docs, tfidf_array = pickle.load(f)  # ignore[pickle]: explicit-opt-in
 
         return cls(vectorizer=vectorizer, docs=docs, tfidf_array=tfidf_array)

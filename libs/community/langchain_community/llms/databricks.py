@@ -44,8 +44,7 @@ class _DatabricksClientBase(BaseModel, ABC):
     @abstractmethod
     def post(
         self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     @property
     def llm(self) -> bool:
@@ -242,7 +241,7 @@ def _load_pickled_fn_from_hex_string(
         raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
 
     try:
-        return cloudpickle.loads(bytes.fromhex(data))
+        return cloudpickle.loads(bytes.fromhex(data))  # ignore[pickle]: explicit-opt-in
     except Exception as e:
         raise ValueError(
             f"Failed to load the pickled function from a hexadecimal string. Error: {e}"
@@ -490,7 +489,7 @@ class Databricks(LLM):
                 task=self.task,
             )
         elif self.cluster_id and self.cluster_driver_port:
-            self._client = _DatabricksClusterDriverProxyClient(
+            self._client = _DatabricksClusterDriverProxyClient(  # type: ignore[call-arg]
                 host=self.host,
                 api_token=self.api_token,
                 cluster_id=self.cluster_id,

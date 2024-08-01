@@ -33,6 +33,25 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 T = TypeVar("T", bound=Union[Type, Callable[..., Any]])
 
 
+def _validate_deprecation_params(
+    pending: bool,
+    removal: str,
+    alternative: str,
+    alternative_import: str,
+) -> None:
+    """Validate the deprecation parameters."""
+    if pending and removal:
+        raise ValueError("A pending deprecation cannot have a scheduled removal")
+    if alternative and alternative_import:
+        raise ValueError("Cannot specify both alternative and alternative_import")
+
+    if alternative_import and "." not in alternative_import:
+        raise ValueError(
+            "alternative_import must be a fully qualified module path. Got "
+            f" {alternative_import}"
+        )
+
+
 def deprecated(
     since: str,
     *,
@@ -99,6 +118,7 @@ def deprecated(
             def the_function_to_deprecate():
                 pass
     """
+    _validate_deprecation_params(pending, removal, alternative, alternative_import)
 
     def deprecate(
         obj: T,
@@ -337,13 +357,6 @@ def warn_deprecated(
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
     """
-    if pending and removal:
-        raise ValueError("A pending deprecation cannot have a scheduled removal")
-    if alternative and alternative_import:
-        raise ValueError("Cannot specify both alternative and alternative_import")
-    if alternative_import and "." not in alternative_import:
-        raise ValueError("alternative_import must be a fully qualified module path")
-
     if not pending:
         if not removal:
             removal = f"in {removal}" if removal else "within ?? minor releases"

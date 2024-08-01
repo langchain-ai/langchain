@@ -11,5 +11,12 @@ from tests.unit_tests.fake_llm import FakeLLM
 def test_create_pandas_dataframe_agent() -> None:
     import pandas as pd
 
-    create_pandas_dataframe_agent(FakeLLM(), pd.DataFrame())
-    create_pandas_dataframe_agent(FakeLLM(), [pd.DataFrame(), pd.DataFrame()])
+    with pytest.raises(ValueError):
+        create_pandas_dataframe_agent(
+            FakeLLM(), pd.DataFrame(), allow_dangerous_code=False
+        )
+
+    create_pandas_dataframe_agent(FakeLLM(), pd.DataFrame(), allow_dangerous_code=True)
+    create_pandas_dataframe_agent(
+        FakeLLM(), [pd.DataFrame(), pd.DataFrame()], allow_dangerous_code=True
+    )

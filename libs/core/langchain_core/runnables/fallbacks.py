@@ -1,4 +1,7 @@
 import asyncio
+import inspect
+import typing
+from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -61,7 +64,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             from langchain_core.chat_models.openai import ChatOpenAI
             from langchain_core.chat_models.anthropic import ChatAnthropic
 
-            model = ChatAnthropic().with_fallbacks([ChatOpenAI()])
+            model = ChatAnthropic(
+                model="claude-3-haiku-20240307"
+            ).with_fallbacks([ChatOpenAI(model="gpt-3.5-turbo-0125")])
             # Will usually use ChatAnthropic, but fallback to ChatOpenAI
             # if ChatAnthropic fails.
             model.invoke('hello')
@@ -86,7 +91,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """
 
     runnable: Runnable[Input, Output]
-    """The runnable to run first."""
+    """The Runnable to run first."""
     fallbacks: Sequence[Runnable[Input, Output]]
     """A sequence of fallbacks to try."""
     exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
@@ -97,7 +102,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     exception_key: Optional[str] = None
     """If string is specified then handled exceptions will be passed to fallbacks as 
         part of the input under the specified key. If None, exceptions
-        will not be passed to fallbacks. If used, the base runnable and its fallbacks 
+        will not be passed to fallbacks. If used, the base Runnable and its fallbacks 
         must accept a dictionary as input."""
 
     class Config:
@@ -547,3 +552,77 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_error(e)
             raise e
         await run_manager.on_chain_end(output)
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute from the wrapped Runnable and its fallbacks.
+
+        Returns:
+            If the attribute is anything other than a method that outputs a Runnable,
+            returns getattr(self.runnable, name). If the attribute is a method that
+            does return a new Runnable (e.g. llm.bind_tools([...]) outputs a new
+            RunnableBinding) then self.runnable and each of the runnables in
+            self.fallbacks is replaced with getattr(x, name).
+
+        Example:
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_anthropic import ChatAnthropic
+
+                gpt_4o = ChatOpenAI(model="gpt-4o")
+                claude_3_sonnet = ChatAnthropic(model="claude-3-sonnet-20240229")
+                llm = gpt_4o.with_fallbacks([claude_3_sonnet])
+
+                llm.model_name
+                # -> "gpt-4o"
+
+                # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
+                # Equivalent to:
+                # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
+                llm.bind_tools([...])
+                # -> RunnableWithFallbacks(
+                    runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
+                    fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
+                )
+
+        """  # noqa: E501
+        attr = getattr(self.runnable, name)
+        if _returns_runnable(attr):
+
+            @wraps(attr)
+            def wrapped(*args: Any, **kwargs: Any) -> Any:
+                new_runnable = attr(*args, **kwargs)
+                new_fallbacks = []
+                for fallback in self.fallbacks:
+                    fallback_attr = getattr(fallback, name)
+                    new_fallbacks.append(fallback_attr(*args, **kwargs))
+
+                return self.__class__(
+                    **{
+                        **self.dict(),
+                        **{"runnable": new_runnable, "fallbacks": new_fallbacks},
+                    }
+                )
+
+            return wrapped
+
+        return attr
+
+
+def _returns_runnable(attr: Any) -> bool:
+    if not callable(attr):
+        return False
+    return_type = typing.get_type_hints(attr).get("return")
+    return bool(return_type and _is_runnable_type(return_type))
+
+
+def _is_runnable_type(type_: Any) -> bool:
+    if inspect.isclass(type_):
+        return issubclass(type_, Runnable)
+    origin = getattr(type_, "__origin__", None)
+    if inspect.isclass(origin):
+        return issubclass(origin, Runnable)
+    elif origin is typing.Union:
+        return all(_is_runnable_type(t) for t in type_.__args__)
+    else:
+        return False

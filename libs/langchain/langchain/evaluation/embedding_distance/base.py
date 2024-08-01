@@ -1,4 +1,5 @@
 """A chain for comparing the output of two models using embeddings."""
+
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -9,12 +10,12 @@ from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import pre_init
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
 from langchain.schema import RUN_KEY
-from langchain.utils.math import cosine_similarity
 
 
 def _embedding_factory() -> Embeddings:
@@ -68,7 +69,7 @@ class _EmbeddingDistanceChainMixin(Chain):
     embeddings: Embeddings = Field(default_factory=_embedding_factory)
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
 
-    @root_validator(pre=False)
+    @pre_init
     def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the TikTok library is installed.
 
@@ -164,6 +165,14 @@ class _EmbeddingDistanceChainMixin(Chain):
         Returns:
             np.ndarray: The cosine distance.
         """
+        try:
+            from langchain_community.utils.math import cosine_similarity
+        except ImportError:
+            raise ImportError(
+                "The cosine_similarity function is required to compute cosine distance."
+                " Please install the langchain-community package using"
+                " `pip install langchain-community`."
+            )
         return 1.0 - cosine_similarity(a, b)
 
     @staticmethod

@@ -69,19 +69,8 @@ def get_gmail_credentials(
 ) -> Credentials:
     """Get credentials."""
     # From https://developers.google.com/gmail/api/quickstart/python
-    Request, Credentials = (
-        guard_import(
-            module_name="google.auth.transport.requests",
-            pip_name="google-auth-httplib2",
-        ).Request,
-        guard_import(
-            module_name="google.oauth2.credentials", pip_name="google-auth-httplib2"
-        ).Credentials,
-    )
-
-    InstalledAppFlow = guard_import(
-        module_name="google_auth_oauthlib.flow", pip_name="google-auth-oauthlib"
-    ).InstalledAppFlow
+    Request, Credentials = import_google()
+    InstalledAppFlow = import_installed_app_flow()
     creds = None
     scopes = scopes or DEFAULT_SCOPES
     token_file = token_file or DEFAULT_CREDS_TOKEN_FILE
@@ -114,9 +103,7 @@ def build_resource_service(
 ) -> Resource:
     """Build a Gmail service."""
     credentials = credentials or get_gmail_credentials()
-    builder = guard_import(
-        module_name="googleapiclient.discovery", pip_name="google-api-python-client"
-    ).build
+    builder = import_googleapiclient_resource_builder()
     return builder(service_name, service_version, credentials=credentials)
 
 

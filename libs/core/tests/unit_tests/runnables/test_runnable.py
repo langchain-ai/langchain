@@ -37,7 +37,6 @@ from langchain_core.language_models import (
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
 from langchain_core.messages import (
-    AIMessage,
     AIMessageChunk,
     HumanMessage,
     SystemMessage,
@@ -90,7 +89,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.stubs import AnyStr, _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
 class FakeTracer(BaseTracer):
@@ -182,6 +181,7 @@ class FakeRunnable(Runnable[str, int]):
         self,
         input: str,
         config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> int:
         return len(input)
 
@@ -305,11 +305,15 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "Document": {
                 "title": "Document",
-                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "id": {
+                        "title": "Id",
+                        "type": "string",
+                    },
                     "type": {
                         "title": "Type",
                         "enum": ["Document"],
@@ -342,290 +346,12 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         ]
     )
 
-    assert chat_prompt.input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {
-            "history": {
-                "title": "History",
-                "type": "array",
-                "items": {
-                    "anyOf": [
-                        {"$ref": "#/definitions/AIMessage"},
-                        {"$ref": "#/definitions/HumanMessage"},
-                        {"$ref": "#/definitions/ChatMessage"},
-                        {"$ref": "#/definitions/SystemMessage"},
-                        {"$ref": "#/definitions/FunctionMessage"},
-                        {"$ref": "#/definitions/ToolMessage"},
-                    ]
-                },
-            }
-        },
-        "definitions": {
-            "ToolCall": {
-                "title": "ToolCall",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "args": {"title": "Args", "type": "object"},
-                    "id": {"title": "Id", "type": "string"},
-                },
-                "required": ["name", "args", "id"],
-            },
-            "InvalidToolCall": {
-                "title": "InvalidToolCall",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "args": {"title": "Args", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "error": {"title": "Error", "type": "string"},
-                },
-                "required": ["name", "args", "id", "error"],
-            },
-            "AIMessage": {
-                "title": "AIMessage",
-                "description": "Message from an AI.",
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": ["ai"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "example": {
-                        "title": "Example",
-                        "default": False,
-                        "type": "boolean",
-                    },
-                    "tool_calls": {
-                        "title": "Tool Calls",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/definitions/ToolCall"},
-                    },
-                    "invalid_tool_calls": {
-                        "title": "Invalid Tool Calls",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/definitions/InvalidToolCall"},
-                    },
-                },
-                "required": ["content"],
-            },
-            "HumanMessage": {
-                "title": "HumanMessage",
-                "description": "Message from a human.",
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": ["human"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "example": {
-                        "title": "Example",
-                        "default": False,
-                        "type": "boolean",
-                    },
-                },
-                "required": ["content"],
-            },
-            "ChatMessage": {
-                "title": "ChatMessage",
-                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": ["chat"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "role": {"title": "Role", "type": "string"},
-                },
-                "required": ["content", "role"],
-            },
-            "SystemMessage": {
-                "title": "SystemMessage",
-                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": ["system"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                },
-                "required": ["content"],
-            },
-            "FunctionMessage": {
-                "title": "FunctionMessage",
-                "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": ["function"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                },
-                "required": ["content", "name"],
-            },
-            "ToolMessage": {
-                "title": "ToolMessage",
-                "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": ["tool"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "tool_call_id": {"title": "Tool Call Id", "type": "string"},
-                },
-                "required": ["content", "tool_call_id"],
-            },
-        },
-    }
-    assert chat_prompt.output_schema.schema() == snapshot
+    assert chat_prompt.input_schema.schema() == snapshot(
+        name="chat_prompt_input_schema"
+    )
+    assert chat_prompt.output_schema.schema() == snapshot(
+        name="chat_prompt_output_schema"
+    )
 
     prompt = PromptTemplate.from_template("Hello, {name}!")
 
@@ -633,6 +359,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert prompt.output_schema.schema() == snapshot
 
@@ -642,6 +369,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "PromptInput": {
                 "properties": {"name": {"title": "Name", "type": "string"}},
+                "required": ["name"],
                 "title": "PromptInput",
                 "type": "object",
             }
@@ -667,6 +395,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert seq.output_schema.schema() == {
         "type": "array",
@@ -707,6 +436,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert seq_w_map.output_schema.schema() == {
         "title": "RunnableParallel<original,as_list,length>Output",
@@ -1040,6 +770,7 @@ def test_configurable_fields() -> None:
             "lang": {"title": "Lang", "type": "string"},
             "name": {"title": "Name", "type": "string"},
         },
+        "required": ["lang", "name"],
     }
 
     chain_configurable = prompt_configurable | fake_llm_configurable | StrOutputParser()
@@ -1095,6 +826,7 @@ def test_configurable_fields() -> None:
             "lang": {"title": "Lang", "type": "string"},
             "name": {"title": "Name", "type": "string"},
         },
+        "required": ["lang", "name"],
     }
 
     chain_with_map_configurable: Runnable = prompt_configurable | {
@@ -1398,26 +1130,136 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     fake = FakeRunnable()
     mock = mocker.Mock()
 
-    seq: Runnable = fake | RunnablePassthrough(mock)
+    seq: Runnable = RunnablePassthrough(mock) | fake | RunnablePassthrough(mock)
 
-    assert await seq.ainvoke("hello") == 5
-    assert mock.call_args_list == [mocker.call(5)]
+    assert await seq.ainvoke("hello", my_kwarg="value") == 5
+    assert mock.call_args_list == [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call(5),
+    ]
+    mock.reset_mock()
+
+    assert await seq.abatch(["hello", "byebye"], my_kwarg="value") == [5, 6]
+    assert len(mock.call_args_list) == 4
+    for call in [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call("byebye", my_kwarg="value"),
+        mocker.call(5),
+        mocker.call(6),
+    ]:
+        assert call in mock.call_args_list
+    mock.reset_mock()
+
+    assert await seq.abatch(
+        ["hello", "byebye"], my_kwarg="value", return_exceptions=True
+    ) == [
+        5,
+        6,
+    ]
+    assert len(mock.call_args_list) == 4
+    for call in [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call("byebye", my_kwarg="value"),
+        mocker.call(5),
+        mocker.call(6),
+    ]:
+        assert call in mock.call_args_list
+    mock.reset_mock()
+
+    assert sorted(
+        [
+            a
+            async for a in seq.abatch_as_completed(
+                ["hello", "byebye"], my_kwarg="value", return_exceptions=True
+            )
+        ]
+    ) == [
+        (0, 5),
+        (1, 6),
+    ]
+    assert len(mock.call_args_list) == 4
+    for call in [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call("byebye", my_kwarg="value"),
+        mocker.call(5),
+        mocker.call(6),
+    ]:
+        assert call in mock.call_args_list
     mock.reset_mock()
 
     assert [
-        part async for part in seq.astream("hello", dict(metadata={"key": "value"}))
+        part
+        async for part in seq.astream(
+            "hello", dict(metadata={"key": "value"}), my_kwarg="value"
+        )
     ] == [5]
-    assert mock.call_args_list == [mocker.call(5)]
-    mock.reset_mock()
-
-    assert seq.invoke("hello") == 5
-    assert mock.call_args_list == [mocker.call(5)]
-    mock.reset_mock()
-
-    assert [part for part in seq.stream("hello", dict(metadata={"key": "value"}))] == [
-        5
+    assert mock.call_args_list == [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call(5),
     ]
-    assert mock.call_args_list == [mocker.call(5)]
+    mock.reset_mock()
+
+    assert seq.invoke("hello", my_kwarg="value") == 5  # type: ignore[call-arg]
+    assert mock.call_args_list == [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call(5),
+    ]
+    mock.reset_mock()
+
+    assert seq.batch(["hello", "byebye"], my_kwarg="value") == [5, 6]
+    assert len(mock.call_args_list) == 4
+    for call in [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call("byebye", my_kwarg="value"),
+        mocker.call(5),
+        mocker.call(6),
+    ]:
+        assert call in mock.call_args_list
+    mock.reset_mock()
+
+    assert seq.batch(["hello", "byebye"], my_kwarg="value", return_exceptions=True) == [
+        5,
+        6,
+    ]
+    assert len(mock.call_args_list) == 4
+    for call in [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call("byebye", my_kwarg="value"),
+        mocker.call(5),
+        mocker.call(6),
+    ]:
+        assert call in mock.call_args_list
+    mock.reset_mock()
+
+    assert sorted(
+        a
+        for a in seq.batch_as_completed(
+            ["hello", "byebye"], my_kwarg="value", return_exceptions=True
+        )
+    ) == [
+        (0, 5),
+        (1, 6),
+    ]
+    assert len(mock.call_args_list) == 4
+    for call in [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call("byebye", my_kwarg="value"),
+        mocker.call(5),
+        mocker.call(6),
+    ]:
+        assert call in mock.call_args_list
+    mock.reset_mock()
+
+    assert [
+        part
+        for part in seq.stream(
+            "hello", dict(metadata={"key": "value"}), my_kwarg="value"
+        )
+    ] == [5]
+    assert mock.call_args_list == [
+        mocker.call("hello", my_kwarg="value"),
+        mocker.call(5),
+    ]
     mock.reset_mock()
 
 
@@ -1428,7 +1270,11 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
 
     assert (
         fakew.with_config(tags=["a-tag"]).invoke(
-            "hello", {"configurable": {"hello": "there"}, "metadata": {"bye": "now"}}
+            "hello",
+            {
+                "configurable": {"hello": "there", "__secret_key": "nahnah"},
+                "metadata": {"bye": "now"},
+            },
         )
         == 5
     )
@@ -1438,9 +1284,8 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             tags=["a-tag"],
             callbacks=None,
             recursion_limit=25,
-            configurable={"hello": "there"},
+            configurable={"hello": "there", "__secret_key": "nahnah"},
             metadata={"hello": "there", "bye": "now"},
-            run_id=None,
         ),
     )
     spy.reset_mock()
@@ -1452,7 +1297,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     assert fake.with_config(tags=["a-tag"]).invoke("hello") == 5
     assert spy.call_args_list == [
-        mocker.call("hello", dict(tags=["a-tag"])),
+        mocker.call(
+            "hello",
+            dict(tags=["a-tag"], metadata={}, configurable={}),
+        ),
     ]
     spy.reset_mock()
 
@@ -1481,7 +1329,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
         )
     ] == [5]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(tags=["a-tag"], metadata={"key": "value"})),
+        mocker.call(
+            "hello",
+            dict(tags=["a-tag"], metadata={"key": "value"}, configurable={}),
+        ),
     ]
     spy.reset_mock()
 
@@ -1556,7 +1407,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
         == 5
     )
     assert spy.call_args_list == [
-        mocker.call("hello", dict(callbacks=[handler], metadata={"a": "b"})),
+        mocker.call(
+            "hello",
+            dict(callbacks=[handler], metadata={"a": "b"}, configurable={}, tags=[]),
+        ),
     ]
     spy.reset_mock()
 
@@ -1564,7 +1418,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
         part async for part in fake.with_config(metadata={"a": "b"}).astream("hello")
     ] == [5]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(metadata={"a": "b"})),
+        mocker.call("hello", dict(metadata={"a": "b"}, tags=[], configurable={})),
     ]
     spy.reset_mock()
 
@@ -1582,7 +1436,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
-                run_id=None,
+                configurable={},
             ),
         ),
         mocker.call(
@@ -1592,7 +1446,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
-                run_id=None,
+                configurable={},
             ),
         ),
     ]
@@ -1618,7 +1472,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
-            run_id=None,
+            configurable={},
         ),
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
@@ -1629,7 +1483,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
-            run_id=None,
+            configurable={},
         ),
     )
 
@@ -1700,7 +1554,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
             tags=[],
             callbacks=None,
             recursion_limit=25,
-            run_id=None,
+            configurable={},
         )
 
 
@@ -1970,7 +1824,7 @@ def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo", id=AnyStr())
+    ) == _AnyIdAIMessage(content="foo")
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1995,8 +1849,8 @@ def test_prompt_with_chat_model(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo", id=AnyStr()),
-        AIMessage(content="foo", id=AnyStr()),
+        _AnyIdAIMessage(content="foo"),
+        _AnyIdAIMessage(content="foo"),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -2036,9 +1890,9 @@ def test_prompt_with_chat_model(
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
     ] == [
-        AIMessageChunk(content="f", id=AnyStr()),
-        AIMessageChunk(content="o", id=AnyStr()),
-        AIMessageChunk(content="o", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="f"),
+        _AnyIdAIMessageChunk(content="o"),
+        _AnyIdAIMessageChunk(content="o"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2076,7 +1930,7 @@ async def test_prompt_with_chat_model_async(
     tracer = FakeTracer()
     assert await chain.ainvoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo", id=AnyStr())
+    ) == _AnyIdAIMessage(content="foo")
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -2101,8 +1955,8 @@ async def test_prompt_with_chat_model_async(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo", id=AnyStr()),
-        AIMessage(content="foo", id=AnyStr()),
+        _AnyIdAIMessage(content="foo"),
+        _AnyIdAIMessage(content="foo"),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -2145,9 +1999,9 @@ async def test_prompt_with_chat_model_async(
             {"question": "What is your name?"}, dict(callbacks=[tracer])
         )
     ] == [
-        AIMessageChunk(content="f", id=AnyStr()),
-        AIMessageChunk(content="o", id=AnyStr()),
-        AIMessageChunk(content="o", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="f"),
+        _AnyIdAIMessageChunk(content="o"),
+        _AnyIdAIMessageChunk(content="o"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2814,7 +2668,7 @@ def test_prompt_with_chat_model_and_parser(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
+    assert parser_spy.call_args.args[1] == _AnyIdAIMessage(content="foo, bar")
 
     assert tracer.runs == snapshot
 
@@ -2949,7 +2803,7 @@ What is your name?"""
             ),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
+    assert parser_spy.call_args.args[1] == _AnyIdAIMessage(content="foo, bar")
     assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 4
@@ -2995,7 +2849,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
+        "chat": _AnyIdAIMessage(content="i'm a chatbot"),
         "llm": "i'm a textbot",
     }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -3205,7 +3059,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
+        "chat": _AnyIdAIMessage(content="i'm a chatbot"),
         "llm": "i'm a textbot",
         "passthrough": ChatPromptValue(
             messages=[
@@ -3414,7 +3268,7 @@ async def test_map_astream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i", id=AnyStr())},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -3674,6 +3528,7 @@ def test_deep_stream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3724,6 +3579,7 @@ def test_deep_stream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3798,6 +3654,7 @@ async def test_deep_astream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3848,6 +3705,7 @@ async def test_deep_astream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -4849,6 +4707,7 @@ async def test_tool_from_runnable() -> None:
         "properties": {"question": {"title": "Question", "type": "string"}},
         "title": "PromptInput",
         "type": "object",
+        "required": ["question"],
     }
 
 
@@ -4882,6 +4741,23 @@ async def test_runnable_gen() -> None:
     assert await arunnable.ainvoke(None) == 6
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert await arunnable.abatch([None, None]) == [6, 6]
+
+    class AsyncGen:
+        async def __call__(self, input: AsyncIterator[Any]) -> AsyncIterator[int]:
+            yield 1
+            yield 2
+            yield 3
+
+    arunnablecallable = RunnableGenerator(AsyncGen())
+    assert await arunnablecallable.ainvoke(None) == 6
+    assert [p async for p in arunnablecallable.astream(None)] == [1, 2, 3]
+    assert await arunnablecallable.abatch([None, None]) == [6, 6]
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.invoke(None)
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.stream(None)
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.batch([None, None])
 
 
 async def test_runnable_gen_context_config() -> None:
@@ -5508,3 +5384,100 @@ async def test_passthrough_atransform_with_dicts() -> None:
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
     assert chunks == [{"foo": "a"}, {"foo": "n"}]
+
+
+def test_listeners() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from langchain_core.tracers.schemas import Run
+
+    def fake_chain(inputs: dict) -> dict:
+        return {**inputs, "key": "extra"}
+
+    shared_state = {}
+    value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+
+    def on_start(run: Run) -> None:
+        shared_state[run.id] = {"inputs": run.inputs}
+
+    def on_end(run: Run) -> None:
+        shared_state[run.id]["outputs"] = run.inputs
+
+    chain = (
+        RunnableLambda(fake_chain)
+        .with_listeners(on_end=on_end, on_start=on_start)
+        .map()
+    )
+
+    data = [{"name": "one"}, {"name": "two"}]
+    chain.invoke(data, config={"max_concurrency": 1})
+    assert len(shared_state) == 2
+    assert value1 in shared_state.values(), "Value not found in the dictionary."
+    assert value2 in shared_state.values(), "Value not found in the dictionary."
+
+
+async def test_listeners_async() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from langchain_core.tracers.schemas import Run
+
+    def fake_chain(inputs: dict) -> dict:
+        return {**inputs, "key": "extra"}
+
+    shared_state = {}
+    value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+
+    def on_start(run: Run) -> None:
+        shared_state[run.id] = {"inputs": run.inputs}
+
+    def on_end(run: Run) -> None:
+        shared_state[run.id]["outputs"] = run.inputs
+
+    chain: Runnable = (
+        RunnableLambda(fake_chain)
+        .with_listeners(on_end=on_end, on_start=on_start)
+        .map()
+    )
+
+    data = [{"name": "one"}, {"name": "two"}]
+    await chain.ainvoke(data, config={"max_concurrency": 1})
+
+    assert len(shared_state) == 2
+    assert value1 in shared_state.values(), "Value not found in the dictionary."
+    assert value2 in shared_state.values(), "Value not found in the dictionary."
+
+
+async def test_closing_iterator_doesnt_raise_error() -> None:
+    """Test that closing an iterator calls on_chain_end rather than on_chain_error."""
+    import time
+
+    from langchain_core.callbacks import BaseCallbackHandler
+    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+    from langchain_core.output_parsers import StrOutputParser
+
+    on_chain_error_triggered = False
+
+    class MyHandler(BaseCallbackHandler):
+        async def on_chain_error(
+            self,
+            error: BaseException,
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            tags: Optional[List[str]] = None,
+            **kwargs: Any,
+        ) -> None:
+            """Run when chain errors."""
+            nonlocal on_chain_error_triggered
+            on_chain_error_triggered = True
+
+    llm = GenericFakeChatModel(messages=iter(["hi there"]))
+    chain = llm | StrOutputParser()
+    chain_ = chain.with_config({"callbacks": [MyHandler()]})
+    st = chain_.stream("hello")
+    next(st)
+    # This is a generator so close is defined on it.
+    st.close()  # type: ignore
+    # Wait for a bit to make sure that the callback is called.
+    time.sleep(0.05)
+    assert on_chain_error_triggered is False

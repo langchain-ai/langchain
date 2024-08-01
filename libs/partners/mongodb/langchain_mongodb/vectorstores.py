@@ -23,15 +23,25 @@ from langchain_core.vectorstores import VectorStore
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
+from pymongo.errors import CollectionInvalid
 
-from langchain_mongodb.utils import maximal_marginal_relevance
+from langchain_mongodb.index import (
+    create_vector_search_index,
+    update_vector_search_index,
+)
+from langchain_mongodb.utils import (
+    make_serializable,
+    maximal_marginal_relevance,
+    oid_to_str,
+    str_to_oid,
+)
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_INSERT_BATCH_SIZE = 100
+DEFAULT_INSERT_BATCH_SIZE = 100_000
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
@@ -45,8 +55,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import MongoDBAtlasVectorSearch
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_mongodb import MongoDBAtlasVectorSearch
+            from langchain_openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
@@ -137,45 +147,153 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[Dict[str, Any]]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> List:
-        """Run more texts through the embeddings and add to the vectorstore.
+    ) -> List[str]:
+        """Add texts, create embeddings, and add to the Collection and index.
+
+        Important notes on ids:
+            - If _id or id is a key in the metadatas dicts, one must
+                pop them and provide as separate list.
+            - They must be unique.
+            - If they are not provided, the VectorStore will create unique ones,
+                stored as bson.ObjectIds internally, and strings in Langchain.
+                These will appear in Document.metadata with key, '_id'.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique ids that will be used as index in VectorStore.
+                See note on ids.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            List of ids added to the vectorstore.
         """
-        batch_size = kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE)
+
+        # Check to see if metadata includes ids
+        if metadatas is not None and (
+            metadatas[0].get("_id") or metadatas[0].get("id")
+        ):
+            logger.warning(
+                "_id or id key found in metadata. "
+                "Please pop from each dict and input as separate list."
+                "Retrieving methods will include the same id as '_id' in metadata."
+            )
+
+        texts_batch = texts
         _metadatas: Union[List, Generator] = metadatas or ({} for _ in texts)
-        texts_batch = []
-        metadatas_batch = []
+        metadatas_batch = _metadatas
+
         result_ids = []
-        for i, (text, metadata) in enumerate(zip(texts, _metadatas)):
-            texts_batch.append(text)
-            metadatas_batch.append(metadata)
-            if (i + 1) % batch_size == 0:
-                result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
-                texts_batch = []
-                metadatas_batch = []
+        batch_size = kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE)
+        if batch_size:
+            texts_batch = []
+            metadatas_batch = []
+            size = 0
+            i = 0
+            for j, (text, metadata) in enumerate(zip(texts, _metadatas)):
+                size += len(text) + len(metadata)
+                texts_batch.append(text)
+                metadatas_batch.append(metadata)
+                if (j + 1) % batch_size == 0 or size >= 47_000_000:
+                    if ids:
+                        batch_res = self.bulk_embed_and_insert_texts(
+                            texts_batch, metadatas_batch, ids[i : j + 1]
+                        )
+                    else:
+                        batch_res = self.bulk_embed_and_insert_texts(
+                            texts_batch, metadatas_batch
+                        )
+                    result_ids.extend(batch_res)
+                    texts_batch = []
+                    metadatas_batch = []
+                    size = 0
+                    i = j + 1
         if texts_batch:
-            result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
+            if ids:
+                batch_res = self.bulk_embed_and_insert_texts(
+                    texts_batch, metadatas_batch, ids[i : j + 1]
+                )
+            else:
+                batch_res = self.bulk_embed_and_insert_texts(
+                    texts_batch, metadatas_batch
+                )
+            result_ids.extend(batch_res)
         return result_ids
 
-    def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
+    def bulk_embed_and_insert_texts(
+        self,
+        texts: Union[List[str], Iterable[str]],
+        metadatas: Union[List[dict], Generator[dict, Any, Any]],
+        ids: Optional[List[str]] = None,
+    ) -> List[str]:
+        """Bulk insert single batch of texts, embeddings, and optionally ids.
+
+        See add_texts for additional details.
+        """
         if not texts:
             return []
-        # Embed and create the documents
-        embeddings = self._embedding.embed_documents(texts)
-        to_insert = [
-            {self._text_key: t, self._embedding_key: embedding, **m}
-            for t, m, embedding in zip(texts, metadatas, embeddings)
-        ]
+        # Compute embedding vectors
+        embeddings = self._embedding.embed_documents(texts)  # type: ignore
+        if ids:
+            to_insert = [
+                {
+                    "_id": str_to_oid(i),
+                    self._text_key: t,
+                    self._embedding_key: embedding,
+                    **m,
+                }
+                for i, t, m, embedding in zip(ids, texts, metadatas, embeddings)
+            ]
+        else:
+            to_insert = [
+                {self._text_key: t, self._embedding_key: embedding, **m}
+                for t, m, embedding in zip(texts, metadatas, embeddings)
+            ]
         # insert the documents in MongoDB Atlas
         insert_result = self._collection.insert_many(to_insert)  # type: ignore
-        return insert_result.inserted_ids
+        return [oid_to_str(_id) for _id in insert_result.inserted_ids]
+
+    def add_documents(
+        self,
+        documents: List[Document],
+        ids: Optional[List[str]] = None,
+        batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add documents to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            ids: Optional list of unique ids that will be used as index in VectorStore.
+                See note on ids in add_texts.
+            batch_size: Number of documents to insert at a time.
+                Tuning this may help with performance and sidestep MongoDB limits.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        n_docs = len(documents)
+        if ids:
+            assert len(ids) == n_docs, "Number of ids must equal number of documents."
+        result_ids = []
+        start = 0
+        for end in range(batch_size, n_docs + batch_size, batch_size):
+            texts, metadatas = zip(
+                *[(doc.page_content, doc.metadata) for doc in documents[start:end]]
+            )
+            if ids:
+                result_ids.extend(
+                    self.bulk_embed_and_insert_texts(
+                        texts=texts, metadatas=metadatas, ids=ids[start:end]
+                    )
+                )
+            else:
+                result_ids.extend(
+                    self.bulk_embed_and_insert_texts(texts=texts, metadatas=metadatas)
+                )
+            start = end
+        return result_ids
 
     def _similarity_search_with_score(
         self,
@@ -184,8 +302,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         include_embedding: bool = False,
+        include_ids: bool = False,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Core implementation."""
         params = {
             "queryVector": embedding,
             "path": self._embedding_key,
@@ -210,9 +330,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
             pipeline.extend(post_filter_pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
         docs = []
+
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
+            make_serializable(res)
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
@@ -337,6 +459,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[Dict]] = None,
         collection: Optional[Collection[MongoDBDocumentType]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct a `MongoDB Atlas Vector Search` vector store from raw documents.
@@ -352,8 +475,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
             .. code-block:: python
                 from pymongo import MongoClient
 
-                from langchain_community.vectorstores import MongoDBAtlasVectorSearch
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_mongodb import MongoDBAtlasVectorSearch
+                from langchain_openai import OpenAIEmbeddings
 
                 mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
                 collection = mongo_client["<db_name>"]["<collection_name>"]
@@ -368,25 +491,25 @@ class MongoDBAtlasVectorSearch(VectorStore):
         if collection is None:
             raise ValueError("Must provide 'collection' named parameter.")
         vectorstore = cls(collection, embedding, **kwargs)
-        vectorstore.add_texts(texts, metadatas=metadatas)
+        vectorstore.add_texts(texts=texts, metadatas=metadatas, ids=ids, **kwargs)
         return vectorstore
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        """Delete by ObjectId or other criteria.
+        """Delete documents from VectorStore by ids.
 
         Args:
             ids: List of ids to delete.
-            **kwargs: Other keyword arguments that subclasses might use.
+            **kwargs: Other keyword arguments passed to Collection.delete_many()
 
         Returns:
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        search_params: dict[str, Any] = {}
+        filter = {}
         if ids:
-            search_params[self._text_key]["$in"] = ids
-
-        return self._collection.delete_many({**search_params, **kwargs}).acknowledged
+            oids = [str_to_oid(i) for i in ids]
+            filter = {"_id": {"$in": oids}}
+        return self._collection.delete_many(filter=filter, **kwargs).acknowledged
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
@@ -467,4 +590,43 @@ class MongoDBAtlasVectorSearch(VectorStore):
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             **kwargs,
+        )
+
+    def create_vector_search_index(
+        self,
+        dimensions: int,
+        filters: Optional[List[Dict[str, str]]] = None,
+        update: bool = False,
+    ) -> None:
+        """Creates a MongoDB Atlas vectorSearch index for the VectorStore
+
+        Note**: This method may fail as it requires a MongoDB Atlas with
+        these pre-requisites:
+            - M10 cluster or higher
+            - https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/#prerequisites
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            filters (Optional[List[Dict[str, str]]], optional): additional filters
+            for index definition.
+                Defaults to None.
+            update (bool, optional): Updates existing vectorSearch index.
+                Defaults to False.
+        """
+        try:
+            self._collection.database.create_collection(self._collection.name)
+        except CollectionInvalid:
+            pass
+
+        index_operation = (
+            update_vector_search_index if update else create_vector_search_index
+        )
+
+        index_operation(
+            collection=self._collection,
+            index_name=self._index_name,
+            dimensions=dimensions,
+            path=self._embedding_key,
+            similarity=self._relevance_score_fn,
+            filters=filters or [],
         )

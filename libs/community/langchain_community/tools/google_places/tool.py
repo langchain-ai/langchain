@@ -31,7 +31,7 @@ class GooglePlacesTool(BaseTool):
         "discover addressed from ambiguous text. "
         "Input should be a search query."
     )
-    api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)
+    api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)  # type: ignore[arg-type]
     args_schema: Type[BaseModel] = GooglePlacesSchema
 
     def _run(

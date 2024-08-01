@@ -174,24 +174,38 @@ class ChatMlflow(BaseChatModel):
         )
         # TODO: check if `_client.predict_stream` is available.
         chunk_iter = self._client.predict_stream(endpoint=self.endpoint, inputs=data)
+        first_chunk_role = None
         for chunk in chunk_iter:
-            choice = chunk["choices"][0]
-            chunk = ChatMlflow._convert_delta_to_message_chunk(choice["delta"])
+            if chunk["choices"]:
+                choice = chunk["choices"][0]
 
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-            if logprobs := choice.get("logprobs"):
-                generation_info["logprobs"] = logprobs
+                chunk_delta = choice["delta"]
+                if first_chunk_role is None:
+                    first_chunk_role = chunk_delta.get("role")
 
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
-            )
+                chunk_message = ChatMlflow._convert_delta_to_message_chunk(
+                    chunk_delta, first_chunk_role
+                )
 
-            if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                if logprobs := choice.get("logprobs"):
+                    generation_info["logprobs"] = logprobs
 
-            yield chunk
+                chunk = ChatGenerationChunk(
+                    message=chunk_message, generation_info=generation_info or None
+                )
+
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text, chunk=chunk, logprobs=logprobs
+                    )
+
+                yield chunk
+            else:
+                # Handle the case where choices are empty if needed
+                continue
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -225,8 +239,10 @@ class ChatMlflow(BaseChatModel):
             return ChatMessage(content=content, role=role)
 
     @staticmethod
-    def _convert_delta_to_message_chunk(_dict: Mapping[str, Any]) -> BaseMessageChunk:
-        role = _dict["role"]
+    def _convert_delta_to_message_chunk(
+        _dict: Mapping[str, Any], default_role: str
+    ) -> BaseMessageChunk:
+        role = _dict.get("role", default_role)
         content = _dict["content"]
         if role == "user":
             return HumanMessageChunk(content=content)

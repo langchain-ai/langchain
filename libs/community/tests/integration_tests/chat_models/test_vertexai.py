@@ -1,10 +1,10 @@
 """Test Vertex AI API wrapper.
 In order to run this test, you need to install VertexAI SDK (that is is the private
 preview)  and be whitelisted to list the models themselves:
-In order to run this test, you need to install VertexAI SDK 
+In order to run this test, you need to install VertexAI SDK
 pip install google-cloud-aiplatform>=1.35.0
 
-Your end-user credentials would be used to make the calls (make sure you've run 
+Your end-user credentials would be used to make the calls (make sure you've run
 `gcloud auth login` first).
 """
 
@@ -248,7 +248,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
 
-        model = ChatVertexAI(**prompt_params)
+        model = ChatVertexAI(**prompt_params)  # type: ignore[arg-type]
         message = HumanMessage(content=user_prompt)
         if stop:
             response = model.invoke([message], stop=[stop])

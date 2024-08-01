@@ -32,7 +32,12 @@ _EXECUTOR: Optional[ThreadPoolExecutor] = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
-    """Log an error once."""
+    """Log an error once.
+
+    Args:
+        method: The method that raised the exception.
+        exception: The exception that was raised.
+    """
     global _LOGGED
     if (method, type(exception)) in _LOGGED:
         return
@@ -82,7 +87,15 @@ class LangChainTracer(BaseTracer):
         tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the LangChain tracer."""
+        """Initialize the LangChain tracer.
+
+        Args:
+            example_id: The example ID.
+            project_name: The project name. Defaults to the tracer project.
+            client: The client. Defaults to the global client.
+            tags: The tags. Defaults to an empty list.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(**kwargs)
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
@@ -104,7 +117,21 @@ class LangChainTracer(BaseTracer):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Start a trace for an LLM run."""
+        """Start a trace for an LLM run.
+
+        Args:
+            serialized: The serialized model.
+            messages: The messages.
+            run_id: The run ID.
+            tags: The tags. Defaults to None.
+            parent_run_id: The parent run ID. Defaults to None.
+            metadata: The metadata. Defaults to None.
+            name: The name. Defaults to None.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Run: The run.
+        """
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -130,7 +157,15 @@ class LangChainTracer(BaseTracer):
         self.latest_run = run_
 
     def get_run_url(self) -> str:
-        """Get the LangSmith root run URL"""
+        """Get the LangSmith root run URL.
+
+        Returns:
+            str: The LangSmith root run URL.
+
+        Raises:
+            ValueError: If no traced run is found.
+            ValueError: If the run URL cannot be found.
+        """
         if not self.latest_run:
             raise ValueError("No traced run found.")
         # If this is the first run in a project, the project may not yet be created.

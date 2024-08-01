@@ -54,11 +54,14 @@ class ChatPerplexity(BaseChatModel):
 
             from langchain_community.chat_models import ChatPerplexity
 
-            chat = ChatPerplexity(model="pplx-70b-online", temperature=0.7)
+            chat = ChatPerplexity(
+                model="llama-3-sonar-small-32k-online",
+                temperature=0.7,
+            )
     """
 
     client: Any  #: :meta private:
-    model: str = "pplx-70b-online"
+    model: str = "llama-3-sonar-small-32k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -70,7 +73,7 @@ class ChatPerplexity(BaseChatModel):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
     )
-    """Timeout for requests to PerplexityChat completion API. Default is 600 seconds."""
+    """Timeout for requests to PerplexityChat completion API. Default is None."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -198,9 +201,9 @@ class ChatPerplexity(BaseChatModel):
         elif role == "tool" or default_class == ToolMessageChunk:
             return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
         elif role or default_class == ChatMessageChunk:
-            return ChatMessageChunk(content=content, role=role)
+            return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
         else:
-            return default_class(content=content)
+            return default_class(content=content)  # type: ignore[call-arg]
 
     def _stream(
         self,

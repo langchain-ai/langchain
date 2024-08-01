@@ -3,6 +3,7 @@
 Other LangChain classes use **Utilities** to interact with third-part systems
 and packages.
 """
+
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer
@@ -38,7 +39,6 @@ if TYPE_CHECKING:
         Portkey,
         PowerBIDataset,
         PubMedAPIWrapper,
-        PythonREPL,
         Requests,
         RequestsWrapper,
         SceneXplainAPIWrapper,
@@ -90,6 +90,8 @@ DEPRECATED_LOOKUP = {
     "Portkey": "langchain_community.utilities",
     "PowerBIDataset": "langchain_community.utilities",
     "PubMedAPIWrapper": "langchain_community.utilities",
+    # We will not list PythonREPL in __all__ since it has been removed from community
+    # it'll proxy to community package, which will raise an appropriate exception.
     "PythonREPL": "langchain_community.utilities",
     "Requests": "langchain_community.utilities",
     "SteamWebAPIWrapper": "langchain_community.utilities",
@@ -147,7 +149,6 @@ __all__ = [
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
-    "PythonREPL",
     "Requests",
     "SteamWebAPIWrapper",
     "SQLDatabase",

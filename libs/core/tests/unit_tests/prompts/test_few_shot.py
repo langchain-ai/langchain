@@ -1,4 +1,5 @@
 """Test few shot prompt template."""
+
 from typing import Any, Dict, List, Sequence, Tuple
 
 import pytest
@@ -55,6 +56,17 @@ def test_suffix_only() -> None:
     output = prompt.format(foo="bar")
     expected_output = "This is a bar test."
     assert output == expected_output
+
+
+def test_auto_infer_input_variables() -> None:
+    """Test prompt works with just a suffix."""
+    suffix = "This is a {foo} test."
+    prompt = FewShotPromptTemplate(
+        suffix=suffix,
+        examples=[],
+        example_prompt=EXAMPLE_PROMPT,
+    )
+    assert prompt.input_variables == ["foo"]
 
 
 def test_prompt_missing_input_variables() -> None:
@@ -419,6 +431,30 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     ]
     messages = final_prompt.format_messages(input="100 + 1")
     assert messages == expected
+
+
+def test_few_shot_chat_message_prompt_template_infer_input_variables() -> None:
+    """Check that it can infer input variables if not provided."""
+    examples = [
+        {"input": "2+2", "output": "4"},
+        {"input": "2+3", "output": "5"},
+    ]
+    example_selector = AsIsSelector(examples)
+    example_prompt = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate.from_template("{input}"),
+            AIMessagePromptTemplate.from_template("{output}"),
+        ]
+    )
+
+    few_shot_prompt = FewShotChatMessagePromptTemplate(
+        example_prompt=example_prompt,
+        example_selector=example_selector,
+    )
+
+    # The prompt template does not have any inputs! They
+    # have already been filled in.
+    assert few_shot_prompt.input_variables == []
 
 
 class AsyncAsIsSelector(BaseExampleSelector):

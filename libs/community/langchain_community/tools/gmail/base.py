@@ -1,4 +1,5 @@
 """Base class for Gmail tools."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -34,4 +35,4 @@ class GmailBaseTool(BaseTool):
         Returns:
             A tool.
         """
-        return cls(service=api_resource)
+        return cls(service=api_resource)  # type: ignore[call-arg]

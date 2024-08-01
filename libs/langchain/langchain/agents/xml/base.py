@@ -147,7 +147,7 @@ def create_xml_agent(
             from langchain.agents import AgentExecutor, create_xml_agent
 
             prompt = hub.pull("hwchase17/xml-agent-convo")
-            model = ChatAnthropic()
+            model = ChatAnthropic(model="claude-3-haiku-20240307")
             tools = ...
 
             agent = create_xml_agent(model, tools, prompt)
