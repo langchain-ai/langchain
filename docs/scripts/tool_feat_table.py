@@ -101,6 +101,13 @@ hide_table_of_contents: true
 
 # Tools
 
+:::info
+
+If you'd like to write your own tool, see [this how-to](/docs/how_to/custom_tools/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+
+:::
+
 ## Search Tools
 
 The following table shows tools that execute online searches in some shape or form:

@@ -524,6 +524,15 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'status': dict({
+            'default': 'success',
+            'enum': list([
+              'success',
+              'error',
+            ]),
+            'title': 'Status',
+            'type': 'string',
+          }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
             'type': 'string',
@@ -1131,6 +1140,15 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'status': dict({
+            'default': 'success',
+            'enum': list([
+              'success',
+              'error',
+            ]),
+            'title': 'Status',
+            'type': 'string',
           }),
           'tool_call_id': dict({
             'title': 'Tool Call Id',
