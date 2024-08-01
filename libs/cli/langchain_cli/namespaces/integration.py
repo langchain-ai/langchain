@@ -1,6 +1,7 @@
 """
 Develop integration packages for LangChain.
 """
+
 import re
 import shutil
 import subprocess
@@ -26,7 +27,7 @@ Replacements = TypedDict(
 )
 
 
-def _process_name(name: str):
+def _process_name(name: str, *, community: bool = False):
     preprocessed = name.replace("_", "-").lower()
 
     if preprocessed.startswith("langchain-"):
@@ -41,16 +42,17 @@ def _process_name(name: str):
         raise ValueError("Name should not end with `-`.")
     if preprocessed.find("--") != -1:
         raise ValueError("Name should not contain consecutive hyphens.")
-    return Replacements(
-        {
-            "__package_name__": f"langchain-{preprocessed}",
-            "__module_name__": "langchain_" + preprocessed.replace("-", "_"),
-            "__ModuleName__": preprocessed.title().replace("-", ""),
-            "__MODULE_NAME__": preprocessed.upper().replace("-", ""),
-            "__package_name_short__": preprocessed,
-            "__package_name_short_snake__": preprocessed.replace("-", "_"),
-        }
-    )
+    replacements = {
+        "__package_name__": f"langchain-{preprocessed}",
+        "__module_name__": "langchain_" + preprocessed.replace("-", "_"),
+        "__ModuleName__": preprocessed.title().replace("-", ""),
+        "__MODULE_NAME__": preprocessed.upper().replace("-", ""),
+        "__package_name_short__": preprocessed,
+        "__package_name_short_snake__": preprocessed.replace("-", "_"),
+    }
+    if community:
+        replacements["__module_name__"] = preprocessed.replace("-", "_")
+    return Replacements(replacements)
 
 
 @integration_cli.command()
@@ -125,6 +127,20 @@ def new(
     )
 
 
+TEMPLATE_MAP: dict[str, str] = {
+    "ChatModel": "chat.ipynb",
+    "DocumentLoader": "document_loaders.ipynb",
+    "Tool": "tools.ipynb",
+    "VectorStore": "vectorstores.ipynb",
+    "Embeddings": "text_embedding.ipynb",
+    "ByteStore": "kv_store.ipynb",
+    "LLM": "llms.ipynb",
+    "Provider": "provider.ipynb",
+    "Toolkit": "toolkits.ipynb",
+    "Retriever": "retrievers.ipynb",
+}
+
+
 @integration_cli.command()
 def create_doc(
     name: Annotated[
@@ -154,7 +170,8 @@ def create_doc(
         str,
         typer.Option(
             help=(
-                "The type of component. Currently only 'ChatModel', 'DocumentLoader' supported."
+                "The type of component. Currently only 'ChatModel', "
+                "'DocumentLoader', 'VectorStore' supported."
             ),
         ),
     ] = "ChatModel",
@@ -170,7 +187,7 @@ def create_doc(
     Creates a new integration doc.
     """
     try:
-        replacements = _process_name(name)
+        replacements = _process_name(name, community=component_type == "Tool")
     except ValueError as e:
         typer.echo(e)
         raise typer.Exit(code=1)
@@ -198,14 +215,13 @@ def create_doc(
     )
 
     # copy over template from ../integration_template
-    if component_type == "ChatModel":
-        docs_template = (
-            Path(__file__).parents[1] / "integration_template/docs/chat.ipynb"
-        )
-    elif component_type == "DocumentLoader":
-        docs_template = (
-            Path(__file__).parents[1]
-            / "integration_template/docs/document_loaders.ipynb"
+    template_dir = Path(__file__).parents[1] / "integration_template" / "docs"
+    if component_type in TEMPLATE_MAP:
+        docs_template = template_dir / TEMPLATE_MAP[component_type]
+    else:
+        raise ValueError(
+            f"Unrecognized {component_type=}. Expected one of 'ChatModel', "
+            f"'DocumentLoader', 'Tool'."
         )
     shutil.copy(docs_template, destination_path)
 

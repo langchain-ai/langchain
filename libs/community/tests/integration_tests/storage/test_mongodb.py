@@ -1,9 +1,10 @@
-from typing import Generator
+from typing import Generator, Tuple
 
 import pytest
 from langchain_core.documents import Document
+from langchain_standard_tests.integration_tests.base_store import BaseStoreSyncTests
 
-from langchain_community.storage.mongodb import MongoDBStore
+from langchain_community.storage.mongodb import MongoDBByteStore, MongoDBStore
 
 pytest.importorskip("pymongo")
 
@@ -71,3 +72,19 @@ def test_mdelete(mongo_store: MongoDBStore) -> None:
 def test_init_errors() -> None:
     with pytest.raises(ValueError):
         MongoDBStore("", "", "")
+
+
+class TestMongoDBStore(BaseStoreSyncTests):
+    @pytest.fixture
+    def three_values(self) -> Tuple[bytes, bytes, bytes]:  # <-- Provide 3
+        return b"foo", b"bar", b"buzz"
+
+    @pytest.fixture
+    def kv_store(self) -> MongoDBByteStore:
+        import mongomock
+
+        # mongomock creates a mock MongoDB instance for testing purposes
+        with mongomock.patch(servers=(("localhost", 27017),)):
+            return MongoDBByteStore(
+                "mongodb://localhost:27017/", "test_db", "test_collection"
+            )

@@ -1,4 +1,5 @@
 """Module that contains tests for runnable.astream_events API."""
+
 import asyncio
 import sys
 import uuid
@@ -49,7 +50,7 @@ from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import tool
 from langchain_core.utils.aiter import aclosing
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
@@ -511,7 +512,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -520,7 +521,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -529,7 +530,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -539,7 +540,7 @@ async def test_astream_events_from_model() -> None:
         },
         {
             "data": {
-                "output": AIMessageChunk(content="hello world!", id=AnyStr()),
+                "output": _AnyIdAIMessageChunk(content="hello world!"),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
@@ -595,7 +596,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -604,7 +605,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -613,7 +614,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -624,7 +625,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {
                 "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": AIMessage(content="hello world!", id=AnyStr()),
+                "output": _AnyIdAIMessage(content="hello world!"),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
@@ -634,7 +635,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessage(content="hello world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessage(content="hello world!")},
             "event": "on_chain_stream",
             "metadata": {},
             "name": "i_dont_stream",
@@ -643,7 +644,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": [],
         },
         {
-            "data": {"output": AIMessage(content="hello world!", id=AnyStr())},
+            "data": {"output": _AnyIdAIMessage(content="hello world!")},
             "event": "on_chain_end",
             "metadata": {},
             "name": "i_dont_stream",
@@ -681,7 +682,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="hello")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -690,7 +691,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content=" ")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -699,7 +700,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessageChunk(content="world!")},
             "event": "on_chat_model_stream",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
@@ -710,7 +711,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {
                 "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": AIMessage(content="hello world!", id=AnyStr()),
+                "output": _AnyIdAIMessage(content="hello world!"),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
@@ -720,7 +721,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"chunk": AIMessage(content="hello world!", id=AnyStr())},
+            "data": {"chunk": _AnyIdAIMessage(content="hello world!")},
             "event": "on_chain_stream",
             "metadata": {},
             "name": "ai_dont_stream",
@@ -729,7 +730,7 @@ async def test_astream_with_model_in_chain() -> None:
             "tags": [],
         },
         {
-            "data": {"output": AIMessage(content="hello world!", id=AnyStr())},
+            "data": {"output": _AnyIdAIMessage(content="hello world!")},
             "event": "on_chain_end",
             "metadata": {},
             "name": "ai_dont_stream",
@@ -2352,3 +2353,245 @@ async def test_cancel_astream_events() -> None:
 
     # node "anotherwhile" should never start
     assert anotherwhile.started is False
+
+
+async def test_custom_event() -> None:
+    """Test adhoc event."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo", config=config)
+        return x + 1
+
+    uuid1 = uuid.UUID(int=7)
+
+    events = await _collect_events(
+        foo.astream_events(
+            1,
+            version="v2",
+            config={"run_id": uuid1},
+        ),
+        with_nulled_ids=False,
+    )
+
+    run_id = str(uuid1)
+    assert events == [
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"x": 1},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": "foo",
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event2",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": 2},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+    ]
+
+
+async def test_custom_event_nested() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo", config=config)
+        return x + 1
+
+    run_id = uuid.UUID(int=7)
+    child_run_id = uuid.UUID(int=8)
+
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def bar(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        return await foo.ainvoke(
+            x,  # type: ignore[arg-type]
+            {"run_id": child_run_id, **config},
+        )
+
+    events = await _collect_events(
+        bar.astream_events(
+            1,
+            version="v2",
+            config={"run_id": run_id},
+        ),
+        with_nulled_ids=False,
+    )
+
+    run_id = str(run_id)  # type: ignore[assignment]
+    child_run_id = str(child_run_id)  # type: ignore[assignment]
+
+    assert events == [
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"x": 1},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": "foo",
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event2",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"input": 1, "output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": 2},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+        {
+            "data": {"output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+    ]
+
+
+async def test_custom_event_root_dispatch() -> None:
+    """Test adhoc event in a nested chain."""
+    # This just tests that nothing breaks on the path.
+    # It shouldn't do anything at the moment, since the tracer isn't configured
+    # to handle adhoc events.
+    from langchain_core.callbacks.manager import adispatch_custom_event
+
+    # Expected behavior is that the event cannot be dispatched
+    with pytest.raises(RuntimeError):
+        await adispatch_custom_event("event1", {"x": 1})
+
+
+IS_GTE_3_11 = sys.version_info >= (3, 11)
+
+
+# Test relies on automatically picking up RunnableConfig from contextvars
+@pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
+async def test_custom_event_root_dispatch_with_in_tool() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+    from langchain_core.tools import tool
+
+    @tool
+    async def foo(x: int) -> int:
+        """Foo"""
+        await adispatch_custom_event("event1", {"x": x})
+        return x + 1
+
+    # Ignoring type due to @tool not returning correct type annotations
+    events = await _collect_events(
+        foo.astream_events({"x": 2}, version="v2")  # type: ignore[attr-defined]
+    )
+    assert events == [
+        {
+            "data": {"input": {"x": 2}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"x": 2},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": 3},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+    ]

@@ -17,6 +17,7 @@ class FireCrawlLoader(BaseLoader):
         url: str,
         *,
         api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
         mode: Literal["crawl", "scrape"] = "crawl",
         params: Optional[dict] = None,
     ):
@@ -26,6 +27,8 @@ class FireCrawlLoader(BaseLoader):
             url: The url to be crawled.
             api_key: The Firecrawl API key. If not specified will be read from env var
                 FIRECRAWL_API_KEY. Get an API key
+            api_url: The Firecrawl API URL. If not specified will be read from env var
+                FIRECRAWL_API_URL or defaults to https://api.firecrawl.dev.
             mode: The mode to run the loader in. Default is "crawl".
                  Options include "scrape" (single url) and
                  "crawl" (all accessible sub pages).
@@ -45,7 +48,7 @@ class FireCrawlLoader(BaseLoader):
                 f"Unrecognized mode '{mode}'. Expected one of 'crawl', 'scrape'."
             )
         api_key = api_key or get_from_env("api_key", "FIRECRAWL_API_KEY")
-        self.firecrawl = FirecrawlApp(api_key=api_key)
+        self.firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
         self.url = url
         self.mode = mode
         self.params = params

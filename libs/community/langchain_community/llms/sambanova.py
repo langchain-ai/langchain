@@ -5,8 +5,8 @@ import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Extra
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 
 class SVEndpointHandler:
@@ -16,7 +16,7 @@ class SVEndpointHandler:
     :param str host_url: Base URL of the DaaS API service
     """
 
-    API_BASE_PATH = "/api/predict"
+    API_BASE_PATH: str = "/api/predict"
 
     def __init__(self, host_url: str):
         """
@@ -190,6 +190,7 @@ class Sambaverse(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1.0,
                 "top_k": 50,
+                "process_prompt": False
             },
         )
     """
@@ -218,7 +219,7 @@ class Sambaverse(LLM):
     def is_lc_serializable(cls) -> bool:
         return True
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["sambaverse_url"] = get_from_dict_or_env(
@@ -672,7 +673,7 @@ class SambaStudio(LLM):
     Example:
     .. code-block:: python
 
-        from langchain_community.llms.sambanova  import Sambaverse
+        from langchain_community.llms.sambanova  import SambaStudio
         SambaStudio(
             sambastudio_base_url="your-SambaStudio-environment-URL",
             sambastudio_base_uri="your-SambaStudio-base-URI",
@@ -687,6 +688,8 @@ class SambaStudio(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1,
                 "top_k": 50,
+                #"process_prompt": False,
+                #"select_expert": "Meta-Llama-3-8B-Instruct"
             },
         )
     """
@@ -731,7 +734,7 @@ class SambaStudio(LLM):
         """Return type of llm."""
         return "Sambastudio LLM"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["sambastudio_base_url"] = get_from_dict_or_env(
@@ -741,7 +744,7 @@ class SambaStudio(LLM):
             values,
             "sambastudio_base_uri",
             "SAMBASTUDIO_BASE_URI",
-            default="api/predict/nlp",
+            default="api/predict/generic",
         )
         values["sambastudio_project_id"] = get_from_dict_or_env(
             values, "sambastudio_project_id", "SAMBASTUDIO_PROJECT_ID"

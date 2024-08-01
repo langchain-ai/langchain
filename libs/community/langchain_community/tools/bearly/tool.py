@@ -74,8 +74,8 @@ class BearlyInterpreterTool:
     """Tool for evaluating python code in a sandbox environment."""
 
     api_key: str
-    endpoint = "https://exec.bearly.ai/v1/interpreter"
-    name = "bearly_interpreter"
+    endpoint: str = "https://exec.bearly.ai/v1/interpreter"
+    name: str = "bearly_interpreter"
     args_schema: Type[BaseModel] = BearlyInterpreterToolArguments
     files: Dict[str, FileInfo] = {}
 
