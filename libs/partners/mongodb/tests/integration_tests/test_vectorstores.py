@@ -4,16 +4,11 @@ from __future__ import annotations
 
 import os
 from time import monotonic, sleep
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.runnables.base import RunnableLambda
-from langchain_openai import ChatOpenAI
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import OperationFailure
@@ -31,7 +26,7 @@ DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 INDEX_COLLECTION_NAME = "langchain_test_vectorstores_index"
 INDEX_DB_NAME = "langchain_test_index_db"
 DIMENSIONS = 1536
-TIMEOUT = 10.0
+TIMEOUT = 20.0
 INTERVAL = 0.5
 
 
@@ -43,38 +38,6 @@ def example_documents():
         Document(page_content="What is a sandwich?", metadata={"c": 1}),
         Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
     ]
-
-
-class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
-    def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
-        """Patched insert_texts that waits for data to be indexed before returning"""
-        ids = super()._insert_texts(texts, metadatas)
-        start = monotonic()
-        while len(ids) != len(self.similarity_search("sandwich")) and (
-            monotonic() - start <= TIMEOUT
-        ):
-            sleep(INTERVAL)
-        return ids
-
-    def create_vector_search_index(
-        self,
-        dimensions: int,
-        filters: Optional[List[Dict[str, str]]] = None,
-        update: bool = False,
-    ) -> None:
-        result = super().create_vector_search_index(
-            dimensions=dimensions, filters=filters, update=update
-        )
-        start = monotonic()
-        while monotonic() - start <= TIMEOUT:
-            if indexes := list(
-                self._collection.list_search_indexes(name=self._index_name)
-            ):
-                if indexes[0].get("status") == "READY":
-                    return result
-            sleep(INTERVAL)
-
-        raise TimeoutError(f"{self._index_name} never reached 'status: READY'")
 
 
 def _await_index_deletion(coll: Collection, index_name: str) -> None:
@@ -154,9 +117,9 @@ class TestMongoDBAtlasVectorSearch:
         """Test end to end construction and search."""
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
             example_documents,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert len(output) == 1
@@ -174,9 +137,9 @@ class TestMongoDBAtlasVectorSearch:
         """Test end to end construction and search."""
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
             example_documents,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert len(output) == 1
@@ -196,9 +159,9 @@ class TestMongoDBAtlasVectorSearch:
         """Test end to end construction and search."""
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
             example_documents,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1, include_embeddings=True)
         assert len(output) == 1
@@ -218,9 +181,9 @@ class TestMongoDBAtlasVectorSearch:
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert len(output) == 1
@@ -238,10 +201,10 @@ class TestMongoDBAtlasVectorSearch:
         metakeys = ["a", "b", "c", "d", "e"]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
             metadatas=metadatas,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert len(output) == 1
@@ -260,10 +223,10 @@ class TestMongoDBAtlasVectorSearch:
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
             metadatas=metadatas,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
         output = vectorstore.similarity_search(
             "Sandwich", k=1, pre_filter={"c": {"$lte": 0}}
@@ -274,9 +237,9 @@ class TestMongoDBAtlasVectorSearch:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
         query = "foo"
         output = vectorstore.max_marginal_relevance_search(query, k=10, lambda_mult=0.1)
@@ -290,18 +253,16 @@ class TestMongoDBAtlasVectorSearch:
         collection: Any,
         example_documents: List[Document],
     ) -> None:
-        """Demonstrate usage and parity of VectorStore similarity_search with Retriever.invoke."""
+        """Demonstrate usage and parity of VectorStore similarity_search
+        with Retriever.invoke."""
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
             example_documents,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
-
-        # We'll use the same query in both cases, although this isn't necessary
         query = "sandwich"
 
-        # Case 1. Default arguments. Performs a vector search
         retriever_default_kwargs = vectorstore.as_retriever()
         result_retriever = retriever_default_kwargs.invoke(query)
         result_vectorstore = vectorstore.similarity_search(query)
@@ -312,298 +273,6 @@ class TestMongoDBAtlasVectorSearch:
             ]
         )
 
-        # Case 2. With kwargs that produce a hybrid search with an additional index
-        search_kwargs = dict(
-            strategy="hybrid",
-            fulltext_index_name="text_index",
-            fulltext_search_operator="text",
-            fulltext_search_query="heart",
-            fulltext_penalty=0,
-            vector_penalty=0,
-        )
-
-        retriever_nontrivial = vectorstore.as_retriever(search_kwargs=search_kwargs)
-        result_retriever = retriever_nontrivial.invoke(query)
-        result_vectorstore = vectorstore.similarity_search(query, **search_kwargs)
-        assert all(
-            [
-                result_retriever[i].page_content == result_vectorstore[i].page_content
-                for i in range(len(result_retriever))
-            ]
-        )
-
-    @pytest.mark.skipif(
-        "OPENAI_API_KEY" not in os.environ, reason="Requires OpenAI for chat responses."
-    )
-    def test_chain(
-        self,
-        embedding_openai: Embeddings,
-        collection: Any,
-        example_documents: List[Document],
-    ) -> None:
-        """Demonstrate usage of MongoDBAtlasVectorSearch in a realistic chain
-
-        Follows example in the docs: https://python.langchain.com/v0.2/docs/how_to/hybrid/
-
-        Requires OpenAI_API_KEY for embedding and chat model.
-        """
-
-        vectorstore = PatchedMongoDBAtlasVectorSearch(
-            collection=collection,
-            embedding=embedding_openai,
-            vector_index_name=INDEX_NAME,
-            fulltext_index_name="text_index",
-        )
-
-        texts = [
-            "In 2023, I visited Paris",
-            "In 2022, I visited New York",
-            "In 2021, I visited New Orleans",
-        ]
-        vectorstore.add_texts(texts)
-
-        query = "What city did I visit last?"
-        # If we do a standard similarity search, we get all documents, back, up to limit k:
-        out = vectorstore.as_retriever().invoke(query)
-        assert len(out) == len(texts)
-
-        # In the docs page, the example,  cities that don't include "new" or "New" are filtered out.
-        # One way to do this is to add a post-filter stage.
-        # This allows access to MongoDB's powerful query capabilities
-        filtered = vectorstore.similarity_search(
-            query=query,
-            strategy="vector",  # default.
-            post_filter_pipeline=[
-                {"$match": {"text": {"$regex": ".*new.*", "$options": "i"}}}
-            ],
-        )
-        all(["New" in doc.page_content for doc in filtered])
-
-        # We could do a full-text search index to the Collection/VectorStore
-        # In this, we get just 2 results
-        # (Note that we're passing a query arg, but it is not used for the full-text search)
-        fulltext_search = vectorstore.similarity_search(
-            query, strategy="fulltext", fulltext_search_query="new"
-        )
-        all(["New" in doc.page_content for doc in fulltext_search])
-
-        # But do we expect from a Hybrid Search? Some score attributed to the Vector Search and some to the Text, right?
-        # Let's confirm
-        hybrid_search = vectorstore.similarity_search(
-            query="What city did I visit last?",
-            strategy="hybrid",
-            fulltext_search_query="new",
-        )
-        vector_scores = [doc.metadata["vector_score"] for doc in hybrid_search]
-        fulltext_scores = [doc.metadata["fulltext_score"] for doc in hybrid_search]
-        scores = [doc.metadata["score"] for doc in hybrid_search]
-        assert len(fulltext_scores) == len(vector_scores)
-        assert all(
-            [
-                vector_scores[i] + fulltext_scores[i] == scores[i]
-                for i in range(len(vector_scores))
-            ]
-        )
-
-        template = """Answer the question based only on the following context:
-        {context}
-        Question: {question}
-        """
-        prompt = ChatPromptTemplate.from_template(template)
-
-        model = ChatOpenAI()
-
-        retriever = vectorstore.as_retriever(
-            search_kwargs=dict(
-                strategy="hybrid", vector_penalty=10, fulltext_search_query="new"
-            )
-        )
-
-        chain = (
-            {"context": retriever, "question": RunnablePassthrough()}
-            | prompt
-            | model
-            | StrOutputParser()
-        )
-
-        answer = chain.invoke("What city did I visit last?")
-
-        assert "Paris" in answer
-
-        # So, even though we've scored our results, we haven't filtered out documents without "New"
-        # We need to pass more info to the Chat Model - the scores.
-        # First, we create a template that includes the scores.
-
-        scored_template = """Answer the question based only on the following context.
-        You are an assistant tasked with analyzing the following documents. 
-        Each document is accompanied by a relevant importance.
-        Higher scores indicate more relevant documents. 
-        Please consider these scores when generating your response.
-        Disregard statements with scores below {threshold}
-
-        {statements_and_scores}
-
-        Question: {question}
-        """
-
-        # Then we add an additional post-processing step to get the information
-        # we need from the metadata of the retriever's Output
-
-        def format_documents_with_scores(documents: List[Document]) -> str:
-            """Function composes output of Retriever, a List[Document], into a string highlighting Score information."""
-            prompt_parts = []
-            for doc in documents:
-                score = doc.metadata.get("score", "No score available")
-                content = doc.page_content
-                prompt_parts.append(f"Score: {score}. Statement: {content}\n")
-            return "\n".join(prompt_parts)
-
-        postprocessor = RunnableLambda(format_documents_with_scores)
-
-        chain = (
-            {
-                "statements_and_scores": retriever | postprocessor,
-                "question": RunnablePassthrough(),
-                "threshold": RunnableLambda(lambda x: 1.0),
-            }
-            | ChatPromptTemplate.from_template(scored_template)
-            | model
-            | StrOutputParser()
-        )
-
-        scored_response = chain.invoke("What city did I visit most recently?")
-
-        assert "New York" in scored_response
-        assert "Paris" not in scored_response
-
-        # Finally, let's check if our full-text search passes on the query, and gets the same result.
-        retriever = vectorstore.as_retriever(
-            search_kwargs=dict(
-                strategy="fulltext", vector_penalty=10, fulltext_search_query="new"
-            )
-        )
-        chain = (
-            {
-                "statements_and_scores": retriever | postprocessor,
-                "question": RunnablePassthrough(),
-                "threshold": RunnableLambda(lambda x: 1.0),
-            }
-            | ChatPromptTemplate.from_template(scored_template)
-            | model
-            | StrOutputParser()
-        )
-
-        fulltext_response = chain.invoke("What city did I visit most recently?")
-        assert "New York" in fulltext_response
-        assert "Paris" not in fulltext_response
-
-    def test_strategy_fulltext(
-        self,
-        embedding_openai: Embeddings,
-        collection: Any,
-        example_documents: List[Document],
-    ) -> None:
-        """Test result of performing fulltext search"""
-        vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-            example_documents,
-            embedding_openai,
-            collection=collection,
-            vector_index_name=INDEX_NAME,
-        )
-
-        output = vectorstore.similarity_search(
-            "ignored_query", fulltext_search_query="Sandwich", strategy="fulltext", k=10
-        )
-        assert len(output) == 1
-        assert output[0].page_content == "What is a sandwich?"
-        # Check for the presence of the metadata key
-        assert "score" in output[0].metadata
-        assert "c" in output[0].metadata
-
-    def test_strategy_vector(
-        self,
-        embedding_openai: Embeddings,
-        collection: Any,
-        example_documents: List[Document],
-    ) -> None:
-        """Test explicitly passing vector kwarg matches default."""
-        vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-            example_documents,
-            embedding_openai,
-            collection=collection,
-            vector_index_name=INDEX_NAME,
-        )
-
-        output_explicit = vectorstore.similarity_search("Sandwich", strategy="vector")
-        output_implicit = vectorstore.similarity_search("Sandwich", strategy="vector")
-        assert output_explicit == output_implicit
-
-    def test_strategy_hybrid(
-        self,
-        embedding_openai: Embeddings,
-        collection: Any,
-    ) -> None:
-        """Test scores of Hybrid Search."""
-        vectorstore = PatchedMongoDBAtlasVectorSearch(
-            collection=collection,
-            embedding=embedding_openai,
-            vector_index_name=INDEX_NAME,
-            fulltext_index_name="text_index",
-        )
-
-        texts = [
-            "In 2023, I visited Paris",
-            "In 2022, I visited New York",
-            "In 2021, I visited New Orleans",
-        ]
-        vectorstore.add_texts(texts)
-
-        output_vector = vectorstore.similarity_search_with_score(
-            "Visited", strategy="vector"
-        )
-        n = len(texts)
-        assert len(output_vector) == n
-        # Check that all the scores roughly match
-        assert all(
-            [
-                abs((output_vector[i][-1] - output_vector[i + 1][-1]) < 0.1)
-                for i in range(n - 1)
-            ]
-        )
-
-        output_hybrid = vectorstore.similarity_search_with_score(
-            "Visited",
-            strategy="hybrid",
-            fulltext_search_query="Visited",
-            fulltext_search_operator="text",
-        )
-        # Check reciprocal ranking scores make sense
-        sum_scores = 0
-
-        def scores_expected(n, penalty=0):
-            return sum([(1 / (penalty + i)) for i in range(1, n + 1)])
-
-        for i in range(n):
-            sum_scores += output_hybrid[i][-1]
-        assert abs(sum_scores - 2 * scores_expected(n)) < 0.001
-
-        vector_penalty = 10
-        output_penalized = vectorstore.similarity_search_with_score(
-            "I visited where?",
-            strategy="hybrid",
-            fulltext_search_query="New",
-            vector_penalty=vector_penalty,
-        )
-        # Test the weighting of vector scores
-        scores = sum(
-            [output_penalized[i][0].metadata["vector_score"] for i in range(n)]
-        )
-        assert abs(scores - scores_expected(n, vector_penalty)) < 0.001
-        # Test that score == 0 for the Paris text
-        assert 0 in [
-            output_penalized[i][0].metadata["fulltext_score"] for i in range(n)
-        ]
-
     def test_include_embeddings(
         self,
         embedding_openai: Embeddings,
@@ -613,9 +282,9 @@ class TestMongoDBAtlasVectorSearch:
         """Test explicitly passing vector kwarg matches default."""
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
             example_documents,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
-            vector_index_name=INDEX_NAME,
+            index_name=INDEX_NAME,
         )
 
         output_with = vectorstore.similarity_search(
@@ -629,7 +298,7 @@ class TestMongoDBAtlasVectorSearch:
         self, embedding_openai: Embeddings, index_collection: Any
     ) -> None:
         vectorstore = PatchedMongoDBAtlasVectorSearch(
-            index_collection, embedding_openai, index_name=INDEX_CREATION_NAME
+            index_collection, embedding=embedding_openai, index_name=INDEX_CREATION_NAME
         )
         vectorstore.create_vector_search_index(dimensions=1536)
 
@@ -637,7 +306,7 @@ class TestMongoDBAtlasVectorSearch:
         self, embedding_openai: Embeddings, index_collection: Any
     ) -> None:
         vectorstore = PatchedMongoDBAtlasVectorSearch(
-            index_collection, embedding_openai, index_name=INDEX_CREATION_NAME
+            index_collection, embedding=embedding_openai, index_name=INDEX_CREATION_NAME
         )
         vectorstore.create_vector_search_index(dimensions=1536)
         vectorstore.create_vector_search_index(dimensions=1536, update=True)

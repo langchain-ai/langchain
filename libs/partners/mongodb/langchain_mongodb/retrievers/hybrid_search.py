@@ -21,13 +21,18 @@ from langchain_mongodb.utils import make_serializable
 
 class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """Hybrid Search Retriever combines vector and full-text searches
-    weighting them the via Reciprocal Rank Fusion algorithm.
+    weighting them the via Reciprocal Rank Fusion (RRF) algorithm.
+
+    Increasing the vector_penalty will reduce the importance on the vector search.
+    Increasing the fulltext_penalty will correspondingly reduce the fulltext score.
+    For more on the algorithm,see
+    https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking
     """
 
     vectorstore: MongoDBAtlasVectorSearch
     """MongoDBAtlas VectorStore"""
     search_index_name: str
-    """Atlas Search Index name"""
+    """Atlas Search Index (full-text) name"""
     top_k: int = 4
     """Number of documents to return."""
     oversampling_factor: int = 10
@@ -36,9 +41,9 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """(Optional) Any MQL match expression comparing an indexed field"""
     post_filter: Optional[MongoDBDocument] = None
     """(Optional) Pipeline of MongoDB aggregation stages for postprocessing."""
-    vector_penalty: float = 0.0
+    vector_penalty: float = 60.0
     """Penalty applied to vector search results in RRF: scores=1/(rank + penalty)"""
-    fulltext_penalty: float = 0.0
+    fulltext_penalty: float = 60.0
     """Penalty applied to full-text search results in RRF: scores=1/(rank + penalty)"""
     show_embeddings: float = False
     """If true, returned Document metadata will include vectors."""
@@ -67,6 +72,8 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
         scores_fields = ["vector_score", "fulltext_score"]
         pipeline = []
 
+        # First we build up the aggregation pipeline,
+        # then it is passed to the server to execute
         # Vector Search stage
         vector_pipeline = [
             vector_search_stage(

@@ -16,7 +16,6 @@ from typing import (
 )
 
 import numpy as np
-from bson import ObjectId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -30,13 +29,7 @@ from langchain_mongodb.index import (
     create_vector_search_index,
     update_vector_search_index,
 )
-from langchain_mongodb.pipelines import (
-    combine_pipelines,
-    final_hybrid_stage,
-    reciprocal_rank_stage,
-    text_search_stage,
-    vector_search_stage,
-)
+from langchain_mongodb.pipelines import vector_search_stage
 from langchain_mongodb.utils import make_serializable, maximal_marginal_relevance
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
@@ -48,12 +41,27 @@ DEFAULT_INSERT_BATCH_SIZE = 100_000
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
-    """`MongoDB Atlas Vector Search` vector store.
+    """MongoDB Atlas' Vector Store, combines data, embeddings, and indexes.
 
-    To use, you should have both:
-    - the ``pymongo`` python package installed
-    - a connection string associated with a MongoDB Atlas Cluster having deployed an
-        Atlas Search index
+    You must first have created:
+    - A Collection
+    - An Vector Search index
+
+    Search Indexes are only available on Atlas, the fully managed cloud service,
+    not the self-managed MongoDB.
+
+
+    MongoDBAtlasVectorSearch performs data operations on
+    text, embeddings and arbitrary data. In addition to CRUD operations,
+    the VectorStore provides Vector Search
+    based on similarity of embedding vectors following the
+    Hierarchical Navigable Small Worlds (HNSW) algorithm.
+
+    This supports a number of models to ascertain scores,
+    "similarity" (default), "MMR", and "similarity_score_threshold".
+    These are described in the search_type argument to as_retriever,
+    which provides the Runnable.invoke(query) API, allowing
+    MongoDBAtlasVectorSearch to be used within a chain.
 
     Example:
         .. code-block:: python
@@ -62,7 +70,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
             from langchain_openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
-            mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
+            mongo_client = MongoClient("<YOUR-CONNECTION-STRING>",
+                    driver=DriverInfo(name="Langchain", version=version("langchain")))
             collection = mongo_client["<db_name>"]["<collection_name>"]
             embeddings = OpenAIEmbeddings()
             vectorstore = MongoDBAtlasVectorSearch(collection, embeddings)
@@ -72,12 +81,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         collection: Collection[MongoDBDocumentType],
         embedding: Embeddings,
-        vector_index_name: str = "vector_index",
+        index_name: str = "vector_index",
         text_key: str = "text",
         embedding_key: str = "embedding",
         relevance_score_fn: str = "cosine",
-        fulltext_index_name: str = "text_index",
-        index_name: str = None,
         **kwargs,
     ):
         """
@@ -85,12 +92,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
             collection: MongoDB collection to add the texts to.
             embedding: Text embedding model to use.
             text_key: MongoDB field that will contain the text for each document.
-            embedding_key: MongoDB field that will contain the embedding for each document.
+            embedding_key: Field that will contain the embedding for each document.
             vector_index_name: Name of the Atlas Vector Search index.
             relevance_score_fn: The similarity score used for the index.
                 Currently supported: 'euclidean', 'cosine', and 'dotProduct'.
-            fulltext_index_name: If strategy provided to search / retriever in ["fulltext", "hybrid"],
-                one must provide the name of an Atlas Search Index.
         """
         self._collection = collection
         self._embedding = embedding
@@ -150,7 +155,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Add texts and their embeddings to the vectorstore.
 
         Args:
             texts: Iterable of strings to add to the vectorstore.
@@ -200,50 +205,25 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        strategy: str = "vector",
         oversampling_factor: int = 10,
         include_embeddings: bool = False,
-        fulltext_search_query: str = "",
-        fulltext_search_operator: str = "phrase",
-        vector_penalty: float = 0.0,
-        fulltext_penalty: float = 0.0,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return MongoDB documents most similar to the given query and their scores.
 
-        Extended Query interface supporting Vector, Full-Text and Hybrid Search.
-        Each of the search types allows for filtering and permits a limit (k) of documents to return.
-
-        These efficient queries require search indexes to be created in MongoDB Atlas.
-
-        Atlas Search eliminates the need to run a separate
+        Atlas Vector Search eliminates the need to run a separate
         search system alongside your database.
-
-        For details on search_type='vector', see the following:
-            https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
-
-        For details on search_type='text', see
-            https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search
-
-        For details on search_type='hybrid', see
-            https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/reciprocal-rank-fusion/
-            In the scoring algorithm used, Reciprocal Rank Fusion,
-            scores := \frac{1}{rank + penalty} with rank in [1,2,..,n]
 
          Args:
             query: Input text of semantic query
             k: (Optional) number of documents to return. Defaults to 4.
-            pre_filter: (Optional) dictionary of argument(s) to prefilter document fields on.
-            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages for postprocessing.
-            strategy: (Optional) Type of search to make. One of "vector", "fulltext", or "hybrid".
-            oversampling_factor: Multiple of k used when generating number of candidates in HNSW Vector Search,
-            include_embeddings: If True, the embedding vector of each result will be included in metadata.
-            vector_penalty: Weighting factor applied to vector search results.
-            fulltext_penalty: Weighting factor applied to full-text search results.
-            fulltext_search_query: Input test query in the following search:
-                {$search: {operator: {"query": query, "path": text_key}, "index": fulltext_index_name}}
-            fulltext_search_operator: A number of operators are available in the full-text search stage.
-                For details, see https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref
+            pre_filter: (Optional) dictionary of arguments to filter document fields on.
+            post_filter_pipeline: (Optional) Arbitrary pipeline of MongoDB
+                aggregation stages applied after the search is complete.
+            oversampling_factor: This times k is the number of candidates chosen
+                at each step in the in HNSW Vector Search
+            include_embeddings: If True, the embedding vector of each result
+                will be included in metadata.
             kwargs: Additional arguments are specific to the search_type
 
         Returns:
@@ -255,13 +235,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
             k=k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
-            strategy=strategy,
             oversampling_factor=oversampling_factor,
             include_embeddings=include_embeddings,
-            fulltext_search_query=fulltext_search_query,
-            fulltext_search_operator=fulltext_search_operator,
-            vector_penalty=vector_penalty,
-            fulltext_penalty=fulltext_penalty,
             **kwargs,
         )
         return docs
@@ -272,69 +247,40 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        strategy: str = "vector",
         oversampling_factor: int = 10,
         include_scores: bool = True,
         include_embeddings: bool = False,
-        fulltext_search_query: str = "",
-        fulltext_search_operator: str = "phrase",
-        vector_penalty: float = 0.0,
-        fulltext_penalty: float = 0.0,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return MongoDB documents most similar to the given query and their scores.
+        """Return MongoDB documents most similar to the given query.
 
-        Extended Query interface supporting Vector, Full-Text and Hybrid Search.
-        Each of the search types allows for filtering and permits a limit (k) of documents to return.
-
-        These efficient queries require search indexes to be created in MongoDB Atlas.
-
-        Atlas Search eliminates the need to run a separate
+        # TODO Use references like :ref: to minimize duplication.
+        Atlas Vector Search eliminates the need to run a separate
         search system alongside your database.
-
-        For details on search_type='vector', see the following:
-            https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
-
-        For details on search_type='text', see
-            https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search
-
-        For details on search_type='hybrid', see
-            https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/reciprocal-rank-fusion/
-            In the scoring algorithm used, Reciprocal Rank Fusion,
-            scores := \frac{1}{rank + penalty} with rank in [1,2,..,n]
 
          Args:
             query: Input text of semantic query
             k: (Optional) number of documents to return. Defaults to 4.
-            pre_filter: (Optional) dictionary of argument(s) to prefilter document fields on.
-            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages for postprocessing.
-            strategy: (Optional) Type of search to make. One of "vector", "fulltext", or "hybrid".
-            oversampling_factor: Multiple of k used when generating number of candidates in HNSW Vector Search,
-            include_scores: If True, search scores will be included in result metadata
-            include_embeddings: If True, the embedding vector of each result will be included in metadata.
-            vector_penalty: Weighting factor applied to vector search results.
-            fulltext_penalty: Weighting factor applied to full-text search results.
-            fulltext_search_query: Input test query in the following search:
-                {$search: {operator: {"query": query, "path": text_key}, "index": fulltext_index_name}}
-            fulltext_search_operator: A number of operators are available in the full-text search stage.
-                For details, see https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref
+            pre_filter: (Optional) dictionary of arguments to filter document fields on.
+            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
+                to filter/process results after $vectorSearch.
+            oversampling_factor: Multiple of k used when generating number of candidates
+                at each step in the HNSW Vector Search,
+            include_embeddings: If True, the embedding vector of each result
+                will be included in metadata.
             kwargs: Additional arguments are specific to the search_type
 
         Returns:
-            List of documents most similar to the query.
+            List of documents most similar to the query and their scores.
         """
+        # TODO - Including score will incur a performance hit. Let's remove it
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
-            strategy=strategy,
             oversampling_factor=oversampling_factor,
             include_embeddings=include_embeddings,
-            fulltext_search_query=fulltext_search_query,
-            fulltext_search_operator=fulltext_search_operator,
-            vector_penalty=vector_penalty,
-            fulltext_penalty=fulltext_penalty,
             **kwargs,
         )
 
@@ -351,12 +297,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         lambda_mult: float = 0.5,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        strategy: str = "vector",
-        oversampling_factor: int = 10,
-        fulltext_search_query: str = "",
-        fulltext_search_operator: str = "phrase",
-        vector_penalty: float = 0.0,
-        fulltext_penalty: float = 0.0,
         **kwargs: Any,
     ) -> List[Document]:
         """Return documents selected using the maximal marginal relevance.
@@ -373,26 +313,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            pre_filter: (Optional) dictionary of argument(s) to prefilter on document
-                fields.
+            pre_filter: (Optional) dictionary of arguments to filter document fields on.
             post_filter_pipeline: (Optional) pipeline of MongoDB aggregation stages
-                following the vectorSearch stage.
-
-         Args:
-            query: Input text of semantic query
-            k: (Optional) number of documents to return. Defaults to 4.
-            pre_filter: (Optional) dictionary of argument(s) to prefilter document fields on.
-            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages for postprocessing.
-            strategy: (Optional) Type of search to make. One of "vector", "fulltext", or "hybrid".
-            oversampling_factor: Multiple of k used when generating number of candidates in HNSW Vector Search,
-            vector_penalty: Weighting factor applied to vector search results.
-            fulltext_penalty: Weighting factor applied to full-text search results.
-            fulltext_search_query: Input test query in the following search:
-                {$search: {operator: {"query": query, "path": text_key}, "index": fulltext_index_name}}
-            fulltext_search_operator: A number of operators are available in the full-text search stage.
-                For details, see https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref
-            kwargs: Additional arguments are specific to the search_type
-
+                following the $vectorSearch stage.
         Returns:
             List of documents selected by maximal marginal relevance.
         """
@@ -403,12 +326,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
             lambda_mult=lambda_mult,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
-            strategy=strategy,
-            oversampling_factor=oversampling_factor,
-            fulltext_search_query=fulltext_search_query,
-            fulltext_search_operator=fulltext_search_operator,
-            vector_penalty=vector_penalty,
-            fulltext_penalty=fulltext_penalty,
             **kwargs,
         )
 
@@ -419,6 +336,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[Dict]] = None,
         collection: Optional[Collection[MongoDBDocumentType]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct a `MongoDB Atlas Vector Search` vector store from raw documents.
@@ -429,6 +347,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 (Lucene)
 
         This is intended to be a quick way to get started.
+
+        See :ref:`MongoDBAtlasVectorSearch` for kwargs and further description.
+
 
         Example:
             .. code-block:: python
@@ -454,21 +375,21 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return vectorstore
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        """Delete by ObjectId or other criteria.
+        """Delete documents from VectorStore by ids.
 
         Args:
             ids: List of ids to delete.
-            **kwargs: Other keyword arguments that subclasses might use.
+            **kwargs: Other keyword arguments passed to Collection.delete_many()
 
         Returns:
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        search_params: dict[str, Any] = {}
+        filter = {}
         if ids:
-            search_params["_id"] = {"$in": [ObjectId(id) for id in ids]}
-
-        return self._collection.delete_many({**search_params, **kwargs}).acknowledged
+            oids = [str_to_oid(i) for i in ids]
+            filter = {"_id": {"$in": oids}}
+        return self._collection.delete_many(filter=filter, **kwargs).acknowledged
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
@@ -487,18 +408,13 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        query_vector: List[float],
+        embedding: List[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        strategy: str = "vector",
         oversampling_factor: int = 10,
-        fulltext_search_query: str = "",
-        fulltext_search_operator: str = "phrase",
-        vector_penalty: float = 0.0,
-        fulltext_penalty: float = 0.0,
         **kwargs: Any,
     ) -> List[Document]:  # type: ignore
         """Return docs selected using the maximal marginal relevance.
@@ -507,46 +423,34 @@ class MongoDBAtlasVectorSearch(VectorStore):
         among selected documents.
 
         Args:
-            query_vector: Embedding to look up documents similar to.
+            embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            pre_filter: (Optional) dictionary of argument(s) to prefilter on document
-                fields.
+            pre_filter: (Optional) dictionary of arguments to filter document fields on.
             post_filter_pipeline: (Optional) pipeline of MongoDB aggregation stages
                 following the vectorSearch stage.
-            strategy: (Optional) Type of search to make. One of "vector", "fulltext", or "hybrid".
-            oversampling_factor: Multiple of k used when generating number of candidates in HNSW Vector Search,
-            vector_penalty: Weighting factor applied to vector search results.
-            fulltext_penalty: Weighting factor applied to full-text search results.
-            fulltext_search_query: Input test query in the following search:
-                {$search: {operator: {"query": query, "path": text_key}, "index": fulltext_index_name}}
-            fulltext_search_operator: A number of operators are available in the full-text search stage.
-                For details, see https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref
+            oversampling_factor: Multiple of k used when generating number
+                of candidates in HNSW Vector Search,
             kwargs: Additional arguments are specific to the search_type
 
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         docs = self._similarity_search_with_score(
-            query_vector,
+            embedding,
             k=fetch_k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
             include_embeddings=True,
-            strategy=strategy,
             oversampling_factor=oversampling_factor,
-            fulltext_search_query=fulltext_search_query,
-            fulltext_search_operator=fulltext_search_operator,
-            vector_penalty=vector_penalty,
-            fulltext_penalty=fulltext_penalty,
             **kwargs,
         )
         mmr_doc_indexes = maximal_marginal_relevance(
-            np.array(query_vector),
+            np.array(embedding),
             [doc.metadata[self._embedding_key] for doc, _ in docs],
             k=k,
             lambda_mult=lambda_mult,
@@ -556,36 +460,26 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     async def amax_marginal_relevance_search_by_vector(
         self,
-        query_vector: List[float],
+        embedding: List[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        strategy: str = "vector",
         oversampling_factor: int = 10,
-        fulltext_search_query: str = "",
-        fulltext_search_operator: str = "phrase",
-        vector_penalty: float = 0.0,
-        fulltext_penalty: float = 0.0,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
         return await run_in_executor(
             None,
             self.max_marginal_relevance_search_by_vector,
-            query_vector,
+            embedding,
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
-            strategy=strategy,
             oversampling_factor=oversampling_factor,
-            fulltext_search_query=fulltext_search_query,
-            fulltext_search_operator=fulltext_search_operator,
-            vector_penalty=vector_penalty,
-            fulltext_penalty=fulltext_penalty,
             **kwargs,
         )
 
@@ -595,137 +489,25 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        strategy: str = "vector",
         oversampling_factor: int = 10,
         include_embeddings: bool = False,
-        fulltext_search_query: str = "",
-        fulltext_search_operator: str = "phrase",
-        vector_penalty: float = 0.0,
-        fulltext_penalty: float = 0.0,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Extended Query interface supporting Vector, Full-Text and Hybrid Search.
+        """Core search routine. See external methods for details."""
 
-        Each of the search types allows for filtering and permits a limit (k) of documents to return.
-
-        These efficient queries require search indexes to be created in MongoDB Atlas.
-
-        Built on Apache Lucene, Atlas Search eliminates the need to run a separate
-        search system alongside your database.
-
-        For details on search_type='vector', see the following:
-            https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
-
-        For details on search_type='text', see
-            https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search
-
-        For details on search_type='hybrid', see
-            https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/reciprocal-rank-fusion/
-            In the scoring algorithm used, Reciprocal Rank Fusion,
-            scores := \frac{1}{rank + penalty} with rank in [1,2,..,n]
-
-         Args:
-            query_vector: Embedding vector of semantic query
-            k: (Optional) number of documents to return. Defaults to 4.
-            pre_filter: (Optional) dictionary of argument(s) to prefilter document fields on.
-            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages for postprocessing.
-            strategy: (Optional) Type of search to make. One of "vector", "fulltext", or "hybrid".
-            oversampling_factor: Multiple of k used when generating number of candidates in HNSW Vector Search,
-            include_embeddings: If True, the embedding vector of each result will be included in metadata.
-            vector_penalty: Weighting factor applied to vector search results.
-            fulltext_penalty: Weighting factor applied to full-text search results.
-            fulltext_search_query: Input test query in the following search:
-                {$search: {operator: {"query": query, "path": text_key}, "index": fulltext_index_name}}
-            fulltext_search_operator: A number of operators are available in the full-text search stage.
-                For details, see https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref
-            kwargs: Additional arguments are specific to the search_type
-
-        Returns:
-            List of documents most similar to the query and their scores.
-        """
-
-        pipeline = []
-
-        if strategy == "vector":
-            # Atlas Vector Search, potentially with filter
-            pipeline = [
-                vector_search_stage(
-                    query_vector,
-                    self._embedding_key,
-                    self._index_name,
-                    k,
-                    pre_filter,
-                    oversampling_factor,
-                    **kwargs,
-                ),
-                {"$set": {"score": {"$meta": "vectorSearchScore"}}},
-            ]
-
-        elif strategy == "fulltext":
-            # Atlas Full-Text Search, potentially with filter
-            pipeline = [
-                text_search_stage(
-                    fulltext_search_query,
-                    self._text_key,
-                    self._text_index_name,
-                    **kwargs,
-                ),
-                {"$match": {"$and": pre_filter} if pre_filter else {}},
-                {"$set": {"score": {"$meta": "searchScore"}}},
-                {"$limit": k},
-            ]
-
-        elif strategy == "hybrid":
-            # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
-            scores_fields = ["vector_score", "fulltext_score"]
-            # Vector Search pipeline
-            vector_pipeline = [
-                vector_search_stage(
-                    query_vector,
-                    self._embedding_key,
-                    self._index_name,
-                    k,
-                    pre_filter,
-                    oversampling_factor,
-                    **kwargs,
-                )
-            ]
-            vector_pipeline.extend(
-                reciprocal_rank_stage("vector_score", vector_penalty)
-            )
-            combine_pipelines(pipeline, vector_pipeline, self._collection.name)
-
-            # Full-Text Search pipeline
-            if fulltext_search_query:
-                text_pipeline = [
-                    text_search_stage(
-                        fulltext_search_query,
-                        self._text_key,
-                        self._text_index_name,
-                        fulltext_search_operator,
-                    ),
-                    {"$match": {"$and": pre_filter} if pre_filter else {}},
-                    {"$limit": k},
-                ]
-                text_pipeline.extend(
-                    reciprocal_rank_stage("fulltext_score", fulltext_penalty)
-                )
-                combine_pipelines(pipeline, text_pipeline, self._collection.name)
-            else:
-                logger.warning(
-                    f"{strategy=} selected but fulltext_search_query is empty. "
-                    f"No text search will be performed, but scores are still RRF."
-                )
-
-            # Sum and sort pipeline
-            pipeline += final_hybrid_stage(
-                scores_fields=scores_fields, limit=k, **kwargs
-            )
-
-        else:
-            raise ValueError(
-                f"Unrecognized {strategy=}. Expecting one of [vector, fulltext, hybrid]"
-            )
+        # Atlas Vector Search, potentially with filter
+        pipeline = [
+            vector_search_stage(
+                query_vector,
+                self._embedding_key,
+                self._index_name,
+                k,
+                pre_filter,
+                oversampling_factor,
+                **kwargs,
+            ),
+            {"$set": {"score": {"$meta": "vectorSearchScore"}}},
+        ]
 
         # Remove embeddings unless requested.
         if not include_embeddings:

@@ -175,7 +175,7 @@ class TestMongoDBAtlasVectorSearch:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
             vector_index_name=INDEX_NAME,
         )

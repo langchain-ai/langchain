@@ -48,10 +48,6 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
             limit=self.top_k,
             pre_filter=self.pre_filter,
         )
-
-        # Removal of embeddings unless requested.
-        if not self.show_embeddings:
-            pipeline.append({"$project": {self.vectorstore._embedding_key: 0}})
         # Post filtering
         if self.post_filter is not None:
             pipeline.extend(self.post_filter)
@@ -62,8 +58,7 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
         # Formatting
         docs = []
         for res in cursor:
-            text = res.pop(self.vectorstore._text_key)
-            # score = res.pop("score")  # The score remains buried!
+            text = res.pop(self.search_field)
             make_serializable(res)
             docs.append(Document(page_content=text, metadata=res))
         return docs
