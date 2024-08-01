@@ -55,11 +55,17 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    root_validator,
+)
+from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
@@ -205,6 +211,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
 
+    rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
+    """An optional rate limiter to use for limiting the number of requests."""
+
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used.
@@ -336,6 +345,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 batch_size=1,
             )
             generation: Optional[ChatGenerationChunk] = None
+
+            if self.rate_limiter:
+                self.rate_limiter.acquire(blocking=True)
+
             try:
                 for chunk in self._stream(messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
@@ -406,6 +419,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_id=config.pop("run_id", None),
             batch_size=1,
         )
+
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
 
         generation: Optional[ChatGenerationChunk] = None
         try:
@@ -737,6 +753,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
+
+        # Apply the rate limiter after checking the cache, since
+        # we usually don't want to rate limit cache lookups, but
+        # we do want to rate limit API requests.
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
         if type(self)._stream != BaseChatModel._stream and kwargs.pop(
@@ -817,6 +840,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
+
+        # Apply the rate limiter after checking the cache, since
+        # we usually don't want to rate limit cache lookups, but
+        # we do want to rate limit API requests.
+        if self.rate_limiter:
+            self.rate_limiter.acquire(blocking=True)
+
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
         if (
@@ -1044,14 +1074,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
 
     def with_structured_output(
         self,
-        schema: Union[Dict, Type[BaseModel]],
+        schema: Union[Dict, Type],
         *,
         include_raw: bool = False,
         **kwargs: Any,
@@ -1059,13 +1089,25 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
-                then the model output will be an object of that class. If a dict then
-                the model output will be a dict. With a Pydantic class the returned
-                attributes will be validated, whereas with a dict they will not be. If
-                `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec.
-            include_raw: If False then only the parsed structured output is returned. If
+            schema:
+                The output schema. Can be passed in as:
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class (support added in 0.2.26),
+                    - or a Pydantic class.
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+
+                .. versionchanged:: 0.2.26
+
+                        Added support for TypedDict class.
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
@@ -1073,22 +1115,19 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 with keys "raw", "parsed", and "parsing_error".
 
         Returns:
-            A Runnable that takes any ChatModel input and returns as output:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-                If include_raw is True then a dict with keys:
-                    raw: BaseMessage
-                    parsed: Optional[_DictOrPydantic]
-                    parsing_error: Optional[BaseException]
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object).
 
-                If include_raw is False then just _DictOrPydantic is returned,
-                where _DictOrPydantic depends on the schema:
+            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
-                    class.
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+                - ``"raw"``: BaseMessage
+                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``"parsing_error"``: Optional[BaseException]
 
-                If schema is a dict then _DictOrPydantic is a dict.
-
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+        Example: Pydantic schema (include_raw=False):
             .. code-block:: python
 
                 from langchain_core.pydantic_v1 import BaseModel
@@ -1108,7 +1147,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+        Example: Pydantic schema (include_raw=True):
             .. code-block:: python
 
                 from langchain_core.pydantic_v1 import BaseModel
@@ -1128,7 +1167,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 #     'parsing_error': None
                 # }
 
-        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+        Example: Dict schema (include_raw=False):
             .. code-block:: python
 
                 from langchain_core.pydantic_v1 import BaseModel
@@ -1162,9 +1201,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 "with_structured_output is not implemented for this model."
             )
         llm = self.bind_tools([schema], tool_choice="any")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[schema], first_tool_only=True
+                tools=[cast(TypeBaseModel, schema)], first_tool_only=True
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]

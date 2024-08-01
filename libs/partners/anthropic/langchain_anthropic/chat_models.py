@@ -50,7 +50,12 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import (
     Runnable,
     RunnableMap,
@@ -63,6 +68,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -121,6 +127,7 @@ def _merge_messages(
                             "type": "tool_result",
                             "content": curr.content,
                             "tool_use_id": curr.tool_call_id,
+                            "is_error": curr.status == "error",
                         }
                     ]
                 )
@@ -775,7 +782,7 @@ class ChatAnthropic(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[Dict[str, str], Literal["any", "auto"], str]
@@ -786,19 +793,19 @@ class ChatAnthropic(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
+                Supports Anthropic format tool schemas and any tool definition handled
+                by :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Options are:
-                    name of the tool (str): calls corresponding tool;
-                    "auto" or None: automatically selects a tool (including no tool);
-                    "any": force at least one tool to be called;
-                    or a dict of the form:
-                        {"type": "tool", "name": "tool_name"},
-                        or {"type: "any"},
-                        or {"type: "auto"};
-            **kwargs: Any additional parameters to bind.
+                    - name of the tool (str): calls corresponding tool;
+                    - ``"auto"`` or None: automatically selects a tool (including no tool);
+                    - ``"any"``: force at least one tool to be called;
+                    - or a dict of the form:
+                        ``{"type": "tool", "name": "tool_name"}``,
+                        or ``{"type: "any"}``,
+                        or ``{"type: "auto"}``;
+            kwargs: Any additional parameters are passed directly to
+                ``self.bind(**kwargs)``.
 
         Example:
             .. code-block:: python
@@ -898,11 +905,26 @@ class ChatAnthropic(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
-                then the model output will be an object of that class. If a dict then
-                the model output will be a dict. With a Pydantic class the returned
-                attributes will be validated, whereas with a dict they will not be.
-            include_raw: If False then only the parsed structured output is returned. If
+            schema:
+                The output schema. Can be passed in as:
+                    - an Anthropic tool schema,
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class (support added in 0.1.22),
+                    - or a Pydantic class.
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+
+                .. versionchanged:: 0.1.22
+
+                        Added support for TypedDict class.
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
@@ -910,17 +932,17 @@ class ChatAnthropic(BaseChatModel):
                 with keys "raw", "parsed", and "parsing_error".
 
         Returns:
-            A Runnable that takes any ChatModel input. The output type depends on
-            include_raw and schema.
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            If include_raw is True then output is a dict with keys:
-                raw: BaseMessage,
-                parsed: Optional[_DictOrPydantic],
-                parsing_error: Optional[BaseException],
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object).
 
-            If include_raw is False and schema is a Dict then the runnable outputs a Dict.
-            If include_raw is False and schema is a Type[BaseModel] then the runnable
-            outputs a BaseModel.
+            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+                - ``"raw"``: BaseMessage
+                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``"parsing_error"``: Optional[BaseException]
 
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
@@ -994,7 +1016,7 @@ class ChatAnthropic(BaseChatModel):
 
         tool_name = convert_to_anthropic_tool(schema)["name"]
         llm = self.bind_tools([schema], tool_choice=tool_name)
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
@@ -1025,7 +1047,7 @@ class AnthropicTool(TypedDict):
 
 
 def convert_to_anthropic_tool(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    tool: Union[Dict[str, Any], Type, Callable, BaseTool],
 ) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format

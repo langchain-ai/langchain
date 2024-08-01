@@ -102,6 +102,13 @@ def init_chat_model(
 
     .. versionchanged:: 0.2.8
 
+        Support for ``configurable_fields`` and ``config_prefix`` added.
+
+    .. versionchanged:: 0.2.12
+
+        Support for Ollama via langchain-ollama package added. Previously
+        langchain-community version of Ollama (now deprecated) was installed by default.
+
     Args:
         model: The name of the model, e.g. "gpt-4o", "claude-3-opus-20240229".
         model_provider: The model provider. Supported model_provider values and the
@@ -118,7 +125,7 @@ def init_chat_model(
                 - mistralai (langchain-mistralai)
                 - huggingface (langchain-huggingface)
                 - groq (langchain-groq)
-                - ollama (langchain-community)
+                - ollama (langchain-ollama)  [support added in langchain==0.2.12]
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
@@ -336,8 +343,20 @@ def _init_chat_model_helper(
 
         return ChatFireworks(model=model, **kwargs)
     elif model_provider == "ollama":
-        _check_pkg("langchain_community")
-        from langchain_community.chat_models import ChatOllama
+        try:
+            _check_pkg("langchain_ollama")
+            from langchain_ollama import ChatOllama
+        except ImportError:
+            pass
+
+        # For backwards compatibility
+        try:
+            _check_pkg("langchain_community")
+            from langchain_community.chat_models import ChatOllama
+        except ImportError:
+            # If both langchain-ollama and langchain-community aren't available, raise
+            # an error related to langchain-ollama
+            _check_pkg("langchain_ollama")
 
         return ChatOllama(model=model, **kwargs)
     elif model_provider == "together":
@@ -366,6 +385,11 @@ def _init_chat_model_helper(
 
         # TODO: update to use model= once ChatBedrock supports
         return ChatBedrock(model_id=model, **kwargs)
+    elif model_provider == "bedrock_converse":
+        _check_pkg("langchain_aws")
+        from langchain_aws import ChatBedrockConverse
+
+        return ChatBedrockConverse(model=model, **kwargs)
     else:
         supported = ", ".join(_SUPPORTED_PROVIDERS)
         raise ValueError(
@@ -388,6 +412,7 @@ _SUPPORTED_PROVIDERS = {
     "huggingface",
     "groq",
     "bedrock",
+    "bedrock_converse",
 }
 
 

@@ -12,6 +12,9 @@ from packaging.version import parse
 from requests import HTTPError, Response
 
 from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.utils.pydantic import (
+    is_pydantic_v1_subclass,
+)
 
 
 def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
@@ -192,10 +195,16 @@ def get_pydantic_field_names(pydantic_cls: Any) -> Set[str]:
         Set[str]: Field names.
     """
     all_required_field_names = set()
-    for field in pydantic_cls.__fields__.values():
-        all_required_field_names.add(field.name)
-        if field.has_alias:
-            all_required_field_names.add(field.alias)
+    if is_pydantic_v1_subclass(pydantic_cls):
+        for field in pydantic_cls.__fields__.values():
+            all_required_field_names.add(field.name)
+            if field.has_alias:
+                all_required_field_names.add(field.alias)
+    else:  # Assuming pydantic 2 for now
+        for name, field in pydantic_cls.model_fields.items():
+            all_required_field_names.add(name)
+            if field.alias:
+                all_required_field_names.add(field.alias)
     return all_required_field_names
 
 

@@ -4,6 +4,7 @@ import inspect
 import json
 import sys
 import textwrap
+import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -31,6 +32,8 @@ from langchain_core.tools import (
     StructuredTool,
     Tool,
     ToolException,
+    _is_message_content_block,
+    _is_message_content_type,
     tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
@@ -977,6 +980,35 @@ class AFooBase(FooBase):
 def test_tool_pass_config(tool: BaseTool) -> None:
     assert tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
+    # Test we don't mutate tool calls
+    tool_call = {
+        "name": tool.name,
+        "args": {"bar": "baz"},
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == {"bar": "baz"}
+
+
+class FooBaseNonPickleable(FooBase):
+    def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        return True
+
+
+def test_tool_pass_config_non_pickleable() -> None:
+    tool = FooBaseNonPickleable()
+
+    args = {"bar": threading.Lock()}
+    tool_call = {
+        "name": tool.name,
+        "args": args,
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == args
+
 
 @pytest.mark.parametrize(
     "tool", [foo, afoo, simple_foo, asimple_foo, FooBase(), AFooBase()]
@@ -1419,6 +1451,36 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     }
 
 
+def _get_parametrized_tools() -> list:
+    def my_tool(x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]) -> str:
+        """my_tool."""
+        return some_tool
+
+    async def my_async_tool(
+        x: int, y: str, *, some_tool: Annotated[Any, InjectedToolArg]
+    ) -> str:
+        """my_tool."""
+        return some_tool
+
+    return [my_tool, my_async_tool]
+
+
+@pytest.mark.parametrize("tool_", _get_parametrized_tools())
+def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
+    assert convert_to_openai_function(tool_) == {
+        "name": tool_.__name__,
+        "description": "my_tool.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "x": {"type": "integer"},
+                "y": {"type": "string"},
+            },
+            "required": ["x", "y"],
+        },
+    }
+
+
 def generate_models() -> List[Any]:
     """Generate a list of base models depending on the pydantic version."""
     from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
@@ -1563,3 +1625,47 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
         "title": pydantic_model.__name__,
         "type": "object",
     }
+
+
+valid_tool_result_blocks = [
+    "foo",
+    {"type": "text", "text": "foo"},
+    {"type": "text", "blah": "foo"},  # note, only 'type' key is currently checked
+    {"type": "image_url", "image_url": {}},  # openai format
+    {
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": "image/jpeg",
+            "data": "123",
+        },
+    },  # anthropic format
+    {"type": "json", "json": {}},  # bedrock format
+]
+invalid_tool_result_blocks = [
+    {"text": "foo"},  # missing type
+    {"results": "foo"},  # not content blocks
+]
+
+
+@pytest.mark.parametrize(
+    ("obj", "expected"),
+    [
+        *([[block, True] for block in valid_tool_result_blocks]),
+        *([[block, False] for block in invalid_tool_result_blocks]),
+    ],
+)
+def test__is_message_content_block(obj: Any, expected: bool) -> None:
+    assert _is_message_content_block(obj) is expected
+
+
+@pytest.mark.parametrize(
+    ("obj", "expected"),
+    [
+        ["foo", True],
+        [valid_tool_result_blocks, True],
+        [invalid_tool_result_blocks, False],
+    ],
+)
+def test__is_message_content_type(obj: Any, expected: bool) -> None:
+    assert _is_message_content_type(obj) is expected
