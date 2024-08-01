@@ -134,7 +134,6 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
         for chunk in stream:
             delta = chunk.choices[0].delta.content
             if delta:
-                
                 if run_manager:
                     run_manager.on_llm_new_token(delta)
                 yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
@@ -153,7 +152,6 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
         async for chunk in stream:
             delta = chunk.choices[0].delta.content
             if delta:
-                
                 if run_manager:
                     await run_manager.on_llm_new_token(delta)
                 yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
