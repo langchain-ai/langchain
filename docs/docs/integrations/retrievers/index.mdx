@@ -1,0 +1,27 @@
+---
+sidebar_position: 0
+sidebar_class_name: hidden
+---
+
+# Retrievers
+
+A **retriever** is an interface that returns documents given an unstructured query.
+It is more general than a vector store.
+A retriever does not need to be able to store documents, only to return (or retrieve) them.
+Retrievers can be created from vector stores, but are also broad enough to include [Wikipedia search](/docs/integrations/retrievers/wikipedia/) and [Amazon Kendra](/docs/integrations/retrievers/amazon_kendra_retriever/).
+
+Retrievers accept a string query as input and return a list of Document's as output.
+
+For specifics on how to use retrievers, see the [relevant how-to guides here](/docs/how_to/#retrievers).
+
+This table lists common retrievers.
+
+
+| Retriever | Namespace | Native async | Local |
+|-----------|-----------|---------------|------|
+| [AmazonKnowledgeBasesRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html) | langchain_aws.retrievers | ❌ | ❌ |
+| [AzureAISearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html) | langchain_community.retrievers | ✅ | ❌ |
+| [ElasticsearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html) | langchain_elasticsearch | ❌ | ❌ |
+| [MilvusCollectionHybridSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_milvus.retrievers.milvus_hybrid_search.MilvusCollectionHybridSearchRetriever.html) | langchain_milvus | ❌ | ❌ |
+| [TavilySearchAPIRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html) | langchain_community.retrievers | ❌ | ❌ |
+| [VertexAISearchRetriever](https://api.python.langchain.com/en/latest/vertex_ai_search/langchain_google_community.vertex_ai_search.VertexAISearchRetriever.html) | langchain_google_community.vertex_ai_search | ❌ | ❌ |
