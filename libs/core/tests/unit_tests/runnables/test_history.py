@@ -466,9 +466,9 @@ def test_get_input_schema_input_messages() -> None:
     with_history = RunnableWithMessageHistory(
         runnable, get_session_history, output_messages_key="output"
     )
-    assert _schema(with_history.get_input_schema()) == _schema(
-        RunnableWithMessageHistoryInput
-    )
+    expected_schema = _schema(RunnableWithMessageHistoryInput)
+    expected_schema["title"] = "RunnableWithChatHistoryInput"
+    assert _schema(with_history.get_input_schema()) == expected_schema
 
 
 def test_using_custom_config_specs() -> None:
