@@ -3,10 +3,9 @@ from __future__ import annotations
 from typing import Any, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.runnables import RunnableSerializable
+from langchain_core.runnables import Runnable, RunnableSerializable
 from typing_extensions import TypedDict
 
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
@@ -42,7 +41,7 @@ class OutputFixingParser(BaseOutputParser[T]):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLanguageModel,
+        llm: Runnable,
         parser: BaseOutputParser[T],
         prompt: BasePromptTemplate = NAIVE_FIX_PROMPT,
         max_retries: int = 1,
@@ -58,7 +57,7 @@ class OutputFixingParser(BaseOutputParser[T]):
         Returns:
             OutputFixingParser
         """
-        chain = prompt | llm
+        chain = prompt | llm | StrOutputParser()
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
     def parse(self, completion: str) -> T:
