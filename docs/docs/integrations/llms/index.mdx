@@ -22,7 +22,6 @@ All LLMs implement the Runnable interface, which comes with default implementati
 
 Each LLM integration can optionally provide native implementations for async, streaming or batch, which, for providers that support it, can be more efficient. The table shows, for each integration, which features have been implemented with native support.
 
+import { CategoryTable } from '@theme/FeatureTables';
 
-Model|Package
-:-|:-:
-[Anthropic](./anthropic.ipynb)|[`langchain-anthropic`](https://pypi.org/project/langchain-anthropic/)
+<CategoryTable category="llms" />
