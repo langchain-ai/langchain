@@ -28,7 +28,7 @@ def test_search_index_commands(collection: Collection) -> None:
 
     for index_info in collection.list_search_indexes():
         index.drop_vector_search_index(
-            collection, index_info["name"], wait_until_complete
+            collection, index_info["name"], wait_until_complete=wait_until_complete
         )
 
     assert len(list(collection.list_search_indexes())) == 0
@@ -56,7 +56,7 @@ def test_search_index_commands(collection: Collection) -> None:
         "embedding",
         new_similarity,
         [],
-        wait_until_complete,
+        wait_until_complete=wait_until_complete,
     )
 
     assert index._is_index_ready(collection, index_name)
@@ -65,7 +65,9 @@ def test_search_index_commands(collection: Collection) -> None:
     assert indexes[0]["name"] == index_name
     assert indexes[0]["latestDefinition"]["fields"][0]["similarity"] == new_similarity
 
-    index.drop_vector_search_index(collection, index_name, wait_until_complete)
+    index.drop_vector_search_index(
+        collection, index_name, wait_until_complete=wait_until_complete
+    )
 
     indexes = list(collection.list_search_indexes())
     assert len(indexes) == 0
