@@ -629,4 +629,4 @@ class MongoDBAtlasVectorSearch(VectorStore):
             path=self._embedding_key,
             similarity=self._relevance_score_fn,
             filters=filters or [],
-        )
+        )  # type: ignore [operator]
