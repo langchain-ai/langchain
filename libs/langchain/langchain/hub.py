@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
 
-def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Any:
+def _get_client(api_key: Optional[str] = None, api_url: Optional[str] = None, ) -> Any:
     try:
         from langsmith import Client
     except ImportError:
@@ -51,7 +51,7 @@ def push(
     :param new_repo_description: The description of the repo. Defaults to an empty
         string.
     """
-    client = _get_client(api_url=api_url, api_key=api_key)
+    client = _get_client(api_key=api_key, api_url=api_url)
 
     # Then it's langsmith
     if hasattr(client, "push_prompt"):
@@ -90,7 +90,7 @@ def pull(
         if you have an api key set, or a localhost instance if not.
     :param api_key: The API key to use to authenticate with the LangChain Hub API.
     """
-    client = _get_client(api_url=api_url, api_key=api_key)
+    client = _get_client(api_key=api_key, api_url=api_url)
 
     # Then it's langsmith
     if hasattr(client, "pull_prompt"):
