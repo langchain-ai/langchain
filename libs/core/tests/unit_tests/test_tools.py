@@ -1827,3 +1827,38 @@ def test__get_all_basemodel_annotations_v1() -> None:
     expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"], "c": dict}
     actual = _get_all_basemodel_annotations(ModelC)
     assert actual == expected
+
+    expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"]}
+    actual = _get_all_basemodel_annotations(ModelB)
+    assert actual == expected
+
+    expected = {"a": Any}
+    actual = _get_all_basemodel_annotations(ModelA)
+    assert actual == expected
+
+    expected = {"a": int}
+    actual = _get_all_basemodel_annotations(ModelA[int])
+    assert actual == expected
+
+    D = TypeVar("D", bound=Union[str, int])
+
+    class ModelD(ModelC, Generic[D]):
+        d: Optional[D]
+
+    expected = {
+        "a": str,
+        "b": Annotated[ModelA[Dict[str, Any]], "foo"],
+        "c": dict,
+        "d": Union[str, int, None],
+    }
+    actual = _get_all_basemodel_annotations(ModelD)
+    assert actual == expected
+
+    expected = {
+        "a": str,
+        "b": Annotated[ModelA[Dict[str, Any]], "foo"],
+        "c": dict,
+        "d": Union[int, None],
+    }
+    actual = _get_all_basemodel_annotations(ModelD[int])
+    assert actual == expected
