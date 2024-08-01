@@ -35,9 +35,9 @@ def push(
     *,
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
-    parent_commit_hash: Optional[str] = "latest",
-    new_repo_is_public: bool = False,
-    new_repo_description: str = "",
+    parent_commit_hash: Optional[str] = None,
+    new_repo_is_public: Optional[bool] = None,
+    new_repo_description: Optional[str] = None,
 ) -> str:
     """
     Push an object to the hub and returns the URL it can be viewed at in a browser.
@@ -82,7 +82,7 @@ def push(
 def pull(
     owner_repo_commit: str,
     *,
-    include_model: bool = False,
+    include_model: Optional[bool] = None,
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
 ) -> Any:
