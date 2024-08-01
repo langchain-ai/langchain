@@ -1666,7 +1666,7 @@ def _get_all_basemodel_annotations(
         for name, param in inspect.signature(cls).parameters.items():
             annotations[name] = param.annotation
         orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
-    # cls has subscript specifying some type for a TypeVar: cls = FooBar[int]
+    # cls has subscript: cls = FooBar[int]
     else:
         annotations = _get_all_basemodel_annotations(
             get_origin(cls), default_to_bound=False
@@ -1706,10 +1706,10 @@ def _get_all_basemodel_annotations(
                     annotations[field], generic_map, default_to_bound
                 )
 
-    if default_to_bound:
-        return {k: _replace_type_vars(v) for k, v in annotations.items()}
-    else:
-        return annotations
+    return {
+        k: _replace_type_vars(v, default_to_bound=default_to_bound)
+        for k, v in annotations.items()
+    }
 
 
 def _replace_type_vars(
