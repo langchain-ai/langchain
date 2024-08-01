@@ -1753,7 +1753,7 @@ def test__get_all_basemodel_annotations(pydantic_version: str) -> None:
             a: A
     else:
 
-        class ModelA(BaseModelProper, Generic[A]):
+        class ModelA(BaseModelProper, Generic[A]):  # type: ignore[no-redef]
             a: A
 
     class ModelB(ModelA[str]):

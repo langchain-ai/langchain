@@ -1664,7 +1664,7 @@ def _get_all_basemodel_annotations(cls: TypeBaseModel) -> Dict[str, Type]:
         # Check for unresolved generics
         for parent in getattr(cls, "__orig_bases__", tuple()):
             parent_origin = get_origin(parent)
-            generic_type_vars = getattr(parent_origin, "__parameters__", tuple())
+            generic_type_vars: Tuple = getattr(parent_origin, "__parameters__", tuple())
             generic_map = {
                 type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
             }
