@@ -400,7 +400,7 @@ class Runnable(Generic[Input, Output], ABC):
 
                 runnable = RunnableLambda(add_one)
 
-                print(runnable.get_input_jsonschema())
+                print(runnable.get_output_jsonschema())
 
         .. note:: JSON Schema has different versions
 
