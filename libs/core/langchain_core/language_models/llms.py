@@ -56,12 +56,7 @@ from langchain_core.messages import (
     convert_to_messages,
     get_buffer_string,
 )
-from langchain_core.outputs import (
-    Generation,
-    GenerationChunk,
-    LLMResult,
-    RunInfo,
-)
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
