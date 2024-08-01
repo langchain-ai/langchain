@@ -1,14 +1,17 @@
 from typing import Any, Dict, List, Optional
-
+import logging
 import requests
 from langchain_core.documents import Document
-
 from langchain_community.document_loaders.base import BaseLoader
 
 NOTION_BASE_URL = "https://api.notion.com/v1"
 DATABASE_URL = NOTION_BASE_URL + "/databases/{database_id}/query"
 PAGE_URL = NOTION_BASE_URL + "/pages/{page_id}"
 BLOCK_URL = NOTION_BASE_URL + "/blocks/{block_id}/children"
+
+# Configure logging
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class NotionDBLoader(BaseLoader):
@@ -39,7 +42,7 @@ class NotionDBLoader(BaseLoader):
             database_id: str,
             request_timeout_sec: Optional[int] = 10,
             *,
-            filter_object: Optional[Dict[str, Any]] = None,
+            filter_object: Optional[Dict[str, Any]] = None
     ) -> None:
         """Initialize with parameters."""
         if not integration_token:
@@ -63,7 +66,6 @@ class NotionDBLoader(BaseLoader):
             List[Document]: List of documents.
         """
         page_summaries = self._retrieve_page_summaries()
-
         return list(self.load_page(page_summary) for page_summary in page_summaries)
 
     def _retrieve_page_summaries(
@@ -133,11 +135,12 @@ class NotionDBLoader(BaseLoader):
             elif prop_type == "status":
                 value = prop_data["status"]["name"] if prop_data["status"] else None
             elif prop_type == "people":
-                value = (
-                    [item.get("name", "No Name") for item in prop_data["people"]]
-                    if prop_data["people"]
-                    else []
-                )
+                value = []
+                for item in prop_data["people"]:
+                    name = item.get("name")
+                    if not name:
+                        logger.warning(f"Missing 'name' in 'people' property for page {page_id}")
+                    value.append(name)
             elif prop_type == "date":
                 value = prop_data["date"] if prop_data["date"] else None
             elif prop_type == "last_edited_time":
