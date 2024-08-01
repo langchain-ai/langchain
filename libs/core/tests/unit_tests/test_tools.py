@@ -11,6 +11,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import pytest
+from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 from typing_extensions import Annotated, TypedDict
 
 from langchain_core.callbacks import (
@@ -1544,7 +1545,6 @@ def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
 
 def generate_models() -> List[Any]:
     """Generate a list of base models depending on the pydantic version."""
-    from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 
     class FooProper(BaseModelProper):
         a: int
@@ -1732,9 +1732,16 @@ def test__is_message_content_type(obj: Any, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
 
 
-def test__get_all_basemodel_annotations() -> None:
-    class ModelA(BaseModel):
-        a: str
+@pytest.mark.parametrize("pydantic_version", ["v1", "v2"])
+def test__get_all_basemodel_annotations(pydantic_version: str) -> None:
+    if pydantic_version == "v1":
+
+        class ModelA(BaseModel):
+            a: str
+    else:
+
+        class ModelA(BaseModelProper):
+            a: str
 
     class ModelB(ModelA):
         b: Annotated[ModelA, "foo"]
