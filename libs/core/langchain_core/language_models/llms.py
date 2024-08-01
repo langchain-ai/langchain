@@ -57,7 +57,6 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.outputs import (
-    ChatGeneration,
     Generation,
     GenerationChunk,
     LLMResult,
@@ -228,9 +227,7 @@ async def aget_prompts(
 
 def update_cache(
     cache: Union[BaseCache, bool, None],
-    existing_prompts: Dict[
-        int, Union[List[List[Generation]], List[List[ChatGeneration]]]
-    ],
+    existing_prompts: Dict[int, List],
     llm_string: str,
     missing_prompt_idxs: List[int],
     new_results: LLMResult,
@@ -254,7 +251,7 @@ def update_cache(
     """
     llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
-        existing_prompts[missing_prompt_idxs[i]] = result  # type: ignore
+        existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
         if llm_cache is not None:
             llm_cache.update(prompt, llm_string, result)

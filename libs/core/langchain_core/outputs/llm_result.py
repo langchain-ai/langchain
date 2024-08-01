@@ -68,11 +68,7 @@ class LLMResult(BaseModel):
             if i == 0:
                 llm_results.append(
                     LLMResult(
-                        # pydantic is correctly complaining about the usage of
-                        # an outer union rather than an inner union in the type.
-                        # Type ignoring here since it **should** be the correct
-                        # type in practice.
-                        generations=[gen_list],  # type: ignore[arg-type]
+                        generations=[gen_list],
                         llm_output=self.llm_output,
                     )
                 )
@@ -84,11 +80,7 @@ class LLMResult(BaseModel):
                     llm_output = None
                 llm_results.append(
                     LLMResult(
-                        # pydantic is correctly complaining about the usage of
-                        # an outer union rather than an inner union in the type.
-                        # Type ignoring here since it **should** be the correct
-                        # type in practice.
-                        generations=[gen_list],  # type: ignore[arg-type]
+                        generations=[gen_list],
                         llm_output=llm_output,
                     )
                 )
