@@ -3579,6 +3579,7 @@ def test_deep_stream_assign() -> None:
             "str": {"title": "Str", "type": "string"},
             "hello": {"title": "Hello", "type": "string"},
         },
+        "required": ["str", "hello"],
     }
 
     chunks = []
@@ -3630,6 +3631,7 @@ def test_deep_stream_assign() -> None:
             "str": {"title": "Str"},
             "hello": {"title": "Hello", "type": "string"},
         },
+        "required": ["str", "hello"],
     }
 
     chunks = []
@@ -3705,6 +3707,7 @@ async def test_deep_astream_assign() -> None:
             "str": {"title": "Str", "type": "string"},
             "hello": {"title": "Hello", "type": "string"},
         },
+        "required": ["str", "hello"],
     }
 
     chunks = []
@@ -3756,6 +3759,7 @@ async def test_deep_astream_assign() -> None:
             "str": {"title": "Str"},
             "hello": {"title": "Hello", "type": "string"},
         },
+        "required": ["str", "hello"],
     }
 
     chunks = []
