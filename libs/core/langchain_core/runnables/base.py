@@ -35,7 +35,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
-from typing_extensions import Literal, get_args
+from typing_extensions import Literal, get_args, get_type_hints
 
 from langchain_core._api import beta_decorator
 from langchain_core.load.dump import dumpd
@@ -253,6 +253,16 @@ class Runnable(Generic[Input, Output], ABC):
     @property
     def InputType(self) -> Type[Input]:
         """The type of input this Runnable accepts specified as a type annotation."""
+        # First loop through bases -- this will help generic
+        # any pydantic models.
+        for base in self.__class__.mro():
+            if hasattr(base, "__pydantic_generic_metadata__"):
+                metadata = base.__pydantic_generic_metadata__
+                if "args" in metadata and len(metadata["args"]) == 2:
+                    return metadata["args"][0]
+
+        # then loop through __orig_bases__ -- this will Runnables that do not inherit
+        # from pydantic
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 2:
@@ -266,6 +276,14 @@ class Runnable(Generic[Input, Output], ABC):
     @property
     def OutputType(self) -> Type[Output]:
         """The type of output this Runnable produces specified as a type annotation."""
+        # First loop through bases -- this will help generic
+        # any pydantic models.
+        for base in self.__class__.mro():
+            if hasattr(base, "__pydantic_generic_metadata__"):
+                metadata = base.__pydantic_generic_metadata__
+                if "args" in metadata and len(metadata["args"]) == 2:
+                    return metadata["args"][1]
+
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 2:
@@ -379,15 +397,19 @@ class Runnable(Generic[Input, Output], ABC):
             else None
         )
 
-        return create_model(  # type: ignore[call-overload]
-            self.get_name("Config"),
+        # Many need to create a typed dict instead to implement NotRequired!
+        all_fields = {
             **({"configurable": (configurable, None)} if configurable else {}),
             **{
-                field_name: field_type
-                for field_name, field_type in RunnableConfig.__annotations__.items()
+                field_name: (field_type, None)
+                for field_name, field_type in get_type_hints(RunnableConfig).items()
                 if field_name in [i for i in include if i != "configurable"]
             },
+        }
+        model = create_model(  # type: ignore[call-overload]
+            self.get_name("Config"), **all_fields
         )
+        return model
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""
