@@ -29,7 +29,6 @@ from langchain_core.prompts.chat import (
     _convert_to_message,
 )
 from langchain_core.pydantic_v1 import ValidationError
-from tests.unit_tests.pydantic_utils import _schema
 
 
 @pytest.fixture
