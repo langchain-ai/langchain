@@ -245,8 +245,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/retrievers",
+            type: "doc",
+            id: "integrations/retrievers/index",
           },
         },
         {
