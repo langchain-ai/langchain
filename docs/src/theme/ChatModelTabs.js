@@ -8,7 +8,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @typedef {Object} ChatModelTabsProps - Component props.
  * @property {string} [openaiParams] - Parameters for OpenAI chat model. Defaults to `model="gpt-3.5-turbo-0125"`
  * @property {string} [anthropicParams] - Parameters for Anthropic chat model. Defaults to `model="claude-3-sonnet-20240229"`
- * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r"`
+ * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r-plus"`
  * @property {string} [fireworksParams] - Parameters for Fireworks chat model. Defaults to `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
  * @property {string} [groqParams] - Parameters for Groq chat model. Defaults to `model="llama3-8b-8192"`
  * @property {string} [mistralParams] - Parameters for Mistral chat model. Defaults to `model="mistral-large-latest"`

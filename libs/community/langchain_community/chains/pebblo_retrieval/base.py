@@ -76,7 +76,7 @@ class PebbloRetrievalQA(Chain):
     """Classifier endpoint."""
     classifier_location: str = "local"  #: :meta private:
     """Classifier location. It could be either of 'local' or 'pebblo-cloud'."""
-    _discover_sent = False  #: :meta private:
+    _discover_sent: bool = False  #: :meta private:
     """Flag to check if discover payload has been sent."""
     _prompt_sent: bool = False  #: :meta private:
     """Flag to check if prompt payload has been sent."""
