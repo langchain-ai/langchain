@@ -7,7 +7,6 @@ import pytest
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
-from tests.unit_tests.pydantic_utils import _schema
 
 
 def test_prompt_valid() -> None:

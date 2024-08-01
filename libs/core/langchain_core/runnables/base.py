@@ -465,12 +465,12 @@ class Runnable(Generic[Input, Output], ABC):
         )
 
     def get_config_jsonschema(
-        self, config: Optional[RunnableConfig] = None
+        self, *, include: Optional[Sequence[str]] = None
     ) -> Dict[str, Any]:
         """Get a JSON schema that represents the output of the Runnable.
 
         Args:
-            config: A config to use when generating the schema.
+            include: A list of fields to include in the config schema.
 
         Returns:
             A JSON schema that represents the output of the Runnable.
@@ -486,7 +486,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         .. versionadded:: 0.2.27
         """
-        return self.get_output_schema(config).schema()
+        return self.config_schema(include=include).schema()
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""
