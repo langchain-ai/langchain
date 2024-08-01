@@ -138,13 +138,14 @@ class NotionDBLoader(BaseLoader):
                 value = prop_data["status"]["name"] if prop_data["status"] else None
             elif prop_type == "people":
                 value = []
-                for item in prop_data["people"]:
-                    name = item.get("name")
-                    if not name:
-                        logger.warning(
-                            f"Missing 'name' in 'people' property for page {page_id}"
-                        )
-                    value.append(name)
+                if prop_data["people"]:
+                    for item in prop_data["people"]:
+                        name = item.get("name")
+                        if not name:
+                            logger.warning(
+                                f"Missing 'name' in 'people' property for page {page_id}"
+                            )
+                        value.append(name)
             elif prop_type == "date":
                 value = prop_data["date"] if prop_data["date"] else None
             elif prop_type == "last_edited_time":
