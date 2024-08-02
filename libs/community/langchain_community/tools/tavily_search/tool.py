@@ -1,6 +1,5 @@
 """Tool for the Tavily search API."""
 
-import json
 from typing import Dict, List, Literal, Optional, Tuple, Type, Union
 
 from langchain_core.callbacks import (
@@ -139,7 +138,7 @@ class TavilySearchResults(BaseTool):
             )
         except Exception as e:
             return repr(e), {}
-        return self.api_wrapper.clean_results(raw_results['results']), raw_results
+        return self.api_wrapper.clean_results(raw_results["results"]), raw_results
 
     async def _arun(
         self,
@@ -160,7 +159,8 @@ class TavilySearchResults(BaseTool):
             )
         except Exception as e:
             return repr(e), {}
-        return self.api_wrapper.clean_results(raw_results['results']), raw_results
+        return self.api_wrapper.clean_results(raw_results["results"]), raw_results
+
 
 class TavilyAnswer(BaseTool):
     """Tool that queries the Tavily Search API and gets back an answer."""
