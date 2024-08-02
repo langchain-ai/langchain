@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-together"
-version = "0.1.4"
+version = "0.1.5"
 description = "An integration package connecting Together AI and LangChain"
 authors = []
 readme = "README.md"
@@ -20,7 +20,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.2.17,<0.3"
+langchain-core = "^0.2.26"
 langchain-openai = "^0.1.16"
 requests = "^2"
 aiohttp = "^3.9.1"

@@ -1,6 +1,6 @@
 """Tool for the Tavily search API."""
 
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, List, Literal, Optional, Tuple, Type, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -33,35 +33,61 @@ class TavilySearchResults(BaseTool):
 
         .. code-block:: python
 
-            from langchain_community.tools.tavily_search import TavilySearchResults
+            from langchain_community.tools import TavilySearchResults
 
             tool = TavilySearchResults(
-                # max_results= 5
-                # search_depth = "advanced"
+                max_results=5,
+                include_answer=True,
+                include_raw_content=True,
+                include_images=True,
+                # search_depth="advanced",
                 # include_domains = []
                 # exclude_domains = []
-                # include_answer = False
-                # include_raw_content = False
-                # include_images = False
             )
 
-    Invoke:
+    Invoke directly with args:
 
         .. code-block:: python
 
-            tool = TavilySearchResults(max_results=3)
-            tool.invoke("What is the weather?")
+            tool.invoke({'query': 'who won the last french open'})
 
         .. code-block:: python
 
-            [{'url': 'https://www.weatherapi.com/',
-            'content': "{'location': {'name': 'Current', 'region': 'Harbour Island', 'country': 'Bahamas', 'lat': 25.43, 'lon': -76.78, 'tz_id': 'America/Nassau', 'localtime_epoch': 1718077801, 'localtime': '2024-06-10 23:50'}, 'current': {'last_updated_epoch': 1718077500, 'last_updated': '2024-06-10 23:45', 'temp_c': 27.9, 'temp_f': 82.1, 'is_day': 0, 'condition': {'text': 'Patchy rain nearby', 'icon': '//cdn.weatherapi.com/weather/64x64/night/176.png', 'code': 1063}, 'wind_mph': 14.5, 'wind_kph': 23.4, 'wind_degree': 161, 'wind_dir': 'SSE', 'pressure_mb': 1014.0, 'pressure_in': 29.94, 'precip_mm': 0.01, 'precip_in': 0.0, 'humidity': 88, 'cloud': 74, 'feelslike_c': 33.1, 'feelslike_f': 91.5, 'windchill_c': 27.9, 'windchill_f': 82.1, 'heatindex_c': 33.1, 'heatindex_f': 91.5, 'dewpoint_c': 25.6, 'dewpoint_f': 78.1, 'vis_km': 10.0, 'vis_miles': 6.0, 'uv': 1.0, 'gust_mph': 20.4, 'gust_kph': 32.9}}"},
-            {'url': 'https://www.localconditions.com/weather-ninnescah-kansas/67069/',
-            'content': 'The following chart reports what the hourly Ninnescah, KS temperature has been today, from 12:56 AM to 3:56 AM Tue, May 21st 2024. The lowest temperature reading has been 73.04 degrees fahrenheit at 3:56 AM, while the highest temperature is 75.92 degrees fahrenheit at 12:56 AM. Ninnescah KS detailed current weather report for 67069 in Kansas.'},
-            {'url': 'https://www.weather.gov/forecastmaps/',
-            'content': 'Short Range Forecasts. Short range forecast products depicting pressure patterns, circulation centers and fronts, and types and extent of precipitation. 12 Hour | 24 Hour | 36 Hour | 48 Hour.'}]
+            '{\n  "answer": "Novak Djokovic won the last French Open by beating Casper Ruud ...',
 
-        When converting ``TavilySearchResults`` to a tool, you may want to not return all of the content resulting from ``invoke``. You can select what parts of the response to keep depending on your use case.
+    Invoke with tool call:
+
+        .. code-block:: python
+
+            tool.invoke({"args": {'query': 'who won the last french open'}, "type": "tool_call", "id": "foo", "name": "tavily"})
+
+        .. code-block:: python
+
+            ToolMessage(
+                content='{\n  "answer": "Novak Djokovic won the last French Open by beating Casper Ruud ...',
+                artifact={
+                    'query': 'who won the last french open',
+                    'follow_up_questions': None,
+                    'answer': 'Novak ...',
+                    'images': [
+                        'https://www.amny.com/wp-content/uploads/2023/06/AP23162622181176-1200x800.jpg',
+                        ...
+                        ],
+                    'results': [
+                        {
+                            'title': 'Djokovic ...',
+                            'url': 'https://www.nytimes.com...',
+                            'content': "Novak...",
+                            'score': 0.99505633,
+                            'raw_content': 'Tennis\nNovak ...'
+                        },
+                        ...
+                    ],
+                    'response_time': 2.92
+                },
+                tool_call_id='1',
+                name='tavily_search_results_json',
+            )
 
     """  # noqa: E501
 
@@ -71,7 +97,9 @@ class TavilySearchResults(BaseTool):
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query."
     )
-    api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
+    args_schema: Type[BaseModel] = TavilyInput
+    """The tool response format."""
+
     max_results: int = 5
     """Max search results to return, default is 5"""
     search_depth: str = "advanced"
@@ -86,16 +114,19 @@ class TavilySearchResults(BaseTool):
     """Include cleaned and parsed HTML of each site search results. Default is False."""
     include_images: bool = False
     """Include a list of query related images in the response. Default is False."""
-    args_schema: Type[BaseModel] = TavilyInput
+
+    api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _run(
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[List[Dict], str]:
+    ) -> Tuple[Union[List[Dict[str, str]], str], Dict]:
         """Use the tool."""
+        # TODO: remove try/except, should be handled by BaseTool
         try:
-            return self.api_wrapper.results(
+            raw_results = self.api_wrapper.raw_results(
                 query,
                 self.max_results,
                 self.search_depth,
@@ -106,16 +137,17 @@ class TavilySearchResults(BaseTool):
                 self.include_images,
             )
         except Exception as e:
-            return repr(e)
+            return repr(e), {}
+        return self.api_wrapper.clean_results(raw_results["results"]), raw_results
 
     async def _arun(
         self,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> Union[List[Dict], str]:
+    ) -> Tuple[Union[List[Dict[str, str]], str], Dict]:
         """Use the tool asynchronously."""
         try:
-            return await self.api_wrapper.results_async(
+            raw_results = await self.api_wrapper.raw_results_async(
                 query,
                 self.max_results,
                 self.search_depth,
@@ -126,7 +158,8 @@ class TavilySearchResults(BaseTool):
                 self.include_images,
             )
         except Exception as e:
-            return repr(e)
+            return repr(e), {}
+        return self.api_wrapper.clean_results(raw_results["results"]), raw_results
 
 
 class TavilyAnswer(BaseTool):

@@ -230,7 +230,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         if not isinstance(value, list):
             raise ValueError(
                 f"variable {self.variable_name} should be a list of base messages, "
-                f"got {value}"
+                f"got {value} of type {type(value)}"
             )
         value = convert_to_messages(value)
         if self.n_messages:
