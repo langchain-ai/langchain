@@ -8,10 +8,22 @@ import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import pytest
-from typing_extensions import Annotated, TypedDict
+from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
+from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -32,12 +44,13 @@ from langchain_core.tools import (
     StructuredTool,
     Tool,
     ToolException,
+    _get_all_basemodel_annotations,
     _is_message_content_block,
     _is_message_content_type,
     tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain_core.utils.pydantic import _create_subset_model
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -1452,6 +1465,66 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
     }
 
 
+def test_tool_inherited_injected_arg() -> None:
+    class barSchema(BaseModel):
+        """bar."""
+
+        y: Annotated[str, "foobar comment", InjectedToolArg()] = Field(
+            ..., description="123"
+        )
+
+    class fooSchema(barSchema):
+        """foo."""
+
+        x: int = Field(..., description="abc")
+
+    class InheritedInjectedArgTool(BaseTool):
+        name: str = "foo"
+        description: str = "foo."
+        args_schema: Type[BaseModel] = fooSchema
+
+        def _run(self, x: int, y: str) -> Any:
+            return y
+
+    tool_ = InheritedInjectedArgTool()
+    assert tool_.get_input_schema().schema() == {
+        "title": "fooSchema",
+        "description": "foo.",
+        "type": "object",
+        "properties": {
+            "x": {"description": "abc", "title": "X", "type": "integer"},
+            "y": {"description": "123", "title": "Y", "type": "string"},
+        },
+        "required": ["y", "x"],
+    }
+    assert tool_.tool_call_schema.schema() == {
+        "title": "foo",
+        "description": "foo.",
+        "type": "object",
+        "properties": {"x": {"description": "abc", "title": "X", "type": "integer"}},
+        "required": ["x"],
+    }
+    assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
+    assert tool_.invoke(
+        {"name": "foo", "args": {"x": 5, "y": "bar"}, "id": "123", "type": "tool_call"}
+    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    expected_error = (
+        ValidationError if not isinstance(tool_, InjectedTool) else TypeError
+    )
+    with pytest.raises(expected_error):
+        tool_.invoke({"x": 5})
+
+    assert convert_to_openai_function(tool_) == {
+        "name": "foo",
+        "description": "foo.",
+        "parameters": {
+            "type": "object",
+            "properties": {"x": {"type": "integer", "description": "abc"}},
+            "required": ["x"],
+        },
+    }
+
+
 def _get_parametrized_tools() -> list:
     def my_tool(x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]) -> str:
         """my_tool."""
@@ -1484,7 +1557,6 @@ def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
 
 def generate_models() -> List[Any]:
     """Generate a list of base models depending on the pydantic version."""
-    from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 
     class FooProper(BaseModelProper):
         a: int
@@ -1670,3 +1742,124 @@ def test__is_message_content_block(obj: Any, expected: bool) -> None:
 )
 def test__is_message_content_type(obj: Any, expected: bool) -> None:
     assert _is_message_content_type(obj) is expected
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
+@pytest.mark.parametrize("use_v1_namespace", [True, False])
+def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
+    A = TypeVar("A")
+
+    if use_v1_namespace:
+
+        class ModelA(BaseModel, Generic[A]):
+            a: A
+    else:
+
+        class ModelA(BaseModelProper, Generic[A]):  # type: ignore[no-redef]
+            a: A
+
+    class ModelB(ModelA[str]):
+        b: Annotated[ModelA[Dict[str, Any]], "foo"]
+
+    class Mixin(object):
+        def foo(self) -> str:
+            return "foo"
+
+    class ModelC(Mixin, ModelB):
+        c: dict
+
+    expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"], "c": dict}
+    actual = _get_all_basemodel_annotations(ModelC)
+    assert actual == expected
+
+    expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"]}
+    actual = _get_all_basemodel_annotations(ModelB)
+    assert actual == expected
+
+    expected = {"a": Any}
+    actual = _get_all_basemodel_annotations(ModelA)
+    assert actual == expected
+
+    expected = {"a": int}
+    actual = _get_all_basemodel_annotations(ModelA[int])
+    assert actual == expected
+
+    D = TypeVar("D", bound=Union[str, int])
+
+    class ModelD(ModelC, Generic[D]):
+        d: Optional[D]
+
+    expected = {
+        "a": str,
+        "b": Annotated[ModelA[Dict[str, Any]], "foo"],
+        "c": dict,
+        "d": Union[str, int, None],
+    }
+    actual = _get_all_basemodel_annotations(ModelD)
+    assert actual == expected
+
+    expected = {
+        "a": str,
+        "b": Annotated[ModelA[Dict[str, Any]], "foo"],
+        "c": dict,
+        "d": Union[int, None],
+    }
+    actual = _get_all_basemodel_annotations(ModelD[int])
+    assert actual == expected
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Testing pydantic v1.")
+def test__get_all_basemodel_annotations_v1() -> None:
+    A = TypeVar("A")
+
+    class ModelA(BaseModel, Generic[A]):
+        a: A
+
+    class ModelB(ModelA[str]):
+        b: Annotated[ModelA[Dict[str, Any]], "foo"]
+
+    class Mixin(object):
+        def foo(self) -> str:
+            return "foo"
+
+    class ModelC(Mixin, ModelB):
+        c: dict
+
+    expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"], "c": dict}
+    actual = _get_all_basemodel_annotations(ModelC)
+    assert actual == expected
+
+    expected = {"a": str, "b": Annotated[ModelA[Dict[str, Any]], "foo"]}
+    actual = _get_all_basemodel_annotations(ModelB)
+    assert actual == expected
+
+    expected = {"a": Any}
+    actual = _get_all_basemodel_annotations(ModelA)
+    assert actual == expected
+
+    expected = {"a": int}
+    actual = _get_all_basemodel_annotations(ModelA[int])
+    assert actual == expected
+
+    D = TypeVar("D", bound=Union[str, int])
+
+    class ModelD(ModelC, Generic[D]):
+        d: Optional[D]
+
+    expected = {
+        "a": str,
+        "b": Annotated[ModelA[Dict[str, Any]], "foo"],
+        "c": dict,
+        "d": Union[str, int, None],
+    }
+    actual = _get_all_basemodel_annotations(ModelD)
+    assert actual == expected
+
+    expected = {
+        "a": str,
+        "b": Annotated[ModelA[Dict[str, Any]], "foo"],
+        "c": dict,
+        "d": Union[int, None],
+    }
+    actual = _get_all_basemodel_annotations(ModelD[int])
+    assert actual == expected

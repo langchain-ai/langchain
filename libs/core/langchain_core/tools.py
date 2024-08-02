@@ -45,7 +45,7 @@ from typing import (
     get_type_hints,
 )
 
-from typing_extensions import Annotated, cast, get_args, get_origin
+from typing_extensions import Annotated, TypeVar, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -88,11 +88,16 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
-from langchain_core.utils.function_calling import _parse_google_docstring
+from langchain_core.utils.function_calling import (
+    _parse_google_docstring,
+    _py_38_safe_origin,
+)
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
     is_basemodel_subclass,
+    is_pydantic_v1_subclass,
+    is_pydantic_v2_subclass,
 )
 
 FILTERED_ARGS = ("run_manager", "callbacks")
@@ -387,7 +392,7 @@ class ChildTool(BaseTool):
     def tool_call_schema(self) -> Type[BaseModel]:
         full_schema = self.get_input_schema()
         fields = []
-        for name, type_ in full_schema.__annotations__.items():
+        for name, type_ in _get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
         return _create_subset_model(
@@ -1650,3 +1655,80 @@ def _filter_schema_args(func: Callable) -> List[str]:
         filter_args.append(config_param)
     # filter_args.extend(_get_non_model_params(type_hints))
     return filter_args
+
+
+def _get_all_basemodel_annotations(
+    cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
+) -> Dict[str, Type]:
+    # cls has no subscript: cls = FooBar
+    if isinstance(cls, type):
+        annotations: Dict[str, Type] = {}
+        for name, param in inspect.signature(cls).parameters.items():
+            annotations[name] = param.annotation
+        orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
+    # cls has subscript: cls = FooBar[int]
+    else:
+        annotations = _get_all_basemodel_annotations(
+            get_origin(cls), default_to_bound=False
+        )
+        orig_bases = (cls,)
+
+    # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
+    if not (isinstance(cls, type) and is_pydantic_v2_subclass(cls)):
+        # if cls = FooBar inherits from Baz[str], orig_bases will contain Baz[str]
+        # if cls = FooBar inherits from Baz, orig_bases will contain Baz
+        # if cls = FooBar[int], orig_bases will contain FooBar[int]
+        for parent in orig_bases:
+            # if class = FooBar inherits from Baz, parent = Baz
+            if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
+                annotations.update(
+                    _get_all_basemodel_annotations(parent, default_to_bound=False)
+                )
+                continue
+
+            parent_origin = get_origin(parent)
+
+            # if class = FooBar inherits from non-pydantic class
+            if not parent_origin:
+                continue
+
+            # if class = FooBar inherits from Baz[str]:
+            # parent = Baz[str],
+            # parent_origin = Baz,
+            # generic_type_vars = (type vars in Baz)
+            # generic_map = {type var in Baz: str}
+            generic_type_vars: Tuple = getattr(parent_origin, "__parameters__", tuple())
+            generic_map = {
+                type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
+            }
+            for field in getattr(parent_origin, "__annotations__", dict()):
+                annotations[field] = _replace_type_vars(
+                    annotations[field], generic_map, default_to_bound
+                )
+
+    return {
+        k: _replace_type_vars(v, default_to_bound=default_to_bound)
+        for k, v in annotations.items()
+    }
+
+
+def _replace_type_vars(
+    type_: Type,
+    generic_map: Optional[Dict[TypeVar, Type]] = None,
+    default_to_bound: bool = True,
+) -> Type:
+    generic_map = generic_map or {}
+    if isinstance(type_, TypeVar):
+        if type_ in generic_map:
+            return generic_map[type_]
+        elif default_to_bound:
+            return type_.__bound__ or Any
+        else:
+            return type_
+    elif (origin := get_origin(type_)) and (args := get_args(type_)):
+        new_args = tuple(
+            _replace_type_vars(arg, generic_map, default_to_bound) for arg in args
+        )
+        return _py_38_safe_origin(origin)[new_args]
+    else:
+        return type_
