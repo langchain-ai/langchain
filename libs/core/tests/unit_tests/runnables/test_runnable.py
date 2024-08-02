@@ -89,7 +89,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.pydantic_utils import _schema
+from tests.unit_tests.pydantic_utils import _schema, replace_all_of_with_ref
 from tests.unit_tests.stubs import AnyStr, _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
@@ -980,66 +980,69 @@ def test_configurable_fields_prefix_keys() -> None:
     chain = prompt | fake_llm
 
     assert _schema(chain.config_schema()) == {
-        "title": "RunnableSequenceConfig",
-        "type": "object",
-        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
         "definitions": {
-            "LLM": {
-                "title": "LLM",
-                "description": "An enumeration.",
-                "enum": ["chat", "default"],
-                "type": "string",
-            },
             "Chat_Responses": {
-                "title": "Chat Responses",
-                "description": "An enumeration.",
                 "enum": ["hello", "bye", "helpful"],
-                "type": "string",
-            },
-            "Prompt_Template": {
-                "title": "Prompt Template",
-                "description": "An enumeration.",
-                "enum": ["hello", "good_morning"],
+                "title": "Chat Responses",
                 "type": "string",
             },
             "Configurable": {
-                "title": "Configurable",
-                "type": "object",
                 "properties": {
-                    "prompt_template": {
-                        "title": "Prompt Template",
-                        "description": "The prompt template for this chain",
-                        "default": "hello",
-                        "allOf": [{"$ref": "#/definitions/Prompt_Template"}],
+                    "chat_sleep": {
+                        "anyOf": [{"type": "number"}, {"type": "null"}],
+                        "default": None,
+                        "title": "Chat " "Sleep",
                     },
                     "llm": {
-                        "title": "LLM",
+                        "$ref": "#/definitions/LLM",
                         "default": "default",
-                        "allOf": [{"$ref": "#/definitions/LLM"}],
+                        "title": "LLM",
                     },
-                    # not prefixed because marked as shared
-                    "chat_sleep": {
-                        "title": "Chat Sleep",
-                        "type": "number",
-                    },
-                    # prefixed for "chat" option
                     "llm==chat/responses": {
-                        "title": "Chat Responses",
                         "default": ["hello", "bye"],
-                        "type": "array",
                         "items": {"$ref": "#/definitions/Chat_Responses"},
-                    },
-                    # prefixed for "default" option
-                    "llm==default/responses": {
-                        "title": "LLM Responses",
-                        "description": "A list of fake responses for this LLM",
-                        "default": ["a"],
+                        "title": "Chat " "Responses",
                         "type": "array",
+                    },
+                    "llm==default/responses": {
+                        "default": ["a"],
+                        "description": "A "
+                        "list "
+                        "of "
+                        "fake "
+                        "responses "
+                        "for "
+                        "this "
+                        "LLM",
                         "items": {"type": "string"},
+                        "title": "LLM " "Responses",
+                        "type": "array",
+                    },
+                    "prompt_template": {
+                        "$ref": "#/definitions/Prompt_Template",
+                        "default": "hello",
+                        "description": "The "
+                        "prompt "
+                        "template "
+                        "for "
+                        "this "
+                        "chain",
+                        "title": "Prompt " "Template",
                     },
                 },
+                "title": "Configurable",
+                "type": "object",
+            },
+            "LLM": {"enum": ["chat", "default"], "title": "LLM", "type": "string"},
+            "Prompt_Template": {
+                "enum": ["hello", "good_morning"],
+                "title": "Prompt Template",
+                "type": "string",
             },
         },
+        "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
+        "title": "RunnableSequenceConfig",
+        "type": "object",
     }
 
 
@@ -1088,26 +1091,22 @@ def test_configurable_fields_example() -> None:
     chain_configurable = prompt | fake_llm | (lambda x: {"name": x}) | prompt | fake_llm
 
     assert chain_configurable.invoke({"name": "John"}) == "a"
-
-    assert _schema(chain_configurable.config_schema()) == {
+    expected = {
         "title": "RunnableSequenceConfig",
         "type": "object",
         "properties": {"configurable": {"$ref": "#/definitions/Configurable"}},
         "definitions": {
             "LLM": {
                 "title": "LLM",
-                "description": "An enumeration.",
                 "enum": ["chat", "default"],
                 "type": "string",
             },
             "Chat_Responses": {
-                "description": "An enumeration.",
                 "enum": ["hello", "bye", "helpful"],
                 "title": "Chat Responses",
                 "type": "string",
             },
             "Prompt_Template": {
-                "description": "An enumeration.",
                 "enum": ["hello", "good_morning"],
                 "title": "Prompt Template",
                 "type": "string",
@@ -1144,6 +1143,10 @@ def test_configurable_fields_example() -> None:
             },
         },
     }
+
+    replace_all_of_with_ref(expected)
+
+    assert _schema(chain_configurable.config_schema()) == expected
 
     assert (
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(

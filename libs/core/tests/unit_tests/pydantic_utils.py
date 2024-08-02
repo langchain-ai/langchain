@@ -55,6 +55,19 @@ def remove_all_none_default(schema: Any) -> None:
             remove_all_none_default(item)
 
 
+def _remove_enum_description(obj: Any) -> None:
+    """Remove the description from enums."""
+    if isinstance(obj, dict):
+        if "enum" in obj:
+            if "description" in obj and obj["description"] == "An enumeration.":
+                del obj["description"]
+        for key, value in obj.items():
+            _remove_enum_description(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            _remove_enum_description(item)
+
+
 def _schema(obj: Type[BaseModel]) -> dict:
     """Return the schema of the object."""
     # Remap to old style schema
@@ -68,5 +81,6 @@ def _schema(obj: Type[BaseModel]) -> dict:
 
     replace_all_of_with_ref(schema_)
     remove_all_none_default(schema_)
+    _remove_enum_description(schema_)
 
     return schema_
