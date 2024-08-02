@@ -1,69 +1,89 @@
+import json
 import re
 import sys
+from functools import cache
 from pathlib import Path
-from typing import Union
+from typing import Dict, Iterable, List, Union
 
 CURR_DIR = Path(__file__).parent.absolute()
-
-CHAT_MODEL_HEADERS = (
-    "## Overview",
-    "### Integration details",
-    "### Model features",
-    "## Setup",
-    "## Instantiation",
-    "## Invocation",
-    "## Chaining",
-    "## API reference",
+CLI_TEMPLATE_DIR = (
+    CURR_DIR.parent.parent / "libs/cli/langchain_cli/integration_template/docs"
 )
-CHAT_MODEL_REGEX = r".*".join(CHAT_MODEL_HEADERS)
 
-DOCUMENT_LOADER_HEADERS = (
-    "## Overview",
-    "### Integration details",
-    "### Loader features",
-    "## Setup",
-    "## Instantiation",
-    "## Load",
-    "## Lazy Load",
-    "## API reference",
-)
-DOCUMENT_LOADER_REGEX = r".*".join(DOCUMENT_LOADER_HEADERS)
+INFO_BY_DIR: Dict[str, Dict[str, Union[int, str]]] = {
+    "chat": {
+        "issue_number": 22296,
+    },
+    "document_loaders": {
+        "issue_number": 22866,
+    },
+    "stores": {},
+    "llms": {
+        "issue_number": 24803,
+    },
+    "text_embedding": {"issue_number": 14856},
+    "toolkits": {"issue_number": "TODO"},
+    "tools": {"issue_number": "TODO"},
+    "vectorstores": {"issue_number": 24800},
+    "retrievers": {"issue_number": "TODO"},
+}
 
 
-def check_chat_model(path: Path) -> None:
+@cache
+def _get_headers(doc_dir: str) -> Iterable[str]:
+    """Gets all markdown headers ## and below from the integration template.
+
+    Ignores headers that contain "TODO"."""
+    ipynb_name = f"{doc_dir}.ipynb"
+    if not (CLI_TEMPLATE_DIR / ipynb_name).exists():
+        raise FileNotFoundError(f"Could not find {ipynb_name} in {CLI_TEMPLATE_DIR}")
+    with open(CLI_TEMPLATE_DIR / ipynb_name, "r") as f:
+        nb = json.load(f)
+
+    headers: List[str] = []
+    for cell in nb["cells"]:
+        if cell["cell_type"] == "markdown":
+            for line in cell["source"]:
+                if not line.startswith("##") or "TODO" in line:
+                    continue
+                header = line.strip()
+                headers.append(header)
+    return headers
+
+
+def check_header_order(path: Path) -> None:
+    doc_dir = path.parent.name
+    if doc_dir not in INFO_BY_DIR:
+        # Skip if not a directory we care about
+        return
+    headers = _get_headers(doc_dir)
+    issue_number = INFO_BY_DIR[doc_dir].get("issue_number", "nonexistent")
+
+    print(f"Checking {doc_dir} page {path}")
+
     with open(path, "r") as f:
         doc = f.read()
-    if not re.search(CHAT_MODEL_REGEX, doc, re.DOTALL):
-        raise ValueError(
-            f"Document {path} does not match the ChatModel Integration page template. "
-            f"Please see https://github.com/langchain-ai/langchain/issues/22296 for "
-            f"instructions on how to correctly format a ChatModel Integration page."
+    regex = r".*".join(headers)
+    if not re.search(regex, doc, re.DOTALL):
+        issueline = (
+            (
+                " Please see https://github.com/langchain-ai/langchain/issues/"
+                f"{issue_number} for instructions on how to correctly format a "
+                f"{doc_dir} integration page."
+            )
+            if isinstance(issue_number, int)
+            else ""
         )
-
-
-def check_document_loader(path: Path) -> None:
-    with open(path, "r") as f:
-        doc = f.read()
-    if not re.search(DOCUMENT_LOADER_REGEX, doc, re.DOTALL):
         raise ValueError(
-            f"Document {path} does not match the DocumentLoader Integration page template. "
-            f"Please see https://github.com/langchain-ai/langchain/issues/22866 for "
-            f"instructions on how to correctly format a DocumentLoader Integration page."
+            f"Document {path} does not match the expected header order.{issueline}"
         )
 
 
 def main(*new_doc_paths: Union[str, Path]) -> None:
     for path in new_doc_paths:
         path = Path(path).resolve().absolute()
-        if CURR_DIR.parent / "docs" / "integrations" / "chat" in path.parents:
-            print(f"Checking chat model page {path}")
-            check_chat_model(path)
-        elif (
-            CURR_DIR.parent / "docs" / "integrations" / "document_loaders"
-            in path.parents
-        ):
-            print(f"Checking document loader page {path}")
-            check_document_loader(path)
+        if CURR_DIR.parent / "docs" / "integrations" in path.parents:
+            check_header_order(path)
         else:
             continue
 
