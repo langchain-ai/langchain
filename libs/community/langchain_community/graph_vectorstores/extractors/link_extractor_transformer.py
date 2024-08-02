@@ -28,7 +28,7 @@ class LinkExtractorTransformer(BaseDocumentTransformer):
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
-        # Implement `transform_docments` directly, so that LinkExtractors which operate
+        # Implement `transform_documents` directly, so that LinkExtractors which operate
         # better in batch (`extract_many`) get a chance to do so.
 
         # Run each extractor over all documents.
