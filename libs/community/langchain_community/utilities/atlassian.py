@@ -10,7 +10,7 @@ from langchain_core.utils import get_from_dict_or_env
 
 
 class AtlassianAPIWrapper(BaseModel):
-    """Wrapper for Atlassian APIs, incluindo Jira e Confluence."""
+    """Wrapper for Atlassian APIs, including Jira and Confluence."""
 
     jira: Optional[Any] = None
     confluence: Optional[Any] = None
@@ -27,8 +27,8 @@ class AtlassianAPIWrapper(BaseModel):
         self.validate_and_initialize_environment()
 
     def validate_and_initialize_environment(self):
-        """Valida se a chave API e o pacote Python estão presentes no ambiente
-        e inicializa as instâncias do Jira e Confluence."""
+        """Validates if the API key and Python package are present in the environment
+        and initializes the Jira and Confluence instances."""
 
         def get_env_var(var_name: str, env_name: str, default: Optional[str] = None) -> str:
             return get_from_dict_or_env(self.__dict__, var_name, env_name, default)
@@ -42,8 +42,8 @@ class AtlassianAPIWrapper(BaseModel):
             from atlassian import Confluence, Jira
         except ImportError:
             raise ImportError(
-                "atlassian-python-api não está instalado. "
-                "Por favor, instale com `pip install atlassian-python-api`"
+                "atlassian-python-api is not installed. "
+                "Please install it with `pip install atlassian-python-api`"
             )
 
         if self.atlassian_username == "":
@@ -78,15 +78,32 @@ class AtlassianAPIWrapper(BaseModel):
             raise ValueError("Failed to initialize Jira or Confluence instances.")
 
     def filter_response_keys(self, response: dict) -> dict:
-        """Remove specified keys from the response dictionary using wildcard patterns."""
+        """
+        Remove specified keys from the response dictionary using wildcard patterns.
+
+        Args:
+            response (dict): The dictionary response to be filtered.
+
+        Returns:
+            dict: The filtered dictionary with specified keys removed.
+        """
         if not self.filter_keys:
             return response
 
         # Remove leading/trailing spaces and transform wildcard patterns into regex patterns
         filter_patterns = [re.compile('^' + key.strip().replace('*', '.*') + '$') for key in self.filter_keys]
-        print(f"Filter patterns: {filter_patterns}")  # Adicionado para debug
+        print(f"Filter patterns: {filter_patterns}")  # Added for debugging
 
         def recursive_filter(data: Any) -> Any:
+            """
+            Recursively filters a data structure (dictionary or list) by removing keys that match specified patterns.
+
+            Args:
+                data (Any): The data to be filtered. Can be a dictionary, list, or other data types.
+
+            Returns:
+                Any: The filtered data structure with specified keys removed.
+            """
             if isinstance(data, dict):
                 return {k: recursive_filter(v) for k, v in data.items() if not any(p.match(k) for p in filter_patterns)}
             elif isinstance(data, list):
@@ -116,6 +133,18 @@ class AtlassianAPIWrapper(BaseModel):
             return json.dumps({"error": str(e)}, indent=2)
 
     def get_jira_functions(self, query: Optional[str] = None) -> str:
+        """
+        Retrieve and return a list of JIRA API functions or details of a specific function if queried.
+
+        Args:
+            query (Optional[str]): The name of the specific JIRA function to retrieve details for. If not provided,
+                                   returns a list of all available JIRA functions.
+
+        Returns:
+            str: A JSON-formatted string. If `query` is None or an empty string, returns a list of all JIRA functions.
+                 If `query` matches a function name, returns the function name and its parameters.
+                 If `query` does not match any function, returns an error message.
+        """
         all_attributes = dir(self.jira)
         functions = [attr for attr in all_attributes if
                      callable(getattr(self.jira, attr)) and not attr.startswith('_')]
@@ -130,6 +159,19 @@ class AtlassianAPIWrapper(BaseModel):
             return json.dumps({"error": f"Function {query} not found."}, indent=2)
 
     def get_confluence_functions(self, query: Optional[str] = None) -> str:
+        """
+        Retrieve and return a list of Confluence API functions or details of a specific function if queried.
+
+        Args:
+            query (Optional[str]): The name of the specific Confluence function to retrieve details for.
+                                    If not provided, returns a list of all available Confluence functions.
+
+        Returns:
+            str: A JSON-formatted string. If `query` is None or an empty string, returns a list of all Confluence
+                functions.
+                 If `query` matches a function name, returns the function name and its parameters.
+                 If `query` does not match any function, returns an error message.
+        """
         all_attributes = dir(self.confluence)
         functions = [attr for attr in all_attributes if
                      callable(getattr(self.confluence, attr)) and not attr.startswith('_')]
@@ -144,6 +186,26 @@ class AtlassianAPIWrapper(BaseModel):
             return json.dumps({"error": f"Function {query} not found."}, indent=2)
 
     def jira_other(self, query: str) -> str:
+        """
+        Execute a specified JIRA function with provided arguments and keyword arguments.
+
+        Args:
+            query (str): A JSON-formatted string containing the function name and its parameters.
+                         Example format:
+                         {
+                             "function": "function_name",
+                             "args": [arg1, arg2, ...],
+                             "kwargs": {"key1": value1, "key2": value2, ...}
+                         }
+
+        Returns:
+            str: A JSON-formatted string containing the result of the JIRA function call. If there is an error,
+                 a JSON-formatted error message is returned.
+
+        Raises:
+            ValueError: If the function name is not found or if the provided parameters do not match the function's
+                        signature.
+        """
         try:
             params = json.loads(query)
             function_name = params.get("function")
@@ -161,7 +223,8 @@ class AtlassianAPIWrapper(BaseModel):
 
             if not set(presented_params).issubset(set(accepted_params["parameters"])):
                 raise ValueError(
-                    f"Function '{function_name}' accepts {accepted_params['parameters']} parameters. But got: {presented_params}."
+                    f"Function '{function_name}' accepts {accepted_params['parameters']} parameters. "
+                    f"But got: {presented_params}."
                 )
 
             result = jira_function(*args, **kwargs)
@@ -172,6 +235,26 @@ class AtlassianAPIWrapper(BaseModel):
             return json.dumps({"error": str(e)}, indent=2)
 
     def confluence_other(self, query: str) -> str:
+        """
+        Execute a specified Confluence function with provided arguments and keyword arguments.
+
+        Args:
+            query (str): A JSON-formatted string containing the function name and its parameters.
+                         Example format:
+                         {
+                             "function": "function_name",
+                             "args": [arg1, arg2, ...],
+                             "kwargs": {"key1": value1, "key2": value2, ...}
+                         }
+
+        Returns:
+            str: A JSON-formatted string containing the result of the Confluence function call. If there is an error,
+                 a JSON-formatted error message is returned.
+
+        Raises:
+            ValueError: If the function name is not found or if the provided parameters do not match the function's
+                        signature.
+        """
         try:
             params = json.loads(query)
             function_name = params.get("function")
@@ -189,7 +272,8 @@ class AtlassianAPIWrapper(BaseModel):
 
             if not set(presented_params).issubset(set(accepted_params["parameters"])):
                 raise ValueError(
-                    f"Function '{function_name}' accepts {accepted_params['parameters']} parameters. But got: {presented_params}."
+                    f"Function '{function_name}' accepts {accepted_params['parameters']} parameters. "
+                    f"But got: {presented_params}."
                 )
 
             result = confluence_function(*args, **kwargs)
@@ -200,19 +284,48 @@ class AtlassianAPIWrapper(BaseModel):
             return json.dumps({"error": str(e)}, indent=2)
 
     def jira_jql(self, query: str) -> str:
+        """
+        Execute a JQL query on JIRA and return the results.
+
+        Args:
+            query (str): The JQL query string to be executed on JIRA.
+
+        Returns:
+            str: A JSON-formatted string containing the results of the JQL query.
+                 If filter keys are specified, the results are filtered accordingly.
+        """
         issues = self.jira.jql(query)
         if self.filter_keys:
             return self.apply_filter(issues)
         return json.dumps(issues, indent=2)
 
     def confluence_cql(self, query: str) -> str:
+        """
+        Execute a CQL query on Confluence and return the results.
+
+        Args:
+            query (str): The CQL query string to be executed on Confluence.
+
+        Returns:
+            str: A JSON-formatted string containing the results of the CQL query.
+                 If filter keys are specified, the results are filtered accordingly.
+        """
         content = self.confluence.cql(query)
         if self.filter_keys:
             return self.apply_filter(content)
         return json.dumps(content, indent=2)
 
     def apply_filter(self, result: Any) -> str:
-        """Apply key filter to the result."""
+        """
+        Apply key filter to the result.
+
+        Args:
+            result (Any): The result data to be filtered, which can be a dictionary or any other data type.
+
+        Returns:
+            str: A JSON-formatted string containing the filtered result.
+                 If the result is a dictionary, specified keys are removed based on filter patterns.
+        """
         if isinstance(result, dict):
             filtered_result = self.filter_response_keys(result)
             return json.dumps(filtered_result, indent=2)
