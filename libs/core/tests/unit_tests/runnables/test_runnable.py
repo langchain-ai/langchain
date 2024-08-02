@@ -4403,7 +4403,10 @@ def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
         assert isinstance(body, Runnable)
 
     assert isinstance(runnable.default, Runnable)
-    assert _schema(runnable.input_schema) == {"title": "RunnableBranchInput"}
+    assert _schema(runnable.input_schema) == {
+        "title": "RunnableBranchInput",
+        "type": "integer",
+    }
 
 
 def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
