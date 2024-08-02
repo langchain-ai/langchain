@@ -800,7 +800,7 @@ def test_chat_input_schema(snapshot: SnapshotAssertion) -> None:
     with pytest.raises(ValidationError):
         prompt_all_required.input_schema(input="")
     assert _schema(prompt_all_required.input_schema) == snapshot(name="required")
-    prompt_optional = ChatPromptTemplate(
+    prompt_optional = ChatPromptTemplate.from_messages(
         messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
     )
     # input variables only lists required variables
