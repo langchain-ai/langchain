@@ -59,9 +59,9 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
     Key init args — completion params:
         model: Optional[str]
             Name of ZhipuAI model to use.
-        minimax_api_key: Optional[str]
+        api_key: Optional[str]
             Automatically inferred from env var `MINIMAX_GROUP_ID` if not provided.
-        minimax_group_id: Optional[str]
+        group_id: Optional[str]
             Automatically inferred from env var `MINIMAX_GROUP_ID` if not provided.
 
     See full list of supported init args and their descriptions in the params section.
