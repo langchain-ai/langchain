@@ -23,7 +23,7 @@ def test_zhipuai_embedding_query() -> None:
 def test_zhipuai_embedding3() -> None:
     """Test ZhipuAI Text Embedding for documents by new model 'embedding-3'"""
     documents = ["This is a test query1.", "This is a test query2."]
-    embedding = ZhipuAIEmbeddings(model="embedding-3")  # using new model 'embedding-3'
+    embedding = ZhipuAIEmbeddings(model="embedding-3")  # type: ignore[call-arg]
     res = embedding.embed_documents(documents)
     assert len(res) == 2  # type: ignore[arg-type]
-    assert len(res[0]) == 2048  # the default dimension is 2048
+    assert len(res[0]) == 2048  # type: ignore[index]
