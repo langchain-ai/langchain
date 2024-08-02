@@ -53,7 +53,7 @@ class TavilySearchResults(BaseTool):
 
         .. code-block:: python
 
-            '{\n  "answer": "Novak Djokovic won the last French Open by beating Casper Ruud ...',
+            '{\n  "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ...'
 
     Invoke with tool call:
 
@@ -64,7 +64,7 @@ class TavilySearchResults(BaseTool):
         .. code-block:: python
 
             ToolMessage(
-                content='{\n  "answer": "Novak Djokovic won the last French Open by beating Casper Ruud ...',
+                content='{\n  "url": "https://www.nytimes.com...", "content": "Novak Djokovic won the last French Open by beating Casper Ruud ...',
                 artifact={
                     'query': 'who won the last french open',
                     'follow_up_questions': None,
