@@ -65,6 +65,10 @@
     {
       "source": "/docs/integrations/toolkits/document_comparison_toolkit(/?)",
       "destination": "/docs/tutorials/rag/"
+    },
+    {
+      "source": "/v0.2/docs/how_to/migrate_chains(/?)",
+      "destination": "/v0.2/docs/versions/migrating_chains"
     }
   ]
 }

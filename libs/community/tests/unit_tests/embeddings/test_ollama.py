@@ -5,7 +5,7 @@ from langchain_community.embeddings.ollama import OllamaEmbeddings
 
 
 class MockResponse:
-    status_code = 200
+    status_code: int = 200
 
     def json(self) -> dict:
         return {"embedding": [1, 2, 3]}

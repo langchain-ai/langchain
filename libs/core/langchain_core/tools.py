@@ -20,7 +20,6 @@ tool for the job.
 from __future__ import annotations
 
 import asyncio
-import copy
 import functools
 import inspect
 import json
@@ -46,7 +45,7 @@ from typing import (
     get_type_hints,
 )
 
-from typing_extensions import Annotated, cast, get_args, get_origin
+from typing_extensions import Annotated, TypeVar, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -89,10 +88,16 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.utils import accepts_context
+from langchain_core.utils.function_calling import (
+    _parse_google_docstring,
+    _py_38_safe_origin,
+)
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
     is_basemodel_subclass,
+    is_pydantic_v1_subclass,
+    is_pydantic_v2_subclass,
 )
 
 FILTERED_ARGS = ("run_manager", "callbacks")
@@ -120,6 +125,7 @@ def _get_filtered_args(
     func: Callable,
     *,
     filter_args: Sequence[str],
+    include_injected: bool = True,
 ) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
@@ -127,7 +133,9 @@ def _get_filtered_args(
     return {
         k: schema[k]
         for i, (k, param) in enumerate(valid_keys.items())
-        if k not in filter_args and (i > 0 or param.name not in ("self", "cls"))
+        if k not in filter_args
+        and (i > 0 or param.name not in ("self", "cls"))
+        and (include_injected or not _is_injected_arg_type(param.annotation))
     }
 
 
@@ -138,50 +146,12 @@ def _parse_python_function_docstring(
 
     Assumes the function docstring follows Google Python style guide.
     """
-    invalid_docstring_error = ValueError(
-        f"Found invalid Google-Style docstring for {function}."
-    )
     docstring = inspect.getdoc(function)
-    if docstring:
-        docstring_blocks = docstring.split("\n\n")
-        if error_on_invalid_docstring:
-            filtered_annotations = {
-                arg for arg in annotations if arg not in (*(FILTERED_ARGS), "return")
-            }
-            if filtered_annotations and (
-                len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:")
-            ):
-                raise (invalid_docstring_error)
-        descriptors = []
-        args_block = None
-        past_descriptors = False
-        for block in docstring_blocks:
-            if block.startswith("Args:"):
-                args_block = block
-                break
-            elif block.startswith("Returns:") or block.startswith("Example:"):
-                # Don't break in case Args come after
-                past_descriptors = True
-            elif not past_descriptors:
-                descriptors.append(block)
-            else:
-                continue
-        description = " ".join(descriptors)
-    else:
-        if error_on_invalid_docstring:
-            raise (invalid_docstring_error)
-        description = ""
-        args_block = None
-    arg_descriptions = {}
-    if args_block:
-        arg = None
-        for line in args_block.split("\n")[1:]:
-            if ":" in line:
-                arg, desc = line.split(":", maxsplit=1)
-                arg_descriptions[arg.strip()] = desc.strip()
-            elif arg:
-                arg_descriptions[arg.strip()] += " " + line.strip()
-    return description, arg_descriptions
+    return _parse_google_docstring(
+        docstring,
+        list(annotations),
+        error_on_invalid_docstring=error_on_invalid_docstring,
+    )
 
 
 def _validate_docstring_args_against_annotations(
@@ -247,6 +217,7 @@ def create_schema_from_function(
     filter_args: Optional[Sequence[str]] = None,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
+    include_injected: bool = True,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
 
@@ -260,6 +231,9 @@ def create_schema_from_function(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to False.
+        include_injected: Whether to include injected arguments in the schema.
+            Defaults to True, since we want to include them in the schema
+            when *validating* tool inputs.
 
     Returns:
         A pydantic model with the same arguments as the function.
@@ -277,7 +251,9 @@ def create_schema_from_function(
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
+    valid_properties = _get_filtered_args(
+        inferred_model, func, filter_args=filter_args, include_injected=include_injected
+    )
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
@@ -416,7 +392,7 @@ class ChildTool(BaseTool):
     def tool_call_schema(self) -> Type[BaseModel]:
         full_schema = self.get_input_schema()
         fields = []
-        for name, type_ in full_schema.__annotations__.items():
+        for name, type_ in _get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
         return _create_subset_model(
@@ -617,23 +593,27 @@ class ChildTool(BaseTool):
                 content, artifact = response
             else:
                 content = response
+            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
+            status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+            status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
+            status = "error"
 
         if error_to_raise:
             run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
-        output = _format_output(content, artifact, tool_call_id, self.name)
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -729,24 +709,28 @@ class ChildTool(BaseTool):
                 content, artifact = response
             else:
                 content = response
+            status = "success"
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
                 content = _handle_validation_error(e, flag=self.handle_validation_error)
+            status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+            status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
+            status = "error"
 
         if error_to_raise:
             await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
-        output = _format_output(content, artifact, tool_call_id, self.name)
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
@@ -1482,9 +1466,8 @@ def _prep_run_args(
 ) -> Tuple[Union[str, Dict], Dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
-        input_copy = copy.deepcopy(input)
-        tool_call_id: Optional[str] = cast(ToolCall, input_copy)["id"]
-        tool_input: Union[str, dict] = cast(ToolCall, input_copy)["args"]
+        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
+        tool_input: Union[str, dict] = cast(ToolCall, input)["args"].copy()
     else:
         tool_call_id = None
         tool_input = cast(Union[str, dict], input)
@@ -1504,23 +1487,40 @@ def _prep_run_args(
 
 
 def _format_output(
-    content: Any, artifact: Any, tool_call_id: Optional[str], name: str
+    content: Any, artifact: Any, tool_call_id: Optional[str], name: str, status: str
 ) -> Union[ToolMessage, Any]:
     if tool_call_id:
-        # NOTE: This will fail to stringify lists which aren't actually content blocks
-        # but whose first element happens to be a string or dict. Tools should avoid
-        # returning such contents.
-        if not isinstance(content, str) and not (
-            isinstance(content, list)
-            and content
-            and isinstance(content[0], (str, dict))
-        ):
+        if not _is_message_content_type(content):
             content = _stringify(content)
         return ToolMessage(
-            content, artifact=artifact, tool_call_id=tool_call_id, name=name
+            content,
+            artifact=artifact,
+            tool_call_id=tool_call_id,
+            name=name,
+            status=status,
         )
     else:
         return content
+
+
+def _is_message_content_type(obj: Any) -> bool:
+    """Check for OpenAI or Anthropic format tool message content."""
+    if isinstance(obj, str):
+        return True
+    elif isinstance(obj, list) and all(_is_message_content_block(e) for e in obj):
+        return True
+    else:
+        return False
+
+
+def _is_message_content_block(obj: Any) -> bool:
+    """Check for OpenAI or Anthropic format tool message content blocks."""
+    if isinstance(obj, str):
+        return True
+    elif isinstance(obj, dict):
+        return obj.get("type", None) in ("text", "image_url", "image", "json")
+    else:
+        return False
 
 
 def _stringify(content: Any) -> str:
@@ -1655,3 +1655,80 @@ def _filter_schema_args(func: Callable) -> List[str]:
         filter_args.append(config_param)
     # filter_args.extend(_get_non_model_params(type_hints))
     return filter_args
+
+
+def _get_all_basemodel_annotations(
+    cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
+) -> Dict[str, Type]:
+    # cls has no subscript: cls = FooBar
+    if isinstance(cls, type):
+        annotations: Dict[str, Type] = {}
+        for name, param in inspect.signature(cls).parameters.items():
+            annotations[name] = param.annotation
+        orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
+    # cls has subscript: cls = FooBar[int]
+    else:
+        annotations = _get_all_basemodel_annotations(
+            get_origin(cls), default_to_bound=False
+        )
+        orig_bases = (cls,)
+
+    # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
+    if not (isinstance(cls, type) and is_pydantic_v2_subclass(cls)):
+        # if cls = FooBar inherits from Baz[str], orig_bases will contain Baz[str]
+        # if cls = FooBar inherits from Baz, orig_bases will contain Baz
+        # if cls = FooBar[int], orig_bases will contain FooBar[int]
+        for parent in orig_bases:
+            # if class = FooBar inherits from Baz, parent = Baz
+            if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
+                annotations.update(
+                    _get_all_basemodel_annotations(parent, default_to_bound=False)
+                )
+                continue
+
+            parent_origin = get_origin(parent)
+
+            # if class = FooBar inherits from non-pydantic class
+            if not parent_origin:
+                continue
+
+            # if class = FooBar inherits from Baz[str]:
+            # parent = Baz[str],
+            # parent_origin = Baz,
+            # generic_type_vars = (type vars in Baz)
+            # generic_map = {type var in Baz: str}
+            generic_type_vars: Tuple = getattr(parent_origin, "__parameters__", tuple())
+            generic_map = {
+                type_var: t for type_var, t in zip(generic_type_vars, get_args(parent))
+            }
+            for field in getattr(parent_origin, "__annotations__", dict()):
+                annotations[field] = _replace_type_vars(
+                    annotations[field], generic_map, default_to_bound
+                )
+
+    return {
+        k: _replace_type_vars(v, default_to_bound=default_to_bound)
+        for k, v in annotations.items()
+    }
+
+
+def _replace_type_vars(
+    type_: Type,
+    generic_map: Optional[Dict[TypeVar, Type]] = None,
+    default_to_bound: bool = True,
+) -> Type:
+    generic_map = generic_map or {}
+    if isinstance(type_, TypeVar):
+        if type_ in generic_map:
+            return generic_map[type_]
+        elif default_to_bound:
+            return type_.__bound__ or Any
+        else:
+            return type_
+    elif (origin := get_origin(type_)) and (args := get_args(type_)):
+        new_args = tuple(
+            _replace_type_vars(arg, generic_map, default_to_bound) for arg in args
+        )
+        return _py_38_safe_origin(origin)[new_args]
+    else:
+        return type_

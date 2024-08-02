@@ -11,7 +11,7 @@ LOG = logging.getLogger(__name__)
 
 
 class TestChatKinetica:
-    test_ctx_json = """
+    test_ctx_json: str = """
     {
         "payload":{
             "context":[
