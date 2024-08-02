@@ -40,7 +40,7 @@ class RelikGraphTransformer:
         self.relik_model = relik.Relik.from_pretrained(model)
         self.relationship_confidence_threshold = relationship_confidence_threshold
 
-    def process_document(self, document: Document):
+    def process_document(self, document: Document) -> GraphDocument:
         relik_out = self.relik_model(document.page_content)
         nodes = []
         # Extract nodes
