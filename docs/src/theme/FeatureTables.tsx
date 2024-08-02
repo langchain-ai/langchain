@@ -14,7 +14,7 @@ const FeatureTables: Record<string, Category> = {
     llms: {
         link: "/docs/integrations/llms",
         columns: [
-            {title: "Model", formatter: (item) => <a href={item.link}>{item.name}</a>},
+            {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
             {title: "Package", formatter: (item) => <a href={`https://pypi.org/project/${item.package}/`}>{item.package}</a>},
         ],
         items:[
@@ -27,7 +27,10 @@ const FeatureTables: Record<string, Category> = {
     },
     text_embedding: {
         link: "/docs/integrations/text_embedding",
-        columns: [],
+        columns: [
+            {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
+            {title: "Package", formatter: (item) => <a href={`https://pypi.org/project/${item.package}/`}>{item.package}</a>},
+        ],
         items:[
             {
                 name: "Cohere",
