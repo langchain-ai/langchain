@@ -79,6 +79,9 @@ def _schema(obj: Type[BaseModel]) -> dict:
         schema_["definitions"] = schema_["$defs"]
         del schema_["$defs"]
 
+    if "default" in schema_ and schema_["default"] is None:
+        del schema_["default"]
+
     replace_all_of_with_ref(schema_)
     remove_all_none_default(schema_)
     _remove_enum_description(schema_)
