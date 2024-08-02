@@ -7080,6 +7080,10 @@
     "langchain_community.vectorstores.SingleStoreDB"
   ],
   [
+    "langchain.vectorstores.SQLiteVec",
+    "langchain_community.vectorstores.SQLiteVec"
+  ],
+  [
     "langchain.vectorstores.SQLiteVSS",
     "langchain_community.vectorstores.SQLiteVSS"
   ],

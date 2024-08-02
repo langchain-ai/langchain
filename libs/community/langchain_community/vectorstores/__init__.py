@@ -230,6 +230,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.sklearn import (
         SKLearnVectorStore,
     )
+    from langchain_community.vectorstores.sqlitevec import (
+        SQLiteVec,
+    )
     from langchain_community.vectorstores.sqlitevss import (
         SQLiteVSS,
     )
@@ -380,6 +383,7 @@ __all__ = [
     "Relyt",
     "Rockset",
     "SKLearnVectorStore",
+    "SQLiteVec",
     "SQLiteVSS",
     "ScaNN",
     "SemaDB",
@@ -483,6 +487,7 @@ _module_lookup = {
     "Relyt": "langchain_community.vectorstores.relyt",
     "Rockset": "langchain_community.vectorstores.rocksetdb",
     "SKLearnVectorStore": "langchain_community.vectorstores.sklearn",
+    "SQLiteVec": "langchain_community.vectorstores.sqlitevec",
     "SQLiteVSS": "langchain_community.vectorstores.sqlitevss",
     "ScaNN": "langchain_community.vectorstores.scann",
     "SemaDB": "langchain_community.vectorstores.semadb",
