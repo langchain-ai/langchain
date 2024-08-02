@@ -505,7 +505,7 @@ def merge_message_runs(
             curr_chunk = _msg_to_chunk(curr)
             if isinstance(last_chunk.content, str) and isinstance(
                 curr_chunk.content, str
-            ):
+            ) and last_chunk.content and curr_chunk.content:
                 last_chunk.content += "\n"
             merged.append(_chunk_to_msg(last_chunk + curr_chunk))
     return merged
