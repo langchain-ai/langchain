@@ -241,14 +241,35 @@ class Runnable(Generic[Input, Output], ABC):
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
         """Get the name of the Runnable."""
-        name = name or self.name or self.__class__.__name__
-        if suffix:
-            if name[0].isupper():
-                return name + suffix.title()
-            else:
-                return name + "_" + suffix.lower()
+        if name:
+            name_ = name
+        elif self.name:
+            name_ = self.name
         else:
-            return name
+            # Here we handle a case where the runnable subclass is also a pydantic
+            # model.
+            cls = self.__class__
+            # Then it's a pydantic sub-class, and we have to check
+            # whether it's a generic, and if so recover the original name.
+            if (
+                hasattr(
+                    cls,
+                    "__pydantic_generic_metadata__",
+                )
+                and "origin" in cls.__pydantic_generic_metadata__
+                and cls.__pydantic_generic_metadata__["origin"] is not None
+            ):
+                name_ = cls.__pydantic_generic_metadata__["origin"].__name__
+            else:
+                name_ = cls.__name__
+
+        if suffix:
+            if name_[0].isupper():
+                return name_ + suffix.title()
+            else:
+                return name_ + "_" + suffix.lower()
+        else:
+            return name_
 
     @property
     def InputType(self) -> Type[Input]:
