@@ -99,7 +99,7 @@ class E2BDataAnalysisTool(BaseTool):
     name: str = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
     session: Any
-    description: str = base_description
+    description: str
     _uploaded_files: List[UploadedFile] = PrivateAttr(default_factory=list)
 
     def __init__(
@@ -122,7 +122,7 @@ class E2BDataAnalysisTool(BaseTool):
 
         # If no API key is provided, E2B will try to read it from the environment
         # variable E2B_API_KEY
-        super().__init__(**kwargs)
+        super().__init__(description=base_description, **kwargs)
         self.session = DataAnalysis(
             api_key=api_key,
             cwd=cwd,
