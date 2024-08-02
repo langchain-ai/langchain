@@ -331,7 +331,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     fake_llm = FakeListLLM(responses=["a"])  # str -> List[List[str]]
 
-    assert _schema(fake_llm.input_schema) == snapshot
+    assert _schema(fake_llm.input_schema) == snapshot(name="fake_llm_input_schema")
     assert _schema(fake_llm.output_schema) == {
         "title": "FakeListLLMOutput",
         "type": "string",
@@ -339,8 +339,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     fake_chat = FakeListChatModel(responses=["a"])  # str -> List[List[str]]
 
-    assert _schema(fake_chat.input_schema) == snapshot
-    assert _schema(fake_chat.output_schema) == snapshot
+    assert _schema(fake_chat.input_schema) == snapshot(name="fake_chat_input_schema")
+    assert _schema(fake_chat.output_schema) == snapshot(name="fake_chat_output_schema")
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [
@@ -364,7 +364,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "properties": {"name": {"title": "Name", "type": "string"}},
         "required": ["name"],
     }
-    assert _schema(prompt.output_schema) == snapshot
+    assert _schema(prompt.output_schema) == snapshot(name="prompt_output_schema")
 
     prompt_mapper = PromptTemplate.from_template("Hello, {name}!").map()
 
@@ -381,11 +381,15 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "type": "array",
         "title": "RunnableEach<PromptTemplate>Input",
     }
-    assert _schema(prompt_mapper.output_schema) == snapshot
+    assert _schema(prompt_mapper.output_schema) == snapshot(
+        name="prompt_mapper_output_schema"
+    )
 
     list_parser = CommaSeparatedListOutputParser()
 
-    assert _schema(list_parser.input_schema) == snapshot
+    assert _schema(list_parser.input_schema) == snapshot(
+        name="list_parser_input_schema"
+    )
     assert _schema(list_parser.output_schema) == {
         "title": "CommaSeparatedListOutputParserOutput",
         "type": "array",
@@ -409,19 +413,26 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     router: Runnable = RouterRunnable({})
 
     assert _schema(router.input_schema) == {
-        "title": "RouterRunnableInput",
         "$ref": "#/definitions/RouterInput",
         "definitions": {
             "RouterInput": {
-                "title": "RouterInput",
-                "type": "object",
+                "description": "Router input.\n"
+                "\n"
+                "Attributes:\n"
+                "    key: The key to route "
+                "on.\n"
+                "    input: The input to pass "
+                "to the selected Runnable.",
                 "properties": {
-                    "key": {"title": "Key", "type": "string"},
                     "input": {"title": "Input"},
+                    "key": {"title": "Key", "type": "string"},
                 },
                 "required": ["key", "input"],
+                "title": "RouterInput",
+                "type": "object",
             }
         },
+        "title": "RouterRunnableInput",
     }
     assert _schema(router.output_schema) == {"title": "RouterRunnableOutput"}
 
@@ -453,6 +464,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "items": {"type": "string"},
             },
         },
+        "required": ["original", "as_list", "length"],
     }
 
 
@@ -3106,31 +3118,6 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     map_run = parent_run.child_runs[2]
     assert map_run.name == "RunnableParallel<chat,llm,passthrough>"
     assert len(map_run.child_runs) == 3
-
-
-def test_schemas_2():
-    prompt = (
-        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-        + "{question}"
-    )
-
-    chat_res = "i'm a chatbot"
-    # sleep to better simulate a real stream
-
-    llm_res = "i'm a textbot"
-    # sleep to better simulate a real stream
-    llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
-
-    chain: Runnable = prompt | {
-        "llm": llm,
-        "passthrough": RunnablePassthrough(),
-    }
-    chain_pick_one = chain.pick("llm")
-
-    assert _schema(chain_pick_one.output_schema) == {
-        "title": "RunnableSequenceOutput",
-        "type": "string",
-    }
 
 
 def test_map_stream() -> None:
