@@ -1122,6 +1122,7 @@ class StructuredTool(BaseTool):
             description=description_,
             return_direct=return_direct,
             few_shot_examples=few_shot_examples,
+            response_format=response_format,
             **kwargs,
         )
 
