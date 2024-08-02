@@ -157,7 +157,15 @@ class Serializable(BaseModel, ABC):
         For example, for the class `langchain.llms.openai.OpenAI`, the id is
         ["langchain", "llms", "openai", "OpenAI"].
         """
-        return [*cls.get_lc_namespace(), cls.__name__]
+        # Pydantic generics change the class name. So we need to do the following
+        if (
+            "origin" in cls.__pydantic_generic_metadata__
+            and cls.__pydantic_generic_metadata__["origin"] is not None
+        ):
+            original_name = cls.__pydantic_generic_metadata__["origin"].__name__
+        else:
+            original_name = cls.__name__
+        return [*cls.get_lc_namespace(), original_name]
 
     model_config = ConfigDict(extra="ignore")
 
