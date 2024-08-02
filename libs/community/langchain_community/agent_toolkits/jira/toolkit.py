@@ -9,11 +9,6 @@ from langchain_community.tools.jira.prompt import (
     JIRA_GET_ALL_PROJECTS_PROMPT,
     JIRA_ISSUE_CREATE_PROMPT,
     JIRA_JQL_PROMPT,
-    # JIRA_TICKETS_FOR_USER_PROMPT,
-    # # JIRA_TICKETS_FOR_USER_IN_PROJECT_PROMPT,
-    JIRA_GET_GROUPS_PROMPT,
-    JIRA_GET_ALL_USERS_FROM_GROUP_PROMPT,
-    JIRA_GET_FUNCTIONS_PROMPT,
 )
 from langchain_community.tools.jira.tool import JiraAction
 from langchain_community.utilities.jira import JiraAPIWrapper
@@ -52,7 +47,7 @@ class JiraToolkit(BaseToolkit):
                 "description": JIRA_JQL_PROMPT,
             },
             {
-                "mode": "project",
+                "mode": "get_projects",
                 "name": "Get Projects",
                 "description": JIRA_GET_ALL_PROJECTS_PROMPT,
             },
@@ -68,33 +63,8 @@ class JiraToolkit(BaseToolkit):
             },
             {
                 "mode": "create_page",
-                "name": "Create Confluence Page",
+                "name": "Create confluence page",
                 "description": JIRA_CONFLUENCE_PAGE_CREATE_PROMPT,
-            },
-            # {
-            #     "mode": "tickets_for_user",
-            #     "name": "Get Tickets for User",
-            #     "description": JIRA_TICKETS_FOR_USER_PROMPT,
-            # },
-            # {
-            #     "mode": "tickets_for_user_in_project",
-            #     "name": "Get Tickets for User in Project",
-            #     "description": JIRA_TICKETS_FOR_USER_IN_PROJECT_PROMPT,
-            # },
-            {
-                "mode": "group",
-                "name": "Get Groups",
-                "description": JIRA_GET_GROUPS_PROMPT,
-            },
-            {
-                "mode": "group_users",
-                "name": "Catch all Users for Group",
-                "description": JIRA_GET_ALL_USERS_FROM_GROUP_PROMPT,
-            },
-            {
-                "mode": "get_jira_functions",
-                "name": "Catch all Jira API Functions",
-                "description": JIRA_GET_FUNCTIONS_PROMPT,
             },
         ]
         tools = [
