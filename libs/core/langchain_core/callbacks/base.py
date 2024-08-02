@@ -25,7 +25,14 @@ class RetrieverManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when Retriever errors."""
+        """Run when Retriever errors.
+
+        Args:
+            error (BaseException): The error that occurred.
+            run_id (UUID): The run ID. This is the ID of the current run.
+            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_retriever_end(
         self,
@@ -35,7 +42,14 @@ class RetrieverManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when Retriever ends running."""
+        """Run when Retriever ends running.
+
+        Args:
+            documents (Sequence[Document]): The documents retrieved.
+            run_id (UUID): The run ID. This is the ID of the current run.
+            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
+            kwargs (Any): Additional keyword arguments.
+        """
 
 
 class LLMManagerMixin:
