@@ -80,7 +80,7 @@ class ChatModelTests(BaseStandardTests):
     def standard_chat_model_params(self) -> dict:
         return {
             "temperature": 0,
-            "max_tokens": 10_000,
+            "max_tokens": 100,
             "timeout": 60,
             "stop": [],
             "max_retries": 2,
