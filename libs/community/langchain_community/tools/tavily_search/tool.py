@@ -37,7 +37,6 @@ class TavilySearchResults(BaseTool):
             from langchain_community.tools import TavilySearchResults
 
             tool = TavilySearchResults(
-                version="v2",
                 max_results=5,
                 include_answer=True,
                 include_raw_content=True,
@@ -102,23 +101,6 @@ class TavilySearchResults(BaseTool):
     args_schema: Type[BaseModel] = TavilyInput
     """The tool response format."""
 
-    version: Literal["v1", "v2"] = "v1"
-    """The version of the tool to use. 
-
-    Recommended usage is 'v2', but default is 'v1' for backwards compatibility.
-
-    With 'v2' the tool automatically outputs a string, which can be used as the content
-    of a ToolMessage. If ``include_answer`` is False, the string is a json dump of a 
-    list of dicts. Each represents a search result and can have the 'content', 'url', 
-    and 'title' key-values. If ``include_answer`` is True, the string is a json dump
-    of a dictionary that has an "answer" key-value and a "results" key-value. "results"
-    contains the list of dicts which is otherwise directly json-ified.
-
-    With 'v1' tool outputs a list of dicts, which must be converted
-    to a string before being passed back to the model. The dicts only contain the 'url' 
-    and 'content' key-values for each result.
-    """
-
     max_results: int = 5
     """Max search results to return, default is 5"""
     search_depth: str = "advanced"
@@ -157,7 +139,7 @@ class TavilySearchResults(BaseTool):
             )
         except Exception as e:
             return repr(e), {}
-        return self._format_content(raw_results), raw_results
+        return self.api_wrapper.clean_results(raw_results['results']), raw_results
 
     async def _arun(
         self,
@@ -178,20 +160,7 @@ class TavilySearchResults(BaseTool):
             )
         except Exception as e:
             return repr(e), {}
-        return self._format_content(raw_results), raw_results
-
-    def _format_content(self, raw_results: dict) -> Union[List[Dict[str, str]], str]:
-        if self.version == "v2":
-            results: Union[list, dict] = [
-                {k: res[k] for k in ("title", "url", "content") if k in res}
-                for res in raw_results["results"]
-            ]
-            if self.include_answer:
-                results = {"answer": raw_results.get("answer", ""), "results": results}
-            return json.dumps(results, indent=2)
-        else:
-            return self.api_wrapper.clean_results(raw_results["results"])
-
+        return self.api_wrapper.clean_results(raw_results['results']), raw_results
 
 class TavilyAnswer(BaseTool):
     """Tool that queries the Tavily Search API and gets back an answer."""
