@@ -8,20 +8,20 @@ DEFAULT_NODE_TYPE = "Node"
 
 class RelikGraphTransformer:
     """
-    A transformer class for converting documents into graph structures 
+    A transformer class for converting documents into graph structures
     using the Relik library and models.
 
     This class leverages relik models for extracting relationships
     and nodes from text documents and converting them into a graph format.
     The relationships are filtered based on a specified confidence threshold.
 
-    For more details on the Relik library, visit their GitHub repository: 
+    For more details on the Relik library, visit their GitHub repository:
       https://github.com/SapienzaNLP/relik
 
     Args:
         model (str): The name of the pretrained Relik model to use.
           Default is "relik-ie/relik-relation-extraction-small-wikipedia".
-        relationship_confidence_threshold (float): The confidence threshold for 
+        relationship_confidence_threshold (float): The confidence threshold for
           filtering relationships. Default is 0.0.
     """
 
