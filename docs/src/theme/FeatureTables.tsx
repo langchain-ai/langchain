@@ -15,6 +15,7 @@ const FeatureTables: Record<string, Category> = {
         link: "/docs/integrations/llms",
         columns: [
             {title: "Model", formatter: (item) => <a href={item.link}>{item.name}</a>},
+            {title: "Package", formatter: (item) => <a href={`https://pypi.org/project/${item.package}/`}>{item.package}</a>},
         ],
         items:[
             {
