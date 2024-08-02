@@ -20,7 +20,7 @@ from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
 
 def test_ensure_config() -> None:
-    run_id = uuid.uuid4()
+    run_id = str(uuid.uuid4())
     arg: Dict = {
         "something": "else",
         "metadata": {"foo": "bar"},
