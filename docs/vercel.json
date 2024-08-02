@@ -67,8 +67,8 @@
       "destination": "/docs/tutorials/rag/"
     },
     {
-      "source": "/docs/how_to/migrate_chains(/?)",
-      "destination": "/docs/versions/migrating_chains"
+      "source": "/v0.2/docs/how_to/migrate_chains(/?)",
+      "destination": "/v0.2/docs/versions/migrating_chains"
     }
   ]
 }
