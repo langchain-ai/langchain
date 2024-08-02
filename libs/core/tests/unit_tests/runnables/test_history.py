@@ -53,6 +53,8 @@ def test_input_messages() -> None:
     assert output == "you said: hello"
     output = with_history.invoke([HumanMessage(content="good bye")], config)
     assert output == "you said: hello\ngood bye"
+    output = [*with_history.stream([HumanMessage(content="hi again")], config)]
+    assert output == ["you said: hello\ngood bye\nhi again"]
     assert store == {
         "1": InMemoryChatMessageHistory(
             messages=[
@@ -60,6 +62,8 @@ def test_input_messages() -> None:
                 AIMessage(content="you said: hello"),
                 HumanMessage(content="good bye"),
                 AIMessage(content="you said: hello\ngood bye"),
+                HumanMessage(content="hi again"),
+                AIMessage(content="you said: hello\ngood bye\nhi again"),
             ]
         )
     }
@@ -78,6 +82,10 @@ async def test_input_messages_async() -> None:
     assert output == "you said: hello"
     output = await with_history.ainvoke([HumanMessage(content="good bye")], config)  # type: ignore[arg-type]
     assert output == "you said: hello\ngood bye"
+    output = [
+        c
+        async for c in with_history.astream([HumanMessage(content="hi again")], config)  # type: ignore[arg-type]
+    ] == ["you said: hello\ngood bye\nhi again"]
     assert store == {
         "1_async": InMemoryChatMessageHistory(
             messages=[
@@ -85,6 +93,8 @@ async def test_input_messages_async() -> None:
                 AIMessage(content="you said: hello"),
                 HumanMessage(content="good bye"),
                 AIMessage(content="you said: hello\ngood bye"),
+                HumanMessage(content="hi again"),
+                AIMessage(content="you said: hello\ngood bye\nhi again"),
             ]
         )
     }
