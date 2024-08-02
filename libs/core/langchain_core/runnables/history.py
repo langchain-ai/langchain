@@ -369,28 +369,25 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        super_schema = super().get_input_schema(config)
-        if issubclass(super_schema, RootModel) or not super_schema.schema().get(
-            "properties"
-        ):
-            from langchain_core.messages import BaseMessage
+        # TODO(0.3): Verify that this change was correct
+        # Not enough tests and unclear on why the previous implementation was
+        # necessary.
+        from langchain_core.messages import BaseMessage
 
-            fields: Dict = {}
-            if self.input_messages_key and self.history_messages_key:
-                fields[self.input_messages_key] = (
-                    Union[str, BaseMessage, Sequence[BaseMessage]],
-                    ...,
-                )
-            elif self.input_messages_key:
-                fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
-            else:
-                fields["__root__"] = (Sequence[BaseMessage], ...)
-            return create_model(  # type: ignore[call-overload]
-                "RunnableWithChatHistoryInput",
-                **fields,
+        fields: Dict = {}
+        if self.input_messages_key and self.history_messages_key:
+            fields[self.input_messages_key] = (
+                Union[str, BaseMessage, Sequence[BaseMessage]],
+                ...,
             )
+        elif self.input_messages_key:
+            fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
         else:
-            return super_schema
+            fields["__root__"] = (Sequence[BaseMessage], ...)
+        return create_model(  # type: ignore[call-overload]
+            "RunnableWithChatHistoryInput",
+            **fields,
+        )
 
     def _is_not_async(self, *args: Sequence[Any], **kwargs: Dict[str, Any]) -> bool:
         return False
