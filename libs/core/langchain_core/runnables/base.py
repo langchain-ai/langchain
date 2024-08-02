@@ -2283,9 +2283,6 @@ class Runnable(Generic[Input, Output], ABC):
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
     """Runnable that can be serialized to JSON."""
 
-    name: Optional[str] = None
-    """The name of the Runnable. Used for debugging and tracing."""
-
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         """Serialize the Runnable to JSON.
 
