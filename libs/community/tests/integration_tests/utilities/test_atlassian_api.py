@@ -1,6 +1,22 @@
-import os
 import json
+import os
+
 from langchain_community.utilities.atlassian import AtlassianAPIWrapper
+
+
+def check_environment_variables():
+    required_vars = [
+        "ATLASSIAN_INSTANCE_URL",
+        "ATLASSIAN_USERNAME",
+        "ATLASSIAN_API_TOKEN",
+        "ATLASSIAN_CLOUD"
+    ]
+    for var in required_vars:
+        if not os.getenv(var):
+            raise EnvironmentError(f"Required environment variable {var} is not set")
+
+
+check_environment_variables()
 
 
 def atlassian_wrapper():
@@ -8,7 +24,7 @@ def atlassian_wrapper():
         atlassian_instance_url=os.environ["ATLASSIAN_INSTANCE_URL"],
         atlassian_username=os.environ["ATLASSIAN_USERNAME"],
         atlassian_api_token=os.environ["ATLASSIAN_API_TOKEN"],
-        atlassian_cloud=os.environ["ATLASSIAN_CLOUD"] == "True"
+        atlassian_cloud=os.environ["ATLASSIAN_CLOUD"] == "True",
     )
 
 
@@ -50,18 +66,20 @@ def test_run_jira_get_function_parameters() -> None:
 
 def test_run_jira_other() -> None:
     """Test for accessing other Jira API methods."""
-    issue_create_dict = json.dumps({
-        "function": "create_issue",
-        "args": [],
-        "kwargs": {
-            "fields": {
-                "summary": "Test Summary",
-                "description": "Test Description",
-                "issuetype": {"name": "Bug"},
-                "project": {"key": "CS"}
-            }
+    issue_create_dict = json.dumps(
+        {
+            "function": "create_issue",
+            "args": [],
+            "kwargs": {
+                "fields": {
+                    "summary": "Test Summary",
+                    "description": "Test Description",
+                    "issuetype": {"name": "Bug"},
+                    "project": {"key": "CS"},
+                }
+            },
         }
-    })
+    )
     atlassian = atlassian_wrapper()
     response = atlassian.run("jira_other", issue_create_dict)
     response_json = json.loads(response)
@@ -93,15 +111,13 @@ def test_run_confluence_other() -> None:
     """Test for accessing other Confluence API methods."""
     atlassian = atlassian_wrapper()
 
-    get_page_dict = json.dumps({
-        "function": "get_page_id",
-        "args": [],
-        "kwargs": {
-            "space": "MPE",
-            "title": "Test Page",
-            "type": "page"
+    get_page_dict = json.dumps(
+        {
+            "function": "get_page_id",
+            "args": [],
+            "kwargs": {"space": "MPE", "title": "Test Page", "type": "page"},
         }
-    })
+    )
     response = atlassian.run("confluence_other", get_page_dict)
     if response is None:
         response_json = {"error": "No response received"}
@@ -142,10 +158,7 @@ def test_filter_response_keys() -> None:
     response = {
         "username": "user1",
         "password": "secret",
-        "details": {
-            "email": "user1@example.com",
-            "secret_token": "abcdef"
-        }
+        "details": {"email": "user1@example.com", "secret_token": "abcdef"},
     }
     filtered_response = atlassian.filter_response_keys(response)
     assert "password" not in filtered_response

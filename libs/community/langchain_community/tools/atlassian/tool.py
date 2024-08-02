@@ -1,8 +1,8 @@
 from typing import Optional
-from pydantic import Field
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
+from pydantic import Field
 
 from langchain_community.utilities.atlassian import AtlassianAPIWrapper
 
@@ -32,16 +32,16 @@ class AtlassianAction(BaseTool):
         if not query:
             return query
 
-        invalid_chars = ['`', "'"]
+        invalid_chars = ["`", "'"]
         for char in invalid_chars:
-            query = query.replace(char, '')
+            query = query.replace(char, "")
 
         if query.count('"') % 2 != 0:
             query += '"'
 
         query = query.strip()
 
-        if query.count('(') != query.count(')'):
+        if query.count("(") != query.count(")"):
             raise ValueError(f"Unmatched parentheses in query: {query}")
 
         if not query:

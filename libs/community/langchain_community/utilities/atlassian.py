@@ -1,12 +1,12 @@
 """Util that calls Atlassian APIs."""
 
+import inspect
 import json
 import re
-import inspect
-from typing import Any, Optional, List
+from typing import Any, List, Optional
 
-from pydantic import BaseModel, ConfigDict
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict
 
 
 class AtlassianAPIWrapper(BaseModel):
@@ -20,7 +20,7 @@ class AtlassianAPIWrapper(BaseModel):
     atlassian_cloud: Optional[bool] = None
     filter_keys: Optional[List[str]] = None
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -30,12 +30,20 @@ class AtlassianAPIWrapper(BaseModel):
         """Validates if the API key and Python package are present in the environment
         and initializes the Jira and Confluence instances."""
 
-        def get_env_var(var_name: str, env_name: str, default: Optional[str] = None) -> str:
+        def get_env_var(
+            var_name: str, env_name: str, default: Optional[str] = None
+        ) -> str:
             return get_from_dict_or_env(self.__dict__, var_name, env_name, default)
 
-        self.atlassian_username = get_env_var("atlassian_username", "ATLASSIAN_USERNAME", "")
-        self.atlassian_api_token = get_env_var("atlassian_api_token", "ATLASSIAN_API_TOKEN")
-        self.atlassian_instance_url = get_env_var("atlassian_instance_url", "ATLASSIAN_INSTANCE_URL")
+        self.atlassian_username = get_env_var(
+            "atlassian_username", "ATLASSIAN_USERNAME", ""
+        )
+        self.atlassian_api_token = get_env_var(
+            "atlassian_api_token", "ATLASSIAN_API_TOKEN"
+        )
+        self.atlassian_instance_url = get_env_var(
+            "atlassian_instance_url", "ATLASSIAN_INSTANCE_URL"
+        )
         self.atlassian_cloud = bool(get_env_var("atlassian_cloud", "ATLASSIAN_CLOUD"))
 
         try:
@@ -91,7 +99,10 @@ class AtlassianAPIWrapper(BaseModel):
             return response
 
         # Remove leading/trailing spaces and transform wildcard patterns into regex patterns
-        filter_patterns = [re.compile('^' + key.strip().replace('*', '.*') + '$') for key in self.filter_keys]
+        filter_patterns = [
+            re.compile("^" + key.strip().replace("*", ".*") + "$")
+            for key in self.filter_keys
+        ]
 
         def recursive_filter(data: Any) -> Any:
             """
@@ -104,7 +115,11 @@ class AtlassianAPIWrapper(BaseModel):
                 Any: The filtered data structure with specified keys removed.
             """
             if isinstance(data, dict):
-                return {k: recursive_filter(v) for k, v in data.items() if not any(p.match(k) for p in filter_patterns)}
+                return {
+                    k: recursive_filter(v)
+                    for k, v in data.items()
+                    if not any(p.match(k) for p in filter_patterns)
+                }
             elif isinstance(data, list):
                 return [recursive_filter(item) for item in data]
             else:
@@ -145,15 +160,20 @@ class AtlassianAPIWrapper(BaseModel):
                  If `query` does not match any function, returns an error message.
         """
         all_attributes = dir(self.jira)
-        functions = [attr for attr in all_attributes if
-                     callable(getattr(self.jira, attr)) and not attr.startswith('_')]
+        functions = [
+            attr
+            for attr in all_attributes
+            if callable(getattr(self.jira, attr)) and not attr.startswith("_")
+        ]
 
         if query is None or query == "":
             return json.dumps({"functions": functions}, indent=2)
         elif query in functions:
             function_obj = getattr(self.jira, query)
             params = inspect.signature(function_obj).parameters
-            return json.dumps({"function": query, "parameters": list(params.keys())}, indent=2)
+            return json.dumps(
+                {"function": query, "parameters": list(params.keys())}, indent=2
+            )
         else:
             return json.dumps({"error": f"Function {query} not found."}, indent=2)
 
@@ -172,15 +192,20 @@ class AtlassianAPIWrapper(BaseModel):
                  If `query` does not match any function, returns an error message.
         """
         all_attributes = dir(self.confluence)
-        functions = [attr for attr in all_attributes if
-                     callable(getattr(self.confluence, attr)) and not attr.startswith('_')]
+        functions = [
+            attr
+            for attr in all_attributes
+            if callable(getattr(self.confluence, attr)) and not attr.startswith("_")
+        ]
 
         if query is None or query == "":
             return json.dumps({"functions": functions}, indent=2)
         elif query in functions:
             function_obj = getattr(self.confluence, query)
             params = inspect.signature(function_obj).parameters
-            return json.dumps({"function": query, "parameters": list(params.keys())}, indent=2)
+            return json.dumps(
+                {"function": query, "parameters": list(params.keys())}, indent=2
+            )
         else:
             return json.dumps({"error": f"Function {query} not found."}, indent=2)
 

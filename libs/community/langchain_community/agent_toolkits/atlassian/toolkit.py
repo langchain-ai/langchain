@@ -1,14 +1,15 @@
 from typing import Dict, List
 
 from langchain_core.tools import BaseToolkit
+
 from langchain_community.tools import BaseTool
 from langchain_community.tools.atlassian.prompt import (
-    ATLASSIAN_JIRA_JQL_PROMPT,
-    ATLASSIAN_CONFLUENCE_CQL_PROMPT,
-    ATLASSIAN_JIRA_CATCH_ALL_PROMPT,
     ATLASSIAN_CONFLUENCE_CATCH_ALL_PROMPT,
-    ATLASSIAN_JIRA_GET_FUNCTIONS_PROMPT,
+    ATLASSIAN_CONFLUENCE_CQL_PROMPT,
     ATLASSIAN_CONFLUENCE_GET_FUNCTIONS_PROMPT,
+    ATLASSIAN_JIRA_CATCH_ALL_PROMPT,
+    ATLASSIAN_JIRA_GET_FUNCTIONS_PROMPT,
+    ATLASSIAN_JIRA_JQL_PROMPT,
 )
 from langchain_community.tools.atlassian.tool import AtlassianAction
 from langchain_community.utilities.atlassian import AtlassianAPIWrapper
@@ -32,7 +33,9 @@ class AtlassianToolkit(BaseToolkit):
     tools: List[BaseTool] = []
 
     @classmethod
-    def from_atlassian_api_wrapper(cls, atlassian_api_wrapper: AtlassianAPIWrapper) -> "AtlassianToolkit":
+    def from_atlassian_api_wrapper(
+        cls, atlassian_api_wrapper: AtlassianAPIWrapper
+    ) -> "AtlassianToolkit":
         """Create an AtlassianToolkit from an AtlassianAPIWrapper.
 
         Args:
