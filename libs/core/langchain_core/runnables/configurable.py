@@ -372,28 +372,33 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         Returns:
             List[ConfigurableFieldSpec]: The configuration specs.
         """
-        return get_unique_config_specs(
-            [
-                (
+        # TODO(0.3): This change removes field_info which isn't needed in pydantic 2
+        config_specs = []
+
+        for field_name, spec in self.fields.items():
+            if isinstance(spec, ConfigurableField):
+                config_specs.append(
                     ConfigurableFieldSpec(
                         id=spec.id,
                         name=spec.name,
                         description=spec.description
-                        or self.default.__fields__[field_name].field_info.description,
+                        or self.default.__fields__[field_name].description,
                         annotation=spec.annotation
                         or self.default.__fields__[field_name].annotation,
                         default=getattr(self.default, field_name),
                         is_shared=spec.is_shared,
                     )
-                    if isinstance(spec, ConfigurableField)
-                    else make_options_spec(
-                        spec, self.default.__fields__[field_name].field_info.description
+                )
+            else:
+                config_specs.append(
+                    make_options_spec(
+                        spec, self.default.__fields__[field_name].description
                     )
                 )
-                for field_name, spec in self.fields.items()
-            ]
-            + list(self.default.config_specs)
-        )
+
+        config_specs.extend(self.default.config_specs)
+
+        return get_unique_config_specs(config_specs)
 
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
