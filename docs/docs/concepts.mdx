@@ -82,7 +82,7 @@ For more complex chains it’s often very useful to access the results of interm
 - **Input and output schemas**
 Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
 
-- [**Seamless LangSmith tracing>**](https://docs.smith.langchain.com)
+- [**Seamless LangSmith tracing**](https://docs.smith.langchain.com)
 As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
 With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.smith.langchain.com/) for maximum observability and debuggability.
 
@@ -528,10 +528,10 @@ Tools are needed whenever you want a model to control parts of your code or call
 
 A tool consists of:
 
-1. The name of the tool.
-2. A description of what the tool does.
-3. A JSON schema defining the inputs to the tool.
-4. A function (and, optionally, an async variant of the function).
+1. The `name` of the tool.
+2. A `description` of what the tool does.
+3. A `JSON schema` defining the inputs to the tool.
+4. A `function` (and, optionally, an async variant of the function).
 
 When a tool is bound to a model, the name, description and JSON schema are provided as context to the model.
 Given a list of tools and a set of instructions, a model can request to call one or more tools with specific inputs.
