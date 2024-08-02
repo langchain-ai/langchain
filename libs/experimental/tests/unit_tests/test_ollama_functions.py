@@ -13,7 +13,7 @@ class Schema(BaseModel):
 
 
 @patch.object(OllamaFunctions, "_create_stream")
-def test_convert_image_prompt(
+def test_convert_image_prompt(  #
     _create_stream_mock: Any,
 ) -> None:
     response = {"message": {"content": '{"tool": "Schema", "tool_input": {}}'}}
