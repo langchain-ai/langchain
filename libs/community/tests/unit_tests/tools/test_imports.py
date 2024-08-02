@@ -124,6 +124,8 @@ EXPECTED_ALL = [
     "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
     "StructuredTool",
+    "TavilyAnswer",
+    "TavilySearchResults",
     "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
