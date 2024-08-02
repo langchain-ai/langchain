@@ -27,4 +27,3 @@ def test_zhipuai_embedding3() -> None:
     res = embedding.embed_documents(documents)
     assert len(res) == 2  # type: ignore[arg-type]
     assert len(res[0]) == 2048  # the default dimension is 2048
-
