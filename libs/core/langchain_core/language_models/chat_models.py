@@ -209,7 +209,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """  # noqa: E501
 
     callback_manager: Optional[BaseCallbackManager] = deprecated(
-        name="callback_manager", since="0.1.7", removal="0.3.0"
+        name="callback_manager", since="0.1.7", removal="0.3.0", alternative="callbacks"
     )(
         Field(
             default=None,
