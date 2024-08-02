@@ -67,7 +67,7 @@ class AtlassianAPIWrapper(BaseModel):
             cloud=self.atlassian_cloud,
         )
 
-        # Verificar se as instâncias Jira e Confluence são inicializadas corretamente
+        # Verify if Jira and Confluence instances are initialized correctly.
         assert self.jira is not None, "Failed to initialize Jira instance."
         assert self.confluence is not None, "Failed to initialize Confluence instance."
 
@@ -92,7 +92,6 @@ class AtlassianAPIWrapper(BaseModel):
 
         # Remove leading/trailing spaces and transform wildcard patterns into regex patterns
         filter_patterns = [re.compile('^' + key.strip().replace('*', '.*') + '$') for key in self.filter_keys]
-        print(f"Filter patterns: {filter_patterns}")  # Added for debugging
 
         def recursive_filter(data: Any) -> Any:
             """

@@ -16,8 +16,18 @@ class AtlassianAction(BaseTool):
     description: str = ""
 
     def clean_query(self, query: str) -> str:
-        """Remove invalid characters and validate query syntax for both JQL and CQL."""
+        """
+        Remove invalid characters and validate query syntax for both JQL and CQL.
 
+        Args:
+            query (str): The query string to be cleaned and validated.
+
+        Returns:
+            str: The cleaned and validated query string.
+
+        Raises:
+            ValueError: If the query contains unmatched parentheses or is empty after cleaning.
+        """
         # If query is empty, return it as is
         if not query:
             return query
@@ -44,7 +54,19 @@ class AtlassianAction(BaseTool):
         instructions: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        """Use the Atlassian API to run an operation."""
+        """
+        Use the Atlassian API to run an operation.
+
+        Args:
+            instructions (str): The instructions or query string to be executed.
+            run_manager (Optional[CallbackManagerForToolRun]): Optional callback manager for the tool run.
+
+        Returns:
+            str: The result of the operation as a string. If there is a ValueError, the error message is returned.
+
+        Raises:
+            ValueError: If the query is invalid or has unmatched parentheses.
+        """
         try:
             # Clean and validate the query
             cleaned_instructions = self.clean_query(instructions)

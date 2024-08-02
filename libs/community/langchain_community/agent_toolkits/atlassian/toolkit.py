@@ -43,7 +43,6 @@ class AtlassianToolkit(BaseToolkit):
 
         See https://atlassian-python-api.readthedocs.io/ for more information.
         """
-
         jira_operations: List[Dict] = [
             {
                 "mode": "jira_jql",
@@ -105,5 +104,10 @@ class AtlassianToolkit(BaseToolkit):
         return cls(tools=tools)
 
     def get_tools(self) -> List[BaseTool]:
-        """Get all the tools in the toolkit, grouped by solution type."""
+        """
+        Get all the tools in the toolkit, grouped by solution type.
+
+        Returns:
+            List[BaseTool]: A list of all tools in the toolkit.
+        """
         return self.tools
