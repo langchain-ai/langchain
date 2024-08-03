@@ -77,37 +77,3 @@ def test_specifying_adapter_id_and_adapter_version_arguments() -> None:
     )
     assert llm.adapter_id == "my-other-hf-adapter"
     assert llm.adapter_version == 3
-
-
-def test_specifying_adapter_id_and_adapter_version_and_api_token_arguments() -> None:
-    llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")  # type: ignore[arg-type, call-arg]
-    assert not llm.adapter_id
-
-    llm = Predibase(  # type: ignore[call-arg]
-        model="my_llm",
-        predibase_api_key="secret-api-key",  # type: ignore[arg-type]
-        adapter_id="my-hf-adapter",
-        adapter_version=None,
-    )
-    assert llm.adapter_id == "my-hf-adapter"
-    assert llm.adapter_version is None
-
-    llm = Predibase(  # type: ignore[call-arg]
-        model="my_llm",
-        predibase_api_key="secret-api-key",  # type: ignore[arg-type]
-        adapter_id="my-other-hf-adapter",
-        adapter_version=3,
-    )
-    assert llm.adapter_id == "my-other-hf-adapter"
-    assert llm.adapter_version == 3
-
-    llm = Predibase(  # type: ignore[call-arg]
-        model="my_llm",
-        predibase_api_key="secret-api-key",  # type: ignore[arg-type]
-        adapter_id="my-other-hf-adapter",
-        adapter_version=3,
-        api_token="secret-hugging-face-token",
-    )
-    assert llm.adapter_id == "my-other-hf-adapter"
-    assert llm.adapter_version == 3
-    assert llm.api_token == "secret-hugging-face-token"
