@@ -53,6 +53,8 @@ class Predibase(LLM):
             self.model_kwargs or self.default_options_for_generation
         )
         #ALEX_TEST
+        kwargs = kwargs or {}
+        options.update(kwargs)
         # hugging_face_hub_token: str = os.environ.get("HUGGING_FACE_HUB_TOKEN")
         # options.update(
         #     {
