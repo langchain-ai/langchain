@@ -150,6 +150,9 @@ class Predibase(LLM):
                 pb_adapter_id: str = f"{self.adapter_id}/{self.adapter_version}"
                 print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITH_VERSION:\n{pb_adapter_id} ; TYPE: {str(type(pb_adapter_id))}')
                 print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITH_VERSION-OPTIONS:\n{options} ; TYPE: {str(type(options))}')
+                # ALEX_TEST
+                options.pop("api_token", None)
+                # ALEX_TEST
                 try:
                     response = lorax_client.generate(
                         prompt=prompt,
