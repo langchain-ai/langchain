@@ -279,23 +279,22 @@ def deprecated(
             old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
-        notes_header = "\nNotes\n-----"
         components = [
-            message,
-            f"Use {alternative} instead." if alternative else "",
-            addendum,
+            _message,
+            f"Use ``{_alternative}`` instead." if _alternative else "",
+            f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
+            _addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
         package = (
             _package or _name.split(".")[0].replace("_", "-") if "." in _name else None
         )
         since_str = f"{package}=={since}" if package else since
-        new_doc = (
-            f"[*Deprecated*] {old_doc}\n"
-            f"{notes_header if notes_header not in old_doc else ''}\n"
-            f".. deprecated:: {since_str}\n"
-            f"   {details}"
-        )
+        new_doc = f"""\
+.. deprecated:: {since_str} {details}
+
+{old_doc}\
+"""
 
         if inspect.iscoroutinefunction(obj):
             finalized = finalize(awarning_emitting_wrapper, new_doc)
