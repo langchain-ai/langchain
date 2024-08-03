@@ -224,7 +224,7 @@ def create_structured_output_runnable(
             structured outputs or a single one. If True and model does not return any 
             structured outputs then chain output is None. If False and model does not 
             return any structured outputs then chain output is an empty list.
-        **kwargs: Additional named arguments.
+        kwargs: Additional named arguments.
 
     Returns:
         A runnable sequence that will return a structured output(s) matching the given 

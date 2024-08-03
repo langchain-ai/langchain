@@ -145,7 +145,7 @@ class VectorStore(ABC):
         Args:
             items: Iterable of Documents to add to the vectorstore.
             batch_size: The size of each batch to upsert.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
                 kwargs should only include parameters that are common to all
                 documents. (e.g., timeout for indexing, retry policy, etc.)
                 kwargs should not include ids to avoid ambiguous semantics.
@@ -186,7 +186,7 @@ class VectorStore(ABC):
 
         Args:
             items: Sequence of Documents to add to the vectorstore.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             UpsertResponse: A response object that contains the list of IDs that were
@@ -247,7 +247,7 @@ class VectorStore(ABC):
         Args:
             items: Iterable of Documents to add to the vectorstore.
             batch_size: The size of each batch to upsert.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
                 kwargs should only include parameters that are common to all
                 documents. (e.g., timeout for indexing, retry policy, etc.)
                 kwargs should not include ids to avoid ambiguous semantics.
@@ -279,7 +279,7 @@ class VectorStore(ABC):
 
         Args:
             items: Sequence of Documents to add to the vectorstore.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             UpsertResponse: A response object that contains the list of IDs that were
@@ -1048,7 +1048,7 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             VectorStore: VectorStore initialized from documents and embeddings.
@@ -1069,7 +1069,7 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             VectorStore: VectorStore initialized from documents and embeddings.
@@ -1094,7 +1094,7 @@ class VectorStore(ABC):
             embedding: Embedding function to use.
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             VectorStore: VectorStore initialized from texts and embeddings.
@@ -1115,7 +1115,7 @@ class VectorStore(ABC):
             embedding: Embedding function to use.
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             VectorStore: VectorStore initialized from texts and embeddings.

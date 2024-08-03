@@ -44,7 +44,7 @@ def load_agent_from_config(
         config: Config dict to load agent from.
         llm: Language model to use as the agent.
         tools: List of tools this agent has access to.
-        **kwargs: Additional keyword arguments passed to the agent executor.
+        kwargs: Additional keyword arguments passed to the agent executor.
 
     Returns:
         An agent executor.
@@ -98,7 +98,7 @@ def load_agent(
 
     Args:
         path: Path to the agent file.
-        **kwargs: Additional keyword arguments passed to the agent executor.
+        kwargs: Additional keyword arguments passed to the agent executor.
 
     Returns:
         An agent executor.

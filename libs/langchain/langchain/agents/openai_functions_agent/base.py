@@ -262,7 +262,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             extra_prompt_messages: Extra prompt messages to use. Defaults to None.
             system_message: The system message to use.
                 Defaults to a default system message.
-            **kwargs: Additional parameters to pass to the agent.
+            kwargs: Additional parameters to pass to the agent.
         """
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,

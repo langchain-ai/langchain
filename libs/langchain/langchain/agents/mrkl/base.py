@@ -128,7 +128,7 @@ class ZeroShotAgent(Agent):
             format_instructions: The format instructions to use.
                 Defaults to FORMAT_INSTRUCTIONS.
             input_variables: The input variables to use. Defaults to None.
-            **kwargs: Additional parameters to pass to the agent.
+            kwargs: Additional parameters to pass to the agent.
         """
         cls._validate_tools(tools)
         prompt = cls.create_prompt(

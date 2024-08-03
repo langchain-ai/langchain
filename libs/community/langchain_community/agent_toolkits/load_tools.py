@@ -590,7 +590,7 @@ def load_huggingface_tool(
         model_repo_id: Optional model repo id. Defaults to None.
         token: Optional token. Defaults to None.
         remote: Optional remote. Defaults to False.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Returns:
         A tool.
@@ -686,7 +686,7 @@ def load_tools(
             It is your responsibility to understand which tools
             you're using and the risks associated with them.
             Defaults to False.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Returns:
         List of tools.

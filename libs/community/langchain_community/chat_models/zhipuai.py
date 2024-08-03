@@ -48,7 +48,7 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
         client: The HTTP client.
         method: The HTTP method.
         url: The URL.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Yields:
         The event source.
@@ -69,7 +69,7 @@ async def aconnect_sse(
         client: The HTTP client.
         method: The HTTP method.
         url: The URL.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Yields:
         The event source.

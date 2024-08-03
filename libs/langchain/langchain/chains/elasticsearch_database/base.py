@@ -197,7 +197,7 @@ class ElasticsearchDatabaseChain(Chain):
             answer_prompt: The prompt to use for answering user question given data.
             query_output_parser: The output parser to use for parsing model-generated
                 ES query. Defaults to SimpleJsonOutputParser.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
         """
         query_prompt = query_prompt or DSL_PROMPT
         query_output_parser = query_output_parser or SimpleJsonOutputParser()

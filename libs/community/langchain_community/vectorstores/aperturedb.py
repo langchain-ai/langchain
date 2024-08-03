@@ -396,7 +396,7 @@ class ApertureDB(VectorStore):
             texts: List of text strings
             embedding: Embeddings object as for constructing the vectorstore
             metadatas: Optional list of metadatas associated with the texts.
-            **kwargs: Additional arguments to pass to the constructor
+            kwargs: Additional arguments to pass to the constructor
         """
         store = cls(embeddings=embedding, **kwargs)
         store.add_texts(texts, metadatas)
@@ -416,7 +416,7 @@ class ApertureDB(VectorStore):
             documents: List of Document objects
             embedding: Embeddings object as for constructing the vectorstore
             metadatas: Optional list of metadatas associated with the texts.
-            **kwargs: Additional arguments to pass to the constructor
+            kwargs: Additional arguments to pass to the constructor
         """
         store = cls(embeddings=embedding, **kwargs)
         store.add_documents(documents)

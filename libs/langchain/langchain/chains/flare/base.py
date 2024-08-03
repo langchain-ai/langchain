@@ -245,7 +245,7 @@ class FlareChain(Chain):
         Args:
             llm: Language model to use.
             max_generation_len: Maximum length of the generated response.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
 
         Returns:
             FlareChain class with the given language model.

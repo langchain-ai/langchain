@@ -859,7 +859,7 @@ class Tool(BaseTool):
             return_direct: Whether to return the output directly. Defaults to False.
             args_schema: The schema of the tool's input arguments. Defaults to None.
             coroutine: The asynchronous version of the function. Defaults to None.
-            **kwargs: Additional arguments to pass to the tool.
+            kwargs: Additional arguments to pass to the tool.
 
         Returns:
             The tool.
@@ -992,7 +992,7 @@ class StructuredTool(BaseTool):
             error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
                 whether to raise ValueError on invalid Google Style docstrings.
                 Defaults to False.
-            **kwargs: Additional arguments to pass to the tool
+            kwargs: Additional arguments to pass to the tool
 
         Returns:
             The tool.

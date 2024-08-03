@@ -104,7 +104,7 @@ class LLMChainFilter(BaseDocumentCompressor):
         Args:
             llm: The language model to use for filtering.
             prompt: The prompt to use for the filter.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
 
         Returns:
             A LLMChainFilter that uses the given language model.

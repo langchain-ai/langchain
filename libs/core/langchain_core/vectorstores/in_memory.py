@@ -324,7 +324,7 @@ class InMemoryVectorStore(VectorStore):
         Args:
             path: The path to load the vector store from.
             embedding: The embedding to use.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
 
         Returns:
             A VectorStore object.
