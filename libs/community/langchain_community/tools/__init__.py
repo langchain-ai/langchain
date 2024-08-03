@@ -211,6 +211,15 @@ if TYPE_CHECKING:
     from langchain_community.tools.plugin import (
         AIPluginTool,
     )
+    from langchain_community.tools.financial_datasets.balance_sheets import (
+        BalanceSheets,
+    )
+    from langchain_community.tools.financial_datasets.cash_flow_statements import (
+        CashFlowStatements,
+    )
+    from langchain_community.tools.financial_datasets.income_statements import (
+        IncomeStatements,
+    )
     from langchain_community.tools.polygon.aggregates import (
         PolygonAggregates,
     )
