@@ -53,12 +53,12 @@ class Predibase(LLM):
             self.model_kwargs or self.default_options_for_generation
         )
         #ALEX_TEST
-        # hugging_face_hub_token: str = os.environ.get("HUGGING_FACE_HUB_TOKEN")
-        # options.update(
-        #     {
-        #         "api_token": hugging_face_hub_token,
-        #     }
-        # )
+        hugging_face_hub_token: str = os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        options.update(
+            {
+                "api_token": hugging_face_hub_token,
+            }
+        )
         #ALEX_TEST
         if self._is_deprecated_sdk_version():
             try:
