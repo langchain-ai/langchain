@@ -262,9 +262,11 @@ def test_yellowbrick_add_extra() -> None:
         output = docsearch.max_marginal_relevance_search("foo", k=1)
         assert len(output) > 0
 
-        output_with_score = docsearch.max_marginal_relevance_search_with_score("foo", k=1)
+        output_with_score = docsearch.max_marginal_relevance_search_with_score(
+            "foo", k=1)
         assert len(output_with_score) > 0
 
         embedding = docsearch._embedding.embed_query("foo")
-        output_by_vector = docsearch.max_marginal_relevance_search_by_vector(embedding, k=1)
+        output_by_vector = docsearch.max_marginal_relevance_search_by_vector(
+            embedding, k=1)
         assert len(output_by_vector) > 0

@@ -972,14 +972,19 @@ class Yellowbrick(VectorStore):
         except Exception as e:
             raise RuntimeError(f"Failed to migrate schema: {e}") from e
             
-    def max_marginal_relevance_search_with_score_by_vector(self, embedding: List[float], k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5, **kwargs: Any) -> List[Tuple[Document, float]]:
+    def max_marginal_relevance_search_with_score_by_vector(
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20,
+        lambda_mult: float = 0.5, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
         """Perform a max marginal relevance search with Yellowbrick with vector
 
         Args:
             embedding (List[float]): query embedding
             k (int, optional): Top K neighbors to retrieve. Defaults to 4.
-            fetch_k (int, optional): Number of neighbors to fetch before MMR. Defaults to 20.
-            lambda_mult (float, optional): Diversity multiplier for MMR. Defaults to 0.5.
+            fetch_k (int, optional): Number of neighbors to fetch before MMR.
+            Defaults to 20.
+            lambda_mult (float, optional): Diversity multiplier for MMR.
+            Defaults to 0.5.
 
         Returns:
             List[Document, float]: List of Documents and scores
@@ -1000,7 +1005,9 @@ class Yellowbrick(VectorStore):
             for doc, score in documents_with_scores:
                 min_similarity = float('inf')
                 for selected_doc in selected_docs:
-                    similarity = self._embedding.similarity(selected_doc.page_content, doc.page_content)
+                    similarity = self._embedding.similarity(
+                        selected_doc.page_content, doc.page_content
+                    )
                     min_similarity = min(min_similarity, similarity)
                 mmr_score = lambda_mult * score - (1 - lambda_mult) * min_similarity
                 if mmr_score > max_score:
@@ -1013,28 +1020,39 @@ class Yellowbrick(VectorStore):
             else:
                 break
         return list(zip(selected_docs, selected_scores))
-            
-    def max_marginal_relevance_search(self, query: str, k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5, **kwargs: Any) -> List[Document]:
+
+    def max_marginal_relevance_search(
+        self, query: str, k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5,
+        **kwargs: Any
+    ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
         embedding = self._embedding.embed_query(query)
         results = self.max_marginal_relevance_search_with_score_by_vector(
-            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, **kwargs
+            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult,
+            **kwargs
         )
         return [doc for doc, _ in results]
 
-    def max_marginal_relevance_search_with_score(self, query: str, k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5, **kwargs: Any) -> List[Tuple[Document, float]]:
+    def max_marginal_relevance_search_with_score(
+        self, query: str, k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5,
+        **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance with score."""
         embedding = self._embedding.embed_query(query)
         results = self.max_marginal_relevance_search_with_score_by_vector(
-            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, **kwargs
+            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult,
+            **kwargs
         )
         return results
 
-    def max_marginal_relevance_search_by_vector(self,embedding: List[float], k: int = 4,fetch_k: int = 20, lambda_mult: float = 0.5, **kwargs: Any
+    def max_marginal_relevance_search_by_vector(
+        self, embedding: List[float], k: int = 4, fetch_k: int = 20,
+        lambda_mult: float = 0.5, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance
             to embedding vector."""
         results = self.max_marginal_relevance_search_with_score_by_vector(
-            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, **kwargs
+            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult,
+            **kwargs
         )
         return [doc for doc, _ in results]
