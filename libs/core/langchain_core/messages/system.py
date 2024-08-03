@@ -45,7 +45,7 @@ class SystemMessage(BaseMessage):
 
         Args:
                content: The string contents of the message.
-               **kwargs: Additional fields to pass to the message.
+               kwargs: Additional fields to pass to the message.
         """
         super().__init__(content=content, **kwargs)
 
