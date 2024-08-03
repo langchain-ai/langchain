@@ -49,9 +49,13 @@ class Predibase(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        print("ALEX-DOG-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         options: Dict[str, Union[str, float]] = (
             self.model_kwargs or self.default_options_for_generation
+        )
+        options.update(
+            {
+                "api_token": os.environ.get("HUGGING_FACE_HUB_TOKEN"),
+            }
         )
         if self._is_deprecated_sdk_version():
             try:
@@ -145,6 +149,7 @@ class Predibase(LLM):
                         **options,
                     )
                 except GenerationError as ge:
+                    print(f"HORROR<ALEX_TEST>: {ge}")
                     raise ValueError(
                         f"""An adapter with the ID "{pb_adapter_id}" cannot be \
 found in the Predibase repository of fine-tuned adapters."""
