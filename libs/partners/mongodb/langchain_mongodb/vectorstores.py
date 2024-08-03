@@ -30,7 +30,11 @@ from langchain_mongodb.index import (
     update_vector_search_index,
 )
 from langchain_mongodb.pipelines import vector_search_stage
-from langchain_mongodb.utils import make_serializable, maximal_marginal_relevance
+from langchain_mongodb.utils import (
+    make_serializable,
+    maximal_marginal_relevance,
+    str_to_oid,
+)
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
@@ -44,8 +48,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
     """MongoDB Atlas' Vector Store, combines data, embeddings, and indexes.
 
     You must first have created:
-    - A Collection
-    - An Vector Search index
+        - A Collection
+        - A Vector Search index
 
     Search Indexes are only available on Atlas, the fully managed cloud service,
     not the self-managed MongoDB.
@@ -89,13 +93,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ):
         """
         Args:
-            collection: MongoDB collection to add the texts to.
-            embedding: Text embedding model to use.
-            text_key: MongoDB field that will contain the text for each document.
-            embedding_key: Field that will contain the embedding for each document.
-            vector_index_name: Name of the Atlas Vector Search index.
-            relevance_score_fn: The similarity score used for the index.
-                Currently supported: 'euclidean', 'cosine', and 'dotProduct'.
+            collection: MongoDB collection to add the texts to
+            embedding: Text embedding model to use
+            text_key: MongoDB field that will contain the text for each document
+            index_name: Existing Atlas Vector Search Index
+            embedding_key: Field that will contain the embedding for each document
+            vector_index_name: Name of the Atlas Vector Search index
+            relevance_score_fn: The similarity score used for the index
+                Currently supported: 'euclidean', 'cosine', and 'dotProduct'
         """
         self._collection = collection
         self._embedding = embedding
@@ -203,12 +208,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[List[MongoDBDocumentType]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         include_embeddings: bool = False,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float]]:  # noqa: E501
         """Return MongoDB documents most similar to the given query and their scores.
 
         Atlas Vector Search eliminates the need to run a separate
@@ -217,7 +222,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
          Args:
             query: Input text of semantic query
             k: (Optional) number of documents to return. Defaults to 4.
-            pre_filter: (Optional) dictionary of arguments to filter document fields on.
+            pre_filter: List of MQL match expressions comparing an indexed field
+                See `Filter Example <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`_.
+
             post_filter_pipeline: (Optional) Arbitrary pipeline of MongoDB
                 aggregation stages applied after the search is complete.
             oversampling_factor: This times k is the number of candidates chosen
@@ -245,23 +252,23 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[List[MongoDBDocumentType]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         include_scores: bool = True,
         include_embeddings: bool = False,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[Document]:  # noqa: E501
         """Return MongoDB documents most similar to the given query.
 
-        # TODO Use references like :ref: to minimize duplication.
         Atlas Vector Search eliminates the need to run a separate
         search system alongside your database.
 
          Args:
             query: Input text of semantic query
             k: (Optional) number of documents to return. Defaults to 4.
-            pre_filter: (Optional) dictionary of arguments to filter document fields on.
+            pre_filter: List of MQL match expressions comparing an indexed field
+                See Filter Example here <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>
             post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
                 to filter/process results after $vectorSearch.
             oversampling_factor: Multiple of k used when generating number of candidates
@@ -273,7 +280,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of documents most similar to the query and their scores.
         """
-        # TODO - Including score will incur a performance hit. Let's remove it
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
@@ -295,7 +301,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[List[MongoDBDocumentType]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -310,17 +316,16 @@ class MongoDBAtlasVectorSearch(VectorStore):
             fetch_k: (Optional) number of documents to fetch before passing to MMR
                 algorithm. Defaults to 20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
-            pre_filter: (Optional) dictionary of arguments to filter document fields on.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity. Defaults to 0.5.
+            pre_filter: List of MQL match expressions comparing an indexed field
             post_filter_pipeline: (Optional) pipeline of MongoDB aggregation stages
                 following the $vectorSearch stage.
         Returns:
             List of documents selected by maximal marginal relevance.
         """
         return self.max_marginal_relevance_search_by_vector(
-            query_vector=self._embedding.embed_query(query),
+            embedding=self._embedding.embed_query(query),
             k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
@@ -487,7 +492,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         query_vector: List[float],
         k: int = 4,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[List[MongoDBDocumentType]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         include_embeddings: bool = False,

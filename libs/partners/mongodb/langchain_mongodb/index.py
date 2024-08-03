@@ -25,19 +25,21 @@ def _vector_search_index_definition(
     dimensions: int,
     path: str,
     similarity: str,
-    filters: Optional[List[Dict[str, str]]],
+    filters: Optional[List[str]],
 ) -> Dict[str, Any]:
-    return {
-        "fields": [
-            {
-                "numDimensions": dimensions,
-                "path": path,
-                "similarity": similarity,
-                "type": "vector",
-            },
-            *(filters or []),
-        ]
-    }
+    # https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-type/
+    fields = [
+        {
+            "numDimensions": dimensions,
+            "path": path,
+            "similarity": similarity,
+            "type": "vector",
+        },
+    ]
+    for field in filters:
+        fields.append({"type": "filter", "path": field})
+
+    return {"fields": fields}
 
 
 def create_vector_search_index(
@@ -57,7 +59,7 @@ def create_vector_search_index(
         dimensions (int): Number of dimensions in embedding
         path (str): field with vector embedding
         similarity (str): The similarity score used for the index
-        filters (List[Dict[str, str]]): additional filters for index definition.
+        filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
             until search index is ready.
     """
@@ -133,12 +135,12 @@ def update_vector_search_index(
     Args:
         collection (Collection): MongoDB Collection
         index_name (str): Name of Index
-        dimensions (int): Number of dimensions in embedding.
-        path (str): field with vector embedding.
+        dimensions (int): Number of dimensions in embedding
+        path (str): field with vector embedding
         similarity (str): The similarity score used for the index.
-        filters (List[Dict[str, str]]): additional filters for index definition.
+        filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
-            until search index is ready.
+            until search index is ready
     """
 
     logger.info(

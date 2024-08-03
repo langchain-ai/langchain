@@ -75,7 +75,7 @@ def llm_cache(cls: Any) -> BaseCache:
             connection_string=CONN_STRING,
             collection_name=COLLECTION,
             database_name=DATABASE,
-            wait_until_ready=True,
+            wait_until_ready=15.0,
         )
     )
     assert get_llm_cache()

@@ -13,7 +13,6 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import OperationFailure
 
-from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.index import drop_vector_search_index
 
 from ..utils import ConsistentFakeEmbeddings, PatchedMongoDBAtlasVectorSearch
@@ -26,7 +25,7 @@ DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
 INDEX_COLLECTION_NAME = "langchain_test_vectorstores_index"
 INDEX_DB_NAME = "langchain_test_index_db"
 DIMENSIONS = 1536
-TIMEOUT = 20.0
+TIMEOUT = 120.0
 INTERVAL = 0.5
 
 
@@ -228,10 +227,15 @@ class TestMongoDBAtlasVectorSearch:
             collection=collection,
             index_name=INDEX_NAME,
         )
-        output = vectorstore.similarity_search(
-            "Sandwich", k=1, pre_filter={"c": {"$lte": 0}}
+        does_not_match_filter = vectorstore.similarity_search(
+            "Sandwich", k=1, pre_filter=[{"c": {"$lte": 0}}]
         )
-        assert output == []
+        assert does_not_match_filter == []
+
+        matches_filter = vectorstore.similarity_search(
+            "Sandwich", k=3, pre_filter=[{"c": {"$gt": 0}}]
+        )
+        assert len(matches_filter) == 1
 
     def test_mmr(self, embedding_openai: Embeddings, collection: Any) -> None:
         texts = ["foo", "foo", "fou", "foy"]

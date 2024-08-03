@@ -216,7 +216,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         collection_name: str = "default",
         database_name: str = "default",
         index_name: str = "default",
-        wait_until_ready: bool = False,
+        wait_until_ready: Optional[float] = None,
         score_threshold: Optional[float] = None,
         **kwargs: Dict[str, Any],
     ):
@@ -233,8 +233,8 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
                 Defaults to "default".
             index_name: Name of the Atlas Search index.
                 defaults to 'default'
-            wait_until_ready (bool): Block until MongoDB Atlas finishes indexing
-                the stored text. Hard timeout of 10 seconds. Defaults to False.
+            wait_until_ready (float): Wait this time for Atlas to finish indexing
+                the stored text. Defaults to None.
         """
         client = _generate_mongo_client(connection_string)
         self.collection = client[database_name][collection_name]
@@ -258,7 +258,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         search_response = self.similarity_search_with_score(
             prompt,
             1,
-            pre_filter={self.LLM: {"$eq": llm_string}},
+            pre_filter=[{self.LLM: {"$eq": llm_string}}],
             post_filter_pipeline=post_filter_pipeline,
         )
         if search_response:
@@ -272,7 +272,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         prompt: str,
         llm_string: str,
         return_val: RETURN_VAL_TYPE,
-        wait_until_ready: Optional[bool] = None,
+        wait_until_ready: Optional[float] = None,
     ) -> None:
         """Update cache based on prompt and llm_string."""
         self.add_texts(
@@ -290,7 +290,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
             return self.lookup(prompt, llm_string) == return_val
 
         if wait:
-            _wait_until(is_indexed, return_val)
+            _wait_until(is_indexed, return_val, timeout=wait)
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache that can take additional keyword arguments.

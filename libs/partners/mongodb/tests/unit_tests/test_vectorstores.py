@@ -81,8 +81,7 @@ class TestMongoDBAtlasVectorSearch:
         # Validate the ObjectId provided is json serializable
         assert loads(dumps(output[0].page_content)) == output[0].page_content
         assert loads(dumps(output[0].metadata)) == output[0].metadata
-        json_metadata = dumps(output[0].metadata)  # normal json.dumps
-        assert isinstance(json_util.loads(json_metadata)["_id"], ObjectId)
+        assert isinstance(output[0].metadata["_id"], str)
 
     def test_from_documents(
         self, embedding_openai: Embeddings, collection: MockCollection

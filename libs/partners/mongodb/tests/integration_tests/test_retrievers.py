@@ -168,7 +168,7 @@ def test_vector_retriever(
 
     query1 = "What was the latest city that I visited?"
     results = retriever.invoke(query1)
-    assert len(results) == 3
+    assert len(results) == 4
     assert "Paris" in results[0].page_content
 
     query2 = "When was the last time I visited new orleans?"

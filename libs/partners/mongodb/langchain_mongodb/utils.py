@@ -8,11 +8,14 @@ are duplicated in this utility respectively from modules:
     - "libs/community/langchain_community/utils/math.py"
 """
 
+from __future__ import annotations
+
 import logging
+from datetime import date, datetime
 from typing import Any, Dict, List, Union
 
 import numpy as np
-from bson import ObjectId, json_util
+from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
@@ -121,24 +124,57 @@ def maximal_marginal_relevance(
     return idxs
 
 
-def make_serializable(obj: Dict[str, Any]) -> None:
-    """Make every BSON ObjectId found JSON-Serializable.
+def str_to_oid(str_repr: str) -> Any | str:
+    """Attempt to cast string representation of id to MongoDB's internal BSON ObjectId.
 
-        Changes are made *in-place*.
-
-       Follows format used in bson.json_util.loads
-        e.g. loads('{"_id": {"$oid": "664..."}}') == {'_id': ObjectId('664..')}
+    To be consistent with ObjectId, input must be a 24 character hex string.
+    If it is not, MongoDB will happily use the string in the main _id index.
+    Importantly, the str representation that comes out of MongoDB will have this form.
 
     Args:
-        obj: Any dict that might contain a bson.ObjectID
+        str_repr: id as string.
 
     Returns:
-        None. Changes are made *in-place*.
+        ObjectID
     """
+    from bson import ObjectId
+    from bson.errors import InvalidId
+
+    try:
+        return ObjectId(str_repr)
+    except InvalidId:
+        logger.debug(
+            "ObjectIds must be 12-character byte or 24-character hex strings. "
+            "Examples: b'heres12bytes', '6f6e6568656c6c6f68656768'"
+        )
+        return str_repr
+
+
+def oid_to_str(oid: Any) -> str:
+    """Convert MongoDB's internal BSON ObjectId into a simple str for compatibility.
+
+    Instructive helper to show where data is coming out of MongoDB.
+
+    Args:
+        oid: bson.ObjectId
+
+    Returns:
+        24 character hex string.
+    """
+    return str(oid)
+
+
+def make_serializable(
+    obj: Dict[str, Any],
+) -> None:
+    """Recursively cast values in a dict to a form able to json.dump"""
+
     for k, v in obj.items():
         if isinstance(v, dict):
             make_serializable(v)
-        elif isinstance(v, list) and v and isinstance(v[0], ObjectId):
-            obj[k] = [json_util.default(item) for item in v]
+        elif isinstance(v, list) and v and isinstance(v[0], (ObjectId, date, datetime)):
+            obj[k] = [oid_to_str(item) for item in v]
         elif isinstance(v, ObjectId):
-            obj[k] = json_util.default(v)
+            obj[k] = oid_to_str(v)
+        elif isinstance(v, (datetime, date)):
+            obj[k] = v.isoformat()

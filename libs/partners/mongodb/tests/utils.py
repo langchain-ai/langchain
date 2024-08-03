@@ -168,13 +168,13 @@ class MockCollection(Collection):
     _aggregate_result: List[Any]
     _insert_result: Optional[InsertManyResult]
     _data: List[Any]
-    _simluate_cache_aggregation_query: bool
+    _simulate_cache_aggregation_query: bool
 
     def __init__(self) -> None:
         self._data = []
         self._aggregate_result = []
         self._insert_result = None
-        self._simluate_cache_aggregation_query = False
+        self._simulate_cache_aggregation_query = False
 
     def delete_many(self, *args, **kwargs) -> DeleteResult:  # type: ignore
         old_len = len(self._data)
@@ -222,7 +222,7 @@ class MockCollection(Collection):
         elif upsert:
             self._data.append({**find_query, **set_options})
 
-    def _execute_cache_aggreation_query(self, *args, **kwargs) -> List[Dict[str, Any]]:  # type: ignore
+    def _execute_cache_aggregation_query(self, *args, **kwargs) -> List[Dict[str, Any]]:  # type: ignore
         """Helper function only to be used for MongoDBAtlasSemanticCache Testing
 
         Returns:
@@ -232,7 +232,7 @@ class MockCollection(Collection):
         params = pipeline[0]["$vectorSearch"]
         embedding = params["queryVector"]
         # Assumes MongoDBAtlasSemanticCache.LLM == "llm_string"
-        llm_string = params["filter"][MongoDBAtlasSemanticCache.LLM]["$eq"]
+        llm_string = params["filter"]["$and"][0][MongoDBAtlasSemanticCache.LLM]["$eq"]
 
         acc = []
         for document in self._data:
@@ -244,12 +244,12 @@ class MockCollection(Collection):
         return acc
 
     def aggregate(self, *args, **kwargs) -> List[Any]:  # type: ignore
-        if self._simluate_cache_aggregation_query:
-            return deepcopy(self._execute_cache_aggreation_query(*args, **kwargs))
+        if self._simulate_cache_aggregation_query:
+            return deepcopy(self._execute_cache_aggregation_query(*args, **kwargs))
         return deepcopy(self._aggregate_result)
 
     def count_documents(self, *args, **kwargs) -> int:  # type: ignore
         return len(self._data)
 
     def __repr__(self) -> str:
-        return "FakeCollection"
+        return "MockCollection"
