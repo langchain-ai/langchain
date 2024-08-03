@@ -116,6 +116,13 @@ CONFIG_KEYS = [
     "run_id",
 ]
 
+COPIABLE_KEYS = [
+    "tags",
+    "metadata",
+    "callbacks",
+    "configurable",
+]
+
 DEFAULT_RECURSION_LIMIT = 25
 
 
@@ -162,15 +169,30 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     )
     if var_config := var_child_runnable_config.get():
         empty.update(
-            cast(RunnableConfig, {k: v for k, v in var_config.items() if v is not None})
+            cast(
+                RunnableConfig,
+                {
+                    k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
+                    for k, v in var_config.items()
+                    if v is not None
+                },
+            )
+        )
+    if config is not None:
+        empty.update(
+            cast(
+                RunnableConfig,
+                {
+                    k: v.copy() if k in COPIABLE_KEYS else v  # type: ignore[attr-defined]
+                    for k, v in config.items()
+                    if v is not None and k in CONFIG_KEYS
+                },
+            )
         )
     if config is not None:
         for k, v in config.items():
-            if v is not None:
-                if k in CONFIG_KEYS:
-                    empty[k] = v  # type: ignore[literal-required]
-                else:
-                    empty["configurable"][k] = v
+            if k not in CONFIG_KEYS and v is not None:
+                empty["configurable"][k] = v
     for key, value in empty.get("configurable", {}).items():
         if (
             not key.startswith("__")
@@ -291,7 +313,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                     **(config.get(key) or {}),  # type: ignore
                 }
             elif key == "tags":
-                base[key] = list(  # type: ignore
+                base[key] = sorted(  # type: ignore
                     set(base.get(key, []) + (config.get(key) or [])),  # type: ignore
                 )
             elif key == "configurable":
@@ -306,7 +328,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                 # so merging two callbacks values has 6 cases
                 if isinstance(these_callbacks, list):
                     if base_callbacks is None:
-                        base["callbacks"] = these_callbacks
+                        base["callbacks"] = these_callbacks.copy()
                     elif isinstance(base_callbacks, list):
                         base["callbacks"] = base_callbacks + these_callbacks
                     else:
@@ -318,7 +340,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                 elif these_callbacks is not None:
                     # these_callbacks is a manager
                     if base_callbacks is None:
-                        base["callbacks"] = these_callbacks
+                        base["callbacks"] = these_callbacks.copy()
                     elif isinstance(base_callbacks, list):
                         mngr = these_callbacks.copy()
                         for callback in base_callbacks:
@@ -361,6 +383,8 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
             elif key == "recursion_limit":
                 if config["recursion_limit"] != DEFAULT_RECURSION_LIMIT:
                     base["recursion_limit"] = config["recursion_limit"]
+            elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
+                base[key] = config[key].copy()  # type: ignore[literal-required]
             else:
                 base[key] = config[key] or base.get(key)  # type: ignore
     return base

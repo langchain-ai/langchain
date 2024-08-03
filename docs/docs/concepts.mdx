@@ -90,7 +90,7 @@ LCEL aims to provide consistency around behavior and customization over legacy s
 `ConversationalRetrievalChain`. Many of these legacy chains hide important details like prompts, and as a wider variety
 of viable models emerge, customization has become more and more important.
 
-If you are currently using one of these legacy chains, please see [this guide for guidance on how to migrate](/docs/how_to/migrate_chains/).
+If you are currently using one of these legacy chains, please see [this guide for guidance on how to migrate](/docs/versions/migrating_chains).
 
 For guides on how to do specific tasks with LCEL, check out [the relevant how-to guides](/docs/how_to/#langchain-expression-language-lcel).
 
@@ -498,6 +498,30 @@ Retrievers accept a string query as input and return a list of Document's as out
 
 For specifics on how to use retrievers, see the [relevant how-to guides here](/docs/how_to/#retrievers).
 
+### Key-value stores
+
+For some techniques, such as [indexing and retrieval with multiple vectors per document](/docs/how_to/multi_vector/) or
+[caching embeddings](/docs/how_to/caching_embeddings/), having a form of key-value (KV) storage is helpful.
+
+LangChain includes a [`BaseStore`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) interface,
+which allows for storage of arbitrary data. However, LangChain components that require KV-storage accept a
+more specific `BaseStore[str, bytes]` instance that stores binary data (referred to as a `ByteStore`), and internally take care of
+encoding and decoding data for their specific needs.
+
+This means that as a user, you only need to think about one type of store rather than different ones for different types of data.
+
+#### Interface
+
+All [`BaseStores`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) support the following interface. Note that the interface allows
+for modifying **multiple** key-value pairs at once:
+
+- `mget(key: Sequence[str]) -> List[Optional[bytes]]`: get the contents of multiple keys, returning `None` if the key does not exist
+- `mset(key_value_pairs: Sequence[Tuple[str, bytes]]) -> None`: set the contents of multiple keys
+- `mdelete(key: Sequence[str]) -> None`: delete multiple keys
+- `yield_keys(prefix: Optional[str] = None) -> Iterator[str]`: yield all keys in the store, optionally filtering by a prefix
+
+For key-value store implementations, see [this section](/docs/integrations/stores/).
+
 ### Tools
 <span data-heading-keywords="tool,tools"></span>
 
@@ -518,7 +542,8 @@ Typical usage may look like the following:
 ```python
 tools = [...] # Define a list of tools
 llm_with_tools = llm.bind_tools(tools)
-ai_msg = llm_with_tools.invoke("do xyz...")  # AIMessage(tool_calls=[ToolCall(...), ...], ...)
+ai_msg = llm_with_tools.invoke("do xyz...")
+# -> AIMessage(tool_calls=[ToolCall(...), ...], ...)
 ```
 
 The `AIMessage` returned from the model MAY have `tool_calls` associated with it.
@@ -535,9 +560,14 @@ This generally looks like:
 
 ```python
 # You will want to previously check that the LLM returned tool calls
-tool_call = ai_msg.tool_calls[0]  # ToolCall(args={...}, id=..., ...)
+tool_call = ai_msg.tool_calls[0]
+# ToolCall(args={...}, id=..., ...)
 tool_output = tool.invoke(tool_call["args"])
-tool_message = ToolMessage(content=tool_output, tool_call_id=tool_call["id"], name=tool_call["name"])
+tool_message = ToolMessage(
+    content=tool_output,
+    tool_call_id=tool_call["id"],
+    name=tool_call["name"]
+)
 ```
 
 Note that the `content` field will generally be passed back to the model.
@@ -547,7 +577,12 @@ you can transform the tool output but also pass it as an artifact (read more abo
 ```python
 ... # Same code as above
 response_for_llm = transform(response)
-tool_message = ToolMessage(content=response_for_llm, tool_call_id=tool_call["id"], name=tool_call["name"], artifact=tool_output)
+tool_message = ToolMessage(
+    content=response_for_llm,
+    tool_call_id=tool_call["id"],
+    name=tool_call["name"],
+    artifact=tool_output
+)
 ```
 
 #### Invoke with `ToolCall`
@@ -558,9 +593,14 @@ The benefits of this are that you don't have to write the logic yourself to tran
 This generally looks like:
 
 ```python
-tool_call = ai_msg.tool_calls[0]  # ToolCall(args={...}, id=..., ...)
+tool_call = ai_msg.tool_calls[0]
+# -> ToolCall(args={...}, id=..., ...)
 tool_message = tool.invoke(tool_call)
-# -> ToolMessage(content="tool result foobar...", tool_call_id=..., name="tool_name")
+# -> ToolMessage(
+    content="tool result foobar...",
+    tool_call_id=...,
+    name="tool_name"
+)
 ```
 
 If you are invoking the tool this way and want to include an [artifact](/docs/concepts/#toolmessage) for the ToolMessage, you will need to have the tool return two things.
