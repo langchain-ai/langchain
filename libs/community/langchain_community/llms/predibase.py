@@ -162,7 +162,7 @@ found in the Predibase repository of fine-tuned adapters."""
             else:
                 # The adapter version is omitted,
                 # hence look for the adapter ID in the HuggingFace repository.
-                print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITHOUT_VERSION_MUST_BE_HF:\n{pb_adapter_id} ; TYPE: {str(type(pb_adapter_id))}')
+                print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITHOUT_VERSION_MUST_BE_HF:\n{self.adapter_id} ; TYPE: {str(type(self.adapter_id))}')
                 print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITHOUT_VERSION_MUST_BE_HF-OPTIONS:\n{options} ; TYPE: {str(type(options))}')
                 try:
                     response = lorax_client.generate(
