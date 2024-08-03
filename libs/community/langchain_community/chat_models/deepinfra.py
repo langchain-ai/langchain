@@ -57,7 +57,7 @@ from langchain_core.outputs import (
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_community.utilities.requests import Requests
@@ -203,7 +203,9 @@ class ChatDeepInfra(BaseChatModel):
     # client: Any  #: :meta private:
     model_name: str = Field(default="meta-llama/Llama-2-70b-chat-hf", alias="model")
     """Model name to use."""
-    deepinfra_api_token: Optional[str] = None
+    deepinfra_api_token: Optional[str] = Field(
+        default_factory=from_env("DEEPINFRA_API_TOKEN", default=api_key)
+    )
     request_timeout: Optional[float] = Field(default=None, alias="timeout")
     temperature: Optional[float] = 1
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -296,12 +298,6 @@ class ChatDeepInfra(BaseChatModel):
             "deepinfra_api_key",
             "DEEPINFRA_API_KEY",
             default="",
-        )
-        values["deepinfra_api_token"] = get_from_dict_or_env(
-            values,
-            "deepinfra_api_token",
-            "DEEPINFRA_API_TOKEN",
-            default=api_key,
         )
         return values
 

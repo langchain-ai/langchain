@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 
 class VolcengineRerank(BaseDocumentCompressor):
@@ -15,11 +15,11 @@ class VolcengineRerank(BaseDocumentCompressor):
     client: Any = None
     """Volcengine client to use for compressing documents."""
 
-    ak: Optional[str] = None
+    ak: Optional[str] = Field(default_factory=from_env("VOLC_API_AK"))
     """Access Key ID. 
     https://www.volcengine.com/docs/84313/1254553"""
 
-    sk: Optional[str] = None
+    sk: Optional[str] = Field(default_factory=from_env("VOLC_API_SK"))
     """Secret Access Key. 
     https://www.volcengine.com/docs/84313/1254553"""
 
@@ -52,9 +52,6 @@ class VolcengineRerank(BaseDocumentCompressor):
                     "Please install it with `pip install volcengine` "
                     "or `pip install --user volcengine`."
                 )
-
-            values["ak"] = get_from_dict_or_env(values, "ak", "VOLC_API_AK")
-            values["sk"] = get_from_dict_or_env(values, "sk", "VOLC_API_SK")
 
             values["client"] = VikingDBService(
                 host="api-vikingdb.volces.com",

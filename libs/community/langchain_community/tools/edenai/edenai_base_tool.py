@@ -8,7 +8,7 @@ import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class EdenaiTool(BaseTool):
 
     feature: str
     subfeature: str
-    edenai_api_key: Optional[str] = None
+    edenai_api_key: Optional[str] = Field(default_factory=from_env("EDENAI_API_KEY"))
     is_async: bool = False
 
     providers: List[str]
@@ -32,9 +32,6 @@ class EdenaiTool(BaseTool):
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["edenai_api_key"] = get_from_dict_or_env(
-            values, "edenai_api_key", "EDENAI_API_KEY"
-        )
         return values
 
     @staticmethod

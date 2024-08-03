@@ -18,6 +18,7 @@ from typing import (
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import (
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
@@ -144,14 +145,22 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model
-    openai_api_version: Optional[str] = None
-    openai_api_base: Optional[str] = None
+    openai_api_version: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_VERSION", default=default_api_version)
+    )
+    openai_api_base: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_BASE", default="")
+    )
     # to support explicit proxy for LocalAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default="")
+    )
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: Optional[str] = None
-    openai_organization: Optional[str] = None
+    openai_api_key: Optional[str] = Field(default_factory=from_env("OPENAI_API_KEY"))
+    openai_organization: Optional[str] = Field(
+        default_factory=from_env("OPENAI_ORGANIZATION", default="")
+    )
     allowed_special: Union[Literal["all"], Set[str]] = set()
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
     chunk_size: int = 1000
@@ -200,35 +209,8 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
-        values["openai_api_base"] = get_from_dict_or_env(
-            values,
-            "openai_api_base",
-            "OPENAI_API_BASE",
-            default="",
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
-        )
 
         default_api_version = ""
-        values["openai_api_version"] = get_from_dict_or_env(
-            values,
-            "openai_api_version",
-            "OPENAI_API_VERSION",
-            default=default_api_version,
-        )
-        values["openai_organization"] = get_from_dict_or_env(
-            values,
-            "openai_organization",
-            "OPENAI_ORGANIZATION",
-            default="",
-        )
         try:
             import openai
 

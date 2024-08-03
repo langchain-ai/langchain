@@ -11,7 +11,7 @@ from typing import (
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -104,7 +104,9 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     """The DashScope client."""
     model: str = "text-embedding-v1"
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[str] = Field(
+        default_factory=from_env("DASHSCOPE_API_KEY")
+    )
     max_retries: int = 5
     """Maximum number of retries to make when generating."""
 
@@ -118,9 +120,6 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
         import dashscope
 
         """Validate that api key and python package exists in environment."""
-        values["dashscope_api_key"] = get_from_dict_or_env(
-            values, "dashscope_api_key", "DASHSCOPE_API_KEY"
-        )
         dashscope.api_key = values["dashscope_api_key"]
         try:
             import dashscope

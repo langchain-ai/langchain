@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 DEFAULT_URL = "https://api.clickup.com/api/v2"
 
@@ -276,7 +276,9 @@ def fetch_list_id(space_id: int, folder_id: int, access_token: str) -> Optional[
 class ClickupAPIWrapper(BaseModel):
     """Wrapper for Clickup API."""
 
-    access_token: Optional[str] = None
+    access_token: Optional[str] = Field(
+        default_factory=from_env("CLICKUP_ACCESS_TOKEN")
+    )
     team_id: Optional[str] = None
     space_id: Optional[str] = None
     folder_id: Optional[str] = None
@@ -326,9 +328,6 @@ class ClickupAPIWrapper(BaseModel):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["access_token"] = get_from_dict_or_env(
-            values, "access_token", "CLICKUP_ACCESS_TOKEN"
-        )
         values["team_id"] = fetch_team_id(values["access_token"])
         values["space_id"] = fetch_space_id(values["team_id"], values["access_token"])
         values["folder_id"] = fetch_folder_id(

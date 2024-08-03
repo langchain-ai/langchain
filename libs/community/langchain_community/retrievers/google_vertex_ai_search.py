@@ -9,7 +9,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 from langchain_community.utilities.vertexai import get_client_info
 
@@ -26,9 +26,11 @@ if TYPE_CHECKING:
 class _BaseGoogleVertexAISearchRetriever(BaseModel):
     project_id: str
     """Google Cloud Project ID."""
-    data_store_id: Optional[str] = None
+    data_store_id: Optional[str] = Field(default_factory=from_env("DATA_STORE_ID"))
     """Vertex AI Search data store ID."""
-    search_engine_id: Optional[str] = None
+    search_engine_id: Optional[str] = Field(
+        default_factory=from_env("SEARCH_ENGINE_ID")
+    )
     """Vertex AI Search app ID."""
     location_id: str = "global"
     """Vertex AI Search data store location."""
@@ -66,17 +68,6 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
             ) from exc
 
         values["project_id"] = get_from_dict_or_env(values, "project_id", "PROJECT_ID")
-
-        try:
-            values["data_store_id"] = get_from_dict_or_env(
-                values, "data_store_id", "DATA_STORE_ID"
-            )
-            values["search_engine_id"] = get_from_dict_or_env(
-                values, "search_engine_id", "SEARCH_ENGINE_ID"
-            )
-        except Exception:
-            pass
-
         return values
 
     @property

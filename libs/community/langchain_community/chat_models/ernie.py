@@ -14,7 +14,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -74,13 +74,17 @@ class ErnieBotChat(BaseChatModel):
 
     """
 
-    ernie_api_base: Optional[str] = None
+    ernie_api_base: Optional[str] = Field(
+        default_factory=from_env("ERNIE_API_BASE", default="https://aip.baidubce.com")
+    )
     """Baidu application custom endpoints"""
 
-    ernie_client_id: Optional[str] = None
+    ernie_client_id: Optional[str] = Field(default_factory=from_env("ERNIE_CLIENT_ID"))
     """Baidu application client id"""
 
-    ernie_client_secret: Optional[str] = None
+    ernie_client_secret: Optional[str] = Field(
+        default_factory=from_env("ERNIE_CLIENT_SECRET")
+    )
     """Baidu application client secret"""
 
     access_token: Optional[str] = None
@@ -110,19 +114,6 @@ class ErnieBotChat(BaseChatModel):
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        values["ernie_api_base"] = get_from_dict_or_env(
-            values, "ernie_api_base", "ERNIE_API_BASE", "https://aip.baidubce.com"
-        )
-        values["ernie_client_id"] = get_from_dict_or_env(
-            values,
-            "ernie_client_id",
-            "ERNIE_CLIENT_ID",
-        )
-        values["ernie_client_secret"] = get_from_dict_or_env(
-            values,
-            "ernie_client_secret",
-            "ERNIE_CLIENT_SECRET",
-        )
         return values
 
     def _chat(self, payload: object) -> dict:

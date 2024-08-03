@@ -36,7 +36,11 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import (
+    from_env,
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +71,9 @@ class ChatPerplexity(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    pplx_api_key: Optional[str] = Field(None, alias="api_key")
+    pplx_api_key: Optional[str] = Field(
+        None, alias="api_key", default_factory=from_env("PPLX_API_KEY")
+    )
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
@@ -119,9 +125,6 @@ class ChatPerplexity(BaseChatModel):
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["pplx_api_key"] = get_from_dict_or_env(
-            values, "pplx_api_key", "PPLX_API_KEY"
-        )
         try:
             import openai
         except ImportError:

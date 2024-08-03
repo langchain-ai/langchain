@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 
 class DashScopeRerank(BaseDocumentCompressor):
@@ -21,7 +21,9 @@ class DashScopeRerank(BaseDocumentCompressor):
     top_n: Optional[int] = 3
     """Number of documents to return."""
 
-    dashscope_api_key: Optional[str] = Field(None, alias="api_key")
+    dashscope_api_key: Optional[str] = Field(
+        None, alias="api_key", default_factory=from_env("DASHSCOPE_API_KEY")
+    )
     """DashScope API key. Must be specified directly or via environment variable 
         DASHSCOPE_API_KEY."""
 
@@ -46,9 +48,6 @@ class DashScopeRerank(BaseDocumentCompressor):
                 )
 
             values["client"] = dashscope.TextReRank
-            values["dashscope_api_key"] = get_from_dict_or_env(
-                values, "dashscope_api_key", "DASHSCOPE_API_KEY"
-            )
             values["model"] = dashscope.TextReRank.Models.gte_rerank
 
         return values

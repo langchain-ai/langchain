@@ -6,6 +6,7 @@ from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import (
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
@@ -30,7 +31,9 @@ class DallEAPIWrapper(BaseModel):
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="dall-e-2", alias="model")
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_KEY"), alias="api_key"
+    )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
@@ -38,7 +41,9 @@ class DallEAPIWrapper(BaseModel):
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default="")
+    )
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -93,9 +98,6 @@ class DallEAPIWrapper(BaseModel):
     @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
             values["openai_organization"]
@@ -105,12 +107,6 @@ class DallEAPIWrapper(BaseModel):
         )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
         )
 
         try:

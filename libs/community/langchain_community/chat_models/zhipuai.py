@@ -32,7 +32,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -335,7 +335,10 @@ class ChatZhipuAI(BaseChatModel):
     # client:
     zhipuai_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `ZHIPUAI_API_KEY` if not provided."""
-    zhipuai_api_base: Optional[str] = Field(default=None, alias="api_base")
+    zhipuai_api_base: Optional[str] = Field(
+        default_factory=from_env("ZHIPUAI_API_BASE", default=ZHIPUAI_API_BASE),
+        alias="api_base",
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator.
     """
@@ -381,9 +384,6 @@ class ChatZhipuAI(BaseChatModel):
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["zhipuai_api_key"] = get_from_dict_or_env(
             values, ["zhipuai_api_key", "api_key"], "ZHIPUAI_API_KEY"
-        )
-        values["zhipuai_api_base"] = get_from_dict_or_env(
-            values, "zhipuai_api_base", "ZHIPUAI_API_BASE", default=ZHIPUAI_API_BASE
         )
 
         return values

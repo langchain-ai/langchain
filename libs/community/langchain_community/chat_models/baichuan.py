@@ -49,6 +49,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     convert_to_secret_str,
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
@@ -348,7 +349,10 @@ class ChatBaichuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    baichuan_api_base: str = Field(default=DEFAULT_API_BASE, alias="base_url")
+    baichuan_api_base: str = Field(
+        default_factory=from_env("BAICHUAN_API_BASE", default=DEFAULT_API_BASE),
+        alias="base_url",
+    )
     """Baichuan custom endpoints"""
     baichuan_api_key: SecretStr = Field(alias="api_key")
     """Baichuan API Key"""
@@ -408,12 +412,6 @@ class ChatBaichuan(BaseChatModel):
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        values["baichuan_api_base"] = get_from_dict_or_env(
-            values,
-            "baichuan_api_base",
-            "BAICHUAN_API_BASE",
-            DEFAULT_API_BASE,
-        )
         values["baichuan_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,

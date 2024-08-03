@@ -6,7 +6,7 @@ from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
 
 
 class SVEndpointHandler:
@@ -201,7 +201,9 @@ class Sambaverse(LLM):
     sambaverse_api_key: str = ""
     """sambaverse api key"""
 
-    sambaverse_model_name: Optional[str] = None
+    sambaverse_model_name: Optional[str] = Field(
+        default_factory=from_env("SAMBAVERSE_MODEL_NAME")
+    )
     """sambaverse expert model to use"""
 
     model_kwargs: Optional[dict] = None
@@ -230,9 +232,6 @@ class Sambaverse(LLM):
         )
         values["sambaverse_api_key"] = get_from_dict_or_env(
             values, "sambaverse_api_key", "SAMBAVERSE_API_KEY"
-        )
-        values["sambaverse_model_name"] = get_from_dict_or_env(
-            values, "sambaverse_model_name", "SAMBAVERSE_MODEL_NAME"
         )
         return values
 

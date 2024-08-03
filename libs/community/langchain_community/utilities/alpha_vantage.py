@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 
 class AlphaVantageAPIWrapper(BaseModel):
@@ -16,7 +16,9 @@ class AlphaVantageAPIWrapper(BaseModel):
     2. Save your API KEY into ALPHAVANTAGE_API_KEY env variable
     """
 
-    alphavantage_api_key: Optional[str] = None
+    alphavantage_api_key: Optional[str] = Field(
+        default_factory=from_env("ALPHAVANTAGE_API_KEY")
+    )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -26,9 +28,6 @@ class AlphaVantageAPIWrapper(BaseModel):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["alphavantage_api_key"] = get_from_dict_or_env(
-            values, "alphavantage_api_key", "ALPHAVANTAGE_API_KEY"
-        )
         return values
 
     def search_symbols(self, keywords: str) -> Dict[str, Any]:

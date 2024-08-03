@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Set
 import requests
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, from_env, get_from_dict_or_env
 
 from langchain_community.adapters.openai import convert_message_to_dict
 from langchain_community.chat_models.openai import (
@@ -64,7 +64,9 @@ class ChatAnyscale(ChatOpenAI):
     """AnyScale Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
-    anyscale_api_base: str = Field(default=DEFAULT_API_BASE)
+    anyscale_api_base: str = Field(
+        default_factory=from_env("ANYSCALE_API_BASE", default=DEFAULT_API_BASE)
+    )
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     anyscale_proxy: Optional[str] = None
@@ -111,12 +113,6 @@ class ChatAnyscale(ChatOpenAI):
                 "anyscale_api_key",
                 "ANYSCALE_API_KEY",
             )
-        )
-        values["anyscale_api_base"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_base",
-            "ANYSCALE_API_BASE",
-            default=DEFAULT_API_BASE,
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,

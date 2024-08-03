@@ -3,7 +3,7 @@
 from typing import Any, Dict, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 
 
 class TwilioAPIWrapper(BaseModel):
@@ -31,7 +31,7 @@ class TwilioAPIWrapper(BaseModel):
     """Twilio account string identifier."""
     auth_token: Optional[str] = None
     """Twilio auth token."""
-    from_number: Optional[str] = None
+    from_number: Optional[str] = Field(default_factory=from_env("TWILIO_FROM_NUMBER"))
     """A Twilio phone number in [E.164](https://www.twilio.com/docs/glossary/what-e164) 
         format, an 
         [alphanumeric sender ID](https://www.twilio.com/docs/sms/send-messages#use-an-alphanumeric-sender-id), 
@@ -61,9 +61,6 @@ class TwilioAPIWrapper(BaseModel):
             )
         account_sid = get_from_dict_or_env(values, "account_sid", "TWILIO_ACCOUNT_SID")
         auth_token = get_from_dict_or_env(values, "auth_token", "TWILIO_AUTH_TOKEN")
-        values["from_number"] = get_from_dict_or_env(
-            values, "from_number", "TWILIO_FROM_NUMBER"
-        )
         values["client"] = Client(account_sid, auth_token)
         return values
 

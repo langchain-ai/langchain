@@ -23,6 +23,7 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import (
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
@@ -195,19 +196,28 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # to support Azure OpenAI Service custom deployment names
     deployment: Optional[str] = model
     # TODO: Move to AzureOpenAIEmbeddings.
-    openai_api_version: Optional[str] = Field(default=None, alias="api_version")
+    openai_api_version: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_VERSION", default=default_api_version),
+        alias="api_version",
+    )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # to support Azure OpenAI Service custom endpoints
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     # to support Azure OpenAI Service custom endpoints
-    openai_api_type: Optional[str] = None
+    openai_api_type: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_TYPE", default="")
+    )
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default="")
+    )
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_KEY"), alias="api_key"
+    )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
@@ -289,23 +299,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
-        )
-        values["openai_api_type"] = get_from_dict_or_env(
-            values,
-            "openai_api_type",
-            "OPENAI_API_TYPE",
-            default="",
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2023-05-15"
@@ -315,12 +310,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             values["chunk_size"] = min(values["chunk_size"], 16)
         else:
             default_api_version = ""
-        values["openai_api_version"] = get_from_dict_or_env(
-            values,
-            "openai_api_version",
-            "OPENAI_API_VERSION",
-            default=default_api_version,
-        )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
             values["openai_organization"]

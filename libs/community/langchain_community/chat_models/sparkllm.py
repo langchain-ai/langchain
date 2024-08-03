@@ -37,6 +37,7 @@ from langchain_core.outputs import (
 )
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import (
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
@@ -228,10 +229,16 @@ class ChatSparkLLM(BaseChatModel):
     spark_api_secret: Optional[str] = Field(default=None, alias="api_secret")
     """Automatically inferred from env var `IFLYTEK_SPARK_API_SECRET` 
         if not provided."""
-    spark_api_url: Optional[str] = Field(default=None, alias="api_url")
+    spark_api_url: Optional[str] = Field(
+        default_factory=from_env("IFLYTEK_SPARK_API_URL", default=SPARK_API_URL),
+        alias="api_url",
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
-    spark_llm_domain: Optional[str] = Field(default=None, alias="model")
+    spark_llm_domain: Optional[str] = Field(
+        default_factory=from_env("IFLYTEK_SPARK_LLM_DOMAIN", default=SPARK_LLM_DOMAIN),
+        alias="model",
+    )
     """Model name to use."""
     spark_user_id: str = "lc_user"
     streaming: bool = False
@@ -293,18 +300,6 @@ class ChatSparkLLM(BaseChatModel):
             values,
             ["spark_api_secret", "api_secret"],
             "IFLYTEK_SPARK_API_SECRET",
-        )
-        values["spark_api_url"] = get_from_dict_or_env(
-            values,
-            "spark_api_url",
-            "IFLYTEK_SPARK_API_URL",
-            SPARK_API_URL,
-        )
-        values["spark_llm_domain"] = get_from_dict_or_env(
-            values,
-            "spark_llm_domain",
-            "IFLYTEK_SPARK_LLM_DOMAIN",
-            SPARK_LLM_DOMAIN,
         )
 
         # put extra params into model_kwargs

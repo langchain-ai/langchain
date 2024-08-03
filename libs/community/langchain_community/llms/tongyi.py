@@ -25,7 +25,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -184,7 +184,9 @@ class Tongyi(BaseLLM):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[str] = Field(
+        default_factory=from_env("DASHSCOPE_API_KEY")
+    )
     """Dashscope api key provide by Alibaba Cloud."""
 
     streaming: bool = False
@@ -201,9 +203,6 @@ class Tongyi(BaseLLM):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["dashscope_api_key"] = get_from_dict_or_env(
-            values, "dashscope_api_key", "DASHSCOPE_API_KEY"
-        )
         try:
             import dashscope
         except ImportError:

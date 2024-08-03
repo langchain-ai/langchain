@@ -22,6 +22,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
+    from_env,
     get_from_dict_or_env,
 )
 
@@ -88,7 +89,9 @@ class ChatCoze(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    coze_api_base: str = Field(default=DEFAULT_API_BASE)
+    coze_api_base: str = Field(
+        default_factory=from_env("COZE_API_BASE", default=DEFAULT_API_BASE)
+    )
     """Coze custom endpoints"""
     coze_api_key: Optional[SecretStr] = None
     """Coze API Key"""
@@ -118,12 +121,6 @@ class ChatCoze(BaseChatModel):
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        values["coze_api_base"] = get_from_dict_or_env(
-            values,
-            "coze_api_base",
-            "COZE_API_BASE",
-            DEFAULT_API_BASE,
-        )
         values["coze_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,

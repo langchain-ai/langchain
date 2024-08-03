@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import from_env, get_from_dict_or_env
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
@@ -12,7 +12,7 @@ from urllib3.util import Retry
 class InfobipAPIWrapper(BaseModel):
     """Wrapper for Infobip API for messaging."""
 
-    infobip_api_key: Optional[str] = None
+    infobip_api_key: Optional[str] = Field(default_factory=from_env("INFOBIP_API_KEY"))
     infobip_base_url: Optional[str] = "https://api.infobip.com"
 
     class Config:
@@ -23,9 +23,6 @@ class InfobipAPIWrapper(BaseModel):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["infobip_api_key"] = get_from_dict_or_env(
-            values, "infobip_api_key", "INFOBIP_API_KEY"
-        )
         values["infobip_base_url"] = get_from_dict_or_env(
             values, "infobip_base_url", "INFOBIP_BASE_URL"
         )

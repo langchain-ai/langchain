@@ -31,7 +31,7 @@ from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, from_env, get_from_dict_or_env
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
@@ -151,7 +151,9 @@ class GPTRouter(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     models_priority_list: List[GPTRouterModel] = Field(min_items=1)
-    gpt_router_api_base: str = Field(default=None)
+    gpt_router_api_base: str = Field(
+        default_factory=from_env("GPT_ROUTER_API_BASE", default=DEFAULT_API_BASE_URL)
+    )
     """WriteSonic GPTRouter custom endpoint"""
     gpt_router_api_key: Optional[SecretStr] = None
     """WriteSonic GPTRouter API Key"""
@@ -169,13 +171,6 @@ class GPTRouter(BaseChatModel):
 
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        values["gpt_router_api_base"] = get_from_dict_or_env(
-            values,
-            "gpt_router_api_base",
-            "GPT_ROUTER_API_BASE",
-            DEFAULT_API_BASE_URL,
-        )
-
         values["gpt_router_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
