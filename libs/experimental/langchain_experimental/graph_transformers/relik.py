@@ -24,10 +24,10 @@ class RelikGraphTransformer:
           Default is "relik-ie/relik-relation-extraction-small-wikipedia".
         relationship_confidence_threshold (float): The confidence threshold for
           filtering relationships. Default is 0.1.
-        model_config (Dict[str, any]): Additional configuration options for the Relik model.
-          Default is an empty dictionary.
-        ignore_self_loops (bool): Whether to ignore relationships where the source and target
-          nodes are the same. Default is True.
+        model_config (Dict[str, any]): Additional configuration options for the
+          Relik model. Default is an empty dictionary.
+        ignore_self_loops (bool): Whether to ignore relationships where the
+          source and target nodes are the same. Default is True.
     """
 
     def __init__(
