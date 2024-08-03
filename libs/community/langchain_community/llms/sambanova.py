@@ -16,7 +16,7 @@ class SVEndpointHandler:
     :param str host_url: Base URL of the DaaS API service
     """
 
-    API_BASE_PATH = "/api/predict"
+    API_BASE_PATH: str = "/api/predict"
 
     def __init__(self, host_url: str):
         """
@@ -389,7 +389,7 @@ class Sambaverse(LLM):
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -426,7 +426,7 @@ class Sambaverse(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -453,7 +453,7 @@ class Sambaverse(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -951,7 +951,7 @@ class SambaStudio(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:

@@ -179,7 +179,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Args:
             input: The query string.
             config: Configuration for the retriever. Defaults to None.
-            **kwargs: Additional arguments to pass to the retriever.
+            kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
@@ -238,7 +238,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Args:
             input: The query string.
             config: Configuration for the retriever. Defaults to None.
-            **kwargs: Additional arguments to pass to the retriever.
+            kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
@@ -343,7 +343,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 and passed as arguments to the handlers defined in `callbacks`.
                 Defaults to None.
             run_name: Optional name for the run. Defaults to None.
-            **kwargs: Additional arguments to pass to the retriever.
+            kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
@@ -387,7 +387,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 and passed as arguments to the handlers defined in `callbacks`.
                 Defaults to None.
             run_name: Optional name for the run. Defaults to None.
-            **kwargs: Additional arguments to pass to the retriever.
+            kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
