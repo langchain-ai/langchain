@@ -66,9 +66,10 @@ class HuggingFaceEndpoint(LLM):
     """  # noqa: E501
 
     endpoint_url: Optional[str] = None
-    """Endpoint URL to use."""
+    """Endpoint URL to use. If repo_id is not specified then this needs to given or 
+    should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
     repo_id: Optional[str] = None
-    """Repo to use."""
+    """Repo to use. If endpoint_url is not specified then this needs to given"""
     huggingfacehub_api_token: Optional[str] = None
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
