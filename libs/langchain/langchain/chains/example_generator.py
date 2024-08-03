@@ -1,8 +1,8 @@
 from typing import List
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 
 TEST_GEN_TEMPLATE_SUFFIX = "Add another example."
