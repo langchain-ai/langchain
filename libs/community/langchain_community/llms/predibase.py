@@ -52,11 +52,11 @@ class Predibase(LLM):
         options: Dict[str, Union[str, float]] = (
             self.model_kwargs or self.default_options_for_generation
         )
-        options.update(
-            {
-                "api_token": os.environ.get("HUGGING_FACE_HUB_TOKEN"),
-            }
-        )
+        # options.update(
+        #     {
+        #         "api_token": os.environ.get("HUGGING_FACE_HUB_TOKEN"),
+        #     }
+        # )
         if self._is_deprecated_sdk_version():
             try:
                 from predibase import PredibaseClient
