@@ -1,4 +1,5 @@
 from typing import (
+    Any,
     List,
     Optional,
 )
@@ -6,10 +7,11 @@ from typing import (
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from pymongo.collection import Collection
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.pipelines import (
-    MongoDBDocument,
+    MongoDBDocumentType,
     combine_pipelines,
     final_hybrid_stage,
     reciprocal_rank_stage,
@@ -37,9 +39,9 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """Number of documents to return."""
     oversampling_factor: int = 10
     """This times top_k is the number of candidates chosen at each step"""
-    pre_filter: Optional[MongoDBDocument] = None
+    pre_filter: Optional[MongoDBDocumentType] = None
     """(Optional) Any MQL match expression comparing an indexed field"""
-    post_filter: Optional[MongoDBDocument] = None
+    post_filter: Optional[MongoDBDocumentType] = None
     """(Optional) Pipeline of MongoDB aggregation stages for postprocessing."""
     vector_penalty: float = 60.0
     """Penalty applied to vector search results in RRF: scores=1/(rank + penalty)"""
@@ -49,7 +51,7 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """If true, returned Document metadata will include vectors."""
 
     @property
-    def collection(self):
+    def collection(self) -> Collection:
         return self.vectorstore._collection
 
     def _get_relevant_documents(
@@ -70,7 +72,7 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
         query_vector = self.vectorstore._embedding.embed_query(query)
 
         scores_fields = ["vector_score", "fulltext_score"]
-        pipeline = []
+        pipeline: List[Any] = []
 
         # First we build up the aggregation pipeline,
         # then it is passed to the server to execute
@@ -98,12 +100,16 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
             pre_filter=self.pre_filter,
         )
 
-        text_pipeline += reciprocal_rank_stage("fulltext_score", self.fulltext_penalty)
+        text_pipeline.extend(
+            reciprocal_rank_stage("fulltext_score", self.fulltext_penalty)
+        )
 
         combine_pipelines(pipeline, text_pipeline, self.collection.name)
 
         # Sum and sort stage
-        pipeline += final_hybrid_stage(scores_fields=scores_fields, limit=self.top_k)
+        pipeline.extend(
+            final_hybrid_stage(scores_fields=scores_fields, limit=self.top_k)
+        )
 
         # Removal of embeddings unless requested.
         if not self.show_embeddings:

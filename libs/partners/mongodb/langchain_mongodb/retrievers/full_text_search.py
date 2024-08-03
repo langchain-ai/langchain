@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pymongo.collection import Collection
 
-from langchain_mongodb.pipelines import MongoDBDocument, text_search_stage
+from langchain_mongodb.pipelines import MongoDBDocumentType, text_search_stage
 from langchain_mongodb.utils import make_serializable
 
 
@@ -20,14 +20,38 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
     """Atlas Search Index name"""
     search_field: str
     """Collection field that contains the text to be searched. It must be indexed"""
-    top_k: int = None
+    top_k: Optional[int] = None
     """Number of documents to return. Default is no limit"""
-    pre_filter: Optional[MongoDBDocument] = None
+    pre_filter: Optional[MongoDBDocumentType] = None
     """(Optional) Any MQL match expression comparing an indexed field"""
-    post_filter: Optional[MongoDBDocument] = None
+    post_filter: Optional[MongoDBDocumentType] = None
     """(Optional) Pipeline of MongoDB aggregation stages for postprocessing"""
     show_embeddings: float = False
     """If true, returned Document metadata will include vectors"""
+
+    # TODO - What do I do about lint errors? THIS MADE IT WORSE
+    """ 
+    def __init__(
+        self,
+        *,
+        collection: Collection,
+        search_index_name: str,
+        search_field: str,
+        top_k: Optional[int] = None,
+        pre_filter: Optional[MongoDBDocumentType] = None,
+        post_filter: Optional[MongoDBDocumentType] = None,
+        show_embeddings: float = False,
+    ):
+        super().__init__(
+            collection=collection,
+            search_index_name=search_index_name,
+            search_field=search_field,
+            top_k=top_k,
+            pre_filter=pre_filter,
+            post_filter=post_filter,
+            show_embeddings=show_embeddings,
+        )
+    """
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from time import monotonic, sleep
-from typing import Any, Dict, List
+from typing import Any, List
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document

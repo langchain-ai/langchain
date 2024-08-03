@@ -2,7 +2,6 @@ from json import dumps, loads
 from typing import Any, Optional
 
 import pytest  # type: ignore[import-not-found]
-from bson import ObjectId, json_util
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from pymongo.collection import Collection

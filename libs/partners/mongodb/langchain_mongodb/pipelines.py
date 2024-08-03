@@ -2,18 +2,18 @@
 
 from typing import Any, Dict, List, Optional, TypeVar
 
-MongoDBDocument = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
+MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 
 def text_search_stage(
     query: str,
-    search_field,
+    search_field: str,
     index_name: str,
     limit: Optional[int] = None,
-    pre_filter: Optional[List[MongoDBDocument]] = None,
+    pre_filter: Optional[List[MongoDBDocumentType]] = None,
     include_scores: Optional[bool] = True,
     **kwargs: Any,
-) -> Dict[str, Any]:  # noqa: E501
+) -> List[MongoDBDocumentType]:  # noqa: E501
     """Full-Text search using Lucene's standard (BM25) analyzer
 
     Args:
@@ -41,13 +41,13 @@ def text_search_stage(
         }
     ]
     if pre_filter:
-        pipeline.append({"$match": {"$and": pre_filter}})
+        pipeline.append({"$match": {"$and": pre_filter}})  # type: ignore
     if include_scores:
         pipeline.append({"$set": {"score": {"$meta": "searchScore"}}})
     if limit:
-        pipeline.append({"$limit": limit})
+        pipeline.append({"$limit": limit})  # type: ignore
 
-    return pipeline
+    return pipeline  # type: ignore
 
 
 def vector_search_stage(
@@ -55,10 +55,10 @@ def vector_search_stage(
     search_field: str,
     index_name: str,
     top_k: int = 4,
-    filter: Optional[List[MongoDBDocument]] = None,
+    filter: Optional[List[MongoDBDocumentType]] = None,
     oversampling_factor: int = 10,
     **kwargs: Any,
-) -> Dict[str, Any]:    # noqa: E501
+) -> Dict[str, Any]:  # noqa: E501
     """Vector Search Stage without Scores.
 
     Scoring is applied later depending on strategy.
@@ -91,13 +91,12 @@ def vector_search_stage(
 
 def combine_pipelines(
     pipeline: List[Any], stage: List[Dict[str, Any]], collection_name: str
-):
-    """Combines two aggregations into a single result set."""
+) -> None:
+    """Combines two aggregations into a single result set in-place."""
     if pipeline:
         pipeline.append({"$unionWith": {"coll": collection_name, "pipeline": stage}})
     else:
         pipeline.extend(stage)
-    return pipeline
 
 
 def reciprocal_rank_stage(
@@ -133,7 +132,7 @@ def reciprocal_rank_stage(
         {"$replaceRoot": {"newRoot": "$docs"}},
     ]
 
-    return rrf_pipeline
+    return rrf_pipeline  # type: ignore
 
 
 def final_hybrid_stage(

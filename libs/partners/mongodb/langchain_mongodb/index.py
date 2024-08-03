@@ -11,7 +11,7 @@ logger = logging.getLogger(__file__)
 _DELAY = 0.5  # Interval between checks for index operations
 
 
-def _search_index_error_message():
+def _search_index_error_message() -> str:
     return (
         "Search index operations are not currently available on shared clusters, "
         "such as MO. They require dedicated clusters >= M10. "
@@ -25,7 +25,7 @@ def _vector_search_index_definition(
     dimensions: int,
     path: str,
     similarity: str,
-    filters: Optional[List[str]],
+    filters: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     # https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-type/
     fields = [
@@ -36,8 +36,9 @@ def _vector_search_index_definition(
             "type": "vector",
         },
     ]
-    for field in filters:
-        fields.append({"type": "filter", "path": field})
+    if filters:
+        for field in filters:
+            fields.append({"type": "filter", "path": field})
 
     return {"fields": fields}
 
@@ -48,7 +49,7 @@ def create_vector_search_index(
     dimensions: int,
     path: str,
     similarity: str,
-    filters: Optional[List[Dict[str, str]]] = None,
+    filters: Optional[List[str]] = None,
     wait_until_complete: Optional[float] = None,
 ) -> None:
     """Experimental Utility function to create a vector search index
@@ -125,7 +126,7 @@ def update_vector_search_index(
     dimensions: int,
     path: str,
     similarity: str,
-    filters: List[Dict[str, str]],
+    filters: Optional[List[str]] = None,
     wait_until_complete: Optional[float] = None,
 ) -> None:
     """Update a search index.

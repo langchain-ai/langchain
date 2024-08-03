@@ -89,7 +89,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         text_key: str = "text",
         embedding_key: str = "embedding",
         relevance_score_fn: str = "cosine",
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Args:
@@ -340,7 +340,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[Dict]] = None,
-        collection: Optional[Collection[MongoDBDocumentType]] = None,
+        collection: Optional[Collection] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
@@ -417,7 +417,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[List[MongoDBDocumentType]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         **kwargs: Any,
@@ -469,7 +469,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        pre_filter: Optional[Dict] = None,
+        pre_filter: Optional[List[MongoDBDocumentType]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         **kwargs: Any,
@@ -477,7 +477,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """Return docs selected using the maximal marginal relevance."""
         return await run_in_executor(
             None,
-            self.max_marginal_relevance_search_by_vector,
+            self.max_marginal_relevance_search_by_vector,  # type: ignore[arg-type]
             embedding,
             k=k,
             fetch_k=fetch_k,
@@ -536,7 +536,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
     def create_vector_search_index(
         self,
         dimensions: int,
-        filters: Optional[List[Dict[str, str]]] = None,
+        filters: Optional[List[str]] = None,
         update: bool = False,
     ) -> None:
         """Creates a MongoDB Atlas vectorSearch index for the VectorStore
