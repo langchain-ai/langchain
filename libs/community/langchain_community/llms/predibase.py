@@ -149,6 +149,7 @@ class Predibase(LLM):
                 # Since the adapter version is provided, query the Predibase repository.
                 pb_adapter_id: str = f"{self.adapter_id}/{self.adapter_version}"
                 print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITH_VERSION:\n{pb_adapter_id} ; TYPE: {str(type(pb_adapter_id))}')
+                print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITH_VERSION-OPTIONS:\n{options} ; TYPE: {str(type(options))}')
                 try:
                     response = lorax_client.generate(
                         prompt=prompt,
