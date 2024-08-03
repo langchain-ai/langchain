@@ -146,7 +146,7 @@ class Predibase(LLM):
             if self.adapter_version:
                 # Since the adapter version is provided, query the Predibase repository.
                 pb_adapter_id: str = f"{self.adapter_id}/{self.adapter_version}"
-                print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID:\n{pb_adapter_id} ; TYPE: {str(type(pb_adapter_id))}')
+                print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITH_VERSION:\n{pb_adapter_id} ; TYPE: {str(type(pb_adapter_id))}')
                 try:
                     response = lorax_client.generate(
                         prompt=prompt,
@@ -162,6 +162,8 @@ found in the Predibase repository of fine-tuned adapters."""
             else:
                 # The adapter version is omitted,
                 # hence look for the adapter ID in the HuggingFace repository.
+                print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITHOUT_VERSION_MUST_BE_HF:\n{pb_adapter_id} ; TYPE: {str(type(pb_adapter_id))}')
+                print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID-WITHOUT_VERSION_MUST_BE_HF-OPTIONS:\n{options} ; TYPE: {str(type(options))}')
                 try:
                     response = lorax_client.generate(
                         prompt=prompt,
