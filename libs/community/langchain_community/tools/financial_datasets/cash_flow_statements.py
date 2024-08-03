@@ -15,14 +15,15 @@ class CashFlowStatementsSchema(BaseModel):
     )
     period: str = Field(
         description="The period of the cash flow statement. "
-        "Possible values are: "
-        "annual, quarterly, ttm. "
-        "Default is 'annual'.",
+                    "Possible values are: "
+                    "annual, quarterly, ttm. "
+                    "Default is 'annual'.",
     )
     limit: int = Field(
         description="The number of cash flow statements to return. "
-        "Default is 10.",
+                    "Default is 10.",
     )
+
 
 class CashFlowStatements(BaseTool):
     """
@@ -41,7 +42,10 @@ class CashFlowStatements(BaseTool):
     )
     args_schema: Type[CashFlowStatementsSchema] = CashFlowStatementsSchema
 
-    api_wrapper: FinancialDatasetsAPIWrapper
+    api_wrapper: FinancialDatasetsAPIWrapper = Field(..., exclude=True)
+
+    def __init__(self, api_wrapper: FinancialDatasetsAPIWrapper):
+        super().__init__(api_wrapper=api_wrapper)
 
     def _run(
         self,

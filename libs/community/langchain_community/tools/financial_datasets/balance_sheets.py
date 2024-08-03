@@ -15,14 +15,15 @@ class BalanceSheetsSchema(BaseModel):
     )
     period: str = Field(
         description="The period of the balance sheets. "
-        "Possible values are: "
-        "annual, quarterly, ttm. "
-        "Default is 'annual'.",
+                    "Possible values are: "
+                    "annual, quarterly, ttm. "
+                    "Default is 'annual'.",
     )
     limit: int = Field(
         description="The number of balance sheets to return. "
-        "Default is 10.",
+                    "Default is 10.",
     )
+
 
 class BalanceSheets(BaseTool):
     """
@@ -41,7 +42,10 @@ class BalanceSheets(BaseTool):
     )
     args_schema: Type[BalanceSheetsSchema] = BalanceSheetsSchema
 
-    api_wrapper: FinancialDatasetsAPIWrapper
+    api_wrapper: FinancialDatasetsAPIWrapper = Field(..., exclude=True)
+
+    def __init__(self, api_wrapper: FinancialDatasetsAPIWrapper):
+        super().__init__(api_wrapper=api_wrapper)
 
     def _run(
         self,
