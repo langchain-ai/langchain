@@ -52,11 +52,12 @@ class Predibase(LLM):
         options: Dict[str, Union[str, float]] = (
             self.model_kwargs or self.default_options_for_generation
         )
-        # options.update(
-        #     {
-        #         "api_token": os.environ.get("HUGGING_FACE_HUB_TOKEN"),
-        #     }
-        # )
+        hugging_face_hub_token: str = os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        options.update(
+            {
+                "api_token": hugging_face_hub_token,
+            }
+        )
         if self._is_deprecated_sdk_version():
             try:
                 from predibase import PredibaseClient
@@ -149,7 +150,6 @@ class Predibase(LLM):
                         **options,
                     )
                 except GenerationError as ge:
-                    print(f"HORROR<ALEX_TEST>-0: {ge}")
                     raise ValueError(
                         f"""An adapter with the ID "{pb_adapter_id}" cannot be \
 found in the Predibase repository of fine-tuned adapters."""
@@ -165,7 +165,6 @@ found in the Predibase repository of fine-tuned adapters."""
                         **options,
                     )
                 except GenerationError as ge:
-                    print(f"HORROR<ALEX_TEST>-1: {ge}")
                     raise ValueError(
                         f"""Either an adapter with the ID "{self.adapter_id}" \
 cannot be found in a HuggingFace repository, or it is incompatible with the \
