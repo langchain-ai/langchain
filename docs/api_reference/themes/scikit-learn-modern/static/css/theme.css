@@ -897,6 +897,13 @@ div.admonition {
   background-color: #eee;
 }
 
+div.admonition-beta {
+  color: #d35400; /* A darker rich orange color */
+  background-color: #FDF2E9; /* A light orange-tinted background color */
+  border-color: #E59866; /* A darker soft orange border color */
+}
+
+
 div.admonition p:last-child,
 div.admonition dl:last-child,
 div.admonition dd:last-child,
