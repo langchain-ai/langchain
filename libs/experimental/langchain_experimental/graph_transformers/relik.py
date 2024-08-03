@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Sequence
+from typing import Any, Dict, List, Sequence
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
@@ -34,7 +34,7 @@ class RelikGraphTransformer:
         self,
         model: str = "relik-ie/relik-relation-extraction-small",
         relationship_confidence_threshold: float = 0.1,
-        model_config: Dict[str, any] = {},
+        model_config: Dict[str, Any] = {},
         ignore_self_loops: bool = True,
     ) -> None:
         try:
