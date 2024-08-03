@@ -36,7 +36,8 @@ class BalanceSheets(BaseTool):
         "This tool is useful for fetching balance sheets for a given ticker."
         "The tool fetches balance sheets for a given ticker over a given period."
         "The period can be annual, quarterly, or trailing twelve months (ttm)."
-        "The number of balance sheets to return can also be specified using the limit parameter."
+        "The number of balance sheets to return can also be "
+        "specified using the limit parameter."
     )
     args_schema: Type[BalanceSheetsSchema] = BalanceSheetsSchema
 

@@ -36,7 +36,8 @@ class IncomeStatements(BaseTool):
         "This tool is useful for fetching income statements for a given ticker."
         "The tool fetches income statements for a given ticker over a given period."
         "The period can be annual, quarterly, or trailing twelve months (ttm)."
-        "The number of income statements to return can also be specified using the limit parameter."
+        "The number of income statements to return can also be "
+        "specified using the limit parameter."
     )
     args_schema: Type[IncomeStatementsSchema] = IncomeStatementsSchema
 

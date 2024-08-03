@@ -4,10 +4,10 @@ Docs: https://docs.financialdatasets.ai/
 """
 
 import json
-from typing import Any, Dict, Optional
+from typing import Any, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env
 
 FINANCIAL_DATASETS_BASE_URL = "https://api.financialdatasets.ai/"
@@ -18,22 +18,24 @@ class FinancialDatasetsAPIWrapper(BaseModel):
 
     financial_datasets_api_key: Optional[str] = None
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key in environment."""
-        financial_datasets_api_key = get_from_dict_or_env(
-            values, "financial_datasets_api_key", "FINANCIAL_DATASETS_API_KEY"
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        self.financial_datasets_api_key = get_from_dict_or_env(
+            data, "financial_datasets_api_key", "FINANCIAL_DATASETS_API_KEY"
         )
-        values["financial_datasets_api_key"] = financial_datasets_api_key
 
-        return values
-
-    def get_income_statements(self, ticker: str, period: str, limit: Optional[int]) -> Optional[dict]:
+    def get_income_statements(
+        self,
+        ticker: str,
+        period: str,
+        limit: Optional[int],
+    ) -> Optional[dict]:
         """
         Get the income statements for a stock `ticker` over a `period` of time.
 
         :param ticker: the stock ticker
-        :param period: the period of time to get the balance sheets for. Possible values are: annual, quarterly, ttm.
+        :param period: the period of time to get the balance sheets for.
+            Possible values are: annual, quarterly, ttm.
         :param limit: the number of results to return, default is 10
         :return: a list of income statements
         """
@@ -53,12 +55,18 @@ class FinancialDatasetsAPIWrapper(BaseModel):
 
         return data.get("income_statements", None)
 
-    def get_balance_sheets(self, ticker: str, period: str, limit: Optional[int]) -> List[dict]:
+    def get_balance_sheets(
+        self,
+        ticker: str,
+        period: str,
+        limit: Optional[int],
+    ) -> List[dict]:
         """
         Get the balance sheets for a stock `ticker` over a `period` of time.
 
         :param ticker: the stock ticker
-        :param period: the period of time to get the balance sheets for. Possible values are: annual, quarterly, ttm.
+        :param period: the period of time to get the balance sheets for.
+            Possible values are: annual, quarterly, ttm.
         :param limit: the number of results to return, default is 10
         :return: a list of balance sheets
         """
@@ -78,12 +86,18 @@ class FinancialDatasetsAPIWrapper(BaseModel):
 
         return data.get("balance_sheets", None)
 
-    def get_cash_flow_statements(self, ticker: str, period: str, limit: Optional[int]) -> List[dict]:
+    def get_cash_flow_statements(
+        self,
+        ticker: str,
+        period: str,
+        limit: Optional[int],
+    ) -> List[dict]:
         """
         Get the cash flow statements for a stock `ticker` over a `period` of time.
 
         :param ticker: the stock ticker
-        :param period: the period of time to get the balance sheets for. Possible values are: annual, quarterly, ttm.
+        :param period: the period of time to get the balance sheets for.
+            Possible values are: annual, quarterly, ttm.
         :param limit: the number of results to return, default is 10
         :return: a list of cash flow statements
         """

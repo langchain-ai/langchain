@@ -36,7 +36,8 @@ class CashFlowStatements(BaseTool):
         "This tool is useful for fetching cash flow statements for a given ticker."
         "The tool fetches cash flow statements for a given ticker over a given period."
         "The period can be annual, quarterly, or trailing twelve months (ttm)."
-        "The number of cash flow statements to return can also be specified using the limit parameter."
+        "The number of cash flow statements to return can also be "
+        "specified using the limit parameter."
     )
     args_schema: Type[CashFlowStatementsSchema] = CashFlowStatementsSchema
 
