@@ -912,6 +912,13 @@ div.deprecated {
   border-color: #eed3d7;
 }
 
+
+div.warning {
+  color: #b94a48;
+  background-color: #F3E5E5;
+  border-color: #eed3d7;
+}
+
 div.seealso {
   background-color: #FFFBE8;
   border-color: #fbeed5;

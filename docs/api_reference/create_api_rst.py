@@ -38,6 +38,8 @@ class ClassInfo(TypedDict):
     """The kind of the class."""
     is_public: bool
     """Whether the class is public or not."""
+    is_deprecated: bool
+    """Whether the class is deprecated."""
 
 
 class FunctionInfo(TypedDict):
@@ -49,6 +51,8 @@ class FunctionInfo(TypedDict):
     """The fully qualified name of the function."""
     is_public: bool
     """Whether the function is public or not."""
+    is_deprecated: bool
+    """Whether the function is deprecated."""
 
 
 class ModuleMembers(TypedDict):
@@ -121,6 +125,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
                     qualified_name=f"{namespace}.{name}",
                     kind=kind,
                     is_public=not name.startswith("_"),
+                    is_deprecated=".. deprecated::" in (type_.__doc__ or ""),
                 )
             )
         elif inspect.isfunction(type_):
@@ -129,6 +134,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
                     name=name,
                     qualified_name=f"{namespace}.{name}",
                     is_public=not name.startswith("_"),
+                    is_deprecated=".. deprecated::" in (type_.__doc__ or ""),
                 )
             )
         else:
@@ -255,8 +261,24 @@ def _construct_doc(
 
     for module in namespaces:
         _members = members_by_namespace[module]
-        classes = [el for el in _members["classes_"] if el["is_public"]]
-        functions = [el for el in _members["functions"] if el["is_public"]]
+        classes = [
+            el
+            for el in _members["classes_"]
+            if el["is_public"] and not el["is_deprecated"]
+        ]
+        functions = [
+            el
+            for el in _members["functions"]
+            if el["is_public"] and not el["is_deprecated"]
+        ]
+        deprecated_classes = [
+            el for el in _members["classes_"] if el["is_public"] and el["is_deprecated"]
+        ]
+        deprecated_functions = [
+            el
+            for el in _members["functions"]
+            if el["is_public"] and el["is_deprecated"]
+        ]
         if not (classes or functions):
             continue
         section = f":mod:`{package_namespace}.{module}`"
@@ -308,6 +330,56 @@ Classes
             full_doc += f"""\
 Functions
 --------------
+.. currentmodule:: {package_namespace}
+
+.. autosummary::
+    :toctree: {module}
+    :template: function.rst
+
+    {fstring}
+
+"""
+        if deprecated_classes:
+            full_doc += f"""\
+Deprecated classes
+--------------
+.. warning:: These classes are deprecated.
+
+.. currentmodule:: {package_namespace}
+
+.. autosummary::
+    :toctree: {module}
+"""
+
+            for class_ in sorted(deprecated_classes, key=lambda c: c["qualified_name"]):
+                if class_["kind"] == "TypedDict":
+                    template = "typeddict.rst"
+                elif class_["kind"] == "enum":
+                    template = "enum.rst"
+                elif class_["kind"] == "Pydantic":
+                    template = "pydantic.rst"
+                elif class_["kind"] == "RunnablePydantic":
+                    template = "runnable_pydantic.rst"
+                elif class_["kind"] == "RunnableNonPydantic":
+                    template = "runnable_non_pydantic.rst"
+                else:
+                    template = "class.rst"
+
+                full_doc += f"""\
+    :template: {template}
+
+    {class_["qualified_name"]}
+
+"""
+
+        if deprecated_functions:
+            _functions = [f["qualified_name"] for f in deprecated_functions]
+            fstring = "\n    ".join(sorted(_functions))
+            full_doc += f"""\
+Deprecated functions
+--------------
+.. warning:: These functions are deprecated.
+
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
