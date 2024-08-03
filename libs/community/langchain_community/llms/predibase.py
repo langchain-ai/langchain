@@ -149,7 +149,7 @@ class Predibase(LLM):
                         **options,
                     )
                 except GenerationError as ge:
-                    print(f"HORROR<ALEX_TEST>: {ge}")
+                    print(f"HORROR<ALEX_TEST>-0: {ge}")
                     raise ValueError(
                         f"""An adapter with the ID "{pb_adapter_id}" cannot be \
 found in the Predibase repository of fine-tuned adapters."""
@@ -165,6 +165,7 @@ found in the Predibase repository of fine-tuned adapters."""
                         **options,
                     )
                 except GenerationError as ge:
+                    print(f"HORROR<ALEX_TEST>-1: {ge}")
                     raise ValueError(
                         f"""Either an adapter with the ID "{self.adapter_id}" \
 cannot be found in a HuggingFace repository, or it is incompatible with the \
