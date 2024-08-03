@@ -445,7 +445,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             combine_docs_chain_kwargs: Parameters to pass as kwargs to `load_qa_chain`
                 when constructing the combine_docs_chain.
             callbacks: Callbacks to pass to all subchains.
-            **kwargs: Additional parameters to pass when initializing
+            kwargs: Additional parameters to pass when initializing
                 ConversationalRetrievalChain
         """
         combine_docs_chain_kwargs = combine_docs_chain_kwargs or {}
