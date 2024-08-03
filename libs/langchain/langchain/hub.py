@@ -95,7 +95,8 @@ def pull(
     Pull an object from the hub and returns it as a LangChain object.
 
     :param owner_repo_commit: The full name of the prompt to pull from in the format of
-        `owner/prompt_name:commit_hash` or `owner/prompt_name` or just `prompt_name` if it's your own prompt.
+        `owner/prompt_name:commit_hash` or `owner/prompt_name`
+        or just `prompt_name` if it's your own prompt.
     :param api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
         if you have an api key set, or a localhost instance if not.
     :param api_key: The API key to use to authenticate with the LangChain Hub API.
