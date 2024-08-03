@@ -42,6 +42,7 @@ model = Predibase(
     predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
     adapter_id="e2e_nlg",
     adapter_version=1,
+    api_token=None,  # optional parameter for accessing services hosting adapters (e.g., HuggingFace)
 )
 
 response = model.invoke("Can you recommend me a nice dry wine?")
@@ -62,6 +63,9 @@ model = Predibase(
     predibase_api_key=os.environ.get("PREDIBASE_API_TOKEN"),
     predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
     adapter_id="predibase/e2e_nlg",
+    api_token=os.environ.get(
+        "HUGGING_FACE_HUB_TOKEN"
+    ),  # optional parameter for accessing services hosting adapters (e.g., HuggingFace)
 )
 
 response = model.invoke("Can you recommend me a nice dry wine?")
