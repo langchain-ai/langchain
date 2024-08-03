@@ -52,12 +52,14 @@ class Predibase(LLM):
         options: Dict[str, Union[str, float]] = (
             self.model_kwargs or self.default_options_for_generation
         )
-        hugging_face_hub_token: str = os.environ.get("HUGGING_FACE_HUB_TOKEN")
-        options.update(
-            {
-                "api_token": hugging_face_hub_token,
-            }
-        )
+        #ALEX_TEST
+        # hugging_face_hub_token: str = os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        # options.update(
+        #     {
+        #         "api_token": hugging_face_hub_token,
+        #     }
+        # )
+        #ALEX_TEST
         if self._is_deprecated_sdk_version():
             try:
                 from predibase import PredibaseClient
@@ -133,6 +135,7 @@ class Predibase(LLM):
         lorax_client: LoraxClient = predibase.deployments.client(
             deployment_ref=self.model
         )
+        print(f'\n[ALEX_TEST] [WOUTPUT] SELF.MODEL_FOR_LORAX_CLIENT:\n{self.model} ; TYPE: {str(type(self.model))}')
 
         response: Response
         if self.adapter_id:
@@ -143,6 +146,7 @@ class Predibase(LLM):
             if self.adapter_version:
                 # Since the adapter version is provided, query the Predibase repository.
                 pb_adapter_id: str = f"{self.adapter_id}/{self.adapter_version}"
+                print(f'\n[ALEX_TEST] [WOUTPUT] PB_ADAPTER_ID:\n{pb_adapter_id} ; TYPE: {str(type(pb_adapter_id))}')
                 try:
                     response = lorax_client.generate(
                         prompt=prompt,
@@ -150,6 +154,7 @@ class Predibase(LLM):
                         **options,
                     )
                 except GenerationError as ge:
+                    print(f'\n[ALEX_TEST] [WOUTPUT] EXCEPTION!!!:\n{ge} ; TYPE: {str(type(ge))}')
                     raise ValueError(
                         f"""An adapter with the ID "{pb_adapter_id}" cannot be \
 found in the Predibase repository of fine-tuned adapters."""
