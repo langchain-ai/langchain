@@ -277,7 +277,7 @@ def test_whole_class_inherited_beta() -> None:
     """Test whole class beta status for inherited class.
 
     The original version of beta decorator created duplicates with
-    '[*Beta*]'.
+    '.. beta::'.
     """
 
     # Test whole class beta status
@@ -339,9 +339,9 @@ def test_whole_class_inherited_beta() -> None:
             "the API may change."
         )
 
-        # if [*Beta*] was inserted only once:
+        # if .. beta:: was inserted only once:
         if obj.__doc__ is not None:
-            assert obj.__doc__.count("[*Beta*]") == 1
+            assert obj.__doc__.count(".. beta::") == 1
 
 
 # Tests with pydantic models
