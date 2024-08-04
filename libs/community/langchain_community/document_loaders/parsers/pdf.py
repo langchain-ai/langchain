@@ -120,6 +120,7 @@ class PyPDFParser(BaseBlobParser):
 
         with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
             import pypdf.errors
+
             try:
                 pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
             except pypdf.errors.PyPdfError as e:
