@@ -74,7 +74,7 @@ def collection() -> Collection:
         )
 
     if not any([SEARCH_INDEX_NAME == ix["name"] for ix in clxn.list_search_indexes()]):
-        index.create_search_index(
+        index.create_fulltext_search_index(
             collection=clxn,
             index_name=SEARCH_INDEX_NAME,
             field=PAGE_CONTENT_FIELD,

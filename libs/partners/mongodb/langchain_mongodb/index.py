@@ -1,3 +1,5 @@
+"""Search Index Commands"""
+
 import logging
 from time import monotonic, sleep
 from typing import Any, Callable, Dict, List, Optional
@@ -212,7 +214,7 @@ def _wait_for_predicate(
         sleep(interval)
 
 
-def create_search_index(
+def create_fulltext_search_index(
     collection: Collection,
     index_name: str,
     field: str,
