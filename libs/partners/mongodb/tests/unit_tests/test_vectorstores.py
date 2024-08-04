@@ -163,7 +163,7 @@ class TestMongoDBAtlasVectorSearch:
             )
         )
         output = vectorstore.similarity_search(
-            "Sandwich", k=1, pre_filter={"range": {"lte": 0, "path": "c"}}
+            "Sandwich", k=1, pre_filter=[{"range": {"lte": 0, "path": "c"}}]
         )
         assert output == []
 

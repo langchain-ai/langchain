@@ -221,10 +221,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
          Args:
             query: Input text of semantic query
-            k: (Optional) number of documents to return. Defaults to 4.
+            k: Number of documents to return. Also know as top_k.
             pre_filter: List of MQL match expressions comparing an indexed field
                 See `Filter Example <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`_.
-
             post_filter_pipeline: (Optional) Arbitrary pipeline of MongoDB
                 aggregation stages applied after the search is complete.
             oversampling_factor: This times k is the number of candidates chosen
@@ -268,7 +267,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             query: Input text of semantic query
             k: (Optional) number of documents to return. Defaults to 4.
             pre_filter: List of MQL match expressions comparing an indexed field
-                See Filter Example here <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>
+                See `Filter Example <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`_.
             post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
                 to filter/process results after $vectorSearch.
             oversampling_factor: Multiple of k used when generating number of candidates
@@ -353,7 +352,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         This is intended to be a quick way to get started.
 
-        See :ref:`MongoDBAtlasVectorSearch` for kwargs and further description.
+        See :class:`~MongoDBAtlasVectorSearch` for kwargs and further description.
 
 
         Example:

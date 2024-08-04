@@ -1,6 +1,11 @@
-"""
-Tools for the Maximal Marginal Relevance (MMR) reranking.
-Duplicated from langchain_community to avoid cross-dependencies.
+"""Various Utility Functions
+
+- Tools for handling bson.ObjectId,
+helping IDs live as ObjectId in MongoDB and str in Langchain and JSON.
+
+
+- Tools for the Maximal Marginal Relevance (MMR) reranking,
+duplicated from langchain_community to avoid cross-dependencies.
 
 Functions "maximal_marginal_relevance" and "cosine_similarity"
 are duplicated in this utility respectively from modules:

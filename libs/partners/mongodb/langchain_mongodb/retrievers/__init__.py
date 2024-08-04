@@ -1,3 +1,9 @@
+"""Search Retrievers of various types.
+
+Use :class:`~langchain_mongodb.MongoDBAtlasVectorSearch` `.as_retriever(**)`
+to create MongoDB's core Vector Search Retriever.
+"""
+
 from langchain_mongodb.retrievers.full_text_search import (
     MongoDBAtlasFullTextSearchRetriever,
 )
