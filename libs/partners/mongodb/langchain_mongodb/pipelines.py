@@ -1,4 +1,11 @@
-"""Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Search"""
+"""Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Search
+
+See the following for more:
+    - `Full-Text Search <https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search>`
+    - `MongoDB Operators <https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref>`
+    - `Vector Search <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/>`
+    - `Filter Example <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`
+"""
 
 from typing import Any, Dict, List, Optional, TypeVar
 
@@ -26,11 +33,6 @@ def text_search_stage(
 
     Returns:
         Dictionary defining the $search stage
-
-    See Also:
-        - MongoDB Full-Text Search <https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search>
-        - MongoDB Operators <https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref>
-        - Filter Example <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>
     """
     pipeline = [
         {
@@ -72,7 +74,7 @@ def vector_search_stage(
         top_k: Number of documents to return
         oversampling_factor: this times limit is the number of candidates
         filter: List of MQL match expressions comparing an indexed field
-            See Filter Example: <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>
+            See `Filter Example: <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`
 
     Returns:
         Dictionary defining the $vectorSearch

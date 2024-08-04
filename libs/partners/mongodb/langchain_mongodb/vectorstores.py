@@ -79,6 +79,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             collection = mongo_client["<db_name>"]["<collection_name>"]
             embeddings = OpenAIEmbeddings()
             vectorstore = MongoDBAtlasVectorSearch(collection, embeddings)
+            documents = vectorstore.similarity_search("pymongo features")
     """
 
     def __init__(
@@ -221,9 +222,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
          Args:
             query: Input text of semantic query
-            k: Number of documents to return. Also know as top_k.
+            k: Number of documents to return. Also known as top_k.
             pre_filter: List of MQL match expressions comparing an indexed field
-                See `Filter Example <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`_.
             post_filter_pipeline: (Optional) Arbitrary pipeline of MongoDB
                 aggregation stages applied after the search is complete.
             oversampling_factor: This times k is the number of candidates chosen
@@ -267,7 +267,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
             query: Input text of semantic query
             k: (Optional) number of documents to return. Defaults to 4.
             pre_filter: List of MQL match expressions comparing an indexed field
-                See `Filter Example <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`_.
             post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
                 to filter/process results after $vectorSearch.
             oversampling_factor: Multiple of k used when generating number of candidates
@@ -352,7 +351,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         This is intended to be a quick way to get started.
 
-        See :class:`~MongoDBAtlasVectorSearch` for kwargs and further description.
+        See `MongoDBAtlasVectorSearch` for kwargs and further description.
 
 
         Example:
@@ -540,10 +539,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> None:
         """Creates a MongoDB Atlas vectorSearch index for the VectorStore
 
-        Note**: This method may fail as it requires a MongoDB Atlas with
-        these pre-requisites:
-            - M10 cluster or higher
-            - https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/#prerequisites
+        Note**: This method may fail as it requires a MongoDB Atlas with these
+        `pre-requisites <https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/#prerequisites>`.
+        Currently, vector and full-text search index operations need to be
+        performed manually on the Atlas UI for shared M0 clusters.
 
         Args:
             dimensions (int): Number of dimensions in embedding
