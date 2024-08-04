@@ -104,7 +104,7 @@ class EvaluatorCallbackHandler(BaseTracer):
     def _evaluate_in_project(self, run: Run, evaluator: langsmith.RunEvaluator) -> None:
         """Evaluate the run in the project.
 
-        Parameters
+        Args:
         ----------
         run : Run
             The run to be evaluated.
@@ -200,7 +200,7 @@ class EvaluatorCallbackHandler(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """Run the evaluator on the run.
 
-        Parameters
+        Args:
         ----------
         run : Run
             The run to be evaluated.

@@ -13,7 +13,7 @@ OUTPUT_NEW_DOCS_DIR = $(OUTPUT_NEW_DIR)/docs
 
 PYTHON = .venv/bin/python
 
-PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/pyproject.toml" \; -print | grep -vE "airbyte|ibm" | tr '\n' ' ')
+PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/pyproject.toml" \; -print | grep -vE "airbyte|ibm|couchbase" | tr '\n' ' ')
 
 PORT ?= 3001
 
@@ -38,7 +38,13 @@ generate-files:
 
 	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
 
+	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
+
 	$(PYTHON) scripts/document_loader_feat_table.py $(INTERMEDIATE_DIR)
+
+	$(PYTHON) scripts/kv_store_feat_table.py $(INTERMEDIATE_DIR)
+
+	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
 
@@ -63,10 +69,13 @@ render:
 md-sync:
 	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --include="*/_category_.yml" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
+append-related:
+	$(PYTHON) scripts/append_related_links.py $(OUTPUT_NEW_DOCS_DIR)
+
 generate-references:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)
 
-build: install-py-deps generate-files copy-infra render md-sync
+build: install-py-deps generate-files copy-infra render md-sync append-related
 
 vercel-build: install-vercel-deps build generate-references
 	rm -rf docs

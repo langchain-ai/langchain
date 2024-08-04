@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from time import sleep
-from typing import Any, Dict, List, Mapping, Optional, cast
+from time import monotonic, sleep
+from typing import Any, Dict, Generator, Iterable, List, Mapping, Optional, Union, cast
 
 from bson import ObjectId
 from langchain_core.callbacks.manager import (
@@ -24,24 +24,43 @@ from pymongo.results import DeleteResult, InsertManyResult
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.cache import MongoDBAtlasSemanticCache
 
+TIMEOUT = 120.0
+INTERVAL = 0.5
+
 
 class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
-    """Standard MongoDBAtlasVectorSearch
+    def bulk_embed_and_insert_texts(
+        self,
+        texts: Union[List[str], Iterable[str]],
+        metadatas: Union[List[dict], Generator[dict, Any, Any]],
+        ids: Optional[List[str]] = None,
+    ) -> List:
+        """Patched insert_texts that waits for data to be indexed before returning"""
+        ids_inserted = super().bulk_embed_and_insert_texts(texts, metadatas, ids)
+        start = monotonic()
+        while len(ids_inserted) != len(self.similarity_search("sandwich")) and (
+            monotonic() - start <= TIMEOUT
+        ):
+            sleep(INTERVAL)
+        return ids_inserted
 
-    Only change is that it waits for data to be indexed before returning.
-    """
-
-    timeout = 10.0
-    interval = 0.5
-
-    def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
-        ids = super()._insert_texts(texts, metadatas)
-        timeout = self.timeout
-        k = len(ids)
-        while k != len(self.similarity_search("sandwich", k=k)) and timeout >= 0:
-            sleep(self.interval)
-            timeout -= self.interval
-        return ids
+    def create_vector_search_index(
+        self,
+        dimensions: int,
+        filters: Optional[List[str]] = None,
+        update: bool = False,
+    ) -> None:
+        result = super().create_vector_search_index(
+            dimensions=dimensions, filters=filters, update=update
+        )
+        start = monotonic()
+        while monotonic() - start <= TIMEOUT:
+            if indexes := list(
+                self._collection.list_search_indexes(name=self._index_name)
+            ):
+                if indexes[0].get("status") == "READY":
+                    return result
+            sleep(INTERVAL)
 
 
 class ConsistentFakeEmbeddings(Embeddings):
