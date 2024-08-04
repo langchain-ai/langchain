@@ -17,7 +17,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
-import pypdf.errors
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
@@ -120,6 +119,7 @@ class PyPDFParser(BaseBlobParser):
                 )
 
         with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
+            import pypdf.errors
             try:
                 pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
             except pypdf.errors.PyPdfError as e:
