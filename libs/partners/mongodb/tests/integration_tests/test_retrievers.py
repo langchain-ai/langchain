@@ -30,7 +30,7 @@ INTERVAL = 0.5
 
 
 @pytest.fixture
-def example_documents():
+def example_documents() -> List[Document]:
     return [
         Document(page_content="In 2023, I visited Paris"),
         Document(page_content="In 2022, I visited New York"),
@@ -87,7 +87,7 @@ def collection() -> Collection:
 def test_hybrid_retriever(
     embedding_openai: Embeddings,
     collection: Collection,
-    example_documents,
+    example_documents: List[Document],
 ) -> None:
     """Test basic usage of MongoDBAtlasHybridSearchRetriever"""
 
@@ -149,7 +149,7 @@ def test_fulltext_retriever(
 def test_vector_retriever(
     embedding_openai: Embeddings,
     collection: Collection,
-    example_documents,
+    example_documents: List[Document],
 ) -> None:
     """Test VectorStoreRetriever"""
 

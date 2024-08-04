@@ -65,7 +65,7 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
             List of relevant documents
         """
 
-        pipeline = text_search_stage(
+        pipeline = text_search_stage(  # type: ignore
             query=query,
             search_field=self.search_field,
             index_name=self.search_index_name,

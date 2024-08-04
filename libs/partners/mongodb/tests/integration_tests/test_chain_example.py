@@ -44,7 +44,7 @@ def collection() -> Collection:
             dimensions=DIMENSIONS,
             path="embedding",
             similarity="cosine",
-            filters={},
+            filters=None,
             wait_until_complete=TIMEOUT,
         )
 
@@ -133,7 +133,7 @@ def test_chain(
     model = ChatOpenAI()
 
     chain = (
-        {"context": retriever, "question": RunnablePassthrough()}
+        {"context": retriever, "question": RunnablePassthrough()}  # type: ignore
         | prompt
         | model
         | StrOutputParser()

@@ -30,7 +30,7 @@ INTERVAL = 0.5
 
 
 @pytest.fixture
-def example_documents():
+def example_documents() -> List[Document]:
     return [
         Document(page_content="Dogs are tough.", metadata={"a": 1}),
         Document(page_content="Cats have fluff.", metadata={"b": 1}),
