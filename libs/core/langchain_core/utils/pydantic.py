@@ -214,10 +214,10 @@ def _create_subset_model_v2(
     for field_name in field_names:
         field = model.model_fields[field_name]  # type: ignore
         description = descriptions_.get(field_name, field.description)
-        fields[field_name] = (
-            field.annotation,
-            FieldInfo(description=description, default=field.default),
-        )
+        field_info = FieldInfo(description=description, default=field.default)
+        if "metadata" in field:
+            field_info.metadata = field.metadata
+        fields[field_name] = (field.annotation, field_info)
     rtn = create_model(name, **fields)  # type: ignore
 
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
