@@ -111,28 +111,10 @@ class VectorStore(ABC):
                     "The number of metadatas must match the number of texts."
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
-
-            if "ids" in kwargs:
-                ids = kwargs["ids"]
-                if not isinstance(ids, Sequence):
-                    raise TypeError(
-                        "If ids are provided, they must be a list or tuple of strings."
-                        f"Got type ({type(ids)})."
-                    )
-
-                if ids and len(ids) != len(texts_):
-                    raise ValueError(
-                        "The number of ids must match the number of texts."
-                        f"Got {len(ids)} ids and {len(texts_)} texts."
-                    )
-            else:
-                ids = None
-
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
-            ids_: Iterable[Union[str, None]] = ids if ids is not None else cycle([None])
             docs = [
-                Document(page_content=text, metadata=metadata_, id=id_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
+                Document(page_content=text, metadata=metadata_)
+                for text, metadata_, id_ in zip(texts, metadatas_)
             ]
 
             return self.add_documents(docs, **kwargs)
@@ -460,28 +442,11 @@ class VectorStore(ABC):
                     "The number of metadatas must match the number of texts."
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
-
-            if "ids" in kwargs:
-                ids = kwargs["ids"]
-                if not isinstance(ids, Sequence):
-                    raise TypeError(
-                        "If ids are provided, they must be a list or tuple of strings."
-                        f"Got type ({type(ids)})."
-                    )
-
-                if ids and len(ids) != len(texts_):
-                    raise ValueError(
-                        "The number of ids must match the number of texts."
-                        f"Got {len(ids)} ids and {len(texts_)} texts."
-                    )
-            else:
-                ids = None
-
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
-            ids_: Iterable[Union[str, None]] = ids if ids is not None else cycle([None])
+
             docs = [
-                Document(page_content=text, metadata=metadata_, id=id_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
+                Document(page_content=text, metadata=metadata_)
+                for text, metadata_ in zip(texts, metadatas_)
             ]
 
             return await self.aadd_documents(docs, **kwargs)
@@ -548,7 +513,7 @@ class VectorStore(ABC):
             metadatas = [doc.metadata for doc in documents]
             return await self.aadd_texts(texts, metadatas, **kwargs)
 
-        return run_in_executor(None, self.add_documents, documents, **kwargs)
+        return await run_in_executor(None, self.add_documents, documents, **kwargs)
 
     def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
         """Return docs most similar to query using a specified search type.

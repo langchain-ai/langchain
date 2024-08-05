@@ -55,20 +55,11 @@ class InMemoryVectorStore(VectorStore):
     async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         self.delete(ids)
 
-    def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        # One of the kwargs should be `ids` which is a list of ids
-        # associated with the texts.
-        # This is not yet enforced in the type signature for backwards compatibility
-        # with existing implementations.
-        ids: List[str] = None,
-        **kwargs: Any,
+    def add_documents(
+        self, documents: List[Document], ids: Optional[List[str]] = None, **kwargs: Any
     ) -> List[str]:
-        if not isinstance(texts, Sequence):
-            texts = list(texts)
-
+        """Add documents to the store."""
+        texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
         if ids and len(ids) != len(texts):
@@ -77,27 +68,52 @@ class InMemoryVectorStore(VectorStore):
                 f"Got {len(ids)} ids and {len(texts)} texts."
             )
 
-        ids_ = ids or [str(uuid.uuid4()) for _ in range(len(texts))]
+        id_iterator = iter(ids) if ids else iter(doc.id for doc in documents)
 
-        for doc_id, text, metadata, vector in zip(
-            ids_, texts, metadatas or [], vectors
-        ):
-            ids_.append(doc_id)
-            self.store[doc_id] = {
-                "id": doc_id,
+        ids_ = []
+
+        for doc, vector in zip(documents, vectors):
+            doc_id = next(id_iterator)
+            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            ids_.append(doc_id_)
+            self.store[doc_id_] = {
+                "id": doc_id_,
                 "vector": vector,
-                "text": text,
-                "metadata": metadata,
+                "text": doc.page_content,
+                "metadata": doc.metadata,
             }
+
         return ids_
 
-    async def aadd_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
+    async def aadd_documents(
+        self, documents: List[Document], ids: Optional[List[str]] = None, **kwargs: Any
     ) -> List[str]:
-        return self.add_texts(texts, metadatas, **kwargs)
+        """Add documents to the store."""
+        texts = [doc.page_content for doc in documents]
+        vectors = await self.embedding.aembed_documents(texts)
+
+        if ids and len(ids) != len(texts):
+            raise ValueError(
+                f"ids must be the same length as texts. "
+                f"Got {len(ids)} ids and {len(texts)} texts."
+            )
+
+        id_iterator = iter(ids) if ids else iter(doc.id for doc in documents)
+
+        ids_ = []
+
+        for doc, vector in zip(documents, vectors):
+            doc_id = next(id_iterator)
+            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            ids_.append(doc_id_)
+            self.store[doc_id_] = {
+                "id": doc_id_,
+                "vector": vector,
+                "text": doc.page_content,
+                "metadata": doc.metadata,
+            }
+
+        return ids_
 
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         """Get documents by their ids.
@@ -133,6 +149,36 @@ class InMemoryVectorStore(VectorStore):
     )
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         vectors = self.embedding.embed_documents([item.page_content for item in items])
+        ids = []
+        for item, vector in zip(items, vectors):
+            doc_id = item.id if item.id else str(uuid.uuid4())
+            ids.append(doc_id)
+            self.store[doc_id] = {
+                "id": doc_id,
+                "vector": vector,
+                "text": item.page_content,
+                "metadata": item.metadata,
+            }
+        return {
+            "succeeded": ids,
+            "failed": [],
+        }
+
+    @deprecated(
+        alternative="VectorStore.aadd_documents",
+        message=(
+            "This was a beta API that was added in 0.2.11. "
+            "It'll be removed in 0.3.0."
+        ),
+        since="0.2.29",
+        removal="0.3.0",
+    )
+    async def aupsert(
+        self, items: Sequence[Document], /, **kwargs: Any
+    ) -> UpsertResponse:
+        vectors = await self.embedding.aembed_documents(
+            [item.page_content for item in items]
+        )
         ids = []
         for item, vector in zip(items, vectors):
             doc_id = item.id if item.id else str(uuid.uuid4())
