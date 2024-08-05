@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,7 +8,6 @@ from langsmith import Client, traceable
 from langsmith.run_helpers import tracing_context
 
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
-from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tracers.langchain import LangChainTracer
 
 
@@ -219,8 +218,15 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
     def my_child_function(a: int) -> int:
         return a + 2
 
-    def other_thing(a: int) -> int:
-        return a + 1
+    if method.startswith("a"):
+
+        async def other_thing(a: int) -> AsyncGenerator[int, None]:
+            yield 1
+
+    else:
+
+        def other_thing(a: int) -> Generator[int, None, None]:
+            yield 1
 
     parallel = RunnableParallel(
         chain_result=my_child_function.with_config(tags=["atag"]),
@@ -237,14 +243,14 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
     if method.startswith("a"):
 
         @RunnableLambda  # type: ignore
-        async def parent(a: int, *, config: Optional[RunnableConfig] = None) -> int:
-            return await sequence.ainvoke(a, config)
+        async def parent(a: int) -> int:
+            return await sequence.ainvoke(a)
 
     else:
 
         @RunnableLambda
-        def parent(a: int, *, config: Optional[RunnableConfig] = None) -> int:
-            return sequence.invoke(a, config)
+        def parent(a: int) -> int:
+            return sequence.invoke(a)
 
     # Now run the chain and check the resulting posts
     cb = [tracer]
