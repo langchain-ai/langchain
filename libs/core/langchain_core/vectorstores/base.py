@@ -114,7 +114,7 @@ class VectorStore(ABC):
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
             docs = [
                 Document(page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_)
+                for text, metadata_ in zip(texts, metadatas_)
             ]
 
             return self.add_documents(docs, **kwargs)
