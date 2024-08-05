@@ -61,7 +61,7 @@ class InMemoryVectorStore(VectorStore):
     def add_documents(
         self,
         documents: List[Document],
-        ids: Optional[List[Optional[str]]] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add documents to the store."""
@@ -94,7 +94,7 @@ class InMemoryVectorStore(VectorStore):
         return ids_
 
     async def aadd_documents(
-        self, documents: List[Document], ids: List[str] = None, **kwargs: Any
+        self, documents: List[Document], ids: Optional[List[str]] = None, **kwargs: Any
     ) -> List[str]:
         """Add documents to the store."""
         texts = [doc.page_content for doc in documents]

@@ -1,6 +1,5 @@
 """Test suite to test vectostores."""
 
-import inspect
 from abc import abstractmethod
 
 import pytest
@@ -363,7 +362,9 @@ class AsyncReadWriteTestSuite(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    async def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
+    async def test_add_documents_with_existing_ids(
+        self, vectorstore: VectorStore
+    ) -> None:
         """Test that add_documentsing with existing IDs is idempotent."""
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
