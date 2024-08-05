@@ -530,8 +530,6 @@ class DocumentIndex(BaseRetriever):
             UpsertResponse: A response object that contains the list of IDs that were
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
-
-        .. versionadded:: 0.2.29
         """
 
     async def aupsert(
@@ -555,8 +553,6 @@ class DocumentIndex(BaseRetriever):
             UpsertResponse: A response object that contains the list of IDs that were
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
-
-        .. versionadded:: 0.2.29
         """
         return await run_in_executor(
             None,
@@ -630,8 +626,6 @@ class DocumentIndex(BaseRetriever):
 
         Returns:
             List[Document]: List of documents that were found.
-
-        .. versionadded:: 0.2.29
         """
 
     async def aget(
@@ -658,8 +652,6 @@ class DocumentIndex(BaseRetriever):
 
         Returns:
             List[Document]: List of documents that were found.
-
-        .. versionadded:: 0.2.29
         """
         return await run_in_executor(
             None,
