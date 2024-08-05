@@ -285,10 +285,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
-    def test_tool_message_histories_string_content(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with string tool contents
         (e.g. OpenAI).
