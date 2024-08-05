@@ -597,13 +597,7 @@ class Milvus(VectorStore):
             if metadatas is not None:
                 for d in metadatas:
                     for key, value in d.items():
-                        keys = (
-                            [x for x in self.fields if x != self._primary_field]
-                            if self.auto_id
-                            else [x for x in self.fields]
-                        )
-                        if key in keys:
-                            insert_dict.setdefault(key, []).append(value)
+                        insert_dict.setdefault(key, []).append(value)
 
         # Total insert count
         vectors: list = insert_dict[self._vector_field]
@@ -616,9 +610,11 @@ class Milvus(VectorStore):
             # Grab end index
             end = min(i + batch_size, total_count)
             # Convert dict to list of lists batch for insertion
-            insert_list = [
-                insert_dict[x][i:end] for x in self.fields if x in insert_dict
-            ]
+            insert_list = (
+                [insert_dict[x][i:end] for x in self.fields if x != self._primary_field]
+                if self.auto_id
+                else [insert_dict[x][i:end] for x in self.fields]
+            )
             # Insert into the collection.
             try:
                 res: Collection
