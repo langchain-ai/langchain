@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "CONFIDENTIALITY AGREEMENT\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Company Name], located at [Company Address] (\"Company\"), and [Supplier Name], located at [Supplier Address] (\"Supplier\").\n\n1. Definition:\n\"Confidential Information\" means proprietary data of the Company, excluding:\n\n    Pre-disclosed or publicly known data.\n    Info from third parties without confidentiality bounds.\n\n2. Obligations:\nSupplier will:\n\n    Use Confidential Information solely for business purposes with the Company.\n    Protect its secrecy and prevent unauthorized disclosure.\n    Return or destroy all Confidential Information upon request or business completion.\n\n3. Duration:\nObligations last for [e.g., \"two years\"] from disclosure date.\n\n4. Remedies:\nBreaches may result in legal actions, damages, and costs by the Company.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: OBLIGATIONS UPON TERMINATION\n\nPertaining to the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Return of Property:\nUpon termination, each party shall promptly return to the other all property, materials, and assets belonging to the other party, unless otherwise specified in the Agreement.\n\n2. Confidential Information:\nBoth parties shall continue to abide by any confidentiality obligations set forth in the Agreement. Any confidential information must be returned or destroyed, as instructed by the owning party.\n\n3. Outstanding Payments:\nAll due payments must be settled within [e.g., \"14 days\"] of termination, as per the terms of the original Agreement.\n\n4. Non-Disparagement:\nBoth parties agree not to make any derogatory or disparaging statements about the other party post-termination.\n\n5. Survival of Provisions:\nAny provisions in the Agreement that, by their nature, should persist beyond termination (e.g., indemnity, liability, confidentiality) will continue to be in effect.\n\n6. Notifications:\nEach party must inform their respective stakeholders, if necessary, about the termination in a manner that maintains the goodwill and reputation of both parties.\n\n7. Transition Assistance:\nTo ensure a smooth transition, both parties agree to cooperate, as reasonably requested by the other, for a period of [e.g., \"30 days\"] after termination.\n\n8. Governing Law:\nThis Appendix is governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "IT SERVICES AGREEMENT\n\nEffective Date: [Date, e.g., \"August 15, 2023\"]\n\nParties:\n\n    [Client Name], located at [Client Address] (\"Client\")\n    [Service Provider Name], located at [Service Provider Address] (\"Provider\")\n\nScope of Work:\nProvider agrees to offer IT services, including [e.g., \"network setup, software installation, and routine maintenance\"], as detailed in Attachment A.\n\nPayment:\nClient shall pay Provider [e.g., \"$1,000\"] per month. Invoices will be sent monthly and are due within [e.g., \"30 days\"].\n\nDuration:\nThis Agreement starts on [Start Date] and ends on [End Date], unless terminated earlier.\n\nTermination:\nEither party may terminate with [e.g., \"30 days\"] written notice. Upon termination, any unpaid fees for services rendered become immediately due.\n\nConfidentiality:\nBoth parties agree to keep all business and technical information confidential.\n\nLimitation of Liability:\nProvider's liability is limited to the amount paid by the Client for the specific service causing damage.\n\nGoverning Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\nEntire Agreement:\nThis constitutes the full agreement between both parties."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "CONFIDENTIALITY AGREEMENT\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Company Name], located at [Company Address] (\"Company\"), and [Supplier Name], located at [Supplier Address] (\"Supplier\").\n\n1. Definition:\n\"Confidential Information\" means proprietary data of the Company, excluding:\n\n    Pre-disclosed or publicly known data.\n    Info from third parties without confidentiality bounds.\n\n2. Obligations:\nSupplier will:\n\n    Use Confidential Information solely for business purposes with the Company.\n    Protect its secrecy and prevent unauthorized disclosure.\n    Return or destroy all Confidential Information upon request or business completion.\n\n3. Duration:\nObligations last for [e.g., \"two years\"] from disclosure date.\n\n4. Remedies:\nBreaches may result in legal actions, damages, and costs by the Company.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: OBLIGATIONS UPON TERMINATION\n\nPertaining to the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Return of Property:\nUpon termination, each party shall promptly return to the other all property, materials, and assets belonging to the other party, unless otherwise specified in the Agreement.\n\n2. Confidential Information:\nBoth parties shall continue to abide by any confidentiality obligations set forth in the Agreement. Any confidential information must be returned or destroyed, as instructed by the owning party.\n\n3. Outstanding Payments:\nAll due payments must be settled within [e.g., \"14 days\"] of termination, as per the terms of the original Agreement.\n\n4. Non-Disparagement:\nBoth parties agree not to make any derogatory or disparaging statements about the other party post-termination.\n\n5. Survival of Provisions:\nAny provisions in the Agreement that, by their nature, should persist beyond termination (e.g., indemnity, liability, confidentiality) will continue to be in effect.\n\n6. Notifications:\nEach party must inform their respective stakeholders, if necessary, about the termination in a manner that maintains the goodwill and reputation of both parties.\n\n7. Transition Assistance:\nTo ensure a smooth transition, both parties agree to cooperate, as reasonably requested by the other, for a period of [e.g., \"30 days\"] after termination.\n\n8. Governing Law:\nThis Appendix is governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "IT SERVICES AGREEMENT\n\nEffective Date: [Date, e.g., \"August 15, 2023\"]\n\nParties:\n\n    [Client Name], located at [Client Address] (\"Client\")\n    [Service Provider Name], located at [Service Provider Address] (\"Provider\")\n\nScope of Work:\nProvider agrees to offer IT services, including [e.g., \"network setup, software installation, and routine maintenance\"], as detailed in Attachment A.\n\nPayment:\nClient shall pay Provider [e.g., \"$1,000\"] per month. Invoices will be sent monthly and are due within [e.g., \"30 days\"].\n\nDuration:\nThis Agreement starts on [Start Date] and ends on [End Date], unless terminated earlier.\n\nTermination:\nEither party may terminate with [e.g., \"30 days\"] written notice. Upon termination, any unpaid fees for services rendered become immediately due.\n\nConfidentiality:\nBoth parties agree to keep all business and technical information confidential.\n\nLimitation of Liability:\nProvider's liability is limited to the amount paid by the Client for the specific service causing damage.\n\nGoverning Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\nEntire Agreement:\nThis constitutes the full agreement between both parties."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "NON-DISCLOSURE AND NON-COMPETE AGREEMENT\n\nEffective Date: [Date]\n\nPARTIES:\n\n    Company: [Full Legal Name of Company], located at [Company Address].\n    Supplier: [Full Legal Name of Supplier], located at [Supplier Address].\n\n1. CONFIDENTIALITY:\n\nSupplier shall not disclose Company's confidential information, which includes business strategies, financial data, and customer details, to any third party. This confidentiality obligation lasts for [X years, e.g., \"5 years\"] from the date of disclosure.\n\n2. NON-COMPETITION:\n\nFor [X years, e.g., \"3 years\"] following the termination of their business relationship, Supplier agrees not to engage in or start any business that directly competes with Company within a [X mile/km radius, e.g., \"50-mile radius\"] of Company's primary business location.\n\n3. PENALTY FOR BREACH:\n\nShould Supplier breach this Agreement, they shall pay Company a penalty of [specific amount, e.g., \"$50,000\"], in addition to any other legal remedies available to Company.\n\n4. RETURN OF INFORMATION:\n\nUpon request, Supplier shall return or destroy all of Company's confidential information and confirm its deletion in writing.\n\n5. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\nAGREEMENT ACKNOWLEDGEMENT:\n\n__________ [Company] __________ [Supplier]",
+          "UNIVERSITY-BUSINESS COOPERATION AGREEMENT\n\nThis Cooperation Agreement (the \"Agreement\") is made and entered into on [Insert Date], by and between [Business Name], a [business type, e.g., \"corporation\"] located at [Business Address], hereinafter referred to as the \"Business', and [University Name], a higher education institution located at [University Address], hereinafter referred to as the \"University\".\n\n1. Objective:\n\nThe purpose of this Agreement is to define the terms under which the Business and the University will cooperate to [Objective e.g., \"jointly conduct research, promote innovation, and facilitate the exchange of knowledge in the field of _________\"].\n\n2. Scope of Cooperation:\n\na. Research Collaborations: Joint research initiatives, sharing of resources, and publications.\n\nb. Internships and Placements: Facilitation of student internships, projects, and job placements.\n\nc. Seminars and Workshops: Organizing joint seminars, conferences, and workshops.\n\nd. Facilities and Resource Sharing: Providing access to labs, equipment, libraries, etc.\n\n3. Intellectual Property:\n\nAll intellectual property developed jointly will be shared, and a separate agreement will detail the rights, ownership, and any revenue distribution.\n\n4. Funding and Resources:\n\nBoth parties agree to jointly contribute [Specify Amount or Percentage], and additional fund sourcing details will be determined on a project-by-project basis.\n\n5. Confidentiality:\n\nBoth parties agree to maintain the confidentiality of shared proprietary information.\n\n6. Duration and Termination:\n\nThis Agreement will remain in effect for [e.g., \"three years\"] from the date of signing, unless terminated earlier by either party with [e.g., \"30 days\"] written notice.\n\n7. Dispute Resolution:\n\nAny disputes arising from this Agreement will first attempt resolution through mediation. If unresolved, disputes will be subject to the jurisdiction of [State/Country].\n\n8. Amendments:\n\nChanges to this Agreement must be in writing and signed by both parties.\n\n9. Liability:\n\nEach party assumes responsibility for its actions and is not liable for the actions of the other party.\n\n10. Governing Law:\n\nThis Agreement is governed by the laws of [State/Country].\n\nIN WITNESS WHEREOF, both parties have executed this Agreement as of the date first mentioned above.",
+          "LABORATORY SUPPLY AGREEMENT\n\nDate: [Insert Date]\n\nParties:\n\n    Supplier: [Supplier Name], [Supplier Address]\n    University: [University Name], [University Address]\n\n1. Purpose: Supplier will provide goods as listed in Annex A to the University's laboratory.\n\n2. Delivery: Within [specific timeframe, e.g., \"30 days\"] to [specific lab address].\n\n3. Payment: University will pay within [e.g., \"30 days\"] of invoice receipt.\n\n4. Warranty: Goods are defect-free for [e.g., \"12 months\"] from delivery.\n\n5. Non-disclosure: University will not disclose Supplier\u2019s proprietary details for [e.g., \"5 years\"]. Breach will result in a penalty of [specific amount or formula, e.g., \"$5,000 per incident or actual damages, whichever is greater\"].\n\n6. Termination: [e.g., \"30 days\"] notice for breaches unresolved within said period.\n\n7. Law: Governed by [State/Country] laws.\n\n8. Amendments: Both parties must sign written changes.",
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n5. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n6. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n7. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n8. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "NON-DISCLOSURE AND NON-COMPETE AGREEMENT\n\nEffective Date: [Date]\n\nPARTIES:\n\n    Company: [Full Legal Name of Company], located at [Company Address].\n    Supplier: [Full Legal Name of Supplier], located at [Supplier Address].\n\n1. CONFIDENTIALITY:\n\nSupplier shall not disclose Company's confidential information, which includes business strategies, financial data, and customer details, to any third party. This confidentiality obligation lasts for [X years, e.g., \"5 years\"] from the date of disclosure.\n\n2. NON-COMPETITION:\n\nFor [X years, e.g., \"3 years\"] following the termination of their business relationship, Supplier agrees not to engage in or start any business that directly competes with Company within a [X mile/km radius, e.g., \"50-mile radius\"] of Company's primary business location.\n\n3. PENALTY FOR BREACH:\n\nShould Supplier breach this Agreement, they shall pay Company a penalty of [specific amount, e.g., \"$50,000\"], in addition to any other legal remedies available to Company.\n\n4. RETURN OF INFORMATION:\n\nUpon request, Supplier shall return or destroy all of Company's confidential information and confirm its deletion in writing.\n\n5. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\nAGREEMENT ACKNOWLEDGEMENT:\n\n__________ [Company] __________ [Supplier]",
+          "UNIVERSITY-BUSINESS COOPERATION AGREEMENT\n\nThis Cooperation Agreement (the \"Agreement\") is made and entered into on [Insert Date], by and between [Business Name], a [business type, e.g., \"corporation\"] located at [Business Address], hereinafter referred to as the \"Business', and [University Name], a higher education institution located at [University Address], hereinafter referred to as the \"University\".\n\n1. Objective:\n\nThe purpose of this Agreement is to define the terms under which the Business and the University will cooperate to [Objective e.g., \"jointly conduct research, promote innovation, and facilitate the exchange of knowledge in the field of _________\"].\n\n2. Scope of Cooperation:\n\na. Research Collaborations: Joint research initiatives, sharing of resources, and publications.\n\nb. Internships and Placements: Facilitation of student internships, projects, and job placements.\n\nc. Seminars and Workshops: Organizing joint seminars, conferences, and workshops.\n\nd. Facilities and Resource Sharing: Providing access to labs, equipment, libraries, etc.\n\n3. Intellectual Property:\n\nAll intellectual property developed jointly will be shared, and a separate agreement will detail the rights, ownership, and any revenue distribution.\n\n4. Funding and Resources:\n\nBoth parties agree to jointly contribute [Specify Amount or Percentage], and additional fund sourcing details will be determined on a project-by-project basis.\n\n5. Confidentiality:\n\nBoth parties agree to maintain the confidentiality of shared proprietary information.\n\n6. Duration and Termination:\n\nThis Agreement will remain in effect for [e.g., \"three years\"] from the date of signing, unless terminated earlier by either party with [e.g., \"30 days\"] written notice.\n\n7. Dispute Resolution:\n\nAny disputes arising from this Agreement will first attempt resolution through mediation. If unresolved, disputes will be subject to the jurisdiction of [State/Country].\n\n8. Amendments:\n\nChanges to this Agreement must be in writing and signed by both parties.\n\n9. Liability:\n\nEach party assumes responsibility for its actions and is not liable for the actions of the other party.\n\n10. Governing Law:\n\nThis Agreement is governed by the laws of [State/Country].\n\nIN WITNESS WHEREOF, both parties have executed this Agreement as of the date first mentioned above.",
+          "LABORATORY SUPPLY AGREEMENT\n\nDate: [Insert Date]\n\nParties:\n\n    Supplier: [Supplier Name], [Supplier Address]\n    University: [University Name], [University Address]\n\n1. Purpose: Supplier will provide goods as listed in Annex A to the University's laboratory.\n\n2. Delivery: Within [specific timeframe, e.g., \"30 days\"] to [specific lab address].\n\n3. Payment: University will pay within [e.g., \"30 days\"] of invoice receipt.\n\n4. Warranty: Goods are defect-free for [e.g., \"12 months\"] from delivery.\n\n5. Non-disclosure: University will not disclose Supplier\u2019s proprietary details for [e.g., \"5 years\"]. Breach will result in a penalty of [specific amount or formula, e.g., \"$5,000 per incident or actual damages, whichever is greater\"].\n\n6. Termination: [e.g., \"30 days\"] notice for breaches unresolved within said period.\n\n7. Law: Governed by [State/Country] laws.\n\n8. Amendments: Both parties must sign written changes.",
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n5. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n6. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n7. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n8. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

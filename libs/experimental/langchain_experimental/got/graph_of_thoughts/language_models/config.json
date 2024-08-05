@@ -1,0 +1,42 @@
+{
+    "chatgpt" : {
+        "model_id": "gpt-4o",
+        "prompt_token_cost": 0.0015,
+        "response_token_cost": 0.002,
+        "temperature": 1.0,
+        "max_tokens": 1536,
+        "stop": null,
+        "organization": "",
+        "api_key": ""
+    },
+    "mixtral-8x22b-instruct" : {
+        "model_id": "ai-mixtral-8x22b-instruct",
+        "prompt_token_cost": 0.0,
+        "response_token_cost": 0.0,
+        "temperature": 1,
+        "top_p": "",
+        "max_tokens": 2048
+    },
+    "llama3-70b-instruct" : {
+        "model_id": "meta/llama3-70b-instruct",
+        "prompt_token_cost": 0.0,
+        "response_token_cost": 0.0,
+        "temperature": 1,
+        "top_p": "",
+        "max_tokens": 2048
+    },
+    "gpt-4o-2024-05-13" : {
+        "model_id": "gpt-4o-2024-05-13",
+        "prompt_token_cost": 0.0,
+        "response_token_cost": 0.0,
+        "temperature": 1,
+        "max_tokens": 2048
+    },
+    "gpt-3.5-turbo-0125" : {
+        "model_id": "gpt-3.5-turbo-0125",
+        "prompt_token_cost": 0.0,
+        "response_token_cost": 0.0,
+        "temperature": 1,
+        "max_tokens": 2048
+    }
+}

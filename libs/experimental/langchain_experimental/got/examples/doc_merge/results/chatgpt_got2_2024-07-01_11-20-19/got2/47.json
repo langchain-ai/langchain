@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO CONTRACT: FEES FOR LATE DELIVERY\n\nThis Amendment is made on [Date], and amends the Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Agreement as follows:\n\nSection [Specific Section Number, e.g., \"3\"] - Fees for Late Delivery\n\na. If Business A/B fails to deliver the products/services by the agreed-upon deadline, a late fee of [Specific Amount or Percentage, e.g., \"$100\" or \"5% of the total contract value\"] shall be applied for each [time period, e.g., \"day\"] of delay.\n\nb. The total late fees shall not exceed [Specific Maximum Amount or Percentage, e.g., \"$1,000\" or \"20% of the total contract value\"].\n\nc. The fees will be deducted from the final payment or invoiced separately, as deemed appropriate by the non-defaulting party.\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"].",
+          "APPENDIX: OBLIGATIONS UPON TERMINATION\n\nPertaining to the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Return of Property:\nUpon termination, each party shall promptly return to the other all property, materials, and assets belonging to the other party, unless otherwise specified in the Agreement.\n\n2. Confidential Information:\nBoth parties shall continue to abide by any confidentiality obligations set forth in the Agreement. Any confidential information must be returned or destroyed, as instructed by the owning party.\n\n3. Outstanding Payments:\nAll due payments must be settled within [e.g., \"14 days\"] of termination, as per the terms of the original Agreement.\n\n4. Non-Disparagement:\nBoth parties agree not to make any derogatory or disparaging statements about the other party post-termination.\n\n5. Survival of Provisions:\nAny provisions in the Agreement that, by their nature, should persist beyond termination (e.g., indemnity, liability, confidentiality) will continue to be in effect.\n\n6. Notifications:\nEach party must inform their respective stakeholders, if necessary, about the termination in a manner that maintains the goodwill and reputation of both parties.\n\n7. Transition Assistance:\nTo ensure a smooth transition, both parties agree to cooperate, as reasonably requested by the other, for a period of [e.g., \"30 days\"] after termination.\n\n8. Governing Law:\nThis Appendix is governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "LOYALTY AGREEMENT\n\nThis Agreement (\"Agreement\") is made as of [Date, e.g., \"August 15, 2023\"], between:\n\n    [Party A Name], with its principal office at [Party A Address] (\"Party A\"),\n    [Party B Name], with its principal office at [Party B Address] (\"Party B\").\n\nPurpose:\nThe parties wish to collaborate and establish a loyal relationship in their joint business endeavors.\n\n1. Loyalty Commitment:\n\na) Both parties commit to act in good faith and refrain from engaging in any activity or partnership that might conflict with the interests of the other party during the term of this Agreement.\n\nb) Neither party shall assist, collaborate, or engage with third parties that may cause harm or disrepute to the other party.\n\nc) Each party shall prioritize the other's interests in situations where opportunities arise from their collaboration.\n\n2. Non-Solicitation:\nDuring the term of this Agreement, and for [e.g., \"one year\"] thereafter, neither party shall solicit or attempt to entice away any clients, customers, or employees of the other party.\n\n3. Duration:\nThis Agreement will begin on the Effective Date and remain in effect for [e.g., \"two years\"] unless terminated earlier by mutual consent.\n\n4. Termination:\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term herein.\n\n5. Confidentiality:\nBoth parties agree to maintain the confidentiality of all proprietary or non-public information obtained during the collaboration.\n\n6. Governing Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\n7. Entire Agreement:\nThis document constitutes the full understanding between both parties, superseding all prior discussions, agreements, or understandings."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO CONTRACT: FEES FOR LATE DELIVERY\n\nThis Amendment is made on [Date], and amends the Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Agreement as follows:\n\nSection [Specific Section Number, e.g., \"3\"] - Fees for Late Delivery\n\na. If Business A/B fails to deliver the products/services by the agreed-upon deadline, a late fee of [Specific Amount or Percentage, e.g., \"$100\" or \"5% of the total contract value\"] shall be applied for each [time period, e.g., \"day\"] of delay.\n\nb. The total late fees shall not exceed [Specific Maximum Amount or Percentage, e.g., \"$1,000\" or \"20% of the total contract value\"].\n\nc. The fees will be deducted from the final payment or invoiced separately, as deemed appropriate by the non-defaulting party.\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"].",
+          "APPENDIX: OBLIGATIONS UPON TERMINATION\n\nPertaining to the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Return of Property:\nUpon termination, each party shall promptly return to the other all property, materials, and assets belonging to the other party, unless otherwise specified in the Agreement.\n\n2. Confidential Information:\nBoth parties shall continue to abide by any confidentiality obligations set forth in the Agreement. Any confidential information must be returned or destroyed, as instructed by the owning party.\n\n3. Outstanding Payments:\nAll due payments must be settled within [e.g., \"14 days\"] of termination, as per the terms of the original Agreement.\n\n4. Non-Disparagement:\nBoth parties agree not to make any derogatory or disparaging statements about the other party post-termination.\n\n5. Survival of Provisions:\nAny provisions in the Agreement that, by their nature, should persist beyond termination (e.g., indemnity, liability, confidentiality) will continue to be in effect.\n\n6. Notifications:\nEach party must inform their respective stakeholders, if necessary, about the termination in a manner that maintains the goodwill and reputation of both parties.\n\n7. Transition Assistance:\nTo ensure a smooth transition, both parties agree to cooperate, as reasonably requested by the other, for a period of [e.g., \"30 days\"] after termination.\n\n8. Governing Law:\nThis Appendix is governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "LOYALTY AGREEMENT\n\nThis Agreement (\"Agreement\") is made as of [Date, e.g., \"August 15, 2023\"], between:\n\n    [Party A Name], with its principal office at [Party A Address] (\"Party A\"),\n    [Party B Name], with its principal office at [Party B Address] (\"Party B\").\n\nPurpose:\nThe parties wish to collaborate and establish a loyal relationship in their joint business endeavors.\n\n1. Loyalty Commitment:\n\na) Both parties commit to act in good faith and refrain from engaging in any activity or partnership that might conflict with the interests of the other party during the term of this Agreement.\n\nb) Neither party shall assist, collaborate, or engage with third parties that may cause harm or disrepute to the other party.\n\nc) Each party shall prioritize the other's interests in situations where opportunities arise from their collaboration.\n\n2. Non-Solicitation:\nDuring the term of this Agreement, and for [e.g., \"one year\"] thereafter, neither party shall solicit or attempt to entice away any clients, customers, or employees of the other party.\n\n3. Duration:\nThis Agreement will begin on the Effective Date and remain in effect for [e.g., \"two years\"] unless terminated earlier by mutual consent.\n\n4. Termination:\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term herein.\n\n5. Confidentiality:\nBoth parties agree to maintain the confidentiality of all proprietary or non-public information obtained during the collaboration.\n\n6. Governing Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\n7. Entire Agreement:\nThis document constitutes the full understanding between both parties, superseding all prior discussions, agreements, or understandings."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

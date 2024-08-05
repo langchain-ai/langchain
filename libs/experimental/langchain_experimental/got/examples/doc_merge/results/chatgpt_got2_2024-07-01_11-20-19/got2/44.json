@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Party A: [Full Legal Name of Party A], located at [Party A Address].\n    Party B: [Full Legal Name of Party B], located at [Party B Address].\n\n1. LOYALTY COMMITMENT:\n\nBoth parties acknowledge the mutual value of their business relationship. They commit to work in good faith, ensuring a collaborative environment that prioritizes trust, loyalty, and shared objectives.\n\n2. NON-POACHING OF EMPLOYEES:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 12 months following its termination\"], neither Party A nor Party B shall, without the prior written consent of the other party:\n\na. Directly or indirectly solicit, induce, or encourage any employees of the other party to terminate their employment or to engage in employment or other services elsewhere.\nb. Hire, employ, or contract the services of any employee of the other party who has been employed by the said party within the last 12 months.\n\n3. BREACH:\n\nAny violation of the clauses in this Agreement will be deemed a material breach and may result in legal action or other remedies as available by law.\n\n4. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n5. AMENDMENTS:\n\nAny modifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Loyalty Agreement.",
+          "APPENDIX B \u2013 CHANGE IN TIME OF DELIVERY\n\nThis Appendix is an addendum to the contract (the \"Contract\") dated [Original Contract Date], entered into between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party\". The purpose of this Appendix is to amend and modify the delivery time as specified in the original Contract.\n\n    Original Delivery Time: As per the terms of the original Contract, the delivery time was set for [Original Delivery Date, e.g., \"September 15, 2023\"].\n\n    Revised Delivery Time: The Parties, through mutual agreement, have now decided to amend the delivery time. The new delivery date shall be [Revised Delivery Date, e.g., \"October 10, 2023\"].\n\n    Reason for Change: [Provide a brief explanation for the change in delivery time, e.g., \"Due to unforeseen challenges in the production process, additional time is required to ensure that the deliverables meet the agreed-upon quality standards.\"]\n\n    Consequences of Delay: Unless otherwise stated in the main body of the Contract:\n\n    a. If the Second Party fails to meet the revised delivery time, penalties or consequences as outlined in the original Contract for late delivery will apply from the revised delivery date.\n\n    b. All other terms related to late delivery, including but not limited to penalties, refunds, or rights to terminate, remain effective and unchanged by this Appendix.\n\n    Prevailing Terms: All other terms and conditions of the original Contract not specifically amended by this Appendix shall remain in full force and effect. In the event of any inconsistency or conflict between the original Contract and this Appendix, the terms of this Appendix shall prevail with respect to the change in the delivery time.\n\n    Acknowledgment: By signing this Appendix, the Parties acknowledge and agree to the revised delivery time and any associated consequences of delays.\n\nThis Appendix is executed as an acknowledgment and agreement to the revised delivery time and shall be considered an integral part of the original Contract.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Date, e.g., \"August 15, 2023\"], between [Client Name], (\"Client\") and [Business Name], (\"Business\").\n\nPurpose:\nProtection of confidential information exchanged due to potential collaboration.\n\n1. Confidentiality:\nBusiness agrees to keep secret all Confidential Information shared by Client.\n\n2. Definition:\n\"Confidential Information\" is non-public data shared by either party, excluding info that's publicly available, already known, or received without confidentiality constraints.\n\n3. Duration:\nObligations last [e.g., \"two years\"] from the date of disclosure.\n\n4. Return/Destruction:\nUpon Client's request, Business will return or destroy all Confidential Information.\n\n5. Remedies:\nUnauthorized disclosures may lead to legal action by Client, including damages.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Party A: [Full Legal Name of Party A], located at [Party A Address].\n    Party B: [Full Legal Name of Party B], located at [Party B Address].\n\n1. LOYALTY COMMITMENT:\n\nBoth parties acknowledge the mutual value of their business relationship. They commit to work in good faith, ensuring a collaborative environment that prioritizes trust, loyalty, and shared objectives.\n\n2. NON-POACHING OF EMPLOYEES:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 12 months following its termination\"], neither Party A nor Party B shall, without the prior written consent of the other party:\n\na. Directly or indirectly solicit, induce, or encourage any employees of the other party to terminate their employment or to engage in employment or other services elsewhere.\nb. Hire, employ, or contract the services of any employee of the other party who has been employed by the said party within the last 12 months.\n\n3. BREACH:\n\nAny violation of the clauses in this Agreement will be deemed a material breach and may result in legal action or other remedies as available by law.\n\n4. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n5. AMENDMENTS:\n\nAny modifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Loyalty Agreement.",
+          "APPENDIX B \u2013 CHANGE IN TIME OF DELIVERY\n\nThis Appendix is an addendum to the contract (the \"Contract\") dated [Original Contract Date], entered into between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party\". The purpose of this Appendix is to amend and modify the delivery time as specified in the original Contract.\n\n    Original Delivery Time: As per the terms of the original Contract, the delivery time was set for [Original Delivery Date, e.g., \"September 15, 2023\"].\n\n    Revised Delivery Time: The Parties, through mutual agreement, have now decided to amend the delivery time. The new delivery date shall be [Revised Delivery Date, e.g., \"October 10, 2023\"].\n\n    Reason for Change: [Provide a brief explanation for the change in delivery time, e.g., \"Due to unforeseen challenges in the production process, additional time is required to ensure that the deliverables meet the agreed-upon quality standards.\"]\n\n    Consequences of Delay: Unless otherwise stated in the main body of the Contract:\n\n    a. If the Second Party fails to meet the revised delivery time, penalties or consequences as outlined in the original Contract for late delivery will apply from the revised delivery date.\n\n    b. All other terms related to late delivery, including but not limited to penalties, refunds, or rights to terminate, remain effective and unchanged by this Appendix.\n\n    Prevailing Terms: All other terms and conditions of the original Contract not specifically amended by this Appendix shall remain in full force and effect. In the event of any inconsistency or conflict between the original Contract and this Appendix, the terms of this Appendix shall prevail with respect to the change in the delivery time.\n\n    Acknowledgment: By signing this Appendix, the Parties acknowledge and agree to the revised delivery time and any associated consequences of delays.\n\nThis Appendix is executed as an acknowledgment and agreement to the revised delivery time and shall be considered an integral part of the original Contract.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Date, e.g., \"August 15, 2023\"], between [Client Name], (\"Client\") and [Business Name], (\"Business\").\n\nPurpose:\nProtection of confidential information exchanged due to potential collaboration.\n\n1. Confidentiality:\nBusiness agrees to keep secret all Confidential Information shared by Client.\n\n2. Definition:\n\"Confidential Information\" is non-public data shared by either party, excluding info that's publicly available, already known, or received without confidentiality constraints.\n\n3. Duration:\nObligations last [e.g., \"two years\"] from the date of disclosure.\n\n4. Return/Destruction:\nUpon Client's request, Business will return or destroy all Confidential Information.\n\n5. Remedies:\nUnauthorized disclosures may lead to legal action by Client, including damages.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

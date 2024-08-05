@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "EMPLOYEE LOYALTY AGREEMENT\n\nThis agreement is entered into by [Company Name] and [Employee Name] to protect the company's business interests, goodwill, and confidential information, and affirm employee's loyalty. \n\n1. Non-disclosure: Employee agrees to not disclose or use company's confidential information, during or post-employment. \n\n2. Non-competition: Employee will not work for or establish a competitor within [e.g., \"50\"] miles from the company for [e.g., \"12\"] months post-employment.\n\n3. Non-solicitation: Employee will not solicit clients or employees of the company for [e.g., \"12\"] months post-employment.\n\n4. Return of Property: Employee will return all company property upon termination.\n\n5. Remedies: Company can seek injunction for a breach or potential breach of this agreement.\n\n6. Severability: If any provision of this agreement is held invalid, the remainder of the Agreement will continue.\n\n7. Governing Law: This agreement will be governed by the laws of [State, e.g., \"California\"].\n\n8. Agreement: This is the entire agreement and supersedes prior negotiations.\n\n9. Amendments: Any changes must be in writing and signed by both parties.\n\nSignatures of both parties indicate agreement to these terms.\n\n[Company Name] - Authorized Signatory [Employee Name]",
+          "This Loyalty Agreement is between [Company Name] and [Contractor Company Name]. The Agreement ensures the Contractor's loyalty and confidentiality towards the Company during and post engagement. Contractor agrees not to use or disclose the Company's confidential information, or engage in competing business or solicitation for a period of [e.g., \"12\"] months post termination. Contractor must return all Company property upon termination. In case of breach, Company can seek legal remedies including injunction. The Agreement remains valid even if a provision is held invalid. The Agreement follows [State, e.g., \"California\"] laws and replaces all previous understandings. It can be amended only in writing with both parties' signature.",
+          "The Non-Disclosure Agreement (NDA) dated [Date] is between [Company], based in [Country/State], and [Supplier], also incorporated in [Country/State]. The Company intends to disclose confidential information to the Supplier for [purpose]. This confidential data can include business strategies, financial data, customer information, and product designs. The Supplier agrees to refrain from sharing this information, barring any legal requirements. Exceptions to this confidentiality are in cases where the information becomes public or was already known by the Supplier before the Company's disclosure. If the Supplier breaches this agreement, they face a financial penalty of [$]. The NDA is valid for [X years], unless the Company provides written termination. Upon the Company's request, the Supplier must return or destroy all copies of Confidential Information. This agreement supersedes previous agreements and can only be altered by a written document approved by both parties. The NDA is governed by the laws of [specific country/state].",
+          "DATA ANALYSIS EMPLOYEE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Employee Name], an individual residing at [Employee Address], herein referred to as the \"Employee.\"\n\n    Position and Duties:\n    a. The Company hereby employs Employee in the capacity of Data Analyst.\n    b. The Employee's primary duties will be to [specific data analysis tasks, e.g., \"analyze sales data, forecast trends, and produce reports for managerial review\"].\n\n    Term: The Employee's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Employee under this Agreement, the Company will pay Employee a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Employee agrees not to disclose or use, either during or after the term of employment, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of performing their duties for the Company.\n\n    Intellectual Property: Any works, developments, or inventions created by the Employee in the course of this employment related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Employee agrees to return all company property and data.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written.\n\n[Company Name or Authorized [Employee Name]\nRepresentative Name, Title]"
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "EMPLOYEE LOYALTY AGREEMENT\n\nThis agreement is entered into by [Company Name] and [Employee Name] to protect the company's business interests, goodwill, and confidential information, and affirm employee's loyalty. \n\n1. Non-disclosure: Employee agrees to not disclose or use company's confidential information, during or post-employment. \n\n2. Non-competition: Employee will not work for or establish a competitor within [e.g., \"50\"] miles from the company for [e.g., \"12\"] months post-employment.\n\n3. Non-solicitation: Employee will not solicit clients or employees of the company for [e.g., \"12\"] months post-employment.\n\n4. Return of Property: Employee will return all company property upon termination.\n\n5. Remedies: Company can seek injunction for a breach or potential breach of this agreement.\n\n6. Severability: If any provision of this agreement is held invalid, the remainder of the Agreement will continue.\n\n7. Governing Law: This agreement will be governed by the laws of [State, e.g., \"California\"].\n\n8. Agreement: This is the entire agreement and supersedes prior negotiations.\n\n9. Amendments: Any changes must be in writing and signed by both parties.\n\nSignatures of both parties indicate agreement to these terms.\n\n[Company Name] - Authorized Signatory [Employee Name]",
+          "This Loyalty Agreement is between [Company Name] and [Contractor Company Name]. The Agreement ensures the Contractor's loyalty and confidentiality towards the Company during and post engagement. Contractor agrees not to use or disclose the Company's confidential information, or engage in competing business or solicitation for a period of [e.g., \"12\"] months post termination. Contractor must return all Company property upon termination. In case of breach, Company can seek legal remedies including injunction. The Agreement remains valid even if a provision is held invalid. The Agreement follows [State, e.g., \"California\"] laws and replaces all previous understandings. It can be amended only in writing with both parties' signature.",
+          "The Non-Disclosure Agreement (NDA) dated [Date] is between [Company], based in [Country/State], and [Supplier], also incorporated in [Country/State]. The Company intends to disclose confidential information to the Supplier for [purpose]. This confidential data can include business strategies, financial data, customer information, and product designs. The Supplier agrees to refrain from sharing this information, barring any legal requirements. Exceptions to this confidentiality are in cases where the information becomes public or was already known by the Supplier before the Company's disclosure. If the Supplier breaches this agreement, they face a financial penalty of [$]. The NDA is valid for [X years], unless the Company provides written termination. Upon the Company's request, the Supplier must return or destroy all copies of Confidential Information. This agreement supersedes previous agreements and can only be altered by a written document approved by both parties. The NDA is governed by the laws of [specific country/state].",
+          "DATA ANALYSIS EMPLOYEE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Employee Name], an individual residing at [Employee Address], herein referred to as the \"Employee.\"\n\n    Position and Duties:\n    a. The Company hereby employs Employee in the capacity of Data Analyst.\n    b. The Employee's primary duties will be to [specific data analysis tasks, e.g., \"analyze sales data, forecast trends, and produce reports for managerial review\"].\n\n    Term: The Employee's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Employee under this Agreement, the Company will pay Employee a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Employee agrees not to disclose or use, either during or after the term of employment, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of performing their duties for the Company.\n\n    Intellectual Property: Any works, developments, or inventions created by the Employee in the course of this employment related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Employee agrees to return all company property and data.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written.\n\n[Company Name or Authorized [Employee Name]\nRepresentative Name, Title]"
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

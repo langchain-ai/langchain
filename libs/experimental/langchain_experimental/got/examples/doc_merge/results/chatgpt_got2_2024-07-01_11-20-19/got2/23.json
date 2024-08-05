@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Party A: [Full Legal Name of Party A], located at [Party A Address].\n    Party B: [Full Legal Name of Party B], located at [Party B Address].\n\n1. LOYALTY COMMITMENT:\n\nBoth parties acknowledge the mutual value of their business relationship. They commit to work in good faith, ensuring a collaborative environment that prioritizes trust, loyalty, and shared objectives.\n\n2. NON-POACHING OF EMPLOYEES:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 12 months following its termination\"], neither Party A nor Party B shall, without the prior written consent of the other party:\n\na. Directly or indirectly solicit, induce, or encourage any employees of the other party to terminate their employment or to engage in employment or other services elsewhere.\nb. Hire, employ, or contract the services of any employee of the other party who has been employed by the said party within the last 12 months.\n\n3. BREACH:\n\nAny violation of the clauses in this Agreement will be deemed a material breach and may result in legal action or other remedies as available by law.\n\n4. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n5. AMENDMENTS:\n\nAny modifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Loyalty Agreement.",
+          "AMENDMENT TO CONTRACT: LENGTH OF ENGAGEMENT\n\nThis Amendment is made on [Date], and amends the Non-Compete and Loyalty Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Non-Compete and Loyalty Agreement as follows:\n\nSection [Specific Section Number, e.g., \"2\"] - Length of Engagement\n\nThe period of engagement between Business A and Business B as stipulated in the original Agreement is hereby extended/shortened/set to commence from [New Start Date] and conclude on [New End Date].\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "This appendix, part of the Contract between Party One and Party Two, sets milestones and deadlines for Party Two. \n\nMilestone 1 involves tasks such as gathering requirements, designing user interface etc. with the objective of developing initial prototype of a software application. Delivery Deadline: September 15, 2023. \n\nMilestone 2 involves tasks like incorporating feedback and conducting beta testing, aiming at finalizing and testing the software application. Delivery Deadline: October 15, 2023. \n\nEach milestone's completion will be reviewed by Party One; if requirements aren't met, Party Two may correct and resubmit. Payment terms and penalties are outlined in the main Contract. This appendix is executed adhering to main Contract's terms and conditions.",
+          "APPENDIX C \u2013 ADDITIONAL CONFIDENTIAL INFORMATION\n\nThis Appendix is an extension of the contract (the \"Contract\") dated [Original Contract Date], between [Party One Name] (\"First Party\") and [Party Two Name] (\"Second Party\"). It outlines additional categories of confidential information beyond those detailed in the Contract.\n\n    Additional Confidential Information Includes:\n\n    a. Non-public financial data.\n\n    b. Unpublished marketing strategies and materials.\n\n    c. Upcoming product or service details.\n\n    d. Proprietary software codes and processes.\n\n    e. Personnel records.\n\n    f. Any data labeled as \"Confidential\" or \"Proprietary\" after the Contract\u2019s execution.\n\n    Protection & Exclusions:\n\nBoth Parties shall extend the same protection to this Additional Confidential Information as previously agreed upon in the Contract. Information that becomes public, is received rightfully from a third party, is independently developed, or gets written release authorization is excluded from confidentiality obligations.\n\n    Duration:\n\nThe confidentiality obligations for this Appendix shall persist as defined in the Contract or, if unspecified, for [e.g., \"five years\"] from the disclosure date.\n\n    Prevailing Terms:\n\nIf there\u2019s any conflict between this Appendix and the Contract concerning confidentiality, this Appendix takes precedence concerning Additional Confidential Information.\n\nExecuted as an integral part of the Contract."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Party A: [Full Legal Name of Party A], located at [Party A Address].\n    Party B: [Full Legal Name of Party B], located at [Party B Address].\n\n1. LOYALTY COMMITMENT:\n\nBoth parties acknowledge the mutual value of their business relationship. They commit to work in good faith, ensuring a collaborative environment that prioritizes trust, loyalty, and shared objectives.\n\n2. NON-POACHING OF EMPLOYEES:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 12 months following its termination\"], neither Party A nor Party B shall, without the prior written consent of the other party:\n\na. Directly or indirectly solicit, induce, or encourage any employees of the other party to terminate their employment or to engage in employment or other services elsewhere.\nb. Hire, employ, or contract the services of any employee of the other party who has been employed by the said party within the last 12 months.\n\n3. BREACH:\n\nAny violation of the clauses in this Agreement will be deemed a material breach and may result in legal action or other remedies as available by law.\n\n4. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n5. AMENDMENTS:\n\nAny modifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Loyalty Agreement.",
+          "AMENDMENT TO CONTRACT: LENGTH OF ENGAGEMENT\n\nThis Amendment is made on [Date], and amends the Non-Compete and Loyalty Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Non-Compete and Loyalty Agreement as follows:\n\nSection [Specific Section Number, e.g., \"2\"] - Length of Engagement\n\nThe period of engagement between Business A and Business B as stipulated in the original Agreement is hereby extended/shortened/set to commence from [New Start Date] and conclude on [New End Date].\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "This appendix, part of the Contract between Party One and Party Two, sets milestones and deadlines for Party Two. \n\nMilestone 1 involves tasks such as gathering requirements, designing user interface etc. with the objective of developing initial prototype of a software application. Delivery Deadline: September 15, 2023. \n\nMilestone 2 involves tasks like incorporating feedback and conducting beta testing, aiming at finalizing and testing the software application. Delivery Deadline: October 15, 2023. \n\nEach milestone's completion will be reviewed by Party One; if requirements aren't met, Party Two may correct and resubmit. Payment terms and penalties are outlined in the main Contract. This appendix is executed adhering to main Contract's terms and conditions.",
+          "APPENDIX C \u2013 ADDITIONAL CONFIDENTIAL INFORMATION\n\nThis Appendix is an extension of the contract (the \"Contract\") dated [Original Contract Date], between [Party One Name] (\"First Party\") and [Party Two Name] (\"Second Party\"). It outlines additional categories of confidential information beyond those detailed in the Contract.\n\n    Additional Confidential Information Includes:\n\n    a. Non-public financial data.\n\n    b. Unpublished marketing strategies and materials.\n\n    c. Upcoming product or service details.\n\n    d. Proprietary software codes and processes.\n\n    e. Personnel records.\n\n    f. Any data labeled as \"Confidential\" or \"Proprietary\" after the Contract\u2019s execution.\n\n    Protection & Exclusions:\n\nBoth Parties shall extend the same protection to this Additional Confidential Information as previously agreed upon in the Contract. Information that becomes public, is received rightfully from a third party, is independently developed, or gets written release authorization is excluded from confidentiality obligations.\n\n    Duration:\n\nThe confidentiality obligations for this Appendix shall persist as defined in the Contract or, if unspecified, for [e.g., \"five years\"] from the disclosure date.\n\n    Prevailing Terms:\n\nIf there\u2019s any conflict between this Appendix and the Contract concerning confidentiality, this Appendix takes precedence concerning Additional Confidential Information.\n\nExecuted as an integral part of the Contract."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

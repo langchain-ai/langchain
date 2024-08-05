@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective from [Effective Date], this NDA involves [Your Company Name] (\"Disclosing Party\"), and [Recipient Name] (\"Receiving Party\").\n\n1. Purpose: The Disclosing Party will disclose confidential information related to [Topic of Research] to the Receiving Party for [Purpose].\n\n2. Confidential Information: Defined as all non-public reports, data, designs, and other materials provided by the Disclosing Party to the Receiving Party.\n\n3. Receiving Party's Obligations:\n   a. Use, reproduce, or distribute the confidential information only for the agreed purpose.\n   b. Restrict access to the information to necessary parties, ensuring they abide by strict confidentiality.\n   c. Return or destroy all confidential information upon request or at the end of the agreement.\n\n4. Exclusions: Information will not be classified as confidential if it is already known to the Receiving Party, publicly known, or independently developed by the Receiving Party.\n\n5. Non-Competition: The Receiving Party will not engage in any competing business against the Disclosing Party during the agreement and one year after its termination.\n\n6. Term and Termination: The agreement is valid for [e.g., \"two years\"], unless terminated earlier with [e.g., \"30 days\"] written notice. The Receiving Party's non-disclosure and non-competition obligations persist post-termination.\n\n7. General Provisions:\n   a. Governing Law: [Your State]'s laws apply.\n   b. Amendments: Only valid if written and signed by both parties.\n   c. Entire Agreement: This contract overrules previous related agreements.\n\nSigned as of the Effective Date by [Your Company Name] - Disclosing Party [Recipient Name] - Receiving Party.",
+          "This Non-Disclosure and Non-Competition Agreement is made between [Your Company Name] and [Contractor Name/Company].\n\n1. Confidentiality: The Contractor acknowledges access to the Company's confidential information during their relationship.\n\n2. Non-Disclosure: The Contractor agrees not to disclose, use, reproduce, or distribute this confidential information unless necessary for their obligations.\n\n3. Non-Competition: The Contractor agrees not to compete with the company or assist others in doing so for one year after the termination of their relationship. They also agree not to solicit the company's clients or customers for the benefit of a competitor for one year.\n\n4. Return of Confidential Information: At the end of the relationship or upon the company's request, the Contractor will return all confidential information and copies thereof.\n\n5. Remedies: For any breach, the Company may seek specific performance and injunctive relief, in addition to other remedies.\n\n6. Governing Law: The Agreement is governed by the laws of [Your State].\n\n7. Entire Agreement: This document replaces all previous agreements and understandings on the subject.\n\nBoth parties acknowledge understanding and voluntarily accepting the Agreement.\n\nSignatures required from [Your Company Name] and [Contractor Name/Company].",
+          "This Loyalty Agreement is between [Company Name] and [Employee Full Name], where the company agrees to provide specialized training at no cost to the employee, who in turn commits to work for the company for a specified period. If the employee leaves the company within two years after completing training, they must pay $50,000 as compensation for training costs, payable within 30 days of termination. Exceptions to this repayment include termination without cause, resignation due to breach of agreement by the company, or other agreed upon circumstances. Any changes to this agreement must be in writing and signed by both parties, and the agreement will be governed by the laws of [State/Country]. This agreement is binding to all involved parties and their successors. Both the company and the employee sign to attest to these terms.",
+          "EMPLOYEE LOYALTY AGREEMENT\n\nThis agreement is entered into by [Company Name] and [Employee Name] to protect the company's business interests, goodwill, and confidential information, and affirm employee's loyalty. \n\n1. Non-disclosure: Employee agrees to not disclose or use company's confidential information, during or post-employment. \n\n2. Non-competition: Employee will not work for or establish a competitor within [e.g., \"50\"] miles from the company for [e.g., \"12\"] months post-employment.\n\n3. Non-solicitation: Employee will not solicit clients or employees of the company for [e.g., \"12\"] months post-employment.\n\n4. Return of Property: Employee will return all company property upon termination.\n\n5. Remedies: Company can seek injunction for a breach or potential breach of this agreement.\n\n6. Severability: If any provision of this agreement is held invalid, the remainder of the Agreement will continue.\n\n7. Governing Law: This agreement will be governed by the laws of [State, e.g., \"California\"].\n\n8. Agreement: This is the entire agreement and supersedes prior negotiations.\n\n9. Amendments: Any changes must be in writing and signed by both parties.\n\nSignatures of both parties indicate agreement to these terms.\n\n[Company Name] - Authorized Signatory [Employee Name]"
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective from [Effective Date], this NDA involves [Your Company Name] (\"Disclosing Party\"), and [Recipient Name] (\"Receiving Party\").\n\n1. Purpose: The Disclosing Party will disclose confidential information related to [Topic of Research] to the Receiving Party for [Purpose].\n\n2. Confidential Information: Defined as all non-public reports, data, designs, and other materials provided by the Disclosing Party to the Receiving Party.\n\n3. Receiving Party's Obligations:\n   a. Use, reproduce, or distribute the confidential information only for the agreed purpose.\n   b. Restrict access to the information to necessary parties, ensuring they abide by strict confidentiality.\n   c. Return or destroy all confidential information upon request or at the end of the agreement.\n\n4. Exclusions: Information will not be classified as confidential if it is already known to the Receiving Party, publicly known, or independently developed by the Receiving Party.\n\n5. Non-Competition: The Receiving Party will not engage in any competing business against the Disclosing Party during the agreement and one year after its termination.\n\n6. Term and Termination: The agreement is valid for [e.g., \"two years\"], unless terminated earlier with [e.g., \"30 days\"] written notice. The Receiving Party's non-disclosure and non-competition obligations persist post-termination.\n\n7. General Provisions:\n   a. Governing Law: [Your State]'s laws apply.\n   b. Amendments: Only valid if written and signed by both parties.\n   c. Entire Agreement: This contract overrules previous related agreements.\n\nSigned as of the Effective Date by [Your Company Name] - Disclosing Party [Recipient Name] - Receiving Party.",
+          "This Non-Disclosure and Non-Competition Agreement is made between [Your Company Name] and [Contractor Name/Company].\n\n1. Confidentiality: The Contractor acknowledges access to the Company's confidential information during their relationship.\n\n2. Non-Disclosure: The Contractor agrees not to disclose, use, reproduce, or distribute this confidential information unless necessary for their obligations.\n\n3. Non-Competition: The Contractor agrees not to compete with the company or assist others in doing so for one year after the termination of their relationship. They also agree not to solicit the company's clients or customers for the benefit of a competitor for one year.\n\n4. Return of Confidential Information: At the end of the relationship or upon the company's request, the Contractor will return all confidential information and copies thereof.\n\n5. Remedies: For any breach, the Company may seek specific performance and injunctive relief, in addition to other remedies.\n\n6. Governing Law: The Agreement is governed by the laws of [Your State].\n\n7. Entire Agreement: This document replaces all previous agreements and understandings on the subject.\n\nBoth parties acknowledge understanding and voluntarily accepting the Agreement.\n\nSignatures required from [Your Company Name] and [Contractor Name/Company].",
+          "This Loyalty Agreement is between [Company Name] and [Employee Full Name], where the company agrees to provide specialized training at no cost to the employee, who in turn commits to work for the company for a specified period. If the employee leaves the company within two years after completing training, they must pay $50,000 as compensation for training costs, payable within 30 days of termination. Exceptions to this repayment include termination without cause, resignation due to breach of agreement by the company, or other agreed upon circumstances. Any changes to this agreement must be in writing and signed by both parties, and the agreement will be governed by the laws of [State/Country]. This agreement is binding to all involved parties and their successors. Both the company and the employee sign to attest to these terms.",
+          "EMPLOYEE LOYALTY AGREEMENT\n\nThis agreement is entered into by [Company Name] and [Employee Name] to protect the company's business interests, goodwill, and confidential information, and affirm employee's loyalty. \n\n1. Non-disclosure: Employee agrees to not disclose or use company's confidential information, during or post-employment. \n\n2. Non-competition: Employee will not work for or establish a competitor within [e.g., \"50\"] miles from the company for [e.g., \"12\"] months post-employment.\n\n3. Non-solicitation: Employee will not solicit clients or employees of the company for [e.g., \"12\"] months post-employment.\n\n4. Return of Property: Employee will return all company property upon termination.\n\n5. Remedies: Company can seek injunction for a breach or potential breach of this agreement.\n\n6. Severability: If any provision of this agreement is held invalid, the remainder of the Agreement will continue.\n\n7. Governing Law: This agreement will be governed by the laws of [State, e.g., \"California\"].\n\n8. Agreement: This is the entire agreement and supersedes prior negotiations.\n\n9. Amendments: Any changes must be in writing and signed by both parties.\n\nSignatures of both parties indicate agreement to these terms.\n\n[Company Name] - Authorized Signatory [Employee Name]"
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

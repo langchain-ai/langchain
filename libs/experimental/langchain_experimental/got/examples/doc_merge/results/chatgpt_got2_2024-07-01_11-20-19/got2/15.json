@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "UNIVERSITY-BUSINESS COOPERATION AGREEMENT\n\nThis Cooperation Agreement (the \"Agreement\") is made and entered into on [Insert Date], by and between [Business Name], a [business type, e.g., \"corporation\"] located at [Business Address], hereinafter referred to as the \"Business', and [University Name], a higher education institution located at [University Address], hereinafter referred to as the \"University\".\n\n1. Objective:\n\nThe purpose of this Agreement is to define the terms under which the Business and the University will cooperate to [Objective e.g., \"jointly conduct research, promote innovation, and facilitate the exchange of knowledge in the field of _________\"].\n\n2. Scope of Cooperation:\n\na. Research Collaborations: Joint research initiatives, sharing of resources, and publications.\n\nb. Internships and Placements: Facilitation of student internships, projects, and job placements.\n\nc. Seminars and Workshops: Organizing joint seminars, conferences, and workshops.\n\nd. Facilities and Resource Sharing: Providing access to labs, equipment, libraries, etc.\n\n3. Intellectual Property:\n\nAll intellectual property developed jointly will be shared, and a separate agreement will detail the rights, ownership, and any revenue distribution.\n\n4. Funding and Resources:\n\nBoth parties agree to jointly contribute [Specify Amount or Percentage], and additional fund sourcing details will be determined on a project-by-project basis.\n\n5. Confidentiality:\n\nBoth parties agree to maintain the confidentiality of shared proprietary information.\n\n6. Duration and Termination:\n\nThis Agreement will remain in effect for [e.g., \"three years\"] from the date of signing, unless terminated earlier by either party with [e.g., \"30 days\"] written notice.\n\n7. Dispute Resolution:\n\nAny disputes arising from this Agreement will first attempt resolution through mediation. If unresolved, disputes will be subject to the jurisdiction of [State/Country].\n\n8. Amendments:\n\nChanges to this Agreement must be in writing and signed by both parties.\n\n9. Liability:\n\nEach party assumes responsibility for its actions and is not liable for the actions of the other party.\n\n10. Governing Law:\n\nThis Agreement is governed by the laws of [State/Country].\n\nIN WITNESS WHEREOF, both parties have executed this Agreement as of the date first mentioned above.",
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms.",
+          "BUSINESS AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement outlines the terms of the collaboration/project/service between Business A and Business B regarding [Brief Description of the Collaboration/Project/Service].\n\n2. TERMS OF SERVICE:\n\n    Business A agrees to: [Specific tasks/responsibilities, e.g., \"Supply 500 units of Product X monthly.\"].\n    Business B agrees to: [Specific tasks/responsibilities, e.g., \"Pay $50 per unit of Product X within 30 days of delivery.\"].\n\n3. PAYMENT TERMS:\n\nPayments shall be made as follows: [Payment structure, e.g., \"Payment due within 30 days of invoice.\"].\n\n4. CONFIDENTIALITY:\n\nBoth parties commit to maintaining confidentiality regarding all proprietary information exchanged during this agreement.\n\n5. TERMINATION:\n\nEither party may terminate this Agreement with [X days, e.g., \"30 days\"] written notice. If breached, the aggrieved party may seek remedies as per governing laws.\n\n6. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Business Agreement.",
+          "CONFIDENTIALITY:\n\n4.1. Confidential Information: For the purposes of this Agreement, \"Confidential Information\" refers to any data or information, regardless of its form, proprietary to or maintained as confidential by either party, which is not publicly known and which is disclosed during the term of this Agreement or in relation to the collaboration/project/service.\n\n4.2. Protection and Non-Disclosure: Both parties agree to use the Confidential Information solely for the purposes of the Agreement and will exert reasonable efforts to prevent the unauthorized disclosure or use of the Confidential Information. Neither party shall disclose, reproduce, or distribute any portion of the Confidential Information without the disclosing party's prior written consent.\n\n4.3. Exclusions: Confidential Information shall not include any data or information which:\n\n    Is or becomes publicly known through no wrongful act of the receiving party;\n    Is independently developed by the receiving party without the use of the Confidential Information;\n    Is rightfully received from a third party without any obligation of confidentiality;\n    Is disclosed under legal requirement or order.\n\n4.4. Return or Destruction: Upon the termination of this Agreement, or at the request of the disclosing party, the receiving party shall return all copies of the Confidential Information to the disclosing party or certify in writing that it has destroyed all such copies.\n\n4.5. Duration: The obligations set forth in this Confidentiality section shall survive the termination or expiration of this Agreement for a period of [specific time, e.g., \"five years\"]."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "UNIVERSITY-BUSINESS COOPERATION AGREEMENT\n\nThis Cooperation Agreement (the \"Agreement\") is made and entered into on [Insert Date], by and between [Business Name], a [business type, e.g., \"corporation\"] located at [Business Address], hereinafter referred to as the \"Business', and [University Name], a higher education institution located at [University Address], hereinafter referred to as the \"University\".\n\n1. Objective:\n\nThe purpose of this Agreement is to define the terms under which the Business and the University will cooperate to [Objective e.g., \"jointly conduct research, promote innovation, and facilitate the exchange of knowledge in the field of _________\"].\n\n2. Scope of Cooperation:\n\na. Research Collaborations: Joint research initiatives, sharing of resources, and publications.\n\nb. Internships and Placements: Facilitation of student internships, projects, and job placements.\n\nc. Seminars and Workshops: Organizing joint seminars, conferences, and workshops.\n\nd. Facilities and Resource Sharing: Providing access to labs, equipment, libraries, etc.\n\n3. Intellectual Property:\n\nAll intellectual property developed jointly will be shared, and a separate agreement will detail the rights, ownership, and any revenue distribution.\n\n4. Funding and Resources:\n\nBoth parties agree to jointly contribute [Specify Amount or Percentage], and additional fund sourcing details will be determined on a project-by-project basis.\n\n5. Confidentiality:\n\nBoth parties agree to maintain the confidentiality of shared proprietary information.\n\n6. Duration and Termination:\n\nThis Agreement will remain in effect for [e.g., \"three years\"] from the date of signing, unless terminated earlier by either party with [e.g., \"30 days\"] written notice.\n\n7. Dispute Resolution:\n\nAny disputes arising from this Agreement will first attempt resolution through mediation. If unresolved, disputes will be subject to the jurisdiction of [State/Country].\n\n8. Amendments:\n\nChanges to this Agreement must be in writing and signed by both parties.\n\n9. Liability:\n\nEach party assumes responsibility for its actions and is not liable for the actions of the other party.\n\n10. Governing Law:\n\nThis Agreement is governed by the laws of [State/Country].\n\nIN WITNESS WHEREOF, both parties have executed this Agreement as of the date first mentioned above.",
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms.",
+          "BUSINESS AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement outlines the terms of the collaboration/project/service between Business A and Business B regarding [Brief Description of the Collaboration/Project/Service].\n\n2. TERMS OF SERVICE:\n\n    Business A agrees to: [Specific tasks/responsibilities, e.g., \"Supply 500 units of Product X monthly.\"].\n    Business B agrees to: [Specific tasks/responsibilities, e.g., \"Pay $50 per unit of Product X within 30 days of delivery.\"].\n\n3. PAYMENT TERMS:\n\nPayments shall be made as follows: [Payment structure, e.g., \"Payment due within 30 days of invoice.\"].\n\n4. CONFIDENTIALITY:\n\nBoth parties commit to maintaining confidentiality regarding all proprietary information exchanged during this agreement.\n\n5. TERMINATION:\n\nEither party may terminate this Agreement with [X days, e.g., \"30 days\"] written notice. If breached, the aggrieved party may seek remedies as per governing laws.\n\n6. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Business Agreement.",
+          "CONFIDENTIALITY:\n\n4.1. Confidential Information: For the purposes of this Agreement, \"Confidential Information\" refers to any data or information, regardless of its form, proprietary to or maintained as confidential by either party, which is not publicly known and which is disclosed during the term of this Agreement or in relation to the collaboration/project/service.\n\n4.2. Protection and Non-Disclosure: Both parties agree to use the Confidential Information solely for the purposes of the Agreement and will exert reasonable efforts to prevent the unauthorized disclosure or use of the Confidential Information. Neither party shall disclose, reproduce, or distribute any portion of the Confidential Information without the disclosing party's prior written consent.\n\n4.3. Exclusions: Confidential Information shall not include any data or information which:\n\n    Is or becomes publicly known through no wrongful act of the receiving party;\n    Is independently developed by the receiving party without the use of the Confidential Information;\n    Is rightfully received from a third party without any obligation of confidentiality;\n    Is disclosed under legal requirement or order.\n\n4.4. Return or Destruction: Upon the termination of this Agreement, or at the request of the disclosing party, the receiving party shall return all copies of the Confidential Information to the disclosing party or certify in writing that it has destroyed all such copies.\n\n4.5. Duration: The obligations set forth in this Confidentiality section shall survive the termination or expiration of this Agreement for a period of [specific time, e.g., \"five years\"]."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

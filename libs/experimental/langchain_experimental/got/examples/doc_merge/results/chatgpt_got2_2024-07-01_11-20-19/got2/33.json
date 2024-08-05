@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: BREACH CONSEQUENCES\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Notification:\nSuspected breaches must be reported in writing by the non-breaching party.\n\n2. Rectification:\nThe breaching party has [e.g., \"14 days\"] from notification to rectify, unless irreparable.\n\n3. Fees:\nBreaches incur a penalty of [e.g., \"$10,000\"], aside from claimed damages.\n\n4. Legal Actions:\nUnresolved or damaging breaches may lead to legal actions, including injunctive relief, damages, and legal fees.\n\n5. Termination:\nRepeated or severe breaches can cause Agreement termination by the non-breaching party.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: BREACH CONSEQUENCES\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Notification:\nSuspected breaches must be reported in writing by the non-breaching party.\n\n2. Rectification:\nThe breaching party has [e.g., \"14 days\"] from notification to rectify, unless irreparable.\n\n3. Fees:\nBreaches incur a penalty of [e.g., \"$10,000\"], aside from claimed damages.\n\n4. Legal Actions:\nUnresolved or damaging breaches may lead to legal actions, including injunctive relief, damages, and legal fees.\n\n5. Termination:\nRepeated or severe breaches can cause Agreement termination by the non-breaching party.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

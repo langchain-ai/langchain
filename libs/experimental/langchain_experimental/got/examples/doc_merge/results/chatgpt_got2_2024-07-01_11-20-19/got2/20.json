@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms.",
+          "AMENDMENT TO CONTRACT: LENGTH OF ENGAGEMENT\n\nThis Amendment is made on [Date], and amends the Non-Compete and Loyalty Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Non-Compete and Loyalty Agreement as follows:\n\nSection [Specific Section Number, e.g., \"2\"] - Length of Engagement\n\nThe period of engagement between Business A and Business B as stipulated in the original Agreement is hereby extended/shortened/set to commence from [New Start Date] and conclude on [New End Date].\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "AMENDMENT TO CONTRACT: FEES FOR LATE DELIVERY\n\nThis Amendment is made on [Date], and amends the Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Agreement as follows:\n\nSection [Specific Section Number, e.g., \"3\"] - Fees for Late Delivery\n\na. If Business A/B fails to deliver the products/services by the agreed-upon deadline, a late fee of [Specific Amount or Percentage, e.g., \"$100\" or \"5% of the total contract value\"] shall be applied for each [time period, e.g., \"day\"] of delay.\n\nb. The total late fees shall not exceed [Specific Maximum Amount or Percentage, e.g., \"$1,000\" or \"20% of the total contract value\"].\n\nc. The fees will be deducted from the final payment or invoiced separately, as deemed appropriate by the non-defaulting party.\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "AMENDMENT TO CONTRACT\n\nThis Amendment (the \"Amendment\") is entered into on [Date], between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party'', collectively referred to as the \"Parties\".\n\nWHEREAS, the Parties entered into a contract dated [Original Contract Date], hereinafter referred to as the \"Original Contract', for [Brief Description of the Original Contract, e.g., \"provision of IT services to First Party\"];\n\nWHEREAS, the Parties now wish to amend the Original Contract to add additional responsibilities pertaining to the maintenance of existing IT systems;\n\nNOW, THEREFORE, in consideration of the mutual covenants contained herein and for other good and valuable consideration, the receipt and sufficiency of which is hereby acknowledged, the Parties agree as follows:\n\n    Additional Responsibility:\n\n    The Second Party shall assume the responsibility of maintaining and ensuring the smooth functioning of the existing IT systems of the First Party. This responsibility includes, but is not limited to:\n\n    a. Regular monitoring of the IT systems for any anomalies or issues.\n\n    b. Prompt troubleshooting and rectification of any issues identified.\n\n    c. Routine updates and patches to ensure the systems are secure and up-to-date.\n\n    d. Any other related tasks as deemed necessary by the First Party.\n\n    Compensation:\n\n    As a result of this additional responsibility, the Parties agree to a revised compensation of [New Compensation Details, e.g., \"$XXX per month\"]. All other payment terms as outlined in the Original Contract shall remain unchanged.\n\n    Duration and Termination:\n\n    The duration and termination clauses from the Original Contract shall remain applicable to this Amendment unless otherwise agreed upon in writing by the Parties.\n\n    Miscellaneous:\n\n    All other terms and conditions of the Original Contract, which are not specifically amended by this Amendment, shall remain in full force and effect. In the event of a conflict between this Amendment and the Original Contract, the terms of this Amendment shall prevail.\n\n    Entire Agreement:\n\n    This Amendment, along with the Original Contract, constitutes the entire agreement between the Parties and supersedes any prior understandings, written or oral, relating to the subject matter of this Amendment.\n\n    Governing Law:\n\n    This Amendment shall be governed by the laws of [Jurisdiction, e.g., \"State of New York\"]."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms.",
+          "AMENDMENT TO CONTRACT: LENGTH OF ENGAGEMENT\n\nThis Amendment is made on [Date], and amends the Non-Compete and Loyalty Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Non-Compete and Loyalty Agreement as follows:\n\nSection [Specific Section Number, e.g., \"2\"] - Length of Engagement\n\nThe period of engagement between Business A and Business B as stipulated in the original Agreement is hereby extended/shortened/set to commence from [New Start Date] and conclude on [New End Date].\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "AMENDMENT TO CONTRACT: FEES FOR LATE DELIVERY\n\nThis Amendment is made on [Date], and amends the Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Agreement as follows:\n\nSection [Specific Section Number, e.g., \"3\"] - Fees for Late Delivery\n\na. If Business A/B fails to deliver the products/services by the agreed-upon deadline, a late fee of [Specific Amount or Percentage, e.g., \"$100\" or \"5% of the total contract value\"] shall be applied for each [time period, e.g., \"day\"] of delay.\n\nb. The total late fees shall not exceed [Specific Maximum Amount or Percentage, e.g., \"$1,000\" or \"20% of the total contract value\"].\n\nc. The fees will be deducted from the final payment or invoiced separately, as deemed appropriate by the non-defaulting party.\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "AMENDMENT TO CONTRACT\n\nThis Amendment (the \"Amendment\") is entered into on [Date], between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party'', collectively referred to as the \"Parties\".\n\nWHEREAS, the Parties entered into a contract dated [Original Contract Date], hereinafter referred to as the \"Original Contract', for [Brief Description of the Original Contract, e.g., \"provision of IT services to First Party\"];\n\nWHEREAS, the Parties now wish to amend the Original Contract to add additional responsibilities pertaining to the maintenance of existing IT systems;\n\nNOW, THEREFORE, in consideration of the mutual covenants contained herein and for other good and valuable consideration, the receipt and sufficiency of which is hereby acknowledged, the Parties agree as follows:\n\n    Additional Responsibility:\n\n    The Second Party shall assume the responsibility of maintaining and ensuring the smooth functioning of the existing IT systems of the First Party. This responsibility includes, but is not limited to:\n\n    a. Regular monitoring of the IT systems for any anomalies or issues.\n\n    b. Prompt troubleshooting and rectification of any issues identified.\n\n    c. Routine updates and patches to ensure the systems are secure and up-to-date.\n\n    d. Any other related tasks as deemed necessary by the First Party.\n\n    Compensation:\n\n    As a result of this additional responsibility, the Parties agree to a revised compensation of [New Compensation Details, e.g., \"$XXX per month\"]. All other payment terms as outlined in the Original Contract shall remain unchanged.\n\n    Duration and Termination:\n\n    The duration and termination clauses from the Original Contract shall remain applicable to this Amendment unless otherwise agreed upon in writing by the Parties.\n\n    Miscellaneous:\n\n    All other terms and conditions of the Original Contract, which are not specifically amended by this Amendment, shall remain in full force and effect. In the event of a conflict between this Amendment and the Original Contract, the terms of this Amendment shall prevail.\n\n    Entire Agreement:\n\n    This Amendment, along with the Original Contract, constitutes the entire agreement between the Parties and supersedes any prior understandings, written or oral, relating to the subject matter of this Amendment.\n\n    Governing Law:\n\n    This Amendment shall be governed by the laws of [Jurisdiction, e.g., \"State of New York\"]."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

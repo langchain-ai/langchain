@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n5. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n6. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n7. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n8. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "CONFIDENTIALITY:\n\n4.1. Confidential Information: For the purposes of this Agreement, \"Confidential Information\" refers to any data or information, regardless of its form, proprietary to or maintained as confidential by either party, which is not publicly known and which is disclosed during the term of this Agreement or in relation to the collaboration/project/service.\n\n4.2. Protection and Non-Disclosure: Both parties agree to use the Confidential Information solely for the purposes of the Agreement and will exert reasonable efforts to prevent the unauthorized disclosure or use of the Confidential Information. Neither party shall disclose, reproduce, or distribute any portion of the Confidential Information without the disclosing party's prior written consent.\n\n4.3. Exclusions: Confidential Information shall not include any data or information which:\n\n    Is or becomes publicly known through no wrongful act of the receiving party;\n    Is independently developed by the receiving party without the use of the Confidential Information;\n    Is rightfully received from a third party without any obligation of confidentiality;\n    Is disclosed under legal requirement or order.\n\n4.4. Return or Destruction: Upon the termination of this Agreement, or at the request of the disclosing party, the receiving party shall return all copies of the Confidential Information to the disclosing party or certify in writing that it has destroyed all such copies.\n\n4.5. Duration: The obligations set forth in this Confidentiality section shall survive the termination or expiration of this Agreement for a period of [specific time, e.g., \"five years\"].",
+          "NON-COMPETE AND LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement is designed to protect the proprietary and business interests of both parties by ensuring loyalty and preventing competition during and after the period of collaboration or engagement.\n\n2. NON-COMPETE:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 24 months following its termination\"], neither party shall:\n\na. Engage in or support any venture that directly competes with the core business of the other party within [specific geographical region, e.g., \"the State of California\"].\nb. Invest in, partner with, or advise any business entity that competes directly with the other party.\n\n3. LOYALTY AND NON-POACHING:\n\nBoth parties pledge their commitment to a loyal business relationship. Specifically:\n\na. Neither party will, without the prior written consent of the other, solicit, induce, or encourage any employees or contractors of the other party to terminate their engagement or to join another business.\nb. Neither party shall disparage or encourage others to disparage the other party, its products, services, or its employees.\n\n4. CONFIDENTIALITY:\n\nBoth parties agree to maintain confidentiality regarding any proprietary or business-sensitive information exchanged during the course of this Agreement, ensuring that such information isn't disclosed without the explicit consent of the party owning that information.\n\n5. BREACH AND REMEDIES:\n\nA violation of any provision in this Agreement will be deemed a significant breach. The aggrieved party shall be entitled to seek injunctive relief, damages, or any other remedies available under the laws of [specific country/state, e.g., \"the State of California\"].\n\n6. GOVERNING LAW:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications or amendments to this Agreement must be in writing and duly signed by authorized representatives of both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, representatives from both businesses affirm their understanding and acceptance of this Non-Compete and Loyalty Agreement.",
+          "AMENDMENT TO CONTRACT: LENGTH OF ENGAGEMENT\n\nThis Amendment is made on [Date], and amends the Non-Compete and Loyalty Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Non-Compete and Loyalty Agreement as follows:\n\nSection [Specific Section Number, e.g., \"2\"] - Length of Engagement\n\nThe period of engagement between Business A and Business B as stipulated in the original Agreement is hereby extended/shortened/set to commence from [New Start Date] and conclude on [New End Date].\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n5. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n6. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n7. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n8. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "CONFIDENTIALITY:\n\n4.1. Confidential Information: For the purposes of this Agreement, \"Confidential Information\" refers to any data or information, regardless of its form, proprietary to or maintained as confidential by either party, which is not publicly known and which is disclosed during the term of this Agreement or in relation to the collaboration/project/service.\n\n4.2. Protection and Non-Disclosure: Both parties agree to use the Confidential Information solely for the purposes of the Agreement and will exert reasonable efforts to prevent the unauthorized disclosure or use of the Confidential Information. Neither party shall disclose, reproduce, or distribute any portion of the Confidential Information without the disclosing party's prior written consent.\n\n4.3. Exclusions: Confidential Information shall not include any data or information which:\n\n    Is or becomes publicly known through no wrongful act of the receiving party;\n    Is independently developed by the receiving party without the use of the Confidential Information;\n    Is rightfully received from a third party without any obligation of confidentiality;\n    Is disclosed under legal requirement or order.\n\n4.4. Return or Destruction: Upon the termination of this Agreement, or at the request of the disclosing party, the receiving party shall return all copies of the Confidential Information to the disclosing party or certify in writing that it has destroyed all such copies.\n\n4.5. Duration: The obligations set forth in this Confidentiality section shall survive the termination or expiration of this Agreement for a period of [specific time, e.g., \"five years\"].",
+          "NON-COMPETE AND LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement is designed to protect the proprietary and business interests of both parties by ensuring loyalty and preventing competition during and after the period of collaboration or engagement.\n\n2. NON-COMPETE:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 24 months following its termination\"], neither party shall:\n\na. Engage in or support any venture that directly competes with the core business of the other party within [specific geographical region, e.g., \"the State of California\"].\nb. Invest in, partner with, or advise any business entity that competes directly with the other party.\n\n3. LOYALTY AND NON-POACHING:\n\nBoth parties pledge their commitment to a loyal business relationship. Specifically:\n\na. Neither party will, without the prior written consent of the other, solicit, induce, or encourage any employees or contractors of the other party to terminate their engagement or to join another business.\nb. Neither party shall disparage or encourage others to disparage the other party, its products, services, or its employees.\n\n4. CONFIDENTIALITY:\n\nBoth parties agree to maintain confidentiality regarding any proprietary or business-sensitive information exchanged during the course of this Agreement, ensuring that such information isn't disclosed without the explicit consent of the party owning that information.\n\n5. BREACH AND REMEDIES:\n\nA violation of any provision in this Agreement will be deemed a significant breach. The aggrieved party shall be entitled to seek injunctive relief, damages, or any other remedies available under the laws of [specific country/state, e.g., \"the State of California\"].\n\n6. GOVERNING LAW:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications or amendments to this Agreement must be in writing and duly signed by authorized representatives of both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, representatives from both businesses affirm their understanding and acceptance of this Non-Compete and Loyalty Agreement.",
+          "AMENDMENT TO CONTRACT: LENGTH OF ENGAGEMENT\n\nThis Amendment is made on [Date], and amends the Non-Compete and Loyalty Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Non-Compete and Loyalty Agreement as follows:\n\nSection [Specific Section Number, e.g., \"2\"] - Length of Engagement\n\nThe period of engagement between Business A and Business B as stipulated in the original Agreement is hereby extended/shortened/set to commence from [New Start Date] and conclude on [New End Date].\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

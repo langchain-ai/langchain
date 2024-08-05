@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is appended to the B2B Contractor Agreement (\"Agreement\") dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name], hereinafter referred to as \"Company', and [Contractor Name], hereinafter referred to as \"Contractor\".\n\n1. Confidentiality:\n\n1.1 Both Company and Contractor acknowledge that they may have access to or receive information during the term of the Agreement which is confidential to the disclosing party (\"Confidential Information\").\n\n1.2 Confidential Information shall not include information that:\n\n    is or becomes public knowledge without breach of this clause;\n    was known by the receiving party before receipt from the disclosing party;\n    is received from a third party without breach of any obligation of confidentiality.\n\n1.3 The receiving party shall:\n\n    use the Confidential Information only for performing under the Agreement;\n    take all reasonable precautions to prevent any unauthorized disclosure of the Confidential Information;\n    not disclose, reproduce, or distribute Confidential Information without the written consent of the disclosing party.\n\n2. Duration:\n\nThe obligations set forth in this Appendix shall continue for a period of [e.g., \"two years\"] from the date of termination or expiration of the Agreement.\n\n3. Return or Destruction:\n\nUpon the expiration or termination of the Agreement, or upon the disclosing party's request, the receiving party shall return or, if directed by the disclosing party, destroy all copies of the Confidential Information.\n\n4. Governing Law:\n\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the Agreement.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "APPENDIX: BREACH CONSEQUENCES\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Notification:\nSuspected breaches must be reported in writing by the non-breaching party.\n\n2. Rectification:\nThe breaching party has [e.g., \"14 days\"] from notification to rectify, unless irreparable.\n\n3. Fees:\nBreaches incur a penalty of [e.g., \"$10,000\"], aside from claimed damages.\n\n4. Legal Actions:\nUnresolved or damaging breaches may lead to legal actions, including injunctive relief, damages, and legal fees.\n\n5. Termination:\nRepeated or severe breaches can cause Agreement termination by the non-breaching party.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: OBLIGATIONS UPON TERMINATION\n\nPertaining to the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Return of Property:\nUpon termination, each party shall promptly return to the other all property, materials, and assets belonging to the other party, unless otherwise specified in the Agreement.\n\n2. Confidential Information:\nBoth parties shall continue to abide by any confidentiality obligations set forth in the Agreement. Any confidential information must be returned or destroyed, as instructed by the owning party.\n\n3. Outstanding Payments:\nAll due payments must be settled within [e.g., \"14 days\"] of termination, as per the terms of the original Agreement.\n\n4. Non-Disparagement:\nBoth parties agree not to make any derogatory or disparaging statements about the other party post-termination.\n\n5. Survival of Provisions:\nAny provisions in the Agreement that, by their nature, should persist beyond termination (e.g., indemnity, liability, confidentiality) will continue to be in effect.\n\n6. Notifications:\nEach party must inform their respective stakeholders, if necessary, about the termination in a manner that maintains the goodwill and reputation of both parties.\n\n7. Transition Assistance:\nTo ensure a smooth transition, both parties agree to cooperate, as reasonably requested by the other, for a period of [e.g., \"30 days\"] after termination.\n\n8. Governing Law:\nThis Appendix is governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is appended to the B2B Contractor Agreement (\"Agreement\") dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name], hereinafter referred to as \"Company', and [Contractor Name], hereinafter referred to as \"Contractor\".\n\n1. Confidentiality:\n\n1.1 Both Company and Contractor acknowledge that they may have access to or receive information during the term of the Agreement which is confidential to the disclosing party (\"Confidential Information\").\n\n1.2 Confidential Information shall not include information that:\n\n    is or becomes public knowledge without breach of this clause;\n    was known by the receiving party before receipt from the disclosing party;\n    is received from a third party without breach of any obligation of confidentiality.\n\n1.3 The receiving party shall:\n\n    use the Confidential Information only for performing under the Agreement;\n    take all reasonable precautions to prevent any unauthorized disclosure of the Confidential Information;\n    not disclose, reproduce, or distribute Confidential Information without the written consent of the disclosing party.\n\n2. Duration:\n\nThe obligations set forth in this Appendix shall continue for a period of [e.g., \"two years\"] from the date of termination or expiration of the Agreement.\n\n3. Return or Destruction:\n\nUpon the expiration or termination of the Agreement, or upon the disclosing party's request, the receiving party shall return or, if directed by the disclosing party, destroy all copies of the Confidential Information.\n\n4. Governing Law:\n\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the Agreement.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "APPENDIX: BREACH CONSEQUENCES\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Notification:\nSuspected breaches must be reported in writing by the non-breaching party.\n\n2. Rectification:\nThe breaching party has [e.g., \"14 days\"] from notification to rectify, unless irreparable.\n\n3. Fees:\nBreaches incur a penalty of [e.g., \"$10,000\"], aside from claimed damages.\n\n4. Legal Actions:\nUnresolved or damaging breaches may lead to legal actions, including injunctive relief, damages, and legal fees.\n\n5. Termination:\nRepeated or severe breaches can cause Agreement termination by the non-breaching party.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: OBLIGATIONS UPON TERMINATION\n\nPertaining to the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Return of Property:\nUpon termination, each party shall promptly return to the other all property, materials, and assets belonging to the other party, unless otherwise specified in the Agreement.\n\n2. Confidential Information:\nBoth parties shall continue to abide by any confidentiality obligations set forth in the Agreement. Any confidential information must be returned or destroyed, as instructed by the owning party.\n\n3. Outstanding Payments:\nAll due payments must be settled within [e.g., \"14 days\"] of termination, as per the terms of the original Agreement.\n\n4. Non-Disparagement:\nBoth parties agree not to make any derogatory or disparaging statements about the other party post-termination.\n\n5. Survival of Provisions:\nAny provisions in the Agreement that, by their nature, should persist beyond termination (e.g., indemnity, liability, confidentiality) will continue to be in effect.\n\n6. Notifications:\nEach party must inform their respective stakeholders, if necessary, about the termination in a manner that maintains the goodwill and reputation of both parties.\n\n7. Transition Assistance:\nTo ensure a smooth transition, both parties agree to cooperate, as reasonably requested by the other, for a period of [e.g., \"30 days\"] after termination.\n\n8. Governing Law:\nThis Appendix is governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

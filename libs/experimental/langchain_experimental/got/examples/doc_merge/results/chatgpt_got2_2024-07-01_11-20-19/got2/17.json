@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "LABORATORY SUPPLY AGREEMENT\n\nDate: [Insert Date]\n\nParties:\n\n    Supplier: [Supplier Name], [Supplier Address]\n    University: [University Name], [University Address]\n\n1. Purpose: Supplier will provide goods as listed in Annex A to the University's laboratory.\n\n2. Delivery: Within [specific timeframe, e.g., \"30 days\"] to [specific lab address].\n\n3. Payment: University will pay within [e.g., \"30 days\"] of invoice receipt.\n\n4. Warranty: Goods are defect-free for [e.g., \"12 months\"] from delivery.\n\n5. Non-disclosure: University will not disclose Supplier\u2019s proprietary details for [e.g., \"5 years\"]. Breach will result in a penalty of [specific amount or formula, e.g., \"$5,000 per incident or actual damages, whichever is greater\"].\n\n6. Termination: [e.g., \"30 days\"] notice for breaches unresolved within said period.\n\n7. Law: Governed by [State/Country] laws.\n\n8. Amendments: Both parties must sign written changes.",
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms.",
+          "LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Party A: [Full Legal Name of Party A], located at [Party A Address].\n    Party B: [Full Legal Name of Party B], located at [Party B Address].\n\n1. LOYALTY COMMITMENT:\n\nBoth parties acknowledge the mutual value of their business relationship. They commit to work in good faith, ensuring a collaborative environment that prioritizes trust, loyalty, and shared objectives.\n\n2. NON-POACHING OF EMPLOYEES:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 12 months following its termination\"], neither Party A nor Party B shall, without the prior written consent of the other party:\n\na. Directly or indirectly solicit, induce, or encourage any employees of the other party to terminate their employment or to engage in employment or other services elsewhere.\nb. Hire, employ, or contract the services of any employee of the other party who has been employed by the said party within the last 12 months.\n\n3. BREACH:\n\nAny violation of the clauses in this Agreement will be deemed a material breach and may result in legal action or other remedies as available by law.\n\n4. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n5. AMENDMENTS:\n\nAny modifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Loyalty Agreement.",
+          "NON-COMPETE AND LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement is designed to protect the proprietary and business interests of both parties by ensuring loyalty and preventing competition during and after the period of collaboration or engagement.\n\n2. NON-COMPETE:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 24 months following its termination\"], neither party shall:\n\na. Engage in or support any venture that directly competes with the core business of the other party within [specific geographical region, e.g., \"the State of California\"].\nb. Invest in, partner with, or advise any business entity that competes directly with the other party.\n\n3. LOYALTY AND NON-POACHING:\n\nBoth parties pledge their commitment to a loyal business relationship. Specifically:\n\na. Neither party will, without the prior written consent of the other, solicit, induce, or encourage any employees or contractors of the other party to terminate their engagement or to join another business.\nb. Neither party shall disparage or encourage others to disparage the other party, its products, services, or its employees.\n\n4. CONFIDENTIALITY:\n\nBoth parties agree to maintain confidentiality regarding any proprietary or business-sensitive information exchanged during the course of this Agreement, ensuring that such information isn't disclosed without the explicit consent of the party owning that information.\n\n5. BREACH AND REMEDIES:\n\nA violation of any provision in this Agreement will be deemed a significant breach. The aggrieved party shall be entitled to seek injunctive relief, damages, or any other remedies available under the laws of [specific country/state, e.g., \"the State of California\"].\n\n6. GOVERNING LAW:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications or amendments to this Agreement must be in writing and duly signed by authorized representatives of both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, representatives from both businesses affirm their understanding and acceptance of this Non-Compete and Loyalty Agreement."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "LABORATORY SUPPLY AGREEMENT\n\nDate: [Insert Date]\n\nParties:\n\n    Supplier: [Supplier Name], [Supplier Address]\n    University: [University Name], [University Address]\n\n1. Purpose: Supplier will provide goods as listed in Annex A to the University's laboratory.\n\n2. Delivery: Within [specific timeframe, e.g., \"30 days\"] to [specific lab address].\n\n3. Payment: University will pay within [e.g., \"30 days\"] of invoice receipt.\n\n4. Warranty: Goods are defect-free for [e.g., \"12 months\"] from delivery.\n\n5. Non-disclosure: University will not disclose Supplier\u2019s proprietary details for [e.g., \"5 years\"]. Breach will result in a penalty of [specific amount or formula, e.g., \"$5,000 per incident or actual damages, whichever is greater\"].\n\n6. Termination: [e.g., \"30 days\"] notice for breaches unresolved within said period.\n\n7. Law: Governed by [State/Country] laws.\n\n8. Amendments: Both parties must sign written changes.",
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms.",
+          "LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Party A: [Full Legal Name of Party A], located at [Party A Address].\n    Party B: [Full Legal Name of Party B], located at [Party B Address].\n\n1. LOYALTY COMMITMENT:\n\nBoth parties acknowledge the mutual value of their business relationship. They commit to work in good faith, ensuring a collaborative environment that prioritizes trust, loyalty, and shared objectives.\n\n2. NON-POACHING OF EMPLOYEES:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 12 months following its termination\"], neither Party A nor Party B shall, without the prior written consent of the other party:\n\na. Directly or indirectly solicit, induce, or encourage any employees of the other party to terminate their employment or to engage in employment or other services elsewhere.\nb. Hire, employ, or contract the services of any employee of the other party who has been employed by the said party within the last 12 months.\n\n3. BREACH:\n\nAny violation of the clauses in this Agreement will be deemed a material breach and may result in legal action or other remedies as available by law.\n\n4. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n5. AMENDMENTS:\n\nAny modifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Loyalty Agreement.",
+          "NON-COMPETE AND LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement is designed to protect the proprietary and business interests of both parties by ensuring loyalty and preventing competition during and after the period of collaboration or engagement.\n\n2. NON-COMPETE:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 24 months following its termination\"], neither party shall:\n\na. Engage in or support any venture that directly competes with the core business of the other party within [specific geographical region, e.g., \"the State of California\"].\nb. Invest in, partner with, or advise any business entity that competes directly with the other party.\n\n3. LOYALTY AND NON-POACHING:\n\nBoth parties pledge their commitment to a loyal business relationship. Specifically:\n\na. Neither party will, without the prior written consent of the other, solicit, induce, or encourage any employees or contractors of the other party to terminate their engagement or to join another business.\nb. Neither party shall disparage or encourage others to disparage the other party, its products, services, or its employees.\n\n4. CONFIDENTIALITY:\n\nBoth parties agree to maintain confidentiality regarding any proprietary or business-sensitive information exchanged during the course of this Agreement, ensuring that such information isn't disclosed without the explicit consent of the party owning that information.\n\n5. BREACH AND REMEDIES:\n\nA violation of any provision in this Agreement will be deemed a significant breach. The aggrieved party shall be entitled to seek injunctive relief, damages, or any other remedies available under the laws of [specific country/state, e.g., \"the State of California\"].\n\n6. GOVERNING LAW:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications or amendments to this Agreement must be in writing and duly signed by authorized representatives of both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, representatives from both businesses affirm their understanding and acceptance of this Non-Compete and Loyalty Agreement."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

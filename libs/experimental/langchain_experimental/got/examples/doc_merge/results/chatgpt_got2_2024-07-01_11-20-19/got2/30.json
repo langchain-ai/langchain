@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX C \u2013 ADDITIONAL CONFIDENTIAL INFORMATION\n\nThis Appendix is an extension of the contract (the \"Contract\") dated [Original Contract Date], between [Party One Name] (\"First Party\") and [Party Two Name] (\"Second Party\"). It outlines additional categories of confidential information beyond those detailed in the Contract.\n\n    Additional Confidential Information Includes:\n\n    a. Non-public financial data.\n\n    b. Unpublished marketing strategies and materials.\n\n    c. Upcoming product or service details.\n\n    d. Proprietary software codes and processes.\n\n    e. Personnel records.\n\n    f. Any data labeled as \"Confidential\" or \"Proprietary\" after the Contract\u2019s execution.\n\n    Protection & Exclusions:\n\nBoth Parties shall extend the same protection to this Additional Confidential Information as previously agreed upon in the Contract. Information that becomes public, is received rightfully from a third party, is independently developed, or gets written release authorization is excluded from confidentiality obligations.\n\n    Duration:\n\nThe confidentiality obligations for this Appendix shall persist as defined in the Contract or, if unspecified, for [e.g., \"five years\"] from the disclosure date.\n\n    Prevailing Terms:\n\nIf there\u2019s any conflict between this Appendix and the Contract concerning confidentiality, this Appendix takes precedence concerning Additional Confidential Information.\n\nExecuted as an integral part of the Contract.",
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is appended to the B2B Contractor Agreement (\"Agreement\") dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name], hereinafter referred to as \"Company', and [Contractor Name], hereinafter referred to as \"Contractor\".\n\n1. Confidentiality:\n\n1.1 Both Company and Contractor acknowledge that they may have access to or receive information during the term of the Agreement which is confidential to the disclosing party (\"Confidential Information\").\n\n1.2 Confidential Information shall not include information that:\n\n    is or becomes public knowledge without breach of this clause;\n    was known by the receiving party before receipt from the disclosing party;\n    is received from a third party without breach of any obligation of confidentiality.\n\n1.3 The receiving party shall:\n\n    use the Confidential Information only for performing under the Agreement;\n    take all reasonable precautions to prevent any unauthorized disclosure of the Confidential Information;\n    not disclose, reproduce, or distribute Confidential Information without the written consent of the disclosing party.\n\n2. Duration:\n\nThe obligations set forth in this Appendix shall continue for a period of [e.g., \"two years\"] from the date of termination or expiration of the Agreement.\n\n3. Return or Destruction:\n\nUpon the expiration or termination of the Agreement, or upon the disclosing party's request, the receiving party shall return or, if directed by the disclosing party, destroy all copies of the Confidential Information.\n\n4. Governing Law:\n\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the Agreement.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX C \u2013 ADDITIONAL CONFIDENTIAL INFORMATION\n\nThis Appendix is an extension of the contract (the \"Contract\") dated [Original Contract Date], between [Party One Name] (\"First Party\") and [Party Two Name] (\"Second Party\"). It outlines additional categories of confidential information beyond those detailed in the Contract.\n\n    Additional Confidential Information Includes:\n\n    a. Non-public financial data.\n\n    b. Unpublished marketing strategies and materials.\n\n    c. Upcoming product or service details.\n\n    d. Proprietary software codes and processes.\n\n    e. Personnel records.\n\n    f. Any data labeled as \"Confidential\" or \"Proprietary\" after the Contract\u2019s execution.\n\n    Protection & Exclusions:\n\nBoth Parties shall extend the same protection to this Additional Confidential Information as previously agreed upon in the Contract. Information that becomes public, is received rightfully from a third party, is independently developed, or gets written release authorization is excluded from confidentiality obligations.\n\n    Duration:\n\nThe confidentiality obligations for this Appendix shall persist as defined in the Contract or, if unspecified, for [e.g., \"five years\"] from the disclosure date.\n\n    Prevailing Terms:\n\nIf there\u2019s any conflict between this Appendix and the Contract concerning confidentiality, this Appendix takes precedence concerning Additional Confidential Information.\n\nExecuted as an integral part of the Contract.",
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is appended to the B2B Contractor Agreement (\"Agreement\") dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name], hereinafter referred to as \"Company', and [Contractor Name], hereinafter referred to as \"Contractor\".\n\n1. Confidentiality:\n\n1.1 Both Company and Contractor acknowledge that they may have access to or receive information during the term of the Agreement which is confidential to the disclosing party (\"Confidential Information\").\n\n1.2 Confidential Information shall not include information that:\n\n    is or becomes public knowledge without breach of this clause;\n    was known by the receiving party before receipt from the disclosing party;\n    is received from a third party without breach of any obligation of confidentiality.\n\n1.3 The receiving party shall:\n\n    use the Confidential Information only for performing under the Agreement;\n    take all reasonable precautions to prevent any unauthorized disclosure of the Confidential Information;\n    not disclose, reproduce, or distribute Confidential Information without the written consent of the disclosing party.\n\n2. Duration:\n\nThe obligations set forth in this Appendix shall continue for a period of [e.g., \"two years\"] from the date of termination or expiration of the Agreement.\n\n3. Return or Destruction:\n\nUpon the expiration or termination of the Agreement, or upon the disclosing party's request, the receiving party shall return or, if directed by the disclosing party, destroy all copies of the Confidential Information.\n\n4. Governing Law:\n\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the Agreement.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

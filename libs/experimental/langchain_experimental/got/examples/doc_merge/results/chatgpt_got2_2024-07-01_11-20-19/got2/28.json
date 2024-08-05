@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This appendix, part of the Contract between Party One and Party Two, sets milestones and deadlines for Party Two. \n\nMilestone 1 involves tasks such as gathering requirements, designing user interface etc. with the objective of developing initial prototype of a software application. Delivery Deadline: September 15, 2023. \n\nMilestone 2 involves tasks like incorporating feedback and conducting beta testing, aiming at finalizing and testing the software application. Delivery Deadline: October 15, 2023. \n\nEach milestone's completion will be reviewed by Party One; if requirements aren't met, Party Two may correct and resubmit. Payment terms and penalties are outlined in the main Contract. This appendix is executed adhering to main Contract's terms and conditions.",
+          "AMENDMENT TO NON-DISCLOSURE AGREEMENT\n\nThis Amendment (the \u201cAmendment\u201d) is made and entered into as of [Amendment Date], by and between [Party A Name], having an address at [Party A Address] (\u201cParty A\u201d), and [Party B Name], having an address at [Party B Address] (\u201cParty B\u201d), collectively referred to as the \u201cParties.\u201d\n\nRECITALS\n\nWHEREAS, the Parties entered into a Non-Disclosure Agreement dated [Original NDA Date] (the \u201cOriginal Agreement\u201d);\n\nWHEREAS, the Parties desire to amend the Original Agreement to extend the duration of certain restrictions therein;\n\nNOW, THEREFORE, in consideration of the mutual covenants and promises made by the Parties hereto, the Parties agree as follows:\n\n    Extension of Time Restrictions: The time restriction set forth in Section [X] of the Original Agreement, currently stating a period of [Original Time, e.g., \"two (2) years\"], is hereby amended and extended to [New Time, e.g., \"five (5) years\"] from the date of disclosure of the Confidential Information.\n\n    Full Force and Effect: Except as expressly modified by this Amendment, all terms, conditions, and provisions of the Original Agreement shall remain in full force and effect. In the event of any conflict between the terms of this Amendment and the Original Agreement, the terms of this Amendment shall govern.\n\n    Counterparts: This Amendment may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.\n\n    Governing Law: This Amendment shall be governed by and construed in accordance with the laws of [Governing State or Country, e.g., \"the State of California\"], without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the Parties hereto have executed this Amendment as of the date first above written.",
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is appended to the B2B Contractor Agreement (\"Agreement\") dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name], hereinafter referred to as \"Company', and [Contractor Name], hereinafter referred to as \"Contractor\".\n\n1. Confidentiality:\n\n1.1 Both Company and Contractor acknowledge that they may have access to or receive information during the term of the Agreement which is confidential to the disclosing party (\"Confidential Information\").\n\n1.2 Confidential Information shall not include information that:\n\n    is or becomes public knowledge without breach of this clause;\n    was known by the receiving party before receipt from the disclosing party;\n    is received from a third party without breach of any obligation of confidentiality.\n\n1.3 The receiving party shall:\n\n    use the Confidential Information only for performing under the Agreement;\n    take all reasonable precautions to prevent any unauthorized disclosure of the Confidential Information;\n    not disclose, reproduce, or distribute Confidential Information without the written consent of the disclosing party.\n\n2. Duration:\n\nThe obligations set forth in this Appendix shall continue for a period of [e.g., \"two years\"] from the date of termination or expiration of the Agreement.\n\n3. Return or Destruction:\n\nUpon the expiration or termination of the Agreement, or upon the disclosing party's request, the receiving party shall return or, if directed by the disclosing party, destroy all copies of the Confidential Information.\n\n4. Governing Law:\n\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the Agreement."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This appendix, part of the Contract between Party One and Party Two, sets milestones and deadlines for Party Two. \n\nMilestone 1 involves tasks such as gathering requirements, designing user interface etc. with the objective of developing initial prototype of a software application. Delivery Deadline: September 15, 2023. \n\nMilestone 2 involves tasks like incorporating feedback and conducting beta testing, aiming at finalizing and testing the software application. Delivery Deadline: October 15, 2023. \n\nEach milestone's completion will be reviewed by Party One; if requirements aren't met, Party Two may correct and resubmit. Payment terms and penalties are outlined in the main Contract. This appendix is executed adhering to main Contract's terms and conditions.",
+          "AMENDMENT TO NON-DISCLOSURE AGREEMENT\n\nThis Amendment (the \u201cAmendment\u201d) is made and entered into as of [Amendment Date], by and between [Party A Name], having an address at [Party A Address] (\u201cParty A\u201d), and [Party B Name], having an address at [Party B Address] (\u201cParty B\u201d), collectively referred to as the \u201cParties.\u201d\n\nRECITALS\n\nWHEREAS, the Parties entered into a Non-Disclosure Agreement dated [Original NDA Date] (the \u201cOriginal Agreement\u201d);\n\nWHEREAS, the Parties desire to amend the Original Agreement to extend the duration of certain restrictions therein;\n\nNOW, THEREFORE, in consideration of the mutual covenants and promises made by the Parties hereto, the Parties agree as follows:\n\n    Extension of Time Restrictions: The time restriction set forth in Section [X] of the Original Agreement, currently stating a period of [Original Time, e.g., \"two (2) years\"], is hereby amended and extended to [New Time, e.g., \"five (5) years\"] from the date of disclosure of the Confidential Information.\n\n    Full Force and Effect: Except as expressly modified by this Amendment, all terms, conditions, and provisions of the Original Agreement shall remain in full force and effect. In the event of any conflict between the terms of this Amendment and the Original Agreement, the terms of this Amendment shall govern.\n\n    Counterparts: This Amendment may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.\n\n    Governing Law: This Amendment shall be governed by and construed in accordance with the laws of [Governing State or Country, e.g., \"the State of California\"], without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the Parties hereto have executed this Amendment as of the date first above written.",
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is appended to the B2B Contractor Agreement (\"Agreement\") dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name], hereinafter referred to as \"Company', and [Contractor Name], hereinafter referred to as \"Contractor\".\n\n1. Confidentiality:\n\n1.1 Both Company and Contractor acknowledge that they may have access to or receive information during the term of the Agreement which is confidential to the disclosing party (\"Confidential Information\").\n\n1.2 Confidential Information shall not include information that:\n\n    is or becomes public knowledge without breach of this clause;\n    was known by the receiving party before receipt from the disclosing party;\n    is received from a third party without breach of any obligation of confidentiality.\n\n1.3 The receiving party shall:\n\n    use the Confidential Information only for performing under the Agreement;\n    take all reasonable precautions to prevent any unauthorized disclosure of the Confidential Information;\n    not disclose, reproduce, or distribute Confidential Information without the written consent of the disclosing party.\n\n2. Duration:\n\nThe obligations set forth in this Appendix shall continue for a period of [e.g., \"two years\"] from the date of termination or expiration of the Agreement.\n\n3. Return or Destruction:\n\nUpon the expiration or termination of the Agreement, or upon the disclosing party's request, the receiving party shall return or, if directed by the disclosing party, destroy all copies of the Confidential Information.\n\n4. Governing Law:\n\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the Agreement."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]
