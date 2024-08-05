@@ -24,18 +24,15 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
     host: str = "maas-api.ml-platform-cn-beijing.volces.com"
     """host
     learn more from https://www.volcengine.com/docs/82379/1174746"""
+    
     region: str = "cn-beijing"
     """region
     learn more from https://www.volcengine.com/docs/82379/1174746"""
 
-    model: str = "bge-large-zh"
-    """Model name
-    you could get from https://www.volcengine.com/docs/82379/1174746
-    for now, we support bge_large_zh
+    entrypoint: str = ''
+    """entrypoint
+    learn more from https://www.volcengine.com/docs/82379/1263482
     """
-
-    version: str = "1.0"
-    """ model version """
 
     chunk_size: int = 100
     """Chunk size when multiple texts are input"""
@@ -78,7 +75,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
         )
 
         try:
-            from volcengine.maas import MaasService
+            from volcengine.maas.v2 import MaasService
 
             client = MaasService(values["host"], values["region"])
             client.set_ak(values["volcano_ak"])
@@ -112,16 +109,12 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
         lst = []
         for chunk in text_in_chunks:
             req = {
-                "model": {
-                    "name": self.model,
-                    "version": self.version,
-                },
                 "input": chunk,
             }
             try:
                 from volcengine.maas import MaasException
 
-                resp = self.client.embeddings(req)
+                resp = self.client.embeddings(self.entrypoint, req)
                 lst.extend([res["embedding"] for res in resp["data"]])
             except MaasException as e:
                 raise ValueError(f"embed by volcengine Error: {e}")
