@@ -6,7 +6,6 @@ pip install -U langchain-mongodb
 ```
 
 # Usage
-- See [integrations doc](../../../docs/docs/integrations/providers/mongodb_atlas.ipynb) for more in-depth usage instructions.
 - See [Getting Started with the LangChain Integration](https://www.mongodb.com/docs/atlas/atlas-vector-search/ai-integrations/langchain/#get-started-with-the-langchain-integration) for a walkthrough on using your first LangChain implementation with MongoDB Atlas.
 
 ## Using MongoDBAtlasVectorSearch

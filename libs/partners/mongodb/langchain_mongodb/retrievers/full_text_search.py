@@ -1,12 +1,14 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, TypeVar
 
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pymongo.collection import Collection
 
-from langchain_mongodb.pipelines import MongoDBDocumentType, text_search_stage
+from langchain_mongodb.pipelines import text_search_stage
 from langchain_mongodb.utils import make_serializable
+
+MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 
 class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
@@ -22,36 +24,12 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
     """Collection field that contains the text to be searched. It must be indexed"""
     top_k: Optional[int] = None
     """Number of documents to return. Default is no limit"""
-    pre_filter: Optional[MongoDBDocumentType] = None
-    """(Optional) Any MQL match expression comparing an indexed field"""
-    post_filter: Optional[MongoDBDocumentType] = None
+    pre_filter: Optional[List[MongoDBDocumentType]] = None
+    """(Optional) List of MQL match expression comparing an indexed field"""
+    post_filter: Optional[List[MongoDBDocumentType]] = None
     """(Optional) Pipeline of MongoDB aggregation stages for postprocessing"""
     show_embeddings: float = False
     """If true, returned Document metadata will include vectors"""
-
-    # TODO - What do I do about lint errors? THIS MADE IT WORSE
-    """ 
-    def __init__(
-        self,
-        *,
-        collection: Collection,
-        search_index_name: str,
-        search_field: str,
-        top_k: Optional[int] = None,
-        pre_filter: Optional[MongoDBDocumentType] = None,
-        post_filter: Optional[MongoDBDocumentType] = None,
-        show_embeddings: float = False,
-    ):
-        super().__init__(
-            collection=collection,
-            search_index_name=search_index_name,
-            search_field=search_field,
-            top_k=top_k,
-            pre_filter=pre_filter,
-            post_filter=post_filter,
-            show_embeddings=show_embeddings,
-        )
-    """
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -74,7 +52,7 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
         )
         # Post filtering
         if self.post_filter is not None:
-            pipeline.extend(self.post_filter)
+            pipeline.append(self.post_filter)
 
         # Execution
         cursor = self.collection.aggregate(pipeline)  # type: ignore[arg-type]

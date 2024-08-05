@@ -68,7 +68,7 @@ def test_chain(
     from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
     embedding_openai = OpenAIEmbeddings(
-        openai_api_key=os.environ["OPENAI_API_KEY"],
+        openai_api_key=os.environ["OPENAI_API_KEY"],  # type: ignore # noqa
         model="text-embedding-3-small",
     )
 

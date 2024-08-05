@@ -10,8 +10,6 @@ from pymongo.operations import SearchIndexModel
 
 logger = logging.getLogger(__file__)
 
-_DELAY = 0.5  # Interval between checks for index operations
-
 
 def _search_index_error_message() -> str:
     return (
@@ -28,6 +26,7 @@ def _vector_search_index_definition(
     path: str,
     similarity: str,
     filters: Optional[List[str]] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     # https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-type/
     fields = [
@@ -41,8 +40,9 @@ def _vector_search_index_definition(
     if filters:
         for field in filters:
             fields.append({"type": "filter", "path": field})
-
-    return {"fields": fields}
+    definition = {"fields": fields}
+    definition.update(kwargs)
+    return definition
 
 
 def create_vector_search_index(
@@ -52,7 +52,9 @@ def create_vector_search_index(
     path: str,
     similarity: str,
     filters: Optional[List[str]] = None,
+    *,
     wait_until_complete: Optional[float] = None,
+    **kwargs: Any,
 ) -> None:
     """Experimental Utility function to create a vector search index
 
@@ -65,6 +67,7 @@ def create_vector_search_index(
         filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
             until search index is ready.
+        kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
     """
     logger.info("Creating Search Index %s on %s", index_name, collection.name)
 
@@ -76,6 +79,7 @@ def create_vector_search_index(
                     path=path,
                     similarity=similarity,
                     filters=filters,
+                    **kwargs,
                 ),
                 name=index_name,
                 type="vectorSearch",
@@ -94,7 +98,10 @@ def create_vector_search_index(
 
 
 def drop_vector_search_index(
-    collection: Collection, index_name: str, wait_until_complete: Optional[float] = None
+    collection: Collection,
+    index_name: str,
+    *,
+    wait_until_complete: Optional[float] = None,
 ) -> None:
     """Drop a created vector search index
 
@@ -129,7 +136,9 @@ def update_vector_search_index(
     path: str,
     similarity: str,
     filters: Optional[List[str]] = None,
+    *,
     wait_until_complete: Optional[float] = None,
+    **kwargs: Any,
 ) -> None:
     """Update a search index.
 
@@ -143,7 +152,8 @@ def update_vector_search_index(
         similarity (str): The similarity score used for the index.
         filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
-            until search index is ready
+            until search index is ready.
+        kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
     """
 
     logger.info(
@@ -157,6 +167,7 @@ def update_vector_search_index(
                 path=path,
                 similarity=similarity,
                 filters=filters,
+                **kwargs,
             ),
         )
     except OperationFailure as e:
@@ -218,16 +229,19 @@ def create_fulltext_search_index(
     collection: Collection,
     index_name: str,
     field: str,
+    *,
     wait_until_complete: Optional[float] = None,
+    **kwargs: Any,
 ) -> None:
     """Experimental Utility function to create an Atlas Search index
 
     Args:
         collection (Collection): MongoDB Collection
         index_name (str): Name of Index
-        field (str): to index
+        field (str): Field to index
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
-            until search index is ready.
+            until search index is ready
+        kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
     """
     logger.info("Creating Search Index %s on %s", index_name, collection.name)
 
@@ -241,6 +255,7 @@ def create_fulltext_search_index(
                 definition=definition,
                 name=index_name,
                 type="search",
+                **kwargs,
             )
         )
     except OperationFailure as e:

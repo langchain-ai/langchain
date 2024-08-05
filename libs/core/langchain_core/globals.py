@@ -18,7 +18,11 @@ _llm_cache: Optional["BaseCache"] = None
 
 
 def set_verbose(value: bool) -> None:
-    """Set a new value for the `verbose` global setting."""
+    """Set a new value for the `verbose` global setting.
+
+    Args:
+        value: The new value for the `verbose` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -46,7 +50,11 @@ def set_verbose(value: bool) -> None:
 
 
 def get_verbose() -> bool:
-    """Get the value of the `verbose` global setting."""
+    """Get the value of the `verbose` global setting.
+
+    Returns:
+        The value of the `verbose` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -69,7 +77,7 @@ def get_verbose() -> bool:
             # In the meantime, the `verbose` setting is considered True if either the old
             # or the new value are True. This accommodates users who haven't migrated
             # to using `set_verbose()` yet. Those users are getting deprecation warnings
-            # directing them to use `set_verbose()` when they import `langhchain.verbose`.
+            # directing them to use `set_verbose()` when they import `langchain.verbose`.
             old_verbose = langchain.verbose
     except ImportError:
         old_verbose = False
@@ -79,7 +87,11 @@ def get_verbose() -> bool:
 
 
 def set_debug(value: bool) -> None:
-    """Set a new value for the `debug` global setting."""
+    """Set a new value for the `debug` global setting.
+
+    Args:
+        value: The new value for the `debug` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -105,7 +117,11 @@ def set_debug(value: bool) -> None:
 
 
 def get_debug() -> bool:
-    """Get the value of the `debug` global setting."""
+    """Get the value of the `debug` global setting.
+
+    Returns:
+        The value of the `debug` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -126,7 +142,7 @@ def get_debug() -> bool:
             # In the meantime, the `debug` setting is considered True if either the old
             # or the new value are True. This accommodates users who haven't migrated
             # to using `set_debug()` yet. Those users are getting deprecation warnings
-            # directing them to use `set_debug()` when they import `langhchain.debug`.
+            # directing them to use `set_debug()` when they import `langchain.debug`.
             old_debug = langchain.debug
     except ImportError:
         old_debug = False
@@ -168,7 +184,11 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
 
 
 def get_llm_cache() -> "BaseCache":
-    """Get the value of the `llm_cache` global setting."""
+    """Get the value of the `llm_cache` global setting.
+
+    Returns:
+        The value of the `llm_cache` global setting.
+    """
     try:
         import langchain  # type: ignore[import]
 
@@ -193,7 +213,7 @@ def get_llm_cache() -> "BaseCache":
             # or the old value if both are falsy. This accommodates users
             # who haven't migrated to using `set_llm_cache()` yet.
             # Those users are getting deprecation warnings directing them
-            # to use `set_llm_cache()` when they import `langhchain.llm_cache`.
+            # to use `set_llm_cache()` when they import `langchain.llm_cache`.
             old_llm_cache = langchain.llm_cache
     except ImportError:
         old_llm_cache = None

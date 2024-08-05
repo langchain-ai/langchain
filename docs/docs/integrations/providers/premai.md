@@ -38,7 +38,7 @@ import getpass
 if "PREMAI_API_KEY" not in os.environ:
     os.environ["PREMAI_API_KEY"] = getpass.getpass("PremAI API Key:")
 
-chat = ChatPremAI(project_id=8)
+chat = ChatPremAI(project_id=1234, model_name="gpt-4o")
 ```
 
 ### Chat Completions
@@ -50,7 +50,8 @@ The first one will give us a static result. Whereas the second one will stream t
 ```python
 human_message = HumanMessage(content="Who are you?")
 
-chat.invoke([human_message])
+response = chat.invoke([human_message])
+print(response.content)
 ```
 
 You can provide system prompt here like this:
@@ -84,8 +85,8 @@ Repositories are also supported in langchain premai. Here is how you can do it.
 
 ```python 
 
-query = "what is the diameter of individual Galaxy"
-repository_ids = [1991, ]
+query = "Which models are used for dense retrieval"
+repository_ids = [1985,]
 repositories = dict(
     ids=repository_ids,
     similarity_threshold=0.3,
@@ -100,6 +101,8 @@ First we start by defining our repository with some repository ids. Make sure th
 Now, we connect the repository with our chat object to invoke RAG based generations. 
 
 ```python 
+import json
+
 response = chat.invoke(query, max_tokens=100, repositories=repositories)
 
 print(response.content)
@@ -109,25 +112,22 @@ print(json.dumps(response.response_metadata, indent=4))
 This is how an output looks like. 
 
 ```bash
-The diameters of individual galaxies range from 80,000-150,000 light-years.
+Dense retrieval models typically include:
+
+1. **BERT-based Models**: Such as DPR (Dense Passage Retrieval) which uses BERT for encoding queries and passages.
+2. **ColBERT**: A model that combines BERT with late interaction mechanisms.
+3. **ANCE (Approximate Nearest Neighbor Negative Contrastive Estimation)**: Uses BERT and focuses on efficient retrieval.
+4. **TCT-ColBERT**: A variant of ColBERT that uses a two-tower
 {
     "document_chunks": [
         {
-            "repository_id": 19xx,
-            "document_id": 13xx,
-            "chunk_id": 173xxx,
-            "document_name": "Kegy 202 Chapter 2",
-            "similarity_score": 0.586126983165741,
-            "content": "n thousands\n                                                                                                                                               of           light-years. The diameters of individual\n                                                                                                                                               galaxies range from 80,000-150,000 light\n                                                                                                                       "
-        },
-        {
-            "repository_id": 19xx,
-            "document_id": 13xx,
-            "chunk_id": 173xxx,
-            "document_name": "Kegy 202 Chapter 2",
-            "similarity_score": 0.4815782308578491,
-            "content": "                                                for development of galaxies. A galaxy contains\n                                                                                                                                               a large number of stars. Galaxies spread over\n                                                                                                                                               vast distances that are measured in thousands\n                                       "
-        },
+            "repository_id": 1985,
+            "document_id": 1306,
+            "chunk_id": 173899,
+            "document_name": "[D] Difference between sparse and dense informati\u2026",
+            "similarity_score": 0.3209080100059509,
+            "content": "with the difference or anywhere\nwhere I can read about it?\n\n\n      17                  9\n\n\n      u/ScotiabankCanada        \u2022  Promoted\n\n\n                       Accelerate your study permit process\n                       with Scotiabank's Student GIC\n                       Program. We're here to help you tur\u2026\n\n\n                       startright.scotiabank.com         Learn More\n\n\n                            Add a Comment\n\n\nSort by:   Best\n\n\n      DinosParkour      \u2022 1y ago\n\n\n     Dense Retrieval (DR) m"
+        }
     ]
 }
 ```
@@ -202,7 +202,7 @@ Prem Templates are also available for Streaming too.
 
 ## Prem Embeddings
 
-In this section we are going to dicuss how we can get access to different embedding model using `PremEmbeddings` with LangChain. Lets start by importing our modules and setting our API Key. 
+In this section we cover how we can get access to different embedding models using `PremEmbeddings` with LangChain. Let's start by importing our modules and setting our API Key.
 
 ```python
 import os
@@ -265,3 +265,163 @@ doc_result[:5]
  -0.004556538071483374,
  0.02918623760342598,
  -0.02547479420900345]
+
+## Tool/Function Calling
+
+LangChain PremAI supports tool/function calling. Tool/function calling allows a model to respond to a given prompt by generating output that matches a user-defined schema. 
+
+- You can learn all about tool calling in details [in our documentation here](https://docs.premai.io/get-started/function-calling).
+- You can learn more about langchain tool calling in [this part of the docs](https://python.langchain.com/v0.1/docs/modules/model_io/chat/function_calling).
+
+**NOTE:**
+
+> The current version of LangChain ChatPremAI do not support function/tool calling with streaming support. Streaming support along with function calling will come soon. 
+
+### Passing tools to model
+
+In order to pass tools and let the LLM choose the tool it needs to call, we need to pass a tool schema. A tool schema is the function definition along with proper docstring on what does the function do, what each argument of the function is etc. Below are some simple arithmetic functions with their schema. 
+
+**NOTE:** 
+> When defining function/tool schema, do not forget to add information around the function arguments, otherwise it would throw error.
+
+```python
+from langchain_core.tools import tool
+from langchain_core.pydantic_v1 import BaseModel, Field 
+
+# Define the schema for function arguments
+class OperationInput(BaseModel):
+    a: int = Field(description="First number")
+    b: int = Field(description="Second number")
+
+
+# Now define the function where schema for argument will be OperationInput
+@tool("add", args_schema=OperationInput, return_direct=True)
+def add(a: int, b: int) -> int:
+    """Adds a and b.
+
+    Args:
+        a: first int
+        b: second int
+    """
+    return a + b
+
+
+@tool("multiply", args_schema=OperationInput, return_direct=True)
+def multiply(a: int, b: int) -> int:
+    """Multiplies a and b.
+
+    Args:
+        a: first int
+        b: second int
+    """
+    return a * b
+```
+
+### Binding tool schemas with our LLM
+
+We will now use the `bind_tools` method to convert our above functions to a "tool" and binding it with the model. This means we are going to pass these tool informations everytime we invoke the model. 
+
+```python
+tools = [add, multiply]
+llm_with_tools = chat.bind_tools(tools)
+```
+
+After this, we get the response from the model which is now binded with the tools. 
+
+```python 
+query = "What is 3 * 12? Also, what is 11 + 49?"
+
+messages = [HumanMessage(query)]
+ai_msg = llm_with_tools.invoke(messages)
+```
+
+As we can see, when our chat model is binded with tools, then based on the given prompt, it calls the correct set of the tools and sequentially. 
+
+```python 
+ai_msg.tool_calls
+```
+**Output**
+
+```python
+[{'name': 'multiply',
+  'args': {'a': 3, 'b': 12},
+  'id': 'call_A9FL20u12lz6TpOLaiS6rFa8'},
+ {'name': 'add',
+  'args': {'a': 11, 'b': 49},
+  'id': 'call_MPKYGLHbf39csJIyb5BZ9xIk'}]
+```
+
+We append this message shown above to the LLM which acts as a context and makes the LLM aware that what all functions it has called. 
+
+```python 
+messages.append(ai_msg)
+```
+
+Since tool calling happens into two phases, where:
+
+1. in our first call, we gathered all the tools that the LLM decided to tool, so that it can get the result as an added context to give more accurate and hallucination free result. 
+
+2. in our second call, we will parse those set of tools decided by LLM and run them (in our case it will be the functions we defined, with the LLM's extracted arguments) and pass this result to the LLM
+
+```python
+from langchain_core.messages import ToolMessage
+
+for tool_call in ai_msg.tool_calls:
+    selected_tool = {"add": add, "multiply": multiply}[tool_call["name"].lower()]
+    tool_output = selected_tool.invoke(tool_call["args"])
+    messages.append(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
+```
+
+Finally, we call the LLM (binded with the tools) with the function response added in it's context. 
+
+```python
+response = llm_with_tools.invoke(messages)
+print(response.content)
+```
+**Output**
+
+```txt
+The final answers are:
+
+- 3 * 12 = 36
+- 11 + 49 = 60
+```
+
+### Defining tool schemas: Pydantic class `Optional`
+
+Above we have shown how to define schema using `tool` decorator, however we can equivalently define the schema using Pydantic. Pydantic is useful when your tool inputs are more complex:
+
+```python
+from langchain_core.output_parsers.openai_tools import PydanticToolsParser
+
+class add(BaseModel):
+    """Add two integers together."""
+
+    a: int = Field(..., description="First integer")
+    b: int = Field(..., description="Second integer")
+
+
+class multiply(BaseModel):
+    """Multiply two integers together."""
+
+    a: int = Field(..., description="First integer")
+    b: int = Field(..., description="Second integer")
+
+
+tools = [add, multiply]
+```
+
+Now, we can bind them to chat models and directly get the result:
+
+```python
+chain = llm_with_tools | PydanticToolsParser(tools=[multiply, add])
+chain.invoke(query)
+```
+
+**Output**
+
+```txt
+[multiply(a=3, b=12), add(a=11, b=49)]
+```
+
+Now, as done above, we parse this and run this functions and call the LLM once again to get the result.

@@ -45,7 +45,7 @@ def initialize_agent(
         agent_kwargs: Additional keyword arguments to pass to the underlying agent.
             Defaults to None.
         tags: Tags to apply to the traced runs. Defaults to None.
-        **kwargs: Additional keyword arguments passed to the agent executor.
+        kwargs: Additional keyword arguments passed to the agent executor.
 
     Returns:
         An agent executor.

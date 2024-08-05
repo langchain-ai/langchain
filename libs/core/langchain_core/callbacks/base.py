@@ -25,7 +25,14 @@ class RetrieverManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when Retriever errors."""
+        """Run when Retriever errors.
+
+        Args:
+            error (BaseException): The error that occurred.
+            run_id (UUID): The run ID. This is the ID of the current run.
+            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_retriever_end(
         self,
@@ -35,7 +42,14 @@ class RetrieverManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when Retriever ends running."""
+        """Run when Retriever ends running.
+
+        Args:
+            documents (Sequence[Document]): The documents retrieved.
+            run_id (UUID): The run ID. This is the ID of the current run.
+            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
+            kwargs (Any): Additional keyword arguments.
+        """
 
 
 class LLMManagerMixin:
@@ -370,6 +384,31 @@ class RunManagerMixin:
             kwargs (Any): Additional keyword arguments.
         """
 
+    def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Override to define a handler for a custom event.
+
+        Args:
+            name: The name of the custom event.
+            data: The data for the custom event. Format will match
+                  the format specified by the user.
+            run_id: The ID of the run.
+            tags: The tags associated with the custom event
+                (includes inherited tags).
+            metadata: The metadata associated with the custom event
+                (includes inherited metadata).
+
+        .. versionadded:: 0.2.15
+        """
+
 
 class BaseCallbackHandler(
     LLMManagerMixin,
@@ -415,6 +454,11 @@ class BaseCallbackHandler(
     @property
     def ignore_chat_model(self) -> bool:
         """Whether to ignore chat model callbacks."""
+        return False
+
+    @property
+    def ignore_custom_event(self) -> bool:
+        """Ignore custom event."""
         return False
 
 
@@ -797,6 +841,31 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
             tags (Optional[List[str]]): The tags.
             kwargs (Any): Additional keyword arguments.
+        """
+
+    async def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Override to define a handler for a custom event.
+
+        Args:
+            name: The name of the custom event.
+            data: The data for the custom event. Format will match
+                  the format specified by the user.
+            run_id: The ID of the run.
+            tags: The tags associated with the custom event
+                (includes inherited tags).
+            metadata: The metadata associated with the custom event
+                (includes inherited metadata).
+
+        .. versionadded:: 0.2.15
         """
 
 

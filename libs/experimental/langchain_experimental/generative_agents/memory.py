@@ -144,7 +144,7 @@ class GenerativeAgentMemory(BaseMemory):
             + " following piece of memory. Always answer with only a list of numbers."
             + " If just given one memory still respond in a list."
             + " Memories are separated by semi colans (;)"
-            + "\Memories: {memory_content}"
+            + "\nMemories: {memory_content}"
             + "\nRating: "
         )
         scores = self.chain(prompt).run(memory_content=memory_content).strip()

@@ -7,6 +7,7 @@ import pytest
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from tests.unit_tests.pydantic_utils import _schema
 
 
 def test_prompt_valid() -> None:
@@ -16,6 +17,29 @@ def test_prompt_valid() -> None:
     prompt = PromptTemplate(input_variables=input_variables, template=template)
     assert prompt.template == template
     assert prompt.input_variables == input_variables
+
+
+def test_from_file_encoding() -> None:
+    """Test that we can load a template from a file with a non utf-8 encoding."""
+    template = "This is a {foo} test with special character €."
+    input_variables = ["foo"]
+
+    # First write to a file using CP-1252 encoding.
+    from tempfile import NamedTemporaryFile
+
+    with NamedTemporaryFile(delete=True, mode="w", encoding="cp1252") as f:
+        f.write(template)
+        f.flush()
+        file_name = f.name
+
+        # Now read from the file using CP-1252 encoding and test
+        prompt = PromptTemplate.from_file(file_name, encoding="cp1252")
+        assert prompt.template == template
+        assert prompt.input_variables == input_variables
+
+        # Now read from the file using UTF-8 encoding and test
+        with pytest.raises(UnicodeDecodeError):
+            PromptTemplate.from_file(file_name, encoding="utf-8")
 
 
 def test_prompt_from_template() -> None:
@@ -46,7 +70,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo="bar") == "This is a bar test."
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"title": "Foo", "type": "string"}},
@@ -57,7 +81,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test."
     assert prompt.input_variables == ["bar", "foo"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
@@ -71,7 +95,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test bar."
     assert prompt.input_variables == ["bar", "foo"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
@@ -87,7 +111,7 @@ def test_mustache_prompt_from_template() -> None:
         "This foo is a bar test baz."
     )
     assert prompt.input_variables == ["foo", "obj"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
@@ -111,7 +135,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo="baz") == ("This {'foo': 'baz'} is a test.")
     assert prompt.input_variables == []
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {},
@@ -128,7 +152,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"$ref": "#/definitions/foo"}},
@@ -160,7 +184,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"$ref": "#/definitions/foo"}},
@@ -215,7 +239,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"$ref": "#/definitions/foo"}},
@@ -263,7 +287,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"$ref": "#/definitions/foo"}},
@@ -286,7 +310,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert prompt.input_schema.schema() == {
+    assert _schema(prompt.input_schema) == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"title": "Foo", "type": "object"}},

@@ -22,7 +22,6 @@ from datetime import date, datetime
 from typing import Any, Dict, List, Union
 
 import numpy as np
-from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +174,8 @@ def make_serializable(
     obj: Dict[str, Any],
 ) -> None:
     """Recursively cast values in a dict to a form able to json.dump"""
+
+    from bson import ObjectId
 
     for k, v in obj.items():
         if isinstance(v, dict):

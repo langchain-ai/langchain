@@ -4,19 +4,52 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
 
 
 class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
-    """`Baidu Qianfan Embeddings` embedding models."""
+    """Baidu Qianfan Embeddings embedding models.
 
-    qianfan_ak: Optional[str] = None
+    Setup:
+        To use, you should have the ``qianfan`` python package installed, and set
+        environment variables ``QIANFAN_AK``, ``QIANFAN_SK``.
+
+        .. code-block:: bash
+
+            pip install qianfan
+            export QIANFAN_AK="your-api-key"
+            export QIANFAN_SK="your-secret_key"
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.embeddings import QianfanEmbeddingsEndpoint
+
+            embeddings = QianfanEmbeddingsEndpoint()
+
+     Embed:
+        .. code-block:: python
+
+            # embed the documents
+            vectors = embeddings.embed_documents([text1, text2, ...])
+
+            # embed the query
+            vectors = embeddings.embed_query(text)
+
+            # embed the documents with async
+            vectors = await embeddings.aembed_documents([text1, text2, ...])
+
+            # embed the query with async
+            vectors = await embeddings.aembed_query(text)
+    """  # noqa: E501
+
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Qianfan application apikey"""
 
-    qianfan_sk: Optional[str] = None
+    qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
     """Qianfan application secretkey"""
 
     chunk_size: int = 16

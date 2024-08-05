@@ -250,7 +250,7 @@ class Chroma(VectorStore):
                     e.g. {"color" : "red", "price": 4.20}.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
-            **kwargs: Additional keyword arguments to pass to Chroma collection query.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of `n_results` nearest neighbor embeddings for provided
@@ -286,7 +286,7 @@ class Chroma(VectorStore):
             metadatas: Optional list of metadatas.
                     When querying, you can filter on this metadata.
             ids: Optional list of IDs.
-            **kwargs: Additional keyword arguments to pass.
+            kwargs: Additional keyword arguments to pass.
 
         Returns:
             List of IDs of the added images.
@@ -374,7 +374,7 @@ class Chroma(VectorStore):
             metadatas: Optional list of metadatas.
                     When querying, you can filter on this metadata.
             ids: Optional list of IDs.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             List of IDs of the added texts.
@@ -456,7 +456,7 @@ class Chroma(VectorStore):
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to Chroma collection query.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text.
@@ -482,7 +482,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
-            **kwargs: Additional keyword arguments to pass to Chroma collection query.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents most similar to the query vector.
@@ -512,7 +512,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
-            **kwargs: Additional keyword arguments to pass to Chroma collection query.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text and relevance score
@@ -543,7 +543,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
-            **kwargs: Additional keyword arguments to pass to Chroma collection query.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text and
@@ -607,6 +607,94 @@ class Chroma(VectorStore):
                 "Consider providing relevance_score_fn to Chroma constructor."
             )
 
+    def similarity_search_by_image(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return. Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+
+        Returns:
+            List of Images most similar to the provided image.
+            Each element in list is a Langchain Document Object.
+            The page content is b64 encoded image, metadata is default or
+            as defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
+    def similarity_search_by_image_with_relevance_score(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return.
+            Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+        Returns:
+            List[Tuple[Document, float]]: List of tuples containing documents similar
+            to the query image and their similarity scores.
+            0th element in each tuple is a Langchain Document Object.
+            The page content is b64 encoded img, metadata is default or defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector_with_relevance_scores(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -634,7 +722,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
-            **kwargs: Additional keyword arguments to pass to Chroma collection query.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -685,7 +773,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
-            **kwargs: Additional keyword arguments to pass to Chroma collection query.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -847,7 +935,7 @@ class Chroma(VectorStore):
                     https://docs.trychroma.com/reference/js-client#class:-chromaclient
             collection_metadata: Collection configurations.
                                                   Defaults to None.
-            **kwargs: Additional keyword arguments to initialize a Chroma client.
+            kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -912,7 +1000,7 @@ class Chroma(VectorStore):
                     https://docs.trychroma.com/reference/js-client#class:-chromaclient
             collection_metadata: Collection configurations.
                                                   Defaults to None.
-            **kwargs: Additional keyword arguments to initialize a Chroma client.
+            kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -937,6 +1025,6 @@ class Chroma(VectorStore):
 
         Args:
             ids: List of ids to delete.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids)
