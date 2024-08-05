@@ -115,27 +115,26 @@ class GlinerGraphTransformer:
         relations = docs[0][0]._.relations
         # Deduplicate based on label, head text, and tail text
         # Use a list comprehension with max() function
+        deduplicated_rels = []
         seen = set()
-        deduplicated_rels = [
-            max(
-                (
-                    item
-                    for item in relations
-                    if (
-                        tuple(item["head_text"]),
-                        tuple(item["tail_text"]),
-                        item["label"],
-                    )
+
+        for item in relations:
+            key = (tuple(item["head_text"]), tuple(item["tail_text"]), item["label"])
+
+            if key not in seen:
+                seen.add(key)
+
+                # Find all items matching the current key
+                matching_items = [
+                    rel
+                    for rel in relations
+                    if (tuple(rel["head_text"]), tuple(rel["tail_text"]), rel["label"])
                     == key
-                ),
-                key=lambda x: x["score"],
-            )
-            for key in {
-                (tuple(item["head_text"]), tuple(item["tail_text"]), item["label"])
-                for item in relations
-            }
-            if not (key in seen or seen.add(key))
-        ]
+                ]
+
+                # Find the item with the maximum score
+                max_item = max(matching_items, key=lambda x: x["score"])
+                deduplicated_rels.append(max_item)
         for rel in deduplicated_rels:
             # Relationship confidence threshold
             if rel["score"] < self.relationship_confidence_threshold:
