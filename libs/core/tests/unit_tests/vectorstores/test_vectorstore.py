@@ -7,7 +7,7 @@ from typing_extensions import TypedDict
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.indexing.base import UpsertResponse
+from langchain_core.indexing import UpsertResponse
 from langchain_core.vectorstores import VectorStore
 
 
