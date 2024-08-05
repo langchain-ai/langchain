@@ -3,23 +3,24 @@
 from typing import (
     Any,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
     Literal,
     Mapping,
     Optional,
+    Tuple,
     Union,
 )
 
-import ollama
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
-from ollama import AsyncClient, Options
+from ollama import AsyncClient, Client, Options
 
 
 class OllamaLLM(BaseLLM):
@@ -107,6 +108,19 @@ class OllamaLLM(BaseLLM):
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
 
+    base_url: Optional[str] = None
+    """Base url the model is hosted under."""
+
+    headers: Optional[dict] = None
+    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
+    This is useful when Ollama is hosted on cloud services that require
+    tokens for authentication.
+    """
+
+    auth: Union[Callable, Tuple, None] = None
+    """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
+    Expects the same format, type and values as requests.request auth parameter."""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -155,7 +169,9 @@ class OllamaLLM(BaseLLM):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        async for part in await AsyncClient().generate(
+        async for part in await AsyncClient(
+            host=self.base_url, headers=self.headers, auth=self.auth
+        ).generate(
             model=params["model"],
             prompt=prompt,
             stream=True,
@@ -183,7 +199,9 @@ class OllamaLLM(BaseLLM):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        yield from ollama.generate(
+        yield from Client(
+            host=self.base_url, headers=self.headers, auth=self.auth
+        ).generate(
             model=params["model"],
             prompt=prompt,
             stream=True,

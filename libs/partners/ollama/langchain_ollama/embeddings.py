@@ -1,9 +1,14 @@
-from typing import List
+from typing import (
+    Callable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
-import ollama
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
-from ollama import AsyncClient
+from ollama import AsyncClient, Client
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -21,6 +26,19 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     model: str
     """Model name to use."""
 
+    base_url: Optional[str] = None
+    """Base url the model is hosted under."""
+
+    headers: Optional[dict] = None
+    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
+    This is useful when Ollama is hosted on cloud services that require
+    tokens for authentication.
+    """
+
+    auth: Union[Callable, Tuple, None] = None
+    """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
+    Expects the same format, type and values as requests.request auth parameter."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -28,7 +46,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = ollama.embed(self.model, texts)["embeddings"]
+        embedded_docs = Client(
+            host=self.base_url, headers=self.headers, auth=self.auth
+        ).embed(self.model, texts)["embeddings"]
         return embedded_docs
 
     def embed_query(self, text: str) -> List[float]:
@@ -37,7 +57,11 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = (await AsyncClient().embed(self.model, texts))["embeddings"]
+        embedded_docs = (
+            await AsyncClient(
+                host=self.base_url, headers=self.headers, auth=self.auth
+            ).embed(self.model, texts)
+        )["embeddings"]
         return embedded_docs
 
     async def aembed_query(self, text: str) -> List[float]:

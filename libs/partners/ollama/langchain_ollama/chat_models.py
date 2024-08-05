@@ -11,6 +11,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
     cast,
@@ -322,6 +323,16 @@ class ChatOllama(BaseChatModel):
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
 
+    headers: Optional[dict] = None
+    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
+    This is useful when Ollama is hosted on cloud services that require
+    tokens for authentication.
+    """
+
+    auth: Union[Callable, Tuple, None] = None
+    """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
+    Expects the same format, type and values as requests.request auth parameter."""
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -449,7 +460,9 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            yield await AsyncClient(host=self.base_url).chat(
+            yield await AsyncClient(
+                host=self.base_url, headers=self.headers, auth=self.auth
+            ).chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=False,
@@ -459,7 +472,9 @@ class ChatOllama(BaseChatModel):
                 tools=kwargs["tools"],
             )  # type:ignore
         else:
-            async for part in await AsyncClient(host=self.base_url).chat(
+            async for part in await AsyncClient(
+                host=self.base_url, headers=self.headers, auth=self.auth
+            ).chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=True,
@@ -487,7 +502,7 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         if "tools" in kwargs:
-            yield Client(host=self.base_url).chat(
+            yield Client(host=self.base_url, headers=self.headers, auth=self.auth).chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=False,
@@ -497,7 +512,9 @@ class ChatOllama(BaseChatModel):
                 tools=kwargs["tools"],
             )
         else:
-            yield from Client(host=self.base_url).chat(
+            yield from Client(
+                host=self.base_url, headers=self.headers, auth=self.auth
+            ).chat(
                 model=params["model"],
                 messages=ollama_messages,
                 stream=True,
