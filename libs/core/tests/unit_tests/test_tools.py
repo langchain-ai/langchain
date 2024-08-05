@@ -1869,6 +1869,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
 def test_tool_args_schema_pydantic_v2_with_metadata():
     from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
     from pydantic import Field as FieldV2  # pydantic: ignore
+    from pydantic import ValidationError as ValidationErrorV2  # pydantic: ignore
 
     class Foo(BaseModelV2):
         x: List[int] = FieldV2(
@@ -1896,3 +1897,7 @@ def test_tool_args_schema_pydantic_v2_with_metadata():
         "title": "foo",
         "type": "object",
     }
+
+    assert foo.invoke({"x": [0] * 10})
+    with pytest.raises(ValidationErrorV2):
+        foo.invoke({"x": [0] * 9})
