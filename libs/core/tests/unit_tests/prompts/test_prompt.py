@@ -18,6 +18,29 @@ def test_prompt_valid() -> None:
     assert prompt.input_variables == input_variables
 
 
+def test_from_file_encoding() -> None:
+    """Test that we can load a template from a file with a non utf-8 encoding."""
+    template = "This is a {foo} test with special character €."
+    input_variables = ["foo"]
+
+    # First write to a file using CP-1252 encoding.
+    from tempfile import NamedTemporaryFile
+
+    with NamedTemporaryFile(delete=True, mode="w", encoding="cp1252") as f:
+        f.write(template)
+        f.flush()
+        file_name = f.name
+
+        # Now read from the file using CP-1252 encoding and test
+        prompt = PromptTemplate.from_file(file_name, encoding="cp1252")
+        assert prompt.template == template
+        assert prompt.input_variables == input_variables
+
+        # Now read from the file using UTF-8 encoding and test
+        with pytest.raises(UnicodeDecodeError):
+            PromptTemplate.from_file(file_name, encoding="utf-8")
+
+
 def test_prompt_from_template() -> None:
     """Test prompts can be constructed from a template."""
     # Single input variable.
@@ -138,6 +161,115 @@ def test_mustache_prompt_from_template() -> None:
                 "type": "object",
                 "properties": {"bar": {"title": "Bar", "type": "string"}},
             }
+        },
+    }
+
+    # more complex nested section/context variables
+    template = """This{{#foo}}
+        {{bar}}
+        {{#baz}}
+            {{qux}}
+        {{/baz}}
+        {{quux}}
+    {{/foo}}is a test."""
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(
+        foo={"bar": "yo", "baz": [{"qux": "wassup"}], "quux": "hello"}
+    ) == (
+        """This
+        yo
+            wassup
+        hello
+    is a test."""
+    )
+    assert prompt.input_variables == ["foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"foo": {"$ref": "#/definitions/foo"}},
+        "definitions": {
+            "foo": {
+                "title": "foo",
+                "type": "object",
+                "properties": {
+                    "bar": {"title": "Bar", "type": "string"},
+                    "baz": {"$ref": "#/definitions/baz"},
+                    "quux": {"title": "Quux", "type": "string"},
+                },
+            },
+            "baz": {
+                "title": "baz",
+                "type": "object",
+                "properties": {"qux": {"title": "Qux", "type": "string"}},
+            },
+        },
+    }
+
+    # triply nested section/context variables
+    template = """This{{#foo}}
+        {{bar}}
+        {{#baz.qux}}
+            {{#barfoo}}
+                {{foobar}}
+            {{/barfoo}}
+            {{foobar}}
+        {{/baz.qux}}
+        {{quux}}
+    {{/foo}}is a test."""
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(
+        foo={
+            "bar": "yo",
+            "baz": {
+                "qux": [
+                    {"foobar": "wassup"},
+                    {"foobar": "yoyo", "barfoo": {"foobar": "hello there"}},
+                ]
+            },
+            "quux": "hello",
+        }
+    ) == (
+        """This
+        yo
+            wassup
+                hello there
+            yoyo
+        hello
+    is a test."""
+    )
+    assert prompt.input_variables == ["foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"foo": {"$ref": "#/definitions/foo"}},
+        "definitions": {
+            "foo": {
+                "title": "foo",
+                "type": "object",
+                "properties": {
+                    "bar": {"title": "Bar", "type": "string"},
+                    "baz": {"$ref": "#/definitions/baz"},
+                    "quux": {"title": "Quux", "type": "string"},
+                },
+            },
+            "baz": {
+                "title": "baz",
+                "type": "object",
+                "properties": {"qux": {"$ref": "#/definitions/qux"}},
+            },
+            "qux": {
+                "title": "qux",
+                "type": "object",
+                "properties": {
+                    "foobar": {"title": "Foobar", "type": "string"},
+                    "barfoo": {"$ref": "#/definitions/barfoo"},
+                },
+            },
+            "barfoo": {
+                "title": "barfoo",
+                "type": "object",
+                "properties": {"foobar": {"title": "Foobar", "type": "string"}},
+            },
         },
     }
 

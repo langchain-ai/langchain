@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-cli"
-version = "0.0.25"
+version = "0.0.27"
 description = "CLI for interacting with GigaChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -13,6 +13,7 @@ packages = [
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/cli"
+"Release Notes" = "https://github.com/ai-forever/gigachain/releases?q=tag%3A%22gigachain-cli%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -33,7 +34,7 @@ pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.5"
 
 [tool.poetry.group.test.dependencies]
 
@@ -66,9 +67,9 @@ _bump_2.uses = { version = "version" }
 
 _bump_1 = "poetry version patch"
 _check_formatting = "poetry run ruff format . --diff"
-_lint = "poetry run ruff ."
+_lint = "poetry run ruff check ."
 _format = "poetry run ruff format ."
-_lint_fix = "poetry run ruff . --fix"
+_lint_fix = "poetry run ruff check . --fix"
 
 [build-system]
 requires = ["poetry-core"]

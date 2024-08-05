@@ -169,13 +169,23 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return ChromaTranslator()
 
         try:
-            from langchain_postgres import PGVector
+            from langchain_postgres import PGVector  # type: ignore[no-redef]
             from langchain_postgres import PGVectorTranslator as NewPGVectorTranslator
         except ImportError:
             pass
         else:
             if isinstance(vectorstore, PGVector):
                 return NewPGVectorTranslator()
+
+        try:
+            # Added in langchain-community==0.2.11
+            from langchain_community.query_constructors.hanavector import HanaTranslator
+            from langchain_community.vectorstores import HanaDB
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, HanaDB):
+                return HanaTranslator()
 
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
@@ -310,16 +320,16 @@ class SelfQueryRetriever(BaseRetriever):
             "allowed_comparators" not in chain_kwargs
             and structured_query_translator.allowed_comparators is not None
         ):
-            chain_kwargs[
-                "allowed_comparators"
-            ] = structured_query_translator.allowed_comparators
+            chain_kwargs["allowed_comparators"] = (
+                structured_query_translator.allowed_comparators
+            )
         if (
             "allowed_operators" not in chain_kwargs
             and structured_query_translator.allowed_operators is not None
         ):
-            chain_kwargs[
-                "allowed_operators"
-            ] = structured_query_translator.allowed_operators
+            chain_kwargs["allowed_operators"] = (
+                structured_query_translator.allowed_operators
+            )
         query_constructor = load_query_constructor_runnable(
             llm,
             document_contents,

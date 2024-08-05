@@ -80,6 +80,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "duckdb-engine",
             "freezegun",
             "gigachain-core",
+            "gigachain-standard-tests",
             "gigachain-text-splitters",
             "gigachain-openai",
             "lark",

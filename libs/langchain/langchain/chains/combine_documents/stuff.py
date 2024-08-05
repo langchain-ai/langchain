@@ -27,13 +27,14 @@ def create_stuff_documents_chain(
     output_parser: Optional[BaseOutputParser] = None,
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
+    document_variable_name: str = DOCUMENTS_KEY,
 ) -> Runnable[Dict[str, Any], Any]:
     """Create a chain for passing a list of Documents to a model.
 
     Args:
         llm: Language model.
-        prompt: Prompt template. Must contain input variable "context", which will be
-            used for passing in the formatted documents.
+        prompt: Prompt template. Must contain input variable "context" (override by
+            setting document_variable), which will be used for passing in the formatted documents.
         output_parser: Output parser. Defaults to StrOutputParser.
         document_prompt: Prompt used for formatting each document into a string. Input
             variables can be "page_content" or any metadata keys that are in all
@@ -42,6 +43,8 @@ def create_stuff_documents_chain(
             automatically retrieved from the `Document.metadata` dictionary. Default to
             a prompt that only contains `Document.page_content`.
         document_separator: String separator to use between formatted document strings.
+        document_variable_name: Variable name to use for the formatted documents in the prompt.
+            Defaults to "context".
 
     Returns:
         An LCEL Runnable. The input is a dictionary that must have a "context" key that
@@ -78,11 +81,12 @@ def create_stuff_documents_chain(
 
     def format_docs(inputs: dict) -> str:
         return document_separator.join(
-            format_document(doc, _document_prompt) for doc in inputs[DOCUMENTS_KEY]
+            format_document(doc, _document_prompt)
+            for doc in inputs[document_variable_name]
         )
 
     return (
-        RunnablePassthrough.assign(**{DOCUMENTS_KEY: format_docs}).with_config(
+        RunnablePassthrough.assign(**{document_variable_name: format_docs}).with_config(
             run_name="format_inputs"
         )
         | prompt

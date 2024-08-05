@@ -1,6 +1,9 @@
 """Test ChatOpenAI chat model."""
+
+import base64
 from typing import Any, AsyncIterator, List, Optional, cast
 
+import httpx
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
@@ -47,7 +50,7 @@ def test_chat_openai_model() -> None:
     """Test ChatOpenAI wrapper handles model_name."""
     chat = ChatOpenAI(model="foo")
     assert chat.model_name == "foo"
-    chat = ChatOpenAI(model_name="bar")
+    chat = ChatOpenAI(model_name="bar")  # type: ignore[call-arg]
     assert chat.model_name == "bar"
 
 
@@ -230,17 +233,17 @@ async def test_async_chat_openai_bind_functions() -> None:
 def test_chat_openai_extra_kwargs() -> None:
     """Test extra kwargs to chat openai."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatOpenAI(foo=3, max_tokens=10)
+    llm = ChatOpenAI(foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatOpenAI(foo=3, model_kwargs={"bar": 2})
+    llm = ChatOpenAI(foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
-        ChatOpenAI(foo=3, model_kwargs={"foo": 2})
+        ChatOpenAI(foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
 
     # Test that if explicit param is specified in kwargs it errors
     with pytest.raises(ValueError):
@@ -317,6 +320,9 @@ def test_openai_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+
+    # assert no response headers if include_response_headers is not set
+    assert "headers" not in result.response_metadata
 
 
 def test_stream() -> None:
@@ -670,3 +676,77 @@ def test_openai_proxy() -> None:
         assert proxy.scheme == b"http"
         assert proxy.host == b"localhost"
         assert proxy.port == 8080
+
+
+def test_openai_response_headers_invoke() -> None:
+    """Test ChatOpenAI response headers."""
+    chat_openai = ChatOpenAI(include_response_headers=True)
+    result = chat_openai.invoke("I'm Pickle Rick")
+    headers = result.response_metadata["headers"]
+    assert headers
+    assert isinstance(headers, dict)
+    assert "content-type" in headers
+
+
+def test_image_token_counting_jpeg() -> None:
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "describe the weather in this image"},
+            {"type": "image_url", "image_url": {"url": image_url}},
+        ]
+    )
+    expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+        "input_tokens"
+    ]
+    actual = model.get_num_tokens_from_messages([message])
+    assert expected == actual
+
+    image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "describe the weather in this image"},
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+            },
+        ]
+    )
+    expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+        "input_tokens"
+    ]
+    actual = model.get_num_tokens_from_messages([message])
+    assert expected == actual
+
+
+def test_image_token_counting_png() -> None:
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "how many dice are in this image"},
+            {"type": "image_url", "image_url": {"url": image_url}},
+        ]
+    )
+    expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+        "input_tokens"
+    ]
+    actual = model.get_num_tokens_from_messages([message])
+    assert expected == actual
+
+    image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "how many dice are in this image"},
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{image_data}"},
+            },
+        ]
+    )
+    expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+        "input_tokens"
+    ]
+    actual = model.get_num_tokens_from_messages([message])
+    assert expected == actual

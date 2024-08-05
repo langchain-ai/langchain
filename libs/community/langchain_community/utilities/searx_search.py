@@ -229,10 +229,10 @@ class SearxSearchWrapper(BaseModel):
 
         return v
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_params(cls, values: Dict) -> Dict:
         """Validate that custom searx params are merged with default ones."""
-        user_params = values["params"]
+        user_params = values.get("params", {})
         default = _get_default_params()
         values["params"] = {**default, **user_params}
 

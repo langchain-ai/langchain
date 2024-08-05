@@ -15,6 +15,14 @@ hide_table_of_contents: true
 
 # Document loaders
 
+:::info
+
+If you'd like to write your own document loader, see [this how-to](/docs/how_to/document_loader_custom/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+
+:::
+
+
 ## Features
 
 The following table shows the feature support for all document loaders.
@@ -22,6 +30,18 @@ The following table shows the feature support for all document loaders.
 {table}
 
 """
+
+DEPRECATED = [
+    "AirbyteCDKLoader",
+    "AirbyteGongLoader",
+    "AirbyteHubspotLoader",
+    "AirbyteJSONLoader",
+    "AirbyteSalesforceLoader",
+    "AirbyteShopifyLoader",
+    "AirbyteStripeLoader",
+    "AirbyteTypeformLoader",
+    "AirbyteZendeskSupportLoader",
+]
 
 
 def get_document_loader_table() -> str:
@@ -55,7 +75,7 @@ def get_document_loader_table() -> str:
     title = ["Document Loader", "Description", "Lazy loading", "Native async support"]
     rows = [title, [":-"] * 2 + [":-:"] * (len(title) - 2)]
     for loader, feats in sorted(doc_loaders_feat_table.items()):
-        if not feats:
+        if not feats or loader in DEPRECATED:
             continue
         rows += [
             [loader, feats["description"]]

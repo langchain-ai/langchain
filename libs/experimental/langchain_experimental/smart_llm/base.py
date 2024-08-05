@@ -1,4 +1,5 @@
 """Chain for applying self-critique using the SmartGPT workflow."""
+
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain.base_language import BaseLanguageModel

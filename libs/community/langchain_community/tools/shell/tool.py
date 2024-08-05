@@ -21,7 +21,7 @@ class ShellInput(BaseModel):
     )
     """List of shell commands to run."""
 
-    @root_validator
+    @root_validator(pre=True)
     def _validate_commands(cls, values: dict) -> dict:
         """Validate commands."""
         # TODO: Add real validators

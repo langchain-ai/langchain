@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional
 
-import httplib2
 from langchain_core._api.deprecation import deprecated
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -66,7 +65,19 @@ class GoogleSearchAPIWrapper(BaseModel):
     google_cse_id: Optional[str] = None
     k: int = 10
     siterestrict: bool = False
-    http: Optional[httplib2.Http] = None
+
+    def __init__(
+        self,
+        **kwargs: Any,
+    ) -> None:
+        try:
+            import httplib2
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import httplib2, please install with `pip install httplib2`."
+            ) from e
+        super().__init__(**kwargs)
+        self.http: Optional[httplib2.Http] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -81,7 +92,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         res = cse.list(q=search_term, cx=self.google_cse_id, **kwargs).execute()
         return res.get("items", [])
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         google_api_key = get_from_dict_or_env(
