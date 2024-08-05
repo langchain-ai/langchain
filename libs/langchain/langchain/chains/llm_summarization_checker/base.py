@@ -6,6 +6,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.prompt import PromptTemplate
@@ -65,6 +66,15 @@ def _load_sequential_chain(
     return chain
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "See LangGraph guides for a variety of self-reflection and corrective "
+        "strategies for question-answering and other tasks: "
+        "https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_self_rag/"
+    ),
+    removal="1.0",
+)
 class LLMSummarizationCheckerChain(Chain):
     """Chain for question-answering with self-verification.
 
