@@ -70,6 +70,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "ElasticsearchStore",
         "FAISS",
         "HanaDB",
+        "HuaweiCSSVectorStore",
         "InMemoryVectorStore",
         "LanceDB",
         "Milvus",

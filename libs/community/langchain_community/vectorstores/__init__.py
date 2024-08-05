@@ -451,6 +451,7 @@ _module_lookup = {
     "FAISS": "langchain_community.vectorstores.faiss",
     "HanaDB": "langchain_community.vectorstores.hanavector",
     "Hologres": "langchain_community.vectorstores.hologres",
+    "HuaweiCSSVectorStore": "langchain_community.vectorstores.huaweicloud_vector_search",
     "InfinispanVS": "langchain_community.vectorstores.infinispanvs",
     "InMemoryVectorStore": "langchain_community.vectorstores.inmemory",
     "KDBAI": "langchain_community.vectorstores.kdbai",
