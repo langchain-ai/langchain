@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict, List, Sequence, Union
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
@@ -22,7 +21,7 @@ class GlinerGraphTransformer:
         ignore_self_loops: bool = True,
     ) -> None:
         try:
-            import gliner_spacy  # type: ignore
+            import gliner_spacy  # type: ignore # noqa: F401
         except ImportError:
             raise ImportError(
                 "Could not import relik python package. "
@@ -36,7 +35,7 @@ class GlinerGraphTransformer:
                 "Please install it with `pip install spacy`."
             )
         try:
-            import glirel  # type: ignore
+            import glirel  # type: ignore # noqa: F401
         except ImportError:
             raise ImportError(
                 "Could not import relik python package. "
