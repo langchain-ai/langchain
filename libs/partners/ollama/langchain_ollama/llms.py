@@ -3,14 +3,12 @@
 from typing import (
     Any,
     AsyncIterator,
-    Callable,
     Dict,
     Iterator,
     List,
     Literal,
     Mapping,
     Optional,
-    Tuple,
     Union,
 )
 
@@ -20,6 +18,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import Field, root_validator
 from ollama import AsyncClient, Client, Options
 
 
@@ -111,15 +110,20 @@ class OllamaLLM(BaseLLM):
     base_url: Optional[str] = None
     """Base url the model is hosted under."""
 
-    headers: Optional[dict] = None
-    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
-    This is useful when Ollama is hosted on cloud services that require
-    tokens for authentication.
+    client_kwargs: Optional[dict] = {}
+    """Additional kwargs to pass to the httpx Client. 
+    For a full list of the params, see [this link](https://pydoc.dev/httpx/latest/httpx.Client.html)
     """
 
-    auth: Union[Callable, Tuple, None] = None
-    """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
-    Expects the same format, type and values as requests.request auth parameter."""
+    _client: Client = Field(default=None)
+    """
+    The client to use for making requests.
+    """
+
+    _async_client: AsyncClient = Field(default=None)
+    """
+    The async client to use for making requests.
+    """
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -151,6 +155,15 @@ class OllamaLLM(BaseLLM):
         """Return type of LLM."""
         return "ollama-llm"
 
+    @root_validator(pre=False, skip_on_failure=True)
+    def _set_clients(cls, values: dict) -> dict:
+        """Set clients to use for ollama."""
+        values["_client"] = Client(host=values["base_url"], **values["client_kwargs"])
+        values["_async_client"] = AsyncClient(
+            host=values["base_url"], **values["client_kwargs"]
+        )
+        return values
+
     async def _acreate_generate_stream(
         self,
         prompt: str,
@@ -169,9 +182,7 @@ class OllamaLLM(BaseLLM):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        async for part in await AsyncClient(
-            host=self.base_url, headers=self.headers, auth=self.auth
-        ).generate(
+        async for part in await self._async_client.generate(
             model=params["model"],
             prompt=prompt,
             stream=True,
@@ -199,9 +210,7 @@ class OllamaLLM(BaseLLM):
                 params[key] = kwargs[key]
 
         params["options"]["stop"] = stop
-        yield from Client(
-            host=self.base_url, headers=self.headers, auth=self.auth
-        ).generate(
+        yield from self._client.generate(
             model=params["model"],
             prompt=prompt,
             stream=True,
