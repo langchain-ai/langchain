@@ -29,14 +29,11 @@ from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterable,
-    AsyncIterator,
     Callable,
     ClassVar,
     Collection,
     Dict,
     Iterable,
-    Iterator,
     List,
     Optional,
     Sequence,
@@ -45,13 +42,10 @@ from typing import (
     TypeVar,
 )
 
-from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables.config import run_in_executor
-from langchain_core.utils.aiter import abatch_iterate
-from langchain_core.utils.iter import batch_iterate
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -59,7 +53,6 @@ if TYPE_CHECKING:
         CallbackManagerForRetrieverRun,
     )
     from langchain_core.documents import Document
-    from langchain_core.indexing import UpsertResponse
 
 logger = logging.getLogger(__name__)
 
@@ -120,197 +113,6 @@ class VectorStore(ABC):
         raise NotImplementedError(
             f"`add_texts` has not been implemented for {self.__class__.__name__} "
         )
-
-    # Developer guidelines:
-    # Do not override streaming_upsert!
-    @deprecated(
-        alternative="VectorStore.add_documents",
-        message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
-        ),
-        since="0.2.29",
-        removal="0.3.0",
-    )
-    def streaming_upsert(
-        self, items: Iterable[Document], /, batch_size: int, **kwargs: Any
-    ) -> Iterator[UpsertResponse]:
-        """Upsert documents in a streaming fashion.
-
-        Args:
-            items: Iterable of Documents to add to the vectorstore.
-            batch_size: The size of each batch to upsert.
-            kwargs: Additional keyword arguments.
-                kwargs should only include parameters that are common to all
-                documents. (e.g., timeout for indexing, retry policy, etc.)
-                kwargs should not include ids to avoid ambiguous semantics.
-                Instead, the ID should be provided as part of the Document object.
-
-        Yields:
-            UpsertResponse: A response object that contains the list of IDs that were
-            successfully added or updated in the vectorstore and the list of IDs that
-            failed to be added or updated.
-
-        .. versionadded:: 0.2.11
-        """
-        # The default implementation of this method breaks the input into
-        # batches of size `batch_size` and calls the `upsert` method on each batch.
-        # Subclasses can override this method to provide a more efficient
-        # implementation.
-        for item_batch in batch_iterate(batch_size, items):
-            yield self.upsert(item_batch, **kwargs)
-
-    # Please note that we originally added a new method `upsert` instead of re-using the
-    # existing `add_documents` method.
-    # This was done to resolve potential ambiguities around the behavior of **kwargs
-    # in existing add_documents / add_texts methods which could include per document
-    # information (e.g., the `ids` parameter).
-    # However, we decide to avoid modifying the existing vectorstore implementations
-    # and instead will reserve `upsert` for a future V2 abstraction.
-    @deprecated(
-        alternative="VectorStore.add_documents",
-        message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
-        ),
-        since="0.2.29",
-        removal="0.3.0",
-    )
-    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
-        """Add or update documents in the vectorstore.
-
-        The upsert functionality should utilize the ID field of the Document object
-        if it is provided. If the ID is not provided, the upsert method is free
-        to generate an ID for the document.
-
-        When an ID is specified and the document already exists in the vectorstore,
-        the upsert method should update the document with the new data. If the document
-        does not exist, the upsert method should add the document to the vectorstore.
-
-        Args:
-            items: Sequence of Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
-
-        Returns:
-            UpsertResponse: A response object that contains the list of IDs that were
-            successfully added or updated in the vectorstore and the list of IDs that
-            failed to be added or updated.
-
-        .. versionadded:: 0.2.11
-        """
-        #  Developer guidelines:
-        #
-        #  Vectorstores implementations are free to extend `upsert` implementation
-        #  to take in additional data per document.
-        #
-        #  This data **SHOULD NOT** be part of the **kwargs** parameter, instead
-        #  sub-classes can use a Union type on `documents` to include additional
-        #  supported formats for the input data stream.
-        #
-        #  For example,
-        #
-        #  .. code-block:: python
-        #  from typing import TypedDict
-        #
-        #  class DocumentWithVector(TypedDict):
-        #      document: Document
-        #      vector: List[float]
-        #
-        #  def upsert(
-        #          self,
-        #          documents: Union[Iterable[Document], Iterable[DocumentWithVector]],
-        #          /,
-        #          **kwargs
-        #  ) -> UpsertResponse:
-        #      \"\"\"Add or update documents in the vectorstore.\"\"\"
-        #      # Implementation should check if documents is an
-        #      # iterable of DocumentWithVector or Document
-        #      pass
-        #
-        #  Implementations that override upsert should include a new doc-string
-        #  that explains the semantics of upsert and includes in code
-        #  examples of how to insert using the alternate data formats.
-
-        # The implementation does not delegate to the `add_texts` method or
-        # the `add_documents` method by default since those implementations
-        raise NotImplementedError(
-            f"upsert has not been implemented for {self.__class__.__name__}"
-        )
-
-    @deprecated(
-        alternative="VectorStore.add_documents",
-        message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
-        ),
-        since="0.2.29",
-        removal="0.3.0",
-    )
-    async def astreaming_upsert(
-        self,
-        items: AsyncIterable[Document],
-        /,
-        batch_size: int,
-        **kwargs: Any,
-    ) -> AsyncIterator[UpsertResponse]:
-        """Upsert documents in a streaming fashion. Async version of streaming_upsert.
-
-        Args:
-            items: Iterable of Documents to add to the vectorstore.
-            batch_size: The size of each batch to upsert.
-            kwargs: Additional keyword arguments.
-                kwargs should only include parameters that are common to all
-                documents. (e.g., timeout for indexing, retry policy, etc.)
-                kwargs should not include ids to avoid ambiguous semantics.
-                Instead the ID should be provided as part of the Document object.
-
-        Yields:
-            UpsertResponse: A response object that contains the list of IDs that were
-            successfully added or updated in the vectorstore and the list of IDs that
-            failed to be added or updated.
-
-        .. versionadded:: 0.2.11
-        """
-        async for batch in abatch_iterate(batch_size, items):
-            yield await self.aupsert(batch, **kwargs)
-
-    @deprecated(
-        alternative="VectorStore.add_documents",
-        message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
-        ),
-        since="0.2.29",
-        removal="0.3.0",
-    )
-    async def aupsert(
-        self, items: Sequence[Document], /, **kwargs: Any
-    ) -> UpsertResponse:
-        """Add or update documents in the vectorstore. Async version of upsert.
-
-        The upsert functionality should utilize the ID field of the Document object
-        if it is provided. If the ID is not provided, the upsert method is free
-        to generate an ID for the document.
-
-        When an ID is specified and the document already exists in the vectorstore,
-        the upsert method should update the document with the new data. If the document
-        does not exist, the upsert method should add the document to the vectorstore.
-
-        Args:
-            items: Sequence of Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
-
-        Returns:
-            UpsertResponse: A response object that contains the list of IDs that were
-            successfully added or updated in the vectorstore and the list of IDs that
-            failed to be added or updated.
-
-        .. versionadded:: 0.2.11
-        """
-        #  Developer guidelines: See guidelines for the `upsert` method.
-        # The implementation does not delegate to the `add_texts` method or
-        # the `add_documents` method by default since those implementations
-        return await run_in_executor(None, self.upsert, items, **kwargs)
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
