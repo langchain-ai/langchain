@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
@@ -16,14 +15,6 @@ from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain.chains.llm import LLMChain
 
 
-@deprecated(
-    since="0.2.13",
-    removal="0.4.0",
-    message=(
-        "Refer here for a recommended map-reduce implementation using langgraph: "
-        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/"
-    ),
-)
 class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combining documents by mapping a chain over them, then combining results.
 
