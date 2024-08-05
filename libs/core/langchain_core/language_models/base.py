@@ -109,7 +109,13 @@ class BaseLanguageModel(
     )
     """Optional encoder to use for counting tokens."""
     disable_streaming: Union[bool, Literal["tool_calling"]] = False
-    """Whether to disable streaming for this model."""
+    """Whether to disable streaming for this model.
+    
+    * If True, will always bypass streaming case.
+    * If "tool_calling", will bypass streaming case only when the model is called
+      with a `tools=` keyword argument.
+    * If False (default), will always use streaming case if available.
+    """
 
     @validator("verbose", pre=True, always=True, allow_reuse=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
