@@ -26,7 +26,9 @@ def create_gigalogger_handler() -> Any:
         if INITIALIZED:
             return HANDLER
         try:
-            from langfuse.callback import CallbackHandler as LangFuseCallback
+            from langfuse.callback import (  # type: ignore[import]
+                CallbackHandler as LangFuseCallback,
+            )
         except ImportError:
             raise ImportError(
                 "Could not import langfuse python package. "

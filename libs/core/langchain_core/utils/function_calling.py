@@ -436,7 +436,7 @@ def convert_to_gigachat_function(
         function = cast(Dict, format_tool_to_gigachat_function(function))
     elif callable(function):
         # Deprecated mode
-        function = convert_python_function_to_openai_function(function)
+        function = cast(Dict, convert_python_function_to_openai_function(function))
     else:
         raise ValueError(
             f"Unsupported function type {type(function)}. Functions must be passed in"
