@@ -79,6 +79,13 @@ jobs:
           echo "Running scheduled tests, installing dependencies with poetry..."
           cd langchain/${{ matrix.working-directory }}
           poetry install --with=test_integration,test
+      
+      - name: Install pydantic v2 in python 3.11
+        if: matrix.python-version == '3.11'
+        run: |
+          echo "Installing pydantic v2 in python 3.11"
+          cd langchain/${{ matrix.working-directory }}
+          poetry run pip install pydantic==2.8.2
 
       - name: Run integration tests
         env:
