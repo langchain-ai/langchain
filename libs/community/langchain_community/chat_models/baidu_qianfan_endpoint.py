@@ -34,6 +34,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -104,13 +105,18 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             # align to api sample, which affects the llm function_call output
             additional_kwargs["function_call"].pop("thoughts")
 
+    # DO NOT ADD ANY NUMERIC OBJECT TO `msg_additional_kwargs` AND `additional_kwargs`
+    # ALONG WITH THEIRS SUB-CONTAINERS !!!
+    # OR IT WILL RAISE A DEADLY EXCEPTION FROM `merge_dict`
+    # 不要往 `msg_additional_kwargs` 和 `additional_kwargs` 里面加任何数值类对象！
+    # 子容器也不行！
+    # 不然 `merge_dict` 会报错导致代码无法运行
     additional_kwargs = {**_dict.get("body", {}), **additional_kwargs}
     msg_additional_kwargs = dict(
         finish_reason=additional_kwargs.get("finish_reason", ""),
         request_id=additional_kwargs["id"],
         object=additional_kwargs.get("object", ""),
         search_info=additional_kwargs.get("search_info", []),
-        usage=additional_kwargs.get("usage", None),
     )
 
     if additional_kwargs.get("function_call", {}):
@@ -125,21 +131,19 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             }
         ]
 
-    if usage := additional_kwargs.get("usage", None):
-        return AIMessage(
-            content=content,
-            additional_kwargs=msg_additional_kwargs,
-            usage_metadata=UsageMetadata(
-                input_tokens=usage.get("prompt_tokens", 0),
-                output_tokens=usage.get("completion_tokens", 0),
-                total_tokens=usage.get("total_tokens", 0),
-            ),
-        )
-
-    return AIMessage(
+    ret = AIMessage(
         content=content,
         additional_kwargs=msg_additional_kwargs,
     )
+
+    if usage := additional_kwargs.get("usage", None):
+        ret.usage_metadata = UsageMetadata(
+            input_tokens=usage.get("prompt_tokens", 0),
+            output_tokens=usage.get("completion_tokens", 0),
+            total_tokens=usage.get("total_tokens", 0),
+        )
+
+    return ret
 
 
 class QianfanChatEndpoint(BaseChatModel):
@@ -613,6 +617,15 @@ class QianfanChatEndpoint(BaseChatModel):
                         role="assistant",
                         additional_kwargs=additional_kwargs,
                         usage_metadata=msg.usage_metadata,
+                        tool_call_chunks=[
+                            tool_call_chunk(
+                                name=tc["name"],
+                                args=json.dumps(tc["args"]),
+                                id=tc["id"],
+                                index=None,
+                            )
+                            for tc in msg.tool_calls
+                        ],
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -641,6 +654,15 @@ class QianfanChatEndpoint(BaseChatModel):
                         role="assistant",
                         additional_kwargs=additional_kwargs,
                         usage_metadata=msg.usage_metadata,
+                        tool_call_chunks=[
+                            tool_call_chunk(
+                                name=tc["name"],
+                                args=json.dumps(tc["args"]),
+                                id=tc["id"],
+                                index=None,
+                            )
+                            for tc in msg.tool_calls
+                        ],
                     ),
                     generation_info=msg.additional_kwargs,
                 )
