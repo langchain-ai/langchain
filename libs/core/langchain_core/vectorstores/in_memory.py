@@ -94,7 +94,7 @@ class InMemoryVectorStore(VectorStore):
         return ids_
 
     async def aadd_documents(
-        self, documents: List[Document], ids: Optional[List[str]] = None, **kwargs: Any
+        self, documents: List[Document], ids: List[str] = None, **kwargs: Any
     ) -> List[str]:
         """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
@@ -106,9 +106,10 @@ class InMemoryVectorStore(VectorStore):
                 f"Got {len(ids)} ids and {len(texts)} texts."
             )
 
-        id_iterator = iter(ids) if ids else iter(doc.id for doc in documents)
-
-        ids_ = []
+        id_iterator: Iterator[Optional[str]] = (
+            iter(ids) if ids else iter(doc.id for doc in documents)
+        )
+        ids_: List[str] = []
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
