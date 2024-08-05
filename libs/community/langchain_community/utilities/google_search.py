@@ -60,19 +60,24 @@ class GoogleSearchAPIWrapper(BaseModel):
 
     """
 
-    try:
-        import httplib2
-    except ImportError as e:
-        raise ImportError(
-            "Unable to import httplib2, please install with `pip install httplib2`."
-        ) from e
-
     search_engine: Any  #: :meta private:
     google_api_key: Optional[str] = None
     google_cse_id: Optional[str] = None
     k: int = 10
     siterestrict: bool = False
-    http: Optional[httplib2.Http] = None
+
+    def __init__(
+        self,
+        **kwargs: Any,
+    ) -> None:
+        try:
+            import httplib2
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import httplib2, please install with `pip install httplib2`."
+            ) from e
+        super().__init__(**kwargs)
+        self.http: Optional[httplib2.Http] = None
 
     class Config:
         """Configuration for this pydantic object."""

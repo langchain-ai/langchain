@@ -22,7 +22,8 @@ count=$(git grep -E '(@root_validator)|(@validator)|(@pre_init)' -- "*.py" | wc 
 # and allow decreasing the count of are welcome!
 current_count=336
 
-if [ "$count" -gt "$current_count" ]; then
+# Original - tg, but we have +1 in gigachat
+if [ "$count" -gte "$current_count" ]; then
   echo "The PR seems to be introducing new usage of @root_validator and/or @field_validator."
   echo "git grep -E '(@root_validator)|(@validator)' | wc -l returned $count"
   echo "whereas the expected count should be equal or less than $current_count"
