@@ -9,7 +9,7 @@ from langchain_core.indexing.base import DeleteResponse, DocumentIndex
 from langchain_core.pydantic_v1 import Field
 
 
-@beta(message="Introduced in version 0.2.29")
+@beta(message="Introduced in version 0.2.29. Underlying abstraction subject to change.")
 class InMemoryDocumentIndex(DocumentIndex):
     """In memory document index.
 
