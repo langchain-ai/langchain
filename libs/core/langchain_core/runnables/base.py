@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import functools
 import inspect
 import threading
 from abc import ABC, abstractmethod
@@ -68,8 +69,8 @@ from langchain_core.runnables.utils import (
     Input,
     Output,
     accepts_config,
-    accepts_context,
     accepts_run_manager,
+    asyncio_accepts_context,
     create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -1830,7 +1831,7 @@ class Runnable(Generic[Input, Output], ABC):
             coro = acall_func_with_variable_args(
                 func, input, config, run_manager, **kwargs
             )
-            if accepts_context(asyncio.create_task):
+            if asyncio_accepts_context():
                 output: Output = await asyncio.create_task(coro, context=context)  # type: ignore
             else:
                 output = await coro
@@ -2156,7 +2157,7 @@ class Runnable(Generic[Input, Output], ABC):
                 iterator = iterator_
             try:
                 while True:
-                    if accepts_context(asyncio.create_task):
+                    if asyncio_accepts_context():
                         chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
                             py_anext(iterator),  # type: ignore[arg-type]
                             context=context,
@@ -2869,10 +2870,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 config = patch_config(
                     config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
                 )
+                context = copy_context()
+                context.run(_set_config_context, config)
                 if i == 0:
-                    input = step.invoke(input, config, **kwargs)
+                    input = context.run(step.invoke, input, config, **kwargs)
                 else:
-                    input = step.invoke(input, config)
+                    input = context.run(step.invoke, input, config)
         # finish the root run
         except BaseException as e:
             run_manager.on_chain_error(e)
@@ -2907,10 +2910,16 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 config = patch_config(
                     config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
                 )
+                context = copy_context()
+                context.run(_set_config_context, config)
                 if i == 0:
-                    input = await step.ainvoke(input, config, **kwargs)
+                    part = functools.partial(step.ainvoke, input, config, **kwargs)
                 else:
-                    input = await step.ainvoke(input, config)
+                    part = functools.partial(step.ainvoke, input, config)
+                if asyncio_accepts_context():
+                    input = await asyncio.create_task(part(), context=context)  # type: ignore[arg-type]
+                else:
+                    input = await asyncio.create_task(part())
         # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)

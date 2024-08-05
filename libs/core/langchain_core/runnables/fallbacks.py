@@ -34,7 +34,7 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
-    accepts_context,
+    asyncio_accepts_context,
     get_unique_config_specs,
 )
 from langchain_core.utils.aiter import py_anext
@@ -229,7 +229,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 context = copy_context()
                 context.run(_set_config_context, child_config)
                 coro = runnable.ainvoke(input, child_config, **kwargs)
-                if accepts_context(asyncio.create_task):
+                if asyncio_accepts_context():
                     output = await asyncio.create_task(coro, context=context)  # type: ignore
                 else:
                     output = await coro
@@ -539,7 +539,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     child_config,
                     **kwargs,
                 )
-                if accepts_context(py_anext):
+                if asyncio_accepts_context():
                     chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
                         py_anext(stream),  # type: ignore[arg-type]
                         context=context,

@@ -1,5 +1,6 @@
 import json
 import sys
+from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,6 +8,7 @@ from langsmith import Client, traceable
 from langsmith.run_helpers import tracing_context
 
 from langchain_core.runnables.base import RunnableLambda
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tracers.langchain import LangChainTracer
 
 
@@ -201,8 +203,12 @@ def test_tracing_enable_disable(
         assert not mock_posts
 
 
-@pytest.mark.parametrize("method", ["invoke", "ainvoke", "stream", "astream"])
-async def test_runnable_with_fallbacks_trace_nesting(method: str):
+@pytest.mark.parametrize(
+    "method", ["invoke", "ainvoke", "stream", "astream", "batch", "abatch"]
+)
+async def test_runnable_with_fallbacks_trace_nesting(method: str) -> None:
+    if method.startswith("a") and sys.version_info < (3, 11):
+        pytest.skip("Asyncio context vars require Python 3.11+")
     mock_session = MagicMock()
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
@@ -211,31 +217,84 @@ async def test_runnable_with_fallbacks_trace_nesting(method: str):
 
     @RunnableLambda
     def my_child_function(a: int) -> int:
-        raise ValueError("This is a test")
-
-    @RunnableLambda
-    def my_fallback_function(a: int) -> int:
         return a + 2
 
-    chain = my_child_function.with_fallbacks(
-        [my_fallback_function], exceptions_to_handle=[ValueError]
-    )
+    chain = my_child_function.with_config(tags=["atag"])
+
+    def before(x: int) -> int:
+        return x
+
+    def after(x: int) -> int:
+        return x
+
+    sequence = before | chain | after
+    if method.startswith("a"):
+
+        @RunnableLambda  # type: ignore
+        async def parent(a: int, *, config: Optional[RunnableConfig] = None) -> int:
+            return await sequence.ainvoke(a, config)
+
+    else:
+
+        @RunnableLambda
+        def parent(a: int, *, config: Optional[RunnableConfig] = None) -> int:
+            return sequence.invoke(a, config)
 
     # Now run the chain and check the resulting posts
+    cb = [tracer, LangChainTracer()]
     match method:
         case "invoke":
-            res = chain.invoke(1, {"callbacks": [tracer]})
+            res: Any = parent.invoke(1, {"callbacks": cb})  # type: ignore
         case "ainvoke":
-            res = await chain.ainvoke(1, {"callbacks": [tracer]})
+            res = await parent.ainvoke(1, {"callbacks": cb})  # type: ignore
         case "stream":
-            results = list(chain.stream(1, {"callbacks": [tracer]}))
+            results = list(parent.stream(1, {"callbacks": cb}))  # type: ignore
             res = results[-1]
         case "astream":
-            results = [res async for res in chain.astream(1, {"callbacks": [tracer]})]
+            results = [res async for res in parent.astream(1, {"callbacks": cb})]  # type: ignore
             res = results[-1]
+        case "batch":
+            res = parent.batch([1], {"callbacks": cb})[0]  # type: ignore
+        case "abatch":
+            res = (await parent.abatch([1], {"callbacks": cb}))[0]  # type: ignore
     assert res == 3
     posts = _get_posts(mock_client_)
-    assert len(posts) == 3
-    assert posts[0]["name"] == "RunnableWithFallbacks"
-    assert posts[1]["name"] == "my_child_function"
-    assert posts[2]["name"] == "my_fallback_function"
+    name_order = [
+        "parent",
+        "RunnableSequence",
+        "before",
+        "my_child_function",
+        "after",
+    ]
+    assert len(posts) == len(name_order)
+    prev_dotted_order = None
+    dotted_order_map = {}
+    for i, name in enumerate(name_order):
+        assert posts[i]["name"] == name
+        dotted_order = posts[i]["dotted_order"]
+        if prev_dotted_order is not None:
+            assert (
+                dotted_order > prev_dotted_order
+            ), f"{name} not after {name_order[i-1]}"
+        prev_dotted_order = dotted_order
+        if name in dotted_order_map:
+            raise ValueError(f"Duplicate name {name}")
+        dotted_order_map[name] = dotted_order
+    expected_parents = {
+        "parent": None,
+        "RunnableSequence": "parent",
+        "before": "RunnableSequence",
+        "my_child_function": "RunnableSequence",
+        "after": "RunnableSequence",
+    }
+
+    # Now check the dotted orders
+    for name, parent_ in expected_parents.items():
+        dotted_order = dotted_order_map[name]
+        if parent_ is not None:
+            parent_dotted_order = dotted_order_map[parent_]
+            assert dotted_order.startswith(
+                parent_dotted_order
+            ), f"{name}, {parent_dotted_order} not in {dotted_order}"
+        else:
+            assert dotted_order.split(".")[0] == dotted_order
