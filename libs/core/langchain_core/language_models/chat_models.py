@@ -493,16 +493,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             ls_params["ls_model_name"] = self.model_name
 
         # temperature
-        if hasattr(self, "temperature") and isinstance(self.temperature, float):
-            ls_params["ls_temperature"] = self.temperature
-        elif "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
             ls_params["ls_temperature"] = kwargs["temperature"]
+        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+            ls_params["ls_temperature"] = self.temperature
 
         # max_tokens
-        if hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
-            ls_params["ls_max_tokens"] = self.max_tokens
-        elif "max_tokens" in kwargs and isinstance(kwargs["max_tokens"], int):
+        if "max_tokens" in kwargs and isinstance(kwargs["max_tokens"], int):
             ls_params["ls_max_tokens"] = kwargs["max_tokens"]
+        elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
+            ls_params["ls_max_tokens"] = self.max_tokens
 
         return ls_params
 
