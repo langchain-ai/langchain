@@ -1617,6 +1617,35 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     }
 
 
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
+@pytest.mark.xfail(reason="Regression test needs to be fixed.")
+def test_pydantic_v1_extra_in_pydantic2() -> None:
+    """This should test that one can type the args schema as a pydantic model.
+
+    Please note that this will test using pydantic 2 even though BaseTool
+    is a pydantic 1 model!
+    """
+    from langchain_core.pydantic_v1 import BaseModel, Field
+    from langchain_core.tools import BaseTool
+    from langchain_core.utils.function_calling import convert_to_openai_tool
+
+    class ToolSchema(BaseModel, extra="allow"):
+        some_param: str = Field(default="", description="some_param")
+
+    class RunTool(BaseTool):
+        name = "hello"
+        description = "description"
+        args_schema: Type[BaseModel] = ToolSchema
+
+        def _run(
+            self,
+            some_param: str = "",
+        ) -> Any:
+            return some_param
+
+    convert_to_openai_tool(RunTool())
+
+
 def test_args_schema_explicitly_typed() -> None:
     """This should test that one can type the args schema as a pydantic model.
 
