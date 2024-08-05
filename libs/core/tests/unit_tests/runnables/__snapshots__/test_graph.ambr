@@ -880,6 +880,15 @@
                   'title': 'Response Metadata',
                   'type': 'object',
                 }),
+                'status': dict({
+                  'default': 'success',
+                  'enum': list([
+                    'success',
+                    'error',
+                  ]),
+                  'title': 'Status',
+                  'type': 'string',
+                }),
                 'tool_call_id': dict({
                   'title': 'Tool Call Id',
                   'type': 'string',
@@ -1087,4 +1096,66 @@
   	classDef last fill:#bfb6fc
   
   '''
+# ---
+# name: test_trim
+  dict({
+    'edges': list([
+      dict({
+        'source': '__start__',
+        'target': 'ask_question',
+      }),
+      dict({
+        'source': 'ask_question',
+        'target': 'answer_question',
+      }),
+      dict({
+        'conditional': True,
+        'source': 'answer_question',
+        'target': 'ask_question',
+      }),
+      dict({
+        'conditional': True,
+        'source': 'answer_question',
+        'target': '__end__',
+      }),
+    ]),
+    'nodes': list([
+      dict({
+        'data': '__start__',
+        'id': '__start__',
+        'type': 'schema',
+      }),
+      dict({
+        'data': dict({
+          'id': list([
+            'langchain',
+            'schema',
+            'output_parser',
+            'StrOutputParser',
+          ]),
+          'name': 'ask_question',
+        }),
+        'id': 'ask_question',
+        'type': 'runnable',
+      }),
+      dict({
+        'data': dict({
+          'id': list([
+            'langchain',
+            'schema',
+            'output_parser',
+            'StrOutputParser',
+          ]),
+          'name': 'answer_question',
+        }),
+        'id': 'answer_question',
+        'type': 'runnable',
+      }),
+      dict({
+        'data': '__end__',
+        'id': '__end__',
+        'type': 'schema',
+      }),
+    ]),
+  })
 # ---

@@ -739,7 +739,7 @@ class Runnable(Generic[Input, Output], ABC):
                for more details. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Returns:
             A list of outputs from the Runnable.
@@ -803,7 +803,7 @@ class Runnable(Generic[Input, Output], ABC):
                for more details. Defaults to None. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             A tuple of the index of the input and the output from the Runnable.
@@ -847,7 +847,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -867,7 +867,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -944,7 +944,7 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_names: Exclude logs with these names.
             exclude_types: Exclude logs with these types.
             exclude_tags: Exclude logs with these tags.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             A RunLogPatch or RunLog object.
@@ -1261,7 +1261,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: An iterator of inputs to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -1303,7 +1303,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: An async iterator of inputs to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -4438,7 +4438,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             input: The input to this Runnable.
             config: The config to use. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             The output of this Runnable.
@@ -4470,7 +4470,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             input: The input to this Runnable.
             config: The config to use. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             The output of this Runnable.

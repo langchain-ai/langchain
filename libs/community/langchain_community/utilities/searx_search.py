@@ -281,12 +281,13 @@ class SearxSearchWrapper(BaseModel):
     async def _asearx_api_query(self, params: dict) -> SearxResults:
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    self.searx_host,
-                    headers=self.headers,
-                    params=params,
-                    ssl=(lambda: False if self.unsecure else None)(),
-                ) as response:
+                kwargs: Dict = {
+                    "headers": self.headers,
+                    "params": params,
+                }
+                if self.unsecure:
+                    kwargs["ssl"] = False
+                async with session.get(self.searx_host, **kwargs) as response:
                     if not response.ok:
                         raise ValueError("Searx API returned an error: ", response.text)
                     result = SearxResults(await response.text())
