@@ -776,20 +776,29 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
-        if type(self)._stream != BaseChatModel._stream and kwargs.pop(
-            "stream",
-            (
-                next(
-                    (
-                        True
-                        for h in run_manager.handlers
-                        if isinstance(h, _StreamingCallbackHandler)
-                    ),
-                    False,
-                )
-                if run_manager
-                else False
-            ),
+        if (
+            type(self)._stream != BaseChatModel._stream
+            and kwargs.pop(
+                "stream",
+                (
+                    next(
+                        (
+                            True
+                            for h in run_manager.handlers
+                            if isinstance(h, _StreamingCallbackHandler)
+                        ),
+                        False,
+                    )
+                    if run_manager
+                    else False
+                ),
+            )
+            and (
+                self.disable_streaming is False
+                or self.disable_streaming == "tool_calling"
+                and "tools" in kwargs
+                and kwargs["tools"]
+            )
         ):
             chunks: List[ChatGenerationChunk] = []
             for chunk in self._stream(messages, stop=stop, **kwargs):
@@ -864,22 +873,31 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
         if (
-            type(self)._astream != BaseChatModel._astream
-            or type(self)._stream != BaseChatModel._stream
-        ) and kwargs.pop(
-            "stream",
             (
-                next(
-                    (
-                        True
-                        for h in run_manager.handlers
-                        if isinstance(h, _StreamingCallbackHandler)
-                    ),
-                    False,
-                )
-                if run_manager
-                else False
-            ),
+                type(self)._astream != BaseChatModel._astream
+                or type(self)._stream != BaseChatModel._stream
+            )
+            and kwargs.pop(
+                "stream",
+                (
+                    next(
+                        (
+                            True
+                            for h in run_manager.handlers
+                            if isinstance(h, _StreamingCallbackHandler)
+                        ),
+                        False,
+                    )
+                    if run_manager
+                    else False
+                ),
+            )
+            and (
+                self.disable_streaming is False
+                or self.disable_streaming == "tool_calling"
+                and "tools" in kwargs
+                and kwargs["tools"]
+            )
         ):
             chunks: List[ChatGenerationChunk] = []
             async for chunk in self._astream(messages, stop=stop, **kwargs):
