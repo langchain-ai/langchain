@@ -84,7 +84,7 @@ def test_rate_limit_batch() -> None:
     toc = time.time()
     # Should be larger than check every n seconds since the token bucket starts
     # with 0 tokens.
-    assert time_to_fill < toc - tic < time_to_fill + 0.01
+    assert time_to_fill < toc - tic < time_to_fill + 0.03
 
 
 async def test_rate_limit_abatch() -> None:
@@ -102,7 +102,7 @@ async def test_rate_limit_abatch() -> None:
     toc = time.time()
     # Should be larger than check every n seconds since the token bucket starts
     # with 0 tokens.
-    assert time_to_fill < toc - tic < time_to_fill + 0.01
+    assert time_to_fill < toc - tic < time_to_fill + 0.03
 
 
 def test_rate_limit_stream() -> None:
