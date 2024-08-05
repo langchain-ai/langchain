@@ -612,6 +612,54 @@ def _convert_to_graph_document(
     return _format_nodes(nodes), _format_relationships(relationships)
 
 
+def _repair_response(json: list[dict]) -> list[dict]:
+    def flatten_nested_lists(data: Any) -> Any:
+        if isinstance(data, list):
+            while isinstance(data, list):
+                data = data[0]
+        return data
+
+    # If the json is nested
+    while isinstance(json, list) and isinstance(json[0], list):
+        json = json[0]
+
+    # Remove any None types, empty strings, and flatten nested lists
+    for rel in json:
+        rel["head"] = flatten_nested_lists(rel.get("head"))
+        rel["head_type"] = flatten_nested_lists(rel.get("head_type"))
+        rel["tail"] = flatten_nested_lists(rel.get("tail"))
+        rel["tail_type"] = flatten_nested_lists(rel.get("tail_type"))
+        rel["relation"] = flatten_nested_lists(rel.get("relation"))
+
+        rel["tail"] = (
+            rel["tail"]
+            if rel.get("tail") is not None and rel.get("tail") != ""
+            else "None"
+        )
+        rel["tail_type"] = (
+            rel["tail_type"]
+            if rel.get("tail_type") is not None and rel.get("tail_type") != ""
+            else "None"
+        )
+        rel["head"] = (
+            rel["head"]
+            if rel.get("head") is not None or rel.get("head") != ""
+            else "None"
+        )
+        rel["head_type"] = (
+            rel["head_type"]
+            if rel.get("head_type") is not None and rel.get("head_type") != ""
+            else "None"
+        )
+        rel["relation"] = (
+            rel["relation"]
+            if rel.get("relation") is not None and rel.get("relation") != ""
+            else "None"
+        )
+
+    return json
+
+
 class LLMGraphTransformer:
     """Transform documents into graph-based documents using a LLM.
 
@@ -729,6 +777,7 @@ class LLMGraphTransformer:
             if not isinstance(raw_schema, str):
                 raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
+            parsed_json = _repair_response(parsed_json)
             for rel in parsed_json:
                 # Nodes need to be deduplicated using a set
                 nodes_set.add((rel["head"], rel["head_type"]))
