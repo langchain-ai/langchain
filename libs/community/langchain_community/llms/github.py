@@ -43,6 +43,9 @@ class GithubLLM(LLM):
         # Streaming with chat history
         for chunk in llm.stream("Can you elaborate on the Reign of Terror?", chat_history=conversation):
             print(chunk, end='', flush=True)
+
+        # This will raise a ValueError
+        # llm_invalid = GithubLLM(model="invalid-model")
     """
 
     endpoint_url: str = "https://models.inference.ai.azure.com/chat/completions"
@@ -50,9 +53,41 @@ class GithubLLM(LLM):
     system_prompt: str = "You are a helpful assistant."
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
+
+    SUPPORTED_MODELS = [
+        "AI21-Jamba-Instruct",
+        "cohere-command-r",
+        "cohere-command-r-plus",
+        "cohere-embed-v3-english",
+        "cohere-embed-v3-multilingual",
+        "meta-llama-3-70b-instruct",
+        "meta-llama-3-8b-instruct",
+        "meta-llama-3.1-405b-instruct",
+        "meta-llama-3.1-70b-instruct",
+        "meta-llama-3.1-8b-instruct",
+        "mistral-large",
+        "mistral-large-2407",
+        "mistral-nemo",
+        "mistral-small",
+        "gpt-4o",
+        "gpt-4o-mini",
+        "phi-3-medium-instruct-128k",
+        "phi-3-medium-instruct-4k",
+        "phi-3-mini-instruct-128k",
+        "phi-3-mini-instruct-4k",
+        "phi-3-small-instruct-128k",
+        "phi-3-small-instruct-8k"
+    ]
+
     class Config:
         """Configuration for this pydantic object."""
         extra = Extra.forbid
+
+    @validator("model")
+    def validate_model(cls, v):
+        if v.lower() not in [model.lower() for model in cls.SUPPORTED_MODELS]:
+            raise ValueError(f"Model {v} is not supported. Please choose from {cls.SUPPORTED_MODELS}")
+        return v
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
