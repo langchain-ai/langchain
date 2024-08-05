@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
+import time
+import jwt
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import requests
@@ -400,67 +403,82 @@ class GitHubAPIWrapper(BaseModel):
         }
 
     def list_pull_request_files(self, pr_number: int) -> List[Dict[str, Any]]:
-        """Fetches the full text of all files in a PR. Truncates after first 3k tokens.
-        # TODO: Enhancement to summarize files with ctags if they're getting long.
+            """Fetches the full text of all files in a PR. Truncates after first 3k tokens.
+            # TODO: Enhancement to summarize files with ctags if they're getting long.
 
-        Args:
-            pr_number(int): The number of the pull request on Github
+            Args:
+                pr_number(int): The number of the pull request on Github
 
-        Returns:
-            dict: A dictionary containing the issue's title,
-            body, and comments as a string
-        """
-        tiktoken = _import_tiktoken()
-        MAX_TOKENS_FOR_FILES = 3_000
-        pr_files = []
-        pr = self.github_repo_instance.get_pull(number=int(pr_number))
-        total_tokens = 0
-        page = 0
-        while True:  # or while (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
-            files_page = pr.get_files().get_page(page)
-            if len(files_page) == 0:
-                break
-            for file in files_page:
-                try:
-                    file_metadata_response = requests.get(file.contents_url)
-                    if file_metadata_response.status_code == 200:
-                        download_url = json.loads(file_metadata_response.text)[
-                            "download_url"
-                        ]
-                    else:
-                        print(f"Failed to download file: {file.contents_url}, skipping")  # noqa: T201
-                        continue
-
-                    file_content_response = requests.get(download_url)
-                    if file_content_response.status_code == 200:
-                        # Save the content as a UTF-8 string
-                        file_content = file_content_response.text
-                    else:
-                        print(  # noqa: T201
-                            "Failed downloading file content "
-                            f"(Error {file_content_response.status_code}). Skipping"
-                        )
-                        continue
-
-                    file_tokens = len(
-                        tiktoken.get_encoding("cl100k_base").encode(
-                            file_content + file.filename + "file_name file_contents"
-                        )
-                    )
-                    if (total_tokens + file_tokens) < MAX_TOKENS_FOR_FILES:
-                        pr_files.append(
-                            {
-                                "filename": file.filename,
-                                "contents": file_content,
-                                "additions": file.additions,
-                                "deletions": file.deletions,
+            Returns:
+                dict: A dictionary containing the issue's title,
+                body, and comments as a string
+            """
+            tiktoken = _import_tiktoken()
+            MAX_TOKENS_FOR_FILES = 3_000
+            pr_files = []
+            pr = self.github_repo_instance.get_pull(number=int(pr_number))
+            total_tokens = 0
+            page = 0
+            while True:  # or while (total_tokens + tiktoken()) < MAX_TOKENS_FOR_FILES:
+                files_page = pr.get_files().get_page(page)
+                if len(files_page) == 0:
+                    break
+                for file in files_page:
+                    try:
+                        app_id = os.getenv("GITHUB_APP_ID")
+                        private_key = open(os.getenv("GITHUB_APP_PRIVATE_KEY")).read()
+                        payload = {
+                            "iat": int(time.time()),
+                            "exp": int(time.time()) + (10 * 60),  # JWT expiration time
+                            "iss": app_id
+                        }
+                        jwt_token = jwt.encode(payload, private_key, algorithm="RS256")
+                        installation_id = os.getenv("INSTALLATION_ID")
+                        access_token_response = requests.post(
+                            f"https://api.github.com/app/installations/{installation_id}/access_tokens",
+                            headers={
+                                "Authorization": f"Bearer {jwt_token}",
+                                "Accept": "application/vnd.github.v3+json"
                             }
                         )
-                        total_tokens += file_tokens
-                except Exception as e:
-                    print(f"Error when reading files from a PR on github. {e}")  # noqa: T201
-            page += 1
-        return pr_files
+                        if access_token_response.status_code == 201:
+                            access_token = access_token_response.json()["token"]
+                            file_metadata_response = requests.get(file.contents_url, headers={"Authorization": f"token {access_token}"})
+                            if file_metadata_response.status_code == 200:
+                                download_url = json.loads(file_metadata_response.text)["download_url"]
+                            else:
+                                print(f"Failed to download file: {file.contents_url}, skipping")
+                                continue
+
+                            file_content_response = requests.get(download_url)
+                            if file_content_response.status_code == 200:
+                                # Save the content as a UTF-8 string
+                                file_content = file_content_response.text
+                            else:
+                                print(f"Failed downloading file content (Error {file_content_response.status_code}). Skipping")
+                                continue
+
+                            file_tokens = len(
+                                tiktoken.get_encoding("cl100k_base").encode(
+                                    file_content + file.filename + "file_name file_contents"
+                                )
+                            )
+                            if (total_tokens + file_tokens) < MAX_TOKENS_FOR_FILES:
+                                pr_files.append(
+                                    {
+                                        "filename": file.filename,
+                                        "contents": file_content,
+                                        "additions": file.additions,
+                                        "deletions": file.deletions,
+                                    }
+                                )
+                                total_tokens += file_tokens
+                        else:
+                            print("Failed to get access token:", access_token_response.text)
+                    except Exception as e:
+                        print(f"Error when reading files from a PR on github. {e}")
+                page += 1
+            return pr_files
 
     def get_pull_request(self, pr_number: int) -> Dict[str, Any]:
         """
