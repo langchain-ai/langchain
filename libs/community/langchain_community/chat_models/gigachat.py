@@ -643,7 +643,10 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call
                 (if any), or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
+                {
+                "name": <<tool_name>>,
+                "partial_arguments": (Optional partial dict of arguments to function)
+                }.
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
@@ -652,17 +655,12 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             if isinstance(tool_choice, str):
                 if tool_choice not in ("auto", "none"):
                     tool_choice = {"name": tool_choice}
-            elif isinstance(tool_choice, bool):
-                tool_choice = formatted_tools[0]
+            elif isinstance(tool_choice, bool) and tool_choice:
+                if not formatted_tools:
+                    raise ValueError("tool_choice can not be bool if tools are empty")
+                tool_choice = {"name": formatted_tools[0]["name"]}
             elif isinstance(tool_choice, dict):
-                if (
-                    formatted_tools[0]["function"]["name"]
-                    != tool_choice["function"]["name"]
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice} was specified, but the only "
-                        f"provided tool was {formatted_tools[0]['function']['name']}."
-                    )
+                pass
             else:
                 raise ValueError(
                     f"Unrecognized tool_choice type. Expected str, bool or dict. "
