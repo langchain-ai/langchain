@@ -59,6 +59,10 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 
 class ChatModelIntegrationTests(ChatModelTests):
+    @property
+    def standard_chat_model_params(self) -> dict:
+        return {}
+
     def test_invoke(self, model: BaseChatModel) -> None:
         result = model.invoke("Hello")
         assert result is not None
@@ -281,10 +285,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
-    def test_tool_message_histories_string_content(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with string tool contents
         (e.g. OpenAI).
