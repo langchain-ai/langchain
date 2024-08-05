@@ -60,7 +60,7 @@ if TYPE_CHECKING:
         CallbackManagerForRetrieverRun,
     )
     from langchain_core.documents import Document
-    from langchain_core.indexing.base import UpsertResponse
+    from langchain_core.indexing import UpsertResponse
 
 logger = logging.getLogger(__name__)
 
