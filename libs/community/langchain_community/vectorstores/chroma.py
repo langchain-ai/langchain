@@ -469,7 +469,7 @@ class Chroma(VectorStore):
         if distance == "cosine":
             return self._cosine_relevance_score_fn
         elif distance == "l2":
-            return self._euclidean_relevance_score_fn
+            return lambda distance: 1.0 - distance / 2
         elif distance == "ip":
             return self._max_inner_product_relevance_score_fn
         else:
