@@ -289,7 +289,7 @@ class PGVector(VectorStore):
                 connection_string=CONNECTION_STRING,
                 use_jsonb=True,
     
-    """
+    """ # noqa: E501
 
     def __init__(
         self,

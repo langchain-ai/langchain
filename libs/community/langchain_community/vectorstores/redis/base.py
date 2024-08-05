@@ -267,7 +267,7 @@ class Redis(VectorStore):
     Otherwise, the schema for newly added samples will be incorrect and metadata
     will not be returned.
 
-    """
+    """ # noqa: E501
 
     DEFAULT_VECTOR_SCHEMA = {
         "name": "content_vector",
