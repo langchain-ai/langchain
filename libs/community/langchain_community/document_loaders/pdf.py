@@ -5,7 +5,7 @@ import re
 import tempfile
 import time
 from abc import ABC
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -81,40 +81,61 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: Union[str, Path], *, headers: Optional[Dict] = None):
-        """Initialize with a file path.
+    def __init__(
+        self,
+        file_path: Union[str, Path, BytesIO] = None,
+        *,
+        headers: Optional[Dict] = None,
+        file_obj: Optional[BytesIO] = None,
+    ):
+        """Initialize with a file path or a file object.
 
         Args:
             file_path: Either a local, S3 or web path to a PDF file.
             headers: Headers to use for GET request to download a file from a web path.
+            file_obj: An already open BytesIO object containing the PDF file.
         """
-        self.file_path = str(file_path)
-        self.web_path = None
-        self.headers = headers
-        if "~" in self.file_path:
-            self.file_path = os.path.expanduser(self.file_path)
+        if file_path is None and file_obj is None:
+            raise ValueError("Either file_path or file_obj must be provided.")
 
-        # If the file is a web path or S3, download it to a temporary file, and use that
-        if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
-            self.temp_dir = tempfile.TemporaryDirectory()
-            _, suffix = os.path.splitext(self.file_path)
-            if self._is_s3_presigned_url(self.file_path):
-                suffix = urlparse(self.file_path).path.split("/")[-1]
-            temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
-            self.web_path = self.file_path
-            if not self._is_s3_url(self.file_path):
-                r = requests.get(self.file_path, headers=self.headers)
-                if r.status_code != 200:
-                    raise ValueError(
-                        "Check the url of your file; returned status code %s"
-                        % r.status_code
-                    )
+        if file_obj is not None:
+            self.file_path = None
+            self.web_path = None
+            self.file_obj = file_obj
+        else:
+            self.file_path = str(file_path) if file_path else None
+            self.web_path = None
+            self.headers = headers
+            if self.file_path and "~" in self.file_path:
+                self.file_path = os.path.expanduser(self.file_path)
 
-                with open(temp_pdf, mode="wb") as f:
-                    f.write(r.content)
-                self.file_path = str(temp_pdf)
-        elif not os.path.isfile(self.file_path):
-            raise ValueError("File path %s is not a valid file or url" % self.file_path)
+            # If the file is a web path or S3, download it to a temporary file
+            if (
+                self.file_path
+                and not os.path.isfile(self.file_path)
+                and self._is_valid_url(self.file_path)
+            ):
+                self.temp_dir = tempfile.TemporaryDirectory()
+                _, suffix = os.path.splitext(self.file_path)
+                if self._is_s3_presigned_url(self.file_path):
+                    suffix = urlparse(self.file_path).path.split("/")[-1]
+                temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
+                self.web_path = self.file_path
+                if not self._is_s3_url(self.file_path):
+                    r = requests.get(self.file_path, headers=self.headers)
+                    if r.status_code != 200:
+                        raise ValueError(
+                            "Check the url of your file; returned status code %s"
+                            % r.status_code
+                        )
+
+                    with open(temp_pdf, mode="wb") as f:
+                        f.write(r.content)
+                    self.file_path = str(temp_pdf)
+            elif self.file_path and not os.path.isfile(self.file_path):
+                raise ValueError(
+                    "File path %s is not a valid file or url" % self.file_path
+                )
 
     def __del__(self) -> None:
         if hasattr(self, "temp_dir"):
@@ -147,7 +168,9 @@ class BasePDFLoader(BaseLoader, ABC):
             return False
 
     @property
-    def source(self) -> str:
+    def source(self) -> Union[str, BytesIO]:
+        if self.file_obj is not None:
+            return self.file_obj
         return self.web_path if self.web_path is not None else self.file_path
 
 
