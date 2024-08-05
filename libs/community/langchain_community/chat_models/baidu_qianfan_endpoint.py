@@ -654,6 +654,15 @@ class QianfanChatEndpoint(BaseChatModel):
                         role="assistant",
                         additional_kwargs=additional_kwargs,
                         usage_metadata=msg.usage_metadata,
+                        tool_call_chunks=[
+                            tool_call_chunk(
+                                name=tc["name"],
+                                args=json.dumps(tc["args"]),
+                                id=tc["id"],
+                                index=None,
+                            )
+                            for tc in msg.tool_calls
+                        ],
                     ),
                     generation_info=msg.additional_kwargs,
                 )
