@@ -1,5 +1,6 @@
 import json
 from typing import Any, Dict
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -7,6 +8,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers.openai_functions import (
     JsonOutputFunctionsParser,
+    OutputFunctionsFixingParser,
     PydanticOutputFunctionsParser,
 )
 from langchain_core.outputs import ChatGeneration
@@ -195,3 +197,114 @@ def test_pydantic_output_functions_parser_multiple_schemas() -> None:
     )
     result = parser.parse_result([chat_generation])
     assert result == Cookie(name="value", age=10)
+
+
+def test_output_functions_fixing_parser_without_retry() -> None:
+    """Test the output functions fixing parser when no retry is needed."""
+
+    message = AIMessage(
+        content="This is a test message",
+        additional_kwargs={
+            "function_call": {
+                "name": "cookie",
+                "arguments": json.dumps({"name": "value", "age": 10}),
+            }
+        },
+    )
+    chat_generation = ChatGeneration(message=message)
+
+    class Cookie(BaseModel):
+        """Test model."""
+
+        name: str
+        age: int
+
+    class Dog(BaseModel):
+        """Test model."""
+
+        species: str
+
+    pydantic_parser = PydanticOutputFunctionsParser(
+        pydantic_schema={"cookie": Cookie, "dog": Dog}
+    )
+    llm = MagicMock()
+    parser = OutputFunctionsFixingParser.from_llm(
+        llm=llm, parser=pydantic_parser, functions=[Cookie, Dog]
+    )
+    result = parser.parse_result([chat_generation])
+    assert result == Cookie(name="value", age=10)
+    llm.bind.assert_called_once()
+    llm.bind.return_value.assert_not_called()
+
+
+def test_output_functions_fixing_parser_retrying_once() -> None:
+    """Test the output functions fixing parser when one retry fixes the problem."""
+
+    invalid_message = AIMessage(content="This is a test message")
+    valid_message = AIMessage(
+        content="This is a test message",
+        additional_kwargs={
+            "function_call": {
+                "name": "cookie",
+                "arguments": json.dumps({"name": "value", "age": 10}),
+            }
+        },
+    )
+    invalid_chat_generation = ChatGeneration(message=invalid_message)
+
+    class Cookie(BaseModel):
+        """Test model."""
+
+        name: str
+        age: int
+
+    class Dog(BaseModel):
+        """Test model."""
+
+        species: str
+
+    pydantic_parser = PydanticOutputFunctionsParser(
+        pydantic_schema={"cookie": Cookie, "dog": Dog}
+    )
+    llm = MagicMock()
+    llm.bind.return_value.return_value = valid_message
+    parser = OutputFunctionsFixingParser.from_llm(
+        llm=llm, parser=pydantic_parser, functions=[Cookie, Dog]
+    )
+    result = parser.parse_result([invalid_chat_generation])
+    assert result == Cookie(name="value", age=10)
+    llm.bind.assert_called_once()
+
+
+def test_output_functions_fixing_parser_retrying_max() -> None:
+    """Test the output functions fixing parser when the retry does not help."""
+
+    invalid_message = AIMessage(content="This is a test message")
+    invalid_chat_generation = ChatGeneration(message=invalid_message)
+
+    class Cookie(BaseModel):
+        """Test model."""
+
+        name: str
+        age: int
+
+    class Dog(BaseModel):
+        """Test model."""
+
+        species: str
+
+    pydantic_parser = PydanticOutputFunctionsParser(
+        pydantic_schema={"cookie": Cookie, "dog": Dog}
+    )
+    llm = MagicMock()
+    llm.bind.return_value.return_value = invalid_message
+    parser = OutputFunctionsFixingParser.from_llm(
+        llm=llm,
+        parser=pydantic_parser,
+        functions=[Cookie, Dog],
+        max_retries=2,
+    )
+    with pytest.raises(OutputParserException):
+        parser.parse_result([invalid_chat_generation])
+    llm.bind.assert_called_once()
+    assert llm.bind.return_value.call_count == 2

@@ -1,17 +1,25 @@
 import copy
 import json
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import jsonpatch  # type: ignore[import]
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseChatModel
 from langchain_core.output_parsers import (
     BaseCumulativeTransformOutputParser,
     BaseGenerationOutputParser,
 )
 from langchain_core.output_parsers.json import parse_partial_json
+from langchain_core.output_parsers.prompts import (
+    NAIVE_FUNCTIONS_FIX_INSTRUCTIONS,
+    NAIVE_FUNCTIONS_FIX_PROMPT,
+)
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.runnables import RunnableSerializable
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -289,3 +297,78 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
         """
         result = super().parse_result(result)
         return getattr(result, self.attr_name)
+
+
+class OutputFunctionsFixingParser(OutputFunctionsParser):
+    """Wraps a parser and try to fix parsing errors calling a runnable.
+    The runnable has context of the original functions used to generate the output."""
+
+    parser: BaseGenerationOutputParser
+    retry_runnable: RunnableSerializable
+    max_retries: int = 1
+    instructions: str = NAIVE_FUNCTIONS_FIX_INSTRUCTIONS
+
+    @classmethod
+    def from_llm(
+        cls,
+        llm: BaseChatModel,
+        parser: BaseGenerationOutputParser,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+        prompt: BasePromptTemplate = NAIVE_FUNCTIONS_FIX_PROMPT,
+        instructions: str = NAIVE_FUNCTIONS_FIX_INSTRUCTIONS,
+        max_retries: int = 1,
+    ) -> "OutputFunctionsFixingParser":
+        model = llm.bind(
+            functions=[convert_to_openai_function(function) for function in functions]
+        )
+        runnable = prompt | model
+        return cls(
+            parser=parser,
+            retry_runnable=runnable,
+            max_retries=max_retries,
+            instructions=instructions,
+        )
+
+    def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call using the wrapped parser.
+        If the parsing fails, retry.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects. Default is False.
+
+        Returns:
+            The parsed JSON object.
+        """
+        retries = 0
+
+        while retries <= self.max_retries:
+            try:
+                return self.parser.parse_result(result, partial=partial)
+            except OutputParserException as error:
+                result = self._handle_parse_error(result, error, retries)
+                retries += 1
+
+        raise ValueError("Max retries is lower than 0.")
+
+    def _handle_parse_error(
+        self,
+        original_generations: List[Generation],
+        error: OutputParserException,
+        retries: int,
+    ) -> List[Generation]:
+        if retries == self.max_retries:
+            raise error
+        return self._invoke_retry_runnable(original_generations, str(error))
+
+    def _invoke_retry_runnable(
+        self, result: List[Generation], error: str
+    ) -> List[Generation]:
+        message = self.retry_runnable.invoke(
+            {
+                "generations": result,
+                "instructions": self.instructions,
+                "error": error,
+            }
+        )
+        return [ChatGeneration(message=message)]
