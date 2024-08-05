@@ -7,9 +7,7 @@ See the following for more:
     - `Filter Example <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`_
 """
 
-from typing import Any, Dict, List, Optional, TypeVar
-
-MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
+from typing import Any, Dict, List, Optional
 
 
 def text_search_stage(
@@ -17,10 +15,10 @@ def text_search_stage(
     search_field: str,
     index_name: str,
     limit: Optional[int] = None,
-    pre_filter: Optional[List[MongoDBDocumentType]] = None,
+    pre_filter: Optional[List[Dict[str, Any]]] = None,
     include_scores: Optional[bool] = True,
     **kwargs: Any,
-) -> List[MongoDBDocumentType]:  # noqa: E501
+) -> List[Dict[str, Any]]:  # noqa: E501
     """Full-Text search using Lucene's standard (BM25) analyzer
 
     Args:
@@ -57,7 +55,7 @@ def vector_search_stage(
     search_field: str,
     index_name: str,
     top_k: int = 4,
-    filter: Optional[List[MongoDBDocumentType]] = None,
+    filter: Optional[List[Dict[str, Any]]] = None,
     oversampling_factor: int = 10,
     **kwargs: Any,
 ) -> Dict[str, Any]:  # noqa: E501

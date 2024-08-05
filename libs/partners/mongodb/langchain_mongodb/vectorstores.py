@@ -37,7 +37,6 @@ from langchain_mongodb.utils import (
     str_to_oid,
 )
 
-MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
 
 logger = logging.getLogger(__name__)
@@ -85,7 +84,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def __init__(
         self,
-        collection: Collection[MongoDBDocumentType],
+        collection: Collection[Dict[str, Any]],
         embedding: Embeddings,
         index_name: str = "vector_index",
         text_key: str = "text",
@@ -312,7 +311,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[List[MongoDBDocumentType]] = None,
+        pre_filter: Optional[List[Dict[str, Any]]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         include_embeddings: bool = False,
@@ -354,7 +353,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         query: str,
         k: int = 4,
-        pre_filter: Optional[List[MongoDBDocumentType]] = None,
+        pre_filter: Optional[List[Dict[str, Any]]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         include_scores: bool = True,
@@ -402,7 +401,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        pre_filter: Optional[List[MongoDBDocumentType]] = None,
+        pre_filter: Optional[List[Dict[str, Any]]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -518,7 +517,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        pre_filter: Optional[List[MongoDBDocumentType]] = None,
+        pre_filter: Optional[List[Dict[str, Any]]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         **kwargs: Any,
@@ -570,7 +569,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        pre_filter: Optional[List[MongoDBDocumentType]] = None,
+        pre_filter: Optional[List[Dict[str, Any]]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         **kwargs: Any,
@@ -593,7 +592,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         query_vector: List[float],
         k: int = 4,
-        pre_filter: Optional[List[MongoDBDocumentType]] = None,
+        pre_filter: Optional[List[Dict[str, Any]]] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         oversampling_factor: int = 10,
         include_embeddings: bool = False,

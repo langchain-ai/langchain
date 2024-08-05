@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -14,8 +14,6 @@ from langchain_mongodb.pipelines import (
     vector_search_stage,
 )
 from langchain_mongodb.utils import make_serializable
-
-MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 
 class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
@@ -36,9 +34,9 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """Number of documents to return."""
     oversampling_factor: int = 10
     """This times top_k is the number of candidates chosen at each step"""
-    pre_filter: Optional[List[MongoDBDocumentType]] = None
+    pre_filter: Optional[List[Dict[str, Any]]] = None
     """(Optional) Any MQL match expression comparing an indexed field"""
-    post_filter: Optional[List[MongoDBDocumentType]] = None
+    post_filter: Optional[List[Dict[str, Any]]] = None
     """(Optional) Pipeline of MongoDB aggregation stages for postprocessing."""
     vector_penalty: float = 60.0
     """Penalty applied to vector search results in RRF: scores=1/(rank + penalty)"""
@@ -113,7 +111,7 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
             pipeline.append({"$project": {self.vectorstore._embedding_key: 0}})
         # Post filtering
         if self.post_filter is not None:
-            pipeline.append(self.post_filter)
+            pipeline.extend(self.post_filter)
 
         # Execution
         cursor = self.collection.aggregate(pipeline)  # type: ignore[arg-type]

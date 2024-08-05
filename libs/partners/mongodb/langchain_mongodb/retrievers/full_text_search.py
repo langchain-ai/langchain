@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -7,8 +7,6 @@ from pymongo.collection import Collection
 
 from langchain_mongodb.pipelines import text_search_stage
 from langchain_mongodb.utils import make_serializable
-
-MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 
 class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
@@ -24,9 +22,9 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
     """Collection field that contains the text to be searched. It must be indexed"""
     top_k: Optional[int] = None
     """Number of documents to return. Default is no limit"""
-    pre_filter: Optional[List[MongoDBDocumentType]] = None
+    pre_filter: Optional[List[Dict[str, Any]]] = None
     """(Optional) List of MQL match expression comparing an indexed field"""
-    post_filter: Optional[List[MongoDBDocumentType]] = None
+    post_filter: Optional[List[Dict[str, Any]]] = None
     """(Optional) Pipeline of MongoDB aggregation stages for postprocessing"""
     show_embeddings: float = False
     """If true, returned Document metadata will include vectors"""
@@ -52,7 +50,7 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
         )
         # Post filtering
         if self.post_filter is not None:
-            pipeline.append(self.post_filter)
+            pipeline.extend(self.post_filter)
 
         # Execution
         cursor = self.collection.aggregate(pipeline)  # type: ignore[arg-type]
