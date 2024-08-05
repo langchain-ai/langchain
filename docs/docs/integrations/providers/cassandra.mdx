@@ -64,6 +64,24 @@ from langchain_community.document_loaders import CassandraLoader
 
 Learn more in the [example notebook](/docs/integrations/document_loaders/cassandra).
 
+## Database-bound prompt templates
+
+```python
+from langchain_community.prompts import CassandraReaderPromptTemplate
+
+my_template = CassandraReaderPromptTemplate(
+  template="Greet {user_name} (aka {short_name}) in a {adj} way.",
+  field_mapper={
+    "user_name": ("demo_users", "user_name"),
+    "short_name": ("demo_users", "short_name"),
+  },
+)
+# table 'demo_users' has 'user_id' as primary key, so:
+prompt = my_template.format(user_id="john_doe", adj="lackadaisical")
+```
+
+Learn mode in the [example notebook](/docs/modules/model_io/prompts/database_bound_prompt_templates).
+
 #### Attribution statement
 
 > Apache Cassandra, Cassandra and Apache are either registered trademarks or trademarks of 
