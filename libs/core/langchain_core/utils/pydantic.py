@@ -53,6 +53,13 @@ def is_pydantic_v1_subclass(cls: Type) -> bool:
     return False
 
 
+def is_pydantic_v2_subclass(cls: Type) -> bool:
+    """Check if the installed Pydantic version is 1.x-like."""
+    from pydantic import BaseModel
+
+    return PYDANTIC_MAJOR_VERSION == 2 and issubclass(cls, BaseModel)
+
+
 def is_basemodel_subclass(cls: Type) -> bool:
     """Check if the given class is a subclass of Pydantic BaseModel.
 

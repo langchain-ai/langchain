@@ -774,7 +774,7 @@ class LLMGraphTransformer:
 
         Args:
             documents (Sequence[Document]): The original documents.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             Sequence[GraphDocument]: The transformed documents as graphs.

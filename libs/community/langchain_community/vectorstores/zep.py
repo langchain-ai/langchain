@@ -639,7 +639,7 @@ class ZepVectorStore(VectorStore):
             api_url (str): The URL of the Zep API.
             api_key (Optional[str]): The API key for the Zep API.
             config (Optional[CollectionConfig]): The configuration for the collection.
-            **kwargs: Additional parameters specific to the vectorstore.
+            kwargs: Additional parameters specific to the vectorstore.
 
         Returns:
             ZepVectorStore: An instance of ZepVectorStore.
