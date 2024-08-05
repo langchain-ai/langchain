@@ -131,11 +131,11 @@ def test_with_field_metadata() -> None:
         class Foo(BaseModelV2):
             x: List[int] = Field(description="List of integers", 
                                  min_length=10, 
-                                 max_length=10)
+                                 max_length=15)
         
         subset_model = _create_subset_model("Foo", Foo, ["x"])
         model_fields = subset_model.model_fields
         assert "x" in model_fields
-        assert model_fields["x"].description == "List of integers"
-        assert model_fields["x"].min_length == 10
-        assert model_fields["x"].max_length == 10
+        assert model_fields["x"].default.description == "List of integers"
+        assert model_fields["x"].default.min_length == 10
+        assert model_fields["x"].default.max_length == 15

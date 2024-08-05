@@ -215,7 +215,7 @@ def _create_subset_model_v2(
         field = model.model_fields[field_name]  # type: ignore
         description = descriptions_.get(field_name, field.description)
         field_info = FieldInfo(description=description, default=field.default)
-        if "metadata" in field:
+        if field.metadata:
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
     rtn = create_model(name, **fields)  # type: ignore
