@@ -45,7 +45,7 @@ requests = "^2"
 PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
-gigachat = "^0.1.31"
+gigachat = "^0.1.33"
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
