@@ -52,6 +52,7 @@ def create_vector_search_index(
     path: str,
     similarity: str,
     filters: Optional[List[str]] = None,
+    *,
     wait_until_complete: Optional[float] = None,
 ) -> None:
     """Experimental Utility function to create a vector search index
@@ -94,7 +95,10 @@ def create_vector_search_index(
 
 
 def drop_vector_search_index(
-    collection: Collection, index_name: str, wait_until_complete: Optional[float] = None
+    collection: Collection,
+    index_name: str,
+    *,
+    wait_until_complete: Optional[float] = None,
 ) -> None:
     """Drop a created vector search index
 
@@ -129,6 +133,7 @@ def update_vector_search_index(
     path: str,
     similarity: str,
     filters: Optional[List[str]] = None,
+    *,
     wait_until_complete: Optional[float] = None,
 ) -> None:
     """Update a search index.

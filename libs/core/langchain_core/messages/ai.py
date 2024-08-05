@@ -89,7 +89,7 @@ class AIMessage(BaseMessage):
 
         Args:
             content: The content of the message.
-            **kwargs: Additional arguments to pass to the parent class.
+            kwargs: Additional arguments to pass to the parent class.
         """
         super().__init__(content=content, **kwargs)
 
