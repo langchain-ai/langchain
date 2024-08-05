@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -107,6 +108,8 @@ class BaseLanguageModel(
         default=None, exclude=True
     )
     """Optional encoder to use for counting tokens."""
+    disable_streaming: Union[bool, Literal["tool_calling"]] = False
+    """Whether to disable streaming for this model."""
 
     @validator("verbose", pre=True, always=True, allow_reuse=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:

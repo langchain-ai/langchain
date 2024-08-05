@@ -312,7 +312,15 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
-        if type(self)._stream == BaseChatModel._stream:
+        if (
+            type(self)._stream == BaseChatModel._stream
+            or (self.disable_streaming is True)
+            or (
+                self.disable_streaming == "tool_calling"
+                and "tools" in kwargs
+                and kwargs["tools"]
+            )
+        ):
             # model doesn't implement streaming, so use default implementation
             yield cast(
                 BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
@@ -385,6 +393,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if (
             type(self)._astream is BaseChatModel._astream
             and type(self)._stream is BaseChatModel._stream
+            or (self.disable_streaming is True)
+            or (
+                self.disable_streaming == "tool_calling"
+                and "tools" in kwargs
+                and kwargs["tools"]
+            )
         ):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
