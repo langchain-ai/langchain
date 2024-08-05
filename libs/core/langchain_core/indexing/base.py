@@ -491,7 +491,7 @@ class DeleteResponse(TypedDict, total=False):
     """The number of items that failed to be deleted."""
 
 
-@beta(message="Added in 0.2.9. The abstraction is subject to change.")
+@beta(message="Added in 0.2.29. The abstraction is subject to change.")
 class DocumentIndex(BaseRetriever):
     """A document retriever that supports indexing operations.
 
@@ -507,7 +507,7 @@ class DocumentIndex(BaseRetriever):
     2. Fetching document by ID.
     3. Searching for document using a query.
 
-    .. versionadded:: 0.2.9
+    .. versionadded:: 0.2.29
     """
 
     @abc.abstractmethod
@@ -531,7 +531,7 @@ class DocumentIndex(BaseRetriever):
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
 
-        .. versionadded:: 0.2.9
+        .. versionadded:: 0.2.29
         """
 
     async def aupsert(
@@ -556,7 +556,7 @@ class DocumentIndex(BaseRetriever):
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
 
-        .. versionadded:: 0.2.9
+        .. versionadded:: 0.2.29
         """
         return await run_in_executor(
             None,
@@ -631,7 +631,7 @@ class DocumentIndex(BaseRetriever):
         Returns:
             List[Document]: List of documents that were found.
 
-        .. versionadded:: 0.2.9
+        .. versionadded:: 0.2.29
         """
 
     async def aget(
@@ -659,7 +659,7 @@ class DocumentIndex(BaseRetriever):
         Returns:
             List[Document]: List of documents that were found.
 
-        .. versionadded:: 0.2.9
+        .. versionadded:: 0.2.29
         """
         return await run_in_executor(
             None,
