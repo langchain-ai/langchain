@@ -21,7 +21,7 @@ from langchain_core.tools import tool
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
-    my_adder_tool
+    my_adder_tool,
 )
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
