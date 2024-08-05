@@ -499,6 +499,7 @@ class ApertureDB(VectorStore):
         # If upsert has been implemented, we can use it to add documents
         return self.upsert(documents_, **kwargs)["succeeded"]
 
+    @override
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Insert or update items
 
