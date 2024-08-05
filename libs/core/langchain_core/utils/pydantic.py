@@ -29,8 +29,6 @@ if PYDANTIC_MAJOR_VERSION == 1:
     PydanticBaseModel = pydantic.BaseModel
     TypeBaseModel = Type[BaseModel]
 elif PYDANTIC_MAJOR_VERSION == 2:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
-
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
     TypeBaseModel = Union[Type[BaseModel], Type[pydantic.BaseModel]]  # type: ignore
@@ -199,12 +197,12 @@ def _create_subset_model_v1(
 
 def _create_subset_model_v2(
     name: str,
-    model: Type[BaseModel],
+    model: Type[pydantic.BaseModel],
     field_names: List[str],
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
+) -> Type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
     from pydantic import create_model  # pydantic: ignore
     from pydantic.fields import FieldInfo  # pydantic: ignore
@@ -230,7 +228,7 @@ def _create_subset_model_v2(
 # However, can't find a way to type hint this.
 def _create_subset_model(
     name: str,
-    model: Type[BaseModel],
+    model: TypeBaseModel,
     field_names: List[str],
     *,
     descriptions: Optional[dict] = None,

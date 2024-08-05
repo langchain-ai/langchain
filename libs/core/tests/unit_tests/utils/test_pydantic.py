@@ -2,13 +2,15 @@
 
 from typing import Any, Dict, List, Optional
 
+import pytest
+
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.pydantic import (
-    _create_subset_model,
     PYDANTIC_MAJOR_VERSION,
+    _create_subset_model_v2,
     is_basemodel_instance,
     is_basemodel_subclass,
-    pre_init
+    pre_init,
 )
 
 
@@ -123,19 +125,31 @@ def test_is_basemodel_instance() -> None:
     else:
         raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
 
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
 def test_with_field_metadata() -> None:
     """Test pydantic with field metadata"""
-    if PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
+    from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
+    from pydantic import Field as FieldV2
 
-        class Foo(BaseModelV2):
-            x: List[int] = Field(description="List of integers", 
-                                 min_length=10, 
-                                 max_length=15)
-        
-        subset_model = _create_subset_model("Foo", Foo, ["x"])
-        model_fields = subset_model.model_fields
-        assert "x" in model_fields
-        assert model_fields["x"].default.description == "List of integers"
-        assert model_fields["x"].default.min_length == 10
-        assert model_fields["x"].default.max_length == 15
+    class Foo(BaseModelV2):
+        x: List[int] = FieldV2(
+            description="List of integers", min_length=10, max_length=15
+        )
+
+    subset_model = _create_subset_model_v2("Foo", Foo, ["x"])
+    assert subset_model.model_json_schema() == {
+        "properties": {
+            "x": {
+                "description": "List of integers",
+                "items": {"type": "integer"},
+                "maxItems": 15,
+                "minItems": 10,
+                "title": "X",
+                "type": "array",
+            }
+        },
+        "required": ["x"],
+        "title": "Foo",
+        "type": "object",
+    }
