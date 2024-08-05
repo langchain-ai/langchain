@@ -2,7 +2,7 @@
 from langchain_community.embeddings import ClovaXEmbeddings
 
 
-def test_langchain_naver_embedding_documents() -> None:
+def test_embedding_documents() -> None:
     """Test cohere embeddings."""
     documents = ["foo bar"]
     embedding = ClovaXEmbeddings()
@@ -11,7 +11,7 @@ def test_langchain_naver_embedding_documents() -> None:
     assert len(output[0]) > 0
 
 
-def test_langchain_naver_embedding_query() -> None:
+def test_embedding_query() -> None:
     """Test cohere embeddings."""
     document = "foo bar"
     embedding = ClovaXEmbeddings()
