@@ -21,7 +21,7 @@ from langchain_core.tools import tool
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
-    my_adder_tool,
+    my_adder_tool
 )
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
@@ -285,10 +285,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
-    def test_tool_message_histories_string_content(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with string tool contents
         (e.g. OpenAI).
