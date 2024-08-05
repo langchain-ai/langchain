@@ -199,3 +199,43 @@ def test_tracing_enable_disable(
         assert len(mock_posts) == 1
     else:
         assert not mock_posts
+
+
+@pytest.mark.parametrize("method", ["invoke", "ainvoke", "stream", "astream"])
+async def test_runnable_with_fallbacks_trace_nesting(method: str):
+    mock_session = MagicMock()
+    mock_client_ = Client(
+        session=mock_session, api_key="test", auto_batch_tracing=False
+    )
+    tracer = LangChainTracer(client=mock_client_)
+
+    @RunnableLambda
+    def my_child_function(a: int) -> int:
+        raise ValueError("This is a test")
+
+    @RunnableLambda
+    def my_fallback_function(a: int) -> int:
+        return a + 2
+
+    chain = my_child_function.with_fallbacks(
+        [my_fallback_function], exceptions_to_handle=[ValueError]
+    )
+
+    # Now run the chain and check the resulting posts
+    match method:
+        case "invoke":
+            res = chain.invoke(1, {"callbacks": [tracer]})
+        case "ainvoke":
+            res = await chain.ainvoke(1, {"callbacks": [tracer]})
+        case "stream":
+            results = list(chain.stream(1, {"callbacks": [tracer]}))
+            res = results[-1]
+        case "astream":
+            results = [res async for res in chain.astream(1, {"callbacks": [tracer]})]
+            res = results[-1]
+    assert res == 3
+    posts = _get_posts(mock_client_)
+    assert len(posts) == 3
+    assert posts[0]["name"] == "RunnableWithFallbacks"
+    assert posts[1]["name"] == "my_child_function"
+    assert posts[2]["name"] == "my_fallback_function"
