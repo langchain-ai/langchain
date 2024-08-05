@@ -46,7 +46,7 @@ from typing import (
     Union,
 )
 
-from langchain_core._api import beta
+from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
@@ -96,7 +96,7 @@ class VectorStore(ABC):
             ValueError: If the number of metadatas does not match the number of texts.
             ValueError: If the number of ids does not match the number of texts.
         """
-        if type(self).upsert != VectorStore.upsert:
+        if type(self).add_documents != VectorStore.add_documents:
             # Import document in local scope to avoid circular imports
             from langchain_core.documents import Document
 
@@ -109,15 +109,21 @@ class VectorStore(ABC):
             if metadatas and len(metadatas) != len(texts_):
                 raise ValueError(
                     "The number of metadatas must match the number of texts."
-                    "Got {len(metadatas)} metadatas and {len(texts_)} texts."
+                    f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
 
             if "ids" in kwargs:
-                ids = kwargs.pop("ids")
+                ids = kwargs["ids"]
+                if not isinstance(ids, Sequence):
+                    raise TypeError(
+                        "If ids are provided, they must be a list or tuple of strings."
+                        f"Got type ({type(ids)})."
+                    )
+
                 if ids and len(ids) != len(texts_):
                     raise ValueError(
                         "The number of ids must match the number of texts."
-                        "Got {len(ids)} ids and {len(texts_)} texts."
+                        f"Got {len(ids)} ids and {len(texts_)} texts."
                     )
             else:
                 ids = None
@@ -128,15 +134,23 @@ class VectorStore(ABC):
                 Document(page_content=text, metadata=metadata_, id=id_)
                 for text, metadata_, id_ in zip(texts, metadatas_, ids_)
             ]
-            upsert_response = self.upsert(docs, **kwargs)
-            return upsert_response["succeeded"]
+
+            return self.add_documents(docs, **kwargs)
         raise NotImplementedError(
             f"`add_texts` has not been implemented for {self.__class__.__name__} "
         )
 
     # Developer guidelines:
     # Do not override streaming_upsert!
-    @beta(message="Added in 0.2.11. The API is subject to change.")
+    @deprecated(
+        alternative="VectorStore.add_documents",
+        message=(
+            "This was a beta API that was added in 0.2.11. "
+            "It'll be removed in 0.3.0."
+        ),
+        since="0.2.29",
+        removal="0.3.0",
+    )
     def streaming_upsert(
         self, items: Iterable[Document], /, batch_size: int, **kwargs: Any
     ) -> Iterator[UpsertResponse]:
@@ -165,14 +179,22 @@ class VectorStore(ABC):
         for item_batch in batch_iterate(batch_size, items):
             yield self.upsert(item_batch, **kwargs)
 
-    # Please note that we've added a new method `upsert` instead of re-using the
+    # Please note that we originally added a new method `upsert` instead of re-using the
     # existing `add_documents` method.
     # This was done to resolve potential ambiguities around the behavior of **kwargs
     # in existing add_documents / add_texts methods which could include per document
     # information (e.g., the `ids` parameter).
-    # Over time the `add_documents` could be denoted as legacy and deprecated
-    # in favor of the `upsert` method.
-    @beta(message="Added in 0.2.11. The API is subject to change.")
+    # However, we decide to avoid modifying the existing vectorstore implementations
+    # and instead will reserve `upsert` for a future V2 abstraction.
+    @deprecated(
+        alternative="VectorStore.add_documents",
+        message=(
+            "This was a beta API that was added in 0.2.11. "
+            "It'll be removed in 0.3.0."
+        ),
+        since="0.2.29",
+        removal="0.3.0",
+    )
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Add or update documents in the vectorstore.
 
@@ -234,7 +256,15 @@ class VectorStore(ABC):
             f"upsert has not been implemented for {self.__class__.__name__}"
         )
 
-    @beta(message="Added in 0.2.11. The API is subject to change.")
+    @deprecated(
+        alternative="VectorStore.add_documents",
+        message=(
+            "This was a beta API that was added in 0.2.11. "
+            "It'll be removed in 0.3.0."
+        ),
+        since="0.2.29",
+        removal="0.3.0",
+    )
     async def astreaming_upsert(
         self,
         items: AsyncIterable[Document],
@@ -263,7 +293,15 @@ class VectorStore(ABC):
         async for batch in abatch_iterate(batch_size, items):
             yield await self.aupsert(batch, **kwargs)
 
-    @beta(message="Added in 0.2.11. The API is subject to change.")
+    @deprecated(
+        alternative="VectorStore.add_documents",
+        message=(
+            "This was a beta API that was added in 0.2.11. "
+            "It'll be removed in 0.3.0."
+        ),
+        since="0.2.29",
+        removal="0.3.0",
+    )
     async def aupsert(
         self, items: Sequence[Document], /, **kwargs: Any
     ) -> UpsertResponse:
@@ -407,7 +445,7 @@ class VectorStore(ABC):
             ValueError: If the number of metadatas does not match the number of texts.
             ValueError: If the number of ids does not match the number of texts.
         """
-        if type(self).aupsert != VectorStore.aupsert:
+        if type(self).aadd_documents != VectorStore.aadd_documents:
             # Import document in local scope to avoid circular imports
             from langchain_core.documents import Document
 
@@ -420,15 +458,21 @@ class VectorStore(ABC):
             if metadatas and len(metadatas) != len(texts_):
                 raise ValueError(
                     "The number of metadatas must match the number of texts."
-                    "Got {len(metadatas)} metadatas and {len(texts_)} texts."
+                    f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
 
             if "ids" in kwargs:
-                ids = kwargs.pop("ids")
+                ids = kwargs["ids"]
+                if not isinstance(ids, Sequence):
+                    raise TypeError(
+                        "If ids are provided, they must be a list or tuple of strings."
+                        f"Got type ({type(ids)})."
+                    )
+
                 if ids and len(ids) != len(texts_):
                     raise ValueError(
                         "The number of ids must match the number of texts."
-                        "Got {len(ids)} ids and {len(texts_)} texts."
+                        f"Got {len(ids)} ids and {len(texts_)} texts."
                     )
             else:
                 ids = None
@@ -439,8 +483,8 @@ class VectorStore(ABC):
                 Document(page_content=text, metadata=metadata_, id=id_)
                 for text, metadata_, id_ in zip(texts, metadatas_, ids_)
             ]
-            upsert_response = await self.aupsert(docs, **kwargs)
-            return upsert_response["succeeded"]
+
+            return await self.aadd_documents(docs, **kwargs)
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
@@ -458,37 +502,21 @@ class VectorStore(ABC):
         Raises:
             ValueError: If the number of ids does not match the number of documents.
         """
-        if type(self).upsert != VectorStore.upsert:
-            from langchain_core.documents import Document
+        if type(self).add_texts != VectorStore.add_texts:
+            if "ids" not in kwargs:
+                ids = [doc.id for doc in documents]
 
-            if "ids" in kwargs:
-                ids = kwargs.pop("ids")
-                if ids and len(ids) != len(documents):
-                    raise ValueError(
-                        "The number of ids must match the number of documents. "
-                        "Got {len(ids)} ids and {len(documents)} documents."
-                    )
+                # If there's at least one valid ID, we'll assume that IDs
+                # should be used.
+                if any(ids):
+                    kwargs["ids"] = ids
 
-                documents_ = []
-
-                for id_, document in zip(ids, documents):
-                    doc_with_id = Document(
-                        page_content=document.page_content,
-                        metadata=document.metadata,
-                        id=id_,
-                    )
-                    documents_.append(doc_with_id)
-            else:
-                documents_ = documents
-
-            # If upsert has been implemented, we can use it to add documents
-            return self.upsert(documents_, **kwargs)["succeeded"]
-
-        # Code path that delegates to add_text for backwards compatibility
-        # TODO: Handle the case where the user doesn't provide ids on the Collection
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return self.add_texts(texts, metadatas, **kwargs)
+            texts = [doc.page_content for doc in documents]
+            metadatas = [doc.metadata for doc in documents]
+            return self.add_texts(texts, metadatas, **kwargs)
+        raise NotImplementedError(
+            f"`add_documents` has not been implemented for {self.__class__.__name__} "
+        )
 
     async def aadd_documents(
         self, documents: List[Document], **kwargs: Any
@@ -506,41 +534,21 @@ class VectorStore(ABC):
         Raises:
             ValueError: If the number of IDs does not match the number of documents.
         """
-        # If either upsert or aupsert has been implemented, we delegate to them!
-        if (
-            type(self).aupsert != VectorStore.aupsert
-            or type(self).upsert != VectorStore.upsert
-        ):
-            # If aupsert has been implemented, we can use it to add documents
-            from langchain_core.documents import Document
+        # If the async method has been overridden, we'll use that.
+        if type(self).aadd_texts != VectorStore.aadd_texts:
+            if "ids" not in kwargs:
+                ids = [doc.id for doc in documents]
 
-            if "ids" in kwargs:
-                ids = kwargs.pop("ids")
-                if ids and len(ids) != len(documents):
-                    raise ValueError(
-                        "The number of ids must match the number of documents."
-                        "Got {len(ids)} ids and {len(documents)} documents."
-                    )
+                # If there's at least one valid ID, we'll assume that IDs
+                # should be used.
+                if any(ids):
+                    kwargs["ids"] = ids
 
-                documents_ = []
+            texts = [doc.page_content for doc in documents]
+            metadatas = [doc.metadata for doc in documents]
+            return await self.aadd_texts(texts, metadatas, **kwargs)
 
-                for id_, document in zip(ids, documents):
-                    doc_with_id = Document(
-                        page_content=document.page_content,
-                        metadata=document.metadata,
-                        id=id_,
-                    )
-                    documents_.append(doc_with_id)
-            else:
-                documents_ = documents
-
-            # The default implementation of aupsert delegates to upsert.
-            upsert_response = await self.aupsert(documents_, **kwargs)
-            return upsert_response["succeeded"]
-
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return await self.aadd_texts(texts, metadatas, **kwargs)
+        return run_in_executor(None, self.add_documents, documents, **kwargs)
 
     def search(self, query: str, search_type: str, **kwargs: Any) -> List[Document]:
         """Return docs most similar to query using a specified search type.
