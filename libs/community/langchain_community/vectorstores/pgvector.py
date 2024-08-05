@@ -231,65 +231,138 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     pending=True,
 )
 class PGVector(VectorStore):
-    """`Postgres`/`PGVector` vector store.
+    """__ModuleName__ vector store integration.
 
-    **DEPRECATED**: This class is pending deprecation and will likely receive
-        no updates. An improved version of this class is available in
-        `langchain_postgres` as `PGVector`. Please use that class instead.
+    # TODO: Replace with relevant packages, env vars.
+    Setup:
+        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
 
-        When migrating please keep in mind that:
-            * The new implementation works with psycopg3, not with psycopg2
-              (This implementation does not work with psycopg3).
-            * Filtering syntax has changed to use $ prefixed operators for JSONB
-              metadata fields. (New implementation only uses JSONB field for metadata)
-            * The new implementation made some schema changes to address issues
-              with the existing implementation. So you will need to re-create
-              your tables and re-index your data or else carry out a manual
-              migration.
+        .. code-block:: bash
 
-    To use, you should have the ``pgvector`` python package installed.
+            pip install -U __package_name__
+            export __MODULE_NAME___API_KEY="your-api-key"
 
-    Args:
-        connection_string: Postgres connection string.
-        embedding_function: Any embedding function implementing
-            `langchain.embeddings.base.Embeddings` interface.
-        embedding_length: The length of the embedding vector. (default: None)
-            NOTE: This is not mandatory. Defining it will prevent vectors of
-            any other size to be added to the embeddings table but, without it,
-            the embeddings can't be indexed.
-        collection_name: The name of the collection to use. (default: langchain)
-            NOTE: This is not the name of the table, but the name of the collection.
-            The tables will be created when initializing the store (if not exists)
-            So, make sure the user has the right permissions to create tables.
-        distance_strategy: The distance strategy to use. (default: COSINE)
-        pre_delete_collection: If True, will delete the collection if it exists.
-            (default: False). Useful for testing.
-        engine_args: SQLAlchemy's create engine arguments.
-        use_jsonb: Use JSONB instead of JSON for metadata. (default: True)
-            Strongly discouraged from using JSON as it's not as efficient
-            for querying.
-            It's provided here for backwards compatibility with older versions,
-            and will be removed in the future.
-        create_extension: If True, will create the vector extension if it doesn't exist.
-            disabling creation is useful when using ReadOnly Databases.
+    # TODO: Populate with relevant params.
+    Key init args — indexing params:
+        collection_name: str
+            Name of the collection.
+        embedding_function: Embeddings
+            Embedding function to use.
 
-    Example:
+    # TODO: Populate with relevant params.
+    Key init args — client params:
+        client: Optional[Client]
+            Client to use.
+        connection_args: Optional[dict]
+            Connection arguments.
+
+    # TODO: Replace with relevant init params.
+    Instantiate:
         .. code-block:: python
 
-            from langchain_community.vectorstores import PGVector
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from __module_name__.vectorstores import __ModuleName__VectorStore
+            from langchain_openai import OpenAIEmbeddings
 
-            CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
-            COLLECTION_NAME = "state_of_the_union_test"
-            embeddings = OpenAIEmbeddings()
-            vectorestore = PGVector.from_documents(
-                embedding=embeddings,
-                documents=docs,
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-                use_jsonb=True,
+            vector_store = __ModuleName__VectorStore(
+                collection_name="foo",
+                embedding_function=OpenAIEmbeddings(),
+                connection_args={"uri": "./foo.db"},
+                # other params...
             )
-    """
+
+    # TODO: Populate with relevant variables.
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    # TODO: Populate with relevant variables.
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    # TODO: Fill out with relevant variables and example output.
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with relevant variables and example output.
+    Search with filter:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with relevant variables and example output.
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with relevant variables and example output.
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with relevant variables and example output.
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    """  # noqa: E501
 
     def __init__(
         self,
