@@ -6,6 +6,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Union,
 )
 
 from ai21.models import DocumentType
@@ -122,7 +123,9 @@ class AI21SemanticTextSplitter(TextSplitter):
         """Use regular expression to replace sequences of '\n'"""
         return re.sub(r"\s+", "", string)
 
-    def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
+    def _merge_splits(
+        self, splits: Iterable[str], separator: Union[str, Iterable[str]]
+    ) -> List[str]:
         """This method overrides the default implementation of TextSplitter"""
         return self._merge_splits_no_seperator(splits)
 
