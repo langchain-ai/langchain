@@ -1,0 +1,60 @@
+# Langtrace
+
+This page covers how to use the [Langtrace](https://www.langtrace.ai) ecosystem within LangChain.
+
+## What is Langtrace?
+
+[Langtrace](https://www.langtrace.ai) enables developers to trace, evaluate, manage prompts and datasets, and debug issues related to an LLM application’s performance. It creates open telemetry standard traces for Chroma which helps with observability and works with any observability client.
+
+Key features include:
+
+- Detailed traces and logs
+- Real-time monitoring of key metrics including accuracy, evaluations, usage, costs, and latency
+- Integrations for the most popular frameworks, vector databases, and LLMs including Langchain, LllamaIndex, OpenAI, Anthropic, Pinecone, Chroma and Cohere.
+- Self-hosted or using Langtrace cloud
+
+![Interface showing traces in Langtrace.](../../../static/img/langtrace_trace.png "Langtrace Cloud Traces")
+
+
+| [Docs](https://docs.langtrace.ai/introduction) | [Github](https://github.com/Scale3-Labs/langtrace) |
+
+### Installation
+
+- Signup for [Langtrace](https://www.langtrace.ai/signup) to get an API key
+
+#### Install the SDK on your project:
+
+- **Python**: Install the Langtrace SDK using pip
+
+```python
+pip install langtrace-python-sdk
+```
+
+- **Typescript**: Install the Langtrace SDK using npm
+
+```typescript
+npm i @langtrase/typescript-sdk
+```
+
+#### Initialize the SDK in your project:
+
+- **Typescript**:
+
+```typescript Typescript
+// Must precede any llm module imports
+import * as Langtrace from "@langtrase/typescript-sdk";
+
+Langtrace.init({ api_key: "<LANGTRACE_API_KEY>" });
+```
+
+- **Python**:
+
+```python Python
+from langtrace_python_sdk import langtrace
+
+langtrace.init(api_key = '<LANGTRACE_API_KEY>')
+```
+
+### Configuration
+
+Langtrace is adaptable and can be configured to transmit traces to any observability platform compatible with OpenTelemetry, such as Datadog, Honeycomb, Dynatrace, New Relic, among others. For more details on setup and options, consult the [Langtrace docs](https://docs.langtrace.ai/introduction).
