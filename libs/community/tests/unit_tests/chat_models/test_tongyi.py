@@ -3,6 +3,7 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
 )
 from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
@@ -69,6 +70,20 @@ def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
     result = convert_message_to_dict(message)
     expected_output = {"role": "user", "content": "foo"}
+    assert result == expected_output
+
+
+def test__convert_message_to_dict_tool() -> None:
+    message = ToolMessage(content="foo", tool_call_id="")
+    result = convert_message_to_dict(message)
+    expected_output = {"role": "assistant", "content": "foo"}
+    assert result == expected_output
+
+
+def test__convert_message_to_dict_function() -> None:
+    message = FunctionMessage(content="foo", name="")
+    result = convert_message_to_dict(message)
+    expected_output = {"role": "assistant", "content": "foo"}
     assert result == expected_output
 
 
