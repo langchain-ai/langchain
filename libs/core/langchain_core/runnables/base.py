@@ -3551,21 +3551,30 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             run_id=config.pop("run_id", None),
         )
 
+        def _invoke_step(
+            step: Runnable[Input, Any], input: Input, config: RunnableConfig, key: str
+        ) -> Any:
+            child_config = patch_config(
+                config,
+                # mark each step as a child run
+                callbacks=run_manager.get_child(f"map:key:{key}"),
+            )
+            context = copy_context()
+            context.run(_set_config_context, child_config)
+            return context.run(
+                step.invoke,
+                input,
+                config,
+            )
+
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
             steps = dict(self.steps__)
+
             with get_executor_for_config(config) as executor:
                 futures = [
-                    executor.submit(
-                        step.invoke,
-                        input,
-                        # mark each step as a child run
-                        patch_config(
-                            config,
-                            callbacks=run_manager.get_child(f"map:key:{key}"),
-                        ),
-                    )
+                    executor.submit(_invoke_step, step, input, config, key)
                     for key, step in steps.items()
                 ]
                 output = {key: future.result() for key, future in zip(steps, futures)}
@@ -3594,18 +3603,34 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             run_id=config.pop("run_id", None),
         )
 
+        async def _ainvoke_step(
+            step: Runnable[Input, Any], input: Input, config: RunnableConfig, key: str
+        ) -> Any:
+            child_config = patch_config(
+                config,
+                callbacks=run_manager.get_child(f"map:key:{key}"),
+            )
+            context = copy_context()
+            context.run(_set_config_context, child_config)
+            if asyncio_accepts_context():
+                return await asyncio.create_task(
+                    step.ainvoke(input, config), context=context
+                )
+            else:
+                return await asyncio.create_task(step.ainvoke(input, config))
+
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
             steps = dict(self.steps__)
             results = await asyncio.gather(
                 *(
-                    step.ainvoke(
+                    _ainvoke_step(
+                        step,
                         input,
                         # mark each step as a child run
-                        patch_config(
-                            config, callbacks=run_manager.get_child(f"map:key:{key}")
-                        ),
+                        config,
+                        key,
                     )
                     for key, step in steps.items()
                 )

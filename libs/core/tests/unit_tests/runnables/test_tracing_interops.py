@@ -7,7 +7,7 @@ import pytest
 from langsmith import Client, traceable
 from langsmith.run_helpers import tracing_context
 
-from langchain_core.runnables.base import RunnableLambda
+from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tracers.langchain import LangChainTracer
 
@@ -204,9 +204,9 @@ def test_tracing_enable_disable(
 
 
 @pytest.mark.parametrize(
-    "method", ["invoke", "ainvoke", "stream", "astream", "batch", "abatch"]
+    "method", ["invoke", "stream", "batch", "ainvoke", "astream", "abatch"]
 )
-async def test_runnable_with_fallbacks_trace_nesting(method: str) -> None:
+async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
     if method.startswith("a") and sys.version_info < (3, 11):
         pytest.skip("Asyncio context vars require Python 3.11+")
     mock_session = MagicMock()
@@ -219,15 +219,21 @@ async def test_runnable_with_fallbacks_trace_nesting(method: str) -> None:
     def my_child_function(a: int) -> int:
         return a + 2
 
-    chain = my_child_function.with_config(tags=["atag"])
+    def other_thing(a: int) -> int:
+        return a + 1
+
+    parallel = RunnableParallel(
+        chain_result=my_child_function.with_config(tags=["atag"]),
+        other_thing=other_thing,
+    )
 
     def before(x: int) -> int:
         return x
 
-    def after(x: int) -> int:
-        return x
+    def after(x: dict) -> int:
+        return x["chain_result"]
 
-    sequence = before | chain | after
+    sequence = before | parallel | after
     if method.startswith("a"):
 
         @RunnableLambda  # type: ignore
@@ -264,34 +270,56 @@ async def test_runnable_with_fallbacks_trace_nesting(method: str) -> None:
         "parent",
         "RunnableSequence",
         "before",
-        "my_child_function",
+        "RunnableParallel<chain_result,other_thing>",
+        ["my_child_function", "other_thing"],
         "after",
     ]
-    assert len(posts) == len(name_order)
-    prev_dotted_order = None
-    dotted_order_map = {}
-    id_map = {}
-    parent_id_map = {}
-    for i, name in enumerate(name_order):
-        assert posts[i]["name"] == name
-        dotted_order = posts[i]["dotted_order"]
-        if prev_dotted_order is not None:
-            assert (
-                dotted_order > prev_dotted_order
-            ), f"{name} not after {name_order[i-1]}"
-        prev_dotted_order = dotted_order
-        if name in dotted_order_map:
-            raise ValueError(f"Duplicate name {name}")
-        dotted_order_map[name] = dotted_order
-        id_map[name] = posts[i]["id"]
-        parent_id_map[name] = posts[i].get("parent_run_id")
     expected_parents = {
         "parent": None,
         "RunnableSequence": "parent",
         "before": "RunnableSequence",
-        "my_child_function": "RunnableSequence",
+        "RunnableParallel<chain_result,other_thing>": "RunnableSequence",
+        "my_child_function": "RunnableParallel<chain_result,other_thing>",
+        "other_thing": "RunnableParallel<chain_result,other_thing>",
         "after": "RunnableSequence",
     }
+    assert len(posts) == sum([1 if isinstance(n, str) else len(n) for n in name_order])
+    prev_dotted_order = None
+    dotted_order_map = {}
+    id_map = {}
+    parent_id_map = {}
+    i = 0
+    for name in name_order:
+        if isinstance(name, list):
+            for n in name:
+                matching_post = next(
+                    p for p in posts[i : i + len(name)] if p["name"] == n
+                )
+                assert matching_post
+                dotted_order = matching_post["dotted_order"]
+                if prev_dotted_order is not None:
+                    assert dotted_order > prev_dotted_order
+                dotted_order_map[n] = dotted_order
+                id_map[n] = matching_post["id"]
+                parent_id_map[n] = matching_post.get("parent_run_id")
+            i += len(name)
+            continue
+        else:
+            assert posts[i]["name"] == name
+            dotted_order = posts[i]["dotted_order"]
+            if prev_dotted_order is not None and not str(
+                expected_parents[name]
+            ).startswith("RunnableParallel"):
+                assert (
+                    dotted_order > prev_dotted_order
+                ), f"{name} not after {name_order[i-1]}"
+            prev_dotted_order = dotted_order
+            if name in dotted_order_map:
+                raise ValueError(f"Duplicate name {name}")
+            dotted_order_map[name] = dotted_order
+            id_map[name] = posts[i]["id"]
+            parent_id_map[name] = posts[i].get("parent_run_id")
+            i += 1
 
     # Now check the dotted orders
     for name, parent_ in expected_parents.items():
