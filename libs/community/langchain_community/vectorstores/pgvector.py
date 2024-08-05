@@ -22,6 +22,7 @@ import sqlalchemy
 from langchain_core._api import deprecated, warn_deprecated
 from sqlalchemy import delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session, relationship
 
 try:
@@ -126,7 +127,8 @@ def _get_embedding_collection_store(
         def get_by_name(
             cls, session: Session, name: str
         ) -> Optional["CollectionStore"]:
-            return session.query(cls).filter(cls.name == name).first()  # type: ignore
+            # type: ignore
+            return session.query(cls).filter(cls.name == name).first()
 
         @classmethod
         def get_or_create(
@@ -303,7 +305,7 @@ class PGVector(VectorStore):
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         *,
-        connection: Optional[sqlalchemy.engine.Connection] = None,
+        connection: Optional[Connection] = None,
         engine_args: Optional[dict[str, Any]] = None,
         use_jsonb: bool = False,
         create_extension: bool = True,
@@ -362,14 +364,14 @@ class PGVector(VectorStore):
         self.create_collection()
 
     def __del__(self) -> None:
-        if isinstance(self._bind, sqlalchemy.engine.Connection):
+        if isinstance(self._bind, Connection):
             self._bind.close()
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
-    def _create_engine(self) -> sqlalchemy.engine.Engine:
+    def _create_engine(self) -> Engine:
         return sqlalchemy.create_engine(url=self.connection_string, **self.engine_args)
 
     def create_vector_extension(self) -> None:
@@ -392,11 +394,13 @@ class PGVector(VectorStore):
             raise Exception(f"Failed to create vector extension: {e}") from e
 
     def create_tables_if_not_exists(self) -> None:
-        with Session(self._bind) as session, session.begin():  # type: ignore[arg-type]
+        # type: ignore[arg-type]
+        with Session(self._bind) as session, session.begin():
             Base.metadata.create_all(session.get_bind())
 
     def drop_tables(self) -> None:
-        with Session(self._bind) as session, session.begin():  # type: ignore[arg-type]
+        # type: ignore[arg-type]
+        with Session(self._bind) as session, session.begin():
             Base.metadata.drop_all(session.get_bind())
 
     def create_collection(self) -> None:
@@ -592,6 +596,7 @@ class PGVector(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[dict] = None,
+        negative_embeddings: Optional[List[List[float]]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -605,7 +610,10 @@ class PGVector(VectorStore):
         """
         embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter
+            embedding=embedding,
+            k=k,
+            filter=filter,
+            negative_embeddings=negative_embeddings,
         )
         return docs
 
@@ -628,8 +636,20 @@ class PGVector(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[dict] = None,
+        negative_embeddings: Optional[List[str]] = None,
     ) -> List[Tuple[Document, float]]:
-        results = self._query_collection(embedding=embedding, k=k, filter=filter)
+        if negative_embeddings:
+            negative_embeddings = [
+                self.embedding_function.embed_query(text)
+                for text in negative_embeddings
+            ]
+
+        results = self.__query_collection(
+            embedding=embedding,
+            k=k,
+            filter=filter,
+            negative_embeddings=negative_embeddings,
+        )
 
         return self._results_to_docs_and_scores(results)
 
@@ -749,7 +769,8 @@ class PGVector(VectorStore):
         else:
             raise NotImplementedError()
 
-    def _create_filter_clause_deprecated(self, key, value):  # type: ignore[no-untyped-def]
+    # type: ignore[no-untyped-def]
+    def _create_filter_clause_deprecated(self, key, value):
         """Deprecated functionality.
 
         This is for backwards compatibility with the JSON based schema for metadata.
@@ -933,8 +954,8 @@ class PGVector(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
+        negative_embeddings: Optional[List[List[float]]] = None,
     ) -> List[Any]:
-        """Query the collection."""
         with Session(self._bind) as session:  # type: ignore[arg-type]
             collection = self.get_collection(session)
             if not collection:
@@ -947,11 +968,15 @@ class PGVector(VectorStore):
                     if filter_clauses is not None:
                         filter_by.append(filter_clauses)
                 else:
-                    # Old way of doing things
                     filter_clauses = self._create_filter_clause_json_deprecated(filter)
                     filter_by.extend(filter_clauses)
 
             _type = self.EmbeddingStore
+
+            if negative_embeddings:
+                for neg_embedding in negative_embeddings:
+                    # Adjust threshold as needed
+                    filter_by.append(self.distance_strategy(neg_embedding) > 0.7)
 
             results: List[Any] = (
                 session.query(
@@ -975,6 +1000,7 @@ class PGVector(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[dict] = None,
+        negative_embeddings: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -988,7 +1014,10 @@ class PGVector(VectorStore):
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter
+            embedding=embedding,
+            k=k,
+            filter=filter,
+            negative_embeddings=negative_embeddings,
         )
         return _results_to_docs(docs_and_scores)
 
@@ -1201,6 +1230,7 @@ class PGVector(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
+        negative_embeddings: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance with score
@@ -1224,7 +1254,12 @@ class PGVector(VectorStore):
             List[Tuple[Document, float]]: List of Documents selected by maximal marginal
                 relevance to the query and score for each.
         """
-        results = self._query_collection(embedding=embedding, k=fetch_k, filter=filter)
+        results = self.__query_collection(
+            embedding=embedding,
+            k=fetch_k,
+            filter=filter,
+            negative_embeddings=negative_embeddings,
+        )
 
         embedding_list = [result.EmbeddingStore.embedding for result in results]
 
