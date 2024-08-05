@@ -131,6 +131,7 @@ _module_lookup = {
     "RedisChatMessageHistory": "langchain_community.chat_message_histories.redis",
     "RocksetChatMessageHistory": "langchain_community.chat_message_histories.rocksetdb",
     "SQLChatMessageHistory": "langchain_community.chat_message_histories.sql",
+    "SnowflakeChatMessageHistory": "langchain_community.chat_message_histories.snowflake",
     "SingleStoreDBChatMessageHistory": "langchain_community.chat_message_histories.singlestoredb",  # noqa: E501
     "StreamlitChatMessageHistory": "langchain_community.chat_message_histories.streamlit",  # noqa: E501
     "TiDBChatMessageHistory": "langchain_community.chat_message_histories.tidb",
