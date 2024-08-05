@@ -433,7 +433,14 @@ class Milvus(VectorStore):
         #         ...
         # ```
         if self.enable_dynamic_field:
-            pass
+            # If both dynamic fields and partition key field are enabled
+            if self._partition_key_field is not None:
+                # create the partition field
+                fields.append(
+                    FieldSchema(
+                        self._partition_key_field, DataType.VARCHAR, max_length=65_535
+                    )
+                )
         elif self._metadata_field is not None:
             fields.append(FieldSchema(self._metadata_field, DataType.JSON))
         else:
