@@ -382,7 +382,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
                 generation_info={"finish_reason": finish_reason},
             )
             generations.append(gen)
-            if finish_reason != "stop":
+            if finish_reason not in ["stop", "function_call"]:
                 logger.warning(
                     "Giga generation stopped with reason: %s",
                     finish_reason,
