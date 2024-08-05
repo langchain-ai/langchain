@@ -1,3 +1,4 @@
+version: '3'
 services:
   langchain:
     build:
@@ -6,22 +7,24 @@ services:
     volumes:
       # Update this to wherever you want VS Code to mount the folder of your project
       - ..:/workspaces/langchain:cached
-    # networks:
-    #   - langchain-network
-    command: tail -f /dev/null
+    networks:
+      - langchain-network
   #   environment:
   #     MONGO_ROOT_USERNAME: root
   #     MONGO_ROOT_PASSWORD: example123
-    depends_on:
-      - neo4j 
-  neo4j:
-    image: neo4j:latest
-    restart: on-failure:0
-    ports:
-      - 7474:7474
-      - 7687:7687
-    environment:
-      - NEO4J_AUTH=neo4j/pleaseletmein
-      - NEO4J_PLUGINS=["apoc"]
-      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
-      - NEO4J_dbms_security_procedures_allowlist=apoc.meta.*,apoc.*
+  #   depends_on:
+  #     - mongo   
+  # mongo:
+  #   image: mongo
+  #   restart: unless-stopped
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_PASSWORD: example123
+  #   ports:
+  #     - "27017:27017"
+  #   networks:
+  #     - langchain-network
+
+networks:
+  langchain-network:
+    driver: bridge
