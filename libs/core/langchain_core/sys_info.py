@@ -28,9 +28,7 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")
     ]
 
-    all_packages = sorted(
-        set(langchain_pkgs + other_packages + list(additional_pkgs))
-    )
+    all_packages = sorted(set(langchain_pkgs + other_packages + list(additional_pkgs)))
 
     # Always surface these packages to the top
     order_by = ["langchain_core", "langchain", "langchain_community", "langsmith"]
