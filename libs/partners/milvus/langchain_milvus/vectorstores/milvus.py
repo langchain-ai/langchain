@@ -438,9 +438,7 @@ class Milvus(VectorStore):
                 # create the partition field
                 fields.append(
                     FieldSchema(
-                        self._partition_key_field,
-                        DataType.VARCHAR,
-                        max_length=65_535
+                        self._partition_key_field, DataType.VARCHAR, max_length=65_535
                     )
                 )
         elif self._metadata_field is not None:

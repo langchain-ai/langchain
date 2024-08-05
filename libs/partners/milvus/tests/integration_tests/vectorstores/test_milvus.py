@@ -1,4 +1,5 @@
 """Test Milvus functionality."""
+
 from typing import Any, List, Optional
 
 import pytest
@@ -283,9 +284,7 @@ def test_milvus_enable_dynamic_field_with_partition_key() -> None:
     metadatas = [{"id": i, "namespace": f"name_{i}"} for i in range(len(texts))]
 
     docsearch = _milvus_from_texts(
-        metadatas=metadatas,
-        enable_dynamic_field=True,
-        partition_key_field="namespace"
+        metadatas=metadatas, enable_dynamic_field=True, partition_key_field="namespace"
     )
 
     # filter on a single namespace
@@ -300,7 +299,7 @@ def test_milvus_enable_dynamic_field_with_partition_key() -> None:
         docsearch._primary_field,
         docsearch._text_field,
         docsearch._vector_field,
-        docsearch._partition_key_field
+        docsearch._partition_key_field,
     }
 
 
