@@ -181,6 +181,7 @@ import os
 os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
           return (
             <TabItem
+              key={tabItem.value}
               value={tabItem.value}
               label={tabItem.label}
               default={tabItem.default}
