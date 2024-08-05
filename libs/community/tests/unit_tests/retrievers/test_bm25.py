@@ -43,3 +43,21 @@ def test_repr() -> None:
     ]
     bm25_retriever = BM25Retriever.from_documents(documents=input_docs)
     assert "I have a pen" not in repr(bm25_retriever)
+
+
+@pytest.mark.requires("rank_bm25")
+def test_k() -> None:
+    input_docs = [
+        Document(page_content="I have a pen."),
+        Document(page_content="Do you have a pen?"),
+        Document(page_content="I have a bag."),
+        Document(page_content="Do you have a dog?"),
+        Document(page_content="I have a cat."),
+    ]
+    bm25_retriever = BM25Retriever.from_documents(documents=input_docs)
+
+    documents = bm25_retriever.get_relevant_documents(query="I have a pen")
+    assert len(documents) == bm25_retriever.k
+
+    documents = bm25_retriever.get_relevant_documents(query="I have a pen", k=2)
+    assert len(documents) == 2

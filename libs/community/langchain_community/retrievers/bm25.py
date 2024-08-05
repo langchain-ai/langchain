@@ -97,8 +97,15 @@ class BM25Retriever(BaseRetriever):
         )
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        k: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         processed_query = self.preprocess_func(query)
-        return_docs = self.vectorizer.get_top_n(processed_query, self.docs, n=self.k)
+        return_docs = self.vectorizer.get_top_n(
+            processed_query, self.docs, n=(k or self.k), **kwargs
+        )
         return return_docs
