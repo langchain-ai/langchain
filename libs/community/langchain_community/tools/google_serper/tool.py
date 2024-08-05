@@ -58,7 +58,7 @@ class GoogleSerperResults(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return str(self.api_wrapper.results(query))
+        return self.api_wrapper.results(query)
 
     async def _arun(
         self,
@@ -67,4 +67,4 @@ class GoogleSerperResults(BaseTool):
     ) -> str:
         """Use the tool asynchronously."""
 
-        return (await self.api_wrapper.aresults(query)).__str__()
+        return (await self.api_wrapper.aresults(query))
