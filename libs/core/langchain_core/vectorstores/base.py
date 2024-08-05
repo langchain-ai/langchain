@@ -43,7 +43,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
 )
 
 from langchain_core._api import deprecated

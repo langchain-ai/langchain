@@ -4,10 +4,10 @@ import json
 import uuid
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Optional,
     Sequence,
@@ -17,13 +17,15 @@ from typing import (
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.indexing import UpsertResponse
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
 from langchain_core.vectorstores.utils import (
     _maximal_marginal_relevance as maximal_marginal_relevance,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.indexing import UpsertResponse
 
 
 class InMemoryVectorStore(VectorStore):
