@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional
 
-import httplib2
 from langchain_core._api.deprecation import deprecated
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -60,6 +59,13 @@ class GoogleSearchAPIWrapper(BaseModel):
     ```
 
     """
+
+    try:
+        import httplib2
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import httplib2, please install with `pip install httplib2`."
+        ) from e
 
     search_engine: Any  #: :meta private:
     google_api_key: Optional[str] = None
