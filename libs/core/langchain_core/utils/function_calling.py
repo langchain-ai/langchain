@@ -32,6 +32,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.tools import BaseTool
+
 logger = logging.getLogger(__name__)
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
@@ -205,6 +206,41 @@ def convert_pydantic_to_openai_tool(
 def _get_python_function_name(function: Callable) -> str:
     """Get the name of a Python function."""
     return function.__name__
+
+
+def convert_python_function_to_gigachat_function(
+    function: Callable,
+) -> GigaFunctionDescription:
+    """Convert a Python function to an GigaChat function-calling API compatible dict.
+
+    Assumes the Python function has type hints and a docstring with a description. If
+        the docstring has Google Python style argument descriptions, these will be
+        included as well.
+
+    Args:
+        function: The Python function to convert.
+
+    Returns:
+        The GigaChat function description.
+    """
+    from langchain_core import tools
+
+    func_name = _get_python_function_name(function)
+    model = tools.create_schema_from_function(
+        func_name,
+        function,
+        filter_args=(),
+        parse_docstring=True,
+        error_on_invalid_docstring=False,
+        include_injected=False,
+    )
+    _return_schema = tools.create_return_schema_from_function(func_name, function)
+    return convert_pydantic_to_gigachat_function(
+        model,
+        name=func_name,
+        return_model=_return_schema,
+        description=model.__doc__,
+    )
 
 
 @deprecated(
@@ -435,8 +471,7 @@ def convert_to_gigachat_function(
     elif isinstance(function, BaseTool):
         function = cast(Dict, format_tool_to_gigachat_function(function))
     elif callable(function):
-        # Deprecated mode
-        function = cast(Dict, convert_python_function_to_openai_function(function))
+        function = cast(Dict, convert_python_function_to_gigachat_function(function))
     else:
         raise ValueError(
             f"Unsupported function type {type(function)}. Functions must be passed in"
