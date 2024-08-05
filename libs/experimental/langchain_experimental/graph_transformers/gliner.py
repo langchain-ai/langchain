@@ -7,7 +7,37 @@ DEFAULT_NODE_TYPE = "Node"
 
 
 class GlinerGraphTransformer:
-    """ """
+    """
+    A transformer class for converting documents into graph structures
+    using the GLiNER and GLiREL models.
+
+    This class leverages GLiNER for named entity recognition and GLiREL for
+    relationship extraction from text documents, converting them into a graph format.
+    The extracted entities and relationships are filtered based on specified
+    confidence thresholds and allowed types.
+
+    For more details on GLiNER and GLiREL, visit their respective repositories:
+      GLiNER: https://github.com/urchade/GLiNER
+      GLiREL: https://github.com/jackboyla/GLiREL/tree/main
+
+    Args:
+        allowed_nodes (List[str]): A list of allowed node types for entity extraction.
+        allowed_relationships (Union[List[str], Dict[str, Any]]): A list of allowed
+          relationship types or a dictionary with additional configuration for
+          relationship extraction.
+        gliner_model (str): The name of the pretrained GLiNER model to use.
+          Default is "urchade/gliner_mediumv2.1".
+        glirel_model (str): The name of the pretrained GLiREL model to use.
+          Default is "jackboyla/glirel_beta".
+        entity_confidence_threshold (float): The confidence threshold for
+          filtering extracted entities. Default is 0.1.
+        relationship_confidence_threshold (float): The confidence threshold for
+          filtering extracted relationships. Default is 0.1.
+        device (str): The device to use for model inference ('cpu' or 'cuda').
+          Default is "cpu".
+        ignore_self_loops (bool): Whether to ignore relationships where the
+          source and target nodes are the same. Default is True.
+    """
 
     def __init__(
         self,
