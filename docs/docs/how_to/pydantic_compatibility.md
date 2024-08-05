@@ -38,6 +38,7 @@ Partner packages that accept pydantic v2 objects via `bind_tools` or `with_struc
 | langchain-robocorp  | Yes         | >=0.0.10    |
 | langchain-openai    | Yes         | >=0.1.19    |
 | langchain-fireworks | Yes         | >=0.1.5     |
+| langchain-aws       | Yes         | >=0.1.15    |
 
 Additional partner packages will be updated to accept Pydantic v2 objects in the future.
 
