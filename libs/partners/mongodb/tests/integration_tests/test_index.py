@@ -1,7 +1,7 @@
 """Search index commands are only supported on Atlas Clusters >=M10"""
 
 import os
-from typing import Generator, List, Optional, Union
+from typing import Generator, List, Optional
 
 import pytest
 from pymongo import MongoClient
@@ -14,7 +14,7 @@ DIMENSIONS = 10
 
 
 @pytest.fixture
-def collection() -> Union[Collection, Generator]:  # type ignore
+def collection() -> Generator:
     """Depending on uri, this could point to any type of cluster."""
     uri = os.environ.get("MONGODB_ATLAS_URI")
     client: MongoClient = MongoClient(uri)
