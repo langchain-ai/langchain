@@ -22,10 +22,8 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
     """Collection field that contains the text to be searched. It must be indexed"""
     top_k: Optional[int] = None
     """Number of documents to return. Default is no limit"""
-    pre_filter: Optional[List[Dict[str, Any]]] = None
+    filter: Optional[Dict[str, Any]] = None
     """(Optional) List of MQL match expression comparing an indexed field"""
-    post_filter: Optional[List[Dict[str, Any]]] = None
-    """(Optional) Pipeline of MongoDB aggregation stages for postprocessing"""
     show_embeddings: float = False
     """If true, returned Document metadata will include vectors"""
 
@@ -46,11 +44,8 @@ class MongoDBAtlasFullTextSearchRetriever(BaseRetriever):
             search_field=self.search_field,
             index_name=self.search_index_name,
             limit=self.top_k,
-            pre_filter=self.pre_filter,
+            filter=self.filter,
         )
-        # Post filtering
-        if self.post_filter is not None:
-            pipeline.extend(self.post_filter)
 
         # Execution
         cursor = self.collection.aggregate(pipeline)  # type: ignore[arg-type]

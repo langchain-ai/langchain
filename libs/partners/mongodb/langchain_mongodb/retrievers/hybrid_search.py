@@ -34,7 +34,7 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
     """Number of documents to return."""
     oversampling_factor: int = 10
     """This times top_k is the number of candidates chosen at each step"""
-    pre_filter: Optional[List[Dict[str, Any]]] = None
+    pre_filter: Optional[Dict[str, Any]] = None
     """(Optional) Any MQL match expression comparing an indexed field"""
     post_filter: Optional[List[Dict[str, Any]]] = None
     """(Optional) Pipeline of MongoDB aggregation stages for postprocessing."""
@@ -74,12 +74,12 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
         # Vector Search stage
         vector_pipeline = [
             vector_search_stage(
-                query_vector,
-                self.vectorstore._embedding_key,
-                self.vectorstore._index_name,
-                self.top_k,
-                self.pre_filter,
-                self.oversampling_factor,
+                query_vector=query_vector,
+                search_field=self.vectorstore._embedding_key,
+                index_name=self.vectorstore._index_name,
+                top_k=self.top_k,
+                filter=self.pre_filter,
+                oversampling_factor=self.oversampling_factor,
             )
         ]
         vector_pipeline += reciprocal_rank_stage("vector_score", self.vector_penalty)
@@ -92,7 +92,7 @@ class MongoDBAtlasHybridSearchRetriever(BaseRetriever):
             search_field=self.vectorstore._text_key,
             index_name=self.search_index_name,
             limit=self.top_k,
-            pre_filter=self.pre_filter,
+            filter=self.pre_filter,
         )
 
         text_pipeline.extend(

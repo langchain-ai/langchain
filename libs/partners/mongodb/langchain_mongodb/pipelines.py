@@ -15,7 +15,7 @@ def text_search_stage(
     search_field: str,
     index_name: str,
     limit: Optional[int] = None,
-    pre_filter: Optional[List[Dict[str, Any]]] = None,
+    filter: Optional[Dict[str, Any]] = None,
     include_scores: Optional[bool] = True,
     **kwargs: Any,
 ) -> List[Dict[str, Any]]:  # noqa: E501
@@ -26,7 +26,7 @@ def text_search_stage(
         search_field: Field in Collection that will be searched
         index_name: Atlas Search Index name
         limit: Maximum number of documents to return. Default of no limit
-        pre_filter: List of MQL match expressions comparing an indexed field
+        filter: Any MQL match expression comparing an indexed field
         include_scores: Scores provide measure of relative relevance
 
     Returns:
@@ -40,8 +40,8 @@ def text_search_stage(
             }
         }
     ]
-    if pre_filter:
-        pipeline.append({"$match": {"$and": pre_filter}})  # type: ignore
+    if filter:
+        pipeline.append({"$match": filter})  # type: ignore
     if include_scores:
         pipeline.append({"$set": {"score": {"$meta": "searchScore"}}})
     if limit:
@@ -55,7 +55,7 @@ def vector_search_stage(
     search_field: str,
     index_name: str,
     top_k: int = 4,
-    filter: Optional[List[Dict[str, Any]]] = None,
+    filter: Optional[Dict[str, Any]] = None,
     oversampling_factor: int = 10,
     **kwargs: Any,
 ) -> Dict[str, Any]:  # noqa: E501
@@ -71,8 +71,10 @@ def vector_search_stage(
         index_name: Name of Atlas Vector Search Index tied to Collection
         top_k: Number of documents to return
         oversampling_factor: this times limit is the number of candidates
-        filter: List of MQL match expressions comparing an indexed field
-            See `Filter Example: <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`_
+        filter: MQL match expression comparing an indexed field.
+            Some operators are not supported.
+            See `vectorSearch filter docs <https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter>`_
+
 
     Returns:
         Dictionary defining the $vectorSearch
@@ -85,7 +87,7 @@ def vector_search_stage(
         "limit": top_k,
     }
     if filter:
-        stage["filter"] = {"$and": filter}
+        stage["filter"] = filter
     return {"$vectorSearch": stage}
 
 

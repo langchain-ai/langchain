@@ -227,12 +227,12 @@ class TestMongoDBAtlasVectorSearch:
             index_name=INDEX_NAME,
         )
         does_not_match_filter = vectorstore.similarity_search(
-            "Sandwich", k=1, pre_filter=[{"c": {"$lte": 0}}]
+            "Sandwich", k=1, pre_filter={"c": {"$lte": 0}}
         )
         assert does_not_match_filter == []
 
         matches_filter = vectorstore.similarity_search(
-            "Sandwich", k=3, pre_filter=[{"c": {"$gt": 0}}]
+            "Sandwich", k=3, pre_filter={"c": {"$gt": 0}}
         )
         assert len(matches_filter) == 1
 
@@ -414,7 +414,6 @@ class TestMongoDBAtlasVectorSearch:
         self,
         embeddings: Embeddings,
         collection: Collection,
-        index_name: str = INDEX_NAME,
     ) -> None:
         """Tests add_documents."""
         vectorstore = PatchedMongoDBAtlasVectorSearch(

@@ -158,7 +158,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         search_response = self.similarity_search_with_score(
             prompt,
             1,
-            pre_filter=[{self.LLM: {"$eq": llm_string}}],
+            pre_filter={self.LLM: {"$eq": llm_string}},
             post_filter_pipeline=post_filter_pipeline,
         )
         if search_response:
