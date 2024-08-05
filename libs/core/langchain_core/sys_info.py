@@ -17,10 +17,9 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     from importlib import metadata, util
 
     # Packages that do not start with "langchain" prefix.
-    other_packages = [
-        "pydantic",
-        "langserve",
+    other_langchain_packages = [
         "langgraph",
+        "langserve",
         "langsmith",
     ]
 
@@ -28,7 +27,19 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")
     ]
 
-    all_packages = sorted(set(langchain_pkgs + other_packages + list(additional_pkgs)))
+    # Some selected dependencies
+    selected_dependencies = [
+        "pydantic",
+    ]
+
+    all_packages = sorted(
+        set(
+            langchain_pkgs
+            + other_langchain_packages
+            + list(additional_pkgs)
+            + selected_dependencies
+        )
+    )
 
     # Always surface these packages to the top
     order_by = ["langchain_core", "langchain", "langchain_community", "langsmith"]
