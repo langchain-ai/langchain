@@ -385,7 +385,7 @@ class DeepLake(VectorStore):
                 model was trained. The search is performed using the Deep Memory model.
                 If False, the distance metric is set to "COS" or whatever distance
                 metric user specifies.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             List of Documents by the specified distance metric,
@@ -505,7 +505,7 @@ class DeepLake(VectorStore):
         Args:
             k (int): Number of Documents to return. Defaults to 4.
             query (str): Text to look up similar documents.
-            **kwargs: Additional keyword arguments include:
+            kwargs: Additional keyword arguments include:
                 embedding (Callable): Embedding function to use. Defaults to None.
                 distance_metric (str): 'L2' for Euclidean, 'L1' for Nuclear, 'max'
                     for L-infinity, 'cos' for cosine, 'dot' for dot product.
@@ -567,7 +567,7 @@ class DeepLake(VectorStore):
             embedding (Union[List[float], np.ndarray]):
                 Embedding to find similar docs.
             k (int): Number of Documents to return. Defaults to 4.
-            **kwargs: Additional keyword arguments including:
+            kwargs: Additional keyword arguments including:
                 filter (Union[Dict, Callable], optional):
                     Additional filter before embedding search.
                     - ``Dict`` - Key-value search on tensors of htype json. True
@@ -636,7 +636,7 @@ class DeepLake(VectorStore):
         Args:
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
-            **kwargs: Additional keyword arguments. Some of these arguments are:
+            kwargs: Additional keyword arguments. Some of these arguments are:
                 distance_metric: `L2` for Euclidean, `L1` for Nuclear, `max` L-infinity
                     distance, `cos` for cosine similarity, 'dot' for dot product.
                     Defaults to `L2`.
@@ -728,7 +728,7 @@ class DeepLake(VectorStore):
                 which the model was trained. The search is performed using the Deep
                 Memory model. If False, the distance metric is set to "COS" or
                 whatever distance metric user specifies.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             List[Documents] - A list of documents.
@@ -795,7 +795,7 @@ class DeepLake(VectorStore):
                 which the model was trained. The search is performed using the Deep
                 Memory model. If False, the distance metric is set to "COS" or
                 whatever distance metric user specifies.
-            **kwargs: Additional keyword arguments
+            kwargs: Additional keyword arguments
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -866,7 +866,7 @@ class DeepLake(VectorStore):
                 Note, in other places, it is called embedding_function.
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             DeepLake: Deep Lake dataset.
