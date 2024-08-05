@@ -225,7 +225,7 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
 
     else:
 
-        def other_thing(a: int) -> Generator[int, None, None]:
+        def other_thing(a: int) -> Generator[int, None, None]:  # type: ignore
             yield 1
 
     parallel = RunnableParallel(

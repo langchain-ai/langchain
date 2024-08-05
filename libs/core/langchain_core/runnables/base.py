@@ -3564,7 +3564,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             return context.run(
                 step.invoke,
                 input,
-                config,
+                child_config,
             )
 
         # gather results from all steps
@@ -3613,11 +3613,11 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             context = copy_context()
             context.run(_set_config_context, child_config)
             if asyncio_accepts_context():
-                return await asyncio.create_task(
-                    step.ainvoke(input, config), context=context
+                return await asyncio.create_task(  # type: ignore
+                    step.ainvoke(input, child_config), context=context
                 )
             else:
-                return await asyncio.create_task(step.ainvoke(input, config))
+                return await asyncio.create_task(step.ainvoke(input, child_config))
 
         # gather results from all steps
         try:
