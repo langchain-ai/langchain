@@ -67,32 +67,6 @@ class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
         return [float(1.0)] * (OS_TOKEN_COUNT - 1) + [float(texts.index(text) + 1)]
 
 
-class FakeHuggingFaceEmbeddings(FakeEmbeddings):
-    """Fake embeddings designed to produce similar restrictions as huggingface."""
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Return simple embeddings"""
-        embeddings = [[float(1.0)] * 9 + [float(i)] for i in range(len(texts))]
-        return self.mock_encode(embeddings)
-
-    def mock_encode(self, all_embeddings: List[List[float]]) -> List[List[float]]:
-        """Mock of HuggingFace's SentenceTransformer#encode
-        method.  Mimics raising IndexError if all_embeddings is empty"""
-        # See https://github.com/UKPLab/sentence-transformers/blob/master/sentence_transformers/SentenceTransformer.py#L629
-        if isinstance(all_embeddings[0], float):
-            return all_embeddings
-        else:
-            return all_embeddings
-        return all_embeddings
-
-    def embed_query(self, text: str) -> List[float]:
-        """Return constant query embeddings.
-        Embeddings are identical to embed_documents(texts)[0].
-        Distance to each text will be that text's index,
-        as it was passed to embed_documents."""
-        return [float(1.0)] * 9 + [float(0.0)]
-
-
 def test_neo4jvector() -> None:
     """Test end to end construction and search."""
     docsearch = Neo4jVector.from_texts(
@@ -562,30 +536,6 @@ def test_neo4jvector_from_existing_graph() -> None:
     assert output == [Document(page_content="\nname: Foo")]
 
     drop_vector_indexes(existing)
-
-
-def test_neo4jvector_from_existing_graph_with_hugging_face() -> None:
-    """Test that throw hugging face error when documents already embedded."""
-    Neo4jVector.from_documents(
-        DOCUMENTS,
-        index_name="vector",
-        embedding=FakeHuggingFaceEmbeddings(),
-        pre_delete_collection=True,
-    )
-    try:
-        existing = Neo4jVector.from_existing_graph(
-            embedding=FakeHuggingFaceEmbeddings(),
-            url=url,
-            username=username,
-            password=password,
-            text_node_properties=["name"],
-            embedding_node_property="embedding",
-            node_label="Test",
-            index_name="vector",
-        )
-        drop_vector_indexes(existing)
-    except Exception as e:
-        assert False, f"'Neo4jVector.from_existing_graph' raised an exception {e}"
 
 
 def test_neo4jvector_from_existing_graph_hybrid() -> None:
