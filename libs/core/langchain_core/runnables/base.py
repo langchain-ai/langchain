@@ -2917,7 +2917,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 else:
                     part = functools.partial(step.ainvoke, input, config)
                 if asyncio_accepts_context():
-                    input = await asyncio.create_task(part(), context=context)  # type: ignore[arg-type]
+                    input = await asyncio.create_task(part(), context=context)  # type: ignore
                 else:
                     input = await asyncio.create_task(part())
         # finish the root run

@@ -241,22 +241,23 @@ async def test_runnable_with_fallbacks_trace_nesting(method: str) -> None:
             return sequence.invoke(a, config)
 
     # Now run the chain and check the resulting posts
-    cb = [tracer, LangChainTracer()]
-    match method:
-        case "invoke":
-            res: Any = parent.invoke(1, {"callbacks": cb})  # type: ignore
-        case "ainvoke":
-            res = await parent.ainvoke(1, {"callbacks": cb})  # type: ignore
-        case "stream":
-            results = list(parent.stream(1, {"callbacks": cb}))  # type: ignore
-            res = results[-1]
-        case "astream":
-            results = [res async for res in parent.astream(1, {"callbacks": cb})]  # type: ignore
-            res = results[-1]
-        case "batch":
-            res = parent.batch([1], {"callbacks": cb})[0]  # type: ignore
-        case "abatch":
-            res = (await parent.abatch([1], {"callbacks": cb}))[0]  # type: ignore
+    cb = [tracer]
+    if method == "invoke":
+        res: Any = parent.invoke(1, {"callbacks": cb})  # type: ignore
+    elif method == "ainvoke":
+        res = await parent.ainvoke(1, {"callbacks": cb})  # type: ignore
+    elif method == "stream":
+        results = list(parent.stream(1, {"callbacks": cb}))  # type: ignore
+        res = results[-1]
+    elif method == "astream":
+        results = [res async for res in parent.astream(1, {"callbacks": cb})]  # type: ignore
+        res = results[-1]
+    elif method == "batch":
+        res = parent.batch([1], {"callbacks": cb})[0]  # type: ignore
+    elif method == "abatch":
+        res = (await parent.abatch([1], {"callbacks": cb}))[0]  # type: ignore
+    else:
+        raise ValueError(f"Unknown method {method}")
     assert res == 3
     posts = _get_posts(mock_client_)
     name_order = [
@@ -269,6 +270,8 @@ async def test_runnable_with_fallbacks_trace_nesting(method: str) -> None:
     assert len(posts) == len(name_order)
     prev_dotted_order = None
     dotted_order_map = {}
+    id_map = {}
+    parent_id_map = {}
     for i, name in enumerate(name_order):
         assert posts[i]["name"] == name
         dotted_order = posts[i]["dotted_order"]
@@ -280,6 +283,8 @@ async def test_runnable_with_fallbacks_trace_nesting(method: str) -> None:
         if name in dotted_order_map:
             raise ValueError(f"Duplicate name {name}")
         dotted_order_map[name] = dotted_order
+        id_map[name] = posts[i]["id"]
+        parent_id_map[name] = posts[i].get("parent_run_id")
     expected_parents = {
         "parent": None,
         "RunnableSequence": "parent",
@@ -296,5 +301,6 @@ async def test_runnable_with_fallbacks_trace_nesting(method: str) -> None:
             assert dotted_order.startswith(
                 parent_dotted_order
             ), f"{name}, {parent_dotted_order} not in {dotted_order}"
+            assert str(parent_id_map[name]) == str(id_map[parent_])
         else:
             assert dotted_order.split(".")[0] == dotted_order
