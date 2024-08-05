@@ -18,6 +18,9 @@ def _get_sub_deps(packages: Sequence[str]) -> List[str]:
         except metadata.PackageNotFoundError:
             continue
 
+        if not required:
+            continue
+
         for req in required:
             try:
                 cleaned_req = req.split(" ")[0]
