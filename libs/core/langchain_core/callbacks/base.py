@@ -991,7 +991,10 @@ class BaseCallbackManager(CallbackManagerMixin):
         """
         for tag in tags:
             self.tags.remove(tag)
-            self.inheritable_tags.remove(tag)
+            try:
+                self.inheritable_tags.remove(tag)
+            except ValueError:
+                pass
 
     def add_metadata(self, metadata: Dict[str, Any], inherit: bool = True) -> None:
         """Add metadata to the callback manager.

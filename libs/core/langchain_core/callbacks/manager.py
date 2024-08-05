@@ -2160,6 +2160,12 @@ def _configure(
         )
         for handler in local_handlers_:
             callback_manager.add_handler(handler, False)
+    if run_tree is not None:
+        if run_tree.tags is not None:
+            callback_manager.add_tags(run_tree.tags, False)
+        if run_tree.metadata is not None:
+            callback_manager.add_metadata(run_tree.metadata, False)
+
     if inheritable_tags or local_tags:
         callback_manager.add_tags(inheritable_tags or [])
         callback_manager.add_tags(local_tags or [], False)
