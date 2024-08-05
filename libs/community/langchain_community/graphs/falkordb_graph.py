@@ -1,6 +1,7 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
+import yaml
 from langchain_core._api import deprecated
 
 from langchain_community.graphs.graph_document import GraphDocument
@@ -142,22 +143,58 @@ class FalkorDBGraph(GraphStore):
         """Returns the structured schema of the Graph"""
         return self.structured_schema
 
+    def _dump_nodes_schema(self) -> List[Any]:
+        """Returns the schema of the nodes in the FalkorDB database"""
+        schema = self.query(node_properties_query)
+
+        nodes_list = []
+        for node in schema:
+            nodes_list.append({"label": node[0]["label"], "keys": node[0]["keys"]})
+
+        return nodes_list
+
+    def _dump_edges_schema(self) -> List[Any]:
+        """Returns the schema of the edges in the FalkorDB database"""
+        schema = self.query(rel_properties_query)
+
+        edges_list = []
+        for edge in schema:
+            edges_list.append({"types": edge[0]["types"], "keys": edge[0]["keys"]})
+
+        return edges_list
+
+    def _dump_relationships_schema(self) -> List[Any]:
+        """Returns the schema of the relationships in the FalkorDB database"""
+        schema = self.query(rel_query)
+
+        relationships_list = []
+        for relationship in schema:
+            relationships_list.append(
+                {
+                    "start": relationship[0]["start"],
+                    "type": relationship[0]["type"],
+                    "end": relationship[0]["end"],
+                }
+            )
+
+        return relationships_list
+
     def refresh_schema(self) -> None:
         """Refreshes the schema of the FalkorDB database"""
-        node_properties: List[Any] = self.query(node_properties_query)
-        rel_properties: List[Any] = self.query(rel_properties_query)
-        relationships: List[Any] = self.query(rel_query)
+        node_properties: List[Any] = self._dump_nodes_schema()
+        edges: List[Any] = self._dump_edges_schema()
+        relationships: List[Any] = self._dump_relationships_schema()
 
         self.structured_schema = {
-            "node_props": {el[0]["label"]: el[0]["keys"] for el in node_properties},
-            "rel_props": {el[0]["types"]: el[0]["keys"] for el in rel_properties},
-            "relationships": [el[0] for el in relationships],
+            "node_props": node_properties,
+            "rel_props": edges,
+            "relationships": relationships,
         }
 
         self.schema = (
-            f"Node properties: {node_properties}\n"
-            f"Relationships properties: {rel_properties}\n"
-            f"Relationships: {relationships}\n"
+            f"nodes:\n{yaml.dump(node_properties)}\n"
+            f"edges:\n{yaml.dump(edges)}\n"
+            f"relationships:\n{yaml.dump(relationships)}\n"
         )
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
