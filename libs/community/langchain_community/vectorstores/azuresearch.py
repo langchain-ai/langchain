@@ -1267,7 +1267,7 @@ class AzureSearch(VectorStore):
                     },
                 ),
                 float(result["@search.score"]),
-                float(result["@search.reranker_score"]),
+                float(result["@search.reranker_score"]) if result["@search.reranker_score"] else None,
             )
             for result in results
         ]
