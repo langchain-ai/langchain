@@ -1866,7 +1866,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
 
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
-def test_tool_args_schema_pydantic_v2_with_metadata():
+def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
     from pydantic import Field as FieldV2  # pydantic: ignore
     from pydantic import ValidationError as ValidationErrorV2  # pydantic: ignore
@@ -1877,7 +1877,7 @@ def test_tool_args_schema_pydantic_v2_with_metadata():
         )
 
     @tool(args_schema=Foo)
-    def foo(x):
+    def foo(x):  # type: ignore[no-untyped-def]
         """foo"""
         return x
 

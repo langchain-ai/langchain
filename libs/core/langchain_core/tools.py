@@ -1058,7 +1058,7 @@ class StructuredTool(BaseTool):
 def tool(
     *args: Union[str, Callable, Runnable],
     return_direct: bool = False,
-    args_schema: Optional[Type[BaseModel]] = None,
+    args_schema: Optional[TypeBaseModel] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,

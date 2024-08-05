@@ -130,7 +130,7 @@ def test_is_basemodel_instance() -> None:
 def test_with_field_metadata() -> None:
     """Test pydantic with field metadata"""
     from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
-    from pydantic import Field as FieldV2
+    from pydantic import Field as FieldV2  # pydantic: ignore
 
     class Foo(BaseModelV2):
         x: List[int] = FieldV2(
