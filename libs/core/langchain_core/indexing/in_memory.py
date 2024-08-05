@@ -68,22 +68,6 @@ class InMemoryDocumentIndex(DocumentIndex):
 
         return found_documents
 
-    async def aupsert(
-        self, items: Sequence[Document], /, **kwargs: Any
-    ) -> UpsertResponse:
-        """Upsert items into the index."""
-        return self.upsert(items, **kwargs)
-
-    async def adelete(
-        self, ids: Optional[List[str]] = None, **kwargs: Any
-    ) -> DeleteResponse:
-        """Delete by ID."""
-        return self.delete(ids, **kwargs)
-
-    async def aget(self, ids: Sequence[str], /, **kwargs: Any) -> List[Document]:
-        """Get by ids."""
-        return self.get(ids, **kwargs)
-
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
