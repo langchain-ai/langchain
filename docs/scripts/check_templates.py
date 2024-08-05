@@ -52,6 +52,9 @@ def _get_headers(doc_dir: str) -> Iterable[str]:
 
 
 def check_header_order(path: Path) -> None:
+    if path.name.startswith("index."):
+        # skip index pages
+        return
     doc_dir = path.parent.name
     if doc_dir not in INFO_BY_DIR:
         # Skip if not a directory we care about
