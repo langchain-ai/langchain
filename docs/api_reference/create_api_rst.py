@@ -343,7 +343,6 @@ Functions
             full_doc += f"""\
 Deprecated classes
 --------------
-.. warning:: These classes are deprecated.
 
 .. currentmodule:: {package_namespace}
 
@@ -378,7 +377,6 @@ Deprecated classes
             full_doc += f"""\
 Deprecated functions
 --------------
-.. warning:: These functions are deprecated.
 
 .. currentmodule:: {package_namespace}
 
