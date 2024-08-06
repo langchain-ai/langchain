@@ -118,6 +118,11 @@ def accepts_context(callable: Callable[..., Any]) -> bool:
         return False
 
 
+@lru_cache(maxsize=1)
+def asyncio_accepts_context() -> bool:
+    return accepts_context(asyncio.create_task)
+
+
 class IsLocalDict(ast.NodeVisitor):
     """Check if a name is a local dict."""
 

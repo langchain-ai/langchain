@@ -87,7 +87,7 @@ from langchain_core.runnables.config import (
     patch_config,
     run_in_executor,
 )
-from langchain_core.runnables.utils import accepts_context
+from langchain_core.runnables.utils import asyncio_accepts_context
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
@@ -694,7 +694,7 @@ class ChildTool(BaseTool):
                 tool_kwargs[config_param] = config
 
             coro = context.run(self._arun, *tool_args, **tool_kwargs)
-            if accepts_context(asyncio.create_task):
+            if asyncio_accepts_context():
                 response = await asyncio.create_task(coro, context=context)  # type: ignore
             else:
                 response = await coro
@@ -1055,10 +1055,12 @@ class StructuredTool(BaseTool):
         )
 
 
+# TODO: Type args_schema as TypeBaseModel if we can get mypy to correctly recognize
+# pydantic v2 BaseModel classes.
 def tool(
     *args: Union[str, Callable, Runnable],
     return_direct: bool = False,
-    args_schema: Optional[Type[BaseModel]] = None,
+    args_schema: Optional[Type] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -1664,6 +1666,10 @@ def _get_all_basemodel_annotations(
     if isinstance(cls, type):
         annotations: Dict[str, Type] = {}
         for name, param in inspect.signature(cls).parameters.items():
+            # Exclude hidden init args added by pydantic Config. For example if
+            # BaseModel(extra="allow") then "extra_data" will part of init sig.
+            if (fields := getattr(cls, "__fields__", {})) and name not in fields:
+                continue
             annotations[name] = param.annotation
         orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
     # cls has subscript: cls = FooBar[int]
