@@ -394,7 +394,7 @@ def convert_to_openai_tool(
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
     oai_function = convert_to_openai_function(tool)
-    oai_tool = {"type": "function", "function": oai_function}
+    oai_tool: Dict[str, Any] = {"type": "function", "function": oai_function}
     if strict is not None:
         oai_tool["strict"] = strict
     return oai_tool
