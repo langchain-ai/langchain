@@ -172,7 +172,8 @@ class Serializable(BaseModel, ABC):
             original_name = cls.__name__
         return [*cls.get_lc_namespace(), original_name]
 
-    model_config = ConfigDict(extra="ignore")
+    class Config:
+        extra = "ignore"
 
     def __repr_args__(self) -> Any:
         return [

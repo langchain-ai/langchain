@@ -161,8 +161,10 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         return values
 
     class Config:
-        arbitrary_types_allowed = True
+        """Configuration for this pydantic object."""
+
         extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.

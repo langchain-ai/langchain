@@ -13,6 +13,7 @@ from typing import (
     NamedTuple,
     Optional,
     Protocol,
+    Sequence,
     Tuple,
     Type,
     TypedDict,

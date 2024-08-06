@@ -2,7 +2,35 @@
 for debugging purposes.
 """
 
-from typing import Sequence
+from typing import List, Sequence
+
+
+def _get_sub_deps(packages: Sequence[str]) -> List[str]:
+    """Get any specified sub-dependencies."""
+    from importlib import metadata
+
+    sub_deps = set()
+    _underscored_packages = set(pkg.replace("-", "_") for pkg in packages)
+
+    for pkg in packages:
+        try:
+            required = metadata.requires(pkg)
+        except metadata.PackageNotFoundError:
+            continue
+
+        if not required:
+            continue
+
+        for req in required:
+            try:
+                cleaned_req = req.split(" ")[0]
+            except Exception:  # In case parsing of requirement spec fails
+                continue
+
+            if cleaned_req.replace("-", "_") not in _underscored_packages:
+                sub_deps.add(cleaned_req)
+
+    return sorted(sub_deps, key=lambda x: x.lower())
 
 
 def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
