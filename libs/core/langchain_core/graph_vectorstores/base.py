@@ -12,6 +12,8 @@ from typing import (
     Optional,
 )
 
+from pydantic import Field
+
 from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -20,7 +22,6 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 from langchain_core.load import Serializable
-from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 

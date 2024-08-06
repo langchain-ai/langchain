@@ -26,6 +26,8 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from pydantic import ConfigDict
+
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
@@ -111,10 +113,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
     """  # noqa: E501
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
@@ -179,7 +178,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Args:
             input: The query string.
             config: Configuration for the retriever. Defaults to None.
-            kwargs: Additional arguments to pass to the retriever.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
@@ -238,7 +237,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Args:
             input: The query string.
             config: Configuration for the retriever. Defaults to None.
-            kwargs: Additional arguments to pass to the retriever.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
@@ -343,7 +342,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 and passed as arguments to the handlers defined in `callbacks`.
                 Defaults to None.
             run_name: Optional name for the run. Defaults to None.
-            kwargs: Additional arguments to pass to the retriever.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
@@ -387,7 +386,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 and passed as arguments to the handlers defined in `callbacks`.
                 Defaults to None.
             run_name: Optional name for the run. Defaults to None.
-            kwargs: Additional arguments to pass to the retriever.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.

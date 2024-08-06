@@ -6,8 +6,10 @@ from io import BufferedReader, BytesIO
 from pathlib import PurePath
 from typing import Any, Generator, List, Literal, Mapping, Optional, Union, cast
 
+from pydantic import ConfigDict, Field, root_validator
+
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils.pydantic import v1_repr
 
 PathLike = Union[str, PurePath]
 
@@ -109,10 +111,7 @@ class Blob(BaseMedia):
     """
     path: Optional[PathLike] = None
     """Location where the original content was found."""
-
-    class Config:
-        arbitrary_types_allowed = True
-        frozen = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
     @property
     def source(self) -> Optional[str]:
@@ -293,3 +292,7 @@ class Document(BaseMedia):
             return f"page_content='{self.page_content}' metadata={self.metadata}"
         else:
             return f"page_content='{self.page_content}'"
+
+    def __repr__(self) -> str:
+        # TODO(0.3): Remove this override after confirming unit tests!
+        return v1_repr(self)
