@@ -18,7 +18,6 @@ from langchain_core.indexing import InMemoryRecordManager, aindex, index
 from langchain_core.indexing.api import _abatch, _HashedDocument
 from langchain_core.indexing.in_memory import InMemoryDocumentIndex
 from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
-from tests.unit_tests.stubs import _AnyIdDocument
 
 
 class ToyLoader(BaseLoader):
@@ -1286,7 +1285,7 @@ def test_indexing_custom_batch_size(
 
         index(docs, record_manager, vector_store, batch_size=batch_size)
         args, kwargs = mock_add_documents.call_args
-        doc_with_id = _AnyIdDocument(
+        doc_with_id = Document(
             id=ids[0], page_content="This is a test document.", metadata={"source": "1"}
         )
         assert args == ([doc_with_id],)
@@ -1309,7 +1308,7 @@ async def test_aindexing_custom_batch_size(
 
     batch_size = 1
     mock_add_documents = AsyncMock()
-    doc_with_id = _AnyIdDocument(
+    doc_with_id = Document(
         id=ids[0], page_content="This is a test document.", metadata={"source": "1"}
     )
     vector_store.aadd_documents = mock_add_documents  # type: ignore
