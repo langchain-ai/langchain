@@ -23,6 +23,10 @@
   ],
   "redirects": [
     {
+      "source": "/v0.2/docs/versions/packages(/?)",
+      "destination": "/v0.2/docs/versions/release_policy/"
+    },
+    {
       "source": "/v0.2/docs/integrations/llms/llm_caching(/?)",
       "destination": "/v0.2/docs/integrations/llm_caching/"
     },
