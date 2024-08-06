@@ -7,6 +7,7 @@ keywords: [azure]
 All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
 ## Chat Models
+
 ### Azure OpenAI
 
 >[Microsoft Azure](https://en.wikipedia.org/wiki/Microsoft_Azure), often referred to as `Azure` is a cloud computing platform run by `Microsoft`, which offers access, management, and development of applications and services through global data centers. It provides a range of capabilities, including software as a service (SaaS), platform as a service (PaaS), and infrastructure as a service (IaaS). `Microsoft Azure` supports many programming languages, tools, and frameworks, including Microsoft-specific and third-party software and systems.
@@ -32,6 +33,15 @@ See a [usage example](/docs/integrations/chat/azure_chat_openai)
 ```python
 from langchain_openai import AzureChatOpenAI
 ```
+
+### Azure ML Chat Online Endpoint
+
+See a [usage example](/docs/integrations/chat/azureml_chat_endpoint).
+
+```python
+from langchain_community.chat_models.azureml_endpoint import AzureMLChatOnlineEndpoint
+```
+
 
 ## LLMs
 
@@ -257,7 +267,7 @@ See a [usage example](/docs/integrations/document_loaders/url/#playwright-url-lo
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
-## AI Agent Memory System
+## Vector Stores
 
 [AI agent](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents) needs robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation.
 
@@ -337,7 +347,17 @@ See a [usage example](/docs/integrations/memory/postgres_chat_message_history/).
 
 Since Azure Database for PostgreSQL is open-source Postgres, you can use the [LangChain's Postgres support](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL.
 
+
+### Azure AI Search
+
+See a [usage example](/docs/integrations/vectorstores/azuresearch).
+
+```python
+from langchain_community.vectorstores.azuresearch import AzureSearch
+```
+
 ## Retrievers
+
 ### Azure AI Search
 
 >[Azure AI Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search` or `Azure Cognitive Search` ) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
@@ -354,7 +374,15 @@ See [set up instructions](https://learn.microsoft.com/en-us/azure/search/search-
 See a [usage example](/docs/integrations/retrievers/azure_ai_search).
 
 ```python
-from langchain.retrievers import AzureAISearchRetriever
+from langchain_community.retrievers import AzureAISearchRetriever
+```
+
+### Azure Cognitive Search Vector
+
+`Azure AI Search` formerly known as `Azure Cognitive Search`. 
+
+```python
+from langchain_community.vectorstores.azuresearch import AzureSearchVectorStoreRetriever
 ```
 
 ## Vector Store
@@ -416,6 +444,86 @@ See a [usage example](/docs/integrations/tools/azure_ai_services).
 ```python
 from langchain_community.agent_toolkits import azure_ai_services
 ```
+
+`Azure AI Services` include:
+
+#### Image Analysis Tool
+
+```python
+from langchain_community.tools.azure_ai_services import AzureAiServicesImageAnalysisTool
+```
+
+#### Document Intelligence Tool
+
+```python
+from langchain_community.tools.azure_ai_services import AzureAiServicesDocumentIntelligenceTool
+```
+
+#### Speech To Text Tool
+
+```python
+from langchain_community.tools.azure_ai_services import AzureAiServicesSpeechToTextTool
+```
+
+#### Text To Speech Tool
+
+```python
+from langchain_community.tools.azure_ai_services import AzureAiServicesTextToSpeechTool
+```
+
+#### Text Analytics For Health Tool
+
+```python
+from langchain_community.tools.azure_ai_services import AzureAiServicesTextAnalyticsForHealthTool
+```
+
+### Azure Cognitive Services
+
+First, you need to set up an Azure account and create a Cognitive Services resource. You can follow 
+[the instructions](https://docs.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account?tabs=multiservice%2Cwindows) 
+to create a resource.
+
+Then, you need to get the endpoint, key and region of your resource, and set them as 
+environment variables. You can find them in the "Keys and Endpoint" page of your resource.
+
+See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
+
+```python
+from langchain_community.agent_toolkits import AzureCognitiveServicesToolkit
+```
+
+`Azure Cognitive Services` include:
+
+#### Image Analysis Tool
+
+```python
+from langchain_community.tools.azure_cognitive_services import AzureCogsImageAnalysisTool
+```
+
+#### Form Recognizer Tool
+
+```python
+from langchain_community.tools.azure_cognitive_services import AzureCogsFormRecognizerTool
+```
+
+#### Speech To Text Tool
+
+```python
+from langchain_community.tools.azure_cognitive_services import AzureCogsSpeech2TextTool
+```
+
+#### Text To Speech Tool
+
+```python
+from langchain_community.tools.azure_cognitive_services import AzureCogsText2SpeechTool
+```
+
+#### Text Analytics Health Tool
+
+```python
+from langchain_community.tools.azure_cognitive_services import AzureCogsTextAnalyticsHealthTool
+```
+
 
 ### Microsoft Office 365 email and calendar
 
@@ -480,8 +588,6 @@ from langchain_community.tools.playwright import NavigateTool
 from langchain_community.tools.playwright import NavigateBackTool
 ```
 
-
-```python
 ## Graphs
 
 ### Azure Cosmos DB for Apache Gremlin
