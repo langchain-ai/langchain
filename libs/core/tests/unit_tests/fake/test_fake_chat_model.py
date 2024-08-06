@@ -7,10 +7,8 @@ from uuid import UUID
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.language_models import GenericFakeChatModel, ParrotFakeChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
-from langchain_core.messages.human import HumanMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.stubs import (
-    AnyStr,
     _AnyIdAIMessage,
     _AnyIdAIMessageChunk,
     _AnyIdHumanMessage,

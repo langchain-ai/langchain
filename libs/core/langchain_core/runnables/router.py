@@ -12,7 +12,6 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import ConfigDict
 from typing_extensions import TypedDict
 
 from langchain_core.runnables.base import (

@@ -18,8 +18,6 @@ from typing import (
     Union,
 )
 
-from langchain_core.pydantic_v1 import ConfigDict
-
 from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
     Runnable,

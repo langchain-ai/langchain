@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 

@@ -26,8 +26,6 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import ConfigDict
-
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd

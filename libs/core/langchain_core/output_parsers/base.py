@@ -13,8 +13,6 @@ from typing import (
     Union,
 )
 
-from typing_extensions import get_args
-
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation

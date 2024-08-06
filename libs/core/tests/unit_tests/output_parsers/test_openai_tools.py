@@ -1,13 +1,12 @@
 from typing import Any, AsyncIterator, Iterator, List
 
-from langchain_core.pydantic_v1 import BaseModel, Field
-
 from langchain_core.messages import AIMessageChunk, BaseMessage, ToolCallChunk
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
     PydanticToolsParser,
 )
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 STREAMED_MESSAGES: list = [
     AIMessageChunk(content=""),

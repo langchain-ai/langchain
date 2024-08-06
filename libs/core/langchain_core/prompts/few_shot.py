@@ -5,8 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from langchain_core.pydantic_v1 import BaseModel, ConfigDict, Extra, root_validator
-
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts.chat import (
@@ -20,6 +18,7 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
