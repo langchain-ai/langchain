@@ -261,7 +261,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             model: Assistant model to use.
             client: OpenAI or AzureOpenAI client.
                 Will create a default OpenAI client if not specified.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             OpenAIAssistantRunnable configured to run using the created assistant.
@@ -418,7 +418,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 tools: Override Assistant tools for this run.
                 run_metadata: Metadata to associate with new run.
             config: Runnable config. Defaults to None.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Return:
             If self.as_agent, will return

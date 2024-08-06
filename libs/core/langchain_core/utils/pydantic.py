@@ -9,10 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 import pydantic  # pydantic: ignore
 
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    root_validator,
-)
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 def get_pydantic_major_version() -> int:
@@ -32,8 +29,6 @@ if PYDANTIC_MAJOR_VERSION == 1:
     PydanticBaseModel = pydantic.BaseModel
     TypeBaseModel = Type[BaseModel]
 elif PYDANTIC_MAJOR_VERSION == 2:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
-
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
     TypeBaseModel = Union[Type[BaseModel], Type[pydantic.BaseModel]]  # type: ignore
@@ -42,6 +37,25 @@ else:
 
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
+
+
+def is_pydantic_v1_subclass(cls: Type) -> bool:
+    """Check if the installed Pydantic version is 1.x-like."""
+    if PYDANTIC_MAJOR_VERSION == 1:
+        return True
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import BaseModel as BaseModelV1
+
+        if issubclass(cls, BaseModelV1):
+            return True
+    return False
+
+
+def is_pydantic_v2_subclass(cls: Type) -> bool:
+    """Check if the installed Pydantic version is 1.x-like."""
+    from pydantic import BaseModel
+
+    return PYDANTIC_MAJOR_VERSION == 2 and issubclass(cls, BaseModel)
 
 
 def is_basemodel_subclass(cls: Type) -> bool:
@@ -183,12 +197,12 @@ def _create_subset_model_v1(
 
 def _create_subset_model_v2(
     name: str,
-    model: Type[BaseModel],
+    model: Type[pydantic.BaseModel],
     field_names: List[str],
     *,
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
-) -> Type[BaseModel]:
+) -> Type[pydantic.BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
     from pydantic import create_model  # pydantic: ignore
     from pydantic.fields import FieldInfo  # pydantic: ignore
@@ -198,10 +212,10 @@ def _create_subset_model_v2(
     for field_name in field_names:
         field = model.model_fields[field_name]  # type: ignore
         description = descriptions_.get(field_name, field.description)
-        fields[field_name] = (
-            field.annotation,
-            FieldInfo(description=description, default=field.default),
-        )
+        field_info = FieldInfo(description=description, default=field.default)
+        if field.metadata:
+            field_info.metadata = field.metadata
+        fields[field_name] = (field.annotation, field_info)
     rtn = create_model(name, **fields)  # type: ignore
 
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
@@ -214,7 +228,7 @@ def _create_subset_model_v2(
 # However, can't find a way to type hint this.
 def _create_subset_model(
     name: str,
-    model: Type[BaseModel],
+    model: TypeBaseModel,
     field_names: List[str],
     *,
     descriptions: Optional[dict] = None,

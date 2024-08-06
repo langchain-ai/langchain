@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-cli"
-version = "0.0.27"
+version = "0.0.28"
 description = "CLI for interacting with GigaChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
