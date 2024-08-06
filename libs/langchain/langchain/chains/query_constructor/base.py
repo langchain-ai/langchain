@@ -217,7 +217,7 @@ def get_query_constructor_prompt(
         enable_limit: Whether to enable the limit operator. Defaults to False.
         schema_prompt: Prompt for describing query schema. Should have string input
             variables allowed_comparators and allowed_operators.
-        **kwargs: Additional named params to pass to FewShotPromptTemplate init.
+        kwargs: Additional named params to pass to FewShotPromptTemplate init.
 
     Returns:
         A prompt template that can be used to construct queries.
@@ -339,7 +339,7 @@ def load_query_constructor_runnable(
             variables allowed_comparators and allowed_operators.
         fix_invalid: Whether to fix invalid filter directives by ignoring invalid
             operators, comparators and attributes.
-        **kwargs: Additional named params to pass to FewShotPromptTemplate init.
+        kwargs: Additional named params to pass to FewShotPromptTemplate init.
 
     Returns:
         A Runnable that can be used to construct queries.
