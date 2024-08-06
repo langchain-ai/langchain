@@ -14,7 +14,18 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
+from collections.abc import Callable
+from typing import (
+    Any,
+    Generator,
+    Optional,
+    ParamSpec,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -423,3 +434,67 @@ def surface_langchain_deprecation_warnings() -> None:
         "default",
         category=LangChainDeprecationWarning,
     )
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+_T = TypeVar("_T")
+
+
+@overload
+def rename_parameter(
+    since: str, removal: str, old: str, new: str, func: None = ...
+) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]: ...
+
+
+@overload
+def rename_parameter(
+    since: str, removal: str, old: str, new: str, func: Callable[_P, _R]
+) -> Callable[_P, _R]: ...
+
+
+def rename_parameter(
+    *,
+    since: str,
+    removal: str,
+    old: str,
+    new: str,
+) -> Union[Callable[[Callable[_P, _R]], Callable[_P, _R]], Callable[_P, _R]]:
+    """Decorator indicating that parameter *old* of *func* is renamed to *new*.
+
+    The actual implementation of *func* should use *new*, not *old*.  If *old*
+    is passed to *func*, a DeprecationWarning is emitted, and its value is
+    used, even if *new* is also passed by keyword (this is to simplify pyplot
+    wrapper functions, which always pass *new* explicitly to the Axes method).
+    If *new* is also passed but positionally, a TypeError will be raised by the
+    underlying function during argument binding.
+
+    Example:
+
+        .. code-block:: python
+
+            @_api.rename_parameter("3.1", "bad_name", "good_name")
+            def func(good_name): ...
+    """
+
+    def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:
+        @functools.wraps(f)
+        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            if new in kwargs and old in kwargs:
+                raise TypeError(
+                    f"{f.__name__}() got multiple values for argument {new!r}"
+                )
+            if old in kwargs:
+                warn_deprecated(
+                    since,
+                    removal=removal,
+                    message=f"The {old!r} parameter of {f.__name__}() "
+                    f"has been renamed {new!r} since Matplotlib {since}; support "
+                    f"for the old name will be dropped {removal}.",
+                )
+                kwargs[new] = kwargs.pop(old)
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

@@ -4,7 +4,11 @@ from typing import Any, Dict
 
 import pytest
 
-from langchain_core._api.deprecation import deprecated, warn_deprecated
+from langchain_core._api.deprecation import (
+    deprecated,
+    rename_parameter,
+    warn_deprecated,
+)
 from langchain_core.pydantic_v1 import BaseModel
 
 
@@ -412,3 +416,45 @@ def test_raise_error_for_bad_decorator() -> None:
         def deprecated_function() -> str:
             """original doc"""
             return "This is a deprecated function."
+
+
+def test_rename_parameter() -> None:
+    """Test rename parameter."""
+
+    @rename_parameter(since="2.0.0", removal="3.0.0", old="old_name", new="new_name")
+    def foo(new_name: str) -> str:
+        """original doc"""
+        return new_name
+
+    assert foo(old_name="hello") == "hello"
+    assert foo(new_name="hello") == "hello"
+    assert foo("hello") == "hello"
+    assert foo.__doc__ == "original doc"
+    with pytest.raises(TypeError):
+        foo(meow="hello")
+    with pytest.raises(TypeError):
+        assert foo("hello", old_name="hello")
+
+    with pytest.raises(TypeError):
+        assert foo(old_name="goodbye", new_name="hello")
+
+
+async def test_rename_parameter_for_async_func() -> None:
+    """Test rename parameter."""
+
+    @rename_parameter(since="2.0.0", removal="3.0.0", old="old_name", new="new_name")
+    async def foo(new_name: str) -> str:
+        """original doc"""
+        return new_name
+
+    assert await foo(old_name="hello") == "hello"
+    assert await foo(new_name="hello") == "hello"
+    assert await foo("hello") == "hello"
+    assert foo.__doc__ == "original doc"
+    with pytest.raises(TypeError):
+        await foo(meow="hello")
+    with pytest.raises(TypeError):
+        assert await foo("hello", old_name="hello")
+
+    with pytest.raises(TypeError):
+        assert await foo(old_name="goodbye", new_name="hello")
