@@ -1,7 +1,9 @@
 import os
 import logging
 import time
-from typing import Any, Dict, List, Mapping, Optional, Iterator, Union
+from typing import Any, Dict, List, Mapping, Optional, Iterator, Union, AsyncIterator
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
@@ -11,6 +13,10 @@ from langchain_core.outputs import ChatResult, ChatGeneration, ChatGenerationChu
 from langchain_core.pydantic_v1 import Extra, Field, root_validator, SecretStr
 
 logger = logging.getLogger(__name__)
+
+def run_in_executor(executor, func, *args, **kwargs):
+    loop = asyncio.get_event_loop()
+    return loop.run_in_executor(executor, func, *args, **kwargs)
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, SystemMessage):
@@ -233,8 +239,6 @@ class GithubLLM(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        # For simplicity, we're using the synchronous version here.
-        # In a production environment, you'd want to implement a truly asynchronous version.
         return await run_in_executor(
             None, self._generate, messages, stop, run_manager, **kwargs
         )
@@ -295,7 +299,16 @@ class GithubLLM(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        # For simplicity, we're using the synchronous version here.
-        # In a production environment, you'd want to implement a truly asynchronous version.
+        async for chunk in self._async_stream_generator(messages, stop, run_manager, **kwargs):
+            yield chunk
+
+    async def _async_stream_generator(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
         for chunk in self._stream(messages, stop, run_manager, **kwargs):
             yield chunk
+            await asyncio.sleep(0)  
