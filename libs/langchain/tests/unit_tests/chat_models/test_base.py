@@ -114,6 +114,7 @@ def test_configurable() -> None:
                 {
                     "type": "function",
                     "function": {"name": "foo", "description": "foo", "parameters": {}},
+                    "strict": True,
                 }
             ]
         },
