@@ -1290,8 +1290,8 @@ class BaseChatOpenAI(BaseChatModel):
                 else JsonOutputParser()
             )
         elif method == "json_schema":
-            llm = self.bind(response_format={"type": "json_schema"})
-            ...
+            llm = self.bind(response_format={"type": "json_schema", "json_schema": convert_to_openai_json_schema(schema)})
+            output_parser =
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
