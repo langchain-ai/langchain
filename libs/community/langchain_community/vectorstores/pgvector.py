@@ -233,63 +233,63 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
 class PGVector(VectorStore):
     """`Postgres`/`PGVector` vector store.
 
-     **DEPRECATED**: This class is pending deprecation and will likely receive
-         no updates. An improved version of this class is available in
-         `langchain_postgres` as `PGVector`. Please use that class instead.
+    **DEPRECATED**: This class is pending deprecation and will likely receive
+        no updates. An improved version of this class is available in
+        `langchain_postgres` as `PGVector`. Please use that class instead.
 
-         When migrating please keep in mind that:
-             * The new implementation works with psycopg3, not with psycopg2
-               (This implementation does not work with psycopg3).
-             * Filtering syntax has changed to use $ prefixed operators for JSONB
-               metadata fields. (New implementation only uses JSONB field for metadata)
-             * The new implementation made some schema changes to address issues
-               with the existing implementation. So you will need to re-create
-               your tables and re-index your data or else carry out a manual
-               migration.
+        When migrating please keep in mind that:
+            * The new implementation works with psycopg3, not with psycopg2
+              (This implementation does not work with psycopg3).
+            * Filtering syntax has changed to use $ prefixed operators for JSONB
+              metadata fields. (New implementation only uses JSONB field for metadata)
+            * The new implementation made some schema changes to address issues
+              with the existing implementation. So you will need to re-create
+              your tables and re-index your data or else carry out a manual
+              migration.
 
-     To use, you should have the ``pgvector`` python package installed.
+    To use, you should have the ``pgvector`` python package installed.
 
-     Args:
-         connection_string: Postgres connection string.
-         embedding_function: Any embedding function implementing
-             `langchain.embeddings.base.Embeddings` interface.
-         embedding_length: The length of the embedding vector. (default: None)
-             NOTE: This is not mandatory. Defining it will prevent vectors of
-             any other size to be added to the embeddings table but, without it,
-             the embeddings can't be indexed.
-         collection_name: The name of the collection to use. (default: langchain)
-             NOTE: This is not the name of the table, but the name of the collection.
-             The tables will be created when initializing the store (if not exists)
-             So, make sure the user has the right permissions to create tables.
-         distance_strategy: The distance strategy to use. (default: COSINE)
-         pre_delete_collection: If True, will delete the collection if it exists.
-             (default: False). Useful for testing.
-         engine_args: SQLAlchemy's create engine arguments.
-         use_jsonb: Use JSONB instead of JSON for metadata. (default: True)
-             Strongly discouraged from using JSON as it's not as efficient
-             for querying.
-             It's provided here for backwards compatibility with older versions,
-             and will be removed in the future.
-         create_extension: If True, will create the vector extension if it doesn't exist.
-             disabling creation is useful when using ReadOnly Databases.
-             
-     Example:
+    Args:
+        connection_string: Postgres connection string.
+        embedding_function: Any embedding function implementing
+            `langchain.embeddings.base.Embeddings` interface.
+        embedding_length: The length of the embedding vector. (default: None)
+            NOTE: This is not mandatory. Defining it will prevent vectors of
+            any other size to be added to the embeddings table but, without it,
+            the embeddings can't be indexed.
+        collection_name: The name of the collection to use. (default: langchain)
+            NOTE: This is not the name of the table, but the name of the collection.
+            The tables will be created when initializing the store (if not exists)
+            So, make sure the user has the right permissions to create tables.
+        distance_strategy: The distance strategy to use. (default: COSINE)
+        pre_delete_collection: If True, will delete the collection if it exists.
+            (default: False). Useful for testing.
+        engine_args: SQLAlchemy's create engine arguments.
+        use_jsonb: Use JSONB instead of JSON for metadata. (default: True)
+            Strongly discouraged from using JSON as it's not as efficient
+            for querying.
+            It's provided here for backwards compatibility with older versions,
+            and will be removed in the future.
+        create_extension: If True, will create the vector extension if it doesn't exist.
+            disabling creation is useful when using ReadOnly Databases.
 
-        .. code-block:: python
+    Example:
 
-            from langchain_community.vectorstores import PGVector
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
-            CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
-            COLLECTION_NAME = "state_of_the_union_test"
-            embeddings = OpenAIEmbeddings()
-            vectorestore = PGVector.from_documents(
-                embedding=embeddings,
-                documents=docs,
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-                use_jsonb=True,
-    
-    """ # noqa: E501
+       .. code-block:: python
+
+           from langchain_community.vectorstores import PGVector
+           from langchain_community.embeddings.openai import OpenAIEmbeddings
+           CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
+           COLLECTION_NAME = "state_of_the_union_test"
+           embeddings = OpenAIEmbeddings()
+           vectorestore = PGVector.from_documents(
+               embedding=embeddings,
+               documents=docs,
+               collection_name=COLLECTION_NAME,
+               connection_string=CONNECTION_STRING,
+               use_jsonb=True,
+
+    """  # noqa: E501
 
     def __init__(
         self,

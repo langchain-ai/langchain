@@ -81,7 +81,7 @@ class Redis(VectorStore):
         - Cloud marketplaces: [AWS Marketplace](https://aws.amazon.com/marketplace/pp/prodview-e6y7ork67pjwg?sr=0-2&ref_=beagle&applicationId=AWSMPContessa), [Google Marketplace](https://console.cloud.google.com/marketplace/details/redislabs-public/redis-enterprise?pli=1), or [Azure Marketplace](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/garantiadata.redis_enterprise_1sp_public_preview?tab=Overview)
         - On-premise: [Redis Enterprise Software](https://redis.com/redis-enterprise-software/overview/)
         - Kubernetes: [Redis Enterprise Software on Kubernetes](https://docs.redis.com/latest/kubernetes/)
-    
+
     Setup:
         Install ``redis``, ``redisvl``, and ``langchain-community`` and run Redis locally.
 
@@ -267,7 +267,7 @@ class Redis(VectorStore):
     Otherwise, the schema for newly added samples will be incorrect and metadata
     will not be returned.
 
-    """ # noqa: E501
+    """  # noqa: E501
 
     DEFAULT_VECTOR_SCHEMA = {
         "name": "content_vector",
