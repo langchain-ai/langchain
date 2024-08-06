@@ -158,25 +158,94 @@ async def agenerate_with_last_element_mark(
 
 
 class Tongyi(BaseLLM):
-    """Tongyi Qwen large language models.
+    """Tongyi completion model integration.
 
-    To use, you should have the ``dashscope`` python package installed, and the
-    environment variable ``DASHSCOPE_API_KEY`` set with your API key, or pass
-    it as a named parameter to the constructor.
+    Setup:
+        Install ``dashscope`` and set environment variables ``DASHSCOPE_API_KEY``.
 
-    Example:
+        .. code-block:: bash
+
+            pip install dashscope
+            export DASHSCOPE_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Tongyi model to use.
+        top_p: float
+            Total probability mass of tokens to consider at each step.
+        streaming: bool
+            Whether to stream the results or not.
+
+    Key init args — client params:
+        api_key: Optional[str]
+            Dashscope API KEY. If not passed in will be read from env var DASHSCOPE_API_KEY.
+        max_retries: int
+            Maximum number of retries to make when generating.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.llms import Tongyi
-            tongyi = tongyi()
-    """
+
+            llm = Tongyi(
+                model="qwen-max",
+                # top_p="...",
+                # api_key="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            llm.invoke(messages)
+
+        .. code-block:: python
+
+            'I enjoy programming.'
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            I
+             enjoy
+             programming
+            .
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(messages)
+
+            # stream:
+            # async for chunk in llm.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await llm.abatch([messages])
+
+        .. code-block:: python
+
+            'I enjoy programming.'
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"dashscope_api_key": "DASHSCOPE_API_KEY"}
 
     client: Any  #: :meta private:
-    model_name: str = "qwen-plus"
+    model_name: str = Field(default="qwen-plus", alias="model")
 
     """Model name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -184,7 +253,7 @@ class Tongyi(BaseLLM):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[str] = Field(default=None, alias="api_key")
     """Dashscope api key provide by Alibaba Cloud."""
 
     streaming: bool = False
@@ -202,7 +271,7 @@ class Tongyi(BaseLLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["dashscope_api_key"] = get_from_dict_or_env(
-            values, "dashscope_api_key", "DASHSCOPE_API_KEY"
+            values, ["dashscope_api_key", "api_key"], "DASHSCOPE_API_KEY"
         )
         try:
             import dashscope
