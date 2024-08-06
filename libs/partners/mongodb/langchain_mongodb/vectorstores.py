@@ -64,10 +64,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Search Indexes are only available on Atlas, the fully managed cloud service,
         not the self-managed MongoDB.
         Follow [this guide](https://www.mongodb.com/basics/mongodb-atlas-tutorial)
-        
-        * Create a Collection and a Vector Search Index.The procedure is described 
+
+        * Create a Collection and a Vector Search Index.The procedure is described
         [here](https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/#procedure).
-        
+
         * Install ``langchain-mongodb``
 
 
