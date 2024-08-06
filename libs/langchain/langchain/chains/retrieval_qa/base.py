@@ -290,6 +290,15 @@ class RetrievalQA(BaseRetrievalQA):
         return "retrieval_qa"
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message = (
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+    )
+)
 class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 
