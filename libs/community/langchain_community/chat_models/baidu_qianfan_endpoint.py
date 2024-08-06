@@ -346,7 +346,9 @@ class QianfanChatEndpoint(BaseChatModel):
 
     client: Any  #: :meta private:
 
-    qianfan_ak: SecretStr = Field(alias="api_key")
+    # It could be empty due to the use of Console API
+    # And they're not list here
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Qianfan API KEY"""
     qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
     """Qianfan SECRET KEY"""
@@ -365,13 +367,13 @@ class QianfanChatEndpoint(BaseChatModel):
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Lite-8K"
+    model: Optional[str] = Field(default=None)
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set.
-    Default is ERNIE-Lite-8K.
+    Default is set by `qianfan` SDK, not here
     """
 
     endpoint: Optional[str] = None
@@ -386,16 +388,12 @@ class QianfanChatEndpoint(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                ["qianfan_ak", "api_key"],
-                "QIANFAN_AK",
+                values, ["qianfan_ak", "api_key"], "QIANFAN_AK", default=""
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                ["qianfan_sk", "secret_key"],
-                "QIANFAN_SK",
+                values, ["qianfan_sk", "secret_key"], "QIANFAN_SK", default=""
             )
         )
 
