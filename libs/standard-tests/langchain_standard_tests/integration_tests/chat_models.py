@@ -18,6 +18,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
+from pydantic import BaseModel as RawBaseModel
+from pydantic import Field as RawField
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -26,7 +28,11 @@ from langchain_standard_tests.unit_tests.chat_models import (
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-@tool
+class MagicFunctionSchema(RawBaseModel):
+    input: int = RawField(..., gt=-1000, lt=1000)
+
+
+@tool(args_schema=MagicFunctionSchema)
 def magic_function(input: int) -> int:
     """Applies a magic function to an input."""
     return input + 2
