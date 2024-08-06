@@ -256,7 +256,7 @@ class ConfluenceLoader(BaseLoader):
             x is not None for x in ((api_key or username), session, oauth2, token)
         )
         if sum(non_null_creds) > 1:
-            all_names = ("(api_key, username)", "session", "oath2", "token")
+            all_names = ("(api_key, username)", "session", "oauth2", "token")
             provided = tuple(n for x, n in zip(non_null_creds, all_names) if x)
             errors.append(
                 f"Cannot provide a value for more than one of: {all_names}. Received "
