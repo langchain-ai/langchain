@@ -1,6 +1,7 @@
 from typing import List
 
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
+from typing import Optional as Optional
 
 
 class StrOutputParser(BaseTransformOutputParser[str]):
@@ -26,4 +27,4 @@ class StrOutputParser(BaseTransformOutputParser[str]):
         return text
 
 
-StrOutputParser.update_forward_refs()
+StrOutputParser.model_rebuild()
