@@ -50,7 +50,7 @@ class SystemMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
 
-SystemMessage.update_forwad_refs()
+SystemMessage.update_forward_refs()
 
 
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):

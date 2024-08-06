@@ -123,7 +123,7 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
             yield [part]
 
 
-ListOutputParser.update_forwad_refs()
+ListOutputParser.update_forward_refs()
 
 
 class CommaSeparatedListOutputParser(ListOutputParser):

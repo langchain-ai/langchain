@@ -33,4 +33,4 @@ class RemoveMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-RemoveMessage.update_forwad_refs()
+RemoveMessage.update_forward_refs()

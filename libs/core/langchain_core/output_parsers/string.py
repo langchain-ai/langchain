@@ -26,4 +26,4 @@ class StrOutputParser(BaseTransformOutputParser[str]):
         return text
 
 
-StrOutputParser.update_forwad_refs()
+StrOutputParser.update_forward_refs()

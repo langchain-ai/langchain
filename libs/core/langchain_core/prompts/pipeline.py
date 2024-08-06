@@ -109,4 +109,4 @@ class PipelinePromptTemplate(BasePromptTemplate):
         raise ValueError
 
 
-PipelinePromptTemplate.update_forwad_refs()
+PipelinePromptTemplate.update_forward_refs()

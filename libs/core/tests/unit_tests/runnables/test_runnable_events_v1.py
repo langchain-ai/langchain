@@ -1075,7 +1075,7 @@ class HardCodedRetriever(BaseRetriever):
         return self.documents
 
 
-HardCodedRetriever.update_forwad_refs()
+HardCodedRetriever.update_forward_refs()
 
 
 async def test_event_stream_with_retriever() -> None:

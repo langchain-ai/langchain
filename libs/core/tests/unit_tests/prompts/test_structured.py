@@ -34,7 +34,7 @@ class FakeStructuredChatModel(FakeListChatModel):
         return "fake-messages-list-chat-model"
 
 
-FakeStructuredChatModel.update_forwad_refs()
+FakeStructuredChatModel.update_forward_refs()
 
 
 def test_structured_prompt_pydantic() -> None:
