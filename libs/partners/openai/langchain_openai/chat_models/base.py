@@ -977,7 +977,7 @@ class BaseChatOpenAI(BaseChatModel):
                     - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
                     - ``False`` or ``None``: no effect, default OpenAI behavior.
             strict: If True, model output is guaranteed to exactly match the JSON Schema
-                provided in the tool definition. If True, the input schema will also be
+                provided in the tool definition. If True, the input schema will be
                 validated according to
                 https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
                 If False, input schema will not be validated and model output will not

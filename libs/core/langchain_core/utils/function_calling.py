@@ -379,6 +379,9 @@ def convert_to_openai_function(
 
     if strict is not None:
         oai_function["strict"] = strict
+        # As of 08/06/24, OpenAI requires that additionalProperties be supplied and set
+        # to False if strict is True.
+        oai_function["parameters"]["additionalProperties"] = False
     return oai_function
 
 
