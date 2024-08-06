@@ -117,3 +117,10 @@ Here is the output schema:
 ```
 {schema}
 ```"""  # noqa: E501
+
+# Re-exporting types for backwards compatibility
+__all__ = [
+    "PydanticBaseModel",
+    "PydanticOutputParser",
+    "TBaseModel",
+]
