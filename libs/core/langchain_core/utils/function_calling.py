@@ -323,7 +323,7 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
 def convert_to_openai_function(
     function: Union[Dict[str, Any], Type, Callable, BaseTool],
     *,
-    strict: Optional[bool] = None
+    strict: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
@@ -362,7 +362,9 @@ def convert_to_openai_function(
     elif isinstance(function, type) and is_basemodel_subclass(function):
         oai_function = cast(Dict, convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
-        oai_function = cast(Dict, _convert_typed_dict_to_openai_function(cast(Type, function)))
+        oai_function = cast(
+            Dict, _convert_typed_dict_to_openai_function(cast(Type, function))
+        )
     elif isinstance(function, BaseTool):
         oai_function = cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
