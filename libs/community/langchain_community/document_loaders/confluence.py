@@ -263,33 +263,46 @@ class ConfluenceLoader(BaseLoader):
                 f"values for: {provided}"
             )
 
-        if set(oauth2.keys()) == {
-            "token",
-            "client_id",
-        } and set(oauth2['token'].keys()) != {
-            "access_token",
-            "token_type",
-        }:
+        if (
+            oauth2
+            and set(oauth2.keys())
+            == {
+                "token",
+                "client_id",
+            }
+            and set(oauth2["token"].keys())
+            != {
+                "access_token",
+                "token_type",
+            }
+        ):
             # OAuth2 token authentication
             errors.append(
                 "You have either omitted require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
-                "`['client_id', token: ['access_token', 'token_type']]`"
+                "`['client_id', 'token': ['access_token', 'token_type']]`"
             )
 
-        if oauth2 and set(oauth2.keys()) != {
-            "access_token",
-            "access_token_secret",
-            "consumer_key",
-            "key_cert",
-        } and set(oauth2.keys()) != {
-            "token",
-            "client_id",
-        }:
+        if (
+            oauth2
+            and set(oauth2.keys())
+            != {
+                "access_token",
+                "access_token_secret",
+                "consumer_key",
+                "key_cert",
+            }
+            and set(oauth2.keys())
+            != {
+                "token",
+                "client_id",
+            }
+        ):
             errors.append(
-                "You have either omitted require keys or added extra "
+                "You have either omitted required keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
-                "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']` or `['client_id', token: ['access_token', 'token_type']]`"
+                "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']` "
+                "or `['client_id', 'token': ['access_token', 'token_type']]`"
             )
         return errors or None
 
