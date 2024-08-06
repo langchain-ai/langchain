@@ -426,17 +426,21 @@ def test_rename_parameter() -> None:
         """original doc"""
         return new_name
 
-    assert foo(old_name="hello") == "hello"
-    assert foo(new_name="hello") == "hello"
-    assert foo("hello") == "hello"
-    assert foo.__doc__ == "original doc"
-    with pytest.raises(TypeError):
-        foo(meow="hello")
-    with pytest.raises(TypeError):
-        assert foo("hello", old_name="hello")
+    with warnings.catch_warnings(record=True) as warning_list:
+        warnings.simplefilter("always")
+        assert foo(old_name="hello") == "hello"
+        assert len(warning_list) == 1
 
-    with pytest.raises(TypeError):
-        assert foo(old_name="goodbye", new_name="hello")
+        assert foo(new_name="hello") == "hello"
+        assert foo("hello") == "hello"
+        assert foo.__doc__ == "original doc"
+        with pytest.raises(TypeError):
+            foo(meow="hello")
+        with pytest.raises(TypeError):
+            assert foo("hello", old_name="hello")
+
+        with pytest.raises(TypeError):
+            assert foo(old_name="goodbye", new_name="hello")
 
 
 async def test_rename_parameter_for_async_func() -> None:
@@ -447,14 +451,49 @@ async def test_rename_parameter_for_async_func() -> None:
         """original doc"""
         return new_name
 
-    assert await foo(old_name="hello") == "hello"
-    assert await foo(new_name="hello") == "hello"
-    assert await foo("hello") == "hello"
-    assert foo.__doc__ == "original doc"
-    with pytest.raises(TypeError):
-        await foo(meow="hello")
-    with pytest.raises(TypeError):
-        assert await foo("hello", old_name="hello")
+    with warnings.catch_warnings(record=True) as warning_list:
+        warnings.simplefilter("always")
+        assert await foo(old_name="hello") == "hello"
+        assert len(warning_list) == 1
+        assert await foo(new_name="hello") == "hello"
+        assert await foo("hello") == "hello"
+        assert foo.__doc__ == "original doc"
+        with pytest.raises(TypeError):
+            await foo(meow="hello")
+        with pytest.raises(TypeError):
+            assert await foo("hello", old_name="hello")
 
-    with pytest.raises(TypeError):
-        assert await foo(old_name="goodbye", new_name="hello")
+        with pytest.raises(TypeError):
+            assert await foo(old_name="goodbye", new_name="hello")
+
+
+def test_rename_parameter_method() -> None:
+    """Test that it works for a method."""
+
+    class Foo:
+        @rename_parameter(
+            since="2.0.0", removal="3.0.0", old="old_name", new="new_name"
+        )
+        def a(self, new_name: str) -> str:
+            return new_name
+
+    foo = Foo()
+
+    with warnings.catch_warnings(record=True) as warning_list:
+        warnings.simplefilter("always")
+        assert foo.a(old_name="hello") == "hello"
+        assert len(warning_list) == 1
+        assert str(warning_list[0].message) == (
+            "The parameter `old_name` of `a` was deprecated in 2.0.0 and will be "
+            "removed "
+            "in 3.0.0 Use `new_name` instead."
+        )
+
+        assert foo.a(new_name="hello") == "hello"
+        assert foo.a("hello") == "hello"
+
+        with pytest.raises(TypeError):
+            foo.a(meow="hello")
+
+        with pytest.raises(TypeError):
+            assert foo.a("hello", old_name="hello")

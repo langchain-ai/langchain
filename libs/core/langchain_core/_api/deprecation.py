@@ -488,9 +488,9 @@ def rename_parameter(
                 warn_deprecated(
                     since,
                     removal=removal,
-                    message=f"The {old!r} parameter of {f.__name__}() "
-                    f"has been renamed {new!r} since Matplotlib {since}; support "
-                    f"for the old name will be dropped {removal}.",
+                    message=f"The parameter `{old}` of `{f.__name__}` was "
+                    f"deprecated in {since} and will be removed "
+                    f"in {removal} Use `{new}` instead.",
                 )
                 kwargs[new] = kwargs.pop(old)
             return f(*args, **kwargs)
