@@ -428,19 +428,19 @@ def test_rename_parameter() -> None:
 
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
-        assert foo(old_name="hello") == "hello"
+        assert foo(old_name="hello") == "hello"  # type: ignore[call-arg]
         assert len(warning_list) == 1
 
         assert foo(new_name="hello") == "hello"
         assert foo("hello") == "hello"
         assert foo.__doc__ == "original doc"
         with pytest.raises(TypeError):
-            foo(meow="hello")
+            foo(meow="hello")  # type: ignore[call-arg]
         with pytest.raises(TypeError):
-            assert foo("hello", old_name="hello")
+            assert foo("hello", old_name="hello")  # type: ignore[call-arg]
 
         with pytest.raises(TypeError):
-            assert foo(old_name="goodbye", new_name="hello")
+            assert foo(old_name="goodbye", new_name="hello")  # type: ignore[call-arg]
 
 
 async def test_rename_parameter_for_async_func() -> None:
@@ -453,18 +453,18 @@ async def test_rename_parameter_for_async_func() -> None:
 
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
-        assert await foo(old_name="hello") == "hello"
+        assert await foo(old_name="hello") == "hello"  # type: ignore[call-arg]
         assert len(warning_list) == 1
         assert await foo(new_name="hello") == "hello"
         assert await foo("hello") == "hello"
         assert foo.__doc__ == "original doc"
         with pytest.raises(TypeError):
-            await foo(meow="hello")
+            await foo(meow="hello")  # type: ignore[call-arg]
         with pytest.raises(TypeError):
-            assert await foo("hello", old_name="hello")
+            assert await foo("hello", old_name="hello")  # type: ignore[call-arg]
 
         with pytest.raises(TypeError):
-            assert await foo(old_name="goodbye", new_name="hello")
+            assert await foo(old_name="a", new_name="hello")  # type: ignore[call-arg]
 
 
 def test_rename_parameter_method() -> None:
@@ -481,7 +481,7 @@ def test_rename_parameter_method() -> None:
 
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
-        assert foo.a(old_name="hello") == "hello"
+        assert foo.a(old_name="hello") == "hello"  # type: ignore[call-arg]
         assert len(warning_list) == 1
         assert str(warning_list[0].message) == (
             "The parameter `old_name` of `a` was deprecated in 2.0.0 and will be "
@@ -493,7 +493,7 @@ def test_rename_parameter_method() -> None:
         assert foo.a("hello") == "hello"
 
         with pytest.raises(TypeError):
-            foo.a(meow="hello")
+            foo.a(meow="hello")  # type: ignore[call-arg]
 
         with pytest.raises(TypeError):
-            assert foo.a("hello", old_name="hello")
+            assert foo.a("hello", old_name="hello")  # type: ignore[call-arg]

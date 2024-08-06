@@ -436,7 +436,6 @@ def surface_langchain_deprecation_warnings() -> None:
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-_T = TypeVar("_T")
 
 
 def rename_parameter(
@@ -445,7 +444,7 @@ def rename_parameter(
     removal: str,
     old: str,
     new: str,
-) -> Union[Callable[[Callable[_P, _R]], Callable[_P, _R]], Callable[_P, _R]]:
+) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """Decorator indicating that parameter *old* of *func* is renamed to *new*.
 
     The actual implementation of *func* should use *new*, not *old*.  If *old*
