@@ -75,7 +75,10 @@ class Beta(BaseAdmonition):
     def run(self):
         self.content = self.content or StringList(
             [
-                "This feature is in beta. It is actively being worked on, so the API may change."
+                (
+                    "This feature is in beta. It is actively being worked on, so the "
+                    "API may change."
+                )
             ]
         )
         self.arguments = self.arguments or ["Beta"]
@@ -90,7 +93,7 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, LangChain, Inc."
+copyright = "2023-2024, LangChain, Inc."
 author = "LangChain, Inc."
 
 html_title = project
@@ -112,8 +115,9 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
+    "myst_parser",
 ]
-source_suffix = [".rst"]
+source_suffix = [".rst", ".md"]
 
 # some autodoc pydantic options are repeated in the actual template.
 # potentially user error, but there may be bugs in the sphinx extension
@@ -156,16 +160,6 @@ html_theme_options = {
 #     # -- General configuration ------------------------------------------------
     "sidebar_includehidden": True,
     "use_edit_page_button": True,
-#     "external_links": [],
-#     "icon_links_label": "Icon Links",
-#     "icon_links": [
-#         {
-#             "name": "GitHub",
-#             "url": "https://github.com/langchain-ai",
-#             "icon": "fa-brands fa-square-github",
-#             "type": "fontawesome",
-#         },
-#     ],
 #     # "analytics": {
 #     #     "plausible_analytics_domain": "scikit-learn.org",
 #     #     "plausible_analytics_url": "https://views.scientific-python.org/js/script.js",
@@ -173,7 +167,7 @@ html_theme_options = {
 #     # If "prev-next" is included in article_footer_items, then setting show_prev_next
 #     # to True would repeat prev and next links. See
 #     # https://github.com/pydata/pydata-sphinx-theme/blob/b731dc230bc26a3d1d1bb039c56c977a9b3d25d8/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/layout.html#L118-L129
-#     "show_prev_next": False,
+    "show_prev_next": False,
     "search_bar_text": "Search the docs ...",
     # "navigation_with_keys": False,
     "collapse_navigation": True,
@@ -194,14 +188,14 @@ html_theme_options = {
 #     # check_switcher may be set to False if docbuild pipeline fails. See
 #     # https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/version-dropdown.html#configure-switcher-json-url
 #     # "check_switcher": True,
-#     "pygments_light_style": "tango",
-#     "pygments_dark_style": "monokai",
-#     "logo": {
-#         "alt_text": "langchain homepage",
-#         "image_relative": "../docs/static/img/brand/favicon.png",
-#         # "image_light": "logos/scikit-learn-logo-small.png",
-#         # "image_dark": "logos/scikit-learn-logo-small.png",
-#     },
+    "pygments_light_style": "tango",
+    "pygments_dark_style": "monokai",
+    "logo": {
+        "alt_text": "langchain homepage",
+        "image_relative": "../docs/static/img/brand/favicon.png",
+        # "image_light": "logos/scikit-learn-logo-small.png",
+        # "image_dark": "logos/scikit-learn-logo-small.png",
+    },
     "surface_warnings": True,
 #     # -- Template placement in theme layouts ----------------------------------
     "navbar_start": ["navbar-logo"],
@@ -223,23 +217,44 @@ html_theme_options = {
 #     # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-exclude_patterns
 #     # In particular, "**" specifies the default for all pages
 #     # Use :html_theme.sidebar_secondary.remove: for file-wide removal
-    "secondary_sidebar_items": {"**": ["page-toc", "sourcelink"]},
+#     "secondary_sidebar_items": {"**": ["page-toc", "sourcelink"]},
     "show_version_warning_banner": True,
-#     "announcement": None,
+    "announcement": None,
+    "external_links": [
+        {"name": "Docs", "url": "https://python.langchain.com"},
+    ],
+    "icon_links": [
+        {
+            # Label for this link
+            "name": "GitHub",
+            # URL where the link will redirect
+            "url": "https://github.com/langchain-ai/langchain",  # required
+            # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
+            "icon": "fa-brands fa-square-github",
+            # The type of image to be used (see below for details)
+            "type": "fontawesome",
+        },
+        {
+            "name": "X / Twitter",
+            "url": "https://twitter.com/langchainai",
+            "icon": "fab fa-twitter-square",
+        },
+    ],
+    "icon_links_label": "Quick Links",
 }
-html_sidebars = {
-    "**": []
-}
+# html_sidebars = {
+#     "**": []
+# }
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = ["themes"]
 # redirects dictionary maps from old links to new links
 html_additional_pages = {}
-redirects = {
-    "index": "langchain_api_reference",
-}
-for old_link in redirects:
-    html_additional_pages[old_link] = "redirects.html"
+# redirects = {
+#     "index": "langchain_api_reference",
+# }
+# for old_link in redirects:
+#     html_additional_pages[old_link] = "redirects.html"
 
 partners_dir = Path(__file__).parent.parent.parent / "libs/partners"
 partners = [
@@ -254,7 +269,7 @@ html_context = {
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
-    "redirects": redirects,
+    # "redirects": redirects,
     "partners": partners,
 }
 
@@ -284,3 +299,5 @@ html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 # Tell Jinja2 templates the build is running on Read the Docs
 if os.environ.get("READTHEDOCS", "") == "True":
     html_context["READTHEDOCS"] = True
+
+master_doc = "index"

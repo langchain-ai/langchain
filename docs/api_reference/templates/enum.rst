@@ -1,5 +1,5 @@
 {{ objname }}
-==============
+{{ underline }}==============
 
 .. currentmodule:: {{ module }}
 

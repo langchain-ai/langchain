@@ -251,11 +251,15 @@ def _construct_doc(
     Returns:
         The contents of the reference.rst file.
     """
+    name = " ".join(x.title().replace("ai", "AI").replace("db", "DB") for x in (package_namespace.replace("langchain_", "").split("-")))
     full_doc = f"""\
 =======================
-{package_namespace} {package_version}
+{name}
 =======================
 
+-----------------------
+{package_namespace} {package_version}
+-----------------------
 """
     namespaces = sorted(members_by_namespace)
 
@@ -341,8 +345,7 @@ def _construct_doc(
 """
         if deprecated_classes:
             full_doc += f"""\
-Deprecated classes
---------------
+**Deprecated classes**
 
 .. currentmodule:: {package_namespace}
 
@@ -375,8 +378,7 @@ Deprecated classes
             _functions = [f["qualified_name"] for f in deprecated_functions]
             fstring = "\n    ".join(sorted(_functions))
             full_doc += f"""\
-Deprecated functions
---------------
+**Deprecated functions**
 
 .. currentmodule:: {package_namespace}
 
@@ -462,6 +464,27 @@ def _doc_first_line(package_name: str) -> str:
     """Return the path to the file containing the documentation."""
     return f".. {package_name.replace('-', '_')}_api_reference:\n\n"
 
+def _build_index(dirs: List[str]) -> None:
+    order = ["core", "langchain", "community", "experimental"]
+    dirs = sorted(dirs, key=lambda d: order.index(d) if d in order else len(order))
+    tree = "\n".join(f"{dir_}_api_reference.rst" for dir_ in dirs)
+    doc = f"""# LangChain Python API Reference
+
+Welcome to the LangChain Python API reference. This contains the API reference for all 
+`langchain-x` packages. For user guides see 
+[https://python.langchain.com](https://python.langchain.com).
+
+## Packages
+
+```{{toctree}}
+:maxdepth: 1
+
+{tree}
+```
+"""
+    with open(HERE / "index.md", "w") as f:
+        f.write(doc)
+
 
 def main(dirs: Optional[list] = None) -> None:
     """Generate the api_reference.rst file for each package."""
@@ -488,6 +511,8 @@ def main(dirs: Optional[list] = None) -> None:
         else:
             print("Building package:", dir_)
             _build_rst_file(package_name=dir_)
+
+    _build_index(dirs)
     print("API reference files built.")
 
 
