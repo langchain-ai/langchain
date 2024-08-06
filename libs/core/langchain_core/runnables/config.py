@@ -348,7 +348,6 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                         base["callbacks"] = mngr
                     else:
                         # base_callbacks is also a manager
-
                         manager = base_callbacks.__class__(
                             parent_run_id=base_callbacks.parent_run_id
                             or these_callbacks.parent_run_id,
