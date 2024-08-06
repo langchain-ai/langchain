@@ -298,8 +298,6 @@ class _AllReturnType(TypedDict):
 class BaseChatOpenAI(BaseChatModel):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    root_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    root_async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
     temperature: float = 0.7
@@ -453,8 +451,9 @@ class BaseChatOpenAI(BaseChatModel):
                     ) from e
                 values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
             sync_specific = {"http_client": values["http_client"]}
-            values["root_client"] = openai.OpenAI( **client_params, **sync_specific )
-            values["client"] = values["root_client"].chat.completions
+            values["client"] = openai.OpenAI(
+                **client_params, **sync_specific
+            ).chat.completions
         if not values.get("async_client"):
             if values["openai_proxy"] and not values["http_async_client"]:
                 try:
@@ -468,10 +467,9 @@ class BaseChatOpenAI(BaseChatModel):
                     proxy=values["openai_proxy"]
                 )
             async_specific = {"http_client": values["http_async_client"]}
-            values["root_async_client"] = openai.AsyncOpenAI(
+            values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific
-            )
-            values["async_client"] = values["root_async_client"].chat.completions
+            ).chat.completions
 
         # Assume only "gpt-..." models support strict tool calling as of 08/06/24.
         values["supports_strict_tool_calling"] = (
@@ -608,8 +606,6 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        # if "response_format" in kwargs:
-        #     self.root_client.
         if self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
