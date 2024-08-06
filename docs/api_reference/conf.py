@@ -15,6 +15,8 @@ from pathlib import Path
 
 import toml
 from docutils import nodes
+from docutils.parsers.rst.directives.admonitions import BaseAdmonition
+from docutils.statemachine import StringList
 from sphinx.util.docutils import SphinxDirective
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -66,8 +68,23 @@ class ExampleLinksDirective(SphinxDirective):
         return [list_node]
 
 
+class Beta(BaseAdmonition):
+    required_arguments = 0
+    node_class = nodes.admonition
+
+    def run(self):
+        self.content = self.content or StringList(
+            [
+                "This feature is in beta. It is actively being worked on, so the API may change."
+            ]
+        )
+        self.arguments = self.arguments or ["Beta"]
+        return super().run()
+
+
 def setup(app):
     app.add_directive("example_links", ExampleLinksDirective)
+    app.add_directive("beta", Beta)
 
 
 # -- Project information -----------------------------------------------------
