@@ -105,6 +105,27 @@ class RunnableConfig(TypedDict, total=False):
     """
 
 
+CONFIG_KEYS = [
+    "tags",
+    "metadata",
+    "callbacks",
+    "run_name",
+    "max_concurrency",
+    "recursion_limit",
+    "configurable",
+    "run_id",
+]
+
+COPIABLE_KEYS = [
+    "tags",
+    "metadata",
+    "callbacks",
+    "configurable",
+]
+
+DEFAULT_RECURSION_LIMIT = 25
+
+
 var_child_runnable_config = ContextVar(
     "child_runnable_config", default=RunnableConfig()
 )

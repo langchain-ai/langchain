@@ -780,7 +780,7 @@ class Runnable(Generic[Input, Output], ABC):
                for more details. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Returns:
             A list of outputs from the Runnable.
@@ -844,7 +844,7 @@ class Runnable(Generic[Input, Output], ABC):
                for more details. Defaults to None. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             A tuple of the index of the input and the output from the Runnable.
@@ -888,7 +888,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -908,7 +908,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -985,7 +985,7 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_names: Exclude logs with these names.
             exclude_types: Exclude logs with these types.
             exclude_tags: Exclude logs with these tags.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             A RunLogPatch or RunLog object.
@@ -1102,7 +1102,21 @@ class Runnable(Generic[Input, Output], ABC):
         | on_prompt_end        | [template_name]  |                                 | {"question": "hello"}                         | ChatPromptValue(messages: [SystemMessage, ...]) |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
 
-        Here are declarations associated with the events shown above:
+        In addition to the standard events, users can also dispatch custom events (see example below).
+
+        Custom events will be only be surfaced with in the `v2` version of the API!
+
+        A custom event has following format:
+
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | Attribute | Type | Description                                                                                               |
+        +===========+======+===========================================================================================================+
+        | name      | str  | A user defined name for the event.                                                                        |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | data      | Any  | The data associated with the event. This can be anything, though we suggest making it JSON serializable.  |
+        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+
+        Here are declarations associated with the standard events shown above:
 
         `format_docs`:
 
@@ -1173,6 +1187,40 @@ class Runnable(Generic[Input, Output], ABC):
                 },
             ]
 
+
+        Example: Dispatch Custom Event
+
+        .. code-block:: python
+
+            from langchain_core.callbacks.manager import (
+                adispatch_custom_event,
+            )
+            from langchain_core.runnables import RunnableLambda, RunnableConfig
+            import asyncio
+
+
+            async def slow_thing(some_input: str, config: RunnableConfig) -> str:
+                \"\"\"Do something that takes a long time.\"\"\"
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                await adispatch_custom_event(
+                    "progress_event",
+                    {"message": "Finished step 1 of 3"},
+                    config=config # Must be included for python < 3.10
+                )
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                await adispatch_custom_event(
+                    "progress_event",
+                    {"message": "Finished step 2 of 3"},
+                    config=config # Must be included for python < 3.10
+                )
+                await asyncio.sleep(1) # Placeholder for some slow operation
+                return "Done"
+
+            slow_thing = RunnableLambda(slow_thing)
+
+            async for event in slow_thing.astream_events("some_input", version="v2"):
+                print(event)
+
         Args:
             input: The input to the Runnable.
             config: The config to use for the Runnable.
@@ -1181,6 +1229,7 @@ class Runnable(Generic[Input, Output], ABC):
                      `v1` is for backwards compatibility and will be deprecated
                      in 0.4.0.
                      No default will be assigned until the API is stabilized.
+                     custom events will only be surfaced in `v2`.
             include_names: Only include events from runnables with matching names.
             include_types: Only include events from runnables with matching types.
             include_tags: Only include events from runnables with matching tags.
@@ -1253,7 +1302,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: An iterator of inputs to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -1295,7 +1344,7 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: An async iterator of inputs to the Runnable.
             config: The config to use for the Runnable. Defaults to None.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the Runnable.
@@ -3985,10 +4034,13 @@ class RunnableLambda(Runnable[Input, Output]):
     RunnableLambda can be composed as any other Runnable and provides
     seamless integration with LangChain tracing.
 
-    `RunnableLambda` is best suited for code that does not need to support
+    ``RunnableLambda`` is best suited for code that does not need to support
     streaming. If you need to support streaming (i.e., be able to operate
-    on chunks of inputs and yield chunks of outputs), use `RunnableGenerator`
+    on chunks of inputs and yield chunks of outputs), use ``RunnableGenerator``
     instead.
+
+    Note that if a ``RunnableLambda`` returns an instance of ``Runnable``, that
+    instance is invoked (or streamed) during execution.
 
     Examples:
 
@@ -4125,6 +4177,7 @@ class RunnableLambda(Runnable[Input, Output]):
             The input schema for this Runnable.
         """
         func = getattr(self, "func", None) or getattr(self, "afunc")
+
         if isinstance(func, itemgetter):
             # This is terrible, but afaict it's not possible to access _items
             # on itemgetter objects, so we have to parse the repr
@@ -4409,7 +4462,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             input: The input to this Runnable.
             config: The config to use. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             The output of this Runnable.
@@ -4441,7 +4494,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             input: The input to this Runnable.
             config: The config to use. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             The output of this Runnable.
