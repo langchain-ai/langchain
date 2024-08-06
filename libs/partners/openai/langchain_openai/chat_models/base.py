@@ -371,7 +371,11 @@ class BaseChatOpenAI(BaseChatModel):
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
     supports_strict_tool_calling: Optional[bool] = None
-    """Whether the model supports the 'strict' argument when passing in tools."""
+    """Whether the model supports the 'strict' argument when passing in tools.
+    
+    Defaults to True if `model_name`/`model` starts with 'gpt-' otherwise defaults to 
+    False.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
