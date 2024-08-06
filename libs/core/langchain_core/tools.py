@@ -859,7 +859,7 @@ class Tool(BaseTool):
             return_direct: Whether to return the output directly. Defaults to False.
             args_schema: The schema of the tool's input arguments. Defaults to None.
             coroutine: The asynchronous version of the function. Defaults to None.
-            **kwargs: Additional arguments to pass to the tool.
+            kwargs: Additional arguments to pass to the tool.
 
         Returns:
             The tool.
@@ -992,7 +992,7 @@ class StructuredTool(BaseTool):
             error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
                 whether to raise ValueError on invalid Google Style docstrings.
                 Defaults to False.
-            **kwargs: Additional arguments to pass to the tool
+            kwargs: Additional arguments to pass to the tool
 
         Returns:
             The tool.
@@ -1664,6 +1664,10 @@ def _get_all_basemodel_annotations(
     if isinstance(cls, type):
         annotations: Dict[str, Type] = {}
         for name, param in inspect.signature(cls).parameters.items():
+            # Exclude hidden init args added by pydantic Config. For example if
+            # BaseModel(extra="allow") then "extra_data" will part of init sig.
+            if (fields := getattr(cls, "__fields__", {})) and name not in fields:
+                continue
             annotations[name] = param.annotation
         orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
     # cls has subscript: cls = FooBar[int]

@@ -1751,11 +1751,11 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
 
     if use_v1_namespace:
 
-        class ModelA(BaseModel, Generic[A]):
+        class ModelA(BaseModel, Generic[A], extra="allow"):
             a: A
     else:
 
-        class ModelA(BaseModelProper, Generic[A]):  # type: ignore[no-redef]
+        class ModelA(BaseModelProper, Generic[A], extra="allow"):  # type: ignore[no-redef]
             a: A
 
     class ModelB(ModelA[str]):
@@ -1812,7 +1812,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
 def test__get_all_basemodel_annotations_v1() -> None:
     A = TypeVar("A")
 
-    class ModelA(BaseModel, Generic[A]):
+    class ModelA(BaseModel, Generic[A], extra="allow"):
         a: A
 
     class ModelB(ModelA[str]):

@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import abc
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Sequence, TypedDict
+from typing import Any, Dict, List, Optional, Sequence, TypedDict
+
+from langchain_core._api import beta
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import run_in_executor
 
 
 class RecordManager(ABC):
@@ -447,3 +453,209 @@ class UpsertResponse(TypedDict):
     """The IDs that were successfully indexed."""
     failed: List[str]
     """The IDs that failed to index."""
+
+
+class DeleteResponse(TypedDict, total=False):
+    """A generic response for delete operation.
+
+    The fields in this response are optional and whether the vectorstore
+    returns them or not is up to the implementation.
+    """
+
+    num_deleted: int
+    """The number of items that were successfully deleted.
+    
+    If returned, this should only include *actual* deletions.
+    
+    If the ID did not exist to begin with, 
+    it should not be included in this count.
+    """
+
+    succeeded: Sequence[str]
+    """The IDs that were successfully deleted.
+    
+    If returned, this should only include *actual* deletions.
+    
+    If the ID did not exist to begin with,
+    it should not be included in this list.
+    """
+
+    failed: Sequence[str]
+    """The IDs that failed to be deleted.
+    
+    Please note that deleting an ID that 
+    does not exist is **NOT** considered a failure.
+    """
+
+    num_failed: int
+    """The number of items that failed to be deleted."""
+
+
+@beta(message="Added in 0.2.29. The abstraction is subject to change.")
+class DocumentIndex(BaseRetriever):
+    """A document retriever that supports indexing operations.
+
+    This indexing interface is designed to be a generic abstraction for storing and
+    querying documents that has an ID and metadata associated with it.
+
+    The interface is designed to be agnostic to the underlying implementation of the
+    indexing system.
+
+    The interface is designed to support the following operations:
+
+    1. Storing document in the index.
+    2. Fetching document by ID.
+    3. Searching for document using a query.
+
+    .. versionadded:: 0.2.29
+    """
+
+    @abc.abstractmethod
+    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+        """Upsert documents into the index.
+
+        The upsert functionality should utilize the ID field of the content object
+        if it is provided. If the ID is not provided, the upsert method is free
+        to generate an ID for the content.
+
+        When an ID is specified and the content already exists in the vectorstore,
+        the upsert method should update the content with the new data. If the content
+        does not exist, the upsert method should add the item to the vectorstore.
+
+        Args:
+            items: Sequence of documents to add to the vectorstore.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            UpsertResponse: A response object that contains the list of IDs that were
+            successfully added or updated in the vectorstore and the list of IDs that
+            failed to be added or updated.
+        """
+
+    async def aupsert(
+        self, items: Sequence[Document], /, **kwargs: Any
+    ) -> UpsertResponse:
+        """Add or update documents in the vectorstore. Async version of upsert.
+
+        The upsert functionality should utilize the ID field of the item
+        if it is provided. If the ID is not provided, the upsert method is free
+        to generate an ID for the item.
+
+        When an ID is specified and the item already exists in the vectorstore,
+        the upsert method should update the item with the new data. If the item
+        does not exist, the upsert method should add the item to the vectorstore.
+
+        Args:
+            items: Sequence of documents to add to the vectorstore.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            UpsertResponse: A response object that contains the list of IDs that were
+            successfully added or updated in the vectorstore and the list of IDs that
+            failed to be added or updated.
+        """
+        return await run_in_executor(
+            None,
+            self.upsert,
+            items,
+            **kwargs,
+        )
+
+    @abc.abstractmethod
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> DeleteResponse:
+        """Delete by IDs or other criteria.
+
+        Calling delete without any input parameters should raise a ValueError!
+
+        Args:
+            ids: List of ids to delete.
+            kwargs: Additional keyword arguments. This is up to the implementation.
+                For example, can include an option to delete the entire index,
+                or else issue a non-blocking delete etc.
+
+        Returns:
+            DeleteResponse: A response object that contains the list of IDs that were
+            successfully deleted and the list of IDs that failed to be deleted.
+        """
+
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> DeleteResponse:
+        """Delete by IDs or other criteria. Async variant.
+
+        Calling adelete without any input parameters should raise a ValueError!
+
+        Args:
+            ids: List of ids to delete.
+            kwargs: Additional keyword arguments. This is up to the implementation.
+                For example, can include an option to delete the entire index.
+
+        Returns:
+            DeleteResponse: A response object that contains the list of IDs that were
+            successfully deleted and the list of IDs that failed to be deleted.
+        """
+        return await run_in_executor(
+            None,
+            self.delete,
+            ids,
+            **kwargs,
+        )
+
+    @abc.abstractmethod
+    def get(
+        self,
+        ids: Sequence[str],
+        /,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Get documents by id.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of IDs to get.
+            kwargs: Additional keyword arguments. These are up to the implementation.
+
+        Returns:
+            List[Document]: List of documents that were found.
+        """
+
+    async def aget(
+        self,
+        ids: Sequence[str],
+        /,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Get documents by id.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of IDs to get.
+            kwargs: Additional keyword arguments. These are up to the implementation.
+
+        Returns:
+            List[Document]: List of documents that were found.
+        """
+        return await run_in_executor(
+            None,
+            self.get,
+            ids,
+            **kwargs,
+        )
