@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-mongodb"
-version = "0.2.0"
+version = "0.1.8"
 description = "An integration package connecting MongoDB and LangChain"
 authors = []
 readme = "README.md"
