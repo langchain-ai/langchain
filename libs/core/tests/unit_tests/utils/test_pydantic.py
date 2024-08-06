@@ -1,10 +1,13 @@
 """Test for some custom pydantic decorators."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+import pytest
 
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
+    _create_subset_model_v2,
     is_basemodel_instance,
     is_basemodel_subclass,
     pre_init,
@@ -121,3 +124,32 @@ def test_is_basemodel_instance() -> None:
         assert is_basemodel_instance(Bar(x=5))
     else:
         raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
+def test_with_field_metadata() -> None:
+    """Test pydantic with field metadata"""
+    from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
+    from pydantic import Field as FieldV2  # pydantic: ignore
+
+    class Foo(BaseModelV2):
+        x: List[int] = FieldV2(
+            description="List of integers", min_length=10, max_length=15
+        )
+
+    subset_model = _create_subset_model_v2("Foo", Foo, ["x"])
+    assert subset_model.model_json_schema() == {
+        "properties": {
+            "x": {
+                "description": "List of integers",
+                "items": {"type": "integer"},
+                "maxItems": 15,
+                "minItems": 10,
+                "title": "X",
+                "type": "array",
+            }
+        },
+        "required": ["x"],
+        "title": "Foo",
+        "type": "object",
+    }
