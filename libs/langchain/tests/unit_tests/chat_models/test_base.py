@@ -113,8 +113,11 @@ def test_configurable() -> None:
             "tools": [
                 {
                     "type": "function",
-                    "function": {"name": "foo", "description": "foo", "parameters": {}},
-                    "strict": True,
+                    "function": {
+                        "name": "foo",
+                        "description": "foo",
+                        "parameters": {},
+                    },
                 }
             ]
         },

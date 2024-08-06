@@ -370,12 +370,6 @@ class BaseChatOpenAI(BaseChatModel):
     making requests to OpenAI compatible APIs, such as vLLM."""
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
-    supports_strict_tool_calling: Optional[bool] = None
-    """Whether the model supports the 'strict' argument when passing in tools.
-    
-    Defaults to True if `model_name`/`model` starts with 'gpt-' otherwise defaults to 
-    False.
-    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -471,12 +465,6 @@ class BaseChatOpenAI(BaseChatModel):
                 **client_params, **async_specific
             ).chat.completions
 
-        # Assume only "gpt-..." models support strict tool calling as of 08/06/24.
-        values["supports_strict_tool_calling"] = (
-            values["supports_strict_tool_calling"]
-            if values["supports_strict_tool_calling"] is not None
-            else "gpt-" in values["model_name"]
-        )
         return values
 
     @property
@@ -972,6 +960,10 @@ class BaseChatOpenAI(BaseChatModel):
 
         Assumes model is compatible with OpenAI tool-calling API.
 
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
+
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
@@ -985,12 +977,19 @@ class BaseChatOpenAI(BaseChatModel):
                     - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
                     - ``False`` or ``None``: no effect, default OpenAI behavior.
             strict: If True, model output is guaranteed to exactly match the JSON Schema
-                provided in the tool definition.
+                provided in the tool definition. If True, the input schema will also be
+                validated according to
+                https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
+                If False, input schema will not be validated and model output will not
+                be validated.
+                If None, ``strict`` argument will not be passed to the model.
+
+                .. versionadded:: 0.1.21
+
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """  # noqa: E501
 
-        strict = strict if strict is not None else self.supports_strict_tool_calling
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
@@ -1037,6 +1036,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
@@ -1047,6 +1047,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
@@ -1056,9 +1057,14 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
+
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
 
         Args:
             schema:
@@ -1092,6 +1098,20 @@ class BaseChatOpenAI(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+            strict: If True and ``method``="function_calling", model output is
+                guaranteed to exactly match the schema
+                If True, the input schema will also be
+                validated according to
+                https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
+                If False, input schema will not be validated and model output will not
+                be validated.
+                If None, ``strict`` argument will not be passed to the model.
+
+                .. versionadded:: 0.1.21
+
+                .. note:: Planned breaking change in version `0.2.0`
+                    ``strict`` will default to True as of version `0.2.0`.
+            kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -1284,7 +1304,10 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             llm = self.bind_tools(
-                [schema], tool_choice=tool_name, parallel_tool_calls=False
+                [schema],
+                tool_choice=tool_name,
+                parallel_tool_calls=False,
+                strict=strict,
             )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(

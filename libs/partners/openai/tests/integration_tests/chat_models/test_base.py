@@ -19,6 +19,10 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_standard_tests.integration_tests.chat_models import (
+    _validate_tool_call_message,
+    magic_function,
+)
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -750,3 +754,20 @@ def test_image_token_counting_png() -> None:
     ]
     actual = model.get_num_tokens_from_messages([message])
     assert expected == actual
+
+
+def test_tool_calling_strict() -> None:
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    model_with_tools = model.bind_tools([magic_function], strict=True)
+
+    # Test invoke
+    query = "What is the value of magic_function(3)? Use the tool."
+    result = model_with_tools.invoke(query)
+    _validate_tool_call_message(result)
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in model_with_tools.stream(query):
+        full = chunk if full is None else full + chunk  # type: ignore
+    assert isinstance(full, AIMessage)
+    _validate_tool_call_message(full)
