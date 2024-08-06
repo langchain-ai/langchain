@@ -4,6 +4,7 @@ import base64
 from typing import Any, AsyncIterator, List, Optional, cast
 
 import httpx
+import openai
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
@@ -19,6 +20,12 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_standard_tests.integration_tests.chat_models import (
+    _validate_tool_call_message,
+)
+from langchain_standard_tests.integration_tests.chat_models import (
+    magic_function as invalid_magic_function,
+)
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -750,3 +757,77 @@ def test_image_token_counting_png() -> None:
     ]
     actual = model.get_num_tokens_from_messages([message])
     assert expected == actual
+
+
+def test_tool_calling_strict() -> None:
+    """Test tool calling with strict=True."""
+
+    class magic_function(BaseModel):
+        """Applies a magic function to an input."""
+
+        input: int
+
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    model_with_tools = model.bind_tools([magic_function], strict=True)
+
+    # invalid_magic_function adds metadata to schema that isn't supported by OpenAI.
+    model_with_invalid_tool_schema = model.bind_tools(
+        [invalid_magic_function], strict=True
+    )
+
+    # Test invoke
+    query = "What is the value of magic_function(3)? Use the tool."
+    response = model_with_tools.invoke(query)
+    _validate_tool_call_message(response)
+
+    # Test invalid tool schema
+    with pytest.raises(openai.BadRequestError):
+        model_with_invalid_tool_schema.invoke(query)
+
+    # Test stream
+    full: Optional[BaseMessageChunk] = None
+    for chunk in model_with_tools.stream(query):
+        full = chunk if full is None else full + chunk  # type: ignore
+    assert isinstance(full, AIMessage)
+    _validate_tool_call_message(full)
+
+    # Test invalid tool schema
+    with pytest.raises(openai.BadRequestError):
+        next(model_with_invalid_tool_schema.stream(query))
+
+
+def test_structured_output_strict() -> None:
+    """Test to verify structured output with strict=True."""
+
+    from pydantic import BaseModel as BaseModelProper
+    from pydantic import Field as FieldProper
+
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
+
+    class Joke(BaseModelProper):
+        """Joke to tell user."""
+
+        setup: str = FieldProper(description="question to set up a joke")
+        punchline: str = FieldProper(description="answer to resolve the joke")
+
+    # Pydantic class
+    # Type ignoring since the interface only officially supports pydantic 1
+    # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
+    # We'll need to do a pass updating the type signatures.
+    chat = model.with_structured_output(Joke, strict=True)  # type: ignore[arg-type]
+    result = chat.invoke("Tell me a joke about cats.")
+    assert isinstance(result, Joke)
+
+    for chunk in chat.stream("Tell me a joke about cats."):
+        assert isinstance(chunk, Joke)
+
+    # Schema
+    chat = model.with_structured_output(Joke.model_json_schema(), strict=True)
+    result = chat.invoke("Tell me a joke about cats.")
+    assert isinstance(result, dict)
+    assert set(result.keys()) == {"setup", "punchline"}
+
+    for chunk in chat.stream("Tell me a joke about cats."):
+        assert isinstance(chunk, dict)
+    assert isinstance(chunk, dict)  # for mypy
+    assert set(chunk.keys()) == {"setup", "punchline"}
