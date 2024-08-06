@@ -18,13 +18,11 @@ from collections.abc import Callable
 from typing import (
     Any,
     Generator,
-    Optional,
     ParamSpec,
     Type,
     TypeVar,
     Union,
     cast,
-    overload,
 )
 
 from langchain_core._api.internal import is_caller_internal
@@ -441,18 +439,6 @@ _R = TypeVar("_R")
 _T = TypeVar("_T")
 
 
-@overload
-def rename_parameter(
-    since: str, removal: str, old: str, new: str, func: None = ...
-) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]: ...
-
-
-@overload
-def rename_parameter(
-    since: str, removal: str, old: str, new: str, func: Callable[_P, _R]
-) -> Callable[_P, _R]: ...
-
-
 def rename_parameter(
     *,
     since: str,
@@ -464,10 +450,7 @@ def rename_parameter(
 
     The actual implementation of *func* should use *new*, not *old*.  If *old*
     is passed to *func*, a DeprecationWarning is emitted, and its value is
-    used, even if *new* is also passed by keyword (this is to simplify pyplot
-    wrapper functions, which always pass *new* explicitly to the Axes method).
-    If *new* is also passed but positionally, a TypeError will be raised by the
-    underlying function during argument binding.
+    used, even if *new* is also passed by keyword.
 
     Example:
 
