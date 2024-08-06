@@ -134,15 +134,20 @@ class AsyncHtmlLoader(BaseLoader):
         async with aiohttp.ClientSession(trust_env=self.trust_env) as session:
             for i in range(retries):
                 try:
-                    proxy = None
+                    kwargs: Dict = dict(
+                        headers=self.session.headers,
+                        cookies=self.session.cookies.get_dict(),
+                        **self.requests_kwargs,
+                    )
+                    if not self.session.verify:
+                        kwargs["ssl"] = False
+
                     if self.proxies and "https" in self.proxies:
-                        proxy = self.proxies["https"]
+                        kwargs["proxy"] = self.proxies["https"]
+
                     async with session.get(
                         url,
-                        headers=self.session.headers,
-                        ssl=None if self.session.verify else False,
-                        proxy=proxy,
-                        **self.requests_kwargs,
+                        **kwargs,
                     ) as response:
                         try:
                             text = await response.text()

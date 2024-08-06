@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gigachain-experimental"
-version = "0.0.63"
+version = "0.0.64"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -25,8 +25,8 @@ exclude = [ "notebooks", "examples", "example_data",]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.2.23"
-gigachain-community = "^0.2.6"
+gigachain-core = "^0.2.27"
+gigachain-community = "^0.2.10"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]

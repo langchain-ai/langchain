@@ -716,7 +716,7 @@ python-dateutil = ">=2.7"
 
 [[package]]
 name = "gigachain-core"
-version = "0.2.25"
+version = "0.2.28"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -733,6 +733,7 @@ pydantic = [
 ]
 PyYAML = ">=5.3"
 tenacity = "^8.1.0,!=8.4.0"
+typing-extensions = ">=4.7"
 
 [package.source]
 type = "directory"

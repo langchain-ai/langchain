@@ -156,7 +156,7 @@ class BaseSingleActionAgent(BaseModel):
             llm: Language model to use.
             tools: Tools to use.
             callback_manager: Callback manager to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             BaseSingleActionAgent: Agent object.
@@ -939,7 +939,7 @@ class Agent(BaseSingleActionAgent):
             tools: Tools to use.
             callback_manager: Callback manager to use.
             output_parser: Output parser to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             Agent: Agent object.
@@ -1110,7 +1110,7 @@ class AgentExecutor(Chain):
             agent: Agent to use.
             tools: Tools to use.
             callbacks: Callbacks to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             AgentExecutor: Agent executor object.
@@ -1741,7 +1741,7 @@ class AgentExecutor(Chain):
         Args:
             input: Input to the agent.
             config: Config to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Yields:
             AddableDict: Addable dictionary.
@@ -1772,7 +1772,7 @@ class AgentExecutor(Chain):
         Args:
             input: Input to the agent.
             config: Config to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Yields:
             AddableDict: Addable dictionary.

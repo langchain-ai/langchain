@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gigachain-mistralai"
-version = "0.1.11"
+version = "0.1.12"
 description = "An integration package connecting Mistral and GigaChain"
 authors = []
 readme = "README.md"
@@ -23,7 +23,7 @@ disallow_untyped_defs = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = ">=0.2.24,<0.3"
+gigachain-core = "^0.2.26"
 tokenizers = ">=0.15.1,<1"
 httpx = ">=0.25.2,<1"
 httpx-sse = ">=0.3.1,<1"

@@ -583,7 +583,7 @@ url = "../standard-tests"
 
 [[package]]
 name = "gigachain-text-splitters"
-version = "0.2.2"
+version = "0.2.3"
 description = "GigaChain text splitting utilities"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3048,4 +3048,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8e6dcc50bcfddd087e040a9ace24599bc2e28d6f94234d047095b019ebf0e7ef"
+content-hash = "0507894c38e688c381ede8af1d9f9b0d5f90d0a1d8d2778a303fac7b30491fb5"

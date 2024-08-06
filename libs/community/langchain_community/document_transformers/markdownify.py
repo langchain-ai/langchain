@@ -13,7 +13,7 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
         convert: A list of tags to convert. This option can't be used with the strip option.
         autolinks: A boolean indicating whether the "automatic link" style should be used when a a tag's contents match its href. Defaults to True.
         heading_style: Defines how headings should be converted. Accepted values are ATX, ATX_CLOSED, SETEXT, and UNDERLINED (which is an alias for SETEXT). Defaults to ATX.
-        **kwargs: Additional options to pass to markdownify.
+        kwargs: Additional options to pass to markdownify.
 
     Example:
         .. code-block:: python
