@@ -333,7 +333,8 @@ def convert_to_openai_function(
             assumed to already be a valid OpenAI function or a JSON schema with
             top-level 'title' and 'description' keys specified.
         strict: If True, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition.
+            provided in the function definition. If None, ``strict`` argument will not
+            be included in tool definition.
 
     Returns:
         A dict version of the passed in function which is compatible with the OpenAI
@@ -398,7 +399,8 @@ def convert_to_openai_tool(
             OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
             'description' keys specified.
         strict: If True, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition.
+            provided in the function definition. If None, ``strict`` argument will not
+            be included in tool definition.
 
     Returns:
         A dict version of the passed in tool which is compatible with the
