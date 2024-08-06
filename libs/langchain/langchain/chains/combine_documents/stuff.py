@@ -99,11 +99,11 @@ def create_stuff_documents_chain(
 @deprecated(
     since="0.2.13",
     removal="1.0",
-    message = (
+    message=(
         "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
         "instead. See migration guide here: "
         "https://python.langchain.com/v0.2/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
-    )
+    ),
 )
 class StuffDocumentsChain(BaseCombineDocumentsChain):
     """Chain that combines documents by stuffing into context.
