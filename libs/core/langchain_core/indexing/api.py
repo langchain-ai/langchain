@@ -196,7 +196,7 @@ class IndexingResult(TypedDict):
 def index(
     docs_source: Union[BaseLoader, Iterable[Document]],
     record_manager: RecordManager,
-    destination: Union[VectorStore, DocumentIndex],
+    vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
@@ -233,7 +233,7 @@ def index(
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
-        destination: Vector store or document index to index the documents into.
+        vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
             - Incremental: Cleans up all documents that haven't been updated AND
@@ -275,7 +275,7 @@ def index(
     if cleanup == "incremental" and source_id_key is None:
         raise ValueError("Source id key is required when cleanup mode is incremental.")
 
-    destination = destination  # Renaming internally for clarity
+    destination = vector_store  # Renaming internally for clarity
 
     # If it's a vectorstore, let's check if it has the required methods.
     if isinstance(destination, VectorStore):
@@ -435,7 +435,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 async def aindex(
     docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
-    destination: Union[VectorStore, DocumentIndex],
+    vectorstore: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
@@ -464,7 +464,7 @@ async def aindex(
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
-        destination: Vector store to index the documents into.
+        vectorstore: Vector store or Document Index to index the documents into
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
             - Incremental: Cleans up all documents that haven't been updated AND
@@ -506,7 +506,7 @@ async def aindex(
     if cleanup == "incremental" and source_id_key is None:
         raise ValueError("Source id key is required when cleanup mode is incremental.")
 
-    destination = destination  # Renaming internally for clarity
+    destination = vectorstore  # Renaming internally for clarity
 
     # If it's a vectorstore, let's check if it has the required methods.
     if isinstance(destination, VectorStore):
