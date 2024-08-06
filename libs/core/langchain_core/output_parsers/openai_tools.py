@@ -1,7 +1,9 @@
 import copy
 import json
 from json import JSONDecodeError
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
+
+from pydantic import BaseModel, ValidationError
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
@@ -13,9 +15,7 @@ from langchain_core.messages.tool import (
 )
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import ValidationError
 from langchain_core.utils.json import parse_partial_json
-from langchain_core.utils.pydantic import TypeBaseModel
 
 
 def parse_tool_call(

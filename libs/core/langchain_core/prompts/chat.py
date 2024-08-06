@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     Dict,
     List,
@@ -20,6 +21,8 @@ from typing import (
     cast,
     overload,
 )
+
+from pydantic import Field, PositiveInt, SkipValidation, root_validator
 
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable
@@ -38,7 +41,6 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
-from langchain_core.pydantic_v1 import Field, PositiveInt, root_validator
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
@@ -922,7 +924,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     """  # noqa: E501
 
-    messages: List[MessageLike]
+    messages: Annotated[List[MessageLike], SkipValidation]
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
     """Whether or not to try validating the template."""

@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from pydantic import BaseModel, ConfigDict, Extra, root_validator
+
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts.chat import (
@@ -18,7 +20,6 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -31,12 +32,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
     example_selector: Optional[BaseExampleSelector] = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
@@ -160,11 +156,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
             ]
         return values
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.
@@ -369,11 +361,7 @@ class FewShotChatMessagePromptTemplate(
         """Return whether or not the class is serializable."""
         return False
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages.
