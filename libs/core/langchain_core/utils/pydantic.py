@@ -7,9 +7,9 @@ import textwrap
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
-import pydantic  # pydantic: ignore
-
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+from pydantic_core import core_schema
 
 
 def get_pydantic_major_version() -> int:
@@ -151,9 +151,13 @@ def pre_init(func: Callable) -> Any:
                     if cls.Config.allow_population_by_field_name:
                         if field_info.alias in values:
                             values[name] = values.pop(field_info.alias)
+            if hasattr(cls, "model_config"):
+                if cls.model_config.get("populate_by_name"):
+                    if field_info.alias in values:
+                        values[name] = values.pop(field_info.alias)
 
             if name not in values or values[name] is None:
-                if not field_info.required:
+                if not field_info.is_required():
                     if field_info.default_factory is not None:
                         values[name] = field_info.default_factory()
                     else:
@@ -163,6 +167,44 @@ def pre_init(func: Callable) -> Any:
         return func(cls, values)
 
     return wrapper
+
+
+class _IgnoreUnserializable(GenerateJsonSchema):
+    """A JSON schema generator that ignores unknown types.
+
+    https://docs.pydantic.dev/latest/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """
+
+    def handle_invalid_for_json_schema(
+        self, schema: core_schema.CoreSchema, error_info: str
+    ) -> JsonSchemaValue:
+        return {}
+
+
+def v1_repr(obj: BaseModel) -> str:
+    """Return the schema of the object as a string.
+
+    Get a repr for the pydantic object which is consistent with pydantic.v1.
+    """
+    if not isinstance(obj, BaseModel):
+        raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
+    repr_ = []
+    for name, field in obj.__fields__.items():
+        value = getattr(obj, name)
+
+        if isinstance(value, BaseModel):
+            repr_.append(f"{name}={v1_repr(value)}")
+        else:
+            if not field.is_required():
+                if not value:
+                    continue
+                if field.default == value:
+                    continue
+
+            repr_.append(f"{name}={repr(value)}")
+
+    args = ", ".join(repr_)
+    return f"{obj.__class__.__name__}({args})"
 
 
 def _create_subset_model_v1(
