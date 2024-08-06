@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Type
+from typing import List, Type, Union
 
 import pytest
 
@@ -18,6 +18,7 @@ from langchain_core.messages import (
     ToolMessage,
     convert_to_messages,
     get_buffer_string,
+    merge_content,
     message_chunk_to_message,
     message_to_dict,
     messages_from_dict,

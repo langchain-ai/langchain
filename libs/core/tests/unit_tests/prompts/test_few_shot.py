@@ -58,6 +58,17 @@ def test_suffix_only() -> None:
     assert output == expected_output
 
 
+def test_auto_infer_input_variables() -> None:
+    """Test prompt works with just a suffix."""
+    suffix = "This is a {foo} test."
+    prompt = FewShotPromptTemplate(
+        suffix=suffix,
+        examples=[],
+        example_prompt=EXAMPLE_PROMPT,
+    )
+    assert prompt.input_variables == ["foo"]
+
+
 def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     # Test when missing in suffix

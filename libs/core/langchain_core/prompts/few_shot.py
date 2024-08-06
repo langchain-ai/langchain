@@ -33,8 +33,10 @@ class _FewShotPromptTemplateMixin(BaseModel):
     Either this or examples should be provided."""
 
     class Config:
-        arbitrary_types_allowed = True
+        """Configuration for this pydantic object."""
+
         extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
@@ -366,8 +368,10 @@ class FewShotChatMessagePromptTemplate(
         return False
 
     class Config:
-        arbitrary_types_allowed = True
+        """Configuration for this pydantic object."""
+
         extra = Extra.forbid
+        arbitrary_types_allowed = True
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages.

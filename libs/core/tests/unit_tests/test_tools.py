@@ -4,13 +4,26 @@ import inspect
 import json
 import sys
 import textwrap
+import threading
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import pytest
-from typing_extensions import Annotated, TypedDict
+from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
+from typing_extensions import Annotated, TypedDict, TypeVar
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -26,13 +39,18 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import (
     BaseTool,
+    InjectedToolArg,
     SchemaAnnotationError,
     StructuredTool,
     Tool,
     ToolException,
-    _create_subset_model,
+    _get_all_basemodel_annotations,
+    _is_message_content_block,
+    _is_message_content_type,
     tool,
 )
+from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -973,6 +991,35 @@ class AFooBase(FooBase):
 @pytest.mark.parametrize("tool", [foo, simple_foo, FooBase(), AFooBase()])
 def test_tool_pass_config(tool: BaseTool) -> None:
     assert tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
+
+    # Test we don't mutate tool calls
+    tool_call = {
+        "name": tool.name,
+        "args": {"bar": "baz"},
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == {"bar": "baz"}
+
+
+class FooBaseNonPickleable(FooBase):
+    def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        return True
+
+
+def test_tool_pass_config_non_pickleable() -> None:
+    tool = FooBaseNonPickleable()
+
+    args = {"bar": threading.Lock()}
+    tool_call = {
+        "name": tool.name,
+        "args": args,
+        "id": "abc123",
+        "type": "tool_call",
+    }
+    _ = tool.invoke(tool_call, {"configurable": {"foo": "not-bar"}})
+    assert tool_call["args"] == args
 
 
 @pytest.mark.parametrize(

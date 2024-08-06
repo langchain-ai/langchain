@@ -667,6 +667,7 @@ def test_schema_complex_seq() -> None:
     prompt2 = ChatPromptTemplate.from_template(
         "what country is the city {city} in? respond in {language}"
     )
+
     model = FakeListChatModel(responses=[""])
 
     chain1: Runnable = RunnableSequence(
@@ -691,6 +692,7 @@ def test_schema_complex_seq() -> None:
         },
         "required": ["person", "language"],
     }
+
     assert _schema(chain2.output_schema) == {
         "title": "StrOutputParserOutput",
         "type": "string",
@@ -1319,7 +1321,11 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
 
     assert (
         fakew.with_config(tags=["a-tag"]).invoke(
-            "hello", {"configurable": {"hello": "there"}, "metadata": {"bye": "now"}}
+            "hello",
+            {
+                "configurable": {"hello": "there", "__secret_key": "nahnah"},
+                "metadata": {"bye": "now"},
+            },
         )
         == 5
     )
@@ -1329,7 +1335,7 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             tags=["a-tag"],
             callbacks=None,
             recursion_limit=25,
-            configurable={"hello": "there"},
+            configurable={"hello": "there", "__secret_key": "nahnah"},
             metadata={"hello": "there", "bye": "now"},
         ),
     )
@@ -1342,7 +1348,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     assert fake.with_config(tags=["a-tag"]).invoke("hello") == 5
     assert spy.call_args_list == [
-        mocker.call("hello", dict(tags=["a-tag"])),
+        mocker.call(
+            "hello",
+            dict(tags=["a-tag"], metadata={}, configurable={}),
+        ),
     ]
     spy.reset_mock()
 
@@ -1371,7 +1380,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
         )
     ] == [5]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(tags=["a-tag"], metadata={"key": "value"})),
+        mocker.call(
+            "hello",
+            dict(tags=["a-tag"], metadata={"key": "value"}, configurable={}),
+        ),
     ]
     spy.reset_mock()
 
@@ -1446,7 +1458,10 @@ async def test_with_config(mocker: MockerFixture) -> None:
         == 5
     )
     assert spy.call_args_list == [
-        mocker.call("hello", dict(callbacks=[handler], metadata={"a": "b"})),
+        mocker.call(
+            "hello",
+            dict(callbacks=[handler], metadata={"a": "b"}, configurable={}, tags=[]),
+        ),
     ]
     spy.reset_mock()
 
@@ -1454,7 +1469,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
         part async for part in fake.with_config(metadata={"a": "b"}).astream("hello")
     ] == [5]
     assert spy.call_args_list == [
-        mocker.call("hello", dict(metadata={"a": "b"})),
+        mocker.call("hello", dict(metadata={"a": "b"}, tags=[], configurable={})),
     ]
     spy.reset_mock()
 
@@ -1472,6 +1487,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                configurable={},
             ),
         ),
         mocker.call(
@@ -1481,6 +1497,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                configurable={},
             ),
         ),
     ]
@@ -1506,6 +1523,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
+            configurable={},
         ),
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
@@ -1516,6 +1534,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
+            configurable={},
         ),
     )
 
@@ -1586,6 +1605,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
             tags=[],
             callbacks=None,
             recursion_limit=25,
+            configurable={},
         )
 
 
@@ -3211,7 +3231,11 @@ def test_map_stream() -> None:
         else:
             final_value += chunk
 
-    if not (
+    assert streamed_chunks[0] in [
+        {"llm": "i"},
+        {"chat": AIMessageChunk(content="i")},
+    ]
+    if not ( # TODO(Rewrite properly) statement above
         streamed_chunks[0] == {"llm": "i"}
         or {"chat": _AnyIdAIMessageChunk(content="i")}
     ):
@@ -5436,7 +5460,7 @@ def test_listeners() -> None:
 
     shared_state = {}
     value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
-    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "two"}, "outputs": {"name": "two"}}
 
     def on_start(run: Run) -> None:
         shared_state[run.id] = {"inputs": run.inputs}
@@ -5466,7 +5490,7 @@ async def test_listeners_async() -> None:
 
     shared_state = {}
     value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
-    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "two"}, "outputs": {"name": "two"}}
 
     def on_start(run: Run) -> None:
         shared_state[run.id] = {"inputs": run.inputs}
