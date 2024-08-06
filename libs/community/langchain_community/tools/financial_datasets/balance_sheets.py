@@ -15,13 +15,12 @@ class BalanceSheetsSchema(BaseModel):
     )
     period: str = Field(
         description="The period of the balance sheets. "
-                    "Possible values are: "
-                    "annual, quarterly, ttm. "
-                    "Default is 'annual'.",
+        "Possible values are: "
+        "annual, quarterly, ttm. "
+        "Default is 'annual'.",
     )
     limit: int = Field(
-        description="The number of balance sheets to return. "
-                    "Default is 10.",
+        description="The number of balance sheets to return. " "Default is 10.",
     )
 
 

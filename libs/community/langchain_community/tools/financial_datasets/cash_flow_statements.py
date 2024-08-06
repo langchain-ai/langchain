@@ -15,13 +15,12 @@ class CashFlowStatementsSchema(BaseModel):
     )
     period: str = Field(
         description="The period of the cash flow statement. "
-                    "Possible values are: "
-                    "annual, quarterly, ttm. "
-                    "Default is 'annual'.",
+        "Possible values are: "
+        "annual, quarterly, ttm. "
+        "Default is 'annual'.",
     )
     limit: int = Field(
-        description="The number of cash flow statements to return. "
-                    "Default is 10.",
+        description="The number of cash flow statements to return. " "Default is 10.",
     )
 
 

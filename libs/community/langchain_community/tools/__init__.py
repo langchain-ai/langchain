@@ -520,7 +520,7 @@ _module_lookup = {
     "BingSearchResults": "langchain_community.tools.bing_search.tool",
     "BingSearchRun": "langchain_community.tools.bing_search.tool",
     "BraveSearch": "langchain_community.tools.brave_search.tool",
-    "CashFlowStatements": "langchain_community.tools.financial_datasets.cash_flow_statements", # noqa: E501
+    "CashFlowStatements": "langchain_community.tools.financial_datasets.cash_flow_statements",  # noqa: E501
     "ClickTool": "langchain_community.tools.playwright",
     "CogniswitchKnowledgeRequest": "langchain_community.tools.cogniswitch.tool",
     "CogniswitchKnowledgeSourceFile": "langchain_community.tools.cogniswitch.tool",
@@ -561,7 +561,7 @@ _module_lookup = {
     "GoogleSerperRun": "langchain_community.tools.google_serper.tool",
     "HumanInputRun": "langchain_community.tools.human.tool",
     "IFTTTWebhook": "langchain_community.tools.ifttt",
-    "IncomeStatements": "langchain_community.tools.financial_datasets.income_statements", # noqa: E501
+    "IncomeStatements": "langchain_community.tools.financial_datasets.income_statements",  # noqa: E501
     "InfoPowerBITool": "langchain_community.tools.powerbi.tool",
     "InfoSQLDatabaseTool": "langchain_community.tools.sql_database.tool",
     "InfoSparkSQLTool": "langchain_community.tools.spark_sql.tool",
