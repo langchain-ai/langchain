@@ -86,7 +86,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         return values
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
         extra = Extra.forbid
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:

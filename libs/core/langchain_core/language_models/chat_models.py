@@ -236,7 +236,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         return values
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     # --- Runnable methods ---
 

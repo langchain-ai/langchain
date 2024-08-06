@@ -33,7 +33,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
     Either this or examples should be provided."""
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
         extra = Extra.forbid
 
     @root_validator(pre=True)
@@ -159,7 +159,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         return values
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
         extra = Extra.forbid
 
     def format(self, **kwargs: Any) -> str:
@@ -366,7 +366,7 @@ class FewShotChatMessagePromptTemplate(
         return False
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
         extra = Extra.forbid
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:

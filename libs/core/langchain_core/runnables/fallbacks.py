@@ -106,7 +106,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         must accept a dictionary as input."""
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     @property
     def InputType(self) -> Type[Input]:

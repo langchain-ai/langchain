@@ -147,7 +147,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )  # type: ignore[call-arg]
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

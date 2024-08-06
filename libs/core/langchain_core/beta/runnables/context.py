@@ -230,7 +230,7 @@ class ContextSet(RunnableSerializable):
     keys: Mapping[str, Optional[Runnable]]
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     def __init__(
         self,

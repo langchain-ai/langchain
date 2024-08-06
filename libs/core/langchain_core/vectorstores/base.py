@@ -1122,7 +1122,7 @@ class VectorStoreRetriever(BaseRetriever):
     )
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     @root_validator(pre=True)
     def validate_search_type(cls, values: Dict) -> Dict:

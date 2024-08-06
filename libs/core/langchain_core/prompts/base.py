@@ -100,7 +100,7 @@ class BasePromptTemplate(
         return True
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     @property
     def OutputType(self) -> Any:

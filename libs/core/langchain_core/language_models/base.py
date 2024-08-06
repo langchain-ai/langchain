@@ -113,7 +113,7 @@ class BaseLanguageModel(
     """Optional encoder to use for counting tokens."""
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     @validator("verbose", pre=True, always=True, allow_reuse=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:

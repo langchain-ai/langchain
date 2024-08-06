@@ -443,7 +443,7 @@ class ChildTool(BaseTool):
     """
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     @property
     def is_single_input(self) -> bool:

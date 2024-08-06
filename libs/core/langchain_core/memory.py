@@ -48,7 +48,7 @@ class BaseMemory(Serializable, ABC):
     """  # noqa: E501
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     @property
     @abstractmethod

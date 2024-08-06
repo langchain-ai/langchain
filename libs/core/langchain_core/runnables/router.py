@@ -84,7 +84,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         )
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

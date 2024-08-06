@@ -112,7 +112,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """  # noqa: E501
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False

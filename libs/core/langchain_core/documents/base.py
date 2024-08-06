@@ -112,7 +112,7 @@ class Blob(BaseMedia):
     """Location where the original content was found."""
 
     class Config:
-        artbirary_types_allowed = True
+        arbitrary_types_allowed = True
         frozen = True
 
     @property
