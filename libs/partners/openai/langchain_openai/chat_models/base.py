@@ -1295,6 +1295,10 @@ class BaseChatOpenAI(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
+        if strict is not None and method != "function_calling":
+            raise ValueError(
+                "Argument `strict` is only supported for `method`='function_calling'"
+            )
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
