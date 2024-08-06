@@ -37,7 +37,7 @@ def push(
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
     parent_commit_hash: Optional[str] = None,
-    new_repo_is_public: Optional[bool] = None,
+    new_repo_is_public: bool = False,
     new_repo_description: Optional[str] = None,
     readme: Optional[str] = None,
     tags: Optional[Sequence[str]] = None,
