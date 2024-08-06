@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import functools
 import inspect
 import threading
 from abc import ABC, abstractmethod
@@ -68,7 +69,6 @@ from langchain_core.runnables.utils import (
     Input,
     Output,
     accepts_config,
-    accepts_context,
     accepts_run_manager,
     asyncio_accepts_context,
     create_model,
