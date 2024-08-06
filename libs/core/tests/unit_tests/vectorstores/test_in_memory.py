@@ -196,3 +196,22 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+async def test_inmemory_as_retriever() -> None:
+    """Test InMemoryVectorStore as retriever and search with score"""
+    store = await InMemoryVectorStore.afrom_texts(
+        ["foo", "bar", "baz"], DeterministicFakeEmbedding(size=3)
+    )
+
+    retriever = store.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"k": 2, "score_threshold": 0.0001},
+    )
+
+    output = retriever.invoke("foo")
+    assert output[0].page_content == "foo"
+    assert output[0].metadata["similarity_score"] is not None
+    assert output[1].metadata["similarity_score"] is not None
+    assert output[0].metadata["similarity_score"] > output[1].metadata["similarity_score"]
+

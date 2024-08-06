@@ -1141,6 +1141,8 @@ class VectorStore(ABC):
                     the Retriever should perform.
                     Can be "similarity" (default), "mmr", or
                     "similarity_score_threshold".
+                    For type "similarity_score_threshold", the similarity_score
+                    will be saved in metadata of document with key "similarity_score".
                 search_kwargs (Optional[Dict]): Keyword arguments to pass to the
                     search function. Can include things like:
                         k: Amount of documents to return (Default: 4)
@@ -1252,7 +1254,10 @@ class VectorStoreRetriever(BaseRetriever):
                     query, **self.search_kwargs
                 )
             )
-            docs = [doc for doc, _ in docs_and_similarities]
+            docs = []
+            for doc, score in docs_and_similarities:
+                doc.metadata["similarity_score"] = score
+                docs.append(doc)
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
                 query, **self.search_kwargs
