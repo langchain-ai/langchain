@@ -251,7 +251,7 @@ class MockCollection(Collection):
         params = pipeline[0]["$vectorSearch"]
         embedding = params["queryVector"]
         # Assumes MongoDBAtlasSemanticCache.LLM == "llm_string"
-        llm_string = params["filter"][0][MongoDBAtlasSemanticCache.LLM]["$eq"]
+        llm_string = params["filter"][MongoDBAtlasSemanticCache.LLM]["$eq"]
 
         acc = []
         for document in self._data:
