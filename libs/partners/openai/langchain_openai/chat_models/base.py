@@ -1016,7 +1016,9 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
@@ -1026,7 +1028,9 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
@@ -1035,7 +1039,9 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
@@ -1283,6 +1289,9 @@ class BaseChatOpenAI(BaseChatModel):
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
+        elif method == "json_schema":
+            llm = self.bind(response_format={"type": "json_schema"})
+            ...
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
