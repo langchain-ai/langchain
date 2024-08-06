@@ -1128,7 +1128,16 @@ class BaseChatOpenAI(BaseChatModel):
                 - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
                 - ``"parsing_error"``: Optional[BaseException]
 
-        Example: schema=Pydantic class, method="function_calling", include_raw=False:
+        Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True:
+            .. note:: Valid schemas when using ``strict`` = True
+
+                OpenAI has a number of restrictions on what types of schemas can be
+                provided if ``strict`` = True. When using Pydantic, our model cannot
+                specify any Field metadata (like min/max constraints) and fields cannot
+                have default values.
+
+                See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+
             .. code-block:: python
 
                 from typing import Optional
@@ -1141,16 +1150,15 @@ class BaseChatOpenAI(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    # If we provide default values and/or descriptions for fields, these will be passed
-                    # to the model. This is an important part of improving a model's ability to
-                    # correctly return structured outputs.
                     justification: Optional[str] = Field(
-                        default=None, description="A justification for the answer."
+                        default=..., description="A justification for the answer."
                     )
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, strict=True
+                )
 
                 structured_llm.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
@@ -1175,7 +1183,7 @@ class BaseChatOpenAI(BaseChatModel):
                     justification: str
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -1208,7 +1216,7 @@ class BaseChatOpenAI(BaseChatModel):
                     ]
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -1237,7 +1245,7 @@ class BaseChatOpenAI(BaseChatModel):
                    }
                }
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
                 structured_llm = llm.with_structured_output(oai_schema)
 
                 structured_llm.invoke(
@@ -1258,7 +1266,7 @@ class BaseChatOpenAI(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
