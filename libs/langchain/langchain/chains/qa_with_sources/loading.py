@@ -156,7 +156,7 @@ def _load_refine_chain(
     since="0.2.13",
     removal="1.0",
     message=(
-        "This class is deprecated. Refer to this guide on retrieval and question "
+        "This function is deprecated. Refer to this guide on retrieval and question "
         "answering with sources: "
         "https://python.langchain.com/v0.2/docs/how_to/qa_sources/"
         "\nSee also the following migration guides for replacements "
