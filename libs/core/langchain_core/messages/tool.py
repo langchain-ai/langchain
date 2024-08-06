@@ -290,3 +290,9 @@ def default_tool_chunk_parser(raw_tool_calls: List[dict]) -> List[ToolCallChunk]
         )
         tool_call_chunks.append(parsed)
     return tool_call_chunks
+
+
+def _merge_status(
+    left: Literal["success", "error"], right: Literal["success", "error"]
+) -> Literal["success", "error"]:
+    return "error" if "error" in (left, right) else "success"

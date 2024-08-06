@@ -613,3 +613,29 @@ class Graph:
             background_color=background_color,
             padding=padding,
         )
+
+
+def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+    """Find the single node that is not a target of any edge.
+    Exclude nodes/sources with ids in the exclude list.
+    If there is no such node, or there are multiple, return None.
+    When drawing the graph, this node would be the origin."""
+    targets = {edge.target for edge in graph.edges if edge.source not in exclude}
+    found: List[Node] = []
+    for node in graph.nodes.values():
+        if node.id not in exclude and node.id not in targets:
+            found.append(node)
+    return found[0] if len(found) == 1 else None
+
+
+def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+    """Find the single node that is not a source of any edge.
+    Exclude nodes/targets with ids in the exclude list.
+    If there is no such node, or there are multiple, return None.
+    When drawing the graph, this node would be the destination."""
+    sources = {edge.source for edge in graph.edges if edge.target not in exclude}
+    found: List[Node] = []
+    for node in graph.nodes.values():
+        if node.id not in exclude and node.id not in sources:
+            found.append(node)
+    return found[0] if len(found) == 1 else None
