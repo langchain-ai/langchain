@@ -1554,7 +1554,10 @@ class ChatOpenAI(BaseChatOpenAI):
                 )
 
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            llm_with_tools = llm.bind_tools(
+                [GetWeather, GetPopulation]
+                # strict = True  # enforce tool args schema is respected
+            )
             ai_msg = llm_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?"
             )
