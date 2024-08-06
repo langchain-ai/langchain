@@ -174,9 +174,7 @@ class PngDrawer:
             graph: The graph to draw.
         """
         for start, end, data, cond in graph.edges:
-            self.add_edge(
-                viz, start, end, str(data) if data is not None else None, cond
-            )
+            self.add_edge(viz, start, end, str(data), cond)
 
     def update_styles(self, viz: Any, graph: Graph) -> None:
         """Update the styles of the entrypoint and END nodes.

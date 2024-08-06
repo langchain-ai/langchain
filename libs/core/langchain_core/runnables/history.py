@@ -13,9 +13,10 @@ from typing import (
     Union,
 )
 
+from pydantic import BaseModel, RootModel
+
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableBranch
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.passthrough import RunnablePassthrough
@@ -368,28 +369,25 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        super_schema = super().get_input_schema(config)
-        if super_schema.__custom_root_type__ or not super_schema.schema().get(
-            "properties"
-        ):
-            from langchain_core.messages import BaseMessage
+        # TODO(0.3): Verify that this change was correct
+        # Not enough tests and unclear on why the previous implementation was
+        # necessary.
+        from langchain_core.messages import BaseMessage
 
-            fields: Dict = {}
-            if self.input_messages_key and self.history_messages_key:
-                fields[self.input_messages_key] = (
-                    Union[str, BaseMessage, Sequence[BaseMessage]],
-                    ...,
-                )
-            elif self.input_messages_key:
-                fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
-            else:
-                fields["__root__"] = (Sequence[BaseMessage], ...)
-            return create_model(  # type: ignore[call-overload]
-                "RunnableWithChatHistoryInput",
-                **fields,
+        fields: Dict = {}
+        if self.input_messages_key and self.history_messages_key:
+            fields[self.input_messages_key] = (
+                Union[str, BaseMessage, Sequence[BaseMessage]],
+                ...,
             )
+        elif self.input_messages_key:
+            fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
         else:
-            return super_schema
+            fields["__root__"] = (Sequence[BaseMessage], ...)
+        return create_model(  # type: ignore[call-overload]
+            "RunnableWithChatHistoryInput",
+            **fields,
+        )
 
     def _is_not_async(self, *args: Sequence[Any], **kwargs: Dict[str, Any]) -> bool:
         return False
@@ -537,9 +535,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         configurable = config.get("configurable", {})
 
         missing_keys = set(expected_keys) - set(configurable.keys())
-        parameter_names = _get_parameter_names(self.get_session_history)
 
-        if missing_keys and parameter_names:
+        if missing_keys:
             example_input = {self.input_messages_key: "foo"}
             example_configurable = {
                 missing_key: "[your-value-here]" for missing_key in missing_keys
@@ -552,16 +549,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 f"e.g., chain.invoke({example_input}, {example_config})"
             )
 
+        parameter_names = _get_parameter_names(self.get_session_history)
+
         if len(expected_keys) == 1:
-            if parameter_names:
-                # If arity = 1, then invoke function by positional arguments
-                message_history = self.get_session_history(
-                    configurable[expected_keys[0]]
-                )
-            else:
-                if not config:
-                    config["configurable"] = {}
-                message_history = self.get_session_history()
+            # If arity = 1, then invoke function by positional arguments
+            message_history = self.get_session_history(configurable[expected_keys[0]])
         else:
             # otherwise verify that names of keys patch and invoke by named arguments
             if set(expected_keys) != set(parameter_names):

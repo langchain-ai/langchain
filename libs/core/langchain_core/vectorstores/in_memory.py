@@ -8,6 +8,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -31,14 +32,13 @@ class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary.
 
     Uses numpy to compute cosine similarity for search.
+
+    Args:
+        embedding:  embedding function to use.
     """
 
     def __init__(self, embedding: Embeddings) -> None:
-        """Initialize with the given embedding function.
-
-        Args:
-            embedding: embedding function to use.
-        """
+        """Initialize with the given embedding function."""
         # TODO: would be nice to change to
         # Dict[str, Document] at some point (will be a breaking change)
         self.store: Dict[str, Dict[str, Any]] = {}
@@ -73,36 +73,8 @@ class InMemoryVectorStore(VectorStore):
             "failed": [],
         }
 
-    async def aupsert(
-        self, items: Sequence[Document], /, **kwargs: Any
-    ) -> UpsertResponse:
-        vectors = await self.embedding.aembed_documents(
-            [item.page_content for item in items]
-        )
-        ids = []
-        for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
-            ids.append(doc_id)
-            self.store[doc_id] = {
-                "id": doc_id,
-                "vector": vector,
-                "text": item.page_content,
-                "metadata": item.metadata,
-            }
-        return {
-            "succeeded": ids,
-            "failed": [],
-        }
-
     def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
-        """Get documents by their ids.
-
-        Args:
-            ids: The ids of the documents to get.
-
-        Returns:
-            A list of Document objects.
-        """
+        """Get documents by their ids."""
         documents = []
 
         for doc_id in ids:
@@ -118,15 +90,15 @@ class InMemoryVectorStore(VectorStore):
         return documents
 
     async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
-        """Async get documents by their ids.
-
-        Args:
-            ids: The ids of the documents to get.
-
-        Returns:
-            A list of Document objects.
-        """
         return self.get_by_ids(ids)
+
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        return self.add_texts(texts, metadatas, **kwargs)
 
     def _similarity_search_with_score_by_vector(
         self,
@@ -184,13 +156,7 @@ class InMemoryVectorStore(VectorStore):
     async def asimilarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        embedding = await self.embedding.aembed_query(query)
-        docs = self.similarity_search_with_score_by_vector(
-            embedding,
-            k,
-            **kwargs,
-        )
-        return docs
+        return self.similarity_search_with_score(query, k, **kwargs)
 
     def similarity_search_by_vector(
         self,
@@ -218,10 +184,7 @@ class InMemoryVectorStore(VectorStore):
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        return [
-            doc
-            for doc, _ in await self.asimilarity_search_with_score(query, k, **kwargs)
-        ]
+        return self.similarity_search(query, k, **kwargs)
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -270,23 +233,6 @@ class InMemoryVectorStore(VectorStore):
             **kwargs,
         )
 
-    async def amax_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        embedding_vector = await self.embedding.aembed_query(query)
-        return self.max_marginal_relevance_search_by_vector(
-            embedding_vector,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult,
-            **kwargs,
-        )
-
     @classmethod
     def from_texts(
         cls,
@@ -309,26 +255,12 @@ class InMemoryVectorStore(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "InMemoryVectorStore":
-        store = cls(
-            embedding=embedding,
-        )
-        await store.aadd_texts(texts=texts, metadatas=metadatas, **kwargs)
-        return store
+        return cls.from_texts(texts, embedding, metadatas, **kwargs)
 
     @classmethod
     def load(
         cls, path: str, embedding: Embeddings, **kwargs: Any
     ) -> "InMemoryVectorStore":
-        """Load a vector store from a file.
-
-        Args:
-            path: The path to load the vector store from.
-            embedding: The embedding to use.
-            kwargs: Additional arguments to pass to the constructor.
-
-        Returns:
-            A VectorStore object.
-        """
         _path: Path = Path(path)
         with _path.open("r") as f:
             store = load(json.load(f))
@@ -337,11 +269,6 @@ class InMemoryVectorStore(VectorStore):
         return vectorstore
 
     def dump(self, path: str) -> None:
-        """Dump the vector store to a file.
-
-        Args:
-            path: The path to dump the vector store to.
-        """
         _path: Path = Path(path)
         _path.parent.mkdir(exist_ok=True, parents=True)
         with _path.open("w") as f:

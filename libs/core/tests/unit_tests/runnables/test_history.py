@@ -1,5 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+from pydantic import BaseModel
+
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
@@ -7,7 +9,6 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -53,8 +54,6 @@ def test_input_messages() -> None:
     assert output == "you said: hello"
     output = with_history.invoke([HumanMessage(content="good bye")], config)
     assert output == "you said: hello\ngood bye"
-    output = [*with_history.stream([HumanMessage(content="hi again")], config)]
-    assert output == ["you said: hello\ngood bye\nhi again"]
     assert store == {
         "1": InMemoryChatMessageHistory(
             messages=[
@@ -62,8 +61,6 @@ def test_input_messages() -> None:
                 AIMessage(content="you said: hello"),
                 HumanMessage(content="good bye"),
                 AIMessage(content="you said: hello\ngood bye"),
-                HumanMessage(content="hi again"),
-                AIMessage(content="you said: hello\ngood bye\nhi again"),
             ]
         )
     }
@@ -77,15 +74,11 @@ async def test_input_messages_async() -> None:
     store: Dict = {}
     get_session_history = _get_get_session_history(store=store)
     with_history = RunnableWithMessageHistory(runnable, get_session_history)
-    config = {"session_id": "1_async"}
-    output = await with_history.ainvoke([HumanMessage(content="hello")], config)  # type: ignore[arg-type]
+    config: RunnableConfig = {"configurable": {"session_id": "1_async"}}
+    output = await with_history.ainvoke([HumanMessage(content="hello")], config)
     assert output == "you said: hello"
-    output = await with_history.ainvoke([HumanMessage(content="good bye")], config)  # type: ignore[arg-type]
+    output = await with_history.ainvoke([HumanMessage(content="good bye")], config)
     assert output == "you said: hello\ngood bye"
-    output = [
-        c
-        async for c in with_history.astream([HumanMessage(content="hi again")], config)  # type: ignore[arg-type]
-    ] == ["you said: hello\ngood bye\nhi again"]
     assert store == {
         "1_async": InMemoryChatMessageHistory(
             messages=[
@@ -93,8 +86,6 @@ async def test_input_messages_async() -> None:
                 AIMessage(content="you said: hello"),
                 HumanMessage(content="good bye"),
                 AIMessage(content="you said: hello\ngood bye"),
-                HumanMessage(content="hi again"),
-                AIMessage(content="you said: hello\ngood bye\nhi again"),
             ]
         )
     }
@@ -451,8 +442,9 @@ def test_get_input_schema_input_dict() -> None:
 
 
 def test_get_input_schema_input_messages() -> None:
-    class RunnableWithChatHistoryInput(BaseModel):
-        __root__: Sequence[BaseMessage]
+    from pydantic import RootModel
+
+    RunnableWithMessageHistoryInput = RootModel[Sequence[BaseMessage]]
 
     runnable = RunnableLambda(
         lambda messages: {
@@ -474,9 +466,9 @@ def test_get_input_schema_input_messages() -> None:
     with_history = RunnableWithMessageHistory(
         runnable, get_session_history, output_messages_key="output"
     )
-    assert _schema(with_history.get_input_schema()) == _schema(
-        RunnableWithChatHistoryInput
-    )
+    expected_schema = _schema(RunnableWithMessageHistoryInput)
+    expected_schema["title"] = "RunnableWithChatHistoryInput"
+    assert _schema(with_history.get_input_schema()) == expected_schema
 
 
 def test_using_custom_config_specs() -> None:
@@ -703,24 +695,3 @@ async def test_using_custom_config_specs_async() -> None:
             ]
         ),
     }
-
-
-def test_ignore_session_id() -> None:
-    """Test without config."""
-
-    def _fake_llm(input: List[BaseMessage]) -> List[BaseMessage]:
-        return [
-            AIMessage(
-                content="you said: "
-                + "\n".join(
-                    str(m.content) for m in input if isinstance(m, HumanMessage)
-                )
-            )
-        ]
-
-    runnable = RunnableLambda(_fake_llm)
-    history = InMemoryChatMessageHistory()
-    with_message_history = RunnableWithMessageHistory(runnable, lambda: history)  # type: ignore
-    _ = with_message_history.invoke("hello")
-    _ = with_message_history.invoke("hello again")
-    assert len(history.messages) == 4

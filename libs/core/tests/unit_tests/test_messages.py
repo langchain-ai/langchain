@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Type, Union
+from typing import List, Type
 
 import pytest
 
@@ -18,7 +18,6 @@ from langchain_core.messages import (
     ToolMessage,
     convert_to_messages,
     get_buffer_string,
-    merge_content,
     message_chunk_to_message,
     message_to_dict,
     messages_from_dict,
@@ -874,9 +873,7 @@ def test_merge_tool_calls() -> None:
 
 
 def test_tool_message_serdes() -> None:
-    message = ToolMessage(
-        "foo", artifact={"bar": {"baz": 123}}, tool_call_id="1", status="error"
-    )
+    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
     ser_message = {
         "lc": 1,
         "type": "constructor",
@@ -886,7 +883,6 @@ def test_tool_message_serdes() -> None:
             "type": "tool",
             "tool_call_id": "1",
             "artifact": {"bar": {"baz": 123}},
-            "status": "error",
         },
     }
     assert dumpd(message) == ser_message
@@ -914,7 +910,6 @@ def test_tool_message_ser_non_serializable() -> None:
                 "id": ["tests", "unit_tests", "test_messages", "BadObject"],
                 "repr": repr(bad_obj),
             },
-            "status": "success",
         },
     }
     assert dumpd(message) == ser_message
@@ -935,7 +930,6 @@ def test_tool_message_to_dict() -> None:
             "name": None,
             "id": None,
             "tool_call_id": "1",
-            "status": "success",
         },
     }
     actual = message_to_dict(message)
@@ -956,27 +950,3 @@ def test_tool_message_str() -> None:
     expected = "content='foo' tool_call_id='1' artifact={'bar': {'baz': 123}}"
     actual = str(message)
     assert expected == actual
-
-
-@pytest.mark.parametrize(
-    ["first", "others", "expected"],
-    [
-        ("", [""], ""),
-        ("", [[]], [""]),
-        ([], [""], []),
-        ([], [[]], []),
-        ("foo", [""], "foo"),
-        ("foo", [[]], ["foo"]),
-        (["foo"], [""], ["foo"]),
-        (["foo"], [[]], ["foo"]),
-        ("foo", ["bar"], "foobar"),
-        ("foo", [["bar"]], ["foo", "bar"]),
-        (["foo"], ["bar"], ["foobar"]),
-        (["foo"], [["bar"]], ["foo", "bar"]),
-    ],
-)
-def test_merge_content(
-    first: Union[list, str], others: list, expected: Union[list, str]
-) -> None:
-    actual = merge_content(first, *others)
-    assert actual == expected

@@ -1,9 +1,11 @@
 from typing import Any, Dict, List, Tuple
+from typing import Optional as Optional
+
+from pydantic import root_validator
 
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import BaseChatPromptTemplate
-from langchain_core.pydantic_v1 import root_validator
 
 
 def _get_inputs(inputs: dict, input_variables: List[str]) -> dict:
@@ -106,3 +108,6 @@ class PipelinePromptTemplate(BasePromptTemplate):
     @property
     def _prompt_type(self) -> str:
         raise ValueError
+
+
+PipelinePromptTemplate.model_rebuild()

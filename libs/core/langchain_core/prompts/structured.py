@@ -12,6 +12,8 @@ from typing import (
     Union,
 )
 
+from pydantic import BaseModel
+
 from langchain_core._api.beta_decorator import beta
 from langchain_core.language_models.base import BaseLanguageModel
 from langchain_core.prompts.chat import (
@@ -22,7 +24,6 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
     _convert_to_message,
 )
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -79,7 +80,7 @@ class StructuredPrompt(ChatPromptTemplate):
                   A message can be represented using the following formats:
                   (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
                   (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (5) a string which is
+                  (4) 2-tuple of (message class, template), (4) a string which is
                   shorthand for ("human", template); e.g., "{user_input}"
             schema: a dictionary representation of function call, or a Pydantic model.
 

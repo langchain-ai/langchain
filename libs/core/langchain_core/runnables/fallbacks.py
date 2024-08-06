@@ -18,8 +18,9 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.load.dump import dumpd
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -104,9 +105,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         part of the input under the specified key. If None, exceptions
         will not be passed to fallbacks. If used, the base Runnable and its fallbacks 
         must accept a dictionary as input."""
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def InputType(self) -> Type[Input]:

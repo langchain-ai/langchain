@@ -21,7 +21,8 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, RootModel
+
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -227,7 +228,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             A Runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
-        return RunnableAssign(RunnableParallel(kwargs))
+        return RunnableAssign(RunnableParallel[Dict[str, Any]](kwargs))
 
     def invoke(
         self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -419,7 +420,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
-        if not map_input_schema.__custom_root_type__:
+        if not issubclass(map_input_schema, RootModel):
             # ie. it's a dict
             return map_input_schema
 
@@ -430,9 +431,8 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     ) -> Type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
         map_output_schema = self.mapper.get_output_schema(config)
-        if (
-            not map_input_schema.__custom_root_type__
-            and not map_output_schema.__custom_root_type__
+        if not issubclass(map_input_schema, RootModel) and not issubclass(
+            map_output_schema, RootModel
         ):
             # ie. both are dicts
             return create_model(  # type: ignore[call-overload]
@@ -443,7 +443,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
                     for k, v in s.__fields__.items()
                 },
             )
-        elif not map_output_schema.__custom_root_type__:
+        elif not issubclass(map_output_schema, RootModel):
             # ie. only map output is a dict
             # ie. input type is either unknown or inferred incorrectly
             return map_output_schema
