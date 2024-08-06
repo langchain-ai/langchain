@@ -25,7 +25,7 @@ disallow_untyped_defs = "True"
 python = ">=3.8.1,<4.0"
 gigachain-core = "^0.2.4"
 gigachain-text-splitters = "^0.2.0"
-ai21 = "^2.7.0"
+ai21 = "~2.7.0"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I",]
