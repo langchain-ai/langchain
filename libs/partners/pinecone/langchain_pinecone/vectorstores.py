@@ -50,7 +50,7 @@ class PineconeVectorStore(VectorStore):
     Key init args — client params:
         index: Optional[Index]
             Index to use.
-        
+
 
     # TODO: Replace with relevant init params.
     Instantiate:

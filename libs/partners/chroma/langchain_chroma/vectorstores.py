@@ -261,7 +261,7 @@ class Chroma(VectorStore):
 
             [Document(metadata={'baz': 'bar'}, page_content='thud')]
 
-    """ # noqa: E501
+    """  # noqa: E501
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
