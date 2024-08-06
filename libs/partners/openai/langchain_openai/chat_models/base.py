@@ -980,7 +980,8 @@ class BaseChatOpenAI(BaseChatModel):
                     - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
                     - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
                     - ``False`` or ``None``: no effect, default OpenAI behavior.
-            strict:
+            strict: If True, model output is guaranteed to exactly match the JSON Schema
+                provided in the tool definition.
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """  # noqa: E501
