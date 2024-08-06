@@ -374,6 +374,8 @@ def convert_to_openai_function(
 
 def convert_to_openai_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    *,
+    strict: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI tool.
 
@@ -382,6 +384,8 @@ def convert_to_openai_tool(
             BaseTool. If a dictionary is passed in, it is assumed to already be a valid
             OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
             'description' keys specified.
+        strict: If True, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition.
 
     Returns:
         A dict version of the passed in tool which is compatible with the
@@ -389,8 +393,11 @@ def convert_to_openai_tool(
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
-    function = convert_to_openai_function(tool)
-    return {"type": "function", "function": function}
+    oai_function = convert_to_openai_function(tool)
+    oai_tool = {"type": "function", "function": oai_function}
+    if strict is not None:
+        oai_tool["strict"] = strict
+    return oai_tool
 
 
 def tool_example_to_messages(

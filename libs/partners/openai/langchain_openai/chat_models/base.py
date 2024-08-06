@@ -370,6 +370,8 @@ class BaseChatOpenAI(BaseChatModel):
     making requests to OpenAI compatible APIs, such as vLLM."""
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
+    supports_strict_tool_calling: Optional[bool] = None
+    """Whether the model supports the 'strict' argument when passing in tools."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -386,7 +388,7 @@ class BaseChatOpenAI(BaseChatModel):
         )
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -464,6 +466,13 @@ class BaseChatOpenAI(BaseChatModel):
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific
             ).chat.completions
+
+        # Assume only "gpt-..." models support strict tool calling as of 08/06/24.
+        values["supports_strict_tool_calling"] = (
+            values["supports_strict_tool_calling"]
+            if values["supports_strict_tool_calling"] is not None
+            else "gpt-" in values["model_name"]
+        )
         return values
 
     @property
@@ -952,6 +961,7 @@ class BaseChatOpenAI(BaseChatModel):
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
         ] = None,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -970,11 +980,15 @@ class BaseChatOpenAI(BaseChatModel):
                     - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
                     - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
                     - ``False`` or ``None``: no effect, default OpenAI behavior.
+            strict:
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
         """  # noqa: E501
 
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        strict = strict if strict is not None else self.supports_strict_tool_calling
+        formatted_tools = [
+            convert_to_openai_tool(tool, strict=strict) for tool in tools
+        ]
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
@@ -1060,7 +1074,7 @@ class BaseChatOpenAI(BaseChatModel):
                         Added support for TypedDict class.
 
             method:
-                The method for steering model generation, either "function_calling"
+                The method for steering model generation, one of "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If "json_mode" then OpenAI's JSON mode will be
