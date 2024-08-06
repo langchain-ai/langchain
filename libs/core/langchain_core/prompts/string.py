@@ -7,7 +7,7 @@ from abc import ABC
 from string import Formatter
 from typing import Any, Callable, Dict, List, Set, Tuple, Type
 
-from pydantic import BaseModel, create_model
+from langchain_core.pydantic_v1 import BaseModel, create_model
 
 import langchain_core.utils.mustache as mustache
 from langchain_core.prompt_values import PromptValue, StringPromptValue

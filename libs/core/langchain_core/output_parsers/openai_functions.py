@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch  # type: ignore[import]
-from pydantic import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (

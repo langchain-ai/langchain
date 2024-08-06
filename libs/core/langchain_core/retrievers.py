@@ -26,7 +26,7 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from pydantic import ConfigDict
+from langchain_core.pydantic_v1 import ConfigDict
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -113,7 +113,8 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
     """  # noqa: E501
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
 
     _new_arg_supported: bool = False
     _expects_other_args: bool = False

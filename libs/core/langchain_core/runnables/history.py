@@ -13,7 +13,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, RootModel
+from langchain_core.pydantic_v1 import BaseModel, RootModel
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load

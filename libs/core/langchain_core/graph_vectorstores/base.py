@@ -12,7 +12,7 @@ from typing import (
     Optional,
 )
 
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain_core._api import beta
 from langchain_core.callbacks import (

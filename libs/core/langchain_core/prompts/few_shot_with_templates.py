@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import ConfigDict, Extra, root_validator
+from langchain_core.pydantic_v1 import ConfigDict, Extra, root_validator
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
@@ -86,7 +86,9 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             )
         return values
 
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
+        extra = Extra.forbid
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
         if self.examples is not None:

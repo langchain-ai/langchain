@@ -6,7 +6,7 @@ from io import BufferedReader, BytesIO
 from pathlib import PurePath
 from typing import Any, Generator, List, Literal, Mapping, Optional, Union, cast
 
-from pydantic import ConfigDict, Field, root_validator
+from langchain_core.pydantic_v1 import ConfigDict, Field, root_validator
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.utils.pydantic import v1_repr
@@ -111,7 +111,10 @@ class Blob(BaseMedia):
     """
     path: Optional[PathLike] = None
     """Location where the original content was found."""
-    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
+
+    class Config:
+        artbirary_types_allowed = True
+        frozen = True
 
     @property
     def source(self) -> Optional[str]:

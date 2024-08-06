@@ -56,7 +56,7 @@ class HumanMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
 
-HumanMessage.model_rebuild()
+HumanMessage.update_forwad_refs()
 
 
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):

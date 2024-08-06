@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import List, Optional, Union
 
-from pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.outputs.generation import Generation

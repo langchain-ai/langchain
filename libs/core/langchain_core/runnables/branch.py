@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict
+from langchain_core.pydantic_v1 import BaseModel, ConfigDict
 
 from langchain_core.load.dump import dumpd
 from langchain_core.runnables.base import (
@@ -147,7 +147,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             name="RunnableBranch",
         )  # type: ignore[call-arg]
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

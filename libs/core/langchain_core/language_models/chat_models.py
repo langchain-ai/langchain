@@ -23,7 +23,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, ConfigDict, Field, root_validator
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
@@ -236,7 +236,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
 
     # --- Runnable methods ---
 

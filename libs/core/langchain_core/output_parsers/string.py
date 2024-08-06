@@ -26,4 +26,4 @@ class StrOutputParser(BaseTransformOutputParser[str]):
         return text
 
 
-StrOutputParser.model_rebuild()
+StrOutputParser.update_forwad_refs()

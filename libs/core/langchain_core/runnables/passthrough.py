@@ -21,7 +21,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, RootModel
+from langchain_core.pydantic_v1 import BaseModel, RootModel
 
 from langchain_core.runnables.base import (
     Other,

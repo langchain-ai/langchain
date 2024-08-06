@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
-from pydantic import ValidationError
+from langchain_core.pydantic_v1 import ValidationError
 from syrupy import SnapshotAssertion
 
 from langchain_core._api.deprecation import (

@@ -3,7 +3,7 @@
 import re
 from typing import Callable, Dict, List
 
-from pydantic import BaseModel, validator
+from langchain_core.pydantic_v1 import BaseModel, validator
 
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate

@@ -3,7 +3,7 @@ import json
 from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall

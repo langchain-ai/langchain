@@ -123,7 +123,7 @@ class ListOutputParser(BaseTransformOutputParser[List[str]]):
             yield [part]
 
 
-ListOutputParser.model_rebuild()
+ListOutputParser.update_forwad_refs()
 
 
 class CommaSeparatedListOutputParser(ListOutputParser):

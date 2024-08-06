@@ -18,7 +18,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory

@@ -27,7 +27,7 @@ from typing import (
 )
 
 import yaml
-from pydantic import ConfigDict, Field, root_validator
+from langchain_core.pydantic_v1 import ConfigDict, Field, root_validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -296,7 +296,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED]"""
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    class Config:
+        artbirary_types_allowed = True
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:

@@ -22,7 +22,12 @@ from typing import (
     overload,
 )
 
-from pydantic import Field, PositiveInt, SkipValidation, root_validator
+from langchain_core.pydantic_v1 import (
+    Field,
+    PositiveInt,
+    SkipValidation,
+    root_validator,
+)
 
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable

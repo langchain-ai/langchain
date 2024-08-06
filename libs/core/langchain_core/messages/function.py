@@ -32,7 +32,7 @@ class FunctionMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-FunctionMessage.model_rebuild()
+FunctionMessage.update_forwad_refs()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -442,7 +442,7 @@ def test_get_input_schema_input_dict() -> None:
 
 
 def test_get_input_schema_input_messages() -> None:
-    from pydantic import RootModel
+    from langchain_core.pydantic_v1 import RootModel
 
     RunnableWithMessageHistoryInput = RootModel[Sequence[BaseMessage]]
 

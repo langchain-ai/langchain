@@ -18,7 +18,7 @@ from typing import (
     Union,
 )
 
-from pydantic import ConfigDict
+from langchain_core.pydantic_v1 import ConfigDict
 
 from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
@@ -230,7 +230,9 @@ class ContextSet(RunnableSerializable):
     prefix: str = ""
 
     keys: Mapping[str, Optional[Runnable]]
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    class Config:
+        artbirary_types_allowed = True
 
     def __init__(
         self,

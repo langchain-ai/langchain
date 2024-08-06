@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import root_validator
+from langchain_core.pydantic_v1 import root_validator
 from typing_extensions import TypedDict
 
 from langchain_core.messages.base import (
@@ -204,7 +204,7 @@ class AIMessage(BaseMessage):
         return (base.strip() + "\n" + "\n".join(lines)).strip()
 
 
-AIMessage.model_rebuild()
+AIMessage.update_forwad_refs()
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):

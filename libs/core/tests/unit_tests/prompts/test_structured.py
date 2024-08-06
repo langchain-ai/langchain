@@ -3,7 +3,7 @@ from inspect import isclass
 from typing import Any, Dict, Type, Union, cast
 from typing import Optional as Optional
 
-from pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_core.language_models import FakeListChatModel
 from langchain_core.load.dump import dumps
@@ -35,7 +35,7 @@ class FakeStructuredChatModel(FakeListChatModel):
         return "fake-messages-list-chat-model"
 
 
-FakeStructuredChatModel.model_rebuild()
+FakeStructuredChatModel.update_forwad_refs()
 
 
 def test_structured_prompt_pydantic() -> None:

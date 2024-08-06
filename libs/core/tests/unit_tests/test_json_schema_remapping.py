@@ -1,4 +1,4 @@
-from pydantic import BaseModel, v1
+from langchain_core.pydantic_v1 import BaseModel, v1
 
 from tests.unit_tests.pydantic_utils import _schema
 

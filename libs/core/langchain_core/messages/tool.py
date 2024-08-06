@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
@@ -94,7 +94,7 @@ class ToolMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
 
-ToolMessage.model_rebuild()
+ToolMessage.update_forwad_refs()
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):

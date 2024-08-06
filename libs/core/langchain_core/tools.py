@@ -45,7 +45,7 @@ from typing import (
     get_type_hints,
 )
 
-from pydantic import (
+from langchain_core.pydantic_v1 import (
     BaseModel,
     ConfigDict,
     Extra,
@@ -443,7 +443,8 @@ class ChildTool(BaseTool):
     two-tuple corresponding to the (content, artifact) of a ToolMessage.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
 
     @property
     def is_single_input(self) -> bool:

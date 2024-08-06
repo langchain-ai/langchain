@@ -34,7 +34,7 @@ from typing import (
     overload,
 )
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel
+from langchain_core.pydantic_v1 import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import Literal, get_args, get_type_hints
 
 from langchain_core._api import beta_decorator
@@ -2653,7 +2653,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         """
         return True
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
 
     @property
     def InputType(self) -> Type[Input]:
@@ -3382,7 +3383,8 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
 
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
@@ -4673,7 +4675,9 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
     """
 
     bound: Runnable[Input, Output]
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    class Config:
+        artbirary_types_allowed = True
 
     @property
     def InputType(self) -> Any:
@@ -4916,7 +4920,9 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
     """
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    class Config:
+        artbirary_types_allowed = True
 
     def __init__(
         self,
@@ -5252,7 +5258,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             yield item
 
 
-RunnableBindingBase.model_rebuild()
+RunnableBindingBase.update_forwad_refs()
 
 
 class RunnableBinding(RunnableBindingBase[Input, Output]):

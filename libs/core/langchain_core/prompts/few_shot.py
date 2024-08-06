@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, ConfigDict, Extra, root_validator
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -32,7 +32,10 @@ class _FewShotPromptTemplateMixin(BaseModel):
     example_selector: Optional[BaseExampleSelector] = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+
+    class Config:
+        artbirary_types_allowed = True
+        extra = Extra.forbid
 
     @root_validator(pre=True)
     def check_examples_and_selector(cls, values: Dict) -> Dict:
@@ -156,7 +159,9 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
             ]
         return values
 
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
+        extra = Extra.forbid
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.
@@ -361,7 +366,9 @@ class FewShotChatMessagePromptTemplate(
         """Return whether or not the class is serializable."""
         return False
 
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
+        extra = Extra.forbid
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages.

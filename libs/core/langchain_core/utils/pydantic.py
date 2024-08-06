@@ -3,7 +3,7 @@
 from functools import wraps
 from typing import Any, Callable, Dict, Type
 
-from pydantic import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from pydantic_core import core_schema
 

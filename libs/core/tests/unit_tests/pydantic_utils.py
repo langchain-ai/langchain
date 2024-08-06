@@ -1,6 +1,6 @@
 from typing import Any, Type
 
-from pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
 
 # Function to replace allOf with $ref

@@ -13,7 +13,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from pydantic import ConfigDict
+from langchain_core.pydantic_v1 import ConfigDict
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import run_in_executor
@@ -49,7 +49,8 @@ class BaseMemory(Serializable, ABC):
                     pass
     """  # noqa: E501
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    class Config:
+        artbirary_types_allowed = True
 
     @property
     @abstractmethod

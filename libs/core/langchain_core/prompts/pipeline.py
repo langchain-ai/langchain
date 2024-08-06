@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Tuple
 from typing import Optional as Optional
 
-from pydantic import root_validator
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
@@ -110,4 +110,4 @@ class PipelinePromptTemplate(BasePromptTemplate):
         raise ValueError
 
 
-PipelinePromptTemplate.model_rebuild()
+PipelinePromptTemplate.update_forwad_refs()

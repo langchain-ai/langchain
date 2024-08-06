@@ -33,4 +33,4 @@ class RemoveMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-RemoveMessage.model_rebuild()
+RemoveMessage.update_forwad_refs()

@@ -10,7 +10,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from typing_extensions import Annotated, TypedDict
 
 from langchain_core.callbacks import (

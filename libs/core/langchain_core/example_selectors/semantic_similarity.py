@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
-from pydantic import BaseModel, ConfigDict, Extra
+from langchain_core.pydantic_v1 import BaseModel, ConfigDict, Extra
 
 from langchain_core.documents import Document
 from langchain_core.example_selectors.base import BaseExampleSelector
@@ -42,7 +42,10 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     the input variables instead of all variables."""
     vectorstore_kwargs: Optional[Dict[str, Any]] = None
     """Extra arguments passed to similarity_search function of the vectorstore."""
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+
+    class Config:
+        artbirary_types_allowed = True
+        extra = Extra.forbid
 
     @staticmethod
     def _example_to_text(

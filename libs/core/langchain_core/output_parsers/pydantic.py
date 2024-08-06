@@ -106,7 +106,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return self.pydantic_object
 
 
-PydanticOutputParser.model_rebuild()
+PydanticOutputParser.update_forwad_refs()
 
 
 _PYDANTIC_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below.
