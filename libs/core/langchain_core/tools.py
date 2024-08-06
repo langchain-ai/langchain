@@ -1055,10 +1055,12 @@ class StructuredTool(BaseTool):
         )
 
 
+# TODO: Type args_schema as TypeBaseModel if we can get mypy to correctly recognize
+# pydantic v2 BaseModel classes.
 def tool(
     *args: Union[str, Callable, Runnable],
     return_direct: bool = False,
-    args_schema: Optional[Type[BaseModel]] = None,
+    args_schema: Optional[Type] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
