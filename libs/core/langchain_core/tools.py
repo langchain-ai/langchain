@@ -87,7 +87,7 @@ from langchain_core.runnables.config import (
     patch_config,
     run_in_executor,
 )
-from langchain_core.runnables.utils import accepts_context
+from langchain_core.runnables.utils import asyncio_accepts_context
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
@@ -694,7 +694,7 @@ class ChildTool(BaseTool):
                 tool_kwargs[config_param] = config
 
             coro = context.run(self._arun, *tool_args, **tool_kwargs)
-            if accepts_context(asyncio.create_task):
+            if asyncio_accepts_context():
                 response = await asyncio.create_task(coro, context=context)  # type: ignore
             else:
                 response = await coro
