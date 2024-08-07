@@ -3,6 +3,8 @@ import time
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
+from typing import Optional
+
 
 
 def test_rate_limit_invoke() -> None:
@@ -214,6 +216,8 @@ class SerializableModel(GenericFakeChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return True
+
+SerializableModel.model_rebuild()
 
 
 def test_serialization_with_rate_limiter() -> None:
