@@ -308,56 +308,34 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         self,
         *,
         async_api: bool,
-        check_kwargs_and_run_manager: bool,
         run_manager: Optional[
             Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
         ] = None,
         **kwargs: Any,
     ) -> bool:
-        # first check if _stream or _astream (if async_api) is not even implemented
-        # check async case
-        if (
-            async_api
-            and type(self)._astream == BaseChatModel._astream
-            and type(self)._stream == BaseChatModel._stream
-        ):
+        sync_not_implemented = type(self)._stream == BaseChatModel._stream
+        async_not_implemented = type(self)._astream == BaseChatModel._astream
+
+        # Check if streaming is implemented.
+        if (not async_api) and sync_not_implemented:
             return False
-        # check sync case
-        if not async_api and type(self)._stream == BaseChatModel._stream:
+        if async_api and async_not_implemented and sync_not_implemented:
             return False
 
-        # now we know streaming functionality is implemented, so we check if it's
-        # disabled
+        # Check if streaming has been disabled on this instance.
         if self.disable_streaming is True:
             return False
-        if (
-            self.disable_streaming == "tool_calling"
-            and "tools" in kwargs
-            and kwargs["tools"]
-        ):
+        # We assume tools are passed in via "tools" kwarg in all models.
+        if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
             return False
 
-        if not check_kwargs_and_run_manager:
-            # for .stream() and .astream(), we stream at this point
-            return True
+        # Check if a runtime streaming flag has been passed in.
+        if (stream := kwargs.get("stream")) is not None:
+            return stream
 
-        # for .stream_events, we check kwargs and run_manager
-
-        kwarg_stream = kwargs.get("stream")
-        if kwarg_stream is not None:
-            return kwarg_stream
-
-        if not run_manager:
-            return False
-
-        return next(
-            (
-                True
-                for h in run_manager.handlers
-                if isinstance(h, _StreamingCallbackHandler)
-            ),
-            False,
-        )
+        # Check if any streaming callback handlers have been passed in.
+        handlers = run_manager.handlers if run_manager else []
+        return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
 
     def stream(
         self,
@@ -367,7 +345,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
-        if not self._should_stream(async_api=False, check_kwargs_and_run_manager=False):
+        if not self._should_stream(async_api=False, stream=True):
             # model doesn't implement streaming, so use default implementation
             yield cast(
                 BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
@@ -437,7 +415,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        if not self._should_stream(async_api=True, check_kwargs_and_run_manager=False):
+        if not self._should_stream(async_api=True, stream=True):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
@@ -816,7 +794,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # astream_events() or astream_log(). Bail out if _stream not implemented
         if self._should_stream(
             async_api=False,
-            check_kwargs_and_run_manager=True,
             run_manager=run_manager,
             **kwargs,
         ):
@@ -894,7 +871,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # astream_events() or astream_log(). Bail out if _astream not implemented
         if self._should_stream(
             async_api=True,
-            check_kwargs_and_run_manager=True,
             run_manager=run_manager,
             **kwargs,
         ):
