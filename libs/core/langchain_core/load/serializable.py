@@ -10,7 +10,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict # pydantic: ignore
+from pydantic import BaseModel, ConfigDict  # pydantic: ignore
 from typing_extensions import NotRequired
 
 from langchain_core.utils.pydantic import v1_repr
@@ -81,7 +81,7 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
         Exception: If the key is not in the model.
     """
     try:
-        return model.__fields__[key].get_default() != value
+        return model.model_fields[key].get_default() != value
     except Exception:
         return True
 
@@ -172,14 +172,15 @@ class Serializable(BaseModel, ABC):
             original_name = cls.__name__
         return [*cls.get_lc_namespace(), original_name]
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
     def __repr_args__(self) -> Any:
         return [
             (k, v)
             for k, v in super().__repr_args__()
-            if (k not in self.__fields__ or try_neq_default(v, k, self))
+            if (k not in self.model_fields or try_neq_default(v, k, self))
         ]
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
@@ -198,7 +199,7 @@ class Serializable(BaseModel, ABC):
             if not _is_field_useful(self, k, v):
                 continue
             # Do nothing if the field is excluded
-            if k in self.__fields__ and self.__fields__[k].exclude:
+            if k in self.model_fields and self.model_fields[k].exclude:
                 continue
 
             lc_kwargs[k] = getattr(self, k, v)
@@ -233,8 +234,8 @@ class Serializable(BaseModel, ABC):
             # that are not present in the fields.
             for key in list(secrets):
                 value = secrets[key]
-                if key in this.__fields__:
-                    secrets[this.__fields__[key].alias] = value
+                if key in this.model_fields:
+                    secrets[this.model_fields[key].alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
@@ -256,7 +257,7 @@ class Serializable(BaseModel, ABC):
     def to_json_not_implemented(self) -> SerializedNotImplemented:
         return to_json_not_implemented(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # TODO(0.3): Remove this override after confirming unit tests!
         return v1_repr(self)
 
@@ -275,7 +276,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
         If the field is not required and the value is None, it is useful if the
         default value is different from the value.
     """
-    field = inst.__fields__.get(key)
+    field = inst.model_fields.get(key)
     if not field:
         return False
 
