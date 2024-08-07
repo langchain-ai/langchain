@@ -235,7 +235,8 @@ class Serializable(BaseModel, ABC):
             for key in list(secrets):
                 value = secrets[key]
                 if key in this.model_fields:
-                    secrets[this.model_fields[key].alias] = value
+                    if this.model_fields[key].alias is not None:
+                        secrets[this.model_fields[key].alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
