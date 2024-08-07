@@ -2,7 +2,7 @@ import logging
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 import requests
 from langchain_core.documents import Document
@@ -10,10 +10,11 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.indexing import UpsertResponse
 from langchain_core.vectorstores import VST, VectorStore
 
+CPU_COUNT = os.cpu_count() or 6
 CONNECTION_POOL_SIZE = int(
     os.getenv(
         "OBJECTIVE_CONNECTION_POOL_SIZE",
-        (os.cpu_count() if os.cpu_count() is not None else 6) * 12,
+        CPU_COUNT * 12,
     )
 )
 API_BASE_URL = "https://api.objective.inc/v1/"
@@ -43,7 +44,7 @@ class Objective(VectorStore):
         api_key = kwargs.pop("api_key")
         objective = Objective(api_key)
         objective.add_texts(texts=texts, metadatas=metadatas, **kwargs)
-        return objective
+        return objective  # type: ignore
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -53,7 +54,7 @@ class Objective(VectorStore):
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Upsert document metadata into the vector store."""
 
-        def _upsert(document) -> (str, bool):
+        def _upsert(document: Document) -> Tuple[str, bool]:
             try:
                 obj_data = {
                     "page_content": document.page_content,
@@ -71,10 +72,13 @@ class Objective(VectorStore):
                         method="POST", endpoint="objects", data=obj_data
                     )
                     document.id = obj_response["id"]
-                return document.id, True
+                # unknown id condition should never happen in practice
+                # but UpsertResponse is non-optional string typed
+                # see UpsertResponse docstring for failure case
+                return document.id or "unknown id", True
             except Exception as e:
                 logger.error(f"Failed to upsert document: {document.id}", e)
-                return document.id, False
+                return document.id or "unknown id", False
 
         success = []
         failures = []
@@ -91,6 +95,9 @@ class Objective(VectorStore):
         )
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        if ids is None:
+            raise ObjectiveError("ids parameter is required for delete")
+
         def _delete(id: str) -> bool:
             try:
                 self._request(
@@ -221,6 +228,7 @@ class Objective(VectorStore):
                     if e.response is not None:
                         raise ObjectiveError(e.response.text) from e
                     raise e
+        raise ObjectiveError(f"Unknown failure on request [{method}] {url}")
 
     @staticmethod
     def get_user_agent() -> str:
