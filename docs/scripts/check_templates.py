@@ -85,7 +85,7 @@ def check_header_order(path: Path) -> None:
                 skip_headers.append(header)
                 print(f"Out of order header: {header}")
             else:
-                doc = doc[pair_match.end() - len(header):]
+                doc = doc[pair_match.end() - len(header) :]
     if problems:
         issueline = (
             (
@@ -104,8 +104,8 @@ def check_header_order(path: Path) -> None:
             )
         )
         raise ValueError(
-            f"Document {path} is missing headers or does not match the expected header order.{issueline}" +
-            ", ".join(problems)
+            f"Document {path} is missing headers or does not match the expected header order.{issueline}"
+            + ", ".join(problems)
         )
 
 
