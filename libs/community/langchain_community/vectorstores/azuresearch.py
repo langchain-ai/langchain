@@ -327,10 +327,10 @@ class AzureSearch(VectorStore):
         if "user_agent" in kwargs and kwargs["user_agent"]:
             user_agent += " " + kwargs["user_agent"]
         self.client = _get_search_client(
-            azure_search_endpoint,
+            azure_search_endpoint,   
+            index_name,            
             azure_search_key,
-            azure_ad_access_token,
-            index_name,
+            azure_ad_access_token,            
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
             vector_search=vector_search,
@@ -343,10 +343,10 @@ class AzureSearch(VectorStore):
             additional_search_client_options=additional_search_client_options,
         )
         self.async_client = _get_search_client(
-            azure_search_endpoint,
+            azure_search_endpoint,   
+            index_name,            
             azure_search_key,
-            azure_ad_access_token,
-            index_name,
+            azure_ad_access_token,  
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
             vector_search=vector_search,
