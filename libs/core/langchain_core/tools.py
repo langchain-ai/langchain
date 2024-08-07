@@ -66,7 +66,7 @@ from langchain_core.prompts import (
     aformat_document,
     format_document,
 )
-from langchain_core.pydantic_v1 import (
+from pydantic import (  # pydantic: ignore
     BaseModel,
     Extra,
     Field,
@@ -74,6 +74,7 @@ from langchain_core.pydantic_v1 import (
     create_model,
     root_validator,
     validate_arguments,
+    SkipValidation,
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
@@ -99,6 +100,7 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
+from pydantic import ConfigDict
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
