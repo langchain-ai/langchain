@@ -1,4 +1,5 @@
-from langchain_core.pydantic_v1 import BaseModel, v1
+from pydantic import BaseModel, v1
+
 from tests.unit_tests.pydantic_utils import _schema
 
 
@@ -13,10 +14,10 @@ def test_schemas() -> None:
 
     schema_2 = _schema(Foo)
 
-    class Bar(v1.BaseModel):
+    class Bar(v1.BaseModel):  # type: ignore[no-redef]
         baz: int
 
-    class Foo(v1.BaseModel):
+    class Foo(v1.BaseModel):  # type: ignore[no-redef]
         bar: Bar
 
     schema_1 = _schema(Foo)
