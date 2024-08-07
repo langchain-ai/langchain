@@ -66,7 +66,7 @@ from langchain_core.prompts import (
     aformat_document,
     format_document,
 )
-from langchain_core.pydantic_v1 import (
+from pydantic import (
     BaseModel,
     Extra,
     Field,
@@ -99,6 +99,8 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
+from pydantic import ConfigDict
+
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -240,20 +242,60 @@ def create_schema_from_function(
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
+
+    sig = inspect.signature(func)
+
+    # Let's ignore `self` and `cls` arguments for class and instance methods
+    if func.__qualname__ and "." in func.__qualname__:
+        # Then it likely belongs in a class namespace
+        in_class = True
+    else:
+        in_class = False
+
+    has_args = False
+    has_kwargs = False
+
+    for param in sig.parameters.values():
+        if param.kind == param.VAR_POSITIONAL:
+            has_args = True
+        elif param.kind == param.VAR_KEYWORD:
+            has_kwargs = True
+
     inferred_model = validated.model  # type: ignore
-    filter_args = filter_args if filter_args is not None else FILTERED_ARGS
-    for arg in filter_args:
+
+    if filter_args:
+        filter_args_ = filter_args
+    else:
+        # Handle classmethods and instance methods
+        existing_params = list(sig.parameters.keys())
+        if existing_params and existing_params[0] in ("self", "cls") and in_class:
+            filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
+        else:
+            filter_args_ = FILTERED_ARGS
+
+    for arg in filter_args_:
         if arg in inferred_model.__fields__:
             del inferred_model.__fields__[arg]
+
     description, arg_descriptions = _infer_arg_descriptions(
         func,
         parse_docstring=parse_docstring,
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = _get_filtered_args(
-        inferred_model, func, filter_args=filter_args, include_injected=include_injected
-    )
+    valid_properties = []
+    for field in inferred_model.__fields__:
+        if not has_args:
+            if field == "args":
+                continue
+        if not has_kwargs:
+            if field == "kwargs":
+                continue
+
+        if field == "v__duplicate_kwargs":  # Internal pydantic field
+            continue
+        if field not in filter_args_:
+            valid_properties.append(field)
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
@@ -373,8 +415,7 @@ class ChildTool(BaseTool):
                 )
         super().__init__(**kwargs)
 
-    class Config(Serializable.Config):
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
     @property
     def is_single_input(self) -> bool:
