@@ -28,7 +28,6 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    overload,
 )
 from urllib.parse import urlparse
 
@@ -1099,33 +1098,6 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
-
-    # TODO: Fix typing.
-    @overload  # type: ignore[override]
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        method: Literal[
-            "function_calling", "json_mode", "json_schema"
-        ] = "function_calling",
-        include_raw: Literal[True] = True,
-        strict: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
-
-    @overload
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        method: Literal[
-            "function_calling", "json_mode", "json_schema"
-        ] = "function_calling",
-        include_raw: Literal[False] = False,
-        strict: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     def with_structured_output(
         self,

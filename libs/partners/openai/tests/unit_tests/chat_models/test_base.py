@@ -1,7 +1,7 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
-from typing import Any, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -357,8 +357,8 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> Non
 @pytest.mark.parametrize("include_raw", [True, False])
 @pytest.mark.parametrize("strict", [True, False, None])
 def test_with_structured_output(
-    schema: Union[Type[BaseModel], dict],
-    method: Literal["json_schema", "function_calling", "json_mode"],
+    schema: Union[Type, Dict[str, Any], None],
+    method: Literal["function_calling", "json_mode", "json_schema"],
     include_raw: bool,
     strict: Optional[bool],
 ) -> None:
@@ -367,7 +367,7 @@ def test_with_structured_output(
         strict = None
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
     llm.with_structured_output(
-        schema, method=method, include_raw=include_raw, strict=strict
+        schema, method=method, strict=strict, include_raw=include_raw
     )
 
 
