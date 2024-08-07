@@ -20,7 +20,7 @@ from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMP
     since="0.2.12",
     removal="0.4.0",
     message=(
-        "Use RunnableBranch to select from multiple prompt templates. See example "
+        "Use RunnableLambda to select from multiple prompt templates. See example "
         "in API reference: "
         "https://api.python.langchain.com/en/latest/chains/langchain.chains.router.multi_prompt.MultiPromptChain.html"  # noqa: E501
     ),
@@ -28,7 +28,7 @@ from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMP
 class MultiPromptChain(MultiRouteChain):
     """A multi-route chain that uses an LLM router chain to choose amongst prompts.
 
-    This class is deprecated in favor of ``RunnableBranch``, which offers several
+    This class is deprecated. See below for a replacement, which offers several
     benefits, including streaming and batch support.
 
     Below is an example implementation:
@@ -40,7 +40,7 @@ class MultiPromptChain(MultiRouteChain):
 
             from langchain_core.output_parsers import StrOutputParser
             from langchain_core.prompts import ChatPromptTemplate
-            from langchain_core.runnables import RunnableBranch, RunnablePassthrough
+            from langchain_core.runnables import RunnableLambda, RunnablePassthrough
             from langchain_openai import ChatOpenAI
 
             llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
@@ -79,11 +79,12 @@ class MultiPromptChain(MultiRouteChain):
                 | itemgetter("destination")
             )
 
-            chain = RunnablePassthrough().assign(
-                destination=route_chain
-            ) | RunnableBranch(
-                (lambda x: x["destination"] == "animal", chain_1),
-                chain_2,
+            chain = {
+                "destination": route_chain,  # "animal" or "vegetable"
+                "input": RunnablePassthrough(),  # pass through input query
+            } | RunnableLambda(
+                # if animal, chain_1. otherwise, chain_2.
+                lambda x: chain_1 if x["destination"] == "animal" else chain_2,
             )
 
             chain.invoke({"query": "what color are carrots"})
