@@ -973,8 +973,12 @@ class Yellowbrick(VectorStore):
             raise RuntimeError(f"Failed to migrate schema: {e}") from e
             
     def max_marginal_relevance_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20,
-        lambda_mult: float = 0.5, **kwargs: Any
+        self, 
+        embedding: List[float], 
+        k: int = 4, 
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5, 
+        **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Perform a max marginal relevance search with Yellowbrick with vector
 
@@ -1000,10 +1004,10 @@ class Yellowbrick(VectorStore):
                 selected_docs.append(doc)
                 selected_scores.append(score)
                 continue
-            max_score = float('-inf')
+            max_score = float("-inf")
             max_doc = None
             for doc, score in documents_with_scores:
-                min_similarity = float('inf')
+                min_similarity = float("inf")
                 for selected_doc in selected_docs:
                     similarity = self._embedding.similarity(
                         selected_doc.page_content, doc.page_content
@@ -1022,7 +1026,11 @@ class Yellowbrick(VectorStore):
         return list(zip(selected_docs, selected_scores))
 
     def max_marginal_relevance_search(
-        self, query: str, k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5,
+        self, 
+        query: str, 
+        k: int = 4, 
+        fetch_k: int = 20, 
+        lambda_mult: float = 0.5,
         **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
@@ -1034,7 +1042,11 @@ class Yellowbrick(VectorStore):
         return [doc for doc, _ in results]
 
     def max_marginal_relevance_search_with_score(
-        self, query: str, k: int = 4, fetch_k: int = 20, lambda_mult: float = 0.5,
+        self, 
+        query: str, 
+        k: int = 4, 
+        fetch_k: int = 20, 
+        lambda_mult: float = 0.5,
         **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance with score."""
@@ -1046,8 +1058,12 @@ class Yellowbrick(VectorStore):
         return results
 
     def max_marginal_relevance_search_by_vector(
-        self, embedding: List[float], k: int = 4, fetch_k: int = 20,
-        lambda_mult: float = 0.5, **kwargs: Any
+        self, 
+        embedding: List[float], 
+        k: int = 4, 
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5, 
+        **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance
             to embedding vector."""
