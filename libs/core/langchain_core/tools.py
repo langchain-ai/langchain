@@ -266,17 +266,17 @@ def create_schema_from_function(
         filter_args_ = filter_args
     else:
         # Handle classmethods and instance methods
-        existing_params = list(sig.parameters.keys())
+        existing_params: List[str] = list(sig.parameters.keys())
         if existing_params and existing_params[0] in ("self", "cls") and in_class:
             filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
         else:
             filter_args_ = list(FILTERED_ARGS)
 
-        for param in existing_params:
+        for param_ in existing_params:
             if not include_injected and _is_injected_arg_type(
-                sig.parameters[param].annotation
+                sig.parameters[param_].annotation
             ):
-                filter_args_.append(param)
+                filter_args_.append(param_)
 
     for arg in filter_args_:
         if arg in inferred_model.__fields__:
@@ -500,7 +500,8 @@ class ChildTool(BaseTool):
                 if hasattr(input_args, "model_fields"):
                     key_ = next(iter(input_args.model_fields.keys()))
                 else:
-                    key_ = next(iter(input_args.__fields__.keys()))
+                    # Code cannot be type checked properly for pydantic v1 path
+                    key_ = next(iter(input_args.__fields__.keys()))  # type: ignore
 
                 input_args.validate({key_: tool_input})
             return tool_input
