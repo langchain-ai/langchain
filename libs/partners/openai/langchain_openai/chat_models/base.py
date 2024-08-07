@@ -1140,11 +1140,13 @@ class BaseChatOpenAI(BaseChatModel):
                 The method for steering model generation, one of:
 
                     - "function_calling":
-                        Uses OpenAI's tool-calling (formerly called function calling) API:
-                        https://platform.openai.com/docs/guides/function-calling
+                        Uses OpenAI's tool-calling (formerly called function calling)
+                        API: https://platform.openai.com/docs/guides/function-calling
                     - "json_schema":
                         Uses OpenAI's Structured Output API:
-                        https://platform.openai.com/docs/guides/structured-outputs
+                        https://platform.openai.com/docs/guides/structured-outputs.
+                        Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
+                        models.
                     - "json_mode":
                         Uses OpenAI's JSON mode. Note that if using JSON mode then you
                         must include instructions for formatting the output into the
