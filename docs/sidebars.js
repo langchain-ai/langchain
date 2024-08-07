@@ -74,15 +74,14 @@ module.exports = {
       items: [
         "versions/overview",
         "versions/release_policy",
-        "versions/packages",
         {
           type: 'doc',
           id: "how_to/pydantic_compatibility",
-          label: "Pydantic",
+          label: "Pydantic compatibility",
         },
         {
           type: "category",
-          label: "v0.2",
+          label: "Migrating to v0.2",
           link: {type: 'doc', id: 'versions/v0_2/index'},
           collapsible: false,
           collapsed: false,
@@ -245,8 +244,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/retrievers",
+            type: "doc",
+            id: "integrations/retrievers/index",
           },
         },
         {
@@ -275,8 +274,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/toolkits",
+            type: "doc",
+            id: "integrations/toolkits/index",
           },
         },
         {

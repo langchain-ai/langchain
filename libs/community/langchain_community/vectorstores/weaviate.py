@@ -428,7 +428,7 @@ class Weaviate(VectorStore):
             relevance_score_fn: Function for converting whatever distance function the
                 vector store uses to a relevance score, which is a normalized similarity
                 score (0 means dissimilar, 1 means similar).
-            **kwargs: Additional named parameters to pass to ``Weaviate.__init__()``.
+            kwargs: Additional named parameters to pass to ``Weaviate.__init__()``.
 
         Example:
             .. code-block:: python

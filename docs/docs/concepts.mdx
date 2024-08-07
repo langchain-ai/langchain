@@ -542,7 +542,8 @@ Typical usage may look like the following:
 ```python
 tools = [...] # Define a list of tools
 llm_with_tools = llm.bind_tools(tools)
-ai_msg = llm_with_tools.invoke("do xyz...")  # AIMessage(tool_calls=[ToolCall(...), ...], ...)
+ai_msg = llm_with_tools.invoke("do xyz...")
+# -> AIMessage(tool_calls=[ToolCall(...), ...], ...)
 ```
 
 The `AIMessage` returned from the model MAY have `tool_calls` associated with it.
@@ -559,9 +560,14 @@ This generally looks like:
 
 ```python
 # You will want to previously check that the LLM returned tool calls
-tool_call = ai_msg.tool_calls[0]  # ToolCall(args={...}, id=..., ...)
+tool_call = ai_msg.tool_calls[0]
+# ToolCall(args={...}, id=..., ...)
 tool_output = tool.invoke(tool_call["args"])
-tool_message = ToolMessage(content=tool_output, tool_call_id=tool_call["id"], name=tool_call["name"])
+tool_message = ToolMessage(
+    content=tool_output,
+    tool_call_id=tool_call["id"],
+    name=tool_call["name"]
+)
 ```
 
 Note that the `content` field will generally be passed back to the model.
@@ -571,7 +577,12 @@ you can transform the tool output but also pass it as an artifact (read more abo
 ```python
 ... # Same code as above
 response_for_llm = transform(response)
-tool_message = ToolMessage(content=response_for_llm, tool_call_id=tool_call["id"], name=tool_call["name"], artifact=tool_output)
+tool_message = ToolMessage(
+    content=response_for_llm,
+    tool_call_id=tool_call["id"],
+    name=tool_call["name"],
+    artifact=tool_output
+)
 ```
 
 #### Invoke with `ToolCall`
@@ -582,9 +593,14 @@ The benefits of this are that you don't have to write the logic yourself to tran
 This generally looks like:
 
 ```python
-tool_call = ai_msg.tool_calls[0]  # ToolCall(args={...}, id=..., ...)
+tool_call = ai_msg.tool_calls[0]
+# -> ToolCall(args={...}, id=..., ...)
 tool_message = tool.invoke(tool_call)
-# -> ToolMessage(content="tool result foobar...", tool_call_id=..., name="tool_name")
+# -> ToolMessage(
+    content="tool result foobar...",
+    tool_call_id=...,
+    name="tool_name"
+)
 ```
 
 If you are invoking the tool this way and want to include an [artifact](/docs/concepts/#toolmessage) for the ToolMessage, you will need to have the tool return two things.
