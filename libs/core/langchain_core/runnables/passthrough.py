@@ -21,7 +21,8 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, RootModel
+from pydantic import BaseModel, RootModel
+
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -439,7 +440,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
                 **{
                     k: (v.type_, v.default)
                     for s in (map_input_schema, map_output_schema)
-                    for k, v in s.__fields__.items()
+                    for k, v in s.model_fields.items()
                 },
             )
         elif not issubclass(map_output_schema, RootModel):
