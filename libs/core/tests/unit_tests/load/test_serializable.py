@@ -38,9 +38,8 @@ def test_simple_serialization_is_serializable() -> None:
 
 def test_simple_serialization_secret() -> None:
     """Test handling of secrets."""
-    from langchain_core.pydantic_v1 import SecretStr
-
     from langchain_core.load import Serializable
+    from langchain_core.pydantic_v1 import SecretStr
 
     class Foo(Serializable):
         bar: int
