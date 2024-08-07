@@ -55,12 +55,14 @@ class QianfanLLMEndpoint(LLM):
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
 
-    model: str = "ERNIE-Bot-turbo"
+    model: Optional[str] = Field(default=None)
     """Model name. 
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set
+    
+    Default is set by `qianfan` SDK, not here
     """
 
     endpoint: Optional[str] = None
