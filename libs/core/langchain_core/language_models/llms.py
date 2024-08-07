@@ -479,7 +479,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
-        if type(self)._stream == BaseLLM._stream or (self.disable_streaming is True):
+        if type(self)._stream == BaseLLM._stream:
             # model doesn't implement streaming, so use default implementation
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
@@ -540,7 +540,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if (
             type(self)._astream is BaseLLM._astream
             and type(self)._stream is BaseLLM._stream
-            or (self.disable_streaming is True)
         ):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
             return

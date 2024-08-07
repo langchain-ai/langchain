@@ -214,6 +214,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
     """An optional rate limiter to use for limiting the number of requests."""
 
+    disable_streaming: Union[bool, Literal["tool_calling"]] = False
+    """Whether to disable streaming for this model.
+    
+    If streaming is bypassed, then ``stream()/astream()`` will defer to 
+    ``invoke()/ainvoke()``.
+
+    - If True, will always bypass streaming case.
+    - If "tool_calling", will bypass streaming case only when the model is called
+      with a ``tools`` keyword argument.
+    - If False (default), will always use streaming case if available.
+    """
+
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used.

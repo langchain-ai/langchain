@@ -11,26 +11,6 @@ from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra
 from langchain_core.utils import get_pydantic_field_names
 
-_GENERATION_KEYS = [
-    "temperature",
-    "seed",
-    "top_k",
-    "top_p",
-    "min_p",
-    "n_predict",
-    "n_keep",
-    "tfs_z",
-    "typical_p",
-    "repeat_penalty",
-    "repeat_last_n",
-    "penalize_nl",
-    "presence_penalty",
-    "frequency_penalty",
-    "mirostat",
-    "mirostat_tau",
-    "mirostat_eta",
-]
-
 
 class Llamafile(LLM):
     """Llamafile lets you distribute and run large language models with a
@@ -148,9 +128,21 @@ class Llamafile(LLM):
         # generation options to the llamafile server. Exclude 'builtin' fields
         # from the BaseLLM class like 'metadata' as well as fields that should
         # not be passed in requests (base_url, request_timeout).
-
+        ignore_keys = [
+            "base_url",
+            "cache",
+            "callback_manager",
+            "callbacks",
+            "metadata",
+            "name",
+            "request_timeout",
+            "streaming",
+            "tags",
+            "verbose",
+            "custom_get_token_ids",
+        ]
         attrs = [
-            k for k in get_pydantic_field_names(self.__class__) if k in _GENERATION_KEYS
+            k for k in get_pydantic_field_names(self.__class__) if k not in ignore_keys
         ]
         return attrs
 
