@@ -52,15 +52,12 @@ class Objective(VectorStore):
 
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Upsert document metadata into the vector store.
-
-        NOTE only metadata is inserted (if available).
-        OTHERWISE, text is used with a "text" key.
         """
 
         def _upsert(document) -> (str, bool):
             try:
                 obj_data = {
-                    "text:": document.page_content,
+                    "page_content": document.page_content,
                     "metadata": document.metadata,
                 }
 
@@ -117,7 +114,7 @@ class Objective(VectorStore):
     def _doc_from_response(obj_response: dict[str, Any]) -> Document:
         obj_id = obj_response["id"]
         obj_data = obj_response["object"]
-        content = obj_data.pop("text")
+        content = obj_data.pop("page_content")
         metadata = obj_data.get("metadata", {})
         return Document(id=obj_id, page_content=content, metadata=metadata)
 
@@ -160,7 +157,7 @@ class Objective(VectorStore):
                 "configuration": {
                     "index_type": {"name": "text"},
                     "fields": {
-                        "searchable": {"allow": ["text"]},
+                        "searchable": {"allow": ["page_content"]},
                     },
                 }
             },
