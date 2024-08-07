@@ -3235,7 +3235,7 @@ def test_map_stream() -> None:
         {"llm": "i"},
         {"chat": AIMessageChunk(content="i")},
     ]
-    if not ( # TODO(Rewrite properly) statement above
+    if not (  # TODO(Rewrite properly) statement above
         streamed_chunks[0] == {"llm": "i"}
         or {"chat": _AnyIdAIMessageChunk(content="i")}
     ):

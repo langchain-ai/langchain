@@ -1,7 +1,7 @@
 from typing import List
+from typing import Optional as Optional
 
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
-from typing import Optional as Optional
 
 
 class StrOutputParser(BaseTransformOutputParser[str]):
