@@ -1,14 +1,16 @@
 import json
+from typing import Annotated, Generic, List, Type
+
 import pydantic  # pydantic: ignore
 from pydantic import SkipValidation  # pydantic: ignore
-from typing import Annotated, Generic, List, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
-    TBaseModel, PydanticBaseModel,
+    PydanticBaseModel,
+    TBaseModel,
 )
 
 
