@@ -11,4 +11,3 @@ def test_openai_call() -> None:
     llm = OpenLLM()
     output = llm.invoke("Say something nice:")
     assert isinstance(output, str)
-
