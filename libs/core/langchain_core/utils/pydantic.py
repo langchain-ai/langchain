@@ -8,10 +8,9 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 import pydantic
+from pydantic import BaseModel, root_validator
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from pydantic_core import core_schema
-
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 def get_pydantic_major_version() -> int:
