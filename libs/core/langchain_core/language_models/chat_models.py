@@ -343,7 +343,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         # for .stream_events, we check kwargs and run_manager
 
-        kwarg_stream = kwargs.pop("stream", None)
+        kwarg_stream = kwargs.get("stream")
         if kwarg_stream is not None:
             return kwarg_stream
 
