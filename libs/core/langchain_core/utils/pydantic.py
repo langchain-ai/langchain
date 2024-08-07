@@ -8,9 +8,10 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 import pydantic
-from pydantic import BaseModel, root_validator
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from pydantic_core import core_schema
+
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 def get_pydantic_major_version() -> int:
@@ -27,13 +28,12 @@ PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 
 if PYDANTIC_MAJOR_VERSION == 1:
-    PydanticBaseModel = pydantic.BaseModel
+    PydanticBaseModel = BaseModel
     TypeBaseModel = Type[BaseModel]
 elif PYDANTIC_MAJOR_VERSION == 2:
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    from pydantic.v1 import BaseModel as BaseModelV1
-    PydanticBaseModel = Union[BaseModel, BaseModelV1]  # type: ignore
-    TypeBaseModel = Union[Type[BaseModel], BaseModelV1]  # type: ignore
+    PydanticBaseModel = Union[pydantic.BaseModel, BaseModel]  # type: ignore
+    TypeBaseModel = Union[Type[pydantic.BaseModel], BaseModel]  # type: ignore
 else:
     raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
 
@@ -188,7 +188,7 @@ def v1_repr(obj: BaseModel) -> str:
 
     Get a repr for the pydantic object which is consistent with pydantic.v1.
     """
-    if not isinstance(obj, BaseModel):
+    if not is_basemodel_instance(obj):
         raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
     repr_ = []
     for name, field in obj.__fields__.items():
