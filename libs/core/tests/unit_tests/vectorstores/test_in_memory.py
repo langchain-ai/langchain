@@ -117,7 +117,7 @@ async def test_inmemory_filter() -> None:
 
     # Check sync version
     output = store.similarity_search("fee", filter=lambda doc: doc.metadata["id"] == 1)
-    assert output == [Document(page_content="foo", metadata={"id": 1}, id=AnyStr())]
+    assert output == [_AnyIdDocument(page_content="foo", metadata={"id": 1})]
 
     # filter with not stored document id
     output = await store.asimilarity_search(
