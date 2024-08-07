@@ -304,11 +304,6 @@ def create_schema_from_function(
         if field not in filter_args_:
             valid_properties.append(field)
 
-    ## FIGURE OUT WHAT TO DO HERE
-    # valid_properties = _get_filtered_args(
-    #     inferred_model, func, filter_args=filter_args, include_injected=include_injected
-    # )
-    ## FIGURE OUT WHAT TO DO HERE
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
