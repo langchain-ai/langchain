@@ -2,7 +2,7 @@ import logging
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, List, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
 from langchain_core.documents import Document
@@ -110,7 +110,7 @@ class Objective(VectorStore):
         return success
 
     @staticmethod
-    def _doc_from_response(obj_response: dict[str, Any]) -> Document:
+    def _doc_from_response(obj_response: Dict[str, Any]) -> Document:
         obj_id = obj_response["id"]
         obj_data = obj_response["object"]
         content = obj_data.pop("page_content")
