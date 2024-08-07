@@ -314,7 +314,6 @@ async def test_disable_streaming(
     async for c in model.astream([]):
         assert c.content == expected
         break
-
     assert (
         model.invoke(
             [], config={"callbacks": [_AstreamEventsCallbackHandler()]}
@@ -330,6 +329,17 @@ async def test_disable_streaming(
     async for c in model.astream([], tools=[{}]):
         assert c.content == expected
         break
+    assert (
+        model.invoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
+        ).content
+        == expected
+    )
+    assert (
+        await model.ainvoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
+        )
+    ).content == expected
 
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
