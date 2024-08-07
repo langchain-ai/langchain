@@ -46,11 +46,11 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.APITimeoutError)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.InternalServerError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -68,11 +68,11 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.APITimeoutError)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.InternalServerError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -90,10 +90,10 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
 
 # https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
 def _check_response(response: dict) -> dict:
-    if any(len(d["embedding"]) == 1 for d in response["data"]):
+    if any(len(d.embedding) == 1 for d in response.data):
         import openai
 
-        raise openai.error.APIError("LocalAI API returned an empty embedding")
+        raise openai.APIError("LocalAI API returned an empty embedding")
     return response
 
 
@@ -114,7 +114,7 @@ async def async_embed_with_retry(embeddings: LocalAIEmbeddings, **kwargs: Any) -
 
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
-        response = await embeddings.client.acreate(**kwargs)
+        response = await embeddings.async_client.create(**kwargs)
         return _check_response(response)
 
     return await _async_embed_with_retry(**kwargs)
@@ -139,15 +139,30 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                 openai_api_base="http://localhost:8080"
             )
 
+    Specifying proxy:
+        .. code-block:: python
+
+            from langchain_community.embeddings import LocalAIEmbeddings
+            import openai
+            import httpx
+            openai = LocalAIEmbeddings(
+                openai_api_key="random-string",
+                client=openai.OpenAI(
+                    base_url="http://localhost:8080",
+                    http_client=openai.DefaultHttpxClient(
+                        proxies="http://localhost:8899",
+                        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
+                    ),
+                    api_key="random-string").embeddings
+            )
     """
 
     client: Any  #: :meta private:
+    async_client: Any  #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model
     openai_api_version: Optional[str] = None
     openai_api_base: Optional[str] = None
-    # to support explicit proxy for LocalAI
-    openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
     openai_api_key: Optional[str] = None
@@ -209,12 +224,6 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_BASE",
             default="",
         )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
-        )
 
         default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
@@ -232,7 +241,17 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         try:
             import openai
 
-            values["client"] = openai.Embedding
+            client_params = {
+                "api_key": values["openai_api_key"],
+                "organization": values["openai_organization"],
+                "base_url": values["openai_api_base"],
+                "timeout": values["request_timeout"],
+                "max_retries": values["max_retries"],
+            }
+            if not values.get("client"):
+                values["client"] = openai.OpenAI(**client_params).embeddings
+            if not values.get("async_client"):
+                values["async_client"] = openai.AsyncOpenAI(**client_params).embeddings
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -244,50 +263,49 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     def _invocation_params(self) -> Dict:
         openai_args = {
             "model": self.model,
-            "request_timeout": self.request_timeout,
-            "headers": self.headers,
-            "api_key": self.openai_api_key,
-            "organization": self.openai_organization,
-            "api_base": self.openai_api_base,
-            "api_version": self.openai_api_version,
             **self.model_kwargs,
         }
-        if self.openai_proxy:
-            import openai
-
-            openai.proxy = {
-                "http": self.openai_proxy,
-                "https": self.openai_proxy,
-            }  # type: ignore[assignment]
         return openai_args
 
-    def _embedding_func(self, text: str, *, engine: str) -> List[float]:
+    def _embedding_func(
+        self, text: str | list[str], *, engine: str
+    ) -> List[List[float]]:
         """Call out to LocalAI's embedding endpoint."""
         # handle large input text
         if self.model.endswith("001"):
             # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
             # replace newlines, which can negatively affect performance.
-            text = text.replace("\n", " ")
-        return embed_with_retry(
+            if isinstance(text, str):
+                text = text.replace("\n", " ")
+            else:
+                text = [t.replace("\n", " ") for t in text]
+        listofembdes = embed_with_retry(
             self,
-            input=[text],
+            input=[text] if isinstance(text, str) else text,
             **self._invocation_params,
-        )["data"][0]["embedding"]
+        ).data
+        return [d.embedding for d in listofembdes]
 
-    async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
+    async def _aembedding_func(
+        self, text: str | List[str], *, engine: str
+    ) -> List[List[float]]:
         """Call out to LocalAI's embedding endpoint."""
         # handle large input text
         if self.model.endswith("001"):
             # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
             # replace newlines, which can negatively affect performance.
-            text = text.replace("\n", " ")
-        return (
+            if isinstance(text, str):
+                text = text.replace("\n", " ")
+            else:
+                text = [t.replace("\n", " ") for t in text]
+        listofembdes = (
             await async_embed_with_retry(
                 self,
-                input=[text],
+                input=[text] if isinstance(text, str) else text,
                 **self._invocation_params,
             )
-        )["data"][0]["embedding"]
+        ).data
+        return [d.embedding for d in listofembdes]
 
     def embed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -303,7 +321,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         # call _embedding_func for each text
-        return [self._embedding_func(text, engine=self.deployment) for text in texts]
+        return self._embedding_func(texts, engine=self.deployment)
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -318,11 +336,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = []
-        for text in texts:
-            response = await self._aembedding_func(text, engine=self.deployment)
-            embeddings.append(response)
-        return embeddings
+        return await self._aembedding_func(texts, engine=self.deployment)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint for embedding query text.
@@ -333,8 +347,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embedding = self._embedding_func(text, engine=self.deployment)
-        return embedding
+        return self._embedding_func([text], engine=self.deployment)[0]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint async for embedding query text.
@@ -345,5 +358,5 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        embedding = await self._aembedding_func(text, engine=self.deployment)
-        return embedding
+        embeddings = await self._aembedding_func([text], engine=self.deployment)
+        return embeddings[0]
