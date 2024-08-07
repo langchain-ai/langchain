@@ -118,7 +118,7 @@ class QianfanLLMEndpoint(LLM):
 
             'I like programming.'
 
-    """
+    """  # noqa: E501
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """init kwargs for qianfan client init, such as `query_per_second` which is 
