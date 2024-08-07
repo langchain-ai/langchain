@@ -4,7 +4,8 @@ from langchain.memory import ConversationBufferMemory  # type: ignore[import-not
 from langchain_core.messages import message_to_dict
 
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
-from tests.utils import MockCollection
+
+from ..utils import MockCollection
 
 
 class PatchedMongoDBChatMessageHistory(MongoDBChatMessageHistory):
