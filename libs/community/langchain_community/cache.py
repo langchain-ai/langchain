@@ -60,6 +60,9 @@ from langchain_community.vectorstores.azure_cosmos_db import (
 )
 from langchain_community.vectorstores.utils import DistanceStrategy
 
+
+# from libs.community.langchain_community.vectorstores.azure_cosmos_db_no_sql import AzureCosmosDBNoSqlVectorSearch
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
@@ -80,7 +83,7 @@ from langchain_community.utilities.astradb import (
 from langchain_community.utilities.astradb import (
     _AstraDBCollectionEnvironment,
 )
-from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+from langchain_community.vectorstores import AzureCosmosDBVectorSearch, AzureCosmosDBNoSqlVectorSearch
 from langchain_community.vectorstores import (
     OpenSearchVectorSearch as OpenSearchVectorStore,
 )
@@ -2273,7 +2276,100 @@ class AzureCosmosDBSemanticCache(BaseCache):
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
         if not isinstance(value, enum_type):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
+class AzureCosmosDBNoSqlSemanticCache(BaseCache):
+    """Cache that uses Cosmos DB NoSQL backend"""
 
+    def __init__(
+            self,
+            embedding: Embeddings,
+            cosmos_client: Optional[Any] = None,
+            database_name: str = "CosmosNoSqlCacheDB",
+            container_name: str = "CosmosNoSqlCacheContainer",
+            *,
+            vector_embedding_policy: Optional[Dict[str, Any]] = None,
+            indexing_policy: Optional[Dict[str, Any]] = None,
+            cosmos_container_properties: Dict[str, Any],
+            cosmos_database_properties: Dict[str, Any]
+    ):
+        self.cosmos_client = cosmos_client
+        self.database_name = database_name
+        self.container_name = container_name
+        self.embedding = embedding
+        self.vector_embedding_policy = vector_embedding_policy
+        self.indexing_policy = indexing_policy
+        self.cosmos_container_properties = cosmos_container_properties
+        self.cosmos_database_properties = cosmos_database_properties
+        self._cache_: Optional[AzureCosmosDBNoSqlVectorSearch] = None
+
+    def _create_llm_cache(self, llm_string: str) -> AzureCosmosDBNoSqlVectorSearch:
+
+        #create new vectorstore client to create the cache
+        if self.cosmos_client:
+            self._cache_ = AzureCosmosDBNoSqlVectorSearch(
+                cosmos_client=self.cosmos_client,
+                embedding=self.embedding,
+                vector_embedding_policy=self.vector_embedding_policy,
+                indexing_policy=self.indexing_policy,
+                cosmos_container_properties=self.cosmos_container_properties,
+                cosmos_database_properties=self.cosmos_database_properties,
+                database_name=self.database_name,
+                container_name=self.container_name
+            )
+
+        return self._cache_
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt."""
+        if not self._cache_:
+            self._cache_ = self._create_llm_cache(llm_string)
+        llm_cache = self._cache_
+        generations: List = []
+        # Read from a Hash
+        results = llm_cache.similarity_search(
+            query=prompt,
+            k=1,
+        )
+        if results:
+            for document in results:
+                try:
+                    generations.extend(loads(document.metadata["return_val"]))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.extend(
+                        _load_generations_from_json(document.metadata["return_val"])
+                    )
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "CosmosDBNoSqlSemanticCache only supports caching of "
+                    f"normal LLM generations, got {type(gen)}"
+                )
+        if not self._cache_:
+            self._cache_ = self._create_llm_cache(llm_string)
+        llm_cache = self._cache_
+        metadata = {
+            "llm_string": llm_string,
+            "prompt": prompt,
+            "return_val": dumps([g for g in return_val]),
+        }
+        llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear semantic cache for a given llm_string."""
+        database = self.cosmos_client.get_database_client(self.database_name)
+        container = database.get_container_client(self.container_name)
+        database.delete_container(self.container_name)
 
 class OpenSearchSemanticCache(BaseCache):
     """Cache that uses OpenSearch vector store backend"""
