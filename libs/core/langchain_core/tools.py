@@ -374,8 +374,6 @@ class ChildTool(BaseTool):
         super().__init__(**kwargs)
 
     class Config(Serializable.Config):
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property
