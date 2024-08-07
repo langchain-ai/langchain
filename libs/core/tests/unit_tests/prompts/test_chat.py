@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
+from pydantic import ValidationError
 from syrupy import SnapshotAssertion
 
 from langchain_core._api.deprecation import (
@@ -30,7 +31,6 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
-from langchain_core.pydantic_v1 import ValidationError
 from tests.unit_tests.pydantic_utils import _schema
 
 

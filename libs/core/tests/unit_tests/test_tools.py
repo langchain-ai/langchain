@@ -22,6 +22,7 @@ from typing import (
 )
 
 import pytest
+from pydantic import BaseModel, Field, ValidationError
 from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 from typing_extensions import Annotated, TypedDict, TypeVar
 
@@ -30,7 +31,6 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,

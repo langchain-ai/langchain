@@ -23,6 +23,12 @@ from typing import (
     cast,
 )
 
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    root_validator, model_validator,
+)
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
@@ -55,11 +61,6 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    root_validator,
-)
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
@@ -214,8 +215,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
     """An optional rate limiter to use for limiting the number of requests."""
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         """Raise deprecation warning if callback_manager is used.
 
         Args:
@@ -235,8 +237,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     # --- Runnable methods ---
 

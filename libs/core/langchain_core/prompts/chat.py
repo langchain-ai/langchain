@@ -26,7 +26,7 @@ from pydantic import (
     Field,
     PositiveInt,
     SkipValidation,
-    root_validator,
+    root_validator, model_validator,
 )
 
 from langchain_core._api import deprecated
@@ -1051,8 +1051,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         else:
             raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
 
-    @root_validator(pre=True)
-    def validate_input_variables(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_input_variables(cls, values: dict) -> Any:
         """Validate input variables.
 
         If input_variables is not set, it will be set to the union of

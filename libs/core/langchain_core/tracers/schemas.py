@@ -12,6 +12,8 @@ from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 
 from langchain_core._api import deprecated
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from pydantic import model_validator
+
 
 
 @deprecated("0.1.0", alternative="Use string instead.", removal="0.3.0")
@@ -128,8 +130,9 @@ class Run(BaseRunV2):
     trace_id: Optional[UUID] = None
     dotted_order: Optional[str] = None
 
-    @root_validator(pre=True)
-    def assign_name(cls, values: dict) -> dict:
+    @model_validator(mode="before")
+    @classmethod
+    def assign_name(cls, values: dict) -> Any:
         """Assign name to the run."""
         if values.get("name") is None:
             if "name" in values["serialized"]:

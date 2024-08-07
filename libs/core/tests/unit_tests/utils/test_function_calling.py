@@ -33,8 +33,9 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
+from pydantic import BaseModel, Field
+
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
