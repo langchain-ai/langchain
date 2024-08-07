@@ -153,6 +153,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.sparkllm import (
         ChatSparkLLM,
     )
+    from langchain_community.chat_models.straico import (
+        ChatStraico,
+    )
     from langchain_community.chat_models.tongyi import (
         ChatTongyi,
     )
@@ -207,7 +210,7 @@ __all__ = [
     "ChatPerplexity",
     "ChatPremAI",
     "ChatSparkLLM",
-    "ChatSnowflakeCortex",
+    "ChatStraico",
     "ChatTongyi",
     "ChatVertexAI",
     "ChatYandexGPT",
@@ -264,6 +267,7 @@ _module_lookup = {
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
     "ChatSnowflakeCortex": "langchain_community.chat_models.snowflake",
     "ChatSparkLLM": "langchain_community.chat_models.sparkllm",
+    "ChatStraico": "langchain_community.chat_models.straico",
     "ChatTongyi": "langchain_community.chat_models.tongyi",
     "ChatVertexAI": "langchain_community.chat_models.vertexai",
     "ChatYandexGPT": "langchain_community.chat_models.yandex",
