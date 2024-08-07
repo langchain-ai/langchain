@@ -1746,6 +1746,7 @@ def test__is_message_content_type(obj: Any, expected: bool) -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
+@pytest.mark.filterwarnings("error")
 def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
