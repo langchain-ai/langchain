@@ -142,9 +142,16 @@ class Objective(VectorStore):
             raise ObjectiveError("index_id is required for search")
         if "filter_query" in kwargs:
             logger.error("Filter queries are not yet supported and will be ignored.")
+
         index_id = kwargs.pop("index_id")
+        params = {"query": query}
+        if "k" in kwargs:
+            params["limit"] = kwargs["k"]
+
         response = self._request(
-            method="GET", endpoint=f"indexes/{index_id}/search", params={"query": query}
+            method="GET",
+            endpoint=f"indexes/{index_id}/search",
+            params=params,
         )
         return [self._doc_from_response(obj) for obj in response["results"]]
 
