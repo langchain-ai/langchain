@@ -15,7 +15,7 @@ when using LangChain with Pydantic.
 
 ## 1. Passing Pydantic objects to LangChain APIs
 
-Most LangChain APIs that accept Pydantic objects have been updated to accept both Pydantic v1 and v2 objects.
+Most LangChain APIs for *tool usage* (see list below) have been updated to accept either Pydantic v1 or v2 objects.
 
 * Pydantic v1 objects correspond to subclasses of `pydantic.BaseModel` if `pydantic 1` is installed or subclasses of `pydantic.v1.BaseModel` if `pydantic 2` is installed.
 * Pydantic v2 objects correspond to subclasses of `pydantic.BaseModel` if `pydantic 2` is installed.
