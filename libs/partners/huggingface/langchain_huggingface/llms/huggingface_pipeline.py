@@ -8,6 +8,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra
+from transformers.pipelines.text_generation import ReturnType
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -269,6 +270,7 @@ class HuggingFacePipeline(BaseLLM):
             # Process batch of prompts
             responses = self.pipeline(
                 batch_prompts,
+                return_full_text=False,
                 **pipeline_kwargs,
             )
 
@@ -295,7 +297,7 @@ class HuggingFacePipeline(BaseLLM):
                     text = text[len(batch_prompts[j]) :]
                 # Append the processed text to results
                 # The 'text' variable is in the ChatMl format so we get the last message (just gerenated by the model) and access the text content
-                text_generations.append(text[-1]["content"]) 
+                text_generations.append(text) 
 
         return LLMResult(
             generations=[[Generation(text=text)] for text in text_generations]
