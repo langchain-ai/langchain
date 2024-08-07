@@ -435,7 +435,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 async def aindex(
     docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
-    vectorstore: Union[VectorStore, DocumentIndex],
+    vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
