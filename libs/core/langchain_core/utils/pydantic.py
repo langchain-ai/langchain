@@ -143,7 +143,7 @@ def pre_init(func: Callable) -> Any:
             Dict[str, Any]: The values to initialize the model with.
         """
         # Insert default values
-        fields = cls.__fields__
+        fields = cls.model_fields
         for name, field_info in fields.items():
             # Check if allow_population_by_field_name is enabled
             # If yes, then set the field name to the alias
@@ -229,7 +229,7 @@ def _create_subset_model_v1(
     fields = {}
 
     for field_name in field_names:
-        field = model.__fields__[field_name]
+        field = model.__fields__[field_name]  # Using pydantic v1
         t = (
             # this isn't perfect but should work for most functions
             field.outer_type_
