@@ -218,9 +218,9 @@ def _create_subset_model_v1(
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     if PYDANTIC_MAJOR_VERSION == 1:
-        from pydantic import create_model
+        from pydantic import create_model  # pydantic: ignore
     elif PYDANTIC_MAJOR_VERSION == 2:
-        from pydantic.v1 import create_model
+        from pydantic.v1 import create_model  # type: ignore # pydantic: ignore
     else:
         raise NotImplementedError(
             f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
@@ -229,7 +229,8 @@ def _create_subset_model_v1(
     fields = {}
 
     for field_name in field_names:
-        field = model.__fields__[field_name]  # Using pydantic v1
+        # Using pydantic v1 so can access __fields__ as a dict.
+        field = model.__fields__[field_name]  # type: ignore
         t = (
             # this isn't perfect but should work for most functions
             field.outer_type_
