@@ -45,6 +45,17 @@ from typing import (
     get_type_hints,
 )
 
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Extra,
+    Field,
+    SkipValidation,
+    ValidationError,
+    create_model,
+    root_validator,
+    validate_arguments,
+)
 from typing_extensions import Annotated, TypeVar, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
@@ -65,16 +76,6 @@ from langchain_core.prompts import (
     PromptTemplate,
     aformat_document,
     format_document,
-)
-from pydantic import (
-    BaseModel,
-    Extra,
-    Field,
-    ValidationError,
-    create_model,
-    root_validator,
-    validate_arguments,
-    SkipValidation,
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
@@ -100,8 +101,6 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
-from pydantic import ConfigDict
-
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -272,7 +271,13 @@ def create_schema_from_function(
         if existing_params and existing_params[0] in ("self", "cls") and in_class:
             filter_args_ = [existing_params[0]] + list(FILTERED_ARGS)
         else:
-            filter_args_ = FILTERED_ARGS
+            filter_args_ = list(FILTERED_ARGS)
+
+        for param in existing_params:
+            if not include_injected and _is_injected_arg_type(
+                sig.parameters[param].annotation
+            ):
+                filter_args_.append(param)
 
     for arg in filter_args_:
         if arg in inferred_model.__fields__:
@@ -295,8 +300,15 @@ def create_schema_from_function(
 
         if field == "v__duplicate_kwargs":  # Internal pydantic field
             continue
+
         if field not in filter_args_:
             valid_properties.append(field)
+
+    ## FIGURE OUT WHAT TO DO HERE
+    # valid_properties = _get_filtered_args(
+    #     inferred_model, func, filter_args=filter_args, include_injected=include_injected
+    # )
+    ## FIGURE OUT WHAT TO DO HERE
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
