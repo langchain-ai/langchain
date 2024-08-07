@@ -3,10 +3,11 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import List, Optional, Union
 
+from pydantic import BaseModel
+
 from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.outputs.generation import Generation
 from langchain_core.outputs.run_info import RunInfo
-from langchain_core.pydantic_v1 import BaseModel
 
 
 class LLMResult(BaseModel):
@@ -17,7 +18,7 @@ class LLMResult(BaseModel):
     wants to return.
     """
 
-    generations: Union[List[List[Generation]], List[List[ChatGeneration]]]
+    generations: List[List[Union[Generation, ChatGeneration]]]
     """Generated outputs.
     
     The first dimension of the list represents completions for different input
