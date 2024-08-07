@@ -22,11 +22,11 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel
 from typing_extensions import Annotated, TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
@@ -84,7 +84,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     removal="0.3.0",
 )
 def convert_pydantic_to_openai_function(
-    model: Type[BaseModel],
+    model: Type,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -192,13 +192,13 @@ def convert_python_function_to_openai_function(
 
 def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescription:
     visited: Dict = {}
-    from pydantic.v1 import BaseModel # pydantic: ignore
+    from pydantic.v1 import BaseModel  # pydantic: ignore
 
     model = cast(
         Type[BaseModel],
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
-    return convert_pydantic_to_openai_function(model)
+    return convert_pydantic_to_openai_function(model)  # type: ignore
 
 
 _MAX_TYPED_DICT_RECURSION = 25
