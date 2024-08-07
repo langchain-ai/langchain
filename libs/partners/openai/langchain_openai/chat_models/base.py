@@ -1179,7 +1179,9 @@ class BaseChatOpenAI(BaseChatModel):
                         desired schema into the model call:
                         https://platform.openai.com/docs/guides/structured-outputs/json-mode
 
-                Learn more about the differences between the methods and which models support which methods here:
+                Learn more about the differences between the methods and which models
+                support which methods here:
+
                     - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
                     - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
 
