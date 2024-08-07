@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+import warnings
 from io import BytesIO
 from math import ceil
 from operator import itemgetter
@@ -74,7 +75,7 @@ from langchain_core.output_parsers.openai_tools import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough, chain
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
@@ -86,7 +87,11 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import (
+    PydanticBaseModel,
+    TypeBaseModel,
+    is_basemodel_subclass,
+)
 from langchain_core.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
@@ -526,13 +531,32 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        base_generation_info = {}
+
+        if "response_format" in payload and is_basemodel_subclass(
+            payload["response_format"]
+        ):
+            # TODO: Add support for streaming with Pydantic response_format.
+            warnings.warn("Streaming with Pydantic response_format not yet supported.")
+            chat_result = self._generate(
+                messages, stop, run_manager=run_manager, **kwargs
+            )
+            msg = chat_result.generations[0].message
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    **msg.dict(exclude={"type", "additional_kwargs"}),
+                    # preserve the Pydantic object without converting it to dict
+                    additional_kwargs=msg.additional_kwargs,
+                ),
+                generation_info=chat_result.generations[0].generation_info,
+            )
+            return
         if self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
             base_generation_info = {"headers": dict(raw_response.headers)}
         else:
             response = self.client.create(**payload)
-            base_generation_info = {}
         with response:
             is_first_chunk = True
             for chunk in response:
@@ -595,15 +619,21 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        generation_info = None
         if "response_format" in payload:
-            response = self.root_client.beta.completions.parse(**payload)
-        if self.include_response_headers:
+            if self.include_response_headers:
+                warnings.warn(
+                    "Cannot currently include response headers when response_format is "
+                    "specified."
+                )
+            payload.pop("stream")
+            response = self.root_client.beta.chat.completions.parse(**payload)
+        elif self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
         else:
             response = self.client.create(**payload)
-            generation_info = None
         return self._create_chat_result(response, generation_info)
 
     def _get_request_payload(
@@ -628,18 +658,19 @@ class BaseChatOpenAI(BaseChatModel):
         generation_info: Optional[Dict] = None,
     ) -> ChatResult:
         generations = []
-        if not isinstance(response, dict):
-            response = response.model_dump()
 
+        response_dict = (
+            response if isinstance(response, dict) else response.model_dump()
+        )
         # Sometimes the AI Model calling will get error, we should raise it.
         # Otherwise, the next code 'choices.extend(response["choices"])'
         # will throw a "TypeError: 'NoneType' object is not iterable" error
         # to mask the true error. Because 'response["choices"]' is None.
-        if response.get("error"):
-            raise ValueError(response.get("error"))
+        if response_dict.get("error"):
+            raise ValueError(response_dict.get("error"))
 
-        token_usage = response.get("usage", {})
-        for res in response["choices"]:
+        token_usage = response_dict.get("usage", {})
+        for res in response_dict["choices"]:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = {
@@ -659,9 +690,19 @@ class BaseChatOpenAI(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_name": response.get("model", self.model_name),
-            "system_fingerprint": response.get("system_fingerprint", ""),
+            "model_name": response_dict.get("model", self.model_name),
+            "system_fingerprint": response_dict.get("system_fingerprint", ""),
         }
+
+        if isinstance(response, openai.BaseModel) and getattr(
+            response, "choices", None
+        ):
+            message = response.choices[0].message  # type: ignore[attr-defined]
+            if hasattr(message, "parsed"):
+                generations[0].message.additional_kwargs["parsed"] = message.parsed
+            if hasattr(message, "refusal"):
+                generations[0].message.additional_kwargs["refusal"] = message.refusal
+
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
@@ -674,13 +715,31 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        base_generation_info = {}
+        if "response_format" in payload and is_basemodel_subclass(
+            payload["response_format"]
+        ):
+            # TODO: Add support for streaming with Pydantic response_format.
+            warnings.warn("Streaming with Pydantic response_format not yet supported.")
+            chat_result = await self._agenerate(
+                messages, stop, run_manager=run_manager, **kwargs
+            )
+            msg = chat_result.generations[0].message
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    **msg.dict(exclude={"type", "additional_kwargs"}),
+                    # preserve the Pydantic object without converting it to dict
+                    additional_kwargs=msg.additional_kwargs,
+                ),
+                generation_info=chat_result.generations[0].generation_info,
+            )
+            return
         if self.include_response_headers:
             raw_response = self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             base_generation_info = {"headers": dict(raw_response.headers)}
         else:
             response = await self.async_client.create(**payload)
-            base_generation_info = {}
         async with response:
             is_first_chunk = True
             async for chunk in response:
@@ -748,13 +807,23 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        if self.include_response_headers:
+        generation_info = None
+        if "response_format" in payload:
+            if self.include_response_headers:
+                warnings.warn(
+                    "Cannot currently include response headers when response_format is "
+                    "specified."
+                )
+            payload.pop("stream")
+            response = await self.root_async_client.beta.chat.completions.parse(
+                **payload
+            )
+        elif self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
             generation_info = {"headers": dict(raw_response.headers)}
         else:
             response = await self.async_client.create(**payload)
-            generation_info = None
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
         )
@@ -1074,6 +1143,7 @@ class BaseChatOpenAI(BaseChatModel):
         .. versionchanged:: 0.1.21
 
             Support for ``strict`` argument added.
+            Support for ``method`` = "json_schema" added.
 
         Args:
             schema:
@@ -1100,6 +1170,15 @@ class BaseChatOpenAI(BaseChatModel):
                 function-calling API. If "json_mode" then OpenAI's JSON mode will be
                 used. Note that if using "json_mode" then you must include instructions
                 for formatting the output into the desired schema into the model call.
+
+                .. versionchanged:: 0.1.21
+
+                        Added support for "json_schema".
+
+                .. note:: Planned breaking change in version `0.2.0`
+
+                    ``method`` wil default to "json_schema" instead of
+                    "function_calling".
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
@@ -1107,14 +1186,15 @@ class BaseChatOpenAI(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
-            strict: If True and ``method`` = "function_calling", model output is
-                guaranteed to exactly match the schema
-                If True, the input schema will also be
-                validated according to
+            strict: If True model output is guaranteed to exactly match the schema
+                If True, the input schema will also be validated according to
                 https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
                 If False, input schema will not be validated and model output will not
-                be validated.
-                If None, ``strict`` argument will not be passed to the model.
+                be validated. If None, ``strict`` argument will not be passed to the model.
+
+                If ``method`` is "json_schema" defaults to True.
+                If ``method`` is "function_calling" or "json_mode" defaults to None.
+                Can only be non-null if ``method`` is "function_calling" or "json_schema".
 
                 .. versionadded:: 0.1.21
 
@@ -1314,15 +1394,15 @@ class BaseChatOpenAI(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        if strict is not None and method != "function_calling":
+        if strict is not None and method == "json_mode":
             raise ValueError(
-                "Argument `strict` is only supported for `method`='function_calling'"
+                "Argument `strict` is not supported with `method`='json_mode'"
             )
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
                 raise ValueError(
-                    "schema must be specified when method is 'function_calling'. "
+                    "schema must be specified when method is not 'json_mode'. "
                     "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
@@ -1349,13 +1429,19 @@ class BaseChatOpenAI(BaseChatModel):
                 else JsonOutputParser()
             )
         elif method == "json_schema":
-            llm = self.bind(
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": convert_to_openai_json_schema(schema),
-                }
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is not 'json_mode'. "
+                    "Received None."
+                )
+            strict = strict if strict is not None else True
+            response_format = _convert_to_openai_response_format(schema, strict=strict)
+            llm = self.bind(response_format=response_format)
+            output_parser = (
+                cast(Runnable, _oai_structured_outputs_parser)
+                if is_pydantic_schema
+                else JsonOutputParser()
             )
-            output_parser = ...
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
@@ -1992,3 +2078,37 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
             height = (width * 768) // height
             width = 768
     return width, height
+
+
+def _convert_to_openai_response_format(
+    schema: Union[Dict[str, Any], Type], strict: bool
+) -> Union[Dict, TypeBaseModel]:
+    if isinstance(schema, type) and is_basemodel_subclass(schema):
+        return schema
+    else:
+        function = convert_to_openai_function(schema, strict=strict)
+        function["schema"] = function.pop("parameters")
+        return {"type": "json_schema", "json_schema": function}
+
+
+@chain
+def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
+    if ai_msg.additional_kwargs.get("parsed"):
+        return ai_msg.additional_kwargs["parsed"]
+    elif ai_msg.additional_kwargs.get("refusal"):
+        raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
+    else:
+        raise ValueError(
+            "Structured Output response does not have a 'parsed' field nor a 'refusal' "
+            "field."
+        )
+
+
+class OpenAIRefusalError(ValueError):
+    """Error raised when OpenAI Structured Outputs API refuses to generate answer.
+
+    When using OpenAI's Structured Outputs API with user-generated input, the model
+    may occasionally refuse to fulfill the request for safety reasons.
+
+    .. versionadded:: 0.1.21
+    """
