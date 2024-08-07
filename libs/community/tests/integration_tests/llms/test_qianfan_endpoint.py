@@ -50,7 +50,7 @@ def test_qianfan_with_param_alias() -> None:
     llm = QianfanLLMEndpoint(  # type: ignore[call-arg]
         api_key="your-api-key",  # type: ignore[arg-type]
         secret_key="your-secret-key",  # type: ignore[arg-type]
-        timeout=50
+        timeout=50,
     )  # type: ignore[call-arg]
     assert cast(SecretStr, llm.qianfan_ak).get_secret_value() == "your-api-key"
     assert cast(SecretStr, llm.qianfan_sk).get_secret_value() == "your-secret-key"
