@@ -248,8 +248,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         return values
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     # --- Runnable methods ---
