@@ -332,6 +332,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Check if streaming is implemented.
         if (not async_api) and sync_not_implemented:
             return False
+        # Note, since async falls back to sync we check both here.
         if async_api and async_not_implemented and sync_not_implemented:
             return False
 
