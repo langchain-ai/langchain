@@ -1,5 +1,5 @@
 import sys
-from typing import Any
+from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
 from langchain_community.embeddings import GPT4AllEmbeddings
@@ -15,10 +15,10 @@ class MockEmbed4All(MagicMock):
 
     def __init__(
         self,
-        model_name: str | None = None,
+        model_name: Optional[str] = None,
         *,
-        n_threads: int | None = None,
-        device: str | None = None,
+        n_threads: Optional[int] = None,
+        device: Optional[str] = None,
         **kwargs: Any,
     ):  # type: ignore[no-untyped-def]
         assert model_name == _GPT4ALL_MODEL_NAME
