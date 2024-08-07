@@ -20,7 +20,8 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -58,8 +59,9 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     config: Optional[RunnableConfig] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -383,9 +385,9 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                         id=spec.id,
                         name=spec.name,
                         description=spec.description
-                        or self.default.__fields__[field_name].description,
+                        or self.default.model_fields[field_name].description,
                         annotation=spec.annotation
-                        or self.default.__fields__[field_name].annotation,
+                        or self.default.model_fields[field_name].annotation,
                         default=getattr(self.default, field_name),
                         is_shared=spec.is_shared,
                     )
@@ -393,7 +395,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             else:
                 config_specs.append(
                     make_options_spec(
-                        spec, self.default.__fields__[field_name].description
+                        spec, self.default.model_fields[field_name].description
                     )
                 )
 
@@ -441,7 +443,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             init_params = {
                 k: v
                 for k, v in self.default.__dict__.items()
-                if k in self.default.__fields__
+                if k in self.default.model_fields
             }
             return (
                 self.default.__class__(**{**init_params, **configurable}),
