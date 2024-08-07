@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import GenericFakeChatModel
