@@ -1,12 +1,21 @@
 from typing import Any, AsyncIterator, Iterator, List
 
-from langchain_core.messages import AIMessageChunk, BaseMessage, ToolCallChunk
+import pytest
+
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ToolCallChunk,
+)
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
     PydanticToolsParser,
 )
+from langchain_core.outputs import ChatGeneration
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 STREAMED_MESSAGES: list = [
     AIMessageChunk(content=""),
@@ -518,3 +527,108 @@ async def test_partial_pydantic_output_parser_async() -> None:
 
         actual = [p async for p in chain.astream(None)]
         assert actual == EXPECTED_STREAMED_PYDANTIC
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="This test is for pydantic 2")
+def test_parse_with_different_pydantic_2_v1() -> None:
+    """Test with pydantic.v1.BaseModel from pydantic 2."""
+    import pydantic  # pydantic: ignore
+
+    class Forecast(pydantic.v1.BaseModel):
+        temperature: int
+        forecast: str
+
+    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # both v1 and v2 in the same codebase.
+    parser = PydanticToolsParser(tools=[Forecast])  # type: ignore[list-item]
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_OwL7f5PE",
+                "name": "Forecast",
+                "args": {"temperature": 20, "forecast": "Sunny"},
+            }
+        ],
+    )
+
+    generation = ChatGeneration(
+        message=message,
+    )
+
+    assert parser.parse_result([generation]) == [
+        Forecast(
+            temperature=20,
+            forecast="Sunny",
+        )
+    ]
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="This test is for pydantic 2")
+def test_parse_with_different_pydantic_2_proper() -> None:
+    """Test with pydantic.BaseModel from pydantic 2."""
+    import pydantic  # pydantic: ignore
+
+    class Forecast(pydantic.BaseModel):
+        temperature: int
+        forecast: str
+
+    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # both v1 and v2 in the same codebase.
+    parser = PydanticToolsParser(tools=[Forecast])  # type: ignore[list-item]
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_OwL7f5PE",
+                "name": "Forecast",
+                "args": {"temperature": 20, "forecast": "Sunny"},
+            }
+        ],
+    )
+
+    generation = ChatGeneration(
+        message=message,
+    )
+
+    assert parser.parse_result([generation]) == [
+        Forecast(
+            temperature=20,
+            forecast="Sunny",
+        )
+    ]
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="This test is for pydantic 1")
+def test_parse_with_different_pydantic_1_proper() -> None:
+    """Test with pydantic.BaseModel from pydantic 1."""
+    import pydantic  # pydantic: ignore
+
+    class Forecast(pydantic.BaseModel):
+        temperature: int
+        forecast: str
+
+    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # both v1 and v2 in the same codebase.
+    parser = PydanticToolsParser(tools=[Forecast])  # type: ignore[list-item]
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_OwL7f5PE",
+                "name": "Forecast",
+                "args": {"temperature": 20, "forecast": "Sunny"},
+            }
+        ],
+    )
+
+    generation = ChatGeneration(
+        message=message,
+    )
+
+    assert parser.parse_result([generation]) == [
+        Forecast(
+            temperature=20,
+            forecast="Sunny",
+        )
+    ]

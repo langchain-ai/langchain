@@ -8,11 +8,21 @@ ecosystem within LangChain.
 
 ## Installation and Setup
 
-If you are using a loader that runs locally, use the following steps to get `unstructured` and
-its dependencies running locally.
+If you are using a loader that runs locally, use the following steps to get `unstructured` and its
+dependencies running.
 
-- Install the Python SDK with `pip install unstructured`.
-    - You can install document specific dependencies with extras, i.e. `pip install "unstructured[docx]"`.
+- For the smallest installation footprint and to take advantage of features not available in the
+  open-source `unstructured` package, install the Python SDK with `pip install unstructured-client`
+  along with `pip install langchain-unstructured` to use the `UnstructuredLoader` and partition
+  remotely against the Unstructured API. This loader lives
+  in a LangChain partner repo instead of the `langchain-community` repo and you will need an
+  `api_key`, which you can generate a free key [here](https://unstructured.io/api-key/).
+    - Unstructured's documentation for the sdk can be found here:
+      https://docs.unstructured.io/api-reference/api-services/sdk
+
+- To run everything locally, install the open-source python package with `pip install unstructured`
+  along with `pip install langchain-community` and use the same `UnstructuredLoader` as mentioned above.
+    - You can install document specific dependencies with extras, e.g. `pip install "unstructured[docx]"`.
     - To install the dependencies for all document types, use `pip install "unstructured[all-docs]"`.
 - Install the following system dependencies if they are not already available on your system with e.g. `brew install` for Mac.
   Depending on what document types you're parsing, you may not need all of these.
@@ -22,16 +32,11 @@ its dependencies running locally.
     - `qpdf` (PDFs)
     - `libreoffice` (MS Office docs)
     - `pandoc` (EPUBs)
+- When running locally, Unstructured also recommends using Docker [by following this
+  guide](https://docs.unstructured.io/open-source/installation/docker-installation) to ensure all
+  system dependencies are installed correctly.
 
-When running locally, Unstructured also recommends using Docker [by following this guide](https://docs.unstructured.io/open-source/installation/docker-installation)
-to ensure all system dependencies are installed correctly.
-
-If you want to get up and running with less set up, you can
-simply run `pip install unstructured` and use `UnstructuredAPIFileLoader` or
-`UnstructuredAPIFileIOLoader`. That will process your document using the hosted Unstructured API.
-
-
-The `Unstructured API` requires API keys to make requests.
+The Unstructured API requires API keys to make requests.
 You can request an API key [here](https://unstructured.io/api-key-hosted) and start using it today!
 Checkout the README [here](https://github.com/Unstructured-IO/unstructured-api) here to get started making API calls.
 We'd love to hear your feedback, let us know how it goes in our [community slack](https://join.slack.com/t/unstructuredw-kbe4326/shared_invite/zt-1x7cgo0pg-PTptXWylzPQF9xZolzCnwQ).
@@ -42,29 +47,20 @@ Check out the instructions
 
 ## Data Loaders
 
-The primary usage of the `Unstructured` is in data loaders.
+The primary usage of `Unstructured` is in data loaders.
 
-### UnstructuredAPIFileIOLoader
+### UnstructuredLoader
 
-See a [usage example](/docs/integrations/document_loaders/unstructured_file#unstructured-api).
-
-```python
-from langchain_community.document_loaders import UnstructuredAPIFileIOLoader
-```
-
-### UnstructuredAPIFileLoader
-
-See a [usage example](/docs/integrations/document_loaders/unstructured_file#unstructured-api).
+See a [usage example](/docs/integrations/document_loaders/unstructured_file) to see how you can use
+this loader for both partitioning locally and remotely with the serverless Unstructured API.
 
 ```python
-from langchain_community.document_loaders import UnstructuredAPIFileLoader
+from langchain_unstructured import UnstructuredLoader
 ```
 
 ### UnstructuredCHMLoader
 
 `CHM` means `Microsoft Compiled HTML Help`.
-
-See a usage example in the API documentation.
 
 ```python
 from langchain_community.document_loaders import UnstructuredCHMLoader
@@ -117,15 +113,6 @@ See a [usage example](/docs/integrations/document_loaders/google_drive#passing-i
 
 ```python
 from langchain_community.document_loaders import UnstructuredFileIOLoader
-```
-
-### UnstructuredFileLoader
-
-See a [usage example](/docs/integrations/document_loaders/unstructured_file).
-
-
-```python
-from langchain_community.document_loaders import UnstructuredFileLoader
 ```
 
 ### UnstructuredHTMLLoader

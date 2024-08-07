@@ -18,14 +18,21 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
+from pydantic import BaseModel as RawBaseModel
+from pydantic import Field as RawField
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
     my_adder_tool,
 )
+from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-@tool
+class MagicFunctionSchema(RawBaseModel):
+    input: int = RawField(..., gt=-1000, lt=1000)
+
+
+@tool(args_schema=MagicFunctionSchema)
 def magic_function(input: int) -> int:
     """Applies a magic function to an input."""
     return input + 2
@@ -58,6 +65,10 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 
 class ChatModelIntegrationTests(ChatModelTests):
+    @property
+    def standard_chat_model_params(self) -> dict:
+        return {}
+
     def test_invoke(self, model: BaseChatModel) -> None:
         result = model.invoke("Hello")
         assert result is not None
@@ -211,10 +222,51 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert tool_call["type"] == "tool_call"
 
     def test_structured_output(self, model: BaseChatModel) -> None:
+        """Test to verify structured output with a Pydantic model."""
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        class Joke(BaseModel):
+        from pydantic import BaseModel as BaseModelProper
+        from pydantic import Field as FieldProper
+
+        class Joke(BaseModelProper):
+            """Joke to tell user."""
+
+            setup: str = FieldProper(description="question to set up a joke")
+            punchline: str = FieldProper(description="answer to resolve the joke")
+
+        # Pydantic class
+        # Type ignoring since the interface only officially supports pydantic 1
+        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
+        # We'll need to do a pass updating the type signatures.
+        chat = model.with_structured_output(Joke)  # type: ignore[arg-type]
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, Joke)
+
+        for chunk in chat.stream("Tell me a joke about cats."):
+            assert isinstance(chunk, Joke)
+
+        # Schema
+        chat = model.with_structured_output(Joke.model_json_schema())
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {"setup", "punchline"}
+
+        for chunk in chat.stream("Tell me a joke about cats."):
+            assert isinstance(chunk, dict)
+        assert isinstance(chunk, dict)  # for mypy
+        assert set(chunk.keys()) == {"setup", "punchline"}
+
+    @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Test requires pydantic 2.")
+    def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
+        """Test to verify compatibility with pydantic.v1.BaseModel.
+
+        pydantic.v1.BaseModel is available in the pydantic 2 package.
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        class Joke(BaseModel):  # Uses langchain_core.pydantic_v1.BaseModel
             """Joke to tell user."""
 
             setup: str = Field(description="question to set up a joke")
@@ -239,10 +291,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
-    def test_tool_message_histories_string_content(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with string tool contents
         (e.g. OpenAI).
@@ -425,6 +474,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                                 "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
                             }
                         ],
+                        "is_error": False,
                     },
                     {"type": "text", "text": "what's my sister's favorite color"},
                 ]

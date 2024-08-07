@@ -4,7 +4,7 @@ from typing import Any, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableSerializable
@@ -82,7 +82,7 @@ class RetryOutputParser(BaseOutputParser[T]):
         Returns:
             RetryOutputParser
         """
-        chain = prompt | llm
+        chain = prompt | llm | StrOutputParser()
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
     def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
@@ -214,7 +214,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         Returns:
             A RetryWithErrorOutputParser.
         """
-        chain = prompt | llm
+        chain = prompt | llm | StrOutputParser()
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
     def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
