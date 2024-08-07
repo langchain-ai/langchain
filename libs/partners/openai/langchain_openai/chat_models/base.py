@@ -285,7 +285,7 @@ class _FunctionCall(TypedDict):
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM]]
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM], Type]
 _DictOrPydantic = Union[Dict, _BM]
 
 
@@ -386,7 +386,7 @@ class BaseChatOpenAI(BaseChatModel):
         )
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -423,10 +423,19 @@ class BaseChatOpenAI(BaseChatModel):
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
         }
-
-        openai_proxy = values["openai_proxy"]
+        if values["openai_proxy"] and (
+            values["http_client"] or values["http_async_client"]
+        ):
+            openai_proxy = values["openai_proxy"]
+            http_client = values["http_client"]
+            http_async_client = values["http_async_client"]
+            raise ValueError(
+                "Cannot specify 'openai_proxy' if one of "
+                "'http_client'/'http_async_client' is already specified. Received:\n"
+                f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
+            )
         if not values.get("client"):
-            if openai_proxy and not values["http_client"]:
+            if values["openai_proxy"] and not values["http_client"]:
                 try:
                     import httpx
                 except ImportError as e:
@@ -434,13 +443,13 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_client"] = httpx.Client(proxy=openai_proxy)
+                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
             sync_specific = {"http_client": values["http_client"]}
             values["client"] = openai.OpenAI(
                 **client_params, **sync_specific
             ).chat.completions
         if not values.get("async_client"):
-            if openai_proxy and not values["http_async_client"]:
+            if values["openai_proxy"] and not values["http_async_client"]:
                 try:
                     import httpx
                 except ImportError as e:
@@ -448,11 +457,14 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_async_client"] = httpx.AsyncClient(proxy=openai_proxy)
+                values["http_async_client"] = httpx.AsyncClient(
+                    proxy=values["openai_proxy"]
+                )
             async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific
             ).chat.completions
+
         return values
 
     @property
@@ -936,38 +948,51 @@ class BaseChatOpenAI(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
         ] = None,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.
 
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
+
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
+                Supports any tool definition handled by
+                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Options are:
-                name of the tool (str): calls corresponding tool;
-                "auto": automatically selects a tool (including no tool);
-                "none": does not call a tool;
-                "any" or "required": force at least one tool to be called;
-                True: forces tool call (requires `tools` be length 1);
-                False: no effect;
+                    - str of the form ``"<<tool_name>>"``: calls <<tool_name>> tool.
+                    - ``"auto"``: automatically selects a tool (including no tool).
+                    - ``"none"``: does not call a tool.
+                    - ``"any"`` or ``"required"`` or ``True``: force at least one tool to be called.
+                    - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
+                    - ``False`` or ``None``: no effect, default OpenAI behavior.
+            strict: If True, model output is guaranteed to exactly match the JSON Schema
+                provided in the tool definition. If True, the input schema will be
+                validated according to
+                https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
+                If False, input schema will not be validated and model output will not
+                be validated.
+                If None, ``strict`` argument will not be passed to the model.
 
-                or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
-        """
+                .. versionadded:: 0.1.21
 
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+            kwargs: Any additional parameters are passed directly to
+                ``self.bind(**kwargs)``.
+        """  # noqa: E501
+
+        formatted_tools = [
+            convert_to_openai_tool(tool, strict=strict) for tool in tools
+        ]
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
@@ -1011,6 +1036,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
@@ -1021,6 +1047,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
@@ -1030,63 +1057,108 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
+        .. versionchanged:: 0.1.21
+
+            Support for ``strict`` argument added.
+
         Args:
-            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
-                then the model output will be an object of that class. If a dict then
-                the model output will be a dict. With a Pydantic class the returned
-                attributes will be validated, whereas with a dict they will not be. If
-                `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec or be a valid JSON schema
-                with top level 'title' and 'description' keys specified.
-            method: The method for steering model generation, either "function_calling"
+            schema:
+                The output schema. Can be passed in as:
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class (support added in 0.1.20),
+                    - or a Pydantic class.
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+
+                .. versionchanged:: 0.1.20
+
+                        Added support for TypedDict class.
+
+            method:
+                The method for steering model generation, one of "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If "json_mode" then OpenAI's JSON mode will be
                 used. Note that if using "json_mode" then you must include instructions
                 for formatting the output into the desired schema into the model call.
-            include_raw: If False then only the parsed structured output is returned. If
+            include_raw:
+                If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
+            strict: If True and ``method`` = "function_calling", model output is
+                guaranteed to exactly match the schema
+                If True, the input schema will also be
+                validated according to
+                https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
+                If False, input schema will not be validated and model output will not
+                be validated.
+                If None, ``strict`` argument will not be passed to the model.
+
+                .. versionadded:: 0.1.21
+
+                .. note:: Planned breaking change in version `0.2.0`
+
+                    ``strict`` will default to True when ``method`` is
+                    "function_calling" as of version `0.2.0`.
+            kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes any ChatModel input and returns as output:
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-                If include_raw is True then a dict with keys:
-                    raw: BaseMessage
-                    parsed: Optional[_DictOrPydantic]
-                    parsing_error: Optional[BaseException]
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object).
 
-                If include_raw is False then just _DictOrPydantic is returned,
-                where _DictOrPydantic depends on the schema:
+            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
-                    class.
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+                - ``"raw"``: BaseMessage
+                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``"parsing_error"``: Optional[BaseException]
 
-                If schema is a dict then _DictOrPydantic is a dict.
+        Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True:
+            .. note:: Valid schemas when using ``strict`` = True
 
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+                OpenAI has a number of restrictions on what types of schemas can be
+                provided if ``strict`` = True. When using Pydantic, our model cannot
+                specify any Field metadata (like min/max constraints) and fields cannot
+                have default values.
+
+                See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+
             .. code-block:: python
 
+                from typing import Optional
+
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_core.pydantic_v1 import BaseModel, Field
 
 
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: str
+                    justification: Optional[str] = Field(
+                        default=..., description="A justification for the answer."
+                    )
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, strict=True
+                )
 
                 structured_llm.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
@@ -1097,7 +1169,7 @@ class BaseChatOpenAI(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+        Example: schema=Pydantic class, method="function_calling", include_raw=True:
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -1111,7 +1183,7 @@ class BaseChatOpenAI(BaseChatModel):
                     justification: str
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -1125,24 +1197,27 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+        Example: schema=TypedDict class, method="function_calling", include_raw=False:
             .. code-block:: python
 
+                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
+                # from typing_extensions, not from typing.
+                from typing_extensions import Annotated, TypedDict
+
                 from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
-                from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
-                class AnswerWithJustification(BaseModel):
+                class AnswerWithJustification(TypedDict):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: str
+                    justification: Annotated[
+                        Optional[str], None, "A justification for the answer."
+                    ]
 
 
-                dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(dict_schema)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
@@ -1152,7 +1227,36 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
+        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+
+                oai_schema = {
+                    'name': 'AnswerWithJustification',
+                    'description': 'An answer to the user question along with justification for the answer.',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'answer': {'type': 'string'},
+                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                        },
+                       'required': ['answer']
+                   }
+               }
+
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
+                structured_llm = llm.with_structured_output(oai_schema)
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+        Example: schema=Pydantic class, method="json_mode", include_raw=True:
             .. code-block::
 
                 from langchain_openai import ChatOpenAI
@@ -1162,7 +1266,7 @@ class BaseChatOpenAI(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                llm = ChatOpenAI(model="gpt-4o", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -1171,38 +1275,40 @@ class BaseChatOpenAI(BaseChatModel):
 
                 structured_llm.invoke(
                     "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                     "What's heavier a pound of bricks or a pound of feathers?"
                 )
                 # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
                 #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
                 #     'parsing_error': None
                 # }
 
-        Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
+        Example: schema=None, method="json_mode", include_raw=True:
             .. code-block::
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
 
                 structured_llm.invoke(
                     "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                     "What's heavier a pound of bricks or a pound of feathers?"
                 )
                 # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
                 #     'parsed': {
                 #         'answer': 'They are both the same weight.',
                 #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
                 #     },
                 #     'parsing_error': None
                 # }
-
-
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
+        if strict is not None and method != "function_calling":
+            raise ValueError(
+                "Argument `strict` is only supported for `method`='function_calling'"
+            )
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1212,7 +1318,10 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             llm = self.bind_tools(
-                [schema], tool_choice=tool_name, parallel_tool_calls=False
+                [schema],
+                tool_choice=tool_name,
+                parallel_tool_calls=False,
+                strict=strict,
             )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
@@ -1445,7 +1554,10 @@ class ChatOpenAI(BaseChatOpenAI):
                 )
 
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            llm_with_tools = llm.bind_tools(
+                [GetWeather, GetPopulation]
+                # strict = True  # enforce tool args schema is respected
+            )
             ai_msg = llm_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?"
             )

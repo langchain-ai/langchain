@@ -86,10 +86,8 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         return values
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = Extra.forbid
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
         if self.examples is not None:
