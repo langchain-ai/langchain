@@ -298,8 +298,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     """[DEPRECATED]"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @root_validator(pre=True)
