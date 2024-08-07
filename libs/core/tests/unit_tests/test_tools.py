@@ -1751,11 +1751,11 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
 
     if use_v1_namespace:
 
-        class ModelA(BaseModel, Generic[A]):
+        class ModelA(BaseModel, Generic[A], extra="allow"):
             a: A
     else:
 
-        class ModelA(BaseModelProper, Generic[A]):  # type: ignore[no-redef]
+        class ModelA(BaseModelProper, Generic[A], extra="allow"):  # type: ignore[no-redef]
             a: A
 
     class ModelB(ModelA[str]):
@@ -1812,7 +1812,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
 def test__get_all_basemodel_annotations_v1() -> None:
     A = TypeVar("A")
 
-    class ModelA(BaseModel, Generic[A]):
+    class ModelA(BaseModel, Generic[A], extra="allow"):
         a: A
 
     class ModelB(ModelA[str]):
@@ -1863,3 +1863,41 @@ def test__get_all_basemodel_annotations_v1() -> None:
     }
     actual = _get_all_basemodel_annotations(ModelD[int])
     assert actual == expected
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
+def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
+    from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
+    from pydantic import Field as FieldV2  # pydantic: ignore
+    from pydantic import ValidationError as ValidationErrorV2  # pydantic: ignore
+
+    class Foo(BaseModelV2):
+        x: List[int] = FieldV2(
+            description="List of integers", min_length=10, max_length=15
+        )
+
+    @tool(args_schema=Foo)
+    def foo(x):  # type: ignore[no-untyped-def]
+        """foo"""
+        return x
+
+    assert foo.tool_call_schema.schema() == {
+        "description": "foo",
+        "properties": {
+            "x": {
+                "description": "List of integers",
+                "items": {"type": "integer"},
+                "maxItems": 15,
+                "minItems": 10,
+                "title": "X",
+                "type": "array",
+            }
+        },
+        "required": ["x"],
+        "title": "foo",
+        "type": "object",
+    }
+
+    assert foo.invoke({"x": [0] * 10})
+    with pytest.raises(ValidationErrorV2):
+        foo.invoke({"x": [0] * 9})

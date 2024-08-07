@@ -60,7 +60,7 @@ if TYPE_CHECKING:
         CallbackManagerForRetrieverRun,
     )
     from langchain_core.documents import Document
-    from langchain_core.indexing.base import UpsertResponse
+    from langchain_core.indexing import UpsertResponse
 
 logger = logging.getLogger(__name__)
 
@@ -1208,8 +1208,6 @@ class VectorStoreRetriever(BaseRetriever):
     )
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @root_validator(pre=True)
