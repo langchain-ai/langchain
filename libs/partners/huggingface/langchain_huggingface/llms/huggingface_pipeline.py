@@ -253,7 +253,7 @@ class HuggingFacePipeline(BaseLLM):
 
     def _generate(
         self,
-        prompts: List[str],
+        prompts: List[List[dict[str, str]]], # List of prompts in the ChatML format e.g {"role": "user", "content": "Hello, how are you?"}
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
@@ -294,7 +294,8 @@ class HuggingFacePipeline(BaseLLM):
                 if skip_prompt:
                     text = text[len(batch_prompts[j]) :]
                 # Append the processed text to results
-                text_generations.append(text)
+                # The 'text' variable is in the ChatMl format so we get the last message (just gerenated by the model) and access the text content
+                text_generations.append(text[-1]["content"]) 
 
         return LLMResult(
             generations=[[Generation(text=text)] for text in text_generations]
