@@ -45,6 +45,17 @@ from typing import (
     get_type_hints,
 )
 
+from pydantic import (  # pydantic: ignore
+    BaseModel,
+    ConfigDict,
+    Extra,
+    Field,
+    SkipValidation,
+    ValidationError,
+    create_model,
+    root_validator,
+    validate_arguments,
+)
 from typing_extensions import Annotated, TypeVar, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
@@ -58,23 +69,12 @@ from langchain_core.callbacks import (
 from langchain_core.callbacks.manager import (
     Callbacks,
 )
-from langchain_core.load.serializable import Serializable
 from langchain_core.messages.tool import ToolCall, ToolMessage
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
     aformat_document,
     format_document,
-)
-from pydantic import (  # pydantic: ignore
-    BaseModel,
-    Extra,
-    Field,
-    ValidationError,
-    create_model,
-    root_validator,
-    validate_arguments,
-    SkipValidation,
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
@@ -100,7 +100,6 @@ from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
 )
-from pydantic import ConfigDict
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 
@@ -498,7 +497,7 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
-                key_ = next(iter(input_args.__fields__.keys()))
+                key_ = next(iter(input_args.model_fields.keys()))
                 input_args.validate({key_: tool_input})
             return tool_input
         else:
