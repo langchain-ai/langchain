@@ -1797,7 +1797,7 @@ class _CachedAwaitable:
     def __await__(self) -> Generator:
         if self.result is _unset:
             self.result = yield from self.awaitable.__await__()
-        return self.result
+        return self.result  # type: ignore
 
 
 def _reawaitable(func: Callable) -> Callable:

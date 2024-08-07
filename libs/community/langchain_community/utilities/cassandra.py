@@ -41,7 +41,7 @@ async def aexecute_cql(session: Session, query: str, **kwargs: Any) -> Any:
     Args:
         session: The Cassandra session to use.
         query: The CQL query to execute.
-        **kwargs: Additional keyword arguments to pass to the session execute method.
+        kwargs: Additional keyword arguments to pass to the session execute method.
 
     Returns:
         The result of the query.
