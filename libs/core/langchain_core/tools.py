@@ -330,8 +330,16 @@ class ChildTool(BaseTool):
 
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to be called during tool execution."""
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """Deprecated. Please use callbacks instead."""
+
+    callback_manager: Optional[BaseCallbackManager] = deprecated(
+        name="callback_manager", since="0.1.7", removal="0.3.0", alternative="callbacks"
+    )(
+        Field(
+            default=None,
+            exclude=True,
+            description="Callback manager to add to the run trace.",
+        )
+    )
     tags: Optional[List[str]] = None
     """Optional list of tags associated with the tool. Defaults to None.
     These tags will be associated with each call to this tool,
