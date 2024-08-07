@@ -15,6 +15,7 @@ CLASSIFIER_URL = os.getenv("PEBBLO_CLASSIFIER_URL", "http://localhost:8000")
 PEBBLO_CLOUD_URL = os.getenv("PEBBLO_CLOUD_URL", "https://api.daxa.ai")
 
 PROMPT_URL = "/v1/prompt"
+PROMPT_GOV_URL = "/v1/prompt/governance"
 APP_DISCOVER_URL = "/v1/app/discover"
 
 

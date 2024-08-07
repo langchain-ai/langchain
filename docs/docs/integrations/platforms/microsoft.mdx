@@ -156,6 +156,20 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onedrive).
 from langchain_community.document_loaders import OneDriveLoader
 ```
 
+### Microsoft OneDrive File
+
+>[Microsoft OneDrive](https://en.wikipedia.org/wiki/OneDrive) (formerly `SkyDrive`) is a file-hosting service operated by Microsoft.
+
+First, you need to install a python package.
+
+```bash
+pip install o365
+```
+
+```python
+from langchain_community.document_loaders import OneDriveFileLoader
+```
+
 
 ### Microsoft Word
 
@@ -338,7 +352,7 @@ Follow the documentation [here](/docs/integrations/tools/bing_search) to get a d
 
 The environment variable `BING_SUBSCRIPTION_KEY` and `BING_SEARCH_URL` are required from Bing Search resource.
 
-```bash
+```python
 from langchain_community.tools.bing_search import BingSearchResults
 from langchain_community.utilities import BingSearchAPIWrapper
 

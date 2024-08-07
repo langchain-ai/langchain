@@ -23,6 +23,10 @@
   ],
   "redirects": [
     {
+      "source": "/v0.2/docs/versions/packages(/?)",
+      "destination": "/v0.2/docs/versions/release_policy/"
+    },
+    {
       "source": "/v0.2/docs/integrations/llms/llm_caching(/?)",
       "destination": "/v0.2/docs/integrations/llm_caching/"
     },
@@ -61,6 +65,14 @@
     {
       "source": "/cookbook(/?)",
       "destination": "/v0.1/docs/cookbook/"
+    },
+    {
+      "source": "/docs/integrations/toolkits/document_comparison_toolkit(/?)",
+      "destination": "/docs/tutorials/rag/"
+    },
+    {
+      "source": "/v0.2/docs/how_to/migrate_chains(/?)",
+      "destination": "/v0.2/docs/versions/migrating_chains"
     }
   ]
 }
