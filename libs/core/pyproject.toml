@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gigachain-core"
-version = "0.2.28"
+version = "0.2.29rc1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -33,6 +33,7 @@ jsonpatch = "^1.33"
 PyYAML = ">=5.3"
 packaging = ">=23.2,<25"
 typing-extensions = ">=4.7"
+langfuse = "^2.41.0"
 [[tool.poetry.dependencies.pydantic]]
 version = ">=1,<3"
 python = "<3.12.4"
@@ -77,16 +78,19 @@ optional = true
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
+
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.10,<1.11"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
 
+
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 grandalf = "^0.8"
+
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
@@ -106,11 +110,14 @@ python = "<3.12"
 version = "^1.26.0"
 python = ">=3.12"
 
+
 [tool.poetry.group.test_integration.dependencies]
+
 
 [tool.poetry.group.typing.dependencies.gigachain-text-splitters]
 path = "../text-splitters"
 develop = true
+
 
 [tool.poetry.group.test.dependencies.gigachain-standard-tests]
 path = "../standard-tests"

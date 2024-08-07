@@ -126,13 +126,13 @@ typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "anyio"
-version = "4.3.0"
+version = "4.4.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "anyio-4.3.0-py3-none-any.whl", hash = "sha256:048e05d0f6caeed70d731f3db756d35dcc1f35747c8c403364a8332c630441b8"},
-    {file = "anyio-4.3.0.tar.gz", hash = "sha256:f75253795a87df48568485fd18cdd2a3fa5c4f7c5be8e5e36637733fce06fed6"},
+    {file = "anyio-4.4.0-py3-none-any.whl", hash = "sha256:c1b2d8f46a8a812513012e1107cb0e68c17159a7a594208005a57dc776e1bdc7"},
+    {file = "anyio-4.4.0.tar.gz", hash = "sha256:5aadc6a1bbb7cdb0bede386cac5e2940f5e2ff3aa20277e991cf028e0585ce94"},
 ]
 
 [package.dependencies]
@@ -829,7 +829,7 @@ tqdm = ["tqdm"]
 
 [[package]]
 name = "gigachain"
-version = "0.2.11"
+version = "0.2.12"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -839,7 +839,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-gigachain-core = "^0.2.23"
+gigachain-core = "^0.2.27"
 gigachain-text-splitters = "^0.2.0"
 gigachat = "^0.1.33"
 langsmith = "^0.1.17"
@@ -859,7 +859,7 @@ url = "../../langchain"
 
 [[package]]
 name = "gigachain-community"
-version = "0.2.10"
+version = "0.2.11"
 description = "Community contributed GigaChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -869,8 +869,8 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain = "^0.2.9"
-gigachain-core = "^0.2.23"
+gigachain = "^0.2.12"
+gigachain-core = "^0.2.27"
 gigachat = "^0.1.33"
 langsmith = "^0.1.0"
 numpy = [
@@ -888,7 +888,7 @@ url = "../../community"
 
 [[package]]
 name = "gigachain-core"
-version = "0.2.25"
+version = "0.2.28"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -897,6 +897,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
+langfuse = "^2.41.0"
 langsmith = "^0.1.75"
 packaging = ">=23.2,<25"
 pydantic = [
@@ -905,6 +906,7 @@ pydantic = [
 ]
 PyYAML = ">=5.3"
 tenacity = "^8.1.0,!=8.4.0"
+typing-extensions = ">=4.7"
 
 [package.source]
 type = "directory"
@@ -912,7 +914,7 @@ url = "../../core"
 
 [[package]]
 name = "gigachain-openai"
-version = "0.1.19"
+version = "0.1.20"
 description = "An integration package connecting OpenAI and GigaChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -920,7 +922,7 @@ files = []
 develop = true
 
 [package.dependencies]
-gigachain-core = "^0.2.24"
+gigachain-core = "^0.2.26"
 openai = "^1.32.0"
 tiktoken = ">=0.7,<1"
 
@@ -930,7 +932,7 @@ url = "../openai"
 
 [[package]]
 name = "gigachain-text-splitters"
-version = "0.2.2"
+version = "0.2.3"
 description = "GigaChain text splitting utilities"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1417,6 +1419,31 @@ websocket-client = ">=0.32.0,<0.40.0 || >0.40.0,<0.41.dev0 || >=0.43.dev0"
 
 [package.extras]
 adal = ["adal (>=1.0.2)"]
+
+[[package]]
+name = "langfuse"
+version = "2.42.1"
+description = "A client library for accessing langfuse"
+optional = false
+python-versions = "<4.0,>=3.8.1"
+files = [
+    {file = "langfuse-2.42.1-py3-none-any.whl", hash = "sha256:8895d9645aea91815db51565f90e110a76d5e157a7b12eaf1cd6959e7aaa2263"},
+    {file = "langfuse-2.42.1.tar.gz", hash = "sha256:f89faf1c14308d488c90f8b7d0368fff3d259f80ffe34d169b9cfc3f0dbfab82"},
+]
+
+[package.dependencies]
+anyio = ">=4.4.0,<5.0.0"
+backoff = ">=1.10.0"
+httpx = ">=0.15.4,<1.0"
+idna = ">=3.7,<4.0"
+packaging = ">=23.2,<24.0"
+pydantic = ">=1.10.7,<3.0"
+wrapt = ">=1.14,<2.0"
+
+[package.extras]
+langchain = ["langchain (>=0.0.309)"]
+llama-index = ["llama-index (>=0.10.12,<2.0.0)"]
+openai = ["openai (>=0.27.8)"]
 
 [[package]]
 name = "langsmith"
