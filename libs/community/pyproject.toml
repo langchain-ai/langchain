@@ -156,4 +156,4 @@ develop = true
 
 [tool.poetry.group.typing.dependencies.langchain]
 path = "../langchain"
-develop = true
+develop = true 
