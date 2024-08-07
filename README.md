@@ -107,7 +107,7 @@ pip install gigachain-community
 
 Самый надежный способ избежать проблем при миграции с LangChain — использовать новое виртуальное окружение Python (*Python virtual environment*), в котором никогда не устанавливались пакеты LangChain.
 
-Чтобы создать новое виртуальное окружения [venv](https://docs.python.org/3/library/venv.html) используйте команды:
+Чтобы создать новое виртуальное окружение [venv](https://docs.python.org/3/library/venv.html), используйте команды:
 
 ```sh
 # Создает чистое виртуальное окружение Python
