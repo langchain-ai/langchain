@@ -74,15 +74,14 @@ module.exports = {
       items: [
         "versions/overview",
         "versions/release_policy",
-        "versions/packages",
         {
           type: 'doc',
           id: "how_to/pydantic_compatibility",
-          label: "Pydantic",
+          label: "Pydantic compatibility",
         },
         {
           type: "category",
-          label: "v0.2",
+          label: "Migrating to v0.2",
           link: { type: 'doc', id: 'versions/v0_2/index' },
           collapsible: false,
           collapsed: false,
@@ -95,7 +94,7 @@ module.exports = {
         {
           type: "category",
           label: "Migrating to LCEL",
-          link: {type: 'doc', id: 'versions/migrating_chains/index'},
+          link: { type: 'doc', id: 'versions/migrating_chains/index' },
           collapsible: false,
           collapsed: false,
           items: [{
