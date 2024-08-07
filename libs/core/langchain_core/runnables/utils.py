@@ -31,8 +31,8 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict, RootModel # pydantic: ignore
-from pydantic import create_model as _create_model_base # pydantic :ignore
+from pydantic import BaseModel, ConfigDict, RootModel  # pydantic: ignore
+from pydantic import create_model as _create_model_base  # pydantic :ignore
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
@@ -708,24 +708,32 @@ _SchemaConfig = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 NO_DEFAULT = object()
 
 
-def create_base_class(name: str, type_: Any, default_=NO_DEFAULT) -> Type[BaseModel]:
+def create_base_class(
+    name: str, type_: Any, default_: object = NO_DEFAULT
+) -> Type[BaseModel]:
     """Create a base class."""
 
     def schema(
-        cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
+        cls: Type[BaseModel],
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
     ) -> Dict[str, Any]:
-        schema_ = super(cls, cls).schema(by_alias=by_alias, ref_template=ref_template)
+        # Complains about schema not being defined in superclass
+        schema_ = super(cls, cls).schema(  # type: ignore[misc]
+            by_alias=by_alias, ref_template=ref_template
+        )
         schema_["title"] = name
         return schema_
 
     def model_json_schema(
-        cls,
+        cls: Type[BaseModel],
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = "validation",
     ) -> Dict[str, Any]:
-        schema_ = super(cls, cls).model_json_schema(
+        # Complains about model_json_schema not being defined in superclass
+        schema_ = super(cls, cls).model_json_schema(  # type: ignore[misc]
             by_alias=by_alias,
             ref_template=ref_template,
             schema_generator=schema_generator,
