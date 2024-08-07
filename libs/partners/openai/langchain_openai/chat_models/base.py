@@ -2124,11 +2124,14 @@ def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
         )
 
 
-class OpenAIRefusalError(ValueError):
-    """Error raised when OpenAI Structured Outputs API refuses to generate answer.
+class OpenAIRefusalError(Exception):
+    """Error raised when OpenAI Structured Outputs API returns a refusal.
 
     When using OpenAI's Structured Outputs API with user-generated input, the model
     may occasionally refuse to fulfill the request for safety reasons.
+
+    See here for more on refusals:
+    https://platform.openai.com/docs/guides/structured-outputs/refusals
 
     .. versionadded:: 0.1.21
     """
