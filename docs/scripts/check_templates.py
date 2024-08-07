@@ -17,15 +17,15 @@ INFO_BY_DIR: Dict[str, Dict[str, Union[int, str]]] = {
     "document_loaders": {
         "issue_number": 22866,
     },
-    "stores": {},
+    "stores": {"issue_number": 24888},
     "llms": {
         "issue_number": 24803,
     },
     "text_embedding": {"issue_number": 14856},
-    "toolkits": {"issue_number": "TODO"},
+    "toolkits": {"issue_number": 24820},
     "tools": {"issue_number": "TODO"},
     "vectorstores": {"issue_number": 24800},
-    "retrievers": {"issue_number": "TODO"},
+    "retrievers": {"issue_number": 24908},
 }
 
 
