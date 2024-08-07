@@ -197,7 +197,11 @@ class Objective(VectorStore):
         for attempt in range(MAX_RETRIES):
             try:
                 response = self.http_session.request(
-                    method, url, headers=headers, json=data, params=params,
+                    method,
+                    url,
+                    headers=headers,
+                    json=data,
+                    params=params,
                 )
                 response.raise_for_status()
                 return response.json()
