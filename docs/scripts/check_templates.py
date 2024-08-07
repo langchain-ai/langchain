@@ -67,8 +67,6 @@ def check_header_order(path: Path) -> None:
     with open(path, "r") as f:
         doc = f.read()
     regex = r".*".join(headers)
-    print(headers)
-    print(regex)
 
     problems = []
     for index, header in enumerate(headers):
@@ -91,16 +89,23 @@ def check_header_order(path: Path) -> None:
     if problems:
         issueline = (
             (
-                "\nPlease see https://github.com/langchain-ai/langchain/issues/"
+                " Please see https://github.com/langchain-ai/langchain/issues/"
                 f"{issue_number} for instructions on how to correctly format a "
-                f"{doc_dir} integration page.\nProblems:\n"
+                f"{doc_dir} integration page "
+                "and templates at https://github.com/langchain-ai/langchain/tree/master"
+                "/libs/cli/langchain_cli/integration_template/docs "
+                "Problems: "
             )
             if isinstance(issue_number, int)
-            else "Problems:\n"
+            else (
+                " Please see doc templates at https://github.com/langchain-ai/langchain/tree/master"
+                "/libs/cli/langchain_cli/integration_template/docs "
+                "Problems: "
+            )
         )
         raise ValueError(
-            f"Document {path} is missing headers or does not match the expected header order.{issueline}"
-            "\n".join(problems)
+            f"Document {path} is missing headers or does not match the expected header order.{issueline}" +
+            ", ".join(problems)
         )
 
 
