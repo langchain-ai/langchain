@@ -326,7 +326,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if not async_api and type(self)._stream == BaseChatModel._stream:
             return False
 
-        # now we know streaming functionality is implemented, so we check if it's disabled
+        # now we know streaming functionality is implemented, so we check if it's
+        # disabled
         if self.disable_streaming is True:
             return False
         if (
@@ -349,8 +350,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if not run_manager:
             return False
 
-        # TODO(erick): confirm this next() logic actually gives a performance
-        # benefit over any(...)
         return next(
             (
                 True
