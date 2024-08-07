@@ -1148,7 +1148,7 @@ class BaseChatOpenAI(BaseChatModel):
         Args:
             schema:
                 The output schema. Can be passed in as:
-                
+
                     - an OpenAI function/tool schema,
                     - a JSON Schema,
                     - a TypedDict class (support added in 0.1.20),
@@ -1164,21 +1164,21 @@ class BaseChatOpenAI(BaseChatModel):
 
                         Added support for TypedDict class.
 
-            method: 
+            method:
                 The method for steering model generation, one of:
-                
-                    - "function_calling": 
-                        Uses OpenAI's tool-calling (formerly called function calling) API: 
+
+                    - "function_calling":
+                        Uses OpenAI's tool-calling (formerly called function calling) API:
                         https://platform.openai.com/docs/guides/function-calling
-                    - "json_schema": 
-                        Uses OpenAI's Structured Output API: 
+                    - "json_schema":
+                        Uses OpenAI's Structured Output API:
                         https://platform.openai.com/docs/guides/structured-outputs
-                    - "json_mode": 
-                        Uses OpenAI's JSON mode. Note that if using JSON mode then you 
-                        must include instructions for formatting the output into the 
-                        desired schema into the model call: 
+                    - "json_mode":
+                        Uses OpenAI's JSON mode. Note that if using JSON mode then you
+                        must include instructions for formatting the output into the
+                        desired schema into the model call:
                         https://platform.openai.com/docs/guides/structured-outputs/json-mode
-                        
+
                 Learn more about the differences between the methods and which models support which methods here:
                     - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
                     - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
@@ -1198,19 +1198,19 @@ class BaseChatOpenAI(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
-            strict: 
-                - True: 
+            strict:
+                - True:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to
                     https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
-                - False: 
-                    Input schema will not be validated and model output will not be 
-                    validated. 
-                - None: 
+                - False:
+                    Input schema will not be validated and model output will not be
+                    validated.
+                - None:
                     ``strict`` argument will not be passed to the model.
 
-                If ``method`` is "json_schema" defaults to True. If ``method`` is 
-                "function_calling" or "json_mode" defaults to None. Can only be 
+                If ``method`` is "json_schema" defaults to True. If ``method`` is
+                "function_calling" or "json_mode" defaults to None. Can only be
                 non-null if ``method`` is "function_calling" or "json_schema".
 
                 .. versionadded:: 0.1.21
@@ -1230,7 +1230,7 @@ class BaseChatOpenAI(BaseChatModel):
             Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-            
+
                 - "raw": BaseMessage
                 - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
                 - "parsing_error": Optional[BaseException]
