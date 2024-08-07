@@ -22,6 +22,13 @@ from typing import (
     overload,
 )
 
+from pydantic import (
+    Field,
+    PositiveInt,
+    SkipValidation,
+    root_validator,
+)
+
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable
 from langchain_core.messages import (
@@ -39,12 +46,6 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
-from langchain_core.pydantic_v1 import (
-    Field,
-    PositiveInt,
-    SkipValidation,
-    root_validator,
-)
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
@@ -213,8 +214,12 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "chat"]
 
-    def __init__(self, variable_name: str, *, optional: bool = False, **kwargs: Any):
-        super().__init__(variable_name=variable_name, optional=optional, **kwargs)
+    def __init__(
+        self, variable_name: str, *, optional: bool = False, **kwargs: Any
+    ) -> None:
+        super().__init__(  # type: ignore[arg-type]
+            variable_name=variable_name, optional=optional, **kwargs
+        )
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
