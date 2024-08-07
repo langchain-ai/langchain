@@ -51,8 +51,7 @@ class Objective(VectorStore):
         raise NotImplementedError
 
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
-        """Upsert document metadata into the vector store.
-        """
+        """Upsert document metadata into the vector store."""
 
         def _upsert(document) -> (str, bool):
             try:
