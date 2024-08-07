@@ -1,6 +1,6 @@
-from typing import Any, Type
+from typing import Any
 
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 # Function to replace allOf with $ref
@@ -68,9 +68,13 @@ def _remove_enum_description(obj: Any) -> None:
             _remove_enum_description(item)
 
 
-def _schema(obj: Type[BaseModel]) -> dict:
+def _schema(obj: Any) -> dict:
     """Return the schema of the object."""
     # Remap to old style schema
+    if not is_basemodel_subclass(obj):
+        raise TypeError(
+            f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
+        )
     if not hasattr(obj, "model_json_schema"):  # V1 model
         return obj.schema()
 
