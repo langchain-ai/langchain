@@ -327,14 +327,22 @@ def convert_to_openai_function(
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
     Args:
-        function: A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
+        function:
+            A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
             Tool object, or a Python function. If a dictionary is passed in, it is
             assumed to already be a valid OpenAI function or a JSON schema with
             top-level 'title' and 'description' keys specified.
-        strict: If True, model output is guaranteed to exactly match the JSON Schema
+        strict:
+            If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in function definition.
+
+            .. versionadded:: 0.2.29
 
     Returns:
         A dict version of the passed in function which is compatible with the OpenAI
@@ -393,18 +401,26 @@ def convert_to_openai_tool(
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI tool.
 
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
     Args:
-        tool: Either a dictionary, a pydantic.BaseModel class, Python function, or
+        tool:
+            Either a dictionary, a pydantic.BaseModel class, Python function, or
             BaseTool. If a dictionary is passed in, it is assumed to already be a valid
             OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
             'description' keys specified.
-        strict: If True, model output is guaranteed to exactly match the JSON Schema
+        strict:
+            If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in tool definition.
 
+            .. versionadded:: 0.2.29
+
     Returns:
         A dict version of the passed in tool which is compatible with the
-            OpenAI tool-calling API.
+        OpenAI tool-calling API.
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
