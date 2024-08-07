@@ -843,7 +843,7 @@ url = "../community"
 
 [[package]]
 name = "gigachain-core"
-version = "0.2.28"
+version = "0.2.29rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -868,7 +868,7 @@ url = "../core"
 
 [[package]]
 name = "gigachain-openai"
-version = "0.1.20"
+version = "0.1.21rc1"
 description = "An integration package connecting OpenAI and GigaChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -876,7 +876,7 @@ files = []
 develop = true
 
 [package.dependencies]
-gigachain-core = "^0.2.26"
+gigachain-core = "^0.2.29rc1"
 openai = "^1.32.0"
 tiktoken = ">=0.7,<1"
 
