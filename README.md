@@ -104,6 +104,19 @@ pip install gigachain-community
 
 ### Миграция с LangChain
 
+Для миграции с LangChain рекомендуется создать чистое окружение python (virtual environment) в котором никогда не было пакетов LangChain.
+
+Для виртуального окружения venv это можно сделать следующим образом:
+
+```sh
+# Создает чистое виртуальное окружение python
+python -m venv .venv
+# Активирует новое окружение
+source .venv/bin/activate
+# Устанавливает gigachain
+pip install gigachain-community
+```
+<!--
 Для миграции с LangChain и начала использования GigaChain нужно удалить все компоненты библиотеки `langchain`:
 
 ```sh
@@ -115,6 +128,7 @@ pip uninstall langchain langchain-experimental langchain-core langchain-communit
 ```sh
 pip install gigachain-community
 ```
+-->
 
 ## Работа с GigaChain
 
@@ -261,17 +275,21 @@ embeddings = GigaChatEmbeddings(
 - у вас установлена последняя версия библиотеки;
 - вместо модулей GigaChain не установлены модули LangChain.
 
+Одновременные использование библиотек LangChain и GigaChain вызывает конфликты, которые могут проявится даже после полного удаления одной из библиотек, поэтому мы рекомендуем создать чистое виртуальное окружение python и установить только пакеты из состава GigaChain. См. подробный пример в разделе [Миграция с LangChain](#Миграция-с-LangChain).
+<!--
 В любом случае для решения проблемы нужно удалить модули LangChain и повторно установить последние версии модулей GigaChain.
-
+-->
 Для вывода полного списка установленных модулей используйте команду:
 
 ```shell
 pip list
 ```
 
-> [!NOTE]
-> Модули `langchain_hub` и `langsmith` не требуют удаления и переустановки.
+Вывод команды не должен содержать модулей, которые содержат слово `langchain` в своём названии.
 
+> [!NOTE]
+> Исключение составляют модули `langchain_hub` и `langsmith`. Они не требуют удаления и переустановки.
+<!--
 Для удаления модулей LangChain используйте команды менеджера пакетов:
 
 ```shell
@@ -295,7 +313,7 @@ pip install -U gigachain-experimental
 pip install -U gigachain-openai
 pip install -U gigachain
 ```
-
+-->
 ### Работа с большими текстами
 
 Обработка больших текстов может занимать у модели продолжительное время — 10 минут и более.
