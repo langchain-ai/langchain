@@ -1,5 +1,6 @@
 import json
 from typing import Annotated, Generic, List, Type
+from typing import Optional as Optional
 
 import pydantic  # pydantic: ignore
 from pydantic import SkipValidation  # pydantic: ignore
