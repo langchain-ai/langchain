@@ -217,7 +217,9 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     def __init__(
         self, variable_name: str, *, optional: bool = False, **kwargs: Any
     ) -> None:
-        super().__init__(  # type: ignore[arg-type]
+        # mypy can't detect the init which is defined in the parent class
+        # b/c these are BaseModel classes.
+        super().__init__(  # type: ignore
             variable_name=variable_name, optional=optional, **kwargs
         )
 
