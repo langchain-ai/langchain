@@ -38,7 +38,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
                 model_name=values.get("model_name"),
                 n_threads=values.get("n_threads"),
                 device=values.get("device"),
-                **values.get("gpt4all_kwargs"),
+                **(values.get("gpt4all_kwargs") or {}),
             )
         except ImportError:
             raise ImportError(

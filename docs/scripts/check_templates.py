@@ -17,15 +17,15 @@ INFO_BY_DIR: Dict[str, Dict[str, Union[int, str]]] = {
     "document_loaders": {
         "issue_number": 22866,
     },
-    "stores": {},
+    "stores": {"issue_number": 24888},
     "llms": {
         "issue_number": 24803,
     },
     "text_embedding": {"issue_number": 14856},
-    "toolkits": {"issue_number": "TODO"},
+    "toolkits": {"issue_number": 24820},
     "tools": {"issue_number": "TODO"},
     "vectorstores": {"issue_number": 24800},
-    "retrievers": {"issue_number": "TODO"},
+    "retrievers": {"issue_number": 24908},
 }
 
 
@@ -52,6 +52,9 @@ def _get_headers(doc_dir: str) -> Iterable[str]:
 
 
 def check_header_order(path: Path) -> None:
+    if path.name.startswith("index."):
+        # skip index pages
+        return
     doc_dir = path.parent.name
     if doc_dir not in INFO_BY_DIR:
         # Skip if not a directory we care about
