@@ -133,6 +133,7 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
+        from pydantic.v1.fields import FieldInfo  # pydantic: ignore
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -206,6 +207,25 @@ def deprecated(
                     warn_if_direct_instance
                 )
                 return cast(T, obj)
+
+        elif isinstance(obj, FieldInfo):
+            from langchain_core.pydantic_v1 import Field
+
+            wrapped = None
+            if not _obj_type:
+                _obj_type = "attribute"
+            if not _name:
+                raise ValueError()
+            old_doc = obj.description
+
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+                return Field(
+                    default=obj.default,
+                    default_factory=obj.default_factory,
+                    description=new_doc,
+                    alias=obj.alias,
+                    exclude=obj.exclude,
+                )
 
         elif isinstance(obj, property):
             if not _obj_type:
