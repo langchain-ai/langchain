@@ -272,11 +272,11 @@ def create_schema_from_function(
         else:
             filter_args_ = list(FILTERED_ARGS)
 
-        for param_ in existing_params:
+        for existing_param in existing_params:
             if not include_injected and _is_injected_arg_type(
-                sig.parameters[param_].annotation
+                sig.parameters[existing_param].annotation
             ):
-                filter_args_.append(param_)
+                filter_args_.append(existing_param)
 
     for arg in filter_args_:
         if arg in inferred_model.__fields__:
