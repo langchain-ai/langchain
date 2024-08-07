@@ -1,4 +1,4 @@
-from langchain_community.retrievers.azure_ai_search import (
+from langchain_snowflake.search_retriever import (
     CortexSearchRetriever,
 )
 from langchain_core.documents import Document

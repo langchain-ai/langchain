@@ -211,15 +211,12 @@ class ChatSnowflakeCortex(BaseChatModel):
             connection_params["password"] = values[
                 "snowflake_password"
             ].get_secret_value()
-            connection_params["authenticator"] = "username_password_mfa"
         else:
             connection_params["authenticator"] = values["authenticator"]
 
         try:
-            print(connection_params)
             values["_sp_session"] = Session.builder.configs(connection_params).create()
         except Exception as e:
-            print(values)
             raise ChatSnowflakeCortexError(f"Failed to create session: {e}")
 
         try:

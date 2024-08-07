@@ -59,6 +59,8 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 
 class ChatModelIntegrationTests(ChatModelTests):
+    def __init__(self):
+        print("params:", self.chat_model_params)
     def test_invoke(self, model: BaseChatModel) -> None:
         result = model.invoke("Hello")
         assert result is not None

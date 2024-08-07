@@ -1,119 +1,55 @@
-import json
 from typing import Any, Dict, List, Optional
 
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
-    pre_init,
 )
 from langchain_core.utils.env import env_var_is_set
 from langchain_core.utils.utils import build_extra_kwargs
 
-SUPPORTED_ROLES: List[str] = [
-    "system",
-    "user",
-    "assistant",
-]
+# questions:
+# 1. is the filter argument to Cortex Search always of the format Dict[str, Dict[str, str]]?
 
 
-class ChatSnowflakeCortexError(Exception):
+class CortexSearchRetrieverError(Exception):
     """Error with Snowpark client."""
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    """Convert a LangChain message to a dictionary.
-
-    Args:
-        message: The LangChain message.
-
-    Returns:
-        The dictionary.
-    """
-    message_dict: Dict[str, Any] = {
-        "content": message.content,
-    }
-
-    # populate role and additional message data
-    if isinstance(message, ChatMessage) and message.role in SUPPORTED_ROLES:
-        message_dict["role"] = message.role
-    elif isinstance(message, SystemMessage):
-        message_dict["role"] = "system"
-    elif isinstance(message, HumanMessage):
-        message_dict["role"] = "user"
-    elif isinstance(message, AIMessage):
-        message_dict["role"] = "assistant"
-    else:
-        raise TypeError(f"Got unknown type {message}")
-    return message_dict
-
-
-def _truncate_at_stop_tokens(
-    text: str,
-    stop: Optional[List[str]],
-) -> str:
-    """Truncates text at the earliest stop token found."""
-    if stop is None:
-        return text
-
-    for stop_token in stop:
-        stop_token_idx = text.find(stop_token)
-        if stop_token_idx != -1:
-            text = text[:stop_token_idx]
-    return text
-
-
-class ChatSnowflakeCortex(BaseChatModel):
-    """Snowflake Cortex based Chat model
-
-    To use you must have the ``snowflake-snowpark-python`` Python package installed and
-    either:
-
-        1. environment variables set with your snowflake credentials or
-        2. directly passed in as kwargs to the ChatSnowflakeCortex constructor.
-
-    Example:
-        .. code-block:: python
-
-            from langchain_community.chat_models import ChatSnowflakeCortex
-            chat = ChatSnowflakeCortex()
-    """
+class CortexSearchRetriever(BaseRetriever):
+    """Retriever for Snowflake Cortex Search."""
 
     _sp_session: Any = None
     """Snowpark session object."""
 
-    model: str = "snowflake-arctic"
-    """Snowflake cortex hosted LLM model name, defaulted to `snowflake-arctic`.
-        Refer to docs for more options."""
-
-    cortex_function: str = "complete"
-    """Cortex function to use, defaulted to `complete`.
-        Refer to docs for more options."""
-
-    temperature: float = 0.7
-    """Model temperature. Value should be >= 0 and <= 1.0"""
-
-    max_tokens: Optional[int] = None
-    """The maximum number of output tokens in the response."""
-
-    top_p: Optional[float] = None
-    """top_p adjusts the number of choices for each predicted tokens based on
-        cumulative probabilities. Value should be ranging between 0.0 and 1.0. 
-    """
+    _sp_root: Any = None
+    """Snowpark API Root object."""
 
     authenticator: Optional[str] = Field(default=None, alias="authenticator")
     """Authenticator to utilize when logging into Snowflake.
+        Refer to docs for more options."""
+
+    columns: Optional[List[Any]] = Field(default=None, alias="columns")
+    """Columns to search when using the Search Service.
+        Refer to docs for more options."""
+
+    cortex_search_service: Optional[str] = Field(default=None, alias="search_service")
+    """Cortex search service to use, stored in Snowflake database.
+        Refer to docs for more options."""
+
+    filter: Optional[Dict[str, Any]] = Field(default=None, alias="filter")
+    """Filter to use when querying the Cortex Search Service.
+        Refer to docs for more options."""
+
+    limit: Optional[int] = Field(default=None, alias="limit")
+    """Limit of number of responses to obtain when querying the Cortex Search Service.
         Refer to docs for more options."""
 
     snowflake_username: Optional[str] = Field(default=None, alias="username")
@@ -173,12 +109,12 @@ class ChatSnowflakeCortex(BaseChatModel):
                 values, "authenticator", "AUTHENTICATOR"
             )
             if values["authenticator"].lower() != "externalbrowser":
-                raise ChatSnowflakeCortexError(
+                raise CortexSearchRetrieverError(
                     "Unable to authenticate. Unsupported authentication method"
                 )
-
+            # check if authentication method is supported
         else:
-            raise ChatSnowflakeCortexError(
+            raise CortexSearchRetrieverError(
                 "Unable to authenticate. Please input Snowflake password directly/as env variable, or authenticate with externalbrowser."
             )
         values["snowflake_account"] = get_from_dict_or_env(
@@ -211,67 +147,66 @@ class ChatSnowflakeCortex(BaseChatModel):
             connection_params["password"] = values[
                 "snowflake_password"
             ].get_secret_value()
-            connection_params["authenticator"] = "username_password_mfa"
         else:
             connection_params["authenticator"] = values["authenticator"]
 
         try:
-            print(connection_params)
             values["_sp_session"] = Session.builder.configs(connection_params).create()
         except Exception as e:
-            print(values)
-            raise ChatSnowflakeCortexError(f"Failed to create session: {e}")
+            raise CortexSearchRetrieverError(f"Failed to create session: {e}")
 
         try:
             values["_sp_root"] = Root(values["_sp_session"])
         except Exception as e:
-            raise ChatSnowflakeCortexError(f"Failed to initialize Root: {e}")
+            raise CortexSearchRetrieverError(f"Failed to initialize Root: {e}")
 
         return values
 
-    def __del__(self) -> None:
-        if getattr(self, "_sp_session", None) is not None:
-            self._sp_session.close()
+    def _create_document(self, response: Dict, search_column: str) -> Document:
+        content = response.pop(search_column)
+        doc = Document(page_content=content, metadata=response)
 
-    @property
-    def _llm_type(self) -> str:
-        """Get the type of language model used by this chat model."""
-        return f"snowflake-cortex-{self.model}"
+        return doc
 
-    def _generate(
+    def _get_relevant_documents(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        query: str,
+        search_column: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
-    ) -> ChatResult:
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
-        message_str = str(message_dicts)
-        options = {"temperature": self.temperature}
-        if self.top_p is not None:
-            options["top_p"] = self.top_p
-        if self.max_tokens is not None:
-            options["max_tokens"] = self.max_tokens
-        options_str = str(options)
-        sql_stmt = f"""
-            select snowflake.cortex.{self.cortex_function}(
-                '{self.model}'
-                ,{message_str},{options_str}) as llm_response;"""
-
+    ) -> List[Document]:
         try:
-            l_rows = self._sp_session.sql(sql_stmt).collect()
-        except Exception as e:
-            raise ChatSnowflakeCortexError(
-                f"Error while making request to Snowflake Cortex via Snowpark: {e}"
+            responses = (
+                self._sp_root.databases[self.snowflake_database]
+                .schemas[self.snowflake_schema]
+                .cortex_search_services[self.cortex_search_service]
+                .search(
+                    query=query,
+                    columns=self.columns,
+                    filter=self.filter,
+                    limit=self.limit,
+                )
             )
 
-        response = json.loads(l_rows[0]["LLM_RESPONSE"])
-        ai_message_content = response["choices"][0]["messages"]
+            document_list = []
+            for response in responses.results:
+                if search_column not in response.keys():
+                    raise CortexSearchRetrieverError(
+                        "Search column not found in Cortex Search response"
+                    )
+                else:
+                    document_list.append(self._create_document(response, search_column))
+        except Exception as e:
+            raise CortexSearchRetrieverError("Failed in search: {e}")
 
-        content = _truncate_at_stop_tokens(ai_message_content, stop)
-        message = AIMessage(
-            content=content,
-            response_metadata=response["usage"],
-        )
-        generation = ChatGeneration(message=message)
-        return ChatResult(generations=[generation])
+        return document_list
+
+    def __del__(self) -> None:
+        if getattr(self, "_sp_session", None) != None:
+            self._sp_session.close()
+
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        raise NotImplementedError("error")
