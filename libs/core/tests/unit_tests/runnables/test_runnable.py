@@ -19,6 +19,7 @@ from uuid import UUID
 
 import pytest
 from freezegun import freeze_time
+from pydantic import BaseModel
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 from typing_extensions import TypedDict
@@ -57,7 +58,6 @@ from langchain_core.prompts import (
     PromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     AddableDict,
@@ -465,6 +465,19 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
         },
         "required": ["original", "as_list", "length"],
+    }
+
+    # Add a test for schema of runnable assign
+    def foo(x: int) -> int:
+        return x
+
+    foo = RunnableLambda(foo)
+
+    assert foo.assign(bar=lambda x: "foo").get_output_schema().schema() == {
+        "properties": {"bar": {"title": "Bar"}, "root": {"title": "Root"}},
+        "required": ["root", "bar"],
+        "title": "RunnableAssignOutput",
+        "type": "object",
     }
 
 
