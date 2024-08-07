@@ -342,8 +342,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             return False
 
         # Check if a runtime streaming flag has been passed in.
-        if (stream := kwargs.get("stream")) is not None:
-            return stream
+        if "stream" in kwargs:
+            return kwargs["stream"]
 
         # Check if any streaming callback handlers have been passed in.
         handlers = run_manager.handlers if run_manager else []
