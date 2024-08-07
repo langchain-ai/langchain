@@ -325,6 +325,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         ] = None,
         **kwargs: Any,
     ) -> bool:
+        """Determine if a given model call should hit the streaming API."""
         sync_not_implemented = type(self)._stream == BaseChatModel._stream
         async_not_implemented = type(self)._astream == BaseChatModel._astream
 
@@ -357,7 +358,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
-        if not self._should_stream(async_api=False, stream=True):
+        if not self._should_stream(async_api=False, **{**kwargs, **{"stream": True}}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
                 BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
@@ -427,7 +428,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        if not self._should_stream(async_api=True, stream=True):
+        if not self._should_stream(async_api=True, **{**kwargs, **{"stream": True}}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
