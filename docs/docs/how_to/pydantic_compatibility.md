@@ -13,6 +13,12 @@ the v1 namespace of Pydantic 2.
 Because Pydantic does not support mixing .v1 and .v2 objects, users should be aware of a number of issues
 when using LangChain with Pydantic.
 
+::caution
+While we support Pydantic V2 objects in some APIs, we generally recommend that until LangChain 0.3.x users 
+keep using Pydantic V1 objects.
+:::
+
+
 ## 1. Passing Pydantic objects to LangChain APIs
 
 Most LangChain APIs for *tool usage* (see list below) have been updated to accept either Pydantic v1 or v2 objects.
