@@ -1,6 +1,7 @@
 """Hugging Face Chat Wrapper."""
 
 from dataclasses import dataclass
+from transformers.pipelines.text_generation import Chat
 from typing import (
     Any,
     Callable,
@@ -356,7 +357,7 @@ class ChatHuggingFace(BaseChatModel):
     def _generate(
         self,
         messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        stop: Optional[List[Chat]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -406,9 +407,7 @@ class ChatHuggingFace(BaseChatModel):
 
         messages_dicts = [self._to_chatml_format(m) for m in messages]
 
-        return self.tokenizer.apply_chat_template(
-            messages_dicts, tokenize=False, add_generation_prompt=True
-        )
+        return messages_dicts
 
     def _to_chatml_format(self, message: BaseMessage) -> dict:
         """Convert LangChain message to ChatML format."""
