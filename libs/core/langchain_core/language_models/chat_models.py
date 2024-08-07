@@ -894,7 +894,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
         if self._should_stream(
-            async_api=False,
+            async_api=True,
             check_kwargs_and_run_manager=True,
             run_manager=run_manager,
             **kwargs,
