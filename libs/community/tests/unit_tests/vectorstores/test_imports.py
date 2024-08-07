@@ -65,6 +65,7 @@ EXPECTED_ALL = [
     "Neo4jVector",
     "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
+    "Objective",
     "OpenSearchVectorSearch",
     "OracleVS",
     "PGEmbedding",
