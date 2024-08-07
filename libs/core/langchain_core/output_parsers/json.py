@@ -16,6 +16,8 @@ from langchain_core.utils.json import (
     parse_json_markdown,
     parse_partial_json,
 )
+from pydantic import SkipValidation
+from typing import Annotated
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 if PYDANTIC_MAJOR_VERSION < 2:
@@ -40,7 +42,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
+    pydantic_object: Annotated[Optional[Type[TBaseModel]], SkipValidation()] = None  # type: ignore
     """The Pydantic object to use for validation. 
     If None, no validation is performed."""
 
