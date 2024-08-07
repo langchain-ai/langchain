@@ -4792,7 +4792,10 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         schema = self.bound.get_output_schema(config)
-        return create_model(self.get_name("Output"), __root__=List[schema])
+        return create_model(
+            self.get_name("Output"),
+            __root__=List[schema],  # type: ignore[valid-type]
+        )
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
