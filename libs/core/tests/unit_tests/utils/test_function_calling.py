@@ -699,7 +699,7 @@ def test__convert_typed_dict_to_openai_function(
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
 def test__convert_typed_dict_to_openai_function_fail(typed_dict: Type) -> None:
     class Tool(typed_dict):
-        arg1: MutableSet  # Pydantic doesn't support
+        arg1: MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
 
-    with pytest.raises(TypeError):
-        _convert_typed_dict_to_openai_function(Tool)
+    # No error should be raised since we're on pydantic 2 now.
+    _convert_typed_dict_to_openai_function(Tool)
