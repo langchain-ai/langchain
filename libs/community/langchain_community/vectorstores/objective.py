@@ -37,7 +37,7 @@ class Objective(VectorStore):
         cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> VST:
         api_key = kwargs.pop("api_key")
@@ -165,7 +165,7 @@ class Objective(VectorStore):
             raise ObjectiveError("Failed to create index")
         return response["id"]
 
-    def index_status(self, index_id: str) -> dict[str, int]:
+    def index_status(self, index_id: str) -> Dict[str, int]:
         response = self._request(
             "GET",
             f"indexes/{index_id}/status",
@@ -178,9 +178,9 @@ class Objective(VectorStore):
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict[str, Any]] = None,
-        params: Optional[dict[str, Any]] = None,
-    ) -> dict[str, Any]:
+        data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Issue a request to the Objective API
 
         Returns the JSON from the request."""
@@ -189,7 +189,7 @@ class Objective(VectorStore):
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "User-Agent": "objective-langchain/0.0.1",
+            "User-Agent": self.get_user_agent(),
         }
 
         MAX_RETRIES = 3
@@ -214,3 +214,9 @@ class Objective(VectorStore):
                     if e.response is not None:
                         raise ObjectiveError(e.response.text) from e
                     raise e
+
+    @staticmethod
+    def get_user_agent() -> str:
+        from langchain_community import __version__
+
+        return f"langchain-py/{__version__}"
