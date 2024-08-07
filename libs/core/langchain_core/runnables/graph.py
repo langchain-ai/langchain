@@ -22,8 +22,9 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.utils.pydantic import _IgnoreUnserializable
+from pydantic import BaseModel
+
+from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
