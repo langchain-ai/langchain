@@ -1,5 +1,3 @@
-from typing import List, Dict
-
 from langchain_core.load import Serializable, dumpd
 
 
@@ -39,23 +37,30 @@ def test_simple_serialization_is_serializable() -> None:
 def test_simple_serialization_secret() -> None:
     """Test handling of secrets."""
     from pydantic import SecretStr
+    from langchain_core.load import Serializable
 
     class Foo(Serializable):
         bar: int
         baz: str
-        secret1: str
         secret2: SecretStr
 
         @classmethod
         def is_lc_serializable(cls) -> bool:
             return True
 
-        @classmethod
-        def lc_secrets(self) -> Dict[str, str]:
-            return {
-                "secret1": "MY_SECRET_1",
-                "secret2": "MY_SECRET_2",
-            }
-
-    foo = Foo(bar=1, baz="baz", secret1="secret", secret2="meow")
-    assert dumpd(foo) == {}
+    foo = Foo(bar=1, baz="baz", secret1="secret", secret2=SecretStr("meow"))
+    assert dumpd(foo) == {
+        "id": ["tests", "unit_tests", "load", "test_serializable", "Foo"],
+        "kwargs": {
+            "bar": 1,
+            "baz": "baz",
+            "secret2": {
+                "id": ["pydantic", "types", "SecretStr"],
+                "lc": 1,
+                "repr": "SecretStr('**********')",
+                "type": "not_implemented",
+            },
+        },
+        "lc": 1,
+        "type": "constructor",
+    }
