@@ -64,7 +64,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
-        """Get relevated documents given a user question.
+        """Get relevant documents given a user question.
 
         Args:
             query: user question
