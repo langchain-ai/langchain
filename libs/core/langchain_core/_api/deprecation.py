@@ -300,9 +300,10 @@ def deprecated(
 
         # Modify the docstring to include a deprecation notice.
         components = [
-            message,
-            f"Use ``{alternative}`` instead." if alternative else "",
-            addendum,
+            _message,
+            f"Use ``{_alternative}`` instead." if _alternative else "",
+            f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
+            _addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
         package = (
