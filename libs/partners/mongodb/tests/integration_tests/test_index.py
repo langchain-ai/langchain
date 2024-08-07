@@ -1,6 +1,7 @@
 """Search index commands are only supported on Atlas Clusters >=M10"""
 
 import os
+from typing import Generator, List, Optional
 
 import pytest
 from pymongo import MongoClient
@@ -8,23 +9,28 @@ from pymongo.collection import Collection
 
 from langchain_mongodb import index
 
+TIMEOUT = 120
+DIMENSIONS = 10
+
 
 @pytest.fixture
-def collection() -> Collection:
+def collection() -> Generator:
     """Depending on uri, this could point to any type of cluster."""
     uri = os.environ.get("MONGODB_ATLAS_URI")
     client: MongoClient = MongoClient(uri)
-    clxn = client["db"].create_collection("collection")
-    return clxn
+    clxn = client["db"]["collection"]
+    clxn.insert_one({"foo": "bar"})
+    yield clxn
+    clxn.drop()
 
 
 def test_search_index_commands(collection: Collection) -> None:
     index_name = "vector_index"
-    dimensions = 1536
+    dimensions = DIMENSIONS
     path = "embedding"
     similarity = "cosine"
-    filters: list = []
-    wait_until_complete = 120
+    filters: Optional[List[str]] = None
+    wait_until_complete = TIMEOUT
 
     for index_info in collection.list_search_indexes():
         index.drop_vector_search_index(
@@ -52,10 +58,10 @@ def test_search_index_commands(collection: Collection) -> None:
     index.update_vector_search_index(
         collection,
         index_name,
-        1536,
+        DIMENSIONS,
         "embedding",
         new_similarity,
-        [],
+        filters=[],
         wait_until_complete=wait_until_complete,
     )
 
