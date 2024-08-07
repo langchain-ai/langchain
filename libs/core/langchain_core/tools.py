@@ -74,6 +74,7 @@ from pydantic import (
     create_model,
     root_validator,
     validate_arguments,
+    SkipValidation,
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
@@ -352,7 +353,10 @@ class ChildTool(BaseTool):
     
     You can provide few-shot examples as a part of the description.
     """
-    args_schema: Optional[TypeBaseModel] = None
+
+    args_schema: Annotated[Optional[TypeBaseModel], SkipValidation()] = Field(
+        default=None, description="The tool schema."
+    )
     """Pydantic model class to validate and parse the tool's input arguments.
     
     Args schema should be either: 
@@ -415,7 +419,9 @@ class ChildTool(BaseTool):
                 )
         super().__init__(**kwargs)
 
-    model_config = ConfigDict(arbitrary_types_allowed=True,)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @property
     def is_single_input(self) -> bool:
@@ -923,7 +929,9 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: TypeBaseModel = Field(..., description="The tool schema.")
+    args_schema: Annotated[TypeBaseModel, SkipValidation()] = Field(
+        ..., description="The tool schema."
+    )
     """The input arguments' schema."""
     func: Optional[Callable[..., Any]]
     """The function to run when the tool is called."""
