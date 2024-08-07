@@ -238,12 +238,12 @@ class SemanticChunker(BaseDocumentTransformer):
             end_index = index
 
             # Slice the sentence_dicts from the current start index to the end index
-            group = sentences[start_index : end_index + 1]
+            group = sentences[start_index : end_index + self.buffer_size]
             combined_text = " ".join([d["sentence"] for d in group])
             chunks.append(combined_text)
 
             # Update the start index for the next group
-            start_index = index + 1
+            start_index = index + self.buffer_size
 
         # The last group, if any sentences remain
         if start_index < len(sentences):
