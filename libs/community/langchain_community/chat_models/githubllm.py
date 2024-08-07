@@ -40,14 +40,14 @@ def _convert_dict_to_message(message_dict: Mapping[str, Any]) -> BaseMessage:
     else:
         raise ValueError(f"Got unknown role {role}")
 
-class GithubLLM(BaseChatModel):
+class ChatGithub(BaseChatModel):
     """GitHub LLM with Azure Fallback"""
 
     github_endpoint_url: str = "https://models.inference.ai.azure.com/chat/completions"
     model: str
     github_api_key: SecretStr = Field(default_factory=lambda: SecretStr(os.environ.get("GITHUB_TOKEN", "")))
     azure_api_key: SecretStr = Field(default_factory=lambda: SecretStr(os.environ.get("AZURE_API_KEY", "")))
-    system_prompt: str = "You are a helpful assistant."
+    system_prompt: Optional[str] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     use_azure_fallback: bool = True
     rate_limit_reset_time: float = 0
@@ -81,6 +81,29 @@ class GithubLLM(BaseChatModel):
         "phi-3-small-instruct-8k"
     ]
 
+    MODEL_TOKEN_LIMITS = {
+        "AI21-Jamba-Instruct": {"input": 72000, "output": 4000},
+        "cohere-command-r": {"input": 131000, "output": 4000},
+        "cohere-command-r-plus": {"input": 131000, "output": 4000},
+        "meta-llama-3-70b-instruct": {"input": 8000, "output": 4000},
+        "meta-llama-3-8b-instruct": {"input": 8000, "output": 4000},
+        "meta-llama-3.1-405b-instruct": {"input": 131000, "output": 4000},
+        "meta-llama-3.1-70b-instruct": {"input": 131000, "output": 4000},
+        "meta-llama-3.1-8b-instruct": {"input": 131000, "output": 4000},
+        "mistral-large": {"input": 33000, "output": 4000},
+        "mistral-large-2407": {"input": 131000, "output": 4000},
+        "mistral-nemo": {"input": 131000, "output": 4000},
+        "mistral-small": {"input": 33000, "output": 4000},
+        "gpt-4o": {"input": 131000, "output": 4000},
+        "gpt-4o-mini": {"input": 131000, "output": 4000},
+        "phi-3-medium-instruct-128k": {"input": 131000, "output": 4000},
+        "phi-3-medium-instruct-4k": {"input": 4000, "output": 4000},
+        "phi-3-mini-instruct-128k": {"input": 131000, "output": 4000},
+        "phi-3-mini-instruct-4k": {"input": 4000, "output": 4000},
+        "phi-3-small-instruct-128k": {"input": 131000, "output": 4000},
+        "phi-3-small-instruct-8k": {"input": 131000, "output": 4000},
+    }
+
     class Config:
         """Configuration for this pydantic object."""
         extra = Extra.forbid
@@ -97,7 +120,22 @@ class GithubLLM(BaseChatModel):
             raise ValueError("AZURE_API_KEY must be set for Azure fallback.")
 
         return values
+    
+    def _prepare_messages(self, messages: List[BaseMessage]) -> List[Dict[str, Any]]:
+        """Prepare messages for API call, including system prompt if present."""
+        message_dicts = []
+        
+        if self.system_prompt:
+            message_dicts.append({"role": "system", "content": self.system_prompt})
+        
+        message_dicts.extend([_convert_message_to_dict(m) for m in messages])
+        
+        return message_dicts
 
+    def _count_tokens(self, messages: List[Dict[str, Any]]) -> int:
+        """Estimate token count for messages. This is a simplified method and may not be exact."""
+        return sum(len(m['content'].split()) for m in messages) * 1.3  # Guestimates the Token Count
+    
     @property
     def _llm_type(self) -> str:
         """Return type of LLM."""
@@ -148,7 +186,10 @@ class GithubLLM(BaseChatModel):
         if self.streaming:
             return self._stream_generate(messages, stop, run_manager, **kwargs)
 
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        if not self._check_token_limit(message_dicts):
+            raise ValueError(f"Input tokens exceed the maximum limit for model {self.model}")
+
+        message_dicts = self._prepare_messages(messages)
         data = {
             "messages": message_dicts,
             "model": self.model,
@@ -187,7 +228,11 @@ class GithubLLM(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = self._prepare_messages(messages)
+        
+        if not self._check_token_limit(message_dicts):
+            raise ValueError(f"Input tokens exceed the maximum limit for model {self.model}")
+
         data = {
             "messages": message_dicts,
             "model": self.model,
@@ -250,7 +295,7 @@ class GithubLLM(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
+        message_dicts = self._prepare_messages(messages)
         data = {
             "messages": message_dicts,
             "model": self.model,
@@ -311,4 +356,4 @@ class GithubLLM(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         for chunk in self._stream(messages, stop, run_manager, **kwargs):
             yield chunk
-            await asyncio.sleep(0)  
+            await asyncio.sleep(0)
