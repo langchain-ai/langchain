@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import inspect
+import pydantic
 import textwrap
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
-
-import pydantic
 from pydantic import BaseModel, root_validator
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from pydantic_core import core_schema
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 
 def get_pydantic_major_version() -> int:
@@ -217,7 +216,14 @@ def _create_subset_model_v1(
     fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
-    from pydantic import create_model
+    if PYDANTIC_MAJOR_VERSION == 1:
+        from pydantic import create_model
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import create_model
+    else:
+        raise NotImplementedError(
+            f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        )
 
     fields = {}
 
