@@ -451,7 +451,7 @@ def test_get_input_schema_input_dict() -> None:
 
 
 def test_get_input_schema_input_messages() -> None:
-    from langchain_core.pydantic_v1 import RootModel
+    from pydantic import RootModel  # pydantic: ignore
 
     RunnableWithMessageHistoryInput = RootModel[Sequence[BaseMessage]]
 

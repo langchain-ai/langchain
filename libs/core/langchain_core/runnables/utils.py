@@ -31,8 +31,8 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict, RootModel
-from pydantic import create_model as _create_model_base
+from pydantic import BaseModel, ConfigDict, RootModel # pydantic: ignore
+from pydantic import create_model as _create_model_base # pydantic :ignore
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,

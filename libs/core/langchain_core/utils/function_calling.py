@@ -22,11 +22,11 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, Field, create_model
 from typing_extensions import Annotated, TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
@@ -192,7 +192,7 @@ def convert_python_function_to_openai_function(
 
 def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescription:
     visited: Dict = {}
-    from pydantic.v1 import BaseModel
+    from pydantic.v1 import BaseModel # pydantic: ignore
 
     model = cast(
         Type[BaseModel],
@@ -210,8 +210,8 @@ def _convert_any_typed_dicts_to_pydantic(
     visited: Dict,
     depth: int = 0,
 ) -> Type:
-    from pydantic.v1 import Field as Field_v1
-    from pydantic.v1 import create_model as create_model_v1
+    from pydantic.v1 import Field as Field_v1  # pydantic: ignore
+    from pydantic.v1 import create_model as create_model_v1  # pydantic: ignore
 
     if type_ in visited:
         return visited[type_]

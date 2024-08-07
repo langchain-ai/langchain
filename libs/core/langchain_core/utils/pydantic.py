@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import inspect
-import pydantic
 import textwrap
 from functools import wraps
-from pydantic import BaseModel, root_validator
-from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
-from pydantic_core import core_schema
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+
+import pydantic  # pydantic: ignore
+from pydantic import BaseModel, root_validator  # pydantic: ignore
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue  # pydantic: ignore
+from pydantic_core import core_schema  # pydantic: ignore
 
 
 def get_pydantic_major_version() -> int:

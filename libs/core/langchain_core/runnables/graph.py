@@ -22,8 +22,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
-
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:

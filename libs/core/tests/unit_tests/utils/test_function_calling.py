@@ -33,9 +33,8 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
-from pydantic import BaseModel, Field
-
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
@@ -701,5 +700,6 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: Type) -> None:
     class Tool(typed_dict):
         arg1: MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
 
-    # No error should be raised since we're on pydantic 2 now.
-    _convert_typed_dict_to_openai_function(Tool)
+    # Error should be raised since we're using v1 code path here
+    with pytest.raises(TypeError):
+        _convert_typed_dict_to_openai_function(Tool)
