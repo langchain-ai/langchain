@@ -96,72 +96,70 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
 }
 
 PRODUCTIVITY_TOOL_FEAT_TABLE = {
-    "Gmail Toolkit":{
+    "Gmail Toolkit": {
         "link": "/docs/integrations/tools/gmail",
         "pricing": "Free, with limit of 250 quota units per user per second",
     },
-    "Github Toolkit":{
+    "Github Toolkit": {
         "link": "/docs/integrations/tools/github",
         "pricing": "Free",
     },
-    "Gitlab Toolkit":{
+    "Gitlab Toolkit": {
         "link": "/docs/integrations/tools/gitlab",
         "pricing": "Free for personal project",
     },
-    "Slack Toolkit":{
+    "Slack Toolkit": {
         "link": "/docs/integrations/tools/slack",
         "pricing": "Free",
     },
-    "Jira Toolkit":{
+    "Jira Toolkit": {
         "link": "/docs/integrations/tools/jira",
         "pricing": "Free, with [rate limits](https://developer.atlassian.com/cloud/jira/platform/rate-limiting/)",
     },
-    "Office365 Toolkit":{
+    "Office365 Toolkit": {
         "link": "/docs/integrations/tools/office365",
         "pricing": "Free with Office365, includes [rate limits](https://learn.microsoft.com/en-us/graph/throttling-limits)",
     },
-    "Twilio Tool":{
+    "Twilio Tool": {
         "link": "/docs/integrations/tools/twilio",
         "pricing": "Free trial, with [pay-as-you-go pricing](https://www.twilio.com/en-us/pricing) after",
     },
-    "Infobip Tool":{
+    "Infobip Tool": {
         "link": "/docs/integrations/tools/infobip",
         "pricing": "Free trial, with variable pricing after",
     },
-
 }
 
 WEBBROWSING_TOOL_FEAT_TABLE = {
-    "Requests Toolkit":{
+    "Requests Toolkit": {
         "link": "/docs/integrations/tools/requests",
         "interactions": False,
-        "pricing": "Free"
+        "pricing": "Free",
     },
-    "PlayWright Browser Toolkit":{
+    "PlayWright Browser Toolkit": {
         "link": "/docs/integrations/tools/playwright",
         "interactions": True,
-        "pricing": "Free"
+        "pricing": "Free",
     },
-    "MultiOn Toolkit":{
+    "MultiOn Toolkit": {
         "link": "/docs/integrations/tools/multion",
         "interactions": True,
-        "pricing": "40 free requests/day"
+        "pricing": "40 free requests/day",
     },
-    
 }
 
 DATABASE_TOOL_FEAT_TABLE = {
-    "SQLDatabase Toolkit":{
+    "SQLDatabase Toolkit": {
         "link": "/docs/integrations/tools/sql_database",
-        "operations":"Any SQL operation"
+        "operations": "Any SQL operation",
     },
-    "Spark SQL Toolkit":{
+    "Spark SQL Toolkit": {
         "link": "/docs/integrations/tools/spark_sql",
-        "operations":"Any SQL operation"
+        "operations": "Any SQL operation",
     },
-    "Cassandra Database Toolkit":{
+    "Cassandra Database Toolkit": {
         "link": "/docs/integrations/tools/cassandra_database",
-        "operations": "SELECT and schema introspection"
+        "operations": "SELECT and schema introspection",
     },
 }
 
@@ -212,13 +210,19 @@ The following table shows tools that can be used to automate tasks in databases:
 
 {database_table}
 
-""" # noqa: E501
+"""  # noqa: E501
 
 
 def get_productivity_table() -> str:
     """Get the table of productivity tools."""
-    header = ["tool", "pricing",]
-    title = ["Tool/Toolkit", "Pricing",]
+    header = [
+        "tool",
+        "pricing",
+    ]
+    title = [
+        "Tool/Toolkit",
+        "Pricing",
+    ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for productivity_tool, feats in sorted(PRODUCTIVITY_TOOL_FEAT_TABLE.items()):
         # Fields are in the order of the header
@@ -230,10 +234,11 @@ def get_productivity_table() -> str:
         rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
 
+
 def get_webbrowsing_table() -> str:
     """Get the table of web browsing tools."""
-    header = ["tool", "pricing","interactions"]
-    title = ["Tool/Toolkit", "Pricing","Supports Interacting with the Browser"]
+    header = ["tool", "pricing", "interactions"]
+    title = ["Tool/Toolkit", "Pricing", "Supports Interacting with the Browser"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for web_browsing_tool, feats in sorted(WEBBROWSING_TOOL_FEAT_TABLE.items()):
         # Fields are in the order of the header
@@ -252,10 +257,11 @@ def get_webbrowsing_table() -> str:
         rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
 
+
 def get_database_table() -> str:
     """Get the table of database tools."""
-    header = ["tool","operations"]
-    title = ["Tool/Toolkit","Allowed Operations"]
+    header = ["tool", "operations"]
+    title = ["Tool/Toolkit", "Allowed Operations"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for database_tool, feats in sorted(DATABASE_TOOL_FEAT_TABLE.items()):
         # Fields are in the order of the header
@@ -266,6 +272,7 @@ def get_database_table() -> str:
             row.append(feats.get(h))
         rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
+
 
 def get_search_tools_table() -> str:
     """Get the table of search tools."""
