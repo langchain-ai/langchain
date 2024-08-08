@@ -38,10 +38,8 @@ class LLMSymbolicMathChain(Chain):
     output_key: str = "answer"  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

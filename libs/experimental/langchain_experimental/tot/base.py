@@ -44,10 +44,8 @@ class ToTChain(Chain):
     verbose_llm: bool = False
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> ToTChain:

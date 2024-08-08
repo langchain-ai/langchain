@@ -84,7 +84,7 @@ class SmartLLMChain(Chain):
     history: SmartLLMChainHistory = SmartLLMChainHistory()
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
     # TODO: move away from `root_validator` since it is deprecated in pydantic v2
     #       and causes mypy type-checking failures (hence the `type: ignore`)

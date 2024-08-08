@@ -67,10 +67,8 @@ class SQLDatabaseChain(Chain):
     """The prompt template that should be used by the query checker"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:

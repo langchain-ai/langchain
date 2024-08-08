@@ -38,8 +38,8 @@ class VideoCaptioningChain(Chain):
     use_unclustered_video_models: bool = False
 
     class Config:
-        extra = Extra.allow
         arbitrary_types_allowed = True
+        extra = "allow"
 
     @property
     def input_keys(self) -> List[str]:
