@@ -1,9 +1,11 @@
 """Test SQLServer_VectorStore functionality."""
 
 import os
+from typing import List
 
 import pytest
 from langchain_core.documents import Document
+from sqlalchemy.exc import DBAPIError
 
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
@@ -20,6 +22,31 @@ def store() -> SQLServer_VectorStore:
         table_name="langchain_vector_store_tests",
     )
     return store  # provide this data to the test
+
+
+@pytest.fixture
+def texts() -> List[str]:
+    """Definition of texts used in the tests."""
+    query = [
+        """I have bought several of the Vitality canned dog food products and have 
+        found them all to be of good quality. The product looks more like a stew 
+        than a processed meat and it smells better. My Labrador is finicky and she 
+        appreciates this product better than  most.""",
+        """The candy is just red , No flavor . Just  plan and chewy .
+        I would never buy them again""",
+        "Arrived in 6 days and were so stale i could not eat any of the 6 bags!!",
+        """Got these on sale for roughly 25 cents per cup, which is half the price 
+        of my local grocery stores, plus they rarely stock the spicy flavors. These 
+        things are a GREAT snack for my office where time is constantly crunched and 
+        sometimes you can't escape for a real meal. This is one of my favorite flavors 
+        of Instant Lunch and will be back to buy every time it goes on sale.""",
+        """If you are looking for a less messy version of licorice for the children, 
+        then be sure to try these!  They're soft, easy to chew, and they don't get your 
+        hands all sticky and gross in the car, in the summer, at the beach, etc. 
+        We love all the flavos and sometimes mix these in with the chocolate to have a 
+        very nice snack! Great item, great price too, highly recommend!""",
+    ]
+    return query  # provide this data to the test.
 
 
 def test_sqlserver_add_texts(store: SQLServer_VectorStore) -> None:
@@ -146,3 +173,15 @@ def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(
     ]
     result = store.add_documents(docs)
     assert len(result) == len(docs)
+
+
+def test_that_drop_deletes_vector_store(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
+    """Test that when drop is called, vector store is deleted
+    and a call to add_text raises an exception.
+    """
+    store.drop()
+    with pytest.raises(DBAPIError):
+        store.add_texts(texts)
