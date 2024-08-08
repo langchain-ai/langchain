@@ -93,7 +93,7 @@ module.exports = {
         },
         {
           type: "category",
-          label: "Migrating to LCEL",
+          label: "Migrating from v0.0 chains",
           link: {type: 'doc', id: 'versions/migrating_chains/index'},
           collapsible: false,
           collapsed: false,
