@@ -8,7 +8,12 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Field, SecretStr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import (
+    convert_to_secret_str,
+    from_env,
+    get_from_dict_or_env,
+    pre_init,
+)
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -28,19 +33,18 @@ class BaichuanLLM(LLM):
     timeout: int = 60
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    baichuan_api_host: Optional[str] = None
+    baichuan_api_host: Optional[str] = Field(
+        default_factory=from_env(
+            "BAICHUAN_API_HOST",
+            default="https://api.baichuan-ai.com/v1/chat/completions",
+        )
+    )
     baichuan_api_key: Optional[SecretStr] = None
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         values["baichuan_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "baichuan_api_key", "BAICHUAN_API_KEY")
-        )
-        values["baichuan_api_host"] = get_from_dict_or_env(
-            values,
-            "baichuan_api_host",
-            "BAICHUAN_API_HOST",
-            default="https://api.baichuan-ai.com/v1/chat/completions",
         )
         return values
 

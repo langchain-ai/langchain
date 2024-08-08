@@ -15,7 +15,12 @@ from langchain_core.callbacks import (
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import (
+    convert_to_secret_str,
+    from_env,
+    get_from_dict_or_env,
+    pre_init,
+)
 
 from langchain_community.llms.openai import (
     BaseOpenAI,
@@ -83,9 +88,13 @@ class Anyscale(BaseOpenAI):
     """
 
     """Key word arguments to pass to the model."""
-    anyscale_api_base: str = Field(default=DEFAULT_BASE_URL)
+    anyscale_api_base: str = Field(
+        default_factory=from_env("ANYSCALE_API_BASE", default=DEFAULT_BASE_URL)
+    )
     anyscale_api_key: SecretStr = Field(default=None)
-    model_name: str = Field(default=DEFAULT_MODEL)
+    model_name: str = Field(
+        default_factory=from_env("MODEL_NAME", default=DEFAULT_MODEL)
+    )
 
     prefix_messages: List = Field(default_factory=list)
 
@@ -96,20 +105,8 @@ class Anyscale(BaseOpenAI):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anyscale_api_base"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_base",
-            "ANYSCALE_API_BASE",
-            default=DEFAULT_BASE_URL,
-        )
         values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
-        )
-        values["model_name"] = get_from_dict_or_env(
-            values,
-            "model_name",
-            "MODEL_NAME",
-            default=DEFAULT_MODEL,
         )
 
         try:

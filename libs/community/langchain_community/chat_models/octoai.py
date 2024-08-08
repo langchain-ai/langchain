@@ -3,7 +3,12 @@
 from typing import Dict
 
 from langchain_core.pydantic_v1 import Field, SecretStr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import (
+    convert_to_secret_str,
+    from_env,
+    get_from_dict_or_env,
+    pre_init,
+)
 
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -31,9 +36,13 @@ class ChatOctoAI(ChatOpenAI):
             chat = ChatOctoAI(model_name="mixtral-8x7b-instruct")
     """
 
-    octoai_api_base: str = Field(default=DEFAULT_API_BASE)
+    octoai_api_base: str = Field(
+        default_factory=from_env("OCTOAI_API_BASE", default=DEFAULT_API_BASE)
+    )
     octoai_api_token: SecretStr = Field(default=None)
-    model_name: str = Field(default=DEFAULT_MODEL)
+    model_name: str = Field(
+        default_factory=from_env("MODEL_NAME", default=DEFAULT_MODEL)
+    )
 
     @property
     def _llm_type(self) -> str:
@@ -51,20 +60,8 @@ class ChatOctoAI(ChatOpenAI):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["octoai_api_base"] = get_from_dict_or_env(
-            values,
-            "octoai_api_base",
-            "OCTOAI_API_BASE",
-            default=DEFAULT_API_BASE,
-        )
         values["octoai_api_token"] = convert_to_secret_str(
             get_from_dict_or_env(values, "octoai_api_token", "OCTOAI_API_TOKEN")
-        )
-        values["model_name"] = get_from_dict_or_env(
-            values,
-            "model_name",
-            "MODEL_NAME",
-            default=DEFAULT_MODEL,
         )
 
         try:

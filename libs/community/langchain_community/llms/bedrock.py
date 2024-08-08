@@ -22,7 +22,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 from langchain_community.utilities.anthropic import (
@@ -297,7 +297,9 @@ class BedrockBase(BaseModel, ABC):
 
     client: Any = Field(exclude=True)  #: :meta private:
 
-    region_name: Optional[str] = None
+    region_name: Optional[str] = Field(
+        default_factory=from_env("AWS_DEFAULT_REGION", default=session.region_name)
+    )
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
     or region specified in ~/.aws/config in case it is not provided here.
     """
@@ -405,13 +407,6 @@ class BedrockBase(BaseModel, ABC):
             else:
                 # use default credentials
                 session = boto3.Session()
-
-            values["region_name"] = get_from_dict_or_env(
-                values,
-                "region_name",
-                "AWS_DEFAULT_REGION",
-                default=session.region_name,
-            )
 
             client_params = {}
             if values["region_name"]:

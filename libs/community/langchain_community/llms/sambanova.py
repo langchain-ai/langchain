@@ -5,7 +5,7 @@ import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
 
 
 class SVEndpointHandler:
@@ -197,10 +197,14 @@ class Sambaverse(LLM):
     sambaverse_url: str = ""
     """Sambaverse url to use"""
 
-    sambaverse_api_key: str = ""
+    sambaverse_api_key: str = Field(
+        default_factory=from_env("SAMBAVERSE_API_KEY", defaul="")
+    )
     """sambaverse api key"""
 
-    sambaverse_model_name: Optional[str] = None
+    sambaverse_model_name: Optional[str] = Field(
+        default_factory=from_env("SAMBAVERSE_MODEL_NAME")
+    )
     """sambaverse expert model to use"""
 
     model_kwargs: Optional[dict] = None
@@ -224,12 +228,6 @@ class Sambaverse(LLM):
             "sambaverse_url",
             "SAMBAVERSE_URL",
             default="https://sambaverse.sambanova.ai",
-        )
-        values["sambaverse_api_key"] = get_from_dict_or_env(
-            values, "sambaverse_api_key", "SAMBAVERSE_API_KEY"
-        )
-        values["sambaverse_model_name"] = get_from_dict_or_env(
-            values, "sambaverse_model_name", "SAMBAVERSE_MODEL_NAME"
         )
         return values
 
@@ -691,19 +689,27 @@ class SambaStudio(LLM):
         )
     """
 
-    sambastudio_base_url: str = ""
+    sambastudio_base_url: str = Field(
+        default_factory=from_env("SAMBASTUDIO_BASE_URL", defaul="")
+    )
     """Base url to use"""
 
     sambastudio_base_uri: str = ""
     """endpoint base uri"""
 
-    sambastudio_project_id: str = ""
+    sambastudio_project_id: str = Field(
+        default_factory=from_env("SAMBASTUDIO_PROJECT_ID", defaul="")
+    )
     """Project id on sambastudio for model"""
 
-    sambastudio_endpoint_id: str = ""
+    sambastudio_endpoint_id: str = Field(
+        default_factory=from_env("SAMBASTUDIO_ENDPOINT_ID", defaul="")
+    )
     """endpoint id on sambastudio for model"""
 
-    sambastudio_api_key: str = ""
+    sambastudio_api_key: str = Field(
+        default_factory=from_env("SAMBASTUDIO_API_KEY", defaul="")
+    )
     """sambastudio api key"""
 
     model_kwargs: Optional[dict] = None
@@ -732,23 +738,11 @@ class SambaStudio(LLM):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["sambastudio_base_url"] = get_from_dict_or_env(
-            values, "sambastudio_base_url", "SAMBASTUDIO_BASE_URL"
-        )
         values["sambastudio_base_uri"] = get_from_dict_or_env(
             values,
             "sambastudio_base_uri",
             "SAMBASTUDIO_BASE_URI",
             default="api/predict/generic",
-        )
-        values["sambastudio_project_id"] = get_from_dict_or_env(
-            values, "sambastudio_project_id", "SAMBASTUDIO_PROJECT_ID"
-        )
-        values["sambastudio_endpoint_id"] = get_from_dict_or_env(
-            values, "sambastudio_endpoint_id", "SAMBASTUDIO_ENDPOINT_ID"
-        )
-        values["sambastudio_api_key"] = get_from_dict_or_env(
-            values, "sambastudio_api_key", "SAMBASTUDIO_API_KEY"
         )
         return values
 
