@@ -45,6 +45,7 @@ from langchain_core.utils import (
     from_env,
     get_pydantic_field_names,
     pre_init,
+    get_from_dict_or_env,
 )
 from tenacity import (
     before_sleep_log,
@@ -85,9 +86,7 @@ class ChatYuan2(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    yuan2_api_key: Optional[str] = Field(
-        alias="api_key", default_factory=from_env("YUAN2_API_KEY", default=None)
-    )
+    yuan2_api_key: Optional[str] = Field(default="EMPTY", alias="api_key")
     """Automatically inferred from env var `YUAN2_API_KEY` if not provided."""
 
     yuan2_api_base: Optional[str] = Field(
@@ -170,6 +169,9 @@ class ChatYuan2(BaseChatModel):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
+        values["yuan2_api_key"] = get_from_dict_or_env(
+            values, "yuan2_api_key", "YUAN2_API_KEY"
+        )
 
         try:
             import openai
