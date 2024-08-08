@@ -11,7 +11,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -74,10 +74,8 @@ class GradientLLM(BaseLLM):
 
     # LLM call kwargs
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:

@@ -10,7 +10,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Extra, Field, SecretStr
+from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
@@ -162,9 +162,7 @@ class Cohere(LLM, BaseCohere):
     """Maximum number of retries to make when generating."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @property
     def _default_params(self) -> Dict[str, Any]:

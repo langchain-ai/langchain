@@ -81,8 +81,8 @@ class KineticaSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_prefix = "kinetica_"
         env_file_encoding = "utf-8"
+        env_prefix = "kinetica_"
 
 
 class Kinetica(VectorStore):
