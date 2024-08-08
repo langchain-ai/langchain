@@ -21,7 +21,7 @@ from typing import (
 import numpy as np
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -255,10 +255,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Optional httpx.Client."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         allow_population_by_field_name = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

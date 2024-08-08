@@ -27,9 +27,6 @@ class AmadeusToolkit(BaseToolkit):
     llm: Optional[BaseLanguageModel] = Field(default=None)
 
     class Config:
-        """Pydantic config."""
-
-        # Allow extra fields. This is needed for the `client` field.
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, cast
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
@@ -54,7 +54,7 @@ class ClovaEmbeddings(BaseModel, Embeddings):
     """Application ID for identifying your application."""
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:

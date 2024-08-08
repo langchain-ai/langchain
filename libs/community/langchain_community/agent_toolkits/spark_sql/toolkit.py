@@ -28,8 +28,6 @@ class SparkSQLToolkit(BaseToolkit):
     llm: BaseLanguageModel = Field(exclude=True)
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

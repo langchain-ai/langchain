@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
@@ -33,9 +33,7 @@ class NeuralDBVectorStore(VectorStore):
     """NeuralDB instance"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     @staticmethod
@@ -347,9 +345,7 @@ class NeuralDBClientVectorStore(VectorStore):
     """NeuralDB Client instance"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     def similarity_search(

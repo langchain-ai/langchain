@@ -21,7 +21,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -779,9 +779,7 @@ class Bedrock(LLM, BedrockBase):
         return attributes
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def _stream(
         self,

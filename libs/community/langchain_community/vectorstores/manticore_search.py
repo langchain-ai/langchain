@@ -58,8 +58,8 @@ class ManticoreSearchSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_prefix = "manticore_"
         env_file_encoding = "utf-8"
+        env_prefix = "manticore_"
 
 
 class ManticoreSearch(VectorStore):

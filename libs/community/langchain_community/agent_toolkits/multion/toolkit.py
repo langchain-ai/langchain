@@ -26,8 +26,6 @@ class MultionToolkit(BaseToolkit):
     """
 
     class Config:
-        """Pydantic config."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

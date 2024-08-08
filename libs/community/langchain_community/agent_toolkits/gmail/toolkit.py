@@ -46,8 +46,6 @@ class GmailToolkit(BaseToolkit):
     api_resource: Resource = Field(default_factory=build_resource_service)
 
     class Config:
-        """Pydantic config."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

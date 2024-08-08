@@ -116,8 +116,6 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     If "query", it belongs to query Embedding."""
 
     class Config:
-        """Configuration for this pydantic object"""
-
         allow_population_by_field_name = True
 
     @root_validator(allow_reuse=True)

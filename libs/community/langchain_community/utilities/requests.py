@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Dict, Literal, Optional, Union
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 from requests import Response
 
 
@@ -22,10 +22,8 @@ class Requests(BaseModel):
     verify: Optional[bool] = True
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     def get(self, url: str, **kwargs: Any) -> requests.Response:
         """GET the URL and return the text."""
@@ -150,10 +148,8 @@ class GenericRequestsWrapper(BaseModel):
     verify: bool = True
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def requests(self) -> Requests:

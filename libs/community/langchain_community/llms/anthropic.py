@@ -181,8 +181,6 @@ class Anthropic(LLM, _AnthropicCommon):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 

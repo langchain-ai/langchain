@@ -16,7 +16,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.chat_models.anthropic import (
     convert_messages_to_prompt_anthropic,
@@ -233,9 +232,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
         return attributes
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def _stream(
         self,

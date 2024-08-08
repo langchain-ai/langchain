@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core._api import deprecated, warn_deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -81,9 +81,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         )
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -185,9 +183,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             self.show_progress = self.encode_kwargs.pop("show_progress_bar")
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
@@ -314,9 +310,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             self.show_progress = self.encode_kwargs.pop("show_progress_bar")
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.

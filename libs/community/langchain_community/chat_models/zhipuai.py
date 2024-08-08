@@ -373,8 +373,6 @@ class ChatZhipuAI(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
