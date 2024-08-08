@@ -235,7 +235,7 @@ class Runnable(Generic[Input, Output], ABC):
     For a UI (and much more) checkout LangSmith: https://docs.smith.langchain.com/
     """  # noqa: E501
 
-    name: Optional[str] = None
+    name: Optional[str]
     """The name of the Runnable. Used for debugging and tracing."""
 
     def get_name(
@@ -244,7 +244,7 @@ class Runnable(Generic[Input, Output], ABC):
         """Get the name of the Runnable."""
         if name:
             name_ = name
-        elif self.name:
+        elif hasattr(self, "name") and self.name:
             name_ = self.name
         else:
             # Here we handle a case where the runnable subclass is also a pydantic
@@ -2354,6 +2354,8 @@ class Runnable(Generic[Input, Output], ABC):
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
     """Runnable that can be serialized to JSON."""
 
+    name: Optional[str] = None
+
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         """Serialize the Runnable to JSON.
 
@@ -3920,6 +3922,8 @@ class RunnableGenerator(Runnable[Input, Output]):
         atransform: Optional[
             Callable[[AsyncIterator[Input]], AsyncIterator[Output]]
         ] = None,
+        *,
+        name: Optional[str] = None,
     ) -> None:
         """Initialize a RunnableGenerator.
 
@@ -3947,9 +3951,9 @@ class RunnableGenerator(Runnable[Input, Output]):
             )
 
         try:
-            self.name = func_for_name.__name__
+            self.name = name or func_for_name.__name__
         except AttributeError:
-            pass
+            self.name = "RunnableGenerator"
 
     @property
     def InputType(self) -> Any:
