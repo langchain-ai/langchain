@@ -18,7 +18,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Field
-from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, pre_init
 
 logger = logging.getLogger(__name__)
 
