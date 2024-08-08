@@ -26,9 +26,13 @@ PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 
 if PYDANTIC_MAJOR_VERSION == 1:
+    from pydantic.fields import FieldInfo as FieldInfoV1
+
     PydanticBaseModel = pydantic.BaseModel
     TypeBaseModel = Type[BaseModel]
 elif PYDANTIC_MAJOR_VERSION == 2:
+    from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
+
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
     TypeBaseModel = Union[Type[BaseModel], Type[pydantic.BaseModel]]  # type: ignore
@@ -272,7 +276,6 @@ if PYDANTIC_MAJOR_VERSION == 2:
     from pydantic import BaseModel as BaseModelV2
     from pydantic.fields import FieldInfo as FieldInfoV2
     from pydantic.v1 import BaseModel as BaseModelV1
-    from pydantic.v1.fields import FieldInfo as FieldInfoV1
 
     @overload
     def get_fields(model: Type[BaseModelV2]) -> Dict[str, FieldInfoV2]: ...
@@ -304,11 +307,10 @@ if PYDANTIC_MAJOR_VERSION == 2:
             raise TypeError(f"Expected a Pydantic model. Got {type(model)}")
 elif PYDANTIC_MAJOR_VERSION == 1:
     from pydantic import BaseModel as BaseModelV1_
-    from pydantic.fields import FieldInfo as FieldInfoV1_
 
     def get_fields(  # type: ignore[no-redef]
         model: Union[Type[BaseModelV1_], BaseModelV1_],
-    ) -> Dict[str, FieldInfoV1_]:
+    ) -> Dict[str, FieldInfoV1]:
         """Get the field names of a Pydantic model."""
         return model.__fields__  # type: ignore
 else:
