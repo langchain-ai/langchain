@@ -37,13 +37,14 @@ class MultiPromptChain(MultiRouteChain):
 
             from operator import itemgetter
             from typing import Literal
+            from typing_extensions import TypedDict
 
             from langchain_core.output_parsers import StrOutputParser
             from langchain_core.prompts import ChatPromptTemplate
             from langchain_core.runnables import RunnableLambda, RunnablePassthrough
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+            llm = ChatOpenAI(model="gpt-4o-mini")
 
             prompt_1 = ChatPromptTemplate.from_messages(
                 [
@@ -69,19 +70,21 @@ class MultiPromptChain(MultiRouteChain):
                 ]
             )
 
-            def route_query(destination: Literal["animal", "vegetable"]) -> None:
+
+            class RouteQuery(TypedDict):
                 \"\"\"Route query to destination.\"\"\"
-                pass
+                destination: Literal["animal", "vegetable"]
+
 
             route_chain = (
                 route_prompt
-                | llm.with_structured_output(route_query)
+                | llm.with_structured_output(RouteQuery)
                 | itemgetter("destination")
             )
 
             chain = {
                 "destination": route_chain,  # "animal" or "vegetable"
-                "input": RunnablePassthrough(),  # pass through input query
+                "query": lambda x: x["query"],  # pass through input query
             } | RunnableLambda(
                 # if animal, chain_1. otherwise, chain_2.
                 lambda x: chain_1 if x["destination"] == "animal" else chain_2,

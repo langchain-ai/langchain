@@ -73,7 +73,7 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
             from langchain.chains import create_citation_fuzzy_match_runnable
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+            llm = ChatOpenAI(model="gpt-4o-mini")
 
             context = "Alice has blue eyes. Bob has brown eyes. Charlie has green eyes."
             question = "What color are Bob's eyes?"
