@@ -44,7 +44,7 @@ class __ModuleName__Retriever(BaseRetriever):
 
             retriever.invoke(query)
 
-        .. code-block:: python
+        .. code-block:: none
 
             # TODO: Example output.
 
@@ -78,7 +78,7 @@ class __ModuleName__Retriever(BaseRetriever):
 
             chain.invoke("...")
 
-        .. code-block:: python
+        .. code-block:: none
 
              # TODO: Example output.
 
