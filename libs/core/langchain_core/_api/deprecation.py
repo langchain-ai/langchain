@@ -18,12 +18,13 @@ from collections.abc import Callable
 from typing import (
     Any,
     Generator,
-    ParamSpec,
     Type,
     TypeVar,
     Union,
     cast,
 )
+
+from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
 
