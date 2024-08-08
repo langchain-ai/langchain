@@ -865,3 +865,58 @@ def test_structured_output_strict(
         chat.invoke("Tell me a joke about cats.")
     with pytest.raises(openai.BadRequestError):
         next(chat.stream("Tell me a joke about cats."))
+
+
+@pytest.mark.parametrize(
+    ("model", "method", "strict"),
+    [("gpt-4o", "function_calling", True), ("gpt-4o-2024-08-06", "json_schema", None)],
+)
+def test_nested_structured_output_strict(
+    model: str,
+    method: Literal["function_calling", "json_schema"],
+    strict: Optional[bool],
+) -> None:
+    """Test to verify structured output with strict=True. for nested object"""
+
+    from pydantic import BaseModel as BaseModelProper
+    from pydantic import Field as FieldProper
+
+    llm = ChatOpenAI(model=model, temperature=0)
+
+    class SelfEvaluation(BaseModelProper):
+        score: int = FieldProper(description="self evaluation score")
+        text: str = FieldProper(description="self evaluation text")
+
+
+    class JokeWithEvaluation(BaseModelProper):
+        """Joke to tell user."""
+
+        setup: str = FieldProper(description="question to set up a joke")
+        punchline: str = FieldProper(description="answer to resolve the joke")
+        self_evaluation: SelfEvaluation = FieldProper(description="self evaluation")
+
+    # Pydantic class
+    # Type ignoring since the interface only officially supports pydantic 1
+    # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
+    # We'll need to do a pass updating the type signatures.
+    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
+    result = chat.invoke("Tell me a joke about cats.")
+    assert isinstance(result, JokeWithEvaluation)
+
+    for chunk in chat.stream("Tell me a joke about cats."):
+        assert isinstance(chunk, JokeWithEvaluation)
+
+    # Schema
+    chat = llm.with_structured_output(
+        JokeWithEvaluation.model_json_schema(), method=method, strict=strict
+    )
+    result = chat.invoke("Tell me a joke about cats.")
+    assert isinstance(result, dict)
+    assert set(result.keys()) == {"setup", "punchline", "self_evaluation"}
+    assert set(result["self_evaluation"].keys()) == {"score", "text"}
+
+    for chunk in chat.stream("Tell me a joke about cats."):
+        assert isinstance(chunk, dict)
+    assert isinstance(chunk, dict)  # for mypy
+    assert set(chunk.keys()) == {"setup", "punchline", "self_evaluation"}
+    assert set(chunk["self_evaluation"].keys()) == {"score", "text"}
