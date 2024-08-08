@@ -93,7 +93,7 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, LangChain, Inc"
+copyright = "2023, LangChain Inc"
 author = "LangChain, Inc"
 
 html_favicon = "_static/img/brand/favicon.png"
@@ -165,8 +165,8 @@ html_theme_options = {
     #     # to True would repeat prev and next links. See
     #     # https://github.com/pydata/pydata-sphinx-theme/blob/b731dc230bc26a3d1d1bb039c56c977a9b3d25d8/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/layout.html#L118-L129
     "show_prev_next": False,
-    "search_bar_text": "Search the api  ...",
-    # "navigation_with_keys": False,
+    "search_bar_text": "Search the API ...",
+    "navigation_with_keys": True,
     "collapse_navigation": True,
     "navigation_depth": 2,
     "show_nav_level": 1,
@@ -202,9 +202,6 @@ html_theme_options = {
     #     "secondary_sidebar_items": {"**": ["page-toc", "sourcelink"]},
     #     "show_version_warning_banner": True,
     #     "announcement": None,
-    "external_links": [
-        {"name": "Docs", "url": "https://python.langchain.com"},
-    ],
     "icon_links": [
         {
             "name": "LangChain docs",
@@ -232,20 +229,12 @@ html_theme_options = {
 }
 
 
-partners_dir = Path(__file__).parent.parent.parent / "libs/partners"
-partners = [
-    (p.name, p.name.replace("-", "_") + "_api_reference")
-    for p in partners_dir.iterdir()
-]
-partners = sorted(partners)
-
 html_context = {
     "display_github": True,  # Integrate GitHub
     "github_user": "langchain-ai",  # Username
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
-    "partners": partners,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
