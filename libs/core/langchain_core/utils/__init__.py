@@ -27,6 +27,7 @@ from langchain_core.utils.utils import (
     guard_import,
     mock_now,
     raise_for_status_with_text,
+    secret_from_env,
     xor_args,
 )
 
@@ -56,4 +57,5 @@ __all__ = [
     "batch_iterate",
     "abatch_iterate",
     "from_env",
+    "secret_from_env",
 ]
