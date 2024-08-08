@@ -33,10 +33,6 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
     """ Whether to load authorization identities."""
     token_path: Path = Path.home() / ".credentials" / "o365_token.txt"
     """ The path to the token to make api calls"""
-    file_id: Optional[str] = None
-    """ The ID of the file for which we need auth identities"""
-    site_id: Optional[str] = None
-    """ The ID of the Sharepoint site of the user where the file is present """
     load_extended_metadata: Optional[bool] = False
     """ Whether to load extended metadata. Size, Owner and full_path."""
 
@@ -123,8 +119,17 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError("Unable to fetch root folder")
             for blob in self._load_from_folder(target_folder):
+                file_id = str(blob.metadata.get("id"))
+                if self.load_auth is True:
+                    auth_identities = self.authorized_identities(file_id)
+                if self.load_extended_metadata is True:
+                    extended_metadata = self.get_extended_metadata(file_id)
                 for blob_part in blob_parser.lazy_parse(blob):
                     blob_part.metadata.update(blob.metadata)
+                    if self.load_auth is True:
+                        blob_part.metadata["authorized_identities"] = auth_identities
+                    if self.load_extended_metadata is True:
+                        blob_part.metadata.update(extended_metadata)
                     yield blob_part
 
     def authorized_identities(self, file_id: str) -> List:
