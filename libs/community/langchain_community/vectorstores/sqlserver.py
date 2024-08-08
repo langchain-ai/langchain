@@ -94,7 +94,7 @@ class SQLServer_VectorStore(VectorStore):
         return create_engine(url=self.connection_string, echo=True)
 
     def _create_table_if_not_exists(self) -> None:
-        logging.info("Creating table %s.", self.table_name)
+        logging.info(f"Creating table {self.table_name}.")
         with Session(self._bind) as session:
             Base.metadata.create_all(session.get_bind())
 
@@ -197,6 +197,7 @@ class SQLServer_VectorStore(VectorStore):
         Returns:
             List of tuple of Document and an accompanying score in order of
             similarity to the query provided.
+            Note that, a smaller score implies greater similarity.
         """
         embedded_query = self.embedding_function.embed_query(query)
         return self.similarity_search_by_vector_with_score(embedded_query, k, **kwargs)
@@ -215,10 +216,11 @@ class SQLServer_VectorStore(VectorStore):
         Returns:
             List of tuple of Document and an accompanying score in order of
             similarity to the embedding provided.
+            Note that, a smaller score implies greater similarity.
         """
         similar_docs = self._search_store(embedding, k, **kwargs)
-        docs = self._docs_and_scores_from_result(similar_docs)
-        return docs
+        docs_and_scores = self._docs_and_scores_from_result(similar_docs)
+        return docs_and_scores
 
     def add_texts(
         self,
@@ -261,8 +263,6 @@ class SQLServer_VectorStore(VectorStore):
         self, embedding: List[float], k: int, filter: Optional[dict] = None
     ) -> List[Any]:
         try:
-            # The filter variable will be passed as an argument to the filter function
-            # filter_clause = self._create_filter_clause(filter)
             with Session(self._bind) as session:
                 results = (
                     session.query(
@@ -299,7 +299,7 @@ class SQLServer_VectorStore(VectorStore):
         self, results: Any
     ) -> List[Tuple[Document, float]]:
         """Formats the input into a result of type Tuple[Document, float]."""
-        docs = [
+        docs_and_scores = [
             (
                 Document(
                     page_content=result[0].query, metadata=result[0].query_metadata
@@ -308,7 +308,7 @@ class SQLServer_VectorStore(VectorStore):
             )
             for result in results
         ]
-        return docs
+        return docs_and_scores
 
     def _insert_embeddings(
         self,
