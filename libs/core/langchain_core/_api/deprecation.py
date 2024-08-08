@@ -133,6 +133,7 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
+        from pydantic.v1.fields import FieldInfo  # pydantic: ignore
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -207,6 +208,25 @@ def deprecated(
                 )
                 return cast(T, obj)
 
+        elif isinstance(obj, FieldInfo):
+            from langchain_core.pydantic_v1 import Field
+
+            wrapped = None
+            if not _obj_type:
+                _obj_type = "attribute"
+            if not _name:
+                raise ValueError()
+            old_doc = obj.description
+
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+                return Field(
+                    default=obj.default,
+                    default_factory=obj.default_factory,
+                    description=new_doc,
+                    alias=obj.alias,
+                    exclude=obj.exclude,
+                )
+
         elif isinstance(obj, property):
             if not _obj_type:
                 _obj_type = "attribute"
@@ -279,23 +299,22 @@ def deprecated(
             old_doc = ""
 
         # Modify the docstring to include a deprecation notice.
-        notes_header = "\nNotes\n-----"
         components = [
-            message,
-            f"Use {alternative} instead." if alternative else "",
-            addendum,
+            _message,
+            f"Use ``{_alternative}`` instead." if _alternative else "",
+            f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
+            _addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
         package = (
             _package or _name.split(".")[0].replace("_", "-") if "." in _name else None
         )
         since_str = f"{package}=={since}" if package else since
-        new_doc = (
-            f"[*Deprecated*] {old_doc}\n"
-            f"{notes_header if notes_header not in old_doc else ''}\n"
-            f".. deprecated:: {since_str}\n"
-            f"   {details}"
-        )
+        new_doc = f"""\
+.. deprecated:: {since_str} {details}
+
+{old_doc}\
+"""
 
         if inspect.iscoroutinefunction(obj):
             finalized = finalize(awarning_emitting_wrapper, new_doc)

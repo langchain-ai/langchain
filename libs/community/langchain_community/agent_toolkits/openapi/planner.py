@@ -421,7 +421,7 @@ def create_openapi_agent(
             Default is False.
         allowed_operations: Optional. The allowed operations.
             Default is ("GET", "POST").
-        **kwargs: Additional arguments.
+        kwargs: Additional arguments.
 
     Returns:
         The agent executor.

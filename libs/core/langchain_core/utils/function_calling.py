@@ -322,14 +322,27 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
 
 def convert_to_openai_function(
     function: Union[Dict[str, Any], Type, Callable, BaseTool],
+    *,
+    strict: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
     Args:
-        function: A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
+        function:
+            A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
             Tool object, or a Python function. If a dictionary is passed in, it is
             assumed to already be a valid OpenAI function or a JSON schema with
             top-level 'title' and 'description' keys specified.
+        strict:
+            If True, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If None, ``strict`` argument will not
+            be included in function definition.
+
+            .. versionadded:: 0.2.29
 
     Returns:
         A dict version of the passed in function which is compatible with the OpenAI
@@ -344,25 +357,27 @@ def convert_to_openai_function(
     if isinstance(function, dict) and all(
         k in function for k in ("name", "description", "parameters")
     ):
-        return function
+        oai_function = function
     # a JSON schema with title and description
     elif isinstance(function, dict) and all(
         k in function for k in ("title", "description", "properties")
     ):
         function = function.copy()
-        return {
+        oai_function = {
             "name": function.pop("title"),
             "description": function.pop("description"),
             "parameters": function,
         }
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        return cast(Dict, convert_pydantic_to_openai_function(function))
+        oai_function = cast(Dict, convert_pydantic_to_openai_function(function))
     elif is_typeddict(function):
-        return cast(Dict, _convert_typed_dict_to_openai_function(cast(Type, function)))
+        oai_function = cast(
+            Dict, _convert_typed_dict_to_openai_function(cast(Type, function))
+        )
     elif isinstance(function, BaseTool):
-        return cast(Dict, format_tool_to_openai_function(function))
+        oai_function = cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        return cast(Dict, convert_python_function_to_openai_function(function))
+        oai_function = cast(Dict, convert_python_function_to_openai_function(function))
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -371,26 +386,47 @@ def convert_to_openai_function(
             " 'title' and 'description' keys."
         )
 
+    if strict is not None:
+        oai_function["strict"] = strict
+        # As of 08/06/24, OpenAI requires that additionalProperties be supplied and set
+        # to False if strict is True.
+        oai_function["parameters"]["additionalProperties"] = False
+    return oai_function
+
 
 def convert_to_openai_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    *,
+    strict: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI tool.
 
+    .. versionchanged:: 0.2.29
+
+        ``strict`` arg added.
+
     Args:
-        tool: Either a dictionary, a pydantic.BaseModel class, Python function, or
+        tool:
+            Either a dictionary, a pydantic.BaseModel class, Python function, or
             BaseTool. If a dictionary is passed in, it is assumed to already be a valid
             OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
             'description' keys specified.
+        strict:
+            If True, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If None, ``strict`` argument will not
+            be included in tool definition.
+
+            .. versionadded:: 0.2.29
 
     Returns:
         A dict version of the passed in tool which is compatible with the
-            OpenAI tool-calling API.
+        OpenAI tool-calling API.
     """
     if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
-    function = convert_to_openai_function(tool)
-    return {"type": "function", "function": function}
+    oai_function = convert_to_openai_function(tool, strict=strict)
+    oai_tool: Dict[str, Any] = {"type": "function", "function": oai_function}
+    return oai_tool
 
 
 def tool_example_to_messages(

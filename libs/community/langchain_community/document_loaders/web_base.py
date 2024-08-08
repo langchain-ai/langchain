@@ -134,12 +134,13 @@ class WebBaseLoader(BaseLoader):
         async with aiohttp.ClientSession() as session:
             for i in range(retries):
                 try:
-                    async with session.get(
-                        url,
+                    kwargs: Dict = dict(
                         headers=self.session.headers,
-                        ssl=None if self.session.verify else False,
                         cookies=self.session.cookies.get_dict(),
-                    ) as response:
+                    )
+                    if not self.session.verify:
+                        kwargs["ssl"] = False
+                    async with session.get(url, **kwargs) as response:
                         if self.raise_for_status:
                             response.raise_for_status()
                         return await response.text()

@@ -25,7 +25,7 @@ def create_csv_agent(
         path: A string path, file-like object or a list of string paths/file-like
             objects that can be read in as pandas DataFrames with pd.read_csv().
         pandas_kwargs: Named arguments to pass to pd.read_csv().
-        **kwargs: Additional kwargs to pass to langchain_experimental.agents.agent_toolkits.pandas.base.create_pandas_dataframe_agent().
+        kwargs: Additional kwargs to pass to langchain_experimental.agents.agent_toolkits.pandas.base.create_pandas_dataframe_agent().
 
     Returns:
         An AgentExecutor with the specified agent_type agent and access to
