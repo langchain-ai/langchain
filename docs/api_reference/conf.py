@@ -175,8 +175,8 @@ html_theme_options = {
     "header_links_before_dropdown": 5,
     "header_dropdown_text": "Integrations",
     "logo": {
-        "image_light": "_static/img/brand/wordmark-small.png",
-        "image_dark": "_static/img/brand/wordmark-dark-small.png",
+        "image_light": "_static/wordmark-small.png",
+        "image_dark": "_static/wordmark-dark-small.png",
     },
     "surface_warnings": True,
     #     # -- Template placement in theme layouts ----------------------------------
