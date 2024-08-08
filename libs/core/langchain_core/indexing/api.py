@@ -506,7 +506,7 @@ async def aindex(
     if cleanup == "incremental" and source_id_key is None:
         raise ValueError("Source id key is required when cleanup mode is incremental.")
 
-    destination = vectorstore  # Renaming internally for clarity
+    destination = vector_store  # Renaming internally for clarity
 
     # If it's a vectorstore, let's check if it has the required methods.
     if isinstance(destination, VectorStore):
