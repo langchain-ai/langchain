@@ -154,16 +154,16 @@ html_theme = "pydata_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-#     # -- General configuration ------------------------------------------------
+    #     # -- General configuration ------------------------------------------------
     "sidebar_includehidden": True,
     "use_edit_page_button": False,
-#     # "analytics": {
-#     #     "plausible_analytics_domain": "scikit-learn.org",
-#     #     "plausible_analytics_url": "https://views.scientific-python.org/js/script.js",
-#     # },
-#     # If "prev-next" is included in article_footer_items, then setting show_prev_next
-#     # to True would repeat prev and next links. See
-#     # https://github.com/pydata/pydata-sphinx-theme/blob/b731dc230bc26a3d1d1bb039c56c977a9b3d25d8/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/layout.html#L118-L129
+    #     # "analytics": {
+    #     #     "plausible_analytics_domain": "scikit-learn.org",
+    #     #     "plausible_analytics_url": "https://views.scientific-python.org/js/script.js",
+    #     # },
+    #     # If "prev-next" is included in article_footer_items, then setting show_prev_next
+    #     # to True would repeat prev and next links. See
+    #     # https://github.com/pydata/pydata-sphinx-theme/blob/b731dc230bc26a3d1d1bb039c56c977a9b3d25d8/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/layout.html#L118-L129
     "show_prev_next": False,
     "search_bar_text": "Search the api  ...",
     # "navigation_with_keys": False,
@@ -173,37 +173,37 @@ html_theme_options = {
     "show_toc_level": 2,
     "navbar_align": "left",
     "header_links_before_dropdown": 5,
-    "header_dropdown_text": "More",
+    "header_dropdown_text": "Integrations",
     "logo": {
         "image_light": "_static/img/brand/wordmark-small.png",
         "image_dark": "_static/img/brand/wordmark-dark-small.png",
     },
     "surface_warnings": True,
-#     # -- Template placement in theme layouts ----------------------------------
+    #     # -- Template placement in theme layouts ----------------------------------
     "navbar_start": ["navbar-logo"],
-#     # Note that the alignment of navbar_center is controlled by navbar_align
+    #     # Note that the alignment of navbar_center is controlled by navbar_align
     "navbar_center": ["navbar-nav"],
     "navbar_end": ["theme-switcher", "navbar-icon-links"],
-#     # navbar_persistent is persistent right (even when on mobiles)
+    #     # navbar_persistent is persistent right (even when on mobiles)
     "navbar_persistent": ["search-button"],
     "article_header_start": ["breadcrumbs"],
     "article_header_end": [],
     "article_footer_items": ["prev-next"],
     "content_footer_items": [],
-#     # Use html_sidebars that map page patterns to list of sidebar templates
-#     "primary_sidebar_end": [],
+    #     # Use html_sidebars that map page patterns to list of sidebar templates
+    #     "primary_sidebar_end": [],
     "footer_start": ["copyright"],
     "footer_center": [],
     "footer_end": [],
-#     # When specified as a dictionary, the keys should follow glob-style patterns, as in
-#     # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-exclude_patterns
-#     # In particular, "**" specifies the default for all pages
-#     # Use :html_theme.sidebar_secondary.remove: for file-wide removal
-#     "secondary_sidebar_items": {"**": ["page-toc", "sourcelink"]},
-#     "show_version_warning_banner": True,
-#     "announcement": None,
+    #     # When specified as a dictionary, the keys should follow glob-style patterns, as in
+    #     # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-exclude_patterns
+    #     # In particular, "**" specifies the default for all pages
+    #     # Use :html_theme.sidebar_secondary.remove: for file-wide removal
+    #     "secondary_sidebar_items": {"**": ["page-toc", "sourcelink"]},
+    #     "show_version_warning_banner": True,
+    #     "announcement": None,
     "external_links": [
-        {"name": "User guide", "url": "https://python.langchain.com"},
+        {"name": "Docs", "url": "https://python.langchain.com"},
     ],
     "icon_links": [
         {

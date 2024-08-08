@@ -415,10 +415,12 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     package_version = _get_package_version(package_dir)
     output_dir = _out_file_path(package_name)
     os.mkdir(output_dir)
-    rsts = _construct_doc(_package_namespace(package_name), package_members, package_version)
+    rsts = _construct_doc(
+        _package_namespace(package_name), package_members, package_version
+    )
     for name, rst in rsts:
         with open(output_dir / name, "w") as f:
-            f.write( rst )
+            f.write(rst)
 
 
 def _package_namespace(package_name: str) -> str:
@@ -475,14 +477,30 @@ def _doc_first_line(package_name: str) -> str:
     """Return the path to the file containing the documentation."""
     return f".. {package_name.replace('-', '_')}_api_reference:\n\n"
 
+
 def _build_index(dirs: List[str]) -> None:
     ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
     integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
-    main_headers = [" ".join(x.title().replace("ai", "AI").replace("db", "DB") for x in (dir_.split("-"))) for dir_ in main_]
-    integration_headers = [" ".join(x.title().replace("ai", "AI").replace("db", "DB") for x in (dir_.split("-"))) for dir_ in integrations]
-    main_tree = "\n".join(f"{header_name}<{dir_}/index>" for header_name, dir_ in zip(main_headers, main_))
-    integration_tree = "\n".join(f"{header_name}<{dir_}/index>" for header_name, dir_ in zip(integration_headers, integrations))
+    main_headers = [
+        " ".join(
+            x.title().replace("ai", "AI").replace("db", "DB") for x in (dir_.split("-"))
+        )
+        for dir_ in main_
+    ]
+    integration_headers = [
+        " ".join(
+            x.title().replace("ai", "AI").replace("db", "DB") for x in (dir_.split("-"))
+        )
+        for dir_ in integrations
+    ]
+    main_tree = "\n".join(
+        f"{header_name}<{dir_}/index>" for header_name, dir_ in zip(main_headers, main_)
+    )
+    integration_tree = "\n".join(
+        f"{header_name}<{dir_}/index>"
+        for header_name, dir_ in zip(integration_headers, integrations)
+    )
     doc = f"""# API reference
 
 Welcome to the LangChain Python API reference. This is a reference for all 
