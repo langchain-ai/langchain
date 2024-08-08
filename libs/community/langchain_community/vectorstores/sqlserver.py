@@ -6,7 +6,7 @@ from langchain_core.vectorstores import VST, VectorStore
 from sqlalchemy import Column, Uuid, bindparam, create_engine, text
 from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
 from sqlalchemy.engine import Connection, Engine
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.orm import Session
 
 try:
@@ -135,6 +135,16 @@ class SQLServer_VectorStore(VectorStore):
         # Insert the embedded texts in the vector store table.
         return self._insert_embeddings(texts, embedded_texts, metadatas, ids)
 
+    def drop(self) -> None:
+        """Drops every table created during initialization of vector store."""
+        logging.info(f"Dropping vector store: {self.table_name}")
+        try:
+            with Session(bind=self._bind) as session:
+                # Drop all the tables associated with the session bind.
+                Base.metadata.drop_all(session.get_bind())
+        except ProgrammingError as e:
+            logging.error(f"Unable to drop vector store.\n {e.__cause__}.")
+
     def _insert_embeddings(
         self,
         texts: Iterable[str],
@@ -200,7 +210,8 @@ class SQLServer_VectorStore(VectorStore):
                 session.bulk_save_objects(documents)
                 session.commit()
         except DBAPIError as e:
-            logging.error(e.__cause__)
+            logging.error(f"Insert text failed:\n {e.__cause__}.")
+            raise
         return ids
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
