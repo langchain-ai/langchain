@@ -96,6 +96,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
+    _get_fields,
     is_basemodel_subclass,
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
@@ -278,10 +279,6 @@ def create_schema_from_function(
             ):
                 filter_args_.append(existing_param)
 
-    for arg in filter_args_:
-        if arg in inferred_model.__fields__:
-            del inferred_model.__fields__[arg]
-
     description, arg_descriptions = _infer_arg_descriptions(
         func,
         parse_docstring=parse_docstring,
@@ -289,7 +286,7 @@ def create_schema_from_function(
     )
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = []
-    for field in inferred_model.__fields__:
+    for field in _get_fields(inferred_model):
         if not has_args:
             if field == "args":
                 continue
@@ -497,12 +494,7 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
-                if hasattr(input_args, "model_fields"):
-                    key_ = next(iter(input_args.model_fields.keys()))
-                else:
-                    # Code cannot be type checked properly for pydantic v1 path
-                    key_ = next(iter(input_args.__fields__.keys()))  # type: ignore
-
+                key_ = next(iter(_get_fields(input_args).keys()))
                 input_args.validate({key_: tool_input})
             return tool_input
         else:
@@ -1726,8 +1718,12 @@ def _get_all_basemodel_annotations(
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if (fields := getattr(cls, "__fields__", {})) and name not in fields:
-                continue
+            if hasattr(cls, "model_fields"):
+                if (fields := getattr(cls, "model_fields", {})) and name not in fields:
+                    continue
+            else:
+                if (fields := getattr(cls, "__fields__", {})) and name not in fields:
+                    continue
             annotations[name] = param.annotation
         orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
     # cls has subscript: cls = FooBar[int]
