@@ -28,6 +28,7 @@ EXPECTED_ALL = [
     "ChatMlflow",
     "ChatMLflowAIGateway",
     "ChatMLX",
+    "ChatNebula",
     "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
