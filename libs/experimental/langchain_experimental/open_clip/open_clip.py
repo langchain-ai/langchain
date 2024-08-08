@@ -5,7 +5,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.utils.pydantic import get_fields
 
 
-
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
     """OpenCLIP Embeddings model."""
 
