@@ -87,7 +87,7 @@ from langchain_core.runnables.config import (
     patch_config,
     run_in_executor,
 )
-from langchain_core.runnables.utils import accepts_context
+from langchain_core.runnables.utils import asyncio_accepts_context
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
@@ -330,8 +330,16 @@ class ChildTool(BaseTool):
 
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to be called during tool execution."""
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """Deprecated. Please use callbacks instead."""
+
+    callback_manager: Optional[BaseCallbackManager] = deprecated(
+        name="callback_manager", since="0.1.7", removal="0.3.0", alternative="callbacks"
+    )(
+        Field(
+            default=None,
+            exclude=True,
+            description="Callback manager to add to the run trace.",
+        )
+    )
     tags: Optional[List[str]] = None
     """Optional list of tags associated with the tool. Defaults to None.
     These tags will be associated with each call to this tool,
@@ -374,8 +382,6 @@ class ChildTool(BaseTool):
         super().__init__(**kwargs)
 
     class Config(Serializable.Config):
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property
@@ -694,7 +700,7 @@ class ChildTool(BaseTool):
                 tool_kwargs[config_param] = config
 
             coro = context.run(self._arun, *tool_args, **tool_kwargs)
-            if accepts_context(asyncio.create_task):
+            if asyncio_accepts_context():
                 response = await asyncio.create_task(coro, context=context)  # type: ignore
             else:
                 response = await coro
@@ -859,7 +865,7 @@ class Tool(BaseTool):
             return_direct: Whether to return the output directly. Defaults to False.
             args_schema: The schema of the tool's input arguments. Defaults to None.
             coroutine: The asynchronous version of the function. Defaults to None.
-            **kwargs: Additional arguments to pass to the tool.
+            kwargs: Additional arguments to pass to the tool.
 
         Returns:
             The tool.
@@ -992,7 +998,7 @@ class StructuredTool(BaseTool):
             error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
                 whether to raise ValueError on invalid Google Style docstrings.
                 Defaults to False.
-            **kwargs: Additional arguments to pass to the tool
+            kwargs: Additional arguments to pass to the tool
 
         Returns:
             The tool.
@@ -1055,10 +1061,12 @@ class StructuredTool(BaseTool):
         )
 
 
+# TODO: Type args_schema as TypeBaseModel if we can get mypy to correctly recognize
+# pydantic v2 BaseModel classes.
 def tool(
     *args: Union[str, Callable, Runnable],
     return_direct: bool = False,
-    args_schema: Optional[Type[BaseModel]] = None,
+    args_schema: Optional[Type] = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -1664,6 +1672,13 @@ def _get_all_basemodel_annotations(
     if isinstance(cls, type):
         annotations: Dict[str, Type] = {}
         for name, param in inspect.signature(cls).parameters.items():
+            # Exclude hidden init args added by pydantic Config. For example if
+            # BaseModel(extra="allow") then "extra_data" will part of init sig.
+            if (
+                fields := getattr(cls, "model_fields", {})  # pydantic v2+
+                or getattr(cls, "__fields__", {})  # pydantic v1
+            ) and name not in fields:
+                continue
             annotations[name] = param.annotation
         orig_bases: Tuple = getattr(cls, "__orig_bases__", tuple())
     # cls has subscript: cls = FooBar[int]
