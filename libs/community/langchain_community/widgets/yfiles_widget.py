@@ -54,14 +54,13 @@ class YfilesJupyterWidget:
         w.sidebar = False
 
         def color_mapping(node: Dict):
-            match node["id"]:
-                case "__start__":
-                    return start
-                case "__end__":
-                    return end
-                case _:
-                    if node_color is not None:
-                        return node_color
+            if node["id"] == "__start__":
+                return start
+            elif node["id"] == "__end__":
+                return end
+            else:
+                if node_color is not None:
+                    return node_color
 
         w.set_node_color_mapping(color_mapping)
         w.directed = directed
