@@ -67,10 +67,6 @@
       "destination": "/v0.1/docs/cookbook/"
     },
     {
-      "source": "/docs/integrations/toolkits/document_comparison_toolkit(/?)",
-      "destination": "/docs/tutorials/rag/"
-    },
-    {
       "source": "/v0.2/docs/how_to/migrate_chains(/?)",
       "destination": "/v0.2/docs/versions/migrating_chains"
     },
@@ -81,6 +77,14 @@
     {
       "source": "/v0.2/docs/integrations/toolkits/airbyte_structured_qa/",
       "destination": "/v0.2/docs/integrations/document_loaders/airbyte/"
+    },
+    {
+      "source": "/v0.2/docs/integrations/toolkits/document_comparison_toolkit(/?)",
+      "destination": "/v0.2/docs/tutorials/rag/"
+    },
+    {
+      "source": "/v0.2/docs/integrations/toolkits/:path(.*/?)*",
+      "destination": "/v0.2/docs/integrations/tools/:path*"
     }
   ]
 }
