@@ -1,16 +1,17 @@
 """Generic utility functions."""
 
-from importlib.metadata import version
-
 import contextlib
 import datetime
 import functools
 import importlib
 import os
 import warnings
+from importlib.metadata import version
+from types import EllipsisType
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, overload
+
 from packaging.version import parse
 from requests import HTTPError, Response
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, overload
 
 from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils.pydantic import (
@@ -263,13 +264,6 @@ def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
     return SecretStr(value)
 
 
-class _NoDefaultType:
-    pass
-
-
-_NoDefault = _NoDefaultType()
-
-
 @overload
 def from_env(key: str, /) -> Callable[[], str]: ...
 
@@ -298,7 +292,7 @@ def from_env(
     key: str,
     /,
     *,
-    default: Union[str, _NoDefaultType, None] = _NoDefault,
+    default: Union[str, EllipsisType, None] = ...,
     error_message: Optional[str] = None,
 ) -> Union[Callable[[], str], Callable[[], Optional[str]]]:
     """Create a factory method that gets a value from an environment variable.
