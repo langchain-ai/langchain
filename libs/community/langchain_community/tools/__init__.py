@@ -342,6 +342,10 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "BaseTool",
+    "Tool",
+    "tool",
+    "StructuredTool",
     "AINAppOps",
     "AINOwnerOps",
     "AINRuleOps",
