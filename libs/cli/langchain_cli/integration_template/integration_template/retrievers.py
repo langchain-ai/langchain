@@ -67,7 +67,7 @@ class __ModuleName__Retriever(BaseRetriever):
             llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
             def format_docs(docs):
-                return "\n\n".join(doc.page_content for doc in docs)
+                return "\\n\\n".join(doc.page_content for doc in docs)
 
             chain = (
                 {"context": retriever | format_docs, "question": RunnablePassthrough()}

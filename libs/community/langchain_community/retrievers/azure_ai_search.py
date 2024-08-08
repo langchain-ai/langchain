@@ -72,7 +72,7 @@ class AzureAISearchRetriever(BaseRetriever):
             llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo")
 
             def format_docs(docs):
-                return "\n\n".join(doc.page_content for doc in docs)
+                return "\\n\\n".join(doc.page_content for doc in docs)
 
             chain = (
                 {"context": retriever | format_docs, "question": RunnablePassthrough()}
