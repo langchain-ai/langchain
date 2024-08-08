@@ -168,9 +168,9 @@ class FallacyChain(Chain):
         final_output: Dict[str, Any] = {"output": response}
         if self.return_intermediate_steps:
             final_output["initial_output"] = initial_response
-            final_output[
-                "fallacy_critiques_and_revisions"
-            ] = fallacy_critiques_and_revisions
+            final_output["fallacy_critiques_and_revisions"] = (
+                fallacy_critiques_and_revisions
+            )
         return final_output
 
     @staticmethod
