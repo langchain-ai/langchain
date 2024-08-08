@@ -479,26 +479,27 @@ def _doc_first_line(package_name: str) -> str:
 
 
 def _build_index(dirs: List[str]) -> None:
+    custom_names = {"airbyte": "Airbyte", "aws": "AWS", "ai21": "AI21"}
     ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
     integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
     main_headers = [
         " ".join(
-            x.title().replace("ai", "AI").replace("db", "DB") for x in (dir_.split("-"))
+            x.title() for x in dir_.split("-")
         )
         for dir_ in main_
     ]
     integration_headers = [
         " ".join(
-            x.title().replace("ai", "AI").replace("db", "DB") for x in (dir_.split("-"))
+            custom_names.get(x, x.title().replace("ai", "AI").replace("db", "DB")) for x in dir_.split("-")
         )
         for dir_ in integrations
     ]
     main_tree = "\n".join(
-        f"{header_name}<{dir_}/index>" for header_name, dir_ in zip(main_headers, main_)
+        f"{header_name}<{dir_.replace('-', '_')}/index>" for header_name, dir_ in zip(main_headers, main_)
     )
     integration_tree = "\n".join(
-        f"{header_name}<{dir_}/index>"
+        f"{header_name}<{dir_.replace('-', '_')}/index>"
         for header_name, dir_ in zip(integration_headers, integrations)
     )
     doc = f"""# API reference
