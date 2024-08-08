@@ -4,9 +4,10 @@ import contextlib
 import datetime
 import functools
 import importlib
+import os
 import warnings
 from importlib.metadata import version
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, overload
 
 from packaging.version import parse
 from requests import HTTPError, Response
@@ -260,3 +261,72 @@ def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
     if isinstance(value, SecretStr):
         return value
     return SecretStr(value)
+
+
+class _NoDefaultType:
+    """Type to indicate no default value is provided."""
+
+    pass
+
+
+_NoDefault = _NoDefaultType()
+
+
+@overload
+def from_env(key: str, /) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(key: str, /, *, default: str) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(key: str, /, *, error_message: str) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(
+    key: str, /, *, default: str, error_message: Optional[str]
+) -> Callable[[], str]: ...
+
+
+@overload
+def from_env(
+    key: str, /, *, default: None, error_message: Optional[str]
+) -> Callable[[], Optional[str]]: ...
+
+
+def from_env(
+    key: str,
+    /,
+    *,
+    default: Union[str, _NoDefaultType, None] = _NoDefault,
+    error_message: Optional[str] = None,
+) -> Union[Callable[[], str], Callable[[], Optional[str]]]:
+    """Create a factory method that gets a value from an environment variable.
+
+    Args:
+        key: The environment variable to look up.
+        default: The default value to return if the environment variable is not set.
+        error_message: the error message which will be raised if the key is not found
+            and no default value is provided.
+            This will be raised as a ValueError.
+    """
+
+    def get_from_env_fn() -> str:  # type: ignore
+        """Get a value from an environment variable."""
+        if key in os.environ:
+            return os.environ[key]
+        elif isinstance(default, str):
+            return default
+        else:
+            if error_message:
+                raise ValueError(error_message)
+            else:
+                raise ValueError(
+                    f"Did not find {key}, please add an environment variable"
+                    f" `{key}` which contains it, or pass"
+                    f" `{key}` as a named parameter."
+                )
+
+    return get_from_env_fn
