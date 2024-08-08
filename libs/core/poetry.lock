@@ -1214,7 +1214,7 @@ files = [
 
 [[package]]
 name = "langchain-standard-tests"
-version = "0.3.0rc0"
+version = "0.3.0.dev0"
 description = "Standard tests for LangChain implementations"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1223,7 +1223,7 @@ develop = true
 
 [package.dependencies]
 httpx = "^0.27.0"
-langchain-core = "^0.3.0rc0"
+langchain-core = "^0.3.0.dev0"
 pytest = ">=7,<9"
 
 [package.source]
@@ -1232,7 +1232,7 @@ url = "../standard-tests"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.0rc0"
+version = "0.3.0.dev0"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1240,7 +1240,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.3.0rc0"
+langchain-core = "^0.3.0.dev0"
 
 [package.source]
 type = "directory"
