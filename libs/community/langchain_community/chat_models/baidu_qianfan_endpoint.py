@@ -51,7 +51,7 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import get_fields, is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -397,7 +397,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
         default_values = {
             name: field.default
-            for name, field in cls.__fields__.items()
+            for name, field in get_fields(cls).items()
             if field.default is not None
         }
         default_values.update(values)
