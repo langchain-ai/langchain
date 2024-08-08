@@ -7,7 +7,6 @@ import importlib
 import os
 import warnings
 from importlib.metadata import version
-from types import EllipsisType
 from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, overload
 
 from packaging.version import parse
@@ -264,6 +263,15 @@ def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
     return SecretStr(value)
 
 
+class _NoDefaultType:
+    """Type to indicate no default value is provided."""
+
+    pass
+
+
+_NoDefault = _NoDefaultType()
+
+
 @overload
 def from_env(key: str, /) -> Callable[[], str]: ...
 
@@ -292,7 +300,7 @@ def from_env(
     key: str,
     /,
     *,
-    default: Union[str, EllipsisType, None] = ...,
+    default: Union[str, _NoDefaultType, None] = _NoDefault,
     error_message: Optional[str] = None,
 ) -> Union[Callable[[], str], Callable[[], Optional[str]]]:
     """Create a factory method that gets a value from an environment variable.
