@@ -1,10 +1,10 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.2.29rc1"
+version = "0.3.0rc0"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -13,9 +13,15 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
+exclude = [
+    "notebooks",
+    "examples",
+    "example_data",
+    "langchain_core/pydantic",
+    "tests/unit_tests/utils/test_function_calling.py",
+]
 [[tool.mypy.overrides]]
-module = [ "numpy", "pytest",]
+module = ["numpy", "pytest"]
 ignore_missing_imports = true
 
 [tool.poetry.urls]
@@ -34,14 +40,18 @@ pydantic = "^2"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = ["E", "F", "I", "T201"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "asyncio: mark tests as requiring asyncio",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
 
 [tool.poetry.group.lint]
@@ -60,9 +70,9 @@ optional = true
 optional = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
-"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
-"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+"tests/unit_tests/prompts/test_chat.py" = ["E501"]
+"tests/unit_tests/runnables/test_runnable.py" = ["E501"]
+"tests/unit_tests/runnables/test_graph.py" = ["E501"]
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
