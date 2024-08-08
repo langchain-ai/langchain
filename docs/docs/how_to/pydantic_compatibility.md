@@ -14,8 +14,7 @@ Because Pydantic does not support mixing .v1 and .v2 objects, users should be aw
 when using LangChain with Pydantic.
 
 :::caution
-While LangChain supports Pydantic V2 objects in some APIs (listed below), it's suggested that users keep using Pydantic V1 objects wait until LangChain 0.3.x.
-keep using Pydantic V1 objects.
+While LangChain supports Pydantic V2 objects in some APIs (listed below), it's suggested that users keep using Pydantic V1 objects until LangChain 0.3 is released.
 :::
 
 
