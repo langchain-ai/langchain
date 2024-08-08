@@ -190,7 +190,7 @@ def v1_repr(obj: BaseModel) -> str:
     if not is_basemodel_instance(obj):
         raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
     repr_ = []
-    for name, field in obj.__fields__.items():
+    for name, field in get_fields(obj).items():
         value = getattr(obj, name)
 
         if isinstance(value, BaseModel):
@@ -317,3 +317,15 @@ def _create_subset_model(
         raise NotImplementedError(
             f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
         )
+
+
+def get_fields(
+    obj: Union[BaseModel, Type[BaseModel]],
+) -> Dict[str, Any]:
+    """Get the fields of a pydantic model."""
+    if hasattr(obj, "model_fields"):
+        return obj.model_fields
+    elif hasattr(obj, "__fields__"):
+        return obj.__fields__  # type: ignore
+    else:
+        raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
