@@ -84,6 +84,10 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "StructuredTool",
+    "BaseTool",
+    "tool",
+    "Tool",
     "AINAppOps",
     "AINOwnerOps",
     "AINRuleOps",
