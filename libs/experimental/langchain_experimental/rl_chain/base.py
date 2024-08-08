@@ -26,7 +26,7 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate,
 )
 
-from langchain_experimental.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_experimental.pydantic_v1 import BaseModel, root_validator
 from langchain_experimental.rl_chain.metrics import (
     MetricsTrackerAverage,
     MetricsTrackerRollingWindow,
@@ -417,10 +417,8 @@ class RLChain(Chain, Generic[TEvent]):
             self.metrics = MetricsTrackerAverage(step=metrics_step)
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
