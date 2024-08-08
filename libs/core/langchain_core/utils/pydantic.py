@@ -190,7 +190,7 @@ def v1_repr(obj: BaseModel) -> str:
     if not is_basemodel_instance(obj):
         raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
     repr_ = []
-    for name, field in get_fields(obj).items():
+    for name, field in _get_fields(obj).items():
         value = getattr(obj, name)
 
         if isinstance(value, BaseModel):
@@ -319,7 +319,7 @@ def _create_subset_model(
         )
 
 
-def get_fields(
+def _get_fields(
     obj: Union[BaseModel, Type[BaseModel]],
 ) -> Dict[str, Any]:
     """Get the fields of a pydantic model."""
