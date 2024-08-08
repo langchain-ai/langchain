@@ -18,7 +18,7 @@ from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMP
 
 @deprecated(
     since="0.2.12",
-    removal="0.4.0",
+    removal="1.0",
     message=(
         "Use RunnableLambda to select from multiple prompt templates. See example "
         "in API reference: "

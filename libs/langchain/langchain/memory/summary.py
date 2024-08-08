@@ -17,7 +17,7 @@ from langchain.memory.prompt import SUMMARY_PROMPT
 
 @deprecated(
     since="0.2.12",
-    removal="0.4.0",
+    removal="1.0",
     message=(
         "Refer here for how to incorporate summaries of conversation history: "
         "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"  # noqa: E501

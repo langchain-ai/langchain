@@ -22,7 +22,7 @@ from langchain.chains.router.base import RouterChain
 
 @deprecated(
     since="0.2.12",
-    removal="0.4.0",
+    removal="1.0",
     message=(
         "Use RunnableLambda to select from multiple prompt templates. See example "
         "in API reference: "
