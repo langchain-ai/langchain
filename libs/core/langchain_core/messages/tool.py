@@ -1,10 +1,10 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
+from pydantic import Field
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
-from langchain_core.pydantic_v1 import Field
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
@@ -94,7 +94,7 @@ class ToolMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
 
-ToolMessage.update_forward_refs()
+ToolMessage.model_rebuild()
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):

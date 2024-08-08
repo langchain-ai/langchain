@@ -3,8 +3,8 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
+from pydantic import BaseModel, ConfigDict, Field
 
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
     _create_subset_model_v2,
@@ -56,8 +56,9 @@ def test_with_aliases() -> None:
         x: int = Field(default=1, alias="y")
         z: int
 
-        class Config:
-            allow_population_by_field_name = True
+        model_config = ConfigDict(
+            populate_by_name=True,
+        )
 
         @pre_init
         def validator(cls, v: Dict[str, Any]) -> Dict[str, Any]:

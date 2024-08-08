@@ -1,5 +1,6 @@
 from typing import Optional
 
+from pydantic import BaseModel
 from syrupy import SnapshotAssertion
 
 from langchain_core.language_models import FakeListLLM
@@ -7,7 +8,6 @@ from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableConfig
 from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.graph_mermaid import _escape_node_label

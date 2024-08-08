@@ -53,7 +53,7 @@ from pydantic import (  # pydantic: ignore
     SkipValidation,
     ValidationError,
     create_model,
-    root_validator,
+    model_validator,
     validate_arguments,
 )
 from typing_extensions import Annotated, TypeVar, cast, get_args, get_origin
@@ -507,8 +507,9 @@ class ChildTool(BaseTool):
                 }
             return tool_input
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         """Raise deprecation warning if callback_manager is used.
 
         Args:

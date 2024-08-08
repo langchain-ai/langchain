@@ -17,6 +17,7 @@ from typing import (
     Union,
 )
 
+from pydantic import BaseModel, ConfigDict, Field, validator
 from typing_extensions import TypeAlias
 
 from langchain_core._api import deprecated
@@ -27,7 +28,6 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
@@ -112,8 +112,9 @@ class BaseLanguageModel(
     )
     """Optional encoder to use for counting tokens."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @validator("verbose", pre=True, always=True, allow_reuse=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:

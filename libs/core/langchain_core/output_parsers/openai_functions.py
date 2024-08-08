@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch  # type: ignore[import]
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -226,8 +226,9 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     determine which schema to use.
     """
 
-    @root_validator(pre=True)
-    def validate_schema(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_schema(cls, values: Dict) -> Any:
         """Validate the pydantic schema.
 
         Args:
@@ -264,14 +265,14 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         _result = super().parse_result(result)
         if self.args_only:
             if hasattr(self.pydantic_schema, "model_validate_json"):
-                pydantic_args = self.pydantic_schema.model_validate_json(_result)
+                pydantic_args = self.pydantic_schema.model_validate_json(_result)  # type: ignore
             else:
                 pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
         else:
             fn_name = _result["name"]
             _args = _result["arguments"]
             if hasattr(self.pydantic_schema, "model_validate_json"):
-                pydantic_args = self.pydantic_schema[fn_name].model_validate_json(_args)
+                pydantic_args = self.pydantic_schema[fn_name].model_validate_json(_args)  # type: ignore
             else:
                 pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore
         return pydantic_args

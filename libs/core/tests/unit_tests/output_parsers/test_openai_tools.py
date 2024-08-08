@@ -1,6 +1,7 @@
 from typing import Any, AsyncIterator, Iterator, List
 
 import pytest
+from pydantic import BaseModel, Field
 
 from langchain_core.messages import (
     AIMessage,
@@ -14,7 +15,6 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 STREAMED_MESSAGES: list = [
