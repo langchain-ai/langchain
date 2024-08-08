@@ -26,7 +26,7 @@ from langchain.chains.llm import LLMChain
 
 @deprecated(
     since="0.2.13",
-    removal="0.4.0",
+    removal="1.0",
     message=(
         "Refer here for a recommended map-reduce implementation using langgraph: "
         "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/. See also "

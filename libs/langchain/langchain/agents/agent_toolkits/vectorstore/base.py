@@ -38,7 +38,11 @@ def create_vectorstore_agent(
     """Construct a VectorStore agent from an LLM and tools.
 
     Note: this class is deprecated. See below for a replacement that uses tool
-    calling methods.
+    calling methods and LangGraph. Install LangGraph with:
+
+        .. code-block:: bash
+
+            pip install -U langgraph
 
         .. code-block:: python
 
@@ -47,7 +51,7 @@ def create_vectorstore_agent(
             from langchain_openai import ChatOpenAI, OpenAIEmbeddings
             from langgraph.prebuilt import create_react_agent
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
             vector_store = InMemoryVectorStore.from_texts(
                 [
@@ -123,7 +127,11 @@ def create_vectorstore_router_agent(
     """Construct a VectorStore router agent from an LLM and tools.
 
     Note: this class is deprecated. See below for a replacement that uses tool
-    calling methods.
+    calling methods and LangGraph. Install LangGraph with:
+
+        .. code-block:: bash
+
+            pip install -U langgraph
 
         .. code-block:: python
 
@@ -132,7 +140,7 @@ def create_vectorstore_router_agent(
             from langchain_openai import ChatOpenAI, OpenAIEmbeddings
             from langgraph.prebuilt import create_react_agent
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
             pet_vector_store = InMemoryVectorStore.from_texts(
                 [
