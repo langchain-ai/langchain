@@ -5,8 +5,8 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
-from langchain_core.outputs.chat_generation import ChatGeneration
-from langchain_core.outputs.generation import Generation
+from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.generation import Generation, GenerationChunk
 from langchain_core.outputs.run_info import RunInfo
 
 
@@ -18,7 +18,9 @@ class LLMResult(BaseModel):
     wants to return.
     """
 
-    generations: List[List[Union[Generation, ChatGeneration]]]
+    generations: List[
+        List[Union[Generation, ChatGeneration, GenerationChunk, ChatGenerationChunk]]
+    ]
     """Generated outputs.
     
     The first dimension of the list represents completions for different input
