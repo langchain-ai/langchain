@@ -313,11 +313,11 @@ def from_env(
             This will be raised as a ValueError.
     """
 
-    def get_from_env_fn() -> str:  # type: ignore
+    def get_from_env_fn() -> Optional[str]:
         """Get a value from an environment variable."""
         if key in os.environ:
             return os.environ[key]
-        elif isinstance(default, str):
+        elif isinstance(default, (str, type(None))):
             return default
         else:
             if error_message:
@@ -330,3 +330,62 @@ def from_env(
                 )
 
     return get_from_env_fn
+
+
+@overload
+def secret_from_env(key: str, /) -> Callable[[], SecretStr]: ...
+
+
+@overload
+def secret_from_env(key: str, /, *, default: str) -> Callable[[], SecretStr]: ...
+
+
+@overload
+def secret_from_env(
+    key: str, /, *, default: None
+) -> Callable[[], Optional[SecretStr]]: ...
+
+
+@overload
+def secret_from_env(key: str, /, *, error_message: str) -> Callable[[], SecretStr]: ...
+
+
+def secret_from_env(
+    key: str,
+    /,
+    *,
+    default: Union[str, _NoDefaultType, None] = _NoDefault,
+    error_message: Optional[str] = None,
+) -> Union[Callable[[], Optional[SecretStr]], Callable[[], SecretStr]]:
+    """Secret from env.
+
+    Args:
+        key: The environment variable to look up.
+        default: The default value to return if the environment variable is not set.
+        error_message: the error message which will be raised if the key is not found
+            and no default value is provided.
+            This will be raised as a ValueError.
+
+    Returns:
+        factory method that will look up the secret from the environment.
+    """
+
+    def get_secret_from_env() -> Optional[SecretStr]:
+        """Get a value from an environment variable."""
+        if key in os.environ:
+            return SecretStr(os.environ[key])
+        elif isinstance(default, str):
+            return SecretStr(default)
+        elif isinstance(default, type(None)):
+            return None
+        else:
+            if error_message:
+                raise ValueError(error_message)
+            else:
+                raise ValueError(
+                    f"Did not find {key}, please add an environment variable"
+                    f" `{key}` which contains it, or pass"
+                    f" `{key}` as a named parameter."
+                )
+
+    return get_secret_from_env
