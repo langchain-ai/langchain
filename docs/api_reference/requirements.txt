@@ -4,3 +4,4 @@ myst-parser>=3,<4
 sphinx-autobuild>=2021,<2024
 pydata-sphinx-theme>=0.14,<0.15
 toml>=0.10.2,<0.11
+myst-nb>=1.1.1,<2
