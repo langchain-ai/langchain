@@ -1467,7 +1467,7 @@ class ChatOpenAI(BaseChatOpenAI):
             export OPENAI_API_KEY="your-api-key"
 
     Key init args — completion params:
-        [model: str
+        model: str
             Name of OpenAI model to use.
         temperature: float
             Sampling temperature.
