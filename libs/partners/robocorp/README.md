@@ -14,4 +14,4 @@ pip install -U langchain-robocorp
 
 ## Action Server Toolkit
 
-See [ActionServerToolkit](https://python.langchain.com/docs/integrations/toolkits/robocorp) for detailed documentation.
+See [ActionServerToolkit](https://python.langchain.com/docs/integrations/tools/robocorp) for detailed documentation.
