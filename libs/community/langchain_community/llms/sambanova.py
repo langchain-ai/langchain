@@ -198,7 +198,7 @@ class Sambaverse(LLM):
     """Sambaverse url to use"""
 
     sambaverse_api_key: str = Field(
-        default_factory=from_env("SAMBAVERSE_API_KEY", defaul="")
+        default_factory=from_env("SAMBAVERSE_API_KEY", default="")
     )
     """sambaverse api key"""
 
@@ -690,7 +690,7 @@ class SambaStudio(LLM):
     """
 
     sambastudio_base_url: str = Field(
-        default_factory=from_env("SAMBASTUDIO_BASE_URL", defaul="")
+        default_factory=from_env("SAMBASTUDIO_BASE_URL", default="")
     )
     """Base url to use"""
 
@@ -698,17 +698,17 @@ class SambaStudio(LLM):
     """endpoint base uri"""
 
     sambastudio_project_id: str = Field(
-        default_factory=from_env("SAMBASTUDIO_PROJECT_ID", defaul="")
+        default_factory=from_env("SAMBASTUDIO_PROJECT_ID", default="")
     )
     """Project id on sambastudio for model"""
 
     sambastudio_endpoint_id: str = Field(
-        default_factory=from_env("SAMBASTUDIO_ENDPOINT_ID", defaul="")
+        default_factory=from_env("SAMBASTUDIO_ENDPOINT_ID", default="")
     )
     """endpoint id on sambastudio for model"""
 
     sambastudio_api_key: str = Field(
-        default_factory=from_env("SAMBASTUDIO_API_KEY", defaul="")
+        default_factory=from_env("SAMBASTUDIO_API_KEY", default="")
     )
     """sambastudio api key"""
 

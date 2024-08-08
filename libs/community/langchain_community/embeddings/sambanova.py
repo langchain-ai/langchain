@@ -44,7 +44,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
     """
 
     sambastudio_embeddings_base_url: str = Field(
-        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_BASE_URL", defaul="")
+        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_BASE_URL", default="")
     )
     """Base url to use"""
 
@@ -52,17 +52,17 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
     """endpoint base uri"""
 
     sambastudio_embeddings_project_id: str = Field(
-        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_PROJECT_ID", defaul="")
+        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_PROJECT_ID", default="")
     )
     """Project id on sambastudio for model"""
 
     sambastudio_embeddings_endpoint_id: str = Field(
-        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_ENDPOINT_ID", defaul="")
+        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_ENDPOINT_ID", default="")
     )
     """endpoint id on sambastudio for model"""
 
     sambastudio_embeddings_api_key: str = Field(
-        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_API_KEY", defaul="")
+        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_API_KEY", default="")
     )
     """sambastudio api key"""
 

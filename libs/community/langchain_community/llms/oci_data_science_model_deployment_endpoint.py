@@ -35,7 +35,7 @@ class OCIModelDeploymentLLM(LLM):
     p: float = 0.75
     """Total probability mass of tokens to consider at each step."""
 
-    endpoint: str = Field(default_factory=from_env("OCI_LLM_ENDPOINT", defaul=""))
+    endpoint: str = Field(default_factory=from_env("OCI_LLM_ENDPOINT", default=""))
     """The uri of the endpoint from the deployed Model Deployment model."""
 
     best_of: int = 1

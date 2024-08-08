@@ -43,17 +43,17 @@ class ArceeRetriever(BaseRetriever):
     """Arcee DALM name"""
 
     arcee_api_url: str = Field(
-        default_factory=from_env("ARCEE_API_URL", defaul="https://api.arcee.ai")
+        default_factory=from_env("ARCEE_API_URL", default="https://api.arcee.ai")
     )
     """Arcee API URL"""
 
     arcee_api_version: str = Field(
-        default_factory=from_env("ARCEE_API_VERSION", defaul="v2")
+        default_factory=from_env("ARCEE_API_VERSION", default="v2")
     )
     """Arcee API Version"""
 
     arcee_app_url: str = Field(
-        default_factory=from_env("ARCEE_APP_URL", defaul="https://app.arcee.ai")
+        default_factory=from_env("ARCEE_APP_URL", default="https://app.arcee.ai")
     )
     """Arcee App URL"""
 
