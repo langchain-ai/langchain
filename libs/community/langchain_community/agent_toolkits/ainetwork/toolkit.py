@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Literal, Optional
 
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.ainetwork.app import AINAppOps
 from langchain_community.tools.ainetwork.owner import AINOwnerOps
 from langchain_community.tools.ainetwork.rule import AINRuleOps

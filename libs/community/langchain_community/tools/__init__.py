@@ -22,11 +22,15 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_core.tools import (
-        BaseTool,
-        StructuredTool,
-        Tool,
-        tool,
+        BaseTool as BaseTool,
     )
+    from langchain_core.tools import (
+        StructuredTool as StructuredTool,
+    )
+    from langchain_core.tools import (
+        Tool as Tool,
+    )
+    from langchain_core.tools.convert import tool as tool
 
     from langchain_community.tools.ainetwork.app import (
         AINAppOps,
@@ -362,7 +366,6 @@ __all__ = [
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
-    "BaseTool",
     "BearlyInterpreterTool",
     "BingSearchResults",
     "BingSearchRun",
@@ -465,10 +468,8 @@ __all__ = [
     "StdInInquireTool",
     "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
-    "StructuredTool",
     "TavilyAnswer",
     "TavilySearchResults",
-    "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
     "WikipediaQueryRun",
@@ -484,7 +485,6 @@ __all__ = [
     "ZenGuardTool",
     "authenticate",
     "format_tool_to_openai_function",
-    "tool",
 ]
 
 # Used for internal purposes

@@ -5,7 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional, Type, cast
 
 from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.tools import BaseTool, BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
 from langchain_community.tools.playwright.base import (
     BaseBrowserTool,
