@@ -133,14 +133,7 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        try:
-            # pydantic >= 1.10.17
-            from pydantic.v1.fields import FieldInfo  # pydantic: ignore
-        except ImportError:
-            # pydantic < 1.10.17
-            from pydantic.fields import (  # type: ignore[assignment]  # pydantic: ignore
-                FieldInfo,
-            )
+        from langchain_core.utils.pydantic import FieldInfoV1_
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -215,7 +208,7 @@ def deprecated(
                 )
                 return cast(T, obj)
 
-        elif isinstance(obj, FieldInfo):
+        elif isinstance(obj, FieldInfoV1_):
             from langchain_core.pydantic_v1 import Field
 
             wrapped = None
