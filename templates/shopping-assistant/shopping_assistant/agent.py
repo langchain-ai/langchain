@@ -1,6 +1,5 @@
 from typing import List, Tuple
 
-import langchain_core.tools.convert
 from ionic_langchain.tool import IonicTool
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.messages import AIMessage, SystemMessage
@@ -10,9 +9,10 @@ from langchain_core.prompts import (
     MessagesPlaceholder,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
-tools = [langchain_core.tools.convert.tool()]
+tools = [tool(IonicTool())]
 
 llm = ChatOpenAI(temperature=0.5, model_name="gpt-3.5-turbo-1106", streaming=True)
 
