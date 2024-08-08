@@ -97,8 +97,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     """[DEPRECATED] Use `callbacks` instead."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def get_input_schema(

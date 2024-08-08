@@ -420,8 +420,6 @@ class RunnableAgent(BaseSingleActionAgent):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property
@@ -530,8 +528,6 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property

@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.chains.combine_documents.base import (
@@ -147,10 +147,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     """The string with which to join the formatted documents"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
