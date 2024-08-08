@@ -58,7 +58,7 @@ class GmailToolkit(BaseToolkit):
 
             toolkit.get_tools()
 
-        .. code-block:: python
+        .. code-block:: none
 
             [GmailCreateDraft(api_resource=<googleapiclient.discovery.Resource object at 0x1094509d0>),
             GmailSendMessage(api_resource=<googleapiclient.discovery.Resource object at 0x1094509d0>),
@@ -85,7 +85,7 @@ class GmailToolkit(BaseToolkit):
             for event in events:
                 event["messages"][-1].pretty_print()
 
-        .. code-block:: python
+        .. code-block:: none
 
              ================================[1m Human Message [0m=================================
 

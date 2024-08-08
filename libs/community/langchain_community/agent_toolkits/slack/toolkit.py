@@ -47,7 +47,7 @@ class SlackToolkit(BaseToolkit):
             tools = toolkit.get_tools()
             tools
 
-        .. code-block:: python
+        .. code-block:: none
 
             [SlackGetChannel(client=<slack_sdk.web.client.WebClient object at 0x113caa8c0>),
             SlackGetMessage(client=<slack_sdk.web.client.WebClient object at 0x113caa4d0>),
@@ -74,7 +74,7 @@ class SlackToolkit(BaseToolkit):
                 if message.type != "tool":  # mask sensitive information
                     event["messages"][-1].pretty_print()
 
-        .. code-block:: python
+        .. code-block:: none
 
              ================================[1m Human Message [0m=================================
 

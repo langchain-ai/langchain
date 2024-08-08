@@ -69,7 +69,7 @@ class RequestsToolkit(BaseToolkit):
             tools = toolkit.get_tools()
             tools
 
-        .. code-block:: python
+        .. code-block:: none
 
             [RequestsGetTool(requests_wrapper=TextRequestsWrapper(headers={}, aiosession=None, auth=None, response_content_type='text', verify=True), allow_dangerous_requests=True),
             RequestsPostTool(requests_wrapper=TextRequestsWrapper(headers={}, aiosession=None, auth=None, response_content_type='text', verify=True), allow_dangerous_requests=True),
@@ -123,7 +123,7 @@ class RequestsToolkit(BaseToolkit):
             for event in events:
                 event["messages"][-1].pretty_print()
 
-        .. code-block:: python
+        .. code-block:: none
 
              ================================[1m Human Message [0m=================================
 
@@ -142,13 +142,13 @@ class RequestsToolkit(BaseToolkit):
                 "userId": 1,
                 "id": 1,
                 "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
-                "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+                "body": "quia et suscipit..."
             },
             {
                 "userId": 1,
                 "id": 2,
                 "title": "qui est esse",
-                "body": "est rerum tempore vitae\nsequi sint nihil reprehenderit dolor beatae ea dolores neque\nfugiat blanditiis voluptate porro vel nihil molestiae ut reiciendis\nqui aperiam non debitis possimus qui neque nisi nulla"
+                "body": "est rerum tempore vitae..."
             }
             ]
             ==================================[1m Ai Message [0m==================================

@@ -194,7 +194,7 @@ class GitHubToolkit(BaseToolkit):
             for tool in tools:
                 print(tool.name)
 
-        .. code-block:: python
+        .. code-block:: none
 
             Get Issues
             Get Issue
@@ -241,7 +241,7 @@ class GitHubToolkit(BaseToolkit):
             for event in events:
                 event["messages"][-1].pretty_print()
 
-        .. code-block:: python
+        .. code-block:: none
 
              ================================[1m Human Message [0m=================================
 
