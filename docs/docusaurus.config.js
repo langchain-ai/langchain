@@ -165,7 +165,7 @@ const config = {
             label: "Integrations",
           },
           {
-            href: "/api_reference/index.html",
+            href: "/api_reference/",
             label: "API Reference",
             position: "left",
           },
