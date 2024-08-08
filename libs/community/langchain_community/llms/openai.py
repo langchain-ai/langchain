@@ -34,6 +34,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
     pre_init,
 )
+from langchain_core.utils.pydantic import get_fields
 from langchain_core.utils.utils import build_extra_kwargs
 
 from langchain_community.utils.openai import is_openai_v1
@@ -1016,7 +1017,7 @@ class OpenAIChat(BaseLLM):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {field.alias for field in get_fields(cls).values()}
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):

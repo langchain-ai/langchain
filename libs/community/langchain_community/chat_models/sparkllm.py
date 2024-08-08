@@ -40,6 +40,7 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from langchain_core.utils.pydantic import get_fields
 
 logger = logging.getLogger(__name__)
 
@@ -308,7 +309,7 @@ class ChatSparkLLM(BaseChatModel):
         # put extra params into model_kwargs
         default_values = {
             name: field.default
-            for name, field in cls.__fields__.items()
+            for name, field in get_fields(cls).items()
             if field.default is not None
         }
         values["model_kwargs"]["temperature"] = default_values.get("temperature")
