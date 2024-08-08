@@ -5,7 +5,6 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     SecretStr,
     root_validator,
@@ -43,9 +42,7 @@ class PipelineAI(LLM, BaseModel):
     pipeline_api_key: Optional[SecretStr] = None
 
     class Config:
-        """Configuration for this pydantic config."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
