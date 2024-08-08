@@ -1,4 +1,5 @@
 """Test Milvus functionality."""
+
 from typing import Any, List, Optional
 
 import pytest
@@ -271,6 +272,34 @@ def test_milvus_metadata_field() -> None:
         docsearch._text_field,
         docsearch._vector_field,
         docsearch._metadata_field,
+    }
+
+
+def test_milvus_enable_dynamic_field_with_partition_key() -> None:
+    """
+    Test end to end construction and enable dynamic field
+    with partition_key_field
+    """
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i, "namespace": f"name_{i}"} for i in range(len(texts))]
+
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas, enable_dynamic_field=True, partition_key_field="namespace"
+    )
+
+    # filter on a single namespace
+    output = docsearch.similarity_search("foo", k=10, expr="namespace == 'name_2'")
+    assert len(output) == 1
+
+    # without namespace filter
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 3
+
+    assert set(docsearch.fields) == {
+        docsearch._primary_field,
+        docsearch._text_field,
+        docsearch._vector_field,
+        docsearch._partition_key_field,
     }
 
 
