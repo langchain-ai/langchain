@@ -271,13 +271,22 @@ class ChatPremAI(BaseChatModel, BaseModel):
     If model name is other than default model then it will override the calls 
     from the model deployed from launchpad."""
 
-    temperature: Optional[float] = None
+    session_id: Optional[str] = None
+    """The ID of the session to use. It helps to track the chat history."""
+
+    temperature: Optional[float] = Field(default=None)
     """Model temperature. Value should be >= 0 and <= 1.0"""
 
-    max_tokens: Optional[int] = None
+    top_p: Optional[float] = None
+    """top_p adjusts the number of choices for each predicted tokens based on
+        cumulative probabilities. Value should be ranging between 0.0 and 1.0. 
+    """
+
+    max_tokens: Optional[int] = Field(default=None)
+
     """The maximum number of tokens to generate"""
 
-    max_retries: int = 1
+    max_retries: int = Field(default=1)
     """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
