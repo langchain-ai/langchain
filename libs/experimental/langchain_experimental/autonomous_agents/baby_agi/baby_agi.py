@@ -52,8 +52,6 @@ class BabyAGI(Chain, BaseModel):  # type: ignore[misc]
     max_iterations: Optional[int] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def add_task(self, task: Dict) -> None:
