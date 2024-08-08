@@ -29,7 +29,6 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
-from pydantic import Field
 
 
 class _AnthropicCommon(BaseLanguageModel):

@@ -6,8 +6,7 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
-from pydantic import Field
+from langchain_core.utils import pre_init
 
 from langchain_community.utilities.vertexai import get_client_info
 

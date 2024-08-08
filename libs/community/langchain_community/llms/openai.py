@@ -37,7 +37,6 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.pydantic import get_fields
 from langchain_core.utils.utils import build_extra_kwargs
-from pydantic import Field
 
 from langchain_community.utils.openai import is_openai_v1
 

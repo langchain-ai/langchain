@@ -48,11 +48,9 @@ from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     from_env,
-    get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
-from pydantic import Field
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,

@@ -26,7 +26,6 @@ from langchain_core.utils import (
     get_pydantic_field_names,
     pre_init,
 )
-from pydantic import Field
 
 logger = logging.getLogger(__name__)
 

@@ -6,10 +6,9 @@ from typing import Dict, List, Optional
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import run_in_executor
-from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
-from pydantic import Field
+from langchain_core.utils import from_env, pre_init
 
 logger = logging.getLogger(__name__)
 

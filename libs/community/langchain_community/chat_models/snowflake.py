@@ -20,7 +20,6 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs
-from pydantic import Field
 
 SUPPORTED_ROLES: List[str] = [
     "system",
