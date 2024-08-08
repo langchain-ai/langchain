@@ -15,7 +15,7 @@ from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
+from langchain_experimental.pydantic_v1 import Field, root_validator
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 SQL_QUERY = "SQLQuery:"

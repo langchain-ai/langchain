@@ -10,7 +10,6 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 
-from langchain_experimental.pydantic_v1 import Extra
 from langchain_experimental.tot.checker import ToTChecker
 from langchain_experimental.tot.controller import ToTController
 from langchain_experimental.tot.memory import ToTDFSMemory

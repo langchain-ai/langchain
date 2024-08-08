@@ -15,7 +15,6 @@ from langchain_core.callbacks.manager import (
 from langchain_core.prompts.base import BasePromptTemplate
 
 from langchain_experimental.llm_symbolic_math.prompt import PROMPT
-from langchain_experimental.pydantic_v1 import Extra
 
 
 class LLMSymbolicMathChain(Chain):

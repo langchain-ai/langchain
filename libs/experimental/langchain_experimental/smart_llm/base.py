@@ -15,7 +15,7 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 
-from langchain_experimental.pydantic_v1 import Extra, root_validator
+from langchain_experimental.pydantic_v1 import root_validator
 
 
 class SmartLLMChain(Chain):

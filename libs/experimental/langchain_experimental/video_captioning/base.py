@@ -4,7 +4,6 @@ from langchain.chains.base import Chain
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import Extra
 
 from langchain_experimental.video_captioning.services.audio_service import (
     AudioProcessor,

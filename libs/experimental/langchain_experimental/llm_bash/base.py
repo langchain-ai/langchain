@@ -14,7 +14,7 @@ from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.llm_bash.bash import BashProcess
 from langchain_experimental.llm_bash.prompt import PROMPT
-from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
+from langchain_experimental.pydantic_v1 import Field, root_validator
 
 logger = logging.getLogger(__name__)
 
