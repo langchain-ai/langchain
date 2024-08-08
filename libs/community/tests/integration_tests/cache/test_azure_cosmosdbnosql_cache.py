@@ -17,40 +17,43 @@ from libs.community.tests.integration_tests.cache.fake_embeddings import (
 from libs.community.tests.unit_tests.llms.fake_llm import FakeLLM
 
 
-URI = 'COSMOSDB_URI'
-KEY = 'COSMOSDB_KEY'
-test_client = CosmosClient(URL, credential=KEY)
+URI = 'COSMOS_DB_URI'
+KEY = 'COSMOS_DB_KEY'
+test_client = CosmosClient(URI, credential=KEY)
 
-indexing_policy = {
-    "indexingMode": "consistent",
-    "includedPaths": [{"path": "/*"}],
-    "excludedPaths": [{"path": '/"_etag"/?'}],
-    "vectorIndexes": [{"path": "/embedding", "type": "quantizedFlat"}],
-}
+#cosine, euclidean, innerproduct
+def indexing_policy(index_type: str):
+    return {
+        "indexingMode": "consistent",
+        "includedPaths": [{"path": "/*"}],
+        "excludedPaths": [{"path": '/"_etag"/?'}],
+        "vectorIndexes": [{"path": "/embedding", "type": index_type}],
+    }
 
-vector_embedding_policy = {
-    "vectorEmbeddings": [
-        {
-            "path": "/embedding",
-            "dataType": "float32",
-            "distanceFunction": "cosine",
-            "dimensions": 1536,
-        }
-    ]
-}
+def vector_embedding_policy(distance_function: str):
+    return {
+        "vectorEmbeddings": [
+            {
+                "path": "/embedding",
+                "dataType": "float32",
+                "distanceFunction": distance_function,
+                "dimensions": 1536,
+            }
+        ]
+    }
 
 partition_key = PartitionKey(path="/id")
 cosmos_container_properties_test = {"partition_key": partition_key}
 cosmos_database_properties_test = {}
 
 # @pytest.fixture(scope="session")
-def test_azure_cosmos_db_nosql_semantic_cache() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=test_client,
             embedding=FakeEmbeddings(),
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
+            vector_embedding_policy=vector_embedding_policy("cosine"),
+            indexing_policy=indexing_policy("quantizedFlat"),
             cosmos_container_properties=cosmos_container_properties_test,
             cosmos_database_properties=cosmos_database_properties_test,
         )
@@ -70,13 +73,13 @@ def test_azure_cosmos_db_nosql_semantic_cache() -> None:
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_semantic_cache_inner_product() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=test_client,
             embedding=FakeEmbeddings(),
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
+            vector_embedding_policy=vector_embedding_policy("cosine"),
+            indexing_policy=indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties_test,
             cosmos_database_properties=cosmos_database_properties_test,
         )
@@ -96,13 +99,13 @@ def test_azure_cosmos_db_semantic_cache_inner_product() -> None:
     get_llm_cache().clear(llm_string=llm_string)
 
 
-def test_azure_cosmos_db_semantic_cache_multi() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=test_client,
             embedding=FakeEmbeddings(),
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
+            vector_embedding_policy=vector_embedding_policy("dotProduct"),
+            indexing_policy=indexing_policy("quantizedFlat"),
             cosmos_container_properties=cosmos_container_properties_test,
             cosmos_database_properties=cosmos_database_properties_test,
         )
@@ -125,13 +128,13 @@ def test_azure_cosmos_db_semantic_cache_multi() -> None:
 
 
 
-def test_azure_cosmos_db_semantic_cache_multi_inner_product() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=test_client,
             embedding=FakeEmbeddings(),
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
+            vector_embedding_policy=vector_embedding_policy("dotProduct"),
+            indexing_policy=indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties_test,
             cosmos_database_properties=cosmos_database_properties_test,
         )
@@ -154,13 +157,13 @@ def test_azure_cosmos_db_semantic_cache_multi_inner_product() -> None:
 
 
 
-def test_azure_cosmos_db_semantic_cache_hnsw() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=test_client,
             embedding=FakeEmbeddings(),
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
+            vector_embedding_policy=vector_embedding_policy("euclidean"),
+            indexing_policy=indexing_policy("quantizedFlat"),
             cosmos_container_properties=cosmos_container_properties_test,
             cosmos_database_properties=cosmos_database_properties_test,
         )
@@ -181,13 +184,13 @@ def test_azure_cosmos_db_semantic_cache_hnsw() -> None:
 
 
 
-def test_azure_cosmos_db_semantic_cache_inner_product_hnsw() -> None:
+def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
             cosmos_client=test_client,
             embedding=FakeEmbeddings(),
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
+            vector_embedding_policy=vector_embedding_policy("euclidean"),
+            indexing_policy=indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties_test,
             cosmos_database_properties=cosmos_database_properties_test,
         )
@@ -208,58 +211,4 @@ def test_azure_cosmos_db_semantic_cache_inner_product_hnsw() -> None:
 
 
 
-def test_azure_cosmos_db_semantic_cache_multi_hnsw() -> None:
-    set_llm_cache(
-        AzureCosmosDBNoSqlSemanticCache(
-            cosmos_client=test_client,
-            embedding=FakeEmbeddings(),
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
-            cosmos_container_properties=cosmos_container_properties_test,
-            cosmos_database_properties=cosmos_database_properties_test,
-        )
-    )
 
-    llm = FakeLLM()
-    params = llm.dict()
-    params["stop"] = None
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    get_llm_cache().update(
-        "foo", llm_string, [Generation(text="fizz"), Generation(text="Buzz")]
-    )
-
-    # foo and bar will have the same embedding produced by FakeEmbeddings
-    cache_output = get_llm_cache().lookup("bar", llm_string)
-    assert cache_output == [Generation(text="fizz"), Generation(text="Buzz")]
-
-    # clear the cache
-    get_llm_cache().clear(llm_string=llm_string)
-
-
-
-def test_azure_cosmos_db_semantic_cache_multi_inner_product_hnsw() -> None:
-    set_llm_cache(
-        AzureCosmosDBNoSqlSemanticCache(
-            cosmos_client=test_client,
-            embedding=FakeEmbeddings(),
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
-            cosmos_container_properties=cosmos_container_properties_test,
-            cosmos_database_properties=cosmos_database_properties_test,
-        )
-    )
-
-    llm = FakeLLM()
-    params = llm.dict()
-    params["stop"] = None
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    get_llm_cache().update(
-        "foo", llm_string, [Generation(text="fizz"), Generation(text="Buzz")]
-    )
-
-    # foo and bar will have the same embedding produced by FakeEmbeddings
-    cache_output = get_llm_cache().lookup("bar", llm_string)
-    assert cache_output == [Generation(text="fizz"), Generation(text="Buzz")]
-
-    # clear the cache
-    get_llm_cache().clear(llm_string=llm_string)
