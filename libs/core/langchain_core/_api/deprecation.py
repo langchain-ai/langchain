@@ -138,8 +138,9 @@ def deprecated(
             from pydantic.v1.fields import FieldInfo  # pydantic: ignore
         except ImportError:
             # pydantic < 1.10.17
-            from pydantic.fields import FieldInfo  # pydantic: ignore
-
+            from pydantic.fields import (  # type: ignore[assignment]  # pydantic: ignore
+                FieldInfo,
+            )
 
         def emit_warning() -> None:
             """Emit the warning."""
