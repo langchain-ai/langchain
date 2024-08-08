@@ -196,10 +196,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # to support Azure OpenAI Service custom deployment names
     deployment: Optional[str] = model
     # TODO: Move to AzureOpenAIEmbeddings.
-    openai_api_version: Optional[str] = Field(
-        default_factory=from_env("OPENAI_API_VERSION", default=default_api_version),
-        alias="api_version",
-    )
+    openai_api_version: Optional[str] = Field(default=None, alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # to support Azure OpenAI Service custom endpoints
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
@@ -308,6 +305,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             values["chunk_size"] = min(values["chunk_size"], 16)
         else:
             default_api_version = ""
+        values["openai_api_version"] = get_from_dict_or_env(
+            values,
+            "openai_api_version",
+            "OPENAI_API_VERSION",
+            default=default_api_version,
+        )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
             values["openai_organization"]

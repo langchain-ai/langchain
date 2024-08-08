@@ -297,9 +297,7 @@ class BedrockBase(BaseModel, ABC):
 
     client: Any = Field(exclude=True)  #: :meta private:
 
-    region_name: Optional[str] = Field(
-        default_factory=from_env("AWS_DEFAULT_REGION", default=session.region_name)
-    )
+    region_name: Optional[str] = None
     """The aws region e.g., `us-west-2`. Fallsback to AWS_DEFAULT_REGION env variable
     or region specified in ~/.aws/config in case it is not provided here.
     """
@@ -407,6 +405,13 @@ class BedrockBase(BaseModel, ABC):
             else:
                 # use default credentials
                 session = boto3.Session()
+
+            values["region_name"] = get_from_dict_or_env(
+                values,
+                "region_name",
+                "AWS_DEFAULT_REGION",
+                default=session.region_name,
+            )
 
             client_params = {}
             if values["region_name"]:

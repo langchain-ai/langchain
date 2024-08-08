@@ -87,7 +87,7 @@ class ChatYuan2(BaseChatModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
     yuan2_api_key: Optional[str] = Field(
-        default="EMPTY", alias="api_key", default_factory=from_env("YUAN2_API_KEY")
+       alias="api_key", default_factory=from_env("YUAN2_API_KEY", default=None)
     )
     """Automatically inferred from env var `YUAN2_API_KEY` if not provided."""
 
