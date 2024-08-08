@@ -11,7 +11,7 @@ from langchain_standard_tests.integration_tests import (
 
 from langchain_groq import ChatGroq
 
-rate_limiter = InMemoryRateLimiter(requests_per_second=0.45)
+rate_limiter = InMemoryRateLimiter(requests_per_second=0.2)
 
 
 class BaseTestGroq(ChatModelIntegrationTests):
