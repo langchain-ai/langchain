@@ -14,6 +14,7 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     pre_init,
 )
+from pydantic import Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 

@@ -22,6 +22,7 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     pre_init,
 )
+from pydantic import Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -77,7 +78,7 @@ class MinimaxCommon(BaseModel):
         default_factory=from_env("MINIMAX_API_HOST", default="https://api.minimax.chat")
     )
     minimax_group_id: Optional[str] = Field(
-        default_factory=from_env("MINIMAX_GROUP_ID")
+        default_factory=from_env("MINIMAX_GROUP_ID", default=None)
     )
     minimax_api_key: Optional[SecretStr] = None
 

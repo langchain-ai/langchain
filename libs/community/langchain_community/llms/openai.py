@@ -37,6 +37,7 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.pydantic import get_fields
 from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import Field
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -204,7 +205,7 @@ class BaseOpenAI(BaseLLM):
     # Check for classes that derive from this class (as some of them
     # may assume openai_api_key is a str)
     openai_api_key: Optional[str] = Field(
-        default_factory=from_env("OPENAI_API_KEY"), alias="api_key"
+        default_factory=from_env("OPENAI_API_KEY", default=None), alias="api_key"
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")

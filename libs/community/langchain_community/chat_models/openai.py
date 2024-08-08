@@ -48,9 +48,11 @@ from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     from_env,
+    get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import Field
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
@@ -206,7 +208,7 @@ class ChatOpenAI(BaseChatModel):
     # Check for classes that derive from this class (as some of them
     # may assume openai_api_key is a str)
     openai_api_key: Optional[str] = Field(
-        default_factory=from_env("OPENAI_API_KEY"), alias="api_key"
+        default_factory=from_env("OPENAI_API_KEY", default=None), alias="api_key"
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")

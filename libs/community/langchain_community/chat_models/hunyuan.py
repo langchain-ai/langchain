@@ -26,6 +26,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
     pre_init,
 )
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -99,10 +100,12 @@ class ChatHunyuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    hunyuan_app_id: Optional[int] = Field(default_factory=from_env("HUNYUAN_APP_ID"))
+    hunyuan_app_id: Optional[int] = Field(
+        default_factory=from_env("HUNYUAN_APP_ID", default=None)
+    )
     """Hunyuan App ID"""
     hunyuan_secret_id: Optional[str] = Field(
-        default_factory=from_env("HUNYUAN_SECRET_ID")
+        default_factory=from_env("HUNYUAN_SECRET_ID", default=None)
     )
     """Hunyuan Secret ID"""
     hunyuan_secret_key: Optional[SecretStr] = None

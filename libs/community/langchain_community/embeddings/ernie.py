@@ -6,9 +6,10 @@ from typing import Dict, List, Optional
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.config import run_in_executor
-from langchain_core.utils import from_env, pre_init
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +24,11 @@ class ErnieEmbeddings(BaseModel, Embeddings):
     ernie_api_base: Optional[str] = Field(
         default_factory=from_env("ERNIE_API_BASE", default="https://aip.baidubce.com")
     )
-    ernie_client_id: Optional[str] = Field(default_factory=from_env("ERNIE_CLIENT_ID"))
+    ernie_client_id: Optional[str] = Field(
+        default_factory=from_env("ERNIE_CLIENT_ID", default=None)
+    )
     ernie_client_secret: Optional[str] = Field(
-        default_factory=from_env("ERNIE_CLIENT_SECRET")
+        default_factory=from_env("ERNIE_CLIENT_SECRET", default=None)
     )
     access_token: Optional[str] = None
 

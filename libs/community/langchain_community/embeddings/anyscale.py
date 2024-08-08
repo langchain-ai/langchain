@@ -11,6 +11,7 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     pre_init,
 )
+from pydantic import Field
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.utils.openai import is_openai_v1

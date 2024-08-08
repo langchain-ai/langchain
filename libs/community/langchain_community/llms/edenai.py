@@ -10,8 +10,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import from_env, pre_init
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
 from langchain_core.utils.pydantic import get_fields
+from pydantic import Field
 
 from langchain_community.llms.utils import enforce_stop_tokens
 from langchain_community.utilities.requests import Requests
@@ -34,7 +35,9 @@ class EdenAI(LLM):
 
     base_url: str = "https://api.edenai.run/v2"
 
-    edenai_api_key: Optional[str] = Field(default_factory=from_env("EDENAI_API_KEY"))
+    edenai_api_key: Optional[str] = Field(
+        default_factory=from_env("EDENAI_API_KEY", default=None)
+    )
 
     feature: Literal["text", "image"] = "text"
     """Which generative feature to use, use text by default"""

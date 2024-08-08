@@ -20,6 +20,7 @@ from langchain_core.utils import (
     pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs
+from pydantic import Field
 
 SUPPORTED_ROLES: List[str] = [
     "system",
@@ -113,29 +114,29 @@ class ChatSnowflakeCortex(BaseChatModel):
     """
 
     snowflake_username: Optional[str] = Field(
-        default_factory=from_env("SNOWFLAKE_USERNAME"), alias="username"
+        default_factory=from_env("SNOWFLAKE_USERNAME", default=None), alias="username"
     )
     """Automatically inferred from env var `SNOWFLAKE_USERNAME` if not provided."""
     snowflake_password: Optional[SecretStr] = Field(default=None, alias="password")
     """Automatically inferred from env var `SNOWFLAKE_PASSWORD` if not provided."""
     snowflake_account: Optional[str] = Field(
-        default_factory=from_env("SNOWFLAKE_ACCOUNT"), alias="account"
+        default_factory=from_env("SNOWFLAKE_ACCOUNT", default=None), alias="account"
     )
     """Automatically inferred from env var `SNOWFLAKE_ACCOUNT` if not provided."""
     snowflake_database: Optional[str] = Field(
-        default_factory=from_env("SNOWFLAKE_DATABASE"), alias="database"
+        default_factory=from_env("SNOWFLAKE_DATABASE", default=None), alias="database"
     )
     """Automatically inferred from env var `SNOWFLAKE_DATABASE` if not provided."""
     snowflake_schema: Optional[str] = Field(
-        default_factory=from_env("SNOWFLAKE_SCHEMA"), alias="schema"
+        default_factory=from_env("SNOWFLAKE_SCHEMA", default=None), alias="schema"
     )
     """Automatically inferred from env var `SNOWFLAKE_SCHEMA` if not provided."""
     snowflake_warehouse: Optional[str] = Field(
-        default_factory=from_env("SNOWFLAKE_WAREHOUSE"), alias="warehouse"
+        default_factory=from_env("SNOWFLAKE_WAREHOUSE", default=None), alias="warehouse"
     )
     """Automatically inferred from env var `SNOWFLAKE_WAREHOUSE` if not provided."""
     snowflake_role: Optional[str] = Field(
-        default_factory=from_env("SNOWFLAKE_ROLE"), alias="role"
+        default_factory=from_env("SNOWFLAKE_ROLE", default=None), alias="role"
     )
     """Automatically inferred from env var `SNOWFLAKE_ROLE` if not provided."""
 

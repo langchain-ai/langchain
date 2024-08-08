@@ -18,7 +18,8 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Field
-from langchain_core.utils import from_env, pre_init
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -43,13 +44,13 @@ class SparkLLM(LLM):
 
     client: Any = None  #: :meta private:
     spark_app_id: Optional[str] = Field(
-        default_factory=from_env("IFLYTEK_SPARK_APP_ID")
+        default_factory=from_env("IFLYTEK_SPARK_APP_ID", default=None)
     )
     spark_api_key: Optional[str] = Field(
-        default_factory=from_env("IFLYTEK_SPARK_API_KEY")
+        default_factory=from_env("IFLYTEK_SPARK_API_KEY", default=None)
     )
     spark_api_secret: Optional[str] = Field(
-        default_factory=from_env("IFLYTEK_SPARK_API_SECRET")
+        default_factory=from_env("IFLYTEK_SPARK_API_SECRET", default=None)
     )
     spark_api_url: Optional[str] = Field(
         default_factory=from_env(

@@ -4,8 +4,9 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.utils import from_env, pre_init
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -13,11 +14,15 @@ logger = logging.getLogger(__name__)
 class VolcanoEmbeddings(BaseModel, Embeddings):
     """`Volcengine Embeddings` embedding models."""
 
-    volcano_ak: Optional[str] = Field(default_factory=from_env("VOLC_ACCESSKEY"))
+    volcano_ak: Optional[str] = Field(
+        default_factory=from_env("VOLC_ACCESSKEY", default=None)
+    )
     """volcano access key
     learn more from: https://www.volcengine.com/docs/6459/76491#ak-sk"""
 
-    volcano_sk: Optional[str] = Field(default_factory=from_env("VOLC_SECRETKEY"))
+    volcano_sk: Optional[str] = Field(
+        default_factory=from_env("VOLC_SECRETKEY", default=None)
+    )
     """volcano secret key
     learn more from: https://www.volcengine.com/docs/6459/76491#ak-sk"""
 
