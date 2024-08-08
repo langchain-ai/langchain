@@ -17,6 +17,7 @@ import warnings
 from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
 
 from langchain_core._api.internal import is_caller_internal
+from langchain_core.utils.pydantic import FieldInfoV1
 
 
 class LangChainDeprecationWarning(DeprecationWarning):
@@ -30,7 +31,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Union[Type, Callable[..., Any]])
+T = TypeVar("T", bound=Union[Type, Callable[..., Any], FieldInfoV1])
 
 
 def _validate_deprecation_params(
@@ -209,8 +210,6 @@ def deprecated(
                 return cast(T, obj)
 
         elif isinstance(obj, FieldInfoV1):
-            from langchain_core.pydantic_v1 import Field
-
             wrapped = None
             if not _obj_type:
                 _obj_type = "attribute"
@@ -219,12 +218,15 @@ def deprecated(
             old_doc = obj.description
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
-                return Field(
-                    default=obj.default,
-                    default_factory=obj.default_factory,
-                    description=new_doc,
-                    alias=obj.alias,
-                    exclude=obj.exclude,
+                return cast(
+                    T,
+                    FieldInfoV1(
+                        default=obj.default,
+                        default_factory=obj.default_factory,
+                        description=new_doc,
+                        alias=obj.alias,
+                        exclude=obj.exclude,
+                    ),
                 )
 
         elif isinstance(obj, property):
@@ -270,7 +272,7 @@ def deprecated(
                 )
 
         else:
-            _name = _name or obj.__qualname__
+            _name = _name or cast(Union[Type, Callable], obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
