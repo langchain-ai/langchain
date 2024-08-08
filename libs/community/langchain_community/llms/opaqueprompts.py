@@ -5,7 +5,6 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
 from langchain_core.messages import AIMessage
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
@@ -34,9 +33,7 @@ class OpaquePrompts(LLM):
     """The base LLM to use."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
