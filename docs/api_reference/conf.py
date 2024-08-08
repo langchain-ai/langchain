@@ -207,6 +207,12 @@ html_theme_options = {
     ],
     "icon_links": [
         {
+            "name": "LangChain docs",
+            "url": "/docs",
+            "icon": "_static/img/brand/favicon.png",
+            "type": "local",
+        },
+        {
             # Label for this link
             "name": "GitHub",
             # URL where the link will redirect
@@ -224,19 +230,7 @@ html_theme_options = {
     ],
     "icon_links_label": "Quick Links",
 }
-# html_sidebars = {
-#     "**": []
-# }
 
-# Add any paths that contain custom themes here, relative to this directory.
-# html_theme_path = ["themes"]
-# redirects dictionary maps from old links to new links
-html_additional_pages = {}
-# redirects = {
-#     "index": "langchain_api_reference",
-# }
-# for old_link in redirects:
-#     html_additional_pages[old_link] = "redirects.html"
 
 partners_dir = Path(__file__).parent.parent.parent / "libs/partners"
 partners = [
@@ -251,7 +245,6 @@ html_context = {
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
-    # "redirects": redirects,
     "partners": partners,
 }
 
@@ -262,9 +255,7 @@ html_static_path = ["_static"]
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (e.g. https://...)
-html_css_files = [
-    "css/custom.css",
-]
+html_css_files = ["css/custom.css"]
 html_use_index = False
 
 myst_enable_extensions = ["colon_fence"]
