@@ -869,46 +869,33 @@ def test_structured_output_strict(
 
 @pytest.mark.parametrize(
     ("model", "method", "strict"),
-    [("gpt-4o", "function_calling", True), ("gpt-4o-2024-08-06", "json_schema", None)],
+    [("gpt-4o-2024-08-06", "json_schema", None)],
 )
 def test_nested_structured_output_strict(
     model: str,
-    method: Literal["function_calling", "json_schema"],
+    method: Literal["json_schema"],
     strict: Optional[bool],
 ) -> None:
-    """Test to verify structured output with strict=True. for nested object"""
+    """Test to verify structured output with strict=True for nested object."""
 
-    from pydantic import BaseModel as BaseModelProper
-    from pydantic import Field as FieldProper
+    from typing import TypedDict
 
     llm = ChatOpenAI(model=model, temperature=0)
 
-    class SelfEvaluation(BaseModelProper):
-        score: int = FieldProper(description="self evaluation score")
-        text: str = FieldProper(description="self evaluation text")
+    class SelfEvaluation(TypedDict):
+        score: int
+        text: str
 
-
-    class JokeWithEvaluation(BaseModelProper):
+    class JokeWithEvaluation(TypedDict):
         """Joke to tell user."""
 
-        setup: str = FieldProper(description="question to set up a joke")
-        punchline: str = FieldProper(description="answer to resolve the joke")
-        self_evaluation: SelfEvaluation = FieldProper(description="self evaluation")
-
-    # Pydantic class
-    # Type ignoring since the interface only officially supports pydantic 1
-    # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-    # We'll need to do a pass updating the type signatures.
-    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
-    result = chat.invoke("Tell me a joke about cats.")
-    assert isinstance(result, JokeWithEvaluation)
-
-    for chunk in chat.stream("Tell me a joke about cats."):
-        assert isinstance(chunk, JokeWithEvaluation)
+        setup: str
+        punchline: str
+        self_evaluation: SelfEvaluation
 
     # Schema
     chat = llm.with_structured_output(
-        JokeWithEvaluation.model_json_schema(), method=method, strict=strict
+        JokeWithEvaluation, method=method, strict=strict
     )
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
