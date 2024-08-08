@@ -96,7 +96,6 @@ sidebar_position: 0
 sidebar_class_name: hidden
 keywords: [compatibility]
 custom_edit_url:
-hide_table_of_contents: true
 ---
 
 # Tools
