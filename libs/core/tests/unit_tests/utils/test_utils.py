@@ -1,12 +1,13 @@
 import os
 import re
 from contextlib import AbstractContextManager, nullcontext
-from typing import Any, Dict, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Type, Union
 from unittest.mock import patch
 
 import pytest
 
 from langchain_core import utils
+from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils import (
     check_package_version,
     from_env,
@@ -15,6 +16,7 @@ from langchain_core.utils import (
 )
 from langchain_core.utils._merge import merge_dicts
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_core.utils.utils import secret_from_env
 
 
 @pytest.mark.parametrize(
@@ -254,3 +256,107 @@ def test_from_env_with_default_error_message() -> None:
         get_value = from_env(key)
         with pytest.raises(ValueError, match=f"Did not find {key}"):
             get_value()
+
+
+def test_secret_from_env_with_env_variable(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Set the environment variable
+    monkeypatch.setenv("TEST_KEY", "secret_value")
+
+    # Get the function
+    get_secret: Callable[[], Optional[SecretStr]] = secret_from_env("TEST_KEY")
+
+    # Assert that it returns the correct value
+    assert get_secret() == SecretStr("secret_value")
+
+
+def test_secret_from_env_with_default_value(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Unset the environment variable
+    monkeypatch.delenv("TEST_KEY", raising=False)
+
+    # Get the function with a default value
+    get_secret: Callable[[], SecretStr] = secret_from_env(
+        "TEST_KEY", default="default_value"
+    )
+
+    # Assert that it returns the default value
+    assert get_secret() == SecretStr("default_value")
+
+
+def test_secret_from_env_with_none_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Unset the environment variable
+    monkeypatch.delenv("TEST_KEY", raising=False)
+
+    # Get the function with a default value of None
+    get_secret: Callable[[], Optional[SecretStr]] = secret_from_env(
+        "TEST_KEY", default=None
+    )
+
+    # Assert that it returns None
+    assert get_secret() is None
+
+
+def test_secret_from_env_without_default_raises_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Unset the environment variable
+    monkeypatch.delenv("TEST_KEY", raising=False)
+
+    # Get the function without a default value
+    get_secret: Callable[[], SecretStr] = secret_from_env("TEST_KEY")
+
+    # Assert that it raises a ValueError with the correct message
+    with pytest.raises(ValueError, match="Did not find TEST_KEY"):
+        get_secret()
+
+
+def test_secret_from_env_with_custom_error_message(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Unset the environment variable
+    monkeypatch.delenv("TEST_KEY", raising=False)
+
+    # Get the function without a default value but with a custom error message
+    get_secret: Callable[[], SecretStr] = secret_from_env(
+        "TEST_KEY", error_message="Custom error message"
+    )
+
+    # Assert that it raises a ValueError with the custom message
+    with pytest.raises(ValueError, match="Custom error message"):
+        get_secret()
+
+
+def test_using_secret_from_env_as_default_factory(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Set the environment variable
+    monkeypatch.setenv("TEST_KEY", "secret_value")
+    # Get the function
+    from langchain_core.pydantic_v1 import BaseModel, Field
+
+    class Foo(BaseModel):
+        secret: SecretStr = Field(default_factory=secret_from_env("TEST_KEY"))
+
+    assert Foo().secret.get_secret_value() == "secret_value"
+
+    class Bar(BaseModel):
+        secret: Optional[SecretStr] = Field(
+            default_factory=secret_from_env("TEST_KEY_2", default=None)
+        )
+
+    assert Bar().secret is None
+
+    class Buzz(BaseModel):
+        secret: Optional[SecretStr] = Field(
+            default_factory=secret_from_env("TEST_KEY_2", default="hello")
+        )
+
+    # We know it will be SecretStr rather than Optional[SecretStr]
+    assert Buzz().secret.get_secret_value() == "hello"  # type: ignore
+
+    class OhMy(BaseModel):
+        secret: Optional[SecretStr] = Field(
+            default_factory=secret_from_env("FOOFOOFOOBAR")
+        )
+
+    with pytest.raises(ValueError, match="Did not find FOOFOOFOOBAR"):
+        OhMy()
