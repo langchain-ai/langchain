@@ -1,3 +1,4 @@
+import os
 import re
 from contextlib import AbstractContextManager, nullcontext
 from typing import Any, Dict, Optional, Tuple, Type, Union
@@ -8,6 +9,7 @@ import pytest
 from langchain_core import utils
 from langchain_core.utils import (
     check_package_version,
+    from_env,
     get_pydantic_field_names,
     guard_import,
 )
@@ -219,3 +221,36 @@ def test_get_pydantic_field_names_v1() -> None:
     result = get_pydantic_field_names(PydanticModel)
     expected = {"field1", "field2", "aliased_field", "alias_field"}
     assert result == expected
+
+
+def test_from_env_with_env_variable() -> None:
+    key = "TEST_KEY"
+    value = "test_value"
+    with patch.dict(os.environ, {key: value}):
+        get_value = from_env(key)
+        assert get_value() == value
+
+
+def test_from_env_with_default_value() -> None:
+    key = "TEST_KEY"
+    default_value = "default_value"
+    with patch.dict(os.environ, {}, clear=True):
+        get_value = from_env(key, default=default_value)
+        assert get_value() == default_value
+
+
+def test_from_env_with_error_message() -> None:
+    key = "TEST_KEY"
+    error_message = "Custom error message"
+    with patch.dict(os.environ, {}, clear=True):
+        get_value = from_env(key, error_message=error_message)
+        with pytest.raises(ValueError, match=error_message):
+            get_value()
+
+
+def test_from_env_with_default_error_message() -> None:
+    key = "TEST_KEY"
+    with patch.dict(os.environ, {}, clear=True):
+        get_value = from_env(key)
+        with pytest.raises(ValueError, match=f"Did not find {key}"):
+            get_value()
