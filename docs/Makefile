@@ -13,7 +13,12 @@ OUTPUT_NEW_DOCS_DIR = $(OUTPUT_NEW_DIR)/docs
 
 PYTHON = .venv/bin/python
 
-PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/pyproject.toml" \; -print | grep -vE "airbyte|ibm|couchbase" | tr '\n' ' ')
+PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec sh -c ' \
+for dir; do \
+    if find "$$dir" -maxdepth 1 -type f \( -name "pyproject.toml" -o -name "setup.py" \) | grep -q .; then \
+        echo "$$dir"; \
+    fi \
+done' sh {} + | grep -vE "airbyte|ibm|couchbase" | tr '\n' ' ')
 
 PORT ?= 3001
 

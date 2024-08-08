@@ -26,8 +26,6 @@ class SlackToolkit(BaseToolkit):
     client: WebClient = Field(default_factory=login)
 
     class Config:
-        """Pydantic config."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:
