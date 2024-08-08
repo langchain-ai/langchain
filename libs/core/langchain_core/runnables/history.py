@@ -16,7 +16,6 @@ from typing import (
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables import RunnableBranch
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
@@ -320,17 +319,21 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             history_chain = RunnablePassthrough.assign(
                 **{messages_key: history_chain}
             ).with_config(run_name="insert_history")
+        with_sync_listeners = runnable.with_listeners(on_end=self._exit_history)
+        with_async_listeners = runnable.with_alisteners(on_end=self._aexit_history)
+
+        def func(input_: Any):
+            return with_sync_listeners
+
+        async def afunc(input: Any):
+            return with_async_listeners
+
         bound: Runnable = (
             history_chain
-            | RunnableBranch(
-                (
-                    RunnableLambda(
-                        self._is_not_async, afunc=self._is_async
-                    ).with_config(run_name="RunnableWithMessageHistoryInAsyncMode"),
-                    runnable.with_alisteners(on_end=self._aexit_history),
-                ),
-                runnable.with_listeners(on_end=self._exit_history),
-            )
+            | RunnableLambda(
+                func=func,
+                afunc=afunc,
+            ).with_config(run_name="RunnableWithListeners")
         ).with_config(run_name="RunnableWithMessageHistory")
 
         if history_factory_config:
@@ -429,10 +432,15 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             # This occurs for chat models - since we batch inputs
             if isinstance(input_val[0], list):
                 if len(input_val) != 1:
-                    raise ValueError()
+                    raise ValueError(
+                        f"Expected a single list of messages. Got {input_val}."
+                    )
                 return input_val[0]
             return list(input_val)
         else:
+            import pdb
+
+            pdb.set_trace()
             raise ValueError(
                 f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
                 f"Got {input_val}."
@@ -468,7 +476,12 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         elif isinstance(output_val, (list, tuple)):
             return list(output_val)
         else:
-            raise ValueError()
+            import pdb
+
+            pdb.set_trace()
+            raise ValueError(
+                f"Expected str, BaseMessage, List[BaseMessage]. Got {output_val}."
+            )
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
