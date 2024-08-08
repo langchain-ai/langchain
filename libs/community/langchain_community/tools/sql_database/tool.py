@@ -47,8 +47,17 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Sequence[Dict[str, Any]], Result]:
+        # add include_columns as valid args for db.run_no_throw
+        valid_kwargs = {}
+        if self.metadata:
+            valid_kwargs = {
+                key: value
+                for key, value in self.metadata.items()
+                if key in ["include_columns"]
+            }
+
         """Execute the query, return the results or an error message."""
-        return self.db.run_no_throw(query)
+        return self.db.run_no_throw(query, **valid_kwargs)
 
 
 class _InfoSQLDatabaseToolInput(BaseModel):
