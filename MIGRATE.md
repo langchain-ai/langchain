@@ -52,7 +52,7 @@ Now:
 
 `from langchain_experimental.sql import SQLDatabaseChain`
 
-Alternatively, if you are just interested in using the query generation part of the SQL chain, you can check out [`Build a Question/Answering system over SQL data`](https://github.com/JuanFKurucz/langchain/blob/master/docs/docs/tutorials/sql_qa.ipynb)
+Alternatively, if you are just interested in using the query generation part of the SQL chain, you can check out this [`SQL question-answering tutorial`](https://python.langchain.com/v0.2/docs/tutorials/sql_qa/#convert-question-to-sql-query)
 
 `from langchain.chains import create_sql_query_chain`
 
