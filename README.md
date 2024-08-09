@@ -181,7 +181,7 @@ chat = GigaChat(credentials=<авторизационные_данные>, verif
 ```py
 """Пример работы с чатом через gigachain"""
 from langchain.schema import HumanMessage, SystemMessage
-from langchain.chat_models.gigachat import GigaChat
+from langchain_community.chat_models.gigachat import GigaChat
 
 # Авторизация в сервисе GigaChat
 chat = GigaChat(credentials=<авторизационные_данные>, verify_ssl_certs=False)
@@ -195,7 +195,7 @@ messages = [
 while(True):
     user_input = input("User: ")
     messages.append(HumanMessage(content=user_input))
-    res = chat(messages)
+    res = chat.invoke(messages)
     messages.append(res)
     print("Bot: ", res.content)
 ```
