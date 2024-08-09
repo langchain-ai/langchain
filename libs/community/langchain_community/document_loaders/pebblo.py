@@ -5,6 +5,7 @@ import logging
 import os
 import uuid
 from http import HTTPStatus
+from importlib.metadata import version
 from typing import Any, Dict, Iterator, List, Optional
 
 import requests  # type: ignore
@@ -20,6 +21,7 @@ from langchain_community.utilities.pebblo import (
     PLUGIN_VERSION,
     App,
     Doc,
+    Framework,
     IndexedDocument,
     generate_size_based_batches,
     get_full_path,
@@ -431,6 +433,10 @@ class PebbloSafeLoader(BaseLoader):
             runtime=runtime,
             framework=framework,
             plugin_version=PLUGIN_VERSION,
+            client_version=Framework(
+                name="langchain_community",
+                version=version("langchain_community"),
+            ),
         )
         return app
 
