@@ -16,6 +16,7 @@ EXPECTED_ALL = [
     "AirbyteTypeformLoader",
     "AirbyteZendeskSupportLoader",
     "AirtableLoader",
+    "AlibabaOSSFileLoader",
     "AmazonTextractPDFLoader",
     "ApifyDatasetLoader",
     "ArcGISLoader",
