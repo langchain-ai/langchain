@@ -96,3 +96,24 @@ def test_json_parser_chaining(
     assert res["f_or_c"] == "C"
     assert res["temperature"] == 20
     assert res["forecast"] == "Sunny"
+
+
+def test_format_instructions_preserves_language() -> None:
+    """Test format instructions does not attempt to encode into ascii."""
+    from langchain_core.pydantic_v1 import BaseModel, Field
+
+    description = (
+        "你好, こんにちは, नमस्ते, Bonjour, Hola, "
+        "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
+    )
+
+    class Foo(BaseModel):
+        hello: str = Field(
+            description=(
+                "你好, こんにちは, नमस्ते, Bonjour, Hola, "
+                "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
+            )
+        )
+
+    parser = PydanticOutputParser(pydantic_object=Foo)
+    assert description in parser.get_format_instructions()
