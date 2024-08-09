@@ -139,6 +139,7 @@ class SQLServer_VectorStore(VectorStore):
             with Session(bind=self._bind) as session:
                 # Drop all the tables associated with the session bind.
                 Base.metadata.drop_all(session.get_bind())
+            logging.info(f"Vector store `{self.table_name}` dropped successfully.")
         except ProgrammingError as e:
             logging.error(f"Unable to drop vector store.\n {e.__cause__}.")
 
@@ -207,6 +208,6 @@ class SQLServer_VectorStore(VectorStore):
                 session.bulk_save_objects(documents)
                 session.commit()
         except DBAPIError as e:
-            logging.error(f"Insert text failed:\n {e.__cause__}.")
+            logging.error(f"Add text failed:\n {e.__cause__}.")
             raise
         return ids
