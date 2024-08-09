@@ -230,9 +230,9 @@ class SQLServer_VectorStore(VectorStore):
             logging.info(EMPTY_IDS_ERROR_MESSAGE)
             return False
 
-        result = self.delete_texts_by_ids(ids)
+        result = self._delete_texts_by_ids(ids)
         if result == 0:
-            logging.info(INVAID_IDS_ERROR_MESSAGE)
+            logging.info(INVALID_IDS_ERROR_MESSAGE)
             return False
 
         logging.info(result, " rows affected.")
