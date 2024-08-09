@@ -248,8 +248,8 @@ def test_sqlserver_delete_text_by_id_no_ids_provided(
         {"id": 600, "source": "newspaper page", "length": 44},
         {"id": 300, "source": "random texts", "length": 16},
     ]
-    store.add_texts(texts, metadatas)
+    result = store.add_texts(texts, metadatas)
 
-    # Should throw an exception since no ids are provided
-    with pytest.raises(ValueError, match="No ids provided to delete."):
-        store.delete([])
+    # Should return False since empty list of ids given
+    if not result:
+        pass

@@ -22,6 +22,9 @@ Base = declarative_base()  # type: Any
 
 _embedding_store: Any = None
 
+EMPTY_IDS_ERROR_MESSAGE = "Empty list of ids provided"
+INVAID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
+
 
 class SQLServer_VectorStore(VectorStore):
     """SQL Server Vector Store.
@@ -212,12 +215,12 @@ class SQLServer_VectorStore(VectorStore):
         """
 
         if ids is None or len(ids) == 0:
-            logging.info("Empty list of ids provided")
-            raise ValueError("No ids provided to delete.")
+            logging.info(EMPTY_IDS_ERROR_MESSAGE)
+            return False
 
         result = self.delete_texts_by_ids(ids)
         if result == 0:
-            logging.info("Provided ids not found in the DB.")
+            logging.info(INVAID_IDS_ERROR_MESSAGE)
             return False
 
         logging.info(result, " rows affected.")
