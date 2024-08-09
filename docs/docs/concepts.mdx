@@ -486,6 +486,27 @@ retriever = vectorstore.as_retriever()
 
 For specifics on how to use vector stores, see the [relevant how-to guides here](/docs/how_to/#vector-stores).
 
+### Graph Vector Stores
+<span data-heading-keywords="graph,graphs,vectorstore,vectorstores,graph vector store,graph vector stores"></span>
+
+Sometimes embedding models don’t capture all the important relationships between documents.
+Graph Vector Stores are an extension to both vector stores and retrievers that allow documents to be explicitly connected to each other.
+
+Graph vector store retrievers use both vector similarity and links to find documents related to an unstructured query.
+
+Graphs allow linking between documents.
+Each document identifies tags that link to and from it.
+For example, a paragraph of text may be linked to URLs based on the anchor tags in it's content and linked from the URL(s) it is published at.
+
+Link extractors can be used to extract links from documents.
+```python
+graph_vector_store = CassandraGraphVectorStore()
+link_extractor = HtmlLinkExtractor()
+links = link_extractor.extract_one(HtmlInput(document.page_content, "http://mysite"))
+add_links(document, links)
+graph_vector_store.add_document(document)
+```
+
 ### Retrievers
 <span data-heading-keywords="retriever,retrievers"></span>
 
