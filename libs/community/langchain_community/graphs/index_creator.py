@@ -8,7 +8,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain_community.graphs import NetworkxEntityGraph
 from langchain_community.graphs.networkx_graph import KG_TRIPLE_DELIMITER
-from langchain_community.graphs.networkx_graph import parse_triples
+from langchain_community.graphs.networkx_graph import parse_triples, parse_json_triples
 
 # flake8: noqa
 
@@ -40,11 +40,74 @@ _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "Output:"
 )
 
+_VERTEXAI_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (    
+    "<goal>Given a text document, identify ALL (subject, object, predicate) triplets where the predicate is clear based on the surrounding text.</goal>\n\n"
+    "<steps>\n"
+    "1. Identify all entities in the text document. For each identified entity, extract the following information:\n"
+    "\t- entity_name: Name of the entity, capitalized\n"
+    "\t- entity_description: A short description of the entity relevant to potential relationships (e.g., location, function)\n\n"
+    "2. Analyze the relationships between the identified entities.\n" 
+    "\t- For each pair of entities, examine the surrounding text to determine if there's a clear connection between them based on verbs, prepositions, or other clues (e.g., 'build', 'located on').\n"
+    "\t- If a relationship is found, extract the following information for the triplet:\n"
+    "\t\t- subject: The subject is the entity being described, as identified in step 1\n"
+    "\t\t- object: The object is the value of the property, as identified in step 1\n"
+    "\t\t- predicate: The predicate is the property of the subject that is being described.\n"
+    "</steps>\n\n"
+    "<example>\n"
+    "<text>A chef cooks delicious food in a restaurant.</text>\n"
+    "<output>\n"
+    "[\n"
+    "\t{{\n"
+    "\t\t\"subject\": \"Chef\",\n"
+    "\t\t\"object\": \"Food\",\n"
+    "\t\t\"predicate\": \"cooks\"\n"
+    "\t}},\n"
+    "\t{{\n"
+    "\t\t\"subject\": \"Chef\",\n"
+    "\t\t\"object\": \"Restaurant\",\n"
+    "\t\t\"predicate\": \"works in\"\n"
+    "\t}}\n"
+    "]\n"
+    "</output>\n"
+    "</example>\n\n"
+    "<real_data>\n"
+    "<text>\n" 
+    "{text}\n"
+    "</text>\n\n"
+    "<output>\n\n"
+)
+
+RESPONSE_SCHEMA = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "subject": {
+                "type": "string",
+                "description": "name of the source entity, as identified in step 1"
+            },
+            "object": {
+                "type": "string",
+                "description": "name of the target entity, as identified in step 1"
+            },
+            "predicate": {
+                "type": "string",
+                "description": "a very brief (2-5 words) description of the relationship"
+            },
+        },
+        "required": ["subject", "object", "predicate"],
+    },
+}
+
 KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT = PromptTemplate(
     input_variables=["text"],
     template=_DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE,
 )
 
+VERTEXAI_KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT = PromptTemplate(
+    input_variables=["text"],
+    template=_VERTEXAI_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE,
+)
 
 class GraphIndexCreator(BaseModel):
     """Functionality to create graph index."""
@@ -68,9 +131,20 @@ class GraphIndexCreator(BaseModel):
                 "Please install langchain to use this functionality. "
                 "You can install it with `pip install langchain`."
             )
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        output = chain.predict(text=text)
-        knowledge = parse_triples(output)
+        # Determin BaseLanguageModel class name. If ChatVertexAI
+        # is the BaseLanguageModel, then use the Vertex AI specific prompt
+        llm_class_name = self.llm.__class__.__name__
+        if llm_class_name == "ChatVertexAI":
+            chain = VERTEXAI_KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT | self.llm.bind(
+                response_mime_type="application/json",
+                response_schema=RESPONSE_SCHEMA
+                )
+            output = chain.invoke({"text": text})
+            knowledge = parse_json_triples(output.content)
+        else:
+            chain = prompt | self.llm
+            output = chain.invoke({"text": text})
+            knowledge = parse_triples(output.content)
         for triple in knowledge:
             graph.add_triple(triple)
         return graph
@@ -91,9 +165,18 @@ class GraphIndexCreator(BaseModel):
                 "Please install langchain to use this functionality. "
                 "You can install it with `pip install langchain`."
             )
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        output = await chain.apredict(text=text)
-        knowledge = parse_triples(output)
+        llm_class_name = self.llm.__class__.__name__
+        if llm_class_name == "ChatVertexAI":
+            chain = VERTEXAI_KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT | self.llm.bind(
+                response_mime_type="application/json",
+                response_schema=RESPONSE_SCHEMA
+                )
+            output = await chain.ainvoke({"text": text})
+            knowledge = parse_json_triples(output.content)
+        else:
+            chain = prompt | self.llm
+            output = await chain.ainvoke({"text": text})
+            knowledge = parse_triples(output.content)
         for triple in knowledge:
             graph.add_triple(triple)
         return graph

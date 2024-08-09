@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, List, NamedTuple, Optional, Tuple
+import json
 
 KG_TRIPLE_DELIMITER = "<|>"
 
@@ -33,6 +34,28 @@ def parse_triples(knowledge_str: str) -> List[KnowledgeTriple]:
     for triple_str in triple_strs:
         try:
             kg_triple = KnowledgeTriple.from_string(triple_str)
+        except ValueError:
+            continue
+        results.append(kg_triple)
+    return results
+
+def parse_json_triples(knowledge_str: str) -> List[KnowledgeTriple]:
+    """Parse knowledge triples from a json string."""
+    try:
+        knowledge_dict = json.loads(knowledge_str)
+    except:
+        return []
+    results = []
+    for triple in knowledge_dict:
+        try:
+            subject = triple['subject']
+            predicate = triple['predicate']
+            object_ = triple['object']
+            kg_triple = KnowledgeTriple(
+                subject=subject,
+                predicate=predicate,
+                object_=object_
+            )
         except ValueError:
             continue
         results.append(kg_triple)
