@@ -12,7 +12,6 @@
  * bundles Infima by default. Infima is a CSS framework designed to
  * work well for content-centric websites.
  */
-
  @font-face {
   font-family: 'Manrope';
   src: url('/fonts/Manrope-VariableFont_wght.ttf') format('truetype');
@@ -25,28 +24,50 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: var(--joy-palette-primary-600);
-  --ifm-color-primary-dark: var(--joy-palette-primary-600);
-  --ifm-color-primary-darker: var(--joy-palette-primary-700);
-  --ifm-color-primary-darkest: var(--joy-palette-primary-800);
-  --ifm-color-primary-light: var(--joy-palette-primary-400);
-  --ifm-color-primary-lighter: var(--joy-palette-primary-200);
-  --ifm-color-primary-lightest: var(--joy-palette-primary-100);
+  --pst-green-50: #E0F7F6;
+  --pst-green-100: #B3E8E6;
+  --pst-green-200: #80D6D3;
+  --pst-green-300: #4DC4C0;
+  --pst-green-hana-light: #4FB2AD;
+  --pst-green-400: #4FB2AD;
+  --pst-green-hana: #359793;
+  --pst-green-500: #287977;
+  --pst-green-600: #246161;
+  --pst-green-700: #204F4F;
+  --pst-green-800: #1C3C3C;
+  --pst-green-900: #0D2427;
+  --pst-lilac-50: #f4eefb;
+  --pst-lilac-100: #DAD6FE;
+  --pst-lilac-200: #BCB2FD;
+  --pst-lilac-300: #9F8BFA;
+  --pst-lilac-400: #7F5CF6;
+  --pst-lilac-500: #6F3AED;
+  --pst-lilac-600: #6028D9;
+  --pst-lilac-700: #5021B6;
+  --pst-lilac-800: #431D95;
+  --pst-lilac-900: #1e0e39;
+  --ifm-color-primary: var(--pst-green-hana);
+  --ifm-color-primary-dark: var(--pst-green-hana);
+  --ifm-color-primary-darker: var(--pst-green-600);
+  --ifm-color-primary-darkest: var(--pst-green-700);
+  --ifm-color-primary-light: var(--pst-green-hana-light);
+  --ifm-color-primary-lighter: var(--pst-green-200);
+  --ifm-color-primary-lightest: var(--pst-green-100);
   --ifm-code-font-size: 95%;
   --ifm-font-family-base: "Public Sans", sans-serif;
-  --docusaurus-highlighted-code-line-bg: var(--joy-palette-primary-100);
+  --docusaurus-highlighted-code-line-bg: var(--pst-green-100);
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: var(--joy-palette-primary-400);
-  --ifm-color-primary-dark: var(--joy-palette-primary-500);
-  --ifm-color-primary-darker: var(--joy-palette-primary-600);
-  --ifm-color-primary-darkest: var(--joy-palette-primary-700);
-  --ifm-color-primary-light: var(--joy-palette-primary-300);
-  --ifm-color-primary-lighter: var(--joy-palette-primary-100);
-  --ifm-color-primary-lightest: var(--joy-palette-primary-50);
-  --docusaurus-highlighted-code-line-bg: var(--joy-palette-primary-800);
+  --ifm-color-primary: var(--pst-green-400);
+  --ifm-color-primary-dark: var(--pst-green-500);
+  --ifm-color-primary-darker: var(--pst-green-600);
+  --ifm-color-primary-darkest: var(--pst-green-700);
+  --ifm-color-primary-light: var(--pst-green-300);
+  --ifm-color-primary-lighter: var(--pst-green-100);
+  --ifm-color-primary-lightest: var(--pst-green-50);
+  --docusaurus-highlighted-code-line-bg: var(--pst-green-800);
 }
 
 nav,
