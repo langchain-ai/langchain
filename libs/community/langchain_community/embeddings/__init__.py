@@ -151,9 +151,6 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.mosaicml import (
         MosaicMLInstructorEmbeddings,
     )
-    from langchain_community.embeddings.nemo import (
-        NeMoEmbeddings,
-    )
     from langchain_community.embeddings.nlpcloud import (
         NLPCloudEmbeddings,
     )
@@ -288,7 +285,6 @@ __all__ = [
     "ModelScopeEmbeddings",
     "MosaicMLInstructorEmbeddings",
     "NLPCloudEmbeddings",
-    "NeMoEmbeddings",
     "OCIGenAIEmbeddings",
     "OctoAIEmbeddings",
     "OllamaEmbeddings",
@@ -370,7 +366,6 @@ _module_lookup = {
     "ModelScopeEmbeddings": "langchain_community.embeddings.modelscope_hub",
     "MosaicMLInstructorEmbeddings": "langchain_community.embeddings.mosaicml",
     "NLPCloudEmbeddings": "langchain_community.embeddings.nlpcloud",
-    "NeMoEmbeddings": "langchain_community.embeddings.nemo",
     "OCIGenAIEmbeddings": "langchain_community.embeddings.oci_generative_ai",
     "OctoAIEmbeddings": "langchain_community.embeddings.octoai_embeddings",
     "OllamaEmbeddings": "langchain_community.embeddings.ollama",

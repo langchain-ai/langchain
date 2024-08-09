@@ -68,7 +68,6 @@ EXPECTED_ALL = [
     "VolcanoEmbeddings",
     "OCIGenAIEmbeddings",
     "QuantizedBiEncoderEmbeddings",
-    "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
     "SambaStudioEmbeddings",
     "TitanTakeoffEmbed",
