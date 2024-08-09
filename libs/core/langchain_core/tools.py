@@ -255,7 +255,7 @@ def create_schema_from_function(
         inferred_model, func, filter_args=filter_args, include_injected=include_injected
     )
     return _create_subset_model(
-        f"{model_name}Schema",
+        model_name,
         inferred_model,
         list(valid_properties),
         descriptions=arg_descriptions,
