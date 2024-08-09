@@ -544,8 +544,6 @@ class KineticaSqlResponse(BaseModel):
     """The Pandas dataframe containing the fetched data."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
 
@@ -585,8 +583,6 @@ class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
     """ Kinetica DB connection. """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def parse(self, text: str) -> KineticaSqlResponse:

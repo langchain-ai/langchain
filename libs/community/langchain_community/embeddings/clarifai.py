@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +44,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
     api_base: str = "https://api.clarifai.com"
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

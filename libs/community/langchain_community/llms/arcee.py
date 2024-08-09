@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
@@ -52,9 +52,7 @@ class Arcee(LLM):
     """Keyword arguments to pass to the model."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     @property

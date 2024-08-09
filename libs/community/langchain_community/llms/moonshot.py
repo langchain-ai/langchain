@@ -45,8 +45,6 @@ class MoonshotCommon(BaseModel):
     """Temperature parameter (higher values make the model more creative)."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @property
@@ -115,8 +113,6 @@ class Moonshot(MoonshotCommon, LLM):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     def _call(
