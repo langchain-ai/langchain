@@ -1,11 +1,12 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils.input import get_color_mapping
 
 from langchain.chains.base import Chain
@@ -20,10 +21,8 @@ class SequentialChain(Chain):
     return_all: bool = False
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -131,10 +130,8 @@ class SimpleSequentialChain(Chain):
     output_key: str = "output"  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -152,7 +149,7 @@ class SimpleSequentialChain(Chain):
         """
         return [self.output_key]
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that chains are all single input/output."""
         for chain in values["chains"]:

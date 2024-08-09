@@ -25,6 +25,12 @@ class AINetworkToolkit(BaseToolkit):
         data associated with this service.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        network: Optional. The network to connect to. Default is "testnet".
+            Options are "mainnet" or "testnet".
+        interface: Optional. The interface to use. If not provided, will
+            attempt to authenticate with the network. Default is None.
     """
 
     network: Optional[Literal["mainnet", "testnet"]] = "testnet"
@@ -32,15 +38,24 @@ class AINetworkToolkit(BaseToolkit):
 
     @root_validator(pre=True)
     def set_interface(cls, values: dict) -> dict:
+        """Set the interface if not provided.
+
+        If the interface is not provided, attempt to authenticate with the
+        network using the network value provided.
+
+        Args:
+            values: The values to validate.
+
+        Returns:
+            The validated values.
+        """
         if not values.get("interface"):
             values["interface"] = authenticate(network=values.get("network", "testnet"))
         return values
 
     class Config:
-        """Pydantic config."""
-
-        validate_all = True
         arbitrary_types_allowed = True
+        validate_all = True
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

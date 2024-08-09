@@ -17,13 +17,15 @@ if TYPE_CHECKING:
 
 
 class SlackToolkit(BaseToolkit):
-    """Toolkit for interacting with Slack."""
+    """Toolkit for interacting with Slack.
+
+    Parameters:
+        client: The Slack client.
+    """
 
     client: WebClient = Field(default_factory=login)
 
     class Config:
-        """Pydantic config."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

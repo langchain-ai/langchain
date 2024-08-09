@@ -123,7 +123,9 @@ def new(
     typer.echo(f"    cd ./{app_name}\n")
     typer.echo("Then add templates with commands like:\n")
     typer.echo("    langchain app add extraction-openai-functions")
-    typer.echo("    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n")
+    typer.echo(
+        "    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n"
+    )
 
 
 @app_cli.command()

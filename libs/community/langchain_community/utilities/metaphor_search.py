@@ -2,12 +2,13 @@
 
 In order to set this up, follow instructions at:
 """
+
 import json
 from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 METAPHOR_API_URL = "https://api.metaphor.systems"
@@ -20,9 +21,7 @@ class MetaphorSearchAPIWrapper(BaseModel):
     k: int = 10
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def _metaphor_search_results(
         self,

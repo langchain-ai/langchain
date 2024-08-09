@@ -90,7 +90,7 @@ class Fireworks(LLM):
         )
         return values
 
-    @root_validator(pre=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         values["fireworks_api_key"] = convert_to_secret_str(

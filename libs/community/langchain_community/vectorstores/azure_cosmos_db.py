@@ -11,7 +11,6 @@ from typing import (
     List,
     Optional,
     Tuple,
-    TypeVar,
     Union,
 )
 
@@ -47,8 +46,6 @@ class CosmosDBVectorSearchType(str, Enum):
     """HNSW vector index"""
 
 
-CosmosDBDocumentType = TypeVar("CosmosDBDocumentType", bound=Dict[str, Any])
-
 logger = logging.getLogger(__name__)
 
 DEFAULT_INSERT_BATCH_SIZE = 128
@@ -64,7 +61,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
     Example:
         . code-block:: python
 
-            from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+            from langchain_community.vectorstores import
+            AzureCosmosDBVectorSearch
             from langchain_community.embeddings.openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
@@ -76,12 +74,13 @@ class AzureCosmosDBVectorSearch(VectorStore):
 
     def __init__(
         self,
-        collection: Collection[CosmosDBDocumentType],
+        collection: Collection,
         embedding: Embeddings,
         *,
         index_name: str = "vectorSearchIndex",
         text_key: str = "textContent",
         embedding_key: str = "vectorContent",
+        application_name: str = "LANGCHAIN_PYTHON",
     ):
         """Constructor for AzureCosmosDBVectorSearch
 
@@ -99,6 +98,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         self._index_name = index_name
         self._text_key = text_key
         self._embedding_key = embedding_key
+        self._application_name = application_name
 
     @property
     def embeddings(self) -> Embeddings:
@@ -122,7 +122,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
         application_name: str = "LANGCHAIN_PYTHON",
         **kwargs: Any,
     ) -> AzureCosmosDBVectorSearch:
-        """Creates an Instance of AzureCosmosDBVectorSearch from a Connection String
+        """Creates an Instance of AzureCosmosDBVectorSearch
+        from a Connection String
 
         Args:
             connection_string: The MongoDB vCore instance connection string
@@ -305,6 +306,27 @@ class AzureCosmosDBVectorSearch(VectorStore):
         }
         return command
 
+    def create_filter_index(
+        self,
+        property_to_filter: str,
+        index_name: str,
+    ) -> dict[str, Any]:
+        command = {
+            "createIndexes": self._collection.name,
+            "indexes": [
+                {
+                    "key": {property_to_filter: 1},
+                    "name": index_name,
+                }
+            ],
+        }
+        # retrieve the database object
+        current_database = self._collection.database
+
+        # invoke the command from the database object
+        create_index_responses: dict[str, Any] = current_database.command(command)
+        return create_index_responses
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -344,7 +366,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         # Embed and create the documents
         embeddings = self._embedding.embed_documents(texts)
         to_insert = [
-            {self._text_key: t, self._embedding_key: embedding, **m}
+            {self._text_key: t, self._embedding_key: embedding, "metadata": m}
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
         # insert the documents in Cosmos DB
@@ -357,7 +379,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        collection: Optional[Collection[CosmosDBDocumentType]] = None,
+        collection: Optional[Collection] = None,
         **kwargs: Any,
     ) -> AzureCosmosDBVectorSearch:
         if collection is None:
@@ -396,8 +418,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
         embeddings: List[float],
         k: int = 4,
         kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+        pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        with_embedding: bool = False,
     ) -> List[Tuple[Document, float]]:
         """Returns a list of documents with their scores
 
@@ -421,9 +445,11 @@ class AzureCosmosDBVectorSearch(VectorStore):
         """
         pipeline: List[dict[str, Any]] = []
         if kind == CosmosDBVectorSearchType.VECTOR_IVF:
-            pipeline = self._get_pipeline_vector_ivf(embeddings, k)
+            pipeline = self._get_pipeline_vector_ivf(embeddings, k, pre_filter)
         elif kind == CosmosDBVectorSearchType.VECTOR_HNSW:
-            pipeline = self._get_pipeline_vector_hnsw(embeddings, k, ef_search)
+            pipeline = self._get_pipeline_vector_hnsw(
+                embeddings, k, ef_search, pre_filter
+            )
 
         cursor = self._collection.aggregate(pipeline)
 
@@ -432,28 +458,32 @@ class AzureCosmosDBVectorSearch(VectorStore):
             score = res.pop("similarityScore")
             if score < score_threshold:
                 continue
-            document_object_field = (
-                res.pop("document")
-                if kind == CosmosDBVectorSearchType.VECTOR_IVF
-                else res
-            )
+            document_object_field = res.pop("document")
             text = document_object_field.pop(self._text_key)
-            docs.append(
-                (Document(page_content=text, metadata=document_object_field), score)
-            )
+            metadata = document_object_field.pop("metadata")
+            if with_embedding:
+                metadata[self._embedding_key] = document_object_field.pop(
+                    self._embedding_key
+                )
+
+            docs.append((Document(page_content=text, metadata=metadata), score))
         return docs
 
     def _get_pipeline_vector_ivf(
-        self, embeddings: List[float], k: int = 4
+        self, embeddings: List[float], k: int = 4, pre_filter: Optional[Dict] = None
     ) -> List[dict[str, Any]]:
+        params = {
+            "vector": embeddings,
+            "path": self._embedding_key,
+            "k": k,
+        }
+        if pre_filter:
+            params["filter"] = pre_filter
+
         pipeline: List[dict[str, Any]] = [
             {
                 "$search": {
-                    "cosmosSearch": {
-                        "vector": embeddings,
-                        "path": self._embedding_key,
-                        "k": k,
-                    },
+                    "cosmosSearch": params,
                     "returnStoredSource": True,
                 }
             },
@@ -467,17 +497,25 @@ class AzureCosmosDBVectorSearch(VectorStore):
         return pipeline
 
     def _get_pipeline_vector_hnsw(
-        self, embeddings: List[float], k: int = 4, ef_search: int = 40
+        self,
+        embeddings: List[float],
+        k: int = 4,
+        ef_search: int = 40,
+        pre_filter: Optional[Dict] = None,
     ) -> List[dict[str, Any]]:
+        params = {
+            "vector": embeddings,
+            "path": self._embedding_key,
+            "k": k,
+            "efSearch": ef_search,
+        }
+        if pre_filter:
+            params["filter"] = pre_filter
+
         pipeline: List[dict[str, Any]] = [
             {
                 "$search": {
-                    "cosmosSearch": {
-                        "vector": embeddings,
-                        "path": self._embedding_key,
-                        "k": k,
-                        "efSearch": ef_search,
-                    },
+                    "cosmosSearch": params,
                 }
             },
             {
@@ -494,16 +532,20 @@ class AzureCosmosDBVectorSearch(VectorStore):
         query: str,
         k: int = 4,
         kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+        pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        with_embedding: bool = False,
     ) -> List[Tuple[Document, float]]:
         embeddings = self._embedding.embed_query(query)
         docs = self._similarity_search_with_score(
             embeddings=embeddings,
             k=k,
             kind=kind,
+            pre_filter=pre_filter,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            with_embedding=with_embedding,
         )
         return docs
 
@@ -512,16 +554,20 @@ class AzureCosmosDBVectorSearch(VectorStore):
         query: str,
         k: int = 4,
         kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+        pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
             kind=kind,
+            pre_filter=pre_filter,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            with_embedding=with_embedding,
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -532,8 +578,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+        pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
         # Retrieves the docs with similarity scores
@@ -542,8 +590,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
             embedding,
             k=fetch_k,
             kind=kind,
+            pre_filter=pre_filter,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            with_embedding=with_embedding,
         )
 
         # Re-ranks the docs using MMR
@@ -563,8 +613,10 @@ class AzureCosmosDBVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+        pre_filter: Optional[Dict] = None,
         ef_search: int = 40,
         score_threshold: float = 0.0,
+        with_embedding: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
         # compute the embeddings vector from the query string
@@ -576,10 +628,12 @@ class AzureCosmosDBVectorSearch(VectorStore):
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             kind=kind,
+            pre_filter=pre_filter,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            with_embedding=with_embedding,
         )
         return docs
 
-    def get_collection(self) -> Collection[CosmosDBDocumentType]:
+    def get_collection(self) -> Collection:
         return self._collection

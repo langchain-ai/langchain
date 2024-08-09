@@ -1,4 +1,5 @@
 """OpenAPI spec agent."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -45,6 +46,28 @@ def create_openapi_agent(
         what network access it has.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Args:
+        llm: The language model to use.
+        toolkit: The OpenAPI toolkit.
+        callback_manager: Optional. The callback manager. Default is None.
+        prefix: Optional. The prefix for the prompt. Default is OPENAPI_PREFIX.
+        suffix: Optional. The suffix for the prompt. Default is OPENAPI_SUFFIX.
+        format_instructions: Optional. The format instructions for the prompt.
+            Default is None.
+        input_variables: Optional. The input variables for the prompt. Default is None.
+        max_iterations: Optional. The maximum number of iterations. Default is 15.
+        max_execution_time: Optional. The maximum execution time. Default is None.
+        early_stopping_method: Optional. The early stopping method. Default is "force".
+        verbose: Optional. Whether to print verbose output. Default is False.
+        return_intermediate_steps: Optional. Whether to return intermediate steps.
+            Default is False.
+        agent_executor_kwargs: Optional. Additional keyword arguments
+            for the agent executor.
+        kwargs: Additional arguments.
+
+    Returns:
+        The agent executor.
     """
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent

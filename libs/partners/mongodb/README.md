@@ -6,7 +6,6 @@ pip install -U langchain-mongodb
 ```
 
 # Usage
-- See [integrations doc](../../../docs/docs/integrations/vectorstores/mongodb.ipynb) for more in-depth usage instructions.
 - See [Getting Started with the LangChain Integration](https://www.mongodb.com/docs/atlas/atlas-vector-search/ai-integrations/langchain/#get-started-with-the-langchain-integration) for a walkthrough on using your first LangChain implementation with MongoDB Atlas.
 
 ## Using MongoDBAtlasVectorSearch
@@ -19,7 +18,7 @@ MONGODB_ATLAS_CLUSTER_URI = os.environ.get("MONGODB_ATLAS_CLUSTER_URI")
 DB_NAME = "langchain_db"
 COLLECTION_NAME = "test"
 ATLAS_VECTOR_SEARCH_INDEX_NAME = "index_name"
-MONGODB_COLLECTION = client[DB_NAME][COLLECITON_NAME]
+MONGODB_COLLECTION = client[DB_NAME][COLLECTION_NAME]
 
 # Create the vector search via `from_connection_string`
 vector_search = MongoDBAtlasVectorSearch.from_connection_string(

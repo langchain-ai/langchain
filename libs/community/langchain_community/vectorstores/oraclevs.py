@@ -90,6 +90,22 @@ def _table_exists(client: Connection, table_name: str) -> bool:
         raise
 
 
+def _compare_version(version: str, target_version: str) -> bool:
+    # Split both version strings into parts
+    version_parts = [int(part) for part in version.split(".")]
+    target_parts = [int(part) for part in target_version.split(".")]
+
+    # Compare each part
+    for v, t in zip(version_parts, target_parts):
+        if v < t:
+            return True  # Current version is less
+        elif v > t:
+            return False  # Current version is greater
+
+    # If all parts equal so far, check if version has fewer parts than target_version
+    return len(version_parts) < len(target_parts)
+
+
 @_handle_exceptions
 def _index_exists(client: Connection, index_name: str) -> bool:
     # Check if the index exists
@@ -157,6 +173,16 @@ def create_index(
     vector_store: OracleVS,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
+    """Create an index on the vector store.
+
+    Args:
+        client: The OracleDB connection object.
+        vector_store: The vector store object.
+        params: Optional parameters for the index creation.
+
+    Raises:
+        ValueError: If an invalid parameter is provided.
+    """
     if params:
         if params["idx_type"] == "HNSW":
             _create_hnsw_index(
@@ -335,6 +361,15 @@ def _create_ivf_index(
 
 @_handle_exceptions
 def drop_table_purge(client: Connection, table_name: str) -> None:
+    """Drop a table and purge it from the database.
+
+    Args:
+        client: The OracleDB connection object.
+        table_name: The name of the table to drop.
+
+    Raises:
+        RuntimeError: If an error occurs while dropping the table.
+    """
     if _table_exists(client, table_name):
         cursor = client.cursor()
         with cursor:
@@ -348,6 +383,15 @@ def drop_table_purge(client: Connection, table_name: str) -> None:
 
 @_handle_exceptions
 def drop_index_if_exists(client: Connection, index_name: str) -> None:
+    """Drop an index if it exists.
+
+    Args:
+        client: The OracleDB connection object.
+        index_name: The name of the index to drop.
+
+    Raises:
+        RuntimeError: If an error occurs while dropping the index.
+    """
     if _index_exists(client, index_name):
         drop_query = f"DROP INDEX {index_name}"
         with client.cursor() as cursor:
@@ -400,6 +444,39 @@ class OracleVS(VectorStore):
                 "Unable to import oracledb, please install with "
                 "`pip install -U oracledb`."
             ) from e
+
+        self.insert_mode = "array"
+
+        if client.thin is True:
+            if oracledb.__version__ == "2.1.0":
+                raise Exception(
+                    "Oracle DB python thin client driver version 2.1.0 not supported"
+                )
+            elif _compare_version(oracledb.__version__, "2.2.0"):
+                self.insert_mode = "clob"
+            else:
+                self.insert_mode = "array"
+        else:
+            if (_compare_version(oracledb.__version__, "2.1.0")) and (
+                not (
+                    _compare_version(
+                        ".".join(map(str, oracledb.clientversion())), "23.4"
+                    )
+                )
+            ):
+                raise Exception(
+                    "Oracle DB python thick client driver version earlier than "
+                    "2.1.0 not supported with client libraries greater than "
+                    "equal to 23.4"
+                )
+
+            if _compare_version(".".join(map(str, oracledb.clientversion())), "23.4"):
+                self.insert_mode = "clob"
+            else:
+                self.insert_mode = "array"
+
+            if _compare_version(oracledb.__version__, "2.1.0"):
+                self.insert_mode = "clob"
 
         try:
             """Initialize with oracledb client."""
@@ -520,17 +597,27 @@ class OracleVS(VectorStore):
         embeddings = self._embed_documents(texts)
         if not metadatas:
             metadatas = [{} for _ in texts]
-        docs = [
-            (id_, text, json.dumps(metadata), array.array("f", embedding))
-            for id_, text, metadata, embedding in zip(
-                processed_ids, texts, metadatas, embeddings
-            )
-        ]
+
+        docs: List[Tuple[Any, Any, Any, Any]]
+        if self.insert_mode == "clob":
+            docs = [
+                (id_, json.dumps(embedding), json.dumps(metadata), text)
+                for id_, embedding, metadata, text in zip(
+                    processed_ids, embeddings, metadatas, texts
+                )
+            ]
+        else:
+            docs = [
+                (id_, array.array("f", embedding), json.dumps(metadata), text)
+                for id_, embedding, metadata, text in zip(
+                    processed_ids, embeddings, metadatas, texts
+                )
+            ]
 
         with self.client.cursor() as cursor:
             cursor.executemany(
-                f"INSERT INTO {self.table_name} (id, text, metadata, "
-                f"embedding) VALUES (:1, :2, :3, :4)",
+                f"INSERT INTO {self.table_name} (id, embedding, metadata, "
+                f"text) VALUES (:1, :2, :3, :4)",
                 docs,
             )
             self.client.commit()
@@ -613,7 +700,12 @@ class OracleVS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         docs_and_scores = []
-        embedding_arr = array.array("f", embedding)
+
+        embedding_arr: Any
+        if self.insert_mode == "clob":
+            embedding_arr = json.dumps(embedding)
+        else:
+            embedding_arr = array.array("f", embedding)
 
         query = f"""
         SELECT id,
@@ -671,8 +763,13 @@ class OracleVS(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
+        embedding_arr: Any
+        if self.insert_mode == "clob":
+            embedding_arr = json.dumps(embedding)
+        else:
+            embedding_arr = array.array("f", embedding)
+
         documents = []
-        embedding_arr = array.array("f", embedding)
 
         query = f"""
         SELECT id,
@@ -705,6 +802,7 @@ class OracleVS(VectorStore):
                         page_content=page_content_str, metadata=metadata
                     )
                     distance = result[3]
+
                     # Assuming result[4] is already in the correct format;
                     # adjust if necessary
                     current_embedding = (
@@ -712,6 +810,7 @@ class OracleVS(VectorStore):
                         if result[4]
                         else np.empty(0, dtype=np.float32)
                     )
+
                     documents.append((document, distance, current_embedding))
         return documents  # type: ignore
 

@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
-    from cassandra.cluster import ResponseFuture
+    from cassandra.cluster import ResponseFuture, Session
 
 
 async def wrapped_response_future(
@@ -33,6 +33,20 @@ async def wrapped_response_future(
 
     response_future.add_callbacks(success_handler, error_handler)
     return await asyncio_future
+
+
+async def aexecute_cql(session: Session, query: str, **kwargs: Any) -> Any:
+    """Execute a CQL query asynchronously.
+
+    Args:
+        session: The Cassandra session to use.
+        query: The CQL query to execute.
+        kwargs: Additional keyword arguments to pass to the session execute method.
+
+    Returns:
+        The result of the query.
+    """
+    return await wrapped_response_future(session.execute_async, query, **kwargs)
 
 
 class SetupMode(Enum):

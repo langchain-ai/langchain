@@ -3,8 +3,8 @@
 from typing import Dict
 
 from langchain_core._api import deprecated
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.solar import SOLAR_SERVICE_URL_BASE, SolarCommon
@@ -31,13 +31,11 @@ class SolarChat(SolarCommon, ChatOpenAI):
 
     # this is needed to match ChatOpenAI superclass
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
         extra = "ignore"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the environment is set up correctly."""
         values["solar_api_key"] = get_from_dict_or_env(

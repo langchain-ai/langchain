@@ -1,4 +1,5 @@
 """Toolkit for interacting with a vector store."""
+
 from typing import List
 
 from langchain_core.language_models import BaseLanguageModel
@@ -15,8 +16,6 @@ class VectorStoreInfo(BaseModel):
     description: str
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
 
@@ -27,8 +26,6 @@ class VectorStoreToolkit(BaseToolkit):
     llm: BaseLanguageModel
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:
@@ -70,8 +67,6 @@ class VectorStoreRouterToolkit(BaseToolkit):
     llm: BaseLanguageModel
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

@@ -1,6 +1,7 @@
 """Internal tracers used for stream_log and astream events implementations."""
+
 import abc
-from typing import AsyncIterator, TypeVar
+from typing import AsyncIterator, Iterator, TypeVar
 from uuid import UUID
 
 T = TypeVar("T")
@@ -20,6 +21,10 @@ class _StreamingCallbackHandler(abc.ABC):
     def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
+        """Used for internal astream_log and astream events implementations."""
+
+    @abc.abstractmethod
+    def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
         """Used for internal astream_log and astream events implementations."""
 
 

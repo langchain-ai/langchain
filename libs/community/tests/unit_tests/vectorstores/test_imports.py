@@ -4,14 +4,17 @@ from langchain_community import vectorstores
 from langchain_community.vectorstores import __all__, _module_lookup
 
 EXPECTED_ALL = [
+    "Aerospike",
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
     "ApacheDoris",
+    "ApertureDB",
     "AstraDB",
     "AtlasDB",
     "AwaDB",
+    "AzureCosmosDBNoSqlVectorSearch",
     "AzureCosmosDBVectorSearch",
     "AzureSearch",
     "BESVectorStore",
@@ -49,6 +52,8 @@ EXPECTED_ALL = [
     "LLMRails",
     "LanceDB",
     "Lantern",
+    "ManticoreSearch",
+    "ManticoreSearchSettings",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
@@ -97,6 +102,7 @@ EXPECTED_ALL = [
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
+    "ZepCloudVectorStore",
     "Zilliz",
 ]
 
@@ -111,6 +117,7 @@ def test_all_imports_exclusive() -> None:
             "PathwayVectorClient",
             "DistanceStrategy",
             "KineticaSettings",
+            "ManticoreSearchSettings",
         ]:
             assert issubclass(getattr(vectorstores, cls), VectorStore)
 

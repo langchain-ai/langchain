@@ -97,8 +97,6 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     """[DEPRECATED] Use `callbacks` instead."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def get_input_schema(
@@ -225,7 +223,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
     def _chain_type(self) -> str:
         raise NotImplementedError("Saving not supported for this chain type.")
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_callback_manager_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:

@@ -39,6 +39,7 @@ class ClickhouseSettings(BaseSettings):
         port (int) : URL port to connect with HTTP. Defaults to 8443.
         username (str) : Username to login. Defaults to None.
         password (str) : Password to login. Defaults to None.
+        secure (bool) : Connect to server over secure connection. Defaults to False.
         index_type (str): index type string.
         index_param (list): index build parameter.
         index_query_params(dict): index query parameters.
@@ -72,6 +73,8 @@ class ClickhouseSettings(BaseSettings):
     username: Optional[str] = None
     password: Optional[str] = None
 
+    secure: bool = False
+
     index_type: Optional[str] = "annoy"
     # Annoy supports L2Distance and cosineDistance.
     index_param: Optional[Union[List, Dict]] = ["'L2Distance'", 100]
@@ -94,23 +97,129 @@ class ClickhouseSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_prefix = "clickhouse_"
         env_file_encoding = "utf-8"
+        env_prefix = "clickhouse_"
 
 
 class Clickhouse(VectorStore):
-    """`ClickHouse VectorSearch` vector store.
+    """ClickHouse vector store integration.
 
-    You need a `clickhouse-connect` python package, and a valid account
-    to connect to ClickHouse.
+    Setup:
+        Install ``langchain_community`` and ``clickhouse-connect``:
 
-    ClickHouse can not only search with simple vector indexes,
-    it also supports complex query with multiple conditions,
-    constraints and even sub-queries.
+        .. code-block:: bash
 
-    For more information, please visit
-        [ClickHouse official site](https://clickhouse.com/clickhouse)
-    """
+            pip install -qU langchain_community clickhouse-connect
+
+    Key init args — indexing params:
+        embedding: Embeddings
+            Embedding function to use.
+
+    Key init args — client params:
+        config: Optional[ClickhouseSettings]
+            ClickHouse client configuration.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.vectorstores import Clickhouse, ClickhouseSettings
+            from langchain_openai import OpenAIEmbeddings
+
+            settings = ClickhouseSettings(table="clickhouse_example")
+            vector_store = Clickhouse(embedding=OpenAIEmbeddings(), config=settings)
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    # TODO: Fill out example output.
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with relevant variables and example output.
+    Search with filter:
+        .. code-block:: python
+
+            # TODO: Edit filter if needed
+            results = vector_store.similarity_search(query="thud",k=1,filter="metadata.baz='bar'")
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with example output.
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with example output.
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with example output.
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -120,10 +229,11 @@ class Clickhouse(VectorStore):
     ) -> None:
         """ClickHouse Wrapper to LangChain
 
-        embedding_function (Embeddings):
-        config (ClickHouseSettings): Configuration to ClickHouse Client
-        Other keyword arguments will pass into
-            [clickhouse-connect](https://docs.clickhouse.com/)
+        Args:
+            embedding_function (Embeddings): embedding function to use
+            config (ClickHouseSettings): Configuration to ClickHouse Client
+            kwargs (any): Other keyword arguments will pass into
+                [clickhouse-connect](https://docs.clickhouse.com/)
         """
         try:
             from clickhouse_connect import get_client
@@ -193,6 +303,7 @@ class Clickhouse(VectorStore):
             port=self.config.port,
             username=self.config.username,
             password=self.config.password,
+            secure=self.config.secure,
             **kwargs,
         )
         # Enable JSON type

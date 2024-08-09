@@ -10,7 +10,7 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env, get_from_env
 
@@ -36,10 +36,12 @@ class AzureAISearchRetriever(BaseRetriever):
     """Key in a retrieved result to set as the Document page_content."""
     top_k: Optional[int] = None
     """Number of results to retrieve. Set to None to retrieve all results."""
+    filter: Optional[str] = None
+    """OData $filter expression to apply to the search query."""
 
     class Config:
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -72,7 +74,8 @@ class AzureAISearchRetriever(BaseRetriever):
             base_url = self.service_name
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
         top_param = f"&$top={self.top_k}" if self.top_k else ""
-        return base_url + endpoint_path + f"&search={query}" + top_param
+        filter_param = f"&$filter={self.filter}" if self.filter else ""
+        return base_url + endpoint_path + f"&search={query}" + top_param + filter_param
 
     @property
     def _headers(self) -> Dict[str, str]:

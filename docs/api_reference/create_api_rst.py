@@ -10,12 +10,21 @@ from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 import toml
+import typing_extensions
+from langchain_core.runnables import Runnable, RunnableSerializable
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
 
-ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
+ClassKind = Literal[
+    "TypedDict",
+    "Regular",
+    "Pydantic",
+    "enum",
+    "RunnablePydantic",
+    "RunnableNonPydantic",
+]
 
 
 class ClassInfo(TypedDict):
@@ -29,6 +38,8 @@ class ClassInfo(TypedDict):
     """The kind of the class."""
     is_public: bool
     """Whether the class is public or not."""
+    is_deprecated: bool
+    """Whether the class is deprecated."""
 
 
 class FunctionInfo(TypedDict):
@@ -40,6 +51,8 @@ class FunctionInfo(TypedDict):
     """The fully qualified name of the function."""
     is_public: bool
     """Whether the function is public or not."""
+    is_deprecated: bool
+    """Whether the function is deprecated."""
 
 
 class ModuleMembers(TypedDict):
@@ -69,8 +82,36 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             continue
 
         if inspect.isclass(type_):
-            if type(type_) == typing._TypedDictMeta:  # type: ignore
+            # The type of the class is used to select a template
+            # for the object when rendering the documentation.
+            # See `templates` directory for defined templates.
+            # This is a hacky solution to distinguish between different
+            # kinds of thing that we want to render.
+            if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
+            elif type(type_) is typing._TypedDictMeta:  # type: ignore
+                kind: ClassKind = "TypedDict"
+            elif (
+                issubclass(type_, Runnable)
+                and issubclass(type_, BaseModel)
+                and type_ is not Runnable
+            ):
+                # RunnableSerializable subclasses from Pydantic which
+                # for which we use autodoc_pydantic for rendering.
+                # We need to distinguish these from regular Pydantic
+                # classes so we can hide inherited Runnable methods
+                # and provide a link to the Runnable interface from
+                # the template.
+                kind = "RunnablePydantic"
+            elif (
+                issubclass(type_, Runnable)
+                and not issubclass(type_, BaseModel)
+                and type_ is not Runnable
+            ):
+                # These are not pydantic classes but are Runnable.
+                # We'll hide all the inherited methods from Runnable
+                # but use a regular class template to render.
+                kind = "RunnableNonPydantic"
             elif issubclass(type_, Enum):
                 kind = "enum"
             elif issubclass(type_, BaseModel):
@@ -84,6 +125,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
                     qualified_name=f"{namespace}.{name}",
                     kind=kind,
                     is_public=not name.startswith("_"),
+                    is_deprecated=".. deprecated::" in (type_.__doc__ or ""),
                 )
             )
         elif inspect.isfunction(type_):
@@ -92,6 +134,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
                     name=name,
                     qualified_name=f"{namespace}.{name}",
                     is_public=not name.startswith("_"),
+                    is_deprecated=".. deprecated::" in (type_.__doc__ or ""),
                 )
             )
         else:
@@ -128,11 +171,11 @@ def _load_package_modules(
     of the modules/packages are part of the package vs. 3rd party or built-in.
 
     Parameters:
-        package_directory: Path to the package directory.
-        submodule: Optional name of submodule to load.
+        package_directory (Union[str, Path]): Path to the package directory.
+        submodule (Optional[str]): Optional name of submodule to load.
 
     Returns:
-        list: A list of loaded module objects.
+        Dict[str, ModuleMembers]: A dictionary where keys are module names and values are ModuleMembers objects.
     """
     package_path = (
         Path(package_directory)
@@ -187,7 +230,7 @@ def _load_package_modules(
             modules_by_namespace[top_namespace] = _module_members
 
         except ImportError as e:
-            print(f"Error: Unable to import module '{namespace}' with error: {e}")  # noqa: T201
+            print(f"Error: Unable to import module '{namespace}' with error: {e}")
 
     return modules_by_namespace
 
@@ -218,8 +261,24 @@ def _construct_doc(
 
     for module in namespaces:
         _members = members_by_namespace[module]
-        classes = [el for el in _members["classes_"] if el["is_public"]]
-        functions = [el for el in _members["functions"] if el["is_public"]]
+        classes = [
+            el
+            for el in _members["classes_"]
+            if el["is_public"] and not el["is_deprecated"]
+        ]
+        functions = [
+            el
+            for el in _members["functions"]
+            if el["is_public"] and not el["is_deprecated"]
+        ]
+        deprecated_classes = [
+            el for el in _members["classes_"] if el["is_public"] and el["is_deprecated"]
+        ]
+        deprecated_functions = [
+            el
+            for el in _members["functions"]
+            if el["is_public"] and el["is_deprecated"]
+        ]
         if not (classes or functions):
             continue
         section = f":mod:`{package_namespace}.{module}`"
@@ -251,6 +310,10 @@ Classes
                     template = "enum.rst"
                 elif class_["kind"] == "Pydantic":
                     template = "pydantic.rst"
+                elif class_["kind"] == "RunnablePydantic":
+                    template = "runnable_pydantic.rst"
+                elif class_["kind"] == "RunnableNonPydantic":
+                    template = "runnable_non_pydantic.rst"
                 else:
                     template = "class.rst"
 
@@ -267,6 +330,54 @@ Classes
             full_doc += f"""\
 Functions
 --------------
+.. currentmodule:: {package_namespace}
+
+.. autosummary::
+    :toctree: {module}
+    :template: function.rst
+
+    {fstring}
+
+"""
+        if deprecated_classes:
+            full_doc += f"""\
+Deprecated classes
+--------------
+
+.. currentmodule:: {package_namespace}
+
+.. autosummary::
+    :toctree: {module}
+"""
+
+            for class_ in sorted(deprecated_classes, key=lambda c: c["qualified_name"]):
+                if class_["kind"] == "TypedDict":
+                    template = "typeddict.rst"
+                elif class_["kind"] == "enum":
+                    template = "enum.rst"
+                elif class_["kind"] == "Pydantic":
+                    template = "pydantic.rst"
+                elif class_["kind"] == "RunnablePydantic":
+                    template = "runnable_pydantic.rst"
+                elif class_["kind"] == "RunnableNonPydantic":
+                    template = "runnable_non_pydantic.rst"
+                else:
+                    template = "class.rst"
+
+                full_doc += f"""\
+    :template: {template}
+
+    {class_["qualified_name"]}
+
+"""
+
+        if deprecated_functions:
+            _functions = [f["qualified_name"] for f in deprecated_functions]
+            fstring = "\n    ".join(sorted(_functions))
+            full_doc += f"""\
+Deprecated functions
+--------------
+
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
@@ -364,7 +475,7 @@ def main(dirs: Optional[list] = None) -> None:
         dirs += [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs" / "partners")
-            if os.path.isdir(dir_)
+            if os.path.isdir(ROOT_DIR / "libs" / "partners" / dir_)
             and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / "partners" / dir_)
         ]
     for dir_ in dirs:

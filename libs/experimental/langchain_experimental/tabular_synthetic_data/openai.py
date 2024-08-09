@@ -41,7 +41,7 @@ def create_openai_data_generator(
         from the function types.
 
 
-        **kwargs: Additional keyword arguments to be passed to
+        kwargs: Additional keyword arguments to be passed to
         `create_structured_output_chain`.
 
 
@@ -60,5 +60,5 @@ def create_openai_data_generator(
     )
 
     # Create the SyntheticDataGenerator instance with the created chain
-    generator = SyntheticDataGenerator(template=prompt, llm_chain=chain)
+    generator = SyntheticDataGenerator(template=prompt, llm_chain=chain)  # type: ignore[arg-type]
     return generator

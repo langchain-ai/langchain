@@ -1,4 +1,5 @@
 """Chain for question-answering with self-verification."""
+
 from __future__ import annotations
 
 import warnings
@@ -7,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -90,10 +91,8 @@ class LLMCheckerChain(Chain):
     output_key: str = "result"  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -118,9 +117,9 @@ class LLMCheckerChain(Chain):
                         values.get("revised_answer_prompt", REVISED_ANSWER_PROMPT),
                     )
                 )
-                values[
-                    "question_to_checked_assertions_chain"
-                ] = question_to_checked_assertions_chain
+                values["question_to_checked_assertions_chain"] = (
+                    question_to_checked_assertions_chain
+                )
         return values
 
     @property

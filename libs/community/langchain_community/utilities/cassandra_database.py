@@ -1,4 +1,5 @@
 """Apache Cassandra database wrapper."""
+
 from __future__ import annotations
 
 import re
@@ -482,7 +483,7 @@ class Table(BaseModel):
     class Config:
         frozen = True
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def check_required_fields(cls, class_values: dict) -> dict:
         if not class_values["columns"]:
             raise ValueError("non-empty column list for must be provided")

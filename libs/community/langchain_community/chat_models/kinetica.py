@@ -9,7 +9,9 @@ import os
 import re
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Pattern, cast
+
+from langchain_core.utils import pre_init
 
 if TYPE_CHECKING:
     import gpudb
@@ -24,7 +26,7 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers.transform import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult, Generation
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 LOG = logging.getLogger(__name__)
 
@@ -162,7 +164,7 @@ class _KineticaLlmFileContextParser:
     """Parser for Kinetica LLM context datafiles."""
 
     # parse line into a dict containing role and content
-    PARSER = re.compile(r"^<\|(?P<role>\w+)\|>\W*(?P<content>.*)$", re.DOTALL)
+    PARSER: Pattern = re.compile(r"^<\|(?P<role>\w+)\|>\W*(?P<content>.*)$", re.DOTALL)
 
     @classmethod
     def _removesuffix(cls, text: str, suffix: str) -> str:
@@ -341,7 +343,7 @@ class ChatKinetica(BaseChatModel):
     kdbc: Any = Field(exclude=True)
     """ Kinetica DB connection. """
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Pydantic object validator."""
 
@@ -542,8 +544,6 @@ class KineticaSqlResponse(BaseModel):
     """The Pandas dataframe containing the fetched data."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
 
@@ -583,8 +583,6 @@ class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
     """ Kinetica DB connection. """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def parse(self, text: str) -> KineticaSqlResponse:

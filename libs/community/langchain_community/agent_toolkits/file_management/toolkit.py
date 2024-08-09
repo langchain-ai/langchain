@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Type
 
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseToolkit
+from langchain_core.utils.pydantic import get_fields
 
 from langchain_community.tools import BaseTool
 from langchain_community.tools.file_management.copy import CopyFileTool
@@ -24,7 +25,7 @@ _FILE_TOOLS: List[Type[BaseTool]] = [
     ListDirectoryTool,
 ]
 _FILE_TOOLS_MAP: Dict[str, Type[BaseTool]] = {
-    tool_cls.__fields__["name"].default: tool_cls for tool_cls in _FILE_TOOLS
+    get_fields(tool_cls)["name"].default: tool_cls for tool_cls in _FILE_TOOLS
 }
 
 
@@ -49,6 +50,13 @@ class FileManagementToolkit(BaseToolkit):
         - Sandbox the agent by running it in a container.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        root_dir: Optional. The root directory to perform file operations.
+            If not provided, file operations are performed relative to the current
+            working directory.
+        selected_tools: Optional. The tools to include in the toolkit. If not
+            provided, all tools are included.
     """
 
     root_dir: Optional[str] = None
@@ -56,7 +64,7 @@ class FileManagementToolkit(BaseToolkit):
     selected_tools: Optional[List[str]] = None
     """If provided, only provide the selected tools. Defaults to all."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_tools(cls, values: dict) -> dict:
         selected_tools = values.get("selected_tools") or []
         for tool_name in selected_tools:

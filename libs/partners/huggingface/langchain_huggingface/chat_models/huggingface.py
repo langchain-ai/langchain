@@ -29,24 +29,29 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
 
 @dataclass
 class TGI_RESPONSE:
+    """Response from the TextGenInference API."""
+
     choices: List[Any]
     usage: Dict
 
 
 @dataclass
 class TGI_MESSAGE:
+    """Message to send to the TextGenInference API."""
+
     role: str
     content: str
     tool_calls: List[Dict]
@@ -135,23 +140,174 @@ def _is_huggingface_endpoint(llm: Any) -> bool:
     return isinstance(llm, HuggingFaceEndpoint)
 
 
+def _is_huggingface_pipeline(llm: Any) -> bool:
+    return isinstance(llm, HuggingFacePipeline)
+
+
 class ChatHuggingFace(BaseChatModel):
-    """
-    Wrapper for using Hugging Face LLM's as ChatModels.
+    """Hugging Face LLM's as ChatModels.
 
     Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`,
-    and `HuggingFaceHub` LLMs.
+    `HuggingFaceHub`, and `HuggingFacePipeline` LLMs.
 
     Upon instantiating this class, the model_id is resolved from the url
     provided to the LLM, and the appropriate tokenizer is loaded from
     the HuggingFace Hub.
 
-    Adapted from: https://python.langchain.com/docs/integrations/chat/llama2_chat
-    """
+    Setup:
+        Install ``langchain-huggingface`` and ensure your Hugging Face token
+        is saved.
+
+        .. code-block:: bash
+
+            pip install langchain-huggingface
+
+        .. code-block:: python
+
+            from huggingface_hub import login
+            login() # You will be prompted for your HF key, which will then be saved locally
+
+    Key init args — completion params:
+        llm: `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`, `HuggingFaceHub`, or
+            'HuggingFacePipeline' LLM to be used.
+
+    Key init args — client params:
+        custom_get_token_ids: Optional[Callable[[str], List[int]]]
+            Optional encoder to use for counting tokens.
+        metadata: Optional[Dict[str, Any]]
+            Metadata to add to the run trace.
+        tags: Optional[List[str]]
+            Tags to add to the run trace.
+        tokenizer: Any
+        verbose: bool
+            Whether to print out response text.
+
+    See full list of supported init args and their descriptions in the params
+    section.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_huggingface import HuggingFaceEndpoint,
+            ChatHuggingFace
+
+            llm = HuggingFaceEndpoint(
+                repo_id="microsoft/Phi-3-mini-4k-instruct",
+                task="text-generation",
+                max_new_tokens=512,
+                do_sample=False,
+                repetition_penalty=1.03,
+            )
+
+            chat = ChatHuggingFace(llm=llm, verbose=True)
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "You are a helpful translator. Translate the user
+                sentence to French."),
+                ("human", "I love programming."),
+            ]
+
+            chat(...).invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content='Je ai une passion pour le programme.\n\nIn
+            French, we use "ai" for masculine subjects and "a" for feminine
+            subjects. Since "programming" is gender-neutral in English, we
+            will go with the masculine "programme".\n\nConfirmation: "J\'aime
+            le programme." is more commonly used. The sentence above is
+            technically accurate, but less commonly used in spoken French as
+            "ai" is used less frequently in everyday speech.',
+            response_metadata={'token_usage': ChatCompletionOutputUsage
+            (completion_tokens=100, prompt_tokens=55, total_tokens=155),
+            'model': '', 'finish_reason': 'length'},
+            id='run-874c24b7-0272-4c99-b259-5d6d7facbc56-0')
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='Je ai une passion pour le programme.\n\nIn French, we use
+            "ai" for masculine subjects and "a" for feminine subjects.
+            Since "programming" is gender-neutral in English,
+            we will go with the masculine "programme".\n\nConfirmation:
+            "J\'aime le programme." is more commonly used. The sentence
+            above is technically accurate, but less commonly used in spoken
+            French as "ai" is used less frequently in everyday speech.'
+            response_metadata={'token_usage': ChatCompletionOutputUsage
+            (completion_tokens=100, prompt_tokens=55, total_tokens=155),
+            'model': '', 'finish_reason': 'length'}
+            id='run-7d7b1967-9612-4f9a-911a-b2b5ca85046a-0'
+
+    Async:
+        .. code-block:: python
+
+            await chat.ainvoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content='Je déaime le programming.\n\nLittérale : Je
+            (j\'aime) déaime (le) programming.\n\nNote: "Programming" in
+            French is "programmation". But here, I used "programming" instead
+            of "programmation" because the user said "I love programming"
+            instead of "I love programming (in French)", which would be
+            "J\'aime la programmation". By translating the sentence
+            literally, I preserved the original meaning of the user\'s
+            sentence.', id='run-fd850318-e299-4735-b4c6-3496dc930b1d-0')
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(..., description="The city and state,
+                e.g. San Francisco, CA")
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(..., description="The city and state,
+                e.g. San Francisco, CA")
+
+            chat_with_tools = chat.bind_tools([GetWeather, GetPopulation])
+            ai_msg = chat_with_tools.invoke("Which city is hotter today and
+            which is bigger: LA or NY?")
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [{'name': 'GetPopulation',
+              'args': {'location': 'Los Angeles, CA'},
+              'id': '0'}]
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+            {'token_usage': ChatCompletionOutputUsage(completion_tokens=100,
+            prompt_tokens=8, total_tokens=108),
+             'model': '',
+             'finish_reason': 'length'}
+
+    """  # noqa: E501
 
     llm: Any
-    """LLM, must be of type HuggingFaceTextGenInference, HuggingFaceEndpoint, or 
-        HuggingFaceHub."""
+    """LLM, must be of type HuggingFaceTextGenInference, HuggingFaceEndpoint,
+        HuggingFaceHub, or HuggingFacePipeline."""
+    # TODO: Is system_message used anywhere?
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
     tokenizer: Any = None
     model_id: Optional[str] = None
@@ -169,16 +325,18 @@ class ChatHuggingFace(BaseChatModel):
             else self.tokenizer
         )
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_llm(cls, values: dict) -> dict:
         if (
             not _is_huggingface_hub(values["llm"])
             and not _is_huggingface_textgen_inference(values["llm"])
             and not _is_huggingface_endpoint(values["llm"])
+            and not _is_huggingface_pipeline(values["llm"])
         ):
             raise TypeError(
                 "Expected llm to be one of HuggingFaceTextGenInference, "
-                f"HuggingFaceEndpoint, HuggingFaceHub, received {type(values['llm'])}"
+                "HuggingFaceEndpoint, HuggingFaceHub, HuggingFacePipeline "
+                f"received {type(values['llm'])}"
             )
         return values
 
@@ -285,7 +443,6 @@ class ChatHuggingFace(BaseChatModel):
 
         from huggingface_hub import list_inference_endpoints  # type: ignore[import]
 
-        available_endpoints = list_inference_endpoints("*")
         if _is_huggingface_hub(self.llm) or (
             hasattr(self.llm, "repo_id") and self.llm.repo_id
         ):
@@ -293,9 +450,12 @@ class ChatHuggingFace(BaseChatModel):
             return
         elif _is_huggingface_textgen_inference(self.llm):
             endpoint_url: Optional[str] = self.llm.inference_server_url
+        elif _is_huggingface_pipeline(self.llm):
+            self.model_id = self.llm.model_id
+            return
         else:
             endpoint_url = self.llm.endpoint_url
-
+        available_endpoints = list_inference_endpoints("*")
         for endpoint in available_endpoints:
             if endpoint.url == endpoint_url:
                 self.model_id = endpoint.repository
@@ -309,7 +469,7 @@ class ChatHuggingFace(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
         tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
         **kwargs: Any,
@@ -320,9 +480,8 @@ class ChatHuggingFace(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
+                Supports any tool definition handled by
+                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 "auto" to automatically determine which function to call

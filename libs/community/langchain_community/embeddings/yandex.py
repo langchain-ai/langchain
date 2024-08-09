@@ -1,4 +1,5 @@
 """Wrapper around YandexGPT embedding models."""
+
 from __future__ import annotations
 
 import logging
@@ -6,8 +7,8 @@ import time
 from typing import Any, Callable, Dict, List, Sequence
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
     retry,
@@ -71,11 +72,9 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     _grpc_metadata: Sequence
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
@@ -105,15 +104,15 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         if not values.get("doc_model_uri"):
             if values["folder_id"] == "":
                 raise ValueError("'doc_model_uri' or 'folder_id' must be provided.")
-            values[
-                "doc_model_uri"
-            ] = f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"  # noqa: E501
+            values["doc_model_uri"] = (
+                f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"
+            )
         if not values.get("model_uri"):
             if values["folder_id"] == "":
                 raise ValueError("'model_uri' or 'folder_id' must be provided.")
-            values[
-                "model_uri"
-            ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"  # noqa: E501
+            values["model_uri"] = (
+                f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            )
         if values["disable_request_logging"]:
             values["_grpc_metadata"].append(
                 (

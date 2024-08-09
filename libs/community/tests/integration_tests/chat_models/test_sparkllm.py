@@ -5,11 +5,21 @@ from langchain_community.chat_models.sparkllm import ChatSparkLLM
 
 def test_initialization() -> None:
     """Test chat model initialization."""
+
     for model in [
-        ChatSparkLLM(timeout=30),
-        ChatSparkLLM(request_timeout=30),  # type: ignore[call-arg]
+        ChatSparkLLM(
+            api_key="secret",
+            temperature=0.5,
+            timeout=30,
+        ),
+        ChatSparkLLM(
+            spark_api_key="secret",
+            request_timeout=30,
+        ),  # type: ignore[call-arg]
     ]:
         assert model.request_timeout == 30
+        assert model.spark_api_key == "secret"
+        assert model.temperature == 0.5
 
 
 def test_chat_spark_llm() -> None:
@@ -43,3 +53,10 @@ def test_chat_spark_llm_with_temperature() -> None:
     print(response)  # noqa: T201
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
+
+def test_chat_spark_llm_streaming_with_stream_method() -> None:
+    chat = ChatSparkLLM()  # type: ignore[call-arg]
+    for chunk in chat.stream("Hello!"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, str)

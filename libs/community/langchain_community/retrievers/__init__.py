@@ -28,6 +28,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.arxiv import (
         ArxivRetriever,
     )
+    from langchain_community.retrievers.asknews import (
+        AskNewsRetriever,
+    )
     from langchain_community.retrievers.azure_ai_search import (
         AzureAISearchRetriever,
         AzureCognitiveSearchRetriever,
@@ -89,6 +92,7 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.milvus import (
         MilvusRetriever,
     )
+    from langchain_community.retrievers.nanopq import NanoPQRetriever
     from langchain_community.retrievers.outline import (
         OutlineRetriever,
     )
@@ -133,6 +137,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.zep import (
         ZepRetriever,
     )
+    from langchain_community.retrievers.zep_cloud import (
+        ZepCloudRetriever,
+    )
     from langchain_community.retrievers.zilliz import (
         ZillizRetriever,
     )
@@ -143,6 +150,7 @@ _module_lookup = {
     "AmazonKnowledgeBasesRetriever": "langchain_community.retrievers.bedrock",
     "ArceeRetriever": "langchain_community.retrievers.arcee",
     "ArxivRetriever": "langchain_community.retrievers.arxiv",
+    "AskNewsRetriever": "langchain_community.retrievers.asknews",
     "AzureAISearchRetriever": "langchain_community.retrievers.azure_ai_search",
     "AzureCognitiveSearchRetriever": "langchain_community.retrievers.azure_ai_search",
     "BM25Retriever": "langchain_community.retrievers.bm25",
@@ -164,6 +172,7 @@ _module_lookup = {
     "LlamaIndexRetriever": "langchain_community.retrievers.llama_index",
     "MetalRetriever": "langchain_community.retrievers.metal",
     "MilvusRetriever": "langchain_community.retrievers.milvus",
+    "NanoPQRetriever": "langchain_community.retrievers.nanopq",
     "OutlineRetriever": "langchain_community.retrievers.outline",
     "PineconeHybridSearchRetriever": "langchain_community.retrievers.pinecone_hybrid_search",  # noqa: E501
     "PubMedRetriever": "langchain_community.retrievers.pubmed",
@@ -179,6 +188,7 @@ _module_lookup = {
     "WikipediaRetriever": "langchain_community.retrievers.wikipedia",
     "YouRetriever": "langchain_community.retrievers.you",
     "ZepRetriever": "langchain_community.retrievers.zep",
+    "ZepCloudRetriever": "langchain_community.retrievers.zep_cloud",
     "ZillizRetriever": "langchain_community.retrievers.zilliz",
     "NeuralDBRetriever": "langchain_community.retrievers.thirdai_neuraldb",
 }
@@ -196,6 +206,7 @@ __all__ = [
     "AmazonKnowledgeBasesRetriever",
     "ArceeRetriever",
     "ArxivRetriever",
+    "AskNewsRetriever",
     "AzureAISearchRetriever",
     "AzureCognitiveSearchRetriever",
     "BM25Retriever",
@@ -217,6 +228,7 @@ __all__ = [
     "LlamaIndexRetriever",
     "MetalRetriever",
     "MilvusRetriever",
+    "NanoPQRetriever",
     "NeuralDBRetriever",
     "OutlineRetriever",
     "PineconeHybridSearchRetriever",
@@ -233,5 +245,6 @@ __all__ = [
     "WikipediaRetriever",
     "YouRetriever",
     "ZepRetriever",
+    "ZepCloudRetriever",
     "ZillizRetriever",
 ]

@@ -446,17 +446,24 @@ class Annoy(VectorStore):
                 "You will need to set `allow_dangerous_deserialization` to `True` to "
                 "enable deserialization. If you do this, make sure that you "
                 "trust the source of the data. For example, if you are loading a "
-                "file that you created, and no that no one else has modified the file, "
-                "then this is safe to do. Do not set this to `True` if you are loading "
-                "a file from an untrusted source (e.g., some random site on the "
-                "internet.)."
+                "file that you created, and know that no one else has modified the "
+                "file, then this is safe to do. Do not set this to `True` if you are "
+                "loading a file from an untrusted source (e.g., some random site on "
+                "the internet.)."
             )
         path = Path(folder_path)
         # load index separately since it is not picklable
         annoy = guard_import("annoy")
         # load docstore and index_to_docstore_id
         with open(path / "index.pkl", "rb") as file:
-            docstore, index_to_docstore_id, config_object = pickle.load(file)
+            # Code path can only be reached if allow_dangerous_deserialization is True
+            (
+                docstore,
+                index_to_docstore_id,
+                config_object,
+            ) = pickle.load(  # ignore[pickle]: explicit-opt-in
+                file
+            )
 
         f = int(config_object["ANNOY"]["f"])
         metric = config_object["ANNOY"]["metric"]

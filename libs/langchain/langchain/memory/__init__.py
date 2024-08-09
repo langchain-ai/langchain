@@ -26,6 +26,7 @@
 
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
+
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer
@@ -48,6 +49,9 @@ from langchain.memory.summary import ConversationSummaryMemory
 from langchain.memory.summary_buffer import ConversationSummaryBufferMemory
 from langchain.memory.token_buffer import ConversationTokenBufferMemory
 from langchain.memory.vectorstore import VectorStoreRetrieverMemory
+from langchain.memory.vectorstore_token_buffer_memory import (
+    ConversationVectorStoreTokenBufferMemory,  # avoid circular import
+)
 
 if TYPE_CHECKING:
     from langchain_community.chat_message_histories import (
@@ -122,6 +126,7 @@ __all__ = [
     "ConversationSummaryBufferMemory",
     "ConversationSummaryMemory",
     "ConversationTokenBufferMemory",
+    "ConversationVectorStoreTokenBufferMemory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
     "ElasticsearchChatMessageHistory",

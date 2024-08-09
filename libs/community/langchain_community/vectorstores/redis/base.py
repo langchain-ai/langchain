@@ -73,103 +73,135 @@ def check_index_exists(client: RedisType, index_name: str) -> bool:
 class Redis(VectorStore):
     """Redis vector database.
 
-    To use, you should have the ``redis`` python package installed
-    and have a running Redis Enterprise or Redis-Stack server
+    Deployment Options:
+        Below, we will use a local deployment as an example. However, Redis can be deployed in all of the following ways:
 
-    For production use cases, it is recommended to use Redis Enterprise
-    as the scaling, performance, stability and availability is much
-    better than Redis-Stack.
+        - [Redis Cloud](https://redis.com/redis-enterprise-cloud/overview/)
+        - [Docker (Redis Stack)](https://hub.docker.com/r/redis/redis-stack)
+        - Cloud marketplaces: [AWS Marketplace](https://aws.amazon.com/marketplace/pp/prodview-e6y7ork67pjwg?sr=0-2&ref_=beagle&applicationId=AWSMPContessa), [Google Marketplace](https://console.cloud.google.com/marketplace/details/redislabs-public/redis-enterprise?pli=1), or [Azure Marketplace](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/garantiadata.redis_enterprise_1sp_public_preview?tab=Overview)
+        - On-premise: [Redis Enterprise Software](https://redis.com/redis-enterprise-software/overview/)
+        - Kubernetes: [Redis Enterprise Software on Kubernetes](https://docs.redis.com/latest/kubernetes/)
 
-    For testing and prototyping, however, this is not required.
-    Redis-Stack is available as a docker container the full vector
-    search API available.
+    Setup:
+        Install ``redis``, ``redisvl``, and ``langchain-community`` and run Redis locally.
 
-    .. code-block:: bash
+        .. code-block:: bash
 
-        # to run redis stack in docker locally
-        docker run -d -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
+            pip install -qU redis redisvl langchain-community
+            docker run -d -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
 
-    Once running, you can connect to the redis server with the following url schemas:
-    - redis://<host>:<port> # simple connection
-    - redis://<username>:<password>@<host>:<port> # connection with authentication
-    - rediss://<host>:<port> # connection with SSL
-    - rediss://<username>:<password>@<host>:<port> # connection with SSL and auth
+    Key init args — indexing params:
+        index_name: str
+            Name of the index.
+        index_schema: Optional[Union[Dict[str, ListOfDict], str, os.PathLike]]
+            Schema of the index and the vector schema. Can be a dict, or path to yaml file.
+        embedding: Embeddings
+            Embedding function to use.
 
+    Key init args — client params:
+        redis_url: str
+            Redis connection url.
 
-    Examples:
-
-    The following examples show various ways to use the Redis VectorStore with
-    LangChain.
-
-    For all the following examples assume we have the following imports:
-
-    .. code-block:: python
-
-        from langchain_community.vectorstores import Redis
-        from langchain_community.embeddings import OpenAIEmbeddings
-
-    Initialize, create index, and load Documents
+    Instantiate:
         .. code-block:: python
 
-            from langchain_community.vectorstores import Redis
-            from langchain_community.embeddings import OpenAIEmbeddings
+            from langchain_community.vectorstores.redis import Redis
+            from langchain_openai import OpenAIEmbeddings
 
-            rds = Redis.from_documents(
-                documents, # a list of Document objects from loaders or created
-                embeddings, # an Embeddings object
+            vector_store = Redis(
                 redis_url="redis://localhost:6379",
+                embedding=OpenAIEmbeddings(),
+                index_name="users",
             )
 
-    Initialize, create index, and load Documents with metadata
+    Add Documents:
         .. code-block:: python
 
+            from langchain_core.documents import Document
 
-            rds = Redis.from_texts(
-                texts, # a list of strings
-                metadata, # a list of metadata dicts
-                embeddings, # an Embeddings object
-                redis_url="redis://localhost:6379",
-            )
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
 
-    Initialize, create index, and load Documents with metadata and return keys
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
 
+    Delete Documents:
         .. code-block:: python
 
-            rds, keys = Redis.from_texts_return_keys(
-                texts, # a list of strings
-                metadata, # a list of metadata dicts
-                embeddings, # an Embeddings object
-                redis_url="redis://localhost:6379",
-            )
+            vector_store.delete(ids=["3"])
 
-    For use cases where the index needs to stay alive, you can initialize
-    with an index name such that it's easier to reference later
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            rds = Redis.from_texts(
-                texts, # a list of strings
-                metadata, # a list of metadata dicts
-                embeddings, # an Embeddings object
-                index_name="my-index",
-                redis_url="redis://localhost:6379",
-            )
+            * thud [{'id': 'doc:users:2'}]
 
-    Initialize and connect to an existing index (from above)
+    Search with filter:
+        .. code-block:: python
+
+            from langchain_community.vectorstores.redis import RedisTag
+
+            results = vector_store.similarity_search(query="thud",k=1,filter=(RedisTag("baz") != "bar"))
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            # must pass in schema and key_prefix from another index
-            existing_rds = Redis.from_existing_index(
-                embeddings, # an Embeddings object
-                index_name="my-index",
-                schema=rds.schema, # schema dumped from another index
-                key_prefix=rds.key_prefix, # key prefix from another index
-                redis_url="redis://localhost:6379",
+            * thud [{'id': 'doc:users:2'}]
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.167700] foo [{'id': 'doc:users:1'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.167700] foo [{'id': 'doc:users:1'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
             )
+            retriever.invoke("thud")
 
+        .. code-block:: python
 
-    Advanced examples:
+            [Document(metadata={'id': 'doc:users:2'}, page_content='thud')]
+
+    **Advanced examples:**
 
     Custom vector schema can be supplied to change the way that
     Redis creates the underlying vector schema. This is useful
@@ -235,7 +267,7 @@ class Redis(VectorStore):
     Otherwise, the schema for newly added samples will be incorrect and metadata
     will not be returned.
 
-    """
+    """  # noqa: E501
 
     DEFAULT_VECTOR_SCHEMA = {
         "name": "content_vector",
@@ -383,7 +415,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore  # noqa: E501
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
                 raise ValueError("Number of metadatas must match number of texts")
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -582,8 +614,8 @@ class Redis(VectorStore):
         with open(path, "w+") as f:
             yaml.dump(self.schema, f)
 
-    @staticmethod
     def delete(
+        self,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> bool:
@@ -602,30 +634,12 @@ class Redis(VectorStore):
             ValueError: If the redis python package is not installed.
             ValueError: If the ids (keys in redis) are not provided
         """
-        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
-
-        if ids is None:
-            raise ValueError("'ids' (keys)() were not provided.")
-
-        try:
-            import redis  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-        try:
-            # We need to first remove redis_url from kwargs,
-            # otherwise passing it to Redis will result in an error.
-            if "redis_url" in kwargs:
-                kwargs.pop("redis_url")
-            client = get_client(redis_url=redis_url, **kwargs)
-        except ValueError as e:
-            raise ValueError(f"Your redis connected error: {e}")
+        client = self.client
         # Check if index exists
         try:
-            client.delete(*ids)
-            logger.info("Entries deleted")
+            if ids:
+                client.delete(*ids)
+                logger.info("Entries deleted")
             return True
         except:  # noqa: E722
             # ids does not exist
@@ -704,7 +718,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore  # noqa: E501
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
                 raise ValueError("Number of metadatas must match number of texts")
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -832,7 +846,7 @@ class Redis(VectorStore):
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
         try:
-            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
+            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
         except redis.exceptions.ResponseError as e:
             # split error message and see if it starts with "Syntax"
             if str(e).split(" ")[0] == "Syntax":
@@ -947,7 +961,7 @@ class Redis(VectorStore):
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
         try:
-            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
+            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
         except redis.exceptions.ResponseError as e:
             # split error message and see if it starts with "Syntax"
             if str(e).split(" ")[0] == "Syntax":
@@ -1439,8 +1453,6 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
     """Allowed search types."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(

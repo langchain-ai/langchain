@@ -38,13 +38,14 @@ class GmailToolkit(BaseToolkit):
         associated account.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        api_resource: Optional. The Google API resource. Default is None.
     """
 
     api_resource: Resource = Field(default_factory=build_resource_service)
 
     class Config:
-        """Pydantic config."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

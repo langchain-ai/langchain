@@ -5990,6 +5990,7 @@ __metadata:
     typedoc: ^0.24.4
     typedoc-plugin-markdown: next
     typescript: ^5.1.3
+    uuid: ^9.0.0
     webpack: ^5.75.0
     yaml-loader: ^0.8.0
   languageName: unknown

@@ -1,0 +1,902 @@
+---
+sidebar_position: 3
+sidebar_label: Changes
+keywords: [retrievalqa, llmchain, conversationalretrievalchain]
+---
+
+# Deprecations and Breaking Changes
+
+This code contains a list of deprecations and removals in the `langchain` and `langchain-core` packages.
+
+New features and improvements are not listed here. See the [overview](/docs/versions/overview/) for a summary of what's new in this release.
+
+## Breaking changes
+
+As of release 0.2.0, `langchain` is required to be integration-agnostic. This means that code in `langchain`  should not by default instantiate any specific chat models, llms, embedding models, vectorstores etc; instead, the user will be required to specify those explicitly.
+
+The following functions and classes require an explicit LLM to be passed as an argument:
+
+- `langchain.agents.agent_toolkits.vectorstore.toolkit.VectorStoreToolkit`
+- `langchain.agents.agent_toolkits.vectorstore.toolkit.VectorStoreRouterToolkit`
+- `langchain.chains.openai_functions.get_openapi_chain`
+- `langchain.chains.router.MultiRetrievalQAChain.from_retrievers`
+- `langchain.indexes.VectorStoreIndexWrapper.query`
+- `langchain.indexes.VectorStoreIndexWrapper.query_with_sources`
+- `langchain.indexes.VectorStoreIndexWrapper.aquery_with_sources`
+- `langchain.chains.flare.FlareChain`
+
+
+The following classes now require passing an explicit Embedding model as an argument:
+
+- `langchain.indexes.VectostoreIndexCreator`
+
+The following code has been removed:
+
+- `langchain.natbot.NatBotChain.from_default` removed in favor of the `from_llm` class method.
+
+Behavior was changed for the following code:
+
+
+### @tool decorator
+
+`@tool` decorator now assigns the function doc-string as the tool description. Previously, the `@tool` decorator
+using to prepend the function signature.
+
+Before 0.2.0:
+
+```python
+@tool
+def my_tool(x: str) -> str:
+    """Some description."""
+    return "something"
+
+print(my_tool.description)
+```
+
+Would result in: `my_tool: (x: str) -> str - Some description.`
+
+As of 0.2.0:
+
+It will result in: `Some description.`
+
+## Code that moved to another package
+
+Code that was moved from `langchain` into another package (e.g, `langchain-community`)
+
+If you try to import it from `langchain`, the import will keep on working, but will raise a deprecation warning. The warning will provide a replacement import statement.
+
+ ```shell
+ python -c "from langchain.document_loaders.markdown import UnstructuredMarkdownLoader"
+```
+
+ ```shell
+ LangChainDeprecationWarning: Importing UnstructuredMarkdownLoader from langchain.document_loaders is deprecated. Please replace deprecated imports:
+
+ >> from langchain.document_loaders import UnstructuredMarkdownLoader
+
+ with new imports of:
+
+ >> from langchain_community.document_loaders import UnstructuredMarkdownLoader
+```
+
+We will continue supporting the imports in `langchain` until release 0.4 as long as the relevant package where the code lives is installed. (e.g., as long as `langchain_community` is installed.)
+
+However, we advise for users to not rely on these imports and instead migrate to the new imports. To help with this process, we’re releasing a migration script via the LangChain CLI. See further instructions in migration guide.
+
+## Code targeted for removal
+
+Code that has better alternatives available and will eventually be removed, so there’s only a single way to do things. (e.g., `predict_messages` method in ChatModels has been deprecated in favor of `invoke`).
+
+### astream events V1
+
+If you are using `astream_events`, please review how to [migrate to astream events v2](/docs/versions/v0_2/migrating_astream_events).
+
+### langchain_core
+
+#### try_load_from_hub
+
+
+In module: `utils.loading`
+Deprecated: 0.1.30
+Removal: 0.3.0
+
+
+Alternative: Using the hwchase17/langchain-hub repo for prompts is deprecated. Please use https://smith.langchain.com/hub instead.
+
+
+#### BaseLanguageModel.predict
+
+
+In module: `language_models.base`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseLanguageModel.predict_messages
+
+
+In module: `language_models.base`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseLanguageModel.apredict
+
+
+In module: `language_models.base`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### BaseLanguageModel.apredict_messages
+
+
+In module: `language_models.base`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### RunTypeEnum
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Use string instead.
+
+
+#### TracerSessionV1Base
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### TracerSessionV1Create
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### TracerSessionV1
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### TracerSessionBase
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### TracerSession
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### BaseRun
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Run
+
+
+#### LLMRun
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Run
+
+
+#### ChainRun
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Run
+
+
+#### ToolRun
+
+
+In module: `tracers.schemas`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Run
+
+
+#### BaseChatModel.__call__
+
+
+In module: `language_models.chat_models`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseChatModel.call_as_llm
+
+
+In module: `language_models.chat_models`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseChatModel.predict
+
+
+In module: `language_models.chat_models`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseChatModel.predict_messages
+
+
+In module: `language_models.chat_models`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseChatModel.apredict
+
+
+In module: `language_models.chat_models`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### BaseChatModel.apredict_messages
+
+
+In module: `language_models.chat_models`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### BaseLLM.__call__
+
+
+In module: `language_models.llms`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseLLM.predict
+
+
+In module: `language_models.llms`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseLLM.predict_messages
+
+
+In module: `language_models.llms`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseLLM.apredict
+
+
+In module: `language_models.llms`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### BaseLLM.apredict_messages
+
+
+In module: `language_models.llms`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### BaseRetriever.get_relevant_documents
+
+
+In module: `retrievers`
+Deprecated: 0.1.46
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### BaseRetriever.aget_relevant_documents
+
+
+In module: `retrievers`
+Deprecated: 0.1.46
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### ChatPromptTemplate.from_role_strings
+
+
+In module: `prompts.chat`
+Deprecated: 0.0.1
+Removal:
+
+
+Alternative: from_messages classmethod
+
+
+#### ChatPromptTemplate.from_strings
+
+
+In module: `prompts.chat`
+Deprecated: 0.0.1
+Removal:
+
+
+Alternative: from_messages classmethod
+
+
+#### BaseTool.__call__
+
+
+In module: `tools`
+Deprecated: 0.1.47
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### convert_pydantic_to_openai_function
+
+
+In module: `utils.function_calling`
+Deprecated: 0.1.16
+Removal: 0.3.0
+
+
+Alternative: langchain_core.utils.function_calling.convert_to_openai_function()
+
+
+#### convert_pydantic_to_openai_tool
+
+
+In module: `utils.function_calling`
+Deprecated: 0.1.16
+Removal: 0.3.0
+
+
+Alternative: langchain_core.utils.function_calling.convert_to_openai_tool()
+
+
+#### convert_python_function_to_openai_function
+
+
+In module: `utils.function_calling`
+Deprecated: 0.1.16
+Removal: 0.3.0
+
+
+Alternative: langchain_core.utils.function_calling.convert_to_openai_function()
+
+
+#### format_tool_to_openai_function
+
+
+In module: `utils.function_calling`
+Deprecated: 0.1.16
+Removal: 0.3.0
+
+
+Alternative: langchain_core.utils.function_calling.convert_to_openai_function()
+
+
+#### format_tool_to_openai_tool
+
+
+In module: `utils.function_calling`
+Deprecated: 0.1.16
+Removal: 0.3.0
+
+
+Alternative: langchain_core.utils.function_calling.convert_to_openai_tool()
+
+
+### langchain
+
+
+#### AgentType
+
+
+In module: `agents.agent_types`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Use [LangGraph](/docs/how_to/migrate_agent/) or new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
+
+
+#### Chain.__call__
+
+
+In module: `chains.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### Chain.acall
+
+
+In module: `chains.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### Chain.run
+
+
+In module: `chains.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: invoke
+
+
+#### Chain.arun
+
+
+In module: `chains.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+#### Chain.apply
+
+
+In module: `chains.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: batch
+
+
+#### LLMChain
+
+
+In module: `chains.llm`
+Deprecated: 0.1.17
+Removal: 0.3.0
+
+
+Alternative: [RunnableSequence](/docs/how_to/sequence/), e.g., `prompt | llm`
+
+This [migration guide](/docs/versions/migrating_chains/llm_chain) has a side-by-side comparison.
+
+
+#### LLMSingleActionAgent
+
+
+In module: `agents.agent`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Use [LangGraph](/docs/how_to/migrate_agent/) or new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
+
+
+#### Agent
+
+
+In module: `agents.agent`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Use [LangGraph](/docs/how_to/migrate_agent/) or new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
+
+
+#### OpenAIFunctionsAgent
+
+
+In module: `agents.openai_functions_agent.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_openai_functions_agent
+
+
+#### ZeroShotAgent
+
+
+In module: `agents.mrkl.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_react_agent
+
+
+#### MRKLChain
+
+
+In module: `agents.mrkl.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### ConversationalAgent
+
+
+In module: `agents.conversational.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_react_agent
+
+
+#### ConversationalChatAgent
+
+
+In module: `agents.conversational_chat.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_json_chat_agent
+
+
+#### ChatAgent
+
+
+In module: `agents.chat.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_react_agent
+
+
+#### OpenAIMultiFunctionsAgent
+
+
+In module: `agents.openai_functions_multi_agent.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_openai_tools_agent
+
+
+#### ReActDocstoreAgent
+
+
+In module: `agents.react.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### DocstoreExplorer
+
+
+In module: `agents.react.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### ReActTextWorldAgent
+
+
+In module: `agents.react.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### ReActChain
+
+
+In module: `agents.react.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### SelfAskWithSearchAgent
+
+
+In module: `agents.self_ask_with_search.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_self_ask_with_search
+
+
+#### SelfAskWithSearchChain
+
+
+In module: `agents.self_ask_with_search.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### StructuredChatAgent
+
+
+In module: `agents.structured_chat.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_structured_chat_agent
+
+
+#### RetrievalQA
+
+
+In module: `chains.retrieval_qa.base`
+Deprecated: 0.1.17
+Removal: 0.3.0
+
+
+Alternative: [create_retrieval_chain](https://api.python.langchain.com/en/latest/chains/langchain.chains.retrieval.create_retrieval_chain.html#langchain-chains-retrieval-create-retrieval-chain)
+This [migration guide](/docs/versions/migrating_chains/retrieval_qa) has a side-by-side comparison.
+
+
+#### load_agent_from_config
+
+
+In module: `agents.loading`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### load_agent
+
+
+In module: `agents.loading`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative:
+
+
+#### initialize_agent
+
+
+In module: `agents.initialize`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: Use [LangGraph](/docs/how_to/migrate_agent/) or new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
+
+
+#### XMLAgent
+
+
+In module: `agents.xml.base`
+Deprecated: 0.1.0
+Removal: 0.3.0
+
+
+Alternative: create_xml_agent
+
+
+#### CohereRerank
+
+
+In module: `retrievers.document_compressors.cohere_rerank`
+Deprecated: 0.0.30
+Removal: 0.3.0
+
+
+Alternative: langchain_cohere.CohereRerank
+
+
+#### ConversationalRetrievalChain
+
+
+In module: `chains.conversational_retrieval.base`
+Deprecated: 0.1.17
+Removal: 0.3.0
+
+
+Alternative: [create_history_aware_retriever](https://api.python.langchain.com/en/latest/chains/langchain.chains.history_aware_retriever.create_history_aware_retriever.html) together with [create_retrieval_chain](https://api.python.langchain.com/en/latest/chains/langchain.chains.retrieval.create_retrieval_chain.html#langchain-chains-retrieval-create-retrieval-chain) (see example in docstring)
+This [migration guide](/docs/versions/migrating_chains/conversation_retrieval_chain) has a side-by-side comparison.
+
+
+#### create_extraction_chain_pydantic
+
+
+In module: `chains.openai_tools.extraction`
+Deprecated: 0.1.14
+Removal: 0.3.0
+
+
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
+
+
+#### create_openai_fn_runnable
+
+
+In module: `chains.structured_output.base`
+Deprecated: 0.1.14
+Removal: 0.3.0
+
+
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
+
+
+#### create_structured_output_runnable
+
+
+In module: `chains.structured_output.base`
+Deprecated: 0.1.17
+Removal: 0.3.0
+
+
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
+
+
+#### create_openai_fn_chain
+
+
+In module: `chains.openai_functions.base`
+Deprecated: 0.1.1
+Removal: 0.3.0
+
+
+Alternative: create_openai_fn_runnable
+
+
+#### create_structured_output_chain
+
+
+In module: `chains.openai_functions.base`
+Deprecated: 0.1.1
+Removal: 0.3.0
+
+Alternative: ChatOpenAI.with_structured_output
+
+
+#### create_extraction_chain
+
+
+In module: `chains.openai_functions.extraction`
+Deprecated: 0.1.14
+Removal: 0.3.0
+
+
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
+
+
+#### create_extraction_chain_pydantic
+
+
+In module: `chains.openai_functions.extraction`
+Deprecated: 0.1.14
+Removal: 0.3.0
+
+
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
