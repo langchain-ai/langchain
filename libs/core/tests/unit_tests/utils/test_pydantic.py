@@ -1,10 +1,13 @@
 """Test for some custom pydantic decorators."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Field
+import pytest
+
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
+    _create_subset_model_v2,
+    get_fields,
     is_basemodel_instance,
     is_basemodel_subclass,
     pre_init,
@@ -12,6 +15,8 @@ from langchain_core.utils.pydantic import (
 
 
 def test_pre_init_decorator() -> None:
+    from langchain_core.pydantic_v1 import BaseModel
+
     class Foo(BaseModel):
         x: int = 5
         y: int
@@ -29,6 +34,8 @@ def test_pre_init_decorator() -> None:
 
 
 def test_pre_init_decorator_with_more_defaults() -> None:
+    from langchain_core.pydantic_v1 import BaseModel, Field
+
     class Foo(BaseModel):
         a: int = 1
         b: Optional[int] = None
@@ -49,6 +56,8 @@ def test_pre_init_decorator_with_more_defaults() -> None:
 
 
 def test_with_aliases() -> None:
+    from langchain_core.pydantic_v1 import BaseModel, Field
+
     class Foo(BaseModel):
         x: int = Field(default=1, alias="y")
         z: int
@@ -121,3 +130,65 @@ def test_is_basemodel_instance() -> None:
         assert is_basemodel_instance(Bar(x=5))
     else:
         raise ValueError(f"Unsupported Pydantic version: {PYDANTIC_MAJOR_VERSION}")
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
+def test_with_field_metadata() -> None:
+    """Test pydantic with field metadata"""
+    from pydantic import BaseModel as BaseModelV2  # pydantic: ignore
+    from pydantic import Field as FieldV2  # pydantic: ignore
+
+    class Foo(BaseModelV2):
+        x: List[int] = FieldV2(
+            description="List of integers", min_length=10, max_length=15
+        )
+
+    subset_model = _create_subset_model_v2("Foo", Foo, ["x"])
+    assert subset_model.model_json_schema() == {
+        "properties": {
+            "x": {
+                "description": "List of integers",
+                "items": {"type": "integer"},
+                "maxItems": 15,
+                "minItems": 10,
+                "title": "X",
+                "type": "array",
+            }
+        },
+        "required": ["x"],
+        "title": "Foo",
+        "type": "object",
+    }
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Only tests Pydantic v1")
+def test_fields_pydantic_v1() -> None:
+    from pydantic import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        x: int
+
+    fields = get_fields(Foo)
+    assert fields == {"x": Foo.__fields__["x"]}  # type: ignore[index]
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
+def test_fields_pydantic_v2_proper() -> None:
+    from pydantic import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        x: int
+
+    fields = get_fields(Foo)
+    assert fields == {"x": Foo.model_fields["x"]}
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
+def test_fields_pydantic_v1_from_2() -> None:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        x: int
+
+    fields = get_fields(Foo)
+    assert fields == {"x": Foo.__fields__["x"]}
