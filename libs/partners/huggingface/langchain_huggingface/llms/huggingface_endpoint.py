@@ -66,9 +66,10 @@ class HuggingFaceEndpoint(LLM):
     """  # noqa: E501
 
     endpoint_url: Optional[str] = None
-    """Endpoint URL to use."""
+    """Endpoint URL to use. If repo_id is not specified then this needs to given or 
+    should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
     repo_id: Optional[str] = None
-    """Repo to use."""
+    """Repo to use. If endpoint_url is not specified then this needs to given"""
     huggingfacehub_api_token: Optional[str] = None
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
@@ -145,18 +146,17 @@ class HuggingFaceEndpoint(LLM):
             )
 
         values["model_kwargs"] = extra
-
-        values["endpoint_url"] = get_from_dict_or_env(
-            values, "endpoint_url", "HF_INFERENCE_ENDPOINT", None
-        )
-
-        if values["endpoint_url"] is None and "repo_id" not in values:
+        if "endpoint_url" not in values and "repo_id" not in values:
             raise ValueError(
                 "Please specify an `endpoint_url` or `repo_id` for the model."
             )
-        if values["endpoint_url"] is not None and "repo_id" in values:
+        if "endpoint_url" in values and "repo_id" in values:
             raise ValueError(
                 "Please specify either an `endpoint_url` OR a `repo_id`, not both."
+            )
+        if "repo_id" not in values:
+            values["endpoint_url"] = get_from_dict_or_env(
+                values, "endpoint_url", "HF_INFERENCE_ENDPOINT", None
             )
         values["model"] = values.get("endpoint_url") or values.get("repo_id")
         return values
