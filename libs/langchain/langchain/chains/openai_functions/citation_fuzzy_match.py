@@ -1,10 +1,12 @@
 from typing import Iterator, List
 
-from langchain_core.language_models import BaseLanguageModel
+from langchain_core._api import deprecated
+from langchain_core.language_models import BaseChatModel, BaseLanguageModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers.openai_functions import PydanticOutputFunctionsParser
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import Runnable
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.openai_functions.utils import get_llm_kwargs
@@ -61,6 +63,57 @@ class QuestionAnswer(BaseModel):
     )
 
 
+def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
+    """Create a citation fuzzy match Runnable.
+
+    Example usage:
+
+        .. code-block:: python
+
+            from langchain.chains import create_citation_fuzzy_match_runnable
+            from langchain_openai import ChatOpenAI
+
+            llm = ChatOpenAI(model="gpt-4o-mini")
+
+            context = "Alice has blue eyes. Bob has brown eyes. Charlie has green eyes."
+            question = "What color are Bob's eyes?"
+
+            chain = create_citation_fuzzy_match_runnable(llm)
+            chain.invoke({"question": question, "context": context})
+
+    Args:
+        llm: Language model to use for the chain. Must implement bind_tools.
+
+    Returns:
+        Runnable that can be used to answer questions with citations.
+    """
+    if llm.bind_tools is BaseChatModel.bind_tools:
+        raise ValueError(
+            "Language model must implement bind_tools to use this function."
+        )
+    prompt = ChatPromptTemplate(
+        [
+            SystemMessage(
+                "You are a world class algorithm to answer "
+                "questions with correct and exact citations."
+            ),
+            HumanMessagePromptTemplate.from_template(
+                "Answer question using the following context."
+                "\n\n{context}"
+                "\n\nQuestion: {question}"
+                "\n\nTips: Make sure to cite your sources, "
+                "and use the exact words from the context."
+            ),
+        ]
+    )
+    return prompt | llm.with_structured_output(QuestionAnswer)
+
+
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    alternative="create_citation_fuzzy_match_runnable",
+)
 def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
     """Create a citation fuzzy match chain.
 

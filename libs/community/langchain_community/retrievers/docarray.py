@@ -6,6 +6,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.utils.pydantic import get_fields
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -45,8 +46,6 @@ class DocArrayRetriever(BaseRetriever):
     filters: Optional[Any] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(
@@ -184,7 +183,7 @@ class DocArrayRetriever(BaseRetriever):
             ValueError: If the document doesn't contain the content field
         """
 
-        fields = doc.keys() if isinstance(doc, dict) else doc.__fields__
+        fields = doc.keys() if isinstance(doc, dict) else get_fields(doc)
 
         if self.content_field not in fields:
             raise ValueError(

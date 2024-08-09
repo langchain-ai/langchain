@@ -41,8 +41,6 @@ class O365Toolkit(BaseToolkit):
     account: Account = Field(default_factory=authenticate)
 
     class Config:
-        """Pydantic config."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

@@ -41,8 +41,6 @@ class PowerBIDataset(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @validator("table_names", allow_reuse=True)
