@@ -332,7 +332,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Penalizes repeated tokens according to frequency."""
     seed: Optional[int] = None
     """Seed for generation"""
-    logprobs: Optional[bool] = False
+    logprobs: Optional[bool] = None
     """Whether to return logprobs."""
     top_logprobs: Optional[int] = None
     """Number of most likely tokens to return at each token position, each with
