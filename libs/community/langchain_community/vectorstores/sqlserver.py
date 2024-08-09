@@ -23,7 +23,7 @@ Base = declarative_base()  # type: Any
 _embedding_store: Any = None
 
 EMPTY_IDS_ERROR_MESSAGE = "Empty list of ids provided"
-INVAID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
+INVALID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
 
 
 class SQLServer_VectorStore(VectorStore):
@@ -226,7 +226,7 @@ class SQLServer_VectorStore(VectorStore):
         logging.info(result, " rows affected.")
         return True
 
-    def delete_texts_by_ids(self, ids: Optional[List[str]] = None) -> int:
+    def _delete_texts_by_ids(self, ids: Optional[List[str]] = None) -> int:
         try:
             with Session(bind=self._bind) as session:
                 result = (
