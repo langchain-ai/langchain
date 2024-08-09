@@ -13,12 +13,14 @@ This guide assumes familiarity with the following concepts:
 
 LangChain maintains a number of legacy abstractions. Many of these can be reimplemented via short combinations of LCEL and LangGraph primitives.
 
-**LCEL** is designed to streamline the process of building useful apps with LLMs and combining related components. It does this by providing:
+### LCEL
+[LCEL](/docs/concepts/#langchain-expression-language-lcel) is designed to streamline the process of building useful apps with LLMs and combining related components. It does this by providing:
 
 1. **A unified interface**: Every LCEL object implements the `Runnable` interface, which defines a common set of invocation methods (`invoke`, `batch`, `stream`, `ainvoke`, ...). This makes it possible to also automatically and consistently support useful operations like streaming of intermediate steps and batching, since every chain composed of LCEL objects is itself an LCEL object.
 2. **Composition primitives**: LCEL provides a number of primitives that make it easy to compose chains, parallelize components, add fallbacks, dynamically configure chain internals, and more.
 
-**LangGraph**, built on top of LCEL, allows for performant orchestrations of application components while maintaining concise and readable code. It includes built-in persistence, support for cycles, and prioritizes controllability.
+### LangGraph
+[LangGraph](https://langchain-ai.github.io/langgraph/), built on top of LCEL, allows for performant orchestrations of application components while maintaining concise and readable code. It includes built-in persistence, support for cycles, and prioritizes controllability.
 If LCEL grows unwieldy for larger or more complex chains, they may benefit from a LangGraph implementation.
 
 Using these frameworks for existing v0.0 chains confers some advantages:
@@ -30,7 +32,7 @@ Using these frameworks for existing v0.0 chains confers some advantages:
 - If using LangGraph, the steps of the chain can be streamed, allowing for greater control and customizability.
 
 
-The below pages assist with migration from various specific chains to LCEL:
+The below pages assist with migration from various specific chains to LCEL and LangGraph:
 
 - [LLMChain](/docs/versions/migrating_chains/llm_chain)
 - [ConversationChain](/docs/versions/migrating_chains/conversation_chain)
