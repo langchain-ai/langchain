@@ -12,7 +12,8 @@ from pymongo.collection import Collection
 
 from langchain_mongodb.cache import MongoDBAtlasSemanticCache, MongoDBCache
 from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
-from tests.utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM, MockCollection
+
+from ..utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM, MockCollection
 
 CONN_STRING = "MockString"
 COLLECTION = "default"
@@ -74,7 +75,7 @@ def llm_cache(cls: Any) -> BaseCache:
             connection_string=CONN_STRING,
             collection_name=COLLECTION,
             database_name=DATABASE,
-            wait_until_ready=True,
+            wait_until_ready=15.0,
         )
     )
     assert get_llm_cache()
@@ -207,7 +208,7 @@ def test_mongodb_atlas_cache_matrix(
     for prompt_i, llm_generations_i in zip(prompts, llm_generations):
         _execute_test(prompt_i, llm_string, llm_generations_i)
 
-    get_llm_cache()._collection._simluate_cache_aggregation_query = True  # type: ignore
+    get_llm_cache()._collection._simulate_cache_aggregation_query = True  # type: ignore
     assert llm.generate(prompts) == LLMResult(
         generations=llm_generations, llm_output={}
     )

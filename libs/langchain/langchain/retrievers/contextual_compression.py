@@ -22,8 +22,6 @@ class ContextualCompressionRetriever(BaseRetriever):
     """Base Retriever to use for getting relevant documents."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(

@@ -51,7 +51,7 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import get_fields, is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -346,7 +346,9 @@ class QianfanChatEndpoint(BaseChatModel):
 
     client: Any  #: :meta private:
 
-    qianfan_ak: SecretStr = Field(alias="api_key")
+    # It could be empty due to the use of Console API
+    # And they're not list here
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Qianfan API KEY"""
     qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
     """Qianfan SECRET KEY"""
@@ -365,43 +367,37 @@ class QianfanChatEndpoint(BaseChatModel):
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Lite-8K"
+    model: Optional[str] = Field(default=None)
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set.
-    Default is ERNIE-Lite-8K.
+    Default is set by `qianfan` SDK, not here
     """
 
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                ["qianfan_ak", "api_key"],
-                "QIANFAN_AK",
+                values, ["qianfan_ak", "api_key"], "QIANFAN_AK", default=""
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                ["qianfan_sk", "secret_key"],
-                "QIANFAN_SK",
+                values, ["qianfan_sk", "secret_key"], "QIANFAN_SK", default=""
             )
         )
 
         default_values = {
             name: field.default
-            for name, field in cls.__fields__.items()
+            for name, field in get_fields(cls).items()
             if field.default is not None
         }
         default_values.update(values)
