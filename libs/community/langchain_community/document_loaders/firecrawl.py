@@ -66,5 +66,5 @@ class FireCrawlLoader(BaseLoader):
             yield Document(
                 page_content=doc.get("markdown", ""),
                 metadata=doc.get("metadata", {}),
-                llm_extraction: doc.get("llm_extraction") if self.params.get('extractorOptions', {}).get('mode') == 'llm-extraction' else None
+                llm_extraction= doc.get("llm_extraction") if self.params.get('extractorOptions', {}).get('mode') == 'llm-extraction' else None
             )
