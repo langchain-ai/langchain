@@ -1,0 +1,78 @@
+@base <https://swapi.co/resource/>.
+@prefix voc:  <https://swapi.co/vocabulary/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+{
+<human/11>
+        a                 voc:Character , voc:Human ;
+        rdfs:label        "Anakin Skywalker", "Darth Vader" ;
+        voc:birthYear     "41.9BBY" ;
+        voc:eyeColor      "blue" ;
+        voc:gender        "male" ;
+        voc:hairColor     "blond" ;
+        voc:height        188.0 ;
+        voc:homeworld     <planet/1> ;
+        voc:mass          84.0 ;
+        voc:skinColor     "fair" ;
+        voc:cybernetics "Cybernetic right arm" .
+
+<human/1>
+        a                 voc:Character , voc:Human ;
+        rdfs:label        "Luke Skywalker" ;
+        voc:birthYear     "19BBY" ;
+        voc:eyeColor      "blue" ;
+        voc:gender        "male" ;
+        voc:hairColor     "blond" ;
+        voc:height        172.0 ;
+        voc:homeworld     <planet/1> ;
+        voc:mass          77.0 ;
+        voc:skinColor     "fair" .
+
+<planet/1>
+        a                   voc:Planet ;
+        rdfs:label          "Tatooine" ;
+        voc:climate         "arid" ;
+        voc:diameter        10465 ;
+        voc:gravity         "1 standard" ;
+        voc:orbitalPeriod   304 ;
+        voc:population      200000 ;
+        voc:resident        <human/1> , <human/11> ;
+        voc:rotationPeriod  23 ;
+        voc:surfaceWater    1 ;
+        voc:terrain         "desert" .
+
+<planet/14>
+        a                   voc:Planet ;
+        rdfs:label          "Kashyyyk" ;
+        voc:climate         "tropical" ;
+        voc:diameter        12765 ;
+        voc:gravity         "1 standard" ;
+        voc:orbitalPeriod   381 ;
+        voc:population      45000000 ;
+        voc:resident        <wookiee/13> , <wookiee/80> ;
+        voc:rotationPeriod  26 ;
+        voc:surfaceWater    60 ;
+        voc:terrain         "jungle, forests, lakes, rivers" .
+
+<wookiee/13>
+        a                 voc:Character , voc:Wookiee ;
+        rdfs:label        "Chewbacca" ;
+        voc:birthYear     "200BBY" ;
+        voc:eyeColor      "blue" ;
+        voc:gender        "male" ;
+        voc:hairColor     "brown" ;
+        voc:height        228.0 ;
+        voc:homeworld     <planet/14> ;
+        voc:mass          112.0 .
+
+<wookiee/80>
+        a              voc:Character , voc:Wookiee ;
+        rdfs:label     "Tarfful" ;
+        voc:eyeColor   "blue" ;
+        voc:gender     "male" ;
+        voc:hairColor  "brown" ;
+        voc:height     234.0 ;
+        voc:homeworld  <planet/14> ;
+        voc:mass       136.0 ;
+        voc:skinColor  "brown" .
+}

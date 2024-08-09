@@ -1,0 +1,33 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix voc: <https://swapi.co/vocabulary/>
+
+voc:Planet a owl:Class .
+voc:Human a voc:Species .
+voc:Wookiee a voc:Species .
+voc:Character a owl:Class .
+
+rdfs:label a rdf:Property .
+voc:birthYear a owl:DatatypeProperty .
+voc:eyeColor a owl:DatatypeProperty .
+voc:gender a owl:DatatypeProperty .
+voc:hairColor a owl:DatatypeProperty .
+voc:height a owl:DatatypeProperty .
+voc:homeworld a owl:ObjectProperty .
+voc:mass a owl:DatatypeProperty .
+voc:skinColor a owl:DatatypeProperty .
+voc:cybernetics a owl:DatatypeProperty .
+voc:climate a owl:DatatypeProperty .
+voc:diameter a owl:DatatypeProperty .
+voc:gravity a owl:DatatypeProperty .
+voc:orbitalPeriod a owl:DatatypeProperty .
+voc:population a owl:DatatypeProperty .
+voc:resident a owl:ObjectProperty .
+voc:rotationPeriod a owl:DatatypeProperty .
+voc:surfaceWater a owl:DatatypeProperty .
+voc:terrain a owl:DatatypeProperty .
+voc:averageHeight a owl:DatatypeProperty .
+voc:averageLifespan a owl:DatatypeProperty .
+voc:character a owl:ObjectProperty .
+voc:language a owl:DatatypeProperty .
+voc:planet a owl:ObjectProperty .
