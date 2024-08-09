@@ -9,7 +9,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseLLMOutputParser
 from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT
@@ -52,10 +52,8 @@ class ElasticsearchDatabaseChain(Chain):
     """Whether or not to return the intermediate steps along with the final answer."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=False, skip_on_failure=True)
     def validate_indices(cls, values: dict) -> dict:

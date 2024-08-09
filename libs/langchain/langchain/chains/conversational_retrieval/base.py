@@ -18,7 +18,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import RunnableConfig
 from langchain_core.vectorstores import VectorStore
@@ -97,11 +97,9 @@ class BaseConversationalRetrievalChain(Chain):
     are found for the question. """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
         allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

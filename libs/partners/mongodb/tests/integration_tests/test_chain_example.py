@@ -20,7 +20,7 @@ from ..utils import PatchedMongoDBAtlasVectorSearch
 CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
 DB_NAME = "langchain_test_db"
 COLLECTION_NAME = "langchain_test_chain_example"
-INDEX_NAME = "vector_index_with_filter"
+INDEX_NAME = "vector_index"
 DIMENSIONS = 1536
 TIMEOUT = 60.0
 INTERVAL = 0.5

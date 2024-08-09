@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_community.cross_encoders.base import BaseCrossEncoder
 
@@ -46,9 +46,7 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
         )
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def score(self, text_pairs: List[Tuple[str, str]]) -> List[float]:
         """Compute similarity scores using a HuggingFace transformer model.

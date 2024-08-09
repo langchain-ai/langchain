@@ -23,7 +23,7 @@ from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import (
     Runnable,
     RunnableBinding,
@@ -96,10 +96,8 @@ class LLMChain(Chain):
     llm_kwargs: dict = Field(default_factory=dict)
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

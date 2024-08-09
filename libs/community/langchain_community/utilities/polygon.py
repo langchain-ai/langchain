@@ -44,7 +44,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status != "OK":
+        if status not in ("OK", "STOCKBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
@@ -60,7 +60,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status != "OK":
+        if status not in ("OK", "STOCKBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
@@ -81,7 +81,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status != "OK":
+        if status not in ("OK", "STOCKBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
@@ -115,7 +115,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status != "OK":
+        if status not in ("OK", "STOCKBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)

@@ -458,8 +458,6 @@ class ChatTongyi(BaseChatModel):
     """Maximum number of retries to make when generating."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @property

@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
@@ -86,9 +86,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
      per request"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument
