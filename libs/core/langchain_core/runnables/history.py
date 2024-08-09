@@ -467,6 +467,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return [output_val]
         elif isinstance(output_val, (list, tuple)):
             return list(output_val)
+        elif isinstance(output_val, bool):
+            return []
         else:
             raise ValueError()
 
@@ -511,6 +513,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # Get the output messages
         output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
+        if len(output_messages) == 0:
+            return
         hist.add_messages(input_messages + output_messages)
 
     async def _aexit_history(self, run: Run, config: RunnableConfig) -> None:
@@ -528,6 +532,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # Get the output messages
         output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
+        if len(output_messages) == 0:
+            return
         await hist.aadd_messages(input_messages + output_messages)
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
