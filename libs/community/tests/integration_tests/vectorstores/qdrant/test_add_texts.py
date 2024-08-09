@@ -104,6 +104,35 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     assert set(ids) == set(stored_ids)
 
 
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test_qdrant_add_texts_stores_int_ids(batch_size: int) -> None:
+    """Test end to end Qdrant.add_texts stores provided ids (of type 'int')"""
+    from qdrant_client import QdrantClient
+    from qdrant_client.http import models as rest
+
+    ids = [
+        1,
+        2,
+    ]
+
+    client = QdrantClient(":memory:")
+    collection_name = uuid.uuid4().hex
+    client.recreate_collection(
+        collection_name,
+        vectors_config=rest.VectorParams(size=10, distance=rest.Distance.COSINE),
+    )
+
+    vec_store = Qdrant(client, collection_name, ConsistentFakeEmbeddings())
+    returned_ids = vec_store.add_texts(["abc", "def"], ids=ids, batch_size=batch_size)
+
+    assert all(first == second for first, second in zip(ids, returned_ids))
+    assert 2 == client.count(collection_name).count
+    stored_ids = [point.id for point in client.scroll(collection_name)[0]]
+    for id in stored_ids:
+        assert isinstance(id, int)
+    assert set(ids) == set(stored_ids)
+
+
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
 def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
     """Test end to end Qdrant.add_texts stores named vectors if name is provided."""
