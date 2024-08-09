@@ -159,6 +159,18 @@ def test_that_a_document_entry_without_metadata_will_be_added_to_vectorstore(
     assert len(result) == len(documents)
 
 
+def test_that_drop_deletes_vector_store(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
+    """Test that when drop is called, vector store is deleted
+    and a call to add_text raises an exception.
+    """
+    store.drop()
+    with pytest.raises(DBAPIError):
+        store.add_texts(texts)
+
+
 def test_that_similarity_search_returns_expected_no_of_documents(
     store: SQLServer_VectorStore,
     texts: List[str],

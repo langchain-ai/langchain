@@ -34,13 +34,16 @@ Base = declarative_base()  # type: Any
 
 _embedding_store: Any = None
 
+DISTANCE = "distance"
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
 DEFAULT_EMBEDDING_LENGTH = 8000
-VECTOR_DISTANCE_QUERY = """
-VECTOR_DISTANCE(:distancestrategy, JSON_ARRAY_TO_VECTOR(:embedding), embeddings) 
-AS distance"""
-EMBEDDING = "embedding"
 DISTANCE_STRATEGY = "distancestrategy"
+EMBEDDING = "embedding"
+EMBEDDING_VALUES = "embeddingvalues"
+JSON_TO_ARRAY_QUERY = f"select JSON_ARRAY_TO_VECTOR (:{EMBEDDING_VALUES})"
+VECTOR_DISTANCE_QUERY = f"""
+VECTOR_DISTANCE(:{DISTANCE_STRATEGY}, JSON_ARRAY_TO_VECTOR(:{EMBEDDING}), embeddings) 
+AS {DISTANCE}"""
 
 
 class SQLServer_VectorStore(VectorStore):
@@ -279,7 +282,7 @@ class SQLServer_VectorStore(VectorStore):
                         ),
                     )
                     .filter()
-                    .order_by(asc(text("distance")))
+                    .order_by(asc(text(DISTANCE)))
                     .limit(k)
                     .all()
                 )
@@ -353,11 +356,9 @@ class SQLServer_VectorStore(VectorStore):
 
                     # Construct text, embedding, metadata as EmbeddingStore model
                     # to be inserted into the table.
-                    sqlquery = text(
-                        "select JSON_ARRAY_TO_VECTOR (:embeddingvalues)"
-                    ).bindparams(
+                    sqlquery = text(JSON_TO_ARRAY_QUERY).bindparams(
                         bindparam(
-                            "embeddingvalues",
+                            EMBEDDING_VALUES,
                             json.dumps(embedding),
                             # render the value of the parameter into SQL statement
                             # at statement execution time
