@@ -260,6 +260,11 @@ def handle_event(
     """
     coros: List[Coroutine[Any, Any, Any]] = []
 
+    # if '_event' in kwargs:
+    #     event = kwargs['_event']
+    #
+    #
+
     try:
         message_strings: Optional[List[str]] = None
         for handler in handlers:
@@ -354,6 +359,10 @@ async def _ahandle_event_for_handler(
     *args: Any,
     **kwargs: Any,
 ) -> None:
+    from langchain_core.callbacks.schema import GenericCallbackHandler
+    if isinstance(handler, GenericCallbackHandler):
+        raise ValueError("here")
+
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
             event = getattr(handler, event_name)
@@ -2092,6 +2101,7 @@ def _configure(
     local_tags: Optional[List[str]] = None,
     inheritable_metadata: Optional[Dict[str, Any]] = None,
     local_metadata: Optional[Dict[str, Any]] = None,
+    run_id: Optional[UUID] = None,
 ) -> T:
     """Configure the callback manager.
 
@@ -2119,10 +2129,11 @@ def _configure(
         _tracing_v2_is_enabled,
         tracing_v2_callback_var,
     )
+    run_id = run_id or uuid.uuid4()
 
-    run_tree = get_run_tree_context()
+    # This can pick up run tree context from trace(), but not traceable?
+    run_tree = get_run_tree_context()  # Why is this here?
     parent_run_id = None if run_tree is None else run_tree.id
-    callback_manager = callback_manager_cls(handlers=[], parent_run_id=parent_run_id)
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
             inheritable_callbacks_ = inheritable_callbacks or []
@@ -2130,8 +2141,9 @@ def _configure(
                 handlers=inheritable_callbacks_.copy(),
                 inheritable_handlers=inheritable_callbacks_.copy(),
                 parent_run_id=parent_run_id,
+                run_id=run_id,
             )
-        else:
+        elif isinstance(inheritable_callbacks, BaseCallbackManager):
             parent_run_id_ = inheritable_callbacks.parent_run_id
             # Break ties between the external tracing context and inherited context
             if parent_run_id is not None:
@@ -2152,6 +2164,12 @@ def _configure(
                 inheritable_tags=inheritable_callbacks.inheritable_tags.copy(),
                 metadata=inheritable_callbacks.metadata.copy(),
                 inheritable_metadata=inheritable_callbacks.inheritable_metadata.copy(),
+                run_id=run_id,
+            )
+        else:
+            raise TypeError(
+                f"inheritable_callbacks must be a list or CallbackManager."
+                f"Got  {type(inheritable_callbacks)}"
             )
         local_handlers_ = (
             local_callbacks
@@ -2160,6 +2178,10 @@ def _configure(
         )
         for handler in local_handlers_:
             callback_manager.add_handler(handler, False)
+    else:
+        callback_manager = callback_manager_cls(
+            handlers=[], parent_run_id=parent_run_id
+        )
     if inheritable_tags or local_tags:
         callback_manager.add_tags(inheritable_tags or [])
         callback_manager.add_tags(local_tags or [], False)
@@ -2205,6 +2227,7 @@ def _configure(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
         ):
+            # Add LangChain tracer if it's not already present in the handlers
             if tracer_v2:
                 callback_manager.add_handler(tracer_v2, True)
             else:
@@ -2223,12 +2246,15 @@ def _configure(
                     )
         if run_tree is not None:
             for handler in callback_manager.handlers:
+                # Looks like a hack here? Why is this needed?
                 if isinstance(handler, LangChainTracer):
                     handler.order_map[run_tree.id] = (
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
                     handler.run_map[str(run_tree.id)] = cast(Run, run_tree)
+
+    # Look at callback managers exposed as _configure_hooks
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None

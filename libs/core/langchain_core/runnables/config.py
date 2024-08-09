@@ -41,6 +41,7 @@ if TYPE_CHECKING:
         CallbackManager,
         CallbackManagerForChainRun,
     )
+    from langchain_core.callbacks.schema import CallbackDispatcher
 else:
     # Pydantic validates through typed dicts, but
     # the callbacks need forward refs updated
@@ -468,7 +469,7 @@ def acall_func_with_variable_args(
     return func(input, **kwargs)  # type: ignore[call-arg]
 
 
-def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
+def get_callback_manager_for_config(config: RunnableConfig) -> CallbackDispatcher:
     """Get a callback manager for a config.
 
     Args:
@@ -477,9 +478,9 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
     Returns:
         CallbackManager: The callback manager.
     """
-    from langchain_core.callbacks.manager import CallbackManager
+    from langchain_core.callbacks.schema import CallbackDispatcher
 
-    return CallbackManager.configure(
+    return CallbackDispatcher.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),

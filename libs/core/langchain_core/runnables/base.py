@@ -1769,7 +1769,7 @@ class Runnable(Generic[Input, Output], ABC):
         with callbacks. Use this method to implement invoke() in subclasses."""
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
-        run_manager = callback_manager.on_chain_start(
+        callback_manager.on_chain_start(
             dumpd(self),
             input,
             run_type=run_type,
@@ -1777,7 +1777,7 @@ class Runnable(Generic[Input, Output], ABC):
             run_id=config.pop("run_id", None),
         )
         try:
-            child_config = patch_config(config, callbacks=run_manager.get_child())
+            child_config = patch_config(config, callbacks=callback_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
             output = cast(
@@ -1787,15 +1787,15 @@ class Runnable(Generic[Input, Output], ABC):
                     func,  # type: ignore[arg-type]
                     input,  # type: ignore[arg-type]
                     config,
-                    run_manager,
+                    callback_manager,
                     **kwargs,
                 ),
             )
         except BaseException as e:
-            run_manager.on_chain_error(e)
+            callback_manager.on_chain_error(e)
             raise
         else:
-            run_manager.on_chain_end(output)
+            callback_manager.on_chain_end(output)
             return output
 
     async def _acall_with_config(
