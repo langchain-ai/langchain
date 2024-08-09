@@ -67,18 +67,45 @@ def check_header_order(path: Path) -> None:
     with open(path, "r") as f:
         doc = f.read()
     regex = r".*".join(headers)
-    if not re.search(regex, doc, re.DOTALL):
+
+    problems = []
+    for index, header in enumerate(headers):
+        if not re.search(header, doc, re.DOTALL):
+            problems.append(f"Missing header: {header}")
+            continue
+
+    if not problems:
+        skip_headers = []
+        for index, header in enumerate(headers):
+            if index == 0 or headers[index - 1] in skip_headers:
+                continue
+            pair_re = f"{headers[index - 1]}.*{header}"
+            pair_match = re.search(pair_re, doc, re.DOTALL)
+            if not pair_match:
+                skip_headers.append(header)
+                print(f"Out of order header: {header}")
+            else:
+                doc = doc[pair_match.end() - len(header) :]
+    if problems:
         issueline = (
             (
                 " Please see https://github.com/langchain-ai/langchain/issues/"
                 f"{issue_number} for instructions on how to correctly format a "
-                f"{doc_dir} integration page."
+                f"{doc_dir} integration page "
+                "and templates at https://github.com/langchain-ai/langchain/tree/master"
+                "/libs/cli/langchain_cli/integration_template/docs "
+                "Problems: "
             )
             if isinstance(issue_number, int)
-            else ""
+            else (
+                " Please see doc templates at https://github.com/langchain-ai/langchain/tree/master"
+                "/libs/cli/langchain_cli/integration_template/docs "
+                "Problems: "
+            )
         )
         raise ValueError(
-            f"Document {path} does not match the expected header order.{issueline}"
+            f"Document {path} is missing headers or does not match the expected header order.{issueline}"
+            + ", ".join(problems)
         )
 
 
