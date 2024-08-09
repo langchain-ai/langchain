@@ -183,6 +183,7 @@ class GPTRouter(BaseChatModel):
                 "GPT_ROUTER_API_KEY",
             )
         )
+        return values
 
     @root_validator(pre=True, skip_on_failure=True)
     def post_init(cls, values: Dict) -> Dict:
