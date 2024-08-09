@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from langchain_community.graphs import OntotextGraphDBGraph
@@ -13,8 +11,6 @@ cd libs/community/tests/integration_tests/graphs/docker-compose-ontotext-graphdb
 def test_query_method_with_valid_query() -> None:
     graph = OntotextGraphDBGraph(
         gdb_repository="http://localhost:7200/repositories/langchain",
-        ontology_query="CONSTRUCT {?s ?p ?o} "
-        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
     query_results = graph.exec_query(
@@ -39,8 +35,6 @@ def test_query_method_with_valid_query() -> None:
 def test_query_method_with_invalid_query() -> None:
     graph = OntotextGraphDBGraph(
         gdb_repository="http://localhost:7200/repositories/langchain",
-        ontology_query="CONSTRUCT {?s ?p ?o}"
-        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
     from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
 
@@ -67,153 +61,3 @@ def test_query_method_with_invalid_query() -> None:
         "b\"MALFORMED QUERY: variable 'character' in projection "
         'not present in GROUP BY."'
     )
-
-
-def test_get_schema_with_query() -> None:
-    graph = OntotextGraphDBGraph(
-        gdb_repository="http://localhost:7200/repositories/langchain",
-        ontology_query="CONSTRUCT {?s ?p ?o}"
-        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
-    )
-
-    from rdflib import Graph
-
-    assert len(Graph().parse(data=graph.get_schema, format="turtle")) == 19
-
-
-@pytest.mark.parametrize(
-    "rdf_format, file_extension",
-    [
-        ("json-ld", "json"),
-        ("json-ld", "jsonld"),
-        ("json-ld", "json-ld"),
-        ("xml", "rdf"),
-        ("xml", "xml"),
-        ("xml", "owl"),
-        ("pretty-xml", "xml"),
-        ("n3", "n3"),
-        ("turtle", "ttl"),
-        ("nt", "nt"),
-        ("trig", "trig"),
-        ("nquads", "nq"),
-        ("nquads", "nquads"),
-        ("trix", "trix"),
-    ],
-)
-def test_get_schema_from_file(
-    tmp_path: Path, rdf_format: str, file_extension: str
-) -> None:
-    expected_number_of_ontology_statements = 19
-
-    graph = OntotextGraphDBGraph(
-        gdb_repository="http://localhost:7200/repositories/langchain",
-        ontology_query="CONSTRUCT {?s ?p ?o}"
-        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
-    )
-
-    from rdflib import ConjunctiveGraph, Graph
-
-    assert (
-        len(Graph().parse(data=graph.get_schema, format="turtle"))
-        == expected_number_of_ontology_statements
-    )
-
-    # serialize the ontology schema loaded with the query in a local file
-    # in various rdf formats and check that this results
-    # in the same number of statements
-    conjunctive_graph = ConjunctiveGraph()
-    ontology_context = conjunctive_graph.get_context("https://swapi.co/ontology/")
-    ontology_context.parse(data=graph.get_schema, format="turtle")
-
-    assert len(ontology_context) == expected_number_of_ontology_statements
-    assert len(conjunctive_graph) == expected_number_of_ontology_statements
-
-    ontology_file_path = tmp_path / ("starwars-ontology." + file_extension)
-    conjunctive_graph.serialize(ontology_file_path, format=rdf_format)
-
-    graph = OntotextGraphDBGraph(
-        gdb_repository="http://localhost:7200/repositories/langchain",
-        ontology_file_path=ontology_file_path,
-    )
-    assert (
-        len(Graph().parse(data=graph.get_schema, format="turtle"))
-        == expected_number_of_ontology_statements
-    )
-
-
-@pytest.mark.parametrize(
-    "rdf_format", ["json-ld", "xml", "n3", "turtle", "nt", "trig", "nquads", "trix"]
-)
-def test_get_schema_from_file_with_explicit_rdf_format(
-    tmp_path: Path, rdf_format: str
-) -> None:
-    expected_number_of_ontology_statements = 19
-
-    graph = OntotextGraphDBGraph(
-        gdb_repository="http://localhost:7200/repositories/langchain",
-        ontology_query="CONSTRUCT {?s ?p ?o}"
-        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
-    )
-
-    from rdflib import ConjunctiveGraph, Graph
-
-    assert (
-        len(Graph().parse(data=graph.get_schema, format="turtle"))
-        == expected_number_of_ontology_statements
-    )
-
-    # serialize the ontology schema loaded with the query in a local file
-    # in various rdf formats and check that this results
-    # in the same number of statements
-    conjunctive_graph = ConjunctiveGraph()
-    ontology_context = conjunctive_graph.get_context("https://swapi.co/ontology/")
-    ontology_context.parse(data=graph.get_schema, format="turtle")
-
-    assert len(ontology_context) == expected_number_of_ontology_statements
-    assert len(conjunctive_graph) == expected_number_of_ontology_statements
-
-    ontology_file_path = tmp_path / "starwars-ontology.txt"
-    conjunctive_graph.serialize(ontology_file_path, format=rdf_format)
-
-    graph = OntotextGraphDBGraph(
-        gdb_repository="http://localhost:7200/repositories/langchain",
-        ontology_file_path=ontology_file_path,
-        ontology_file_format=rdf_format,
-    )
-    assert (
-        len(Graph().parse(data=graph.get_schema, format="turtle"))
-        == expected_number_of_ontology_statements
-    )
-
-
-def test_get_schema_from_file_with_wrong_extension(tmp_path: Path) -> None:
-    expected_number_of_ontology_statements = 19
-
-    graph = OntotextGraphDBGraph(
-        gdb_repository="http://localhost:7200/repositories/langchain",
-        ontology_query="CONSTRUCT {?s ?p ?o}"
-        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
-    )
-
-    from rdflib import ConjunctiveGraph, Graph
-
-    assert (
-        len(Graph().parse(data=graph.get_schema, format="turtle"))
-        == expected_number_of_ontology_statements
-    )
-
-    conjunctive_graph = ConjunctiveGraph()
-    ontology_context = conjunctive_graph.get_context("https://swapi.co/ontology/")
-    ontology_context.parse(data=graph.get_schema, format="turtle")
-
-    assert len(ontology_context) == expected_number_of_ontology_statements
-    assert len(conjunctive_graph) == expected_number_of_ontology_statements
-
-    ontology_file_path = tmp_path / "starwars-ontology.trig"
-    conjunctive_graph.serialize(ontology_file_path, format="nquads")
-
-    with pytest.raises(ValueError):
-        OntotextGraphDBGraph(
-            gdb_repository="http://localhost:7200/repositories/langchain",
-            ontology_file_path=ontology_file_path,
-        )

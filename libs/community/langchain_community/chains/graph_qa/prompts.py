@@ -204,29 +204,24 @@ SPARQL_QA_PROMPT = PromptTemplate(
 )
 
 GRAPHDB_SPARQL_GENERATION_TEMPLATE = """
-Write a SPARQL SELECT query for querying a graph database.
-The ontology schema delimited by triple backticks in Turtle format is:
-```
-{schema}
-```
-Use only the classes and properties provided in the schema to construct the SPARQL query.
-Do not use any classes or properties that are not explicitly provided in the SPARQL query.
-Include all necessary prefixes.
-Do not include any explanations or apologies in your responses.
-Do not wrap the query in backticks.
-Do not include any text except the SPARQL query generated.
-The question delimited by triple backticks is:
-```
-{prompt}
-```
+Write a SPARQL SELECT query to answer the user question delimited by triple backticks:\n```{question}```\n
+The ontology schema delimited by triple backticks in Turtle format is:\n```{ontology_schema}```\n
+Use only the classes and properties provided in the schema to construct the SPARQL query. 
+Do not use any classes or properties that are not explicitly provided in the SPARQL query. 
+Include all necessary prefixes. 
+Do not include any explanations or apologies in your responses. 
+Do not wrap the query in backticks. 
+Do not include any text except the SPARQL query generated. 
+For queries without aggregation, apply LIMIT 5 unless otherwise specified. 
+For queries with aggregation, don't apply limit unless otherwise specified. \n
 """
 GRAPHDB_SPARQL_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "prompt"],
+    input_variables=["ontology_schema", "question"],
     template=GRAPHDB_SPARQL_GENERATION_TEMPLATE,
 )
 
 GRAPHDB_SPARQL_FIX_TEMPLATE = """
-This following SPARQL query delimited by triple backticks
+The following SPARQL query delimited by triple backticks
 ```
 {generated_sparql}
 ```
@@ -242,12 +237,11 @@ Do not wrap the query in backticks.
 Do not include any text except the SPARQL query generated.
 The ontology schema delimited by triple backticks in Turtle format is:
 ```
-{schema}
+{ontology_schema}
 ```
 """
-
 GRAPHDB_SPARQL_FIX_PROMPT = PromptTemplate(
-    input_variables=["error_message", "generated_sparql", "schema"],
+    input_variables=["error_message", "generated_sparql", "ontology_schema"],
     template=GRAPHDB_SPARQL_FIX_TEMPLATE,
 )
 
@@ -260,10 +254,10 @@ Don't use internal knowledge to answer the question, just say you don't know if 
 Information:
 {context}
 
-Question: {prompt}
+Question: {question}
 Helpful Answer:"""
 GRAPHDB_QA_PROMPT = PromptTemplate(
-    input_variables=["context", "prompt"], template=GRAPHDB_QA_TEMPLATE
+    input_variables=["context", "question"], template=GRAPHDB_QA_TEMPLATE
 )
 
 AQL_GENERATION_TEMPLATE = """Task: Generate an ArangoDB Query Language (AQL) query from a User Input.
