@@ -37,6 +37,7 @@ class ArxivRetriever(BaseRetriever, ArxivAPIWrapper):
         .. code-block:: python
 
             docs = retriever.invoke("What is the ImageBind model?")
+            docs[0].metadata
 
         .. code-block:: none
 
