@@ -638,10 +638,18 @@ tools = toolkit.get_tools()
 
 ### Agents
 
-By themselves, language models can't take actions - they just output text.
-A big use case for LangChain is creating **agents**.
-Agents are systems that use an LLM as a reasoning engine to determine which actions to take and what the inputs to those actions should be.
-The results of those actions can then be fed back into the agent and it determine whether more actions are needed, or whether it is okay to finish.
+By themselves, language models can't take actions - they just output text. A big use case for LangChain is creating **agents**.
+
+AI agents are designed to perform specific tasks, answer questions, and automate processes for users. These agents vary widely in complexity, ranging from simple chatbots, to copilots, to advanced AI assistants in the form of digital or robotic systems that can execute complex workflows autonomously. The current prevailing strategy for building advanced agents is using an LLM as a reasoning engine to determine which actions to take and what the inputs to those actions should be. The results of those actions can then be fed back into the agent and it determine whether more actions are needed, or whether it is okay to finish.
+
+Unlike standalone large language models (LLMs) or rule-based software/hardware systems, AI agents possess the follow common features:
+
+- Planning. AI agents can plan and sequence actions to achieve specific goals. The integration of LLMs has revolutionized their planning capabilities.
+- Tool usage. Advanced AI agents can utilize various tools, such as code execution, search, and computation capabilities, to perform tasks effectively. Tool usage is often done through function calling.
+- Perception. AI agents can perceive and process information from their environment, including visual, auditory, and other sensory data, making them more interactive and context aware.
+- Memory. AI agents possess the ability to remember past interactions (tool usage and perception) and behaviors (tool usage and planning). They store these experiences and even perform self-reflection to inform future actions. This memory component allows for continuity and improvement in agent performance over time.
+
+Note that the usage of the term "memory" in the context of AI agents should not be confused with the concept of computer memory (like volatile, non-volatile, and persistent memory).
 
 [LangGraph](https://github.com/langchain-ai/langgraph) is an extension of LangChain specifically aimed at creating highly controllable and customizable agents.
 Please check out that documentation for a more in depth overview of agent concepts.
@@ -676,6 +684,20 @@ and reduce variance.
 
 Please see the [LangGraph documentation](https://langchain-ai.github.io/langgraph/) for more information,
 or [this how-to guide](/docs/how_to/migrate_agent/) for specific information on migrating to LangGraph.
+
+#### AI agent memory system
+
+Just as efficient database management systems are critical to software applications' performances, it is critical to provide LLM-powered agents with relevant and useful information to guide their inference. Robust memory systems enable organizing and storing different kinds of information that the agents can retrieve at inference time.
+
+Currently, LLM-powered applications often use retrieval-augmented generation that uses basic semantic search or vector search to retrieve passages or documents. Vector search can be useful for finding general information, but it may not capture the specific context, structure, or relationships that are relevant for a particular task or domain.
+
+For example, if the task is to write code, vector search may not be able to retrieve the syntax tree, file system layout, code summaries, or API signatures that are important for generating coherent and correct code. Similarly, if the task is to work with tabular data, vector search may not be able to retrieve the schema, the foreign keys, the stored procedures, or the reports that are useful for querying or analyzing the data.
+
+Weaving together a web of standalone in-memory, relational, and vector databases is not an optimal solution for the varied data types, either. This approach may work for prototypical agent systems; however, it adds complexity and performance bottlenecks that can hamper the performance of advanced autonomous agents.
+
+Therefore, AI agents need robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation, while ensuring [speed, scale, and simplicity](https://learn.microsoft.com/azure/cosmos-db/ai-agents#building-a-robust-ai-agent-memory-system).
+
+Read more about [AI agent](https://learn.microsoft.com/azure/cosmos-db/ai-agents).
 
 ### Callbacks
 
