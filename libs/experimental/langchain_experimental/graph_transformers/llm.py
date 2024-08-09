@@ -730,17 +730,81 @@ class LLMGraphTransformer:
                 raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
             for rel in parsed_json:
-                # Nodes need to be deduplicated using a set
-                nodes_set.add((rel["head"], rel["head_type"]))
-                nodes_set.add((rel["tail"], rel["tail_type"]))
+                # Skip entry if head or tail is None
+                if not (
+                    rel["head"]
+                    and rel["head_type"]
+                    and rel["tail"]
+                    and rel["tail_type"]
+                ):
+                    continue
 
-                source_node = Node(id=rel["head"], type=rel["head_type"])
-                target_node = Node(id=rel["tail"], type=rel["tail_type"])
-                relationships.append(
-                    Relationship(
-                        source=source_node, target=target_node, type=rel["relation"]
+                # If rel["head"] is a list but rel["tail"] is not a list,
+                # then connect each item in rel["head"] to rel["tail"]
+                if isinstance(rel["head"], list) and not isinstance(rel["tail"], list):
+                    nodes_set.add((rel["tail"], rel["tail_type"]))
+                    target_node = Node(id=rel["tail"], type=rel["tail_type"])
+
+                    for rel_head in rel["head"]:
+                        nodes_set.add((rel_head, rel["head_type"]))
+                        source_node = Node(id=rel_head, type=rel["head_type"])
+                        relationships.append(
+                            Relationship(
+                                source=source_node,
+                                target=target_node,
+                                type=rel["relation"],
+                            )
+                        )
+
+                # If rel["head"] is not a list but rel["tail"] is a list,
+                # then connect rel["head"] to each item in rel["tail"]
+                elif not isinstance(rel["head"], list) and isinstance(
+                    rel["tail"], list
+                ):
+                    nodes_set.add((rel["head"], rel["head_type"]))
+                    source_node = Node(id=rel["head"], type=rel["head_type"])
+
+                    for rel_tail in rel["tail"]:
+                        nodes_set.add((rel_tail, rel["tail_type"]))
+                        target_node = Node(id=rel_tail, type=rel["tail_type"])
+                        relationships.append(
+                            Relationship(
+                                source=source_node,
+                                target=target_node,
+                                type=rel["relation"],
+                            )
+                        )
+
+                # If both rel["head"] and rel["tail"] are lists, then connect the items
+                # in a pairwise fashion
+                elif isinstance(rel["head"], list) and isinstance(rel["tail"], list):
+                    for rel_head in rel["head"]:
+                        nodes_set.add((rel_head, rel["head_type"]))
+                        source_node = Node(id=rel["head"], type=rel["head_type"])
+
+                        for rel_tail in rel["tail"]:
+                            nodes_set.add((rel_tail, rel["tail_type"]))
+                            target_node = Node(id=rel_tail, type=rel["tail_type"])
+                            relationships.append(
+                                Relationship(
+                                    source=source_node,
+                                    target=target_node,
+                                    type=rel["relation"],
+                                )
+                            )
+
+                else:
+                    # Nodes need to be deduplicated using a set
+                    nodes_set.add((rel["head"], rel["head_type"]))
+                    nodes_set.add((rel["tail"], rel["tail_type"]))
+
+                    source_node = Node(id=rel["head"], type=rel["head_type"])
+                    target_node = Node(id=rel["tail"], type=rel["tail_type"])
+                    relationships.append(
+                        Relationship(
+                            source=source_node, target=target_node, type=rel["relation"]
+                        )
                     )
-                )
             # Create nodes list
             nodes = [Node(id=el[0], type=el[1]) for el in list(nodes_set)]
 
