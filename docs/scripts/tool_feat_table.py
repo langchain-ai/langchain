@@ -368,7 +368,7 @@ MISCELLANEOUS_TOOL_FEAT_TABLE = {
     },
     "Robocorp": {
         "link": "/docs/integrations/tools/robocorp",
-        "description": "Integrate custom actions with your agents"
+        "description": "Integrate custom actions with your agents",
     },
     "Human as a tool": {
         "link": "/docs/integrations/tools/human_tools",
