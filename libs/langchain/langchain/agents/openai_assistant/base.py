@@ -621,9 +621,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
         run = await self._wait_for_run(last_action.run_id, last_action.thread_id)
-        required_tool_call_ids = {
-            tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
-        }
+        required_tool_call_ids = set()
+        if run.required_action:
+            required_tool_call_ids = {
+                tc.id for tc in run.required_action.submit_tool_outputs.tool_calls
+            }
         tool_outputs = [
             {"output": str(output), "tool_call_id": action.tool_call_id}
             for action, output in intermediate_steps
