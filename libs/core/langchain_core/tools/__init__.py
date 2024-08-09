@@ -28,6 +28,9 @@ from langchain_core.tools.base import (
 from langchain_core.tools.base import (
     BaseToolkit as BaseToolkit,
 )
+from langchain_core.tools.base import (
+    InjectedToolArg as InjectedToolArg,
+)
 from langchain_core.tools.base import SchemaAnnotationError as SchemaAnnotationError
 from langchain_core.tools.base import (
     ToolException as ToolException,
@@ -37,9 +40,6 @@ from langchain_core.tools.base import (
 )
 from langchain_core.tools.base import (
     create_schema_from_function as create_schema_from_function,
-)
-from langchain_core.tools.base import (
-    InjectedToolArg as InjectedToolArg,
 )
 from langchain_core.tools.convert import (
     convert_runnable_to_tool as convert_runnable_to_tool,
