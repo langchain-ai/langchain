@@ -85,6 +85,22 @@
     {
       "source": "/v0.2/docs/integrations/toolkits/:path(.*/?)*",
       "destination": "/v0.2/docs/integrations/tools/:path*"
+    },
+    {
+      "source": "/v0.2/docs/integrations/tools/pandas",
+      "destination": "/v0.1/docs/integrations/toolkits/pandas/"
+    },
+    {
+      "source": "/v0.2/docs/integrations/tools/oracleai",
+      "destination": "/v0.1/docs/integrations/tools/oracleai"
+    },
+    {
+      "source": "/v0.2/docs/integrations/tools/google_places",
+      "destination": "/v0.1/docs/integrations/tools/google_places"
+    },
+    {
+      "source": "/v0.2/docs/integrations/tools/google_trends",
+      "destination": "/v0.1/docs/integrations/tools/google_trends"
     }
   ]
 }

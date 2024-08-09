@@ -62,6 +62,11 @@ SEARCH_TOOL_FEAT_TABLE = {
         "available_data": "Answer",
         "link": "/docs/integrations/tools/serpapi",
     },
+    "Data for SEO": {
+        "pricing": "Not free, price depends on API used",
+        "available_data": "URL, Snippet, Title, Type",
+        "link": "/docs/integrations/tools/dataforseo",
+    },
 }
 
 CODE_INTERPRETER_TOOL_FEAT_TABLE = {
@@ -92,6 +97,20 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
         "upload": True,
         "return_results": "Text, Images",
         "link": "/docs/integrations/tools/azure_dynamic_sessions",
+    },
+    "Bash": {
+        "langauges": "Bash",
+        "sandbox_lifetime": "Resets on Execution",
+        "upload": True,
+        "return_results": "Bash execution results",
+        "link": "/docs/integrations/tools/bash",
+    },
+    "Databrick Unity Cataong": {
+        "langauges": "Python, SQL",
+        "sandbox_lifetime": "Resets on Execution",
+        "upload": False,
+        "return_results": "Text",
+        "link": "/docs/integrations/tools/databricks",
     },
 }
 
@@ -128,6 +147,46 @@ PRODUCTIVITY_TOOL_FEAT_TABLE = {
         "link": "/docs/integrations/tools/infobip",
         "pricing": "Free trial, with variable pricing after",
     },
+    "AWS Toolkit": {
+        "link": "/docs/integrations/tools/aws",
+        "pricing": "Free tier, with variable pricing after",
+    },
+    "ClickUp": {
+        "link": "/docs/integrations/tools/clickup",
+        "pricing": "Free tier, with variable pricing after",
+    },
+    "Cogniswitch": {
+        "link": "/docs/integrations/tools/cogniswitch",
+        "pricing": "Free trial, with variable pricing after",
+    },
+    "Google Drive": {
+        "link": "/docs/integrations/tools/google_drive",
+        "pricing": "Free",
+    },
+    "IFTTT Webhooks": {
+        "link": "/docs/integrations/tools/ifttt",
+        "pricing": "Free tier, with variable pricing after",
+    },
+    "Lemon AI": {
+        "link": "/docs/integrations/tools/lemonai",
+        "pricing": "Depends on service used",
+    },
+    "Power BI": {
+        "link": "/docs/integrations/tools/power_bi",
+        "pricing": "Free tier, with variable pricing after",
+    },
+    "Wolfram Alpha": {
+        "link": "/docs/integrations/tools/wolfram_alpha",
+        "pricing": "Free up to 2000 calls/month",
+    },
+    "Zapier": {
+        "link": "/docs/integrations/tools/zapier",
+        "pricing": "Free up to 100 tasks/month",
+    },
+    "Zenguard AI": {
+        "link": "/docs/integrations/tools/zenguard",
+        "pricing": "Free up to 1000 requests/day",
+    },
 }
 
 WEBBROWSING_TOOL_FEAT_TABLE = {
@@ -160,6 +219,164 @@ DATABASE_TOOL_FEAT_TABLE = {
     "Cassandra Database Toolkit": {
         "link": "/docs/integrations/tools/cassandra_database",
         "operations": "SELECT and schema introspection",
+    },
+    "GraphQL Toolkit": {
+        "link": "/docs/integrations/tools/graphql",
+        "operations": "GraphQL queries",
+    },
+}
+
+DOMAIN_SPECIFIC_SEARCH_TOOL_FEAT_TABLE = {
+    "Amadeus": {"link": "/docs/integration/tools/amadeus", "domain": "Travel"},
+    "Alpha Vantage": {
+        "link": "/docs/integration/tools/alpha_vantage",
+        "domain": "Finance",
+    },
+    "ArXiv": {"link": "/docs/integration/tools/arxiv", "domain": "Research"},
+    "AskNews": {"link": "/docs/integration/tools/asknews", "domain": "News"},
+    "Financial Datasets": {
+        "link": "/docs/integration/tools/financial_datasets",
+        "domain": "Finance",
+    },
+    "Google Finance": {
+        "link": "/docs/integration/tools/google_finance",
+        "domain": "Finance",
+    },
+    "Google Jobs": {"link": "/docs/integration/tools/google_jobs", "domain": "Jobs"},
+    "Google Scholar": {
+        "link": "/docs/integration/tools/google_scholar",
+        "domain": "Research",
+    },
+    "Ionic Shopping": {
+        "link": "/docs/integration/tools/ionic_shopping",
+        "domain": "Shopping",
+    },
+    "NASA": {"link": "/docs/integration/tools/nasa", "domain": "Space"},
+    "OpenWeatherMap": {
+        "link": "/docs/integrations/tools/openweathermap",
+        "domain": "Weather",
+    },
+    "Passio Nutrion": {
+        "link": "/docs/integrations/tools/passio_nutrition_ai",
+        "domain": "Nutrition",
+    },
+    "Polygon IO": {"link": "/docs/integrations/tools/polygon", "domain": "Finance"},
+    "PubMed": {"link": "/docs/integrations/tools/pubmed", "domain": "Medical Research"},
+    "Reddit Search": {
+        "link": "/docs/integrations/tools/reddit_search",
+        "domain": "Social Media",
+    },
+    "Semantic Scholar": {
+        "link": "/docs/integrations/tools/semanticscholar",
+        "domain": "Research",
+    },
+    "Stack Exchange": {
+        "link": "/docs/integrations/tools/stackexchange",
+        "domain": "StackOverflow",
+    },
+    "Steam Toolkit": {"link": "/docs/integrations/tools/steam", "domain": "Gaming"},
+    "Wikidata": {
+        "link": "/docs/integrations/tools/wikidata",
+        "domain": "General Knowledge",
+    },
+    "Wikipedia": {
+        "link": "/docs/integrations/tools/wikipedia",
+        "domain": "General Knowledge",
+    },
+    "Yahoo Finance": {
+        "link": "/docs/integrations/tools/yahoo_finance_news",
+        "domain": "Finance",
+    },
+    "YouTube": {"link": "/docs/integrations/tools/youtube", "domain": "YouTube"},
+    "Golden Query": {
+        "link": "/docs/integrations/tools/golden_query",
+        "domain": "General Knowledge",
+    },
+}
+
+MULTIMODAL_TOOL_FEAT_TABLE = {
+    "SceneXplain": {
+        "link": "/docs/integration/tools/sceneXplain",
+        "modalities": "Images",
+    },
+    "Nuclia Understanding": {
+        "link": "/docs/integration/tools/nuclia",
+        "modalities": "Images, Videos, Audio, Documents",
+    },
+    "NVIDIA Riva": {
+        "link": "/docs/integration/tools/nvidia_riva",
+        "modalities": "Audio",
+    },
+    "Azure AI Services": {
+        "link": "/docs/integration/tools/azure_ai_services",
+        "modalities": "Images, Videos, Audio, Documents",
+    },
+    "Azure Cognitive Services": {
+        "link": "/docs/integration/tools/azure_cognitive_services",
+        "modalities": "Images, Videos, Audio, Documents",
+    },
+    "Dall-E Image Generator": {
+        "link": "/docs/integrations/tools/dalle_image_generator",
+        "modalities": "Images",
+    },
+    "Eden AI": {
+        "link": "/docs/integrations/tools/edenai_tools",
+        "modalities": "Images, Audio, Invoices",
+    },
+    "Eleven Labs": {
+        "link": "/docs/integrations/tools/eleven_labs_tts",
+        "modalities": "Audio",
+    },
+    "Google Cloud Text-to-Speech": {
+        "link": "/docs/integrations/tools/google_cloud_texttospeech",
+        "modalities": "Audio",
+    },
+    "Google Imagen": {
+        "link": "/docs/integrations/tools/google_imagen",
+        "modalities": "Images",
+    },
+    "Google Lens": {
+        "link": "/docs/integrations/tools/google_lens",
+        "modalities": "Images",
+    },
+}
+
+MISCELLANEOUS_TOOL_FEAT_TABLE = {
+    "Dataherald": {
+        "link": "/docs/integrations/tools/dataherald",
+        "description": "Natural language to SQL API",
+    },
+    "File Management": {
+        "link": "/docs/integrations/tools/filesystem",
+        "description": "Manage your local file system",
+    },
+    "Gradio": {
+        "link": "/docs/integrations/tools/gradio",
+        "description": "Use Gradio ML apps in your agent",
+    },
+    "JSON Toolkit": {
+        "link": "/docs/integrations/tools/json",
+        "description": "Interact with large JSON blobs",
+    },
+    "OpenAPI": {
+        "link": "/docs/integrations/tools/openapi",
+        "description": "Consume arbitrary APIs conforming to the OpenAPI spec",
+    },
+    "Natural Language API": {
+        "link": "/docs/integrations/tools/openapi_nla",
+        "description": "Efficiently plan and combine calls across endpoints",
+    },
+    "Robocorp": {
+        "link": "/docs/integrations/tools/robocorp",
+        "description": "Integrate custom actions with your agents"
+    },
+    "Human as a tool": {
+        "link": "/docs/integrations/tools/human_tools",
+        "description": "Use human input as a tool",
+    },
+    "Memorize": {
+        "link": "/docs/integrations/tools/memorize",
+        "description": "Fine tune model to memorize data",
     },
 }
 
@@ -210,6 +427,24 @@ The following table shows tools that can be used to automate tasks in databases:
 
 {database_table}
 
+## Domain Specific Search
+
+The following table shows tools that can be used to search for specific types of data:
+
+{domain_specific_search_table}
+
+## Multimodal
+
+The following table shows tools that can be used for dealing with multimodal data:
+
+{multimodal_table}
+
+## Miscellaneous
+
+The following table shows tools that don't fit into the other categories:
+
+{miscellaneous_table}
+
 """  # noqa: E501
 
 
@@ -254,6 +489,56 @@ def get_webbrowsing_table() -> str:
                     row.append("❌")
             else:
                 row.append(value)
+        rows.append(row)
+    return "\n".join(["|".join(row) for row in rows])
+
+
+def get_miscellaneous_table() -> str:
+    """Get the table of miscellaneous tools."""
+    header = ["tool", "description"]
+    title = ["Tool/Toolkit", "Description"]
+    rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
+    for miscellaneous_tool, feats in sorted(MISCELLANEOUS_TOOL_FEAT_TABLE.items()):
+        # Fields are in the order of the header
+        row = [
+            f"[{miscellaneous_tool}]({feats['link']})",
+        ]
+        for h in header[1:]:
+            row.append(feats.get(h))
+        rows.append(row)
+    return "\n".join(["|".join(row) for row in rows])
+
+
+def get_domain_specific_search_table() -> str:
+    """Get the table of domain specific tools."""
+    header = ["tool", "domain"]
+    title = ["Tool/Toolkit", "Domain"]
+    rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
+    for domain_specific_tool, feats in sorted(
+        DOMAIN_SPECIFIC_SEARCH_TOOL_FEAT_TABLE.items()
+    ):
+        # Fields are in the order of the header
+        row = [
+            f"[{domain_specific_tool}]({feats['link']})",
+        ]
+        for h in header[1:]:
+            row.append(feats.get(h))
+        rows.append(row)
+    return "\n".join(["|".join(row) for row in rows])
+
+
+def get_multimodal_table() -> str:
+    """Get the table of multimodal tools."""
+    header = ["tool", "modalities"]
+    title = ["Tool/Toolkit", "Modalties"]
+    rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
+    for multi_modal_tool, feats in sorted(MULTIMODAL_TOOL_FEAT_TABLE.items()):
+        # Fields are in the order of the header
+        row = [
+            f"[{multi_modal_tool}]({feats['link']})",
+        ]
+        for h in header[1:]:
+            row.append(feats.get(h))
         rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
 
@@ -307,10 +592,12 @@ def get_code_interpreter_table() -> str:
         "Return Types",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
-    for search_tool, feats in sorted(CODE_INTERPRETER_TOOL_FEAT_TABLE.items()):
+    for code_interpreter_tool, feats in sorted(
+        CODE_INTERPRETER_TOOL_FEAT_TABLE.items()
+    ):
         # Fields are in the order of the header
         row = [
-            f"[{search_tool}]({feats['link']})",
+            f"[{code_interpreter_tool}]({feats['link']})",
         ]
         for h in header[1:]:
             value = feats.get(h)
@@ -337,6 +624,9 @@ if __name__ == "__main__":
         productivity_table=get_productivity_table(),
         webbrowsing_table=get_webbrowsing_table(),
         database_table=get_database_table(),
+        domain_specific_search_table=get_domain_specific_search_table(),
+        multimodal_table=get_multimodal_table(),
+        miscellaneous_table=get_miscellaneous_table(),
     )
     with open(output_integrations_dir / "tools" / "index.mdx", "w") as f:
         f.write(tools_page)
