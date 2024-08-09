@@ -53,7 +53,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
     class Config:
         extra = "forbid"
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 
@@ -65,8 +65,15 @@ class GradientEmbeddings(BaseModel, Embeddings):
         )
 
         values["gradient_api_url"] = get_from_dict_or_env(
-            values, "gradient_api_url", "GRADIENT_API_URL"
+            values,
+            "gradient_api_url",
+            "GRADIENT_API_URL",
+            default="https://api.gradient.ai/api",
         )
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
         try:
             import gradientai
         except ImportError:
@@ -85,7 +92,6 @@ class GradientEmbeddings(BaseModel, Embeddings):
             host=values["gradient_api_url"],
         )
         values["client"] = gradient.get_embeddings_model(slug=values["model"])
-
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

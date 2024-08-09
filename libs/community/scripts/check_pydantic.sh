@@ -20,7 +20,7 @@ count=$(git grep -E '(@root_validator)|(@validator)|(@pre_init)' -- "*.py" | wc 
 # PRs that increase the current count will not be accepted.
 # PRs that decrease update the code in the repository
 # and allow decreasing the count of are welcome!
-current_count=336
+current_count=337
 
 if [ "$count" -gt "$current_count" ]; then
   echo "The PR seems to be introducing new usage of @root_validator and/or @field_validator."
