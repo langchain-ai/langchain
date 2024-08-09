@@ -1,26 +1,50 @@
 # Llama.cpp
 
-This page covers how to use [llama.cpp](https://github.com/ggerganov/llama.cpp) within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Llama-cpp wrappers.
+>[llama.cpp python](https://github.com/abetlen/llama-cpp-python) library is a simple Python bindings for `@ggerganov`
+>[llama.cpp](https://github.com/ggerganov/llama.cpp).
+>
+>This package provides:
+>
+> - Low-level access to C API via ctypes interface.
+> - High-level Python API for text completion
+>   - `OpenAI`-like API
+>   - `LangChain` compatibility
+>   - `LlamaIndex` compatibility
+> - OpenAI compatible web server
+>   - Local Copilot replacement
+>   - Function Calling support
+>   - Vision API support
+>   - Multiple Models
 
 ## Installation and Setup
-- Install the Python package with `pip install llama-cpp-python`
+
+- Install the Python package
+  ```bash
+  pip install llama-cpp-python
+  ````
 - Download one of the [supported models](https://github.com/ggerganov/llama.cpp#description) and convert them to the llama.cpp format per the [instructions](https://github.com/ggerganov/llama.cpp)
 
-## Wrappers
 
-### LLM
+## Chat models
 
-There exists a LlamaCpp LLM wrapper, which you can access with 
+See a [usage example](/docs/integrations/chat/llamacpp).
+
+```python
+from langchain_community.chat_models import ChatLlamaCpp
+```
+
+## LLMs
+
+See a [usage example](/docs/integrations/llms/llamacpp).
+
 ```python
 from langchain_community.llms import LlamaCpp
 ```
-For a more detailed walkthrough of this, see [this notebook](/docs/integrations/llms/llamacpp)
 
-### Embeddings
+## Embedding models
 
-There exists a LlamaCpp Embeddings wrapper, which you can access with 
+See a [usage example](/docs/integrations/text_embedding/llamacpp).
+
 ```python
 from langchain_community.embeddings import LlamaCppEmbeddings
 ```
-For a more detailed walkthrough of this, see [this notebook](/docs/integrations/text_embedding/llamacpp)
