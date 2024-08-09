@@ -162,6 +162,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.interaction.tool import (
         StdInInquireTool,
     )
+    from langchain_community.tools.jina_search.tool import JinaSearch
     from langchain_community.tools.jira.tool import (
         JiraAction,
     )
@@ -412,6 +413,7 @@ __all__ = [
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
     "JiraAction",
+    "JinaSearch",
     "JsonGetValueTool",
     "JsonListKeysTool",
     "ListDirectoryTool",
@@ -566,6 +568,7 @@ _module_lookup = {
     "InfoSQLDatabaseTool": "langchain_community.tools.sql_database.tool",
     "InfoSparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "JiraAction": "langchain_community.tools.jira.tool",
+    "JinaSearch": "langchain_community.tools.jina_search.tool",
     "JsonGetValueTool": "langchain_community.tools.json.tool",
     "JsonListKeysTool": "langchain_community.tools.json.tool",
     "ListDirectoryTool": "langchain_community.tools.file_management",
