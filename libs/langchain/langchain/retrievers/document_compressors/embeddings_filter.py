@@ -42,8 +42,6 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     to None."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @pre_init

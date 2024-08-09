@@ -41,8 +41,6 @@ class PowerBIDataset(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @validator("table_names", allow_reuse=True)
@@ -50,7 +48,7 @@ class PowerBIDataset(BaseModel):
         """Fix the table names."""
         return [fix_table_name(table) for table in table_names]
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def token_or_credential_present(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that at least one of token and credentials is present."""
         if "token" in values or "credential" in values:

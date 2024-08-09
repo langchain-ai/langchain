@@ -29,8 +29,6 @@ class EdenAiSpeechToTextTool(EdenaiTool):
     You can find your token here: https://app.edenai.run/admin/account/settings
     """
 
-    edenai_api_key: Optional[str] = None
-
     name: str = "edenai_speech_to_text"
     description = (
         "A wrapper around edenai Services speech to text "
