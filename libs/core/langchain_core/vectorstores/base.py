@@ -281,7 +281,8 @@ class VectorStore(ABC):
             metadatas = [doc.metadata for doc in documents]
             return self.add_texts(texts, metadatas, **kwargs)
         raise NotImplementedError(
-            f"`add_documents` and `add_texts` has not been implemented for {self.__class__.__name__} "
+            f"`add_documents` and `add_texts` has not been implemented "
+            f"for {self.__class__.__name__} "
         )
 
     async def aadd_documents(
