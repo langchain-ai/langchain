@@ -119,16 +119,29 @@ class PyPDFParser(BaseBlobParser):
                 )
 
         with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
-            pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
+            import pypdf.errors
 
-            yield from [
-                Document(
-                    page_content=_extract_text_from_page(page=page)
-                    + self._extract_images_from_page(page),
-                    metadata={"source": blob.source, "page": page_number},  # type: ignore[attr-defined]
-                )
-                for page_number, page in enumerate(pdf_reader.pages)
-            ]
+            try:
+                pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
+            except pypdf.errors.PyPdfError as e:
+                raise e
+            try:
+                yield from [
+                    Document(
+                        page_content=_extract_text_from_page(page=page)
+                        + self._extract_images_from_page(page),
+                        metadata={"source": blob.source, "page": page_number},  # type: ignore[attr-defined]
+                    )
+                    for page_number, page in enumerate(pdf_reader.pages)
+                ]
+            except (
+                pypdf.errors.PyPdfError,
+                pypdf.errors.EmptyFileError,
+                pypdf.errors.PdfReadError,
+                pypdf.errors.PdfStreamError,
+                RecursionError,
+            ) as e:
+                raise ValueError(f"Your PDF could not be read due to error {e}")
 
     def _extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
         """Extract images from page and get the text with RapidOCR."""
