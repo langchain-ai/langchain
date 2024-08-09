@@ -3,21 +3,126 @@ from __future__ import annotations
 import re
 from typing import Any, List, Literal, Optional, Union
 
+import contractions
+from spellchecker import SpellChecker
 from langchain_text_splitters.base import Language, TextSplitter
 
 
 class CharacterTextSplitter(TextSplitter):
-    """Splitting text that looks at characters."""
+    """Splitting text that looks at characters, with optional preprocessing.
+
+    This class provides functionality to split text into smaller chunks based on a separator.
+    It also includes optional text preprocessing features such as spelling correction,
+    contraction expansion, punctuation removal, lemmatization, and semantic enhancement.
+
+    Parameters:
+        separator (str): The character(s) used to split the text. Default is "\n\n".
+        is_separator_regex (bool): Whether the separator should be treated as a regex pattern. Default is False.
+        correct_spelling (bool): If True, corrects the spelling of words in the text. Default is False.
+        expand_contractions (bool): If True, expands contractions (e.g., "don't" to "do not"). Default is False.
+        remove_punctuation (bool): If True, removes punctuation from the text. Default is False.
+        remove_stopwords (bool): If True, removes stopwords from the text. Default is False.
+        enhance_semantics (Optional[str]): If set, enhances the semantics of the text using the specified method
+                                           ("paraphrase" or "summarize"). Default is None.
+        normalize (bool): If True, applies all preprocessing steps in a sequence. Default is False.
+        language (str): The spaCy language model to use for lemmatization. Default is "en_core_web_sm".
+
+    Example usage:
+        splitter = CharacterTextSplitter(separator="\n", correct_spelling=True, normalize=True, language="en_core_web_sm")
+        chunks = splitter.split_text("This is an example text to be split and preprocessed.")
+    """
 
     def __init__(
-        self, separator: str = "\n\n", is_separator_regex: bool = False, **kwargs: Any
+        self,
+        separator: str = "\n\n",
+        is_separator_regex: bool = False,
+        correct_spelling: bool = False,
+        expand_contractions: bool = False,
+        remove_punctuation: bool = False,
+        remove_stopwords: bool = False,
+        enhance_semantics: Optional[str] = None,
+        normalize: bool = False,
+        language: str = "en_core_web_sm",
+        **kwargs: Any,
     ) -> None:
-        """Create a new TextSplitter."""
+        """Create a new CharacterTextSplitter."""
         super().__init__(**kwargs)
         self._separator = separator
         self._is_separator_regex = is_separator_regex
+        self.correct_spelling_flag = correct_spelling
+        self.expand_contractions_flag = expand_contractions
+        self.remove_punctuation_flag = remove_punctuation
+        self.remove_stopwords_flag = remove_stopwords
+        self.enhance_semantics_method = enhance_semantics
+        self.normalize_flag = normalize
+        self.language = language
+        self.spell = SpellChecker()
 
     def split_text(self, text: str) -> List[str]:
+        """Split incoming text and return chunks, with optional preprocessing."""
+        if self.normalize_flag:
+            text = self.normalize_text(text)
+        else:
+            if self.correct_spelling_flag:
+                text = self.correct_spelling(text)
+            if self.expand_contractions_flag:
+                text = self.expand_contractions(text)
+            if self.remove_punctuation_flag:
+                text = self.remove_unwanted_chars(text)
+            if self.enhance_semantics_method:
+                text = self.enhance_semantics(text, self.enhance_semantics_method)
+
+        # First we naively split the large input into a bunch of smaller ones.
+        separator = (
+            self._separator if self._is_separator_regex else re.escape(self._separator)
+        )
+        splits = _split_text_with_regex(text, separator, self._keep_separator)
+        _separator = "" if self._keep_separator else self._separator
+        return self._merge_splits(splits, _separator)
+
+    def correct_spelling(self, text: str) -> str:
+        """Correct the spelling of words in the text."""
+        words = text.split()
+        corrected_text = " ".join([self.spell.correction(word) for word in words])
+        return corrected_text
+
+    def expand_contractions(self, text: str) -> str:
+        """Expand contractions in the text."""
+        expanded_text = contractions.fix(text)
+        return expanded_text
+
+    def remove_unwanted_chars(self, text: str) -> str:
+        """Remove unwanted characters (e.g., punctuation) from the text."""
+        text = re.sub(r"[^\w\s]", "", text)
+        return text
+
+    def normalize_text(self, text: str) -> str:
+        """Normalize the text by applying all preprocessing steps."""
+        text = self.correct_spelling(text)
+        text = self.expand_contractions(text)
+        text = self.remove_unwanted_chars(text)
+        return text
+
+    def enhance_semantics(self, text: str, method: str = "paraphrase") -> str:
+        """Enhance the semantics of the text using the specified method."""
+        if method == "paraphrase":
+            return self.paraphrase_text(text)
+        elif method == "summarize":
+            return self.summarize_text(text)
+        else:
+            raise ValueError("Method not supported")
+
+def paraphrase_text(self, text: str) -> str:
+        """Paraphrase the text."""
+        return self.paraphraser(text)[0]["generated_text"]
+
+def summarize_text(self, text: str) -> str:
+        """Summarize the text."""
+        return self.summarizer(text, max_length=50, min_length=25, do_sample=False)[0][
+            "summary_text"
+        ]
+
+def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
         separator = (
@@ -56,7 +161,7 @@ def _split_text_with_regex(
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
-    """Splitting text by recursively look at characters.
+    """Splitting text by recursively looking at characters.
 
     Recursively tries to split by different characters to find one
     that works.
@@ -67,12 +172,27 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         separators: Optional[List[str]] = None,
         keep_separator: bool = True,
         is_separator_regex: bool = False,
+        correct_spelling: bool = False,
+        expand_contractions: bool = False,
+        remove_punctuation: bool = False,
+        remove_stopwords: bool = False,
+        enhance_semantics: Optional[str] = None,
+        normalize: bool = False,
+        language: str = "en_core_web_sm",
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(keep_separator=keep_separator, **kwargs)
         self._separators = separators or ["\n\n", "\n", " ", ""]
         self._is_separator_regex = is_separator_regex
+        self.correct_spelling_flag = correct_spelling
+        self.expand_contractions_flag = expand_contractions
+        self.remove_punctuation_flag = remove_punctuation
+        self.remove_stopwords_flag = remove_stopwords
+        self.enhance_semantics_method = enhance_semantics
+        self.normalize_flag = normalize
+        self.language = language
+        self.spell = SpellChecker()
 
     def _split_text(self, text: str, separators: List[str]) -> List[str]:
         """Split incoming text and return chunks."""

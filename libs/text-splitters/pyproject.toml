@@ -24,6 +24,10 @@ ignore_missing_imports = "True"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.10"
+spacy = "^3.7.5"
+spellcheck = "^1.0.2"
+spellchecker = "^0.4"
+pyspellchecker = "^0.8.1"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]

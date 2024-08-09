@@ -6,6 +6,7 @@ import string
 from pathlib import Path
 from typing import Any, List
 
+import contractions
 import pytest
 from langchain_core.documents import Document
 
@@ -1830,7 +1831,7 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
 @pytest.mark.requires("bs4")
 def test_section_splitter_accepts_a_relative_path() -> None:
     html_string = """<html><body><p>Foo</p></body></html>"""
-    test_file = Path("tests/test_data/test_splitter.xslt")
+    test_file = Path("../test_data/test_splitter.xslt")
     assert test_file.is_file()
 
     sec_splitter = HTMLSectionSplitter(
@@ -1845,7 +1846,7 @@ def test_section_splitter_accepts_a_relative_path() -> None:
 @pytest.mark.requires("bs4")
 def test_section_splitter_accepts_an_absolute_path() -> None:
     html_string = """<html><body><p>Foo</p></body></html>"""
-    test_file = Path("tests/test_data/test_splitter.xslt").absolute()
+    test_file = Path("../test_data/test_splitter.xslt").absolute()
     assert test_file.is_absolute()
     assert test_file.is_file()
 
@@ -1975,6 +1976,151 @@ def test_split_json_many_calls() -> None:
     assert chunk0 == chunk0_output
     assert chunk1 == chunk1_output
 
+
+paragraph_en = (
+    "The National Basketball Association (NBA) is a professional basketball league in North America. "
+    "The league is composed of 30 teams and is one of the major professional sports leagues in the United States and Canada. "
+    "The NBA is an active member of USA Basketball, which is recognized by FIBA as the national governing body for basketball in the United States. "
+    "NBA players are the world's best paid athletes by average annual salary per player. "
+    "The league was founded in New York City on June 6, 1946, as the Basketball Association of America (BAA)."
+)
+
+paragraph_es = (
+    "La Asociación Nacional de Baloncesto (NBA) es una liga profesional de baloncesto en América del Norte. "
+    "La liga está compuesta por 30 equipos y es una de las principales ligas deportivas profesionales en los Estados Unidos y Canadá. "
+    "La NBA es un miembro activo de USA Basketball, que es reconocido por FIBA como el organismo nacional de gobierno del baloncesto en los Estados Unidos. "
+    "Los jugadores de la NBA son los atletas mejor pagados del mundo por salario anual promedio por jugador. "
+    "La liga fue fundada en la ciudad de Nueva York el 6 de junio de 1946, como la Asociación de Baloncesto de América (BAA)."
+)
+
+paragraph_pt = (
+    "A National Basketball Association (NBA) é uma liga profissional de basquete na América do Norte. "
+    "A liga é composta por 30 equipes e é uma das principais ligas esportivas profissionais nos Estados Unidos e Canadá. "
+    "A NBA é um membro ativo da USA Basketball, que é reconhecida pela FIBA como o órgão nacional de governo do basquete nos Estados Unidos. "
+    "Os jogadores da NBA são os atletas mais bem pagos do mundo por salário anual médio por jogador. "
+    "A liga foi fundada na cidade de Nova York em 6 de junho de 1946, como a Basketball Association of America (BAA)."
+)
+
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
+def test_splitter_with_normalization(paragraph: str, language: str) -> None:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100, chunk_overlap=10, normalize=True, language=language
+    )
+    chunks = splitter.split_text(paragraph)
+    assert isinstance(chunks, list)
+    assert len(chunks) > 0
+
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
+def test_splitter_with_correct_spelling(paragraph: str, language: str) -> None:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100, chunk_overlap=10, correct_spelling=True, language=language
+    )
+    chunks = splitter.split_text(paragraph)
+    assert isinstance(chunks, list)
+    assert len(chunks) > 0
+
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
+def test_splitter_with_expand_contractions(paragraph: str, language: str) -> None:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100, chunk_overlap=10, expand_contractions=True, language=language
+    )
+    chunks = splitter.split_text(paragraph)
+    assert isinstance(chunks, list)
+    assert len(chunks) > 0
+
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
+def test_splitter_with_remove_punctuation(paragraph: str, language: str) -> None:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100, chunk_overlap=10, remove_punctuation=True, language=language
+    )
+    chunks = splitter.split_text(paragraph)
+    assert isinstance(chunks, list)
+    assert len(chunks) > 0
+
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
+def test_splitter_with_lemmatization(paragraph: str, language: str) -> None:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100, chunk_overlap=10, lemmatize=True, language=language
+    )
+    chunks = splitter.split_text(paragraph)
+    assert isinstance(chunks, list)
+    assert len(chunks) > 0
+
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
+def test_splitter_with_enhance_semantics(paragraph: str, language: str) -> None:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100,
+        chunk_overlap=10,
+        enhance_semantics="paraphrase",
+        language=language,
+    )
+    chunks = splitter.split_text(paragraph)
+    assert isinstance(chunks, list)
+    assert len(chunks) > 0
+
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
+def test_splitter_with_all_preprocessing(paragraph: str, language: str) -> None:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100,
+        chunk_overlap=10,
+        normalize=True,
+        correct_spelling=True,
+        expand_contractions=True,
+        remove_punctuation=True,
+        lemmatize=True,
+        enhance_semantics="paraphrase",
+        language=language,
+    )
+    chunks = splitter.split_text(paragraph)
+    assert isinstance(chunks, list)
+    assert len(chunks) > 0
+
+
+@pytest.mark.parametrize(
+    "paragraph, language",
+    [(paragraph_en, "en"), (paragraph_es, "es"), (paragraph_pt, "pt")],
+)
+def test_splitter_with_individual_preprocessing(paragraph: str, language: str) -> None:
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=100,
+        chunk_overlap=10,
+        correct_spelling=True,
+        expand_contractions=True,
+        remove_punctuation=True,
+        lemmatize=True,
+        language=language,
+    )
+    chunks = splitter.split_text(paragraph)
+    assert isinstance(chunks, list)
+    assert len(chunks) > 0
 
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
