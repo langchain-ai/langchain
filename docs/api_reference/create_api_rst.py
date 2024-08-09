@@ -474,11 +474,18 @@ def _out_file_path(package_name: str) -> Path:
 
 
 def _build_index(dirs: List[str]) -> None:
-    custom_names = {"airbyte": "Airbyte", "aws": "AWS", "ai21": "AI21",}
+    custom_names = {
+        "airbyte": "Airbyte",
+        "aws": "AWS",
+        "ai21": "AI21",
+    }
     ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
     integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
-    main_headers = [" ".join(custom_names.get(x, x.title()) for x in dir_.split("-")) for dir_ in main_]
+    main_headers = [
+        " ".join(custom_names.get(x, x.title()) for x in dir_.split("-"))
+        for dir_ in main_
+    ]
     integration_headers = [
         " ".join(
             custom_names.get(x, x.title().replace("ai", "AI").replace("db", "DB"))
