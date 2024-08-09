@@ -176,18 +176,8 @@ const config = {
             items: [
               {
                 type: "doc",
-                docId: "people",
-                label: "People",
-              },
-              {
-                type: "doc",
                 docId: "contributing/index",
                 label: "Contributing",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
               },
               {
                 label: "Cookbooks",
@@ -195,17 +185,8 @@ const config = {
               },
               {
                 type: "doc",
-                docId: "additional_resources/tutorials",
-                label: "3rd party tutorials"
-              },
-              {
-                type: "doc",
-                docId: "additional_resources/youtube",
-                label: "YouTube"
-              },
-              {
-                to: "/docs/additional_resources/arxiv_references",
-                label: "arXiv"
+                docId: "people",
+                label: "People",
               },
             ]
           },
@@ -225,38 +206,7 @@ const config = {
             ]
           },
           {
-            type: "dropdown",
-            label: "🦜️🔗",
-            position: "right",
-            items: [
-              {
-                href: "https://smith.langchain.com",
-                label: "LangSmith",
-              },
-              {
-                href: "https://docs.smith.langchain.com/",
-                label: "LangSmith Docs",
-              },
-              {
-                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
-                label: "Templates GitHub",
-              },
-              {
-                label: "Templates Hub",
-                href: "https://templates.langchain.com",
-              },
-              {
-                href: "https://smith.langchain.com/hub",
-                label: "LangChain Hub",
-              },
-              {
-                href: "https://js.langchain.com",
-                label: "JS/TS Docs",
-              },
-            ]
-          },
-          {
-            href: "https://chat.langchain.com",
+            to: "https://chat.langchain.com",
             label: "💬",
             position: "right",
           },
@@ -273,45 +223,44 @@ const config = {
         style: "light",
         links: [
           {
-            title: "Community",
+            title: "Ecosystem",
             items: [
               {
-                label: "Twitter",
-                href: "https://twitter.com/LangChainAI",
+                label: "LangChain JS",
+                to: "https://js.langchain.com/",
+              },
+              {
+                label: "LangGraph",
+                to: "https://langchain-ai.github.io/langgraph/",
+              },
+              {
+                label: "LangSmith",
+                to: "https://docs.smith.langchain.com/",
               },
             ],
           },
           {
-            title: "GitHub",
+            title: "Resources",
             items: [
               {
-                label: "Organization",
-                href: "https://github.com/langchain-ai",
+                label: "GitHub",
+                to: "https://github.com/langchain-ai",
               },
-              {
-                label: "Python",
-                href: "https://github.com/langchain-ai/langchain",
-              },
-              {
-                label: "JS/TS",
-                href: "https://github.com/langchain-ai/langchainjs",
-              },
-            ],
-          },
-          {
-            title: "More",
-            items: [
               {
                 label: "Homepage",
-                href: "https://langchain.com",
+                to: "https://langchain.com",
+              },
+              {
+                label: "X / Twitter",
+                to: "https://twitter.com/LangChainAI",
               },
               {
                 label: "Blog",
-                href: "https://blog.langchain.dev",
+                to: "https://blog.langchain.dev",
               },
               {
                 label: "YouTube",
-                href: "https://www.youtube.com/@LangChain",
+                to: "https://www.youtube.com/@LangChain",
               },
             ],
           },
