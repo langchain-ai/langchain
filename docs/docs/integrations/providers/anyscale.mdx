@@ -19,10 +19,23 @@ pip install openai
 
 ## LLM
 
+### Anyscale
 See a [usage example](/docs/integrations/llms/anyscale).
 
 ```python
 from langchain_community.llms.anyscale import Anyscale
+```
+
+### Aviary
+
+>The hosted `Aviary Explorer` is not available anymore. Visit 
+> [Anyscale](https://endpoints.anyscale.com/) to experience models served with `RayLLM`.
+>`RayLLM` (formerly known as `Aviary`) is an LLM serving solution that makes it easy to 
+> deploy and manage a variety of open source LLMs, built on 
+> [Ray Serve](https://docs.ray.io/en/latest/serve/index.html).
+
+```python
+from langchain_community.llms.aviary import Aviary
 ```
 
 ## Chat Models
