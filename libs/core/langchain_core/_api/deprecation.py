@@ -214,7 +214,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             if not _name:
-                raise ValueError()
+                raise ValueError(f"Field {obj} must have a name to be deprecated.")
             old_doc = obj.description
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
