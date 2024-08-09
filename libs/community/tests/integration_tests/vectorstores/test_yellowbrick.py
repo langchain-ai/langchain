@@ -14,8 +14,6 @@ YELLOWBRICK_URL = "postgres://username:password@host:port/database"
 YELLOWBRICK_TABLE = "test_table"
 YELLOWBRICK_CONTENT = "test_table_content"
 YELLOWBRICK_SCHEMA = "test_schema"
-
-
 def _yellowbrick_vector_from_texts(
     metadatas: Optional[List[dict]] = None, drop: bool = True
 ) -> Yellowbrick:
@@ -253,9 +251,22 @@ def test_yellowbrick_add_extra() -> None:
         _yellowbrick_vector_from_texts_no_schema(),
     ]
     for docsearch in docsearches:
+        
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = _yellowbrick_vector_from_texts(metadatas=metadatas)
         docsearch.add_texts(texts, metadatas)
         output = docsearch.similarity_search("foo", k=10)
         assert len(output) == 6
+
+        output = docsearch.max_marginal_relevance_search("foo", k=1)
+        assert len(output) > 0
+
+        output_with_score = docsearch.max_marginal_relevance_search_with_score(
+            "foo", k=1)
+        assert len(output_with_score) > 0
+
+        embedding = docsearch._embedding.embed_query("foo")
+        output_by_vector = docsearch.max_marginal_relevance_search_by_vector(
+            embedding, k=1)
+        assert len(output_by_vector) > 0

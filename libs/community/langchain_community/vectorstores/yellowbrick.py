@@ -971,3 +971,104 @@ class Yellowbrick(VectorStore):
                 cursor.execute(insert_content_query)
         except Exception as e:
             raise RuntimeError(f"Failed to migrate schema: {e}") from e
+            
+    def max_marginal_relevance_search_with_score_by_vector(
+        self, 
+        embedding: List[float], 
+        k: int = 4, 
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5, 
+        **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Perform a max marginal relevance search with Yellowbrick with vector
+
+        Args:
+            embedding (List[float]): query embedding
+            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
+            fetch_k (int, optional): Number of neighbors to fetch before MMR.
+            Defaults to 20.
+            lambda_mult (float, optional): Diversity multiplier for MMR.
+            Defaults to 0.5.
+
+        Returns:
+            List[Document, float]: List of Documents and scores
+        """
+        documents_with_scores = self.similarity_search_with_score_by_vector(
+            embedding=embedding, k=fetch_k, **kwargs
+        )
+        selected_docs = []
+        selected_scores = []
+        while len(selected_docs) < k and documents_with_scores:
+            if not selected_docs:
+                doc, score = documents_with_scores.pop(0)
+                selected_docs.append(doc)
+                selected_scores.append(score)
+                continue
+            max_score = float("-inf")
+            max_doc = None
+            for doc, score in documents_with_scores:
+                min_similarity = float("inf")
+                for selected_doc in selected_docs:
+                    similarity = self._embedding.similarity(
+                        selected_doc.page_content, doc.page_content
+                    )
+                    min_similarity = min(min_similarity, similarity)
+                mmr_score = lambda_mult * score - (1 - lambda_mult) * min_similarity
+                if mmr_score > max_score:
+                    max_score = mmr_score
+                    max_doc = (doc, score)
+            if max_doc:
+                selected_docs.append(max_doc[0])
+                selected_scores.append(max_doc[1])
+                documents_with_scores.remove(max_doc)
+            else:
+                break
+        return list(zip(selected_docs, selected_scores))
+
+    def max_marginal_relevance_search(
+        self, 
+        query: str, 
+        k: int = 4, 
+        fetch_k: int = 20, 
+        lambda_mult: float = 0.5,
+        **kwargs: Any
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+        embedding = self._embedding.embed_query(query)
+        results = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult,
+            **kwargs
+        )
+        return [doc for doc, _ in results]
+
+    def max_marginal_relevance_search_with_score(
+        self, 
+        query: str, 
+        k: int = 4, 
+        fetch_k: int = 20, 
+        lambda_mult: float = 0.5,
+        **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with score."""
+        embedding = self._embedding.embed_query(query)
+        results = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult,
+            **kwargs
+        )
+        return results
+
+    def max_marginal_relevance_search_by_vector(
+        self, 
+        embedding: List[float], 
+        k: int = 4, 
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5, 
+        **kwargs: Any
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance
+            to embedding vector."""
+        results = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult,
+            **kwargs
+        )
+        return [doc for doc, _ in results]
