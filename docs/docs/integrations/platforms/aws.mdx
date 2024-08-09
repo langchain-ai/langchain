@@ -195,7 +195,7 @@ AWS offers services for computing, databases, storage, analytics, and other func
 See a [usage example](/docs/integrations/vectorstores/documentdb).
 
 ```python
-from langchain.vectorstores import DocumentDBVectorSearch
+from langchain_community.vectorstores import DocumentDBVectorSearch
 ```
 ### Amazon MemoryDB 
 [Amazon MemoryDB](https://aws.amazon.com/memorydb/) is a durable, in-memory database service that delivers ultra-fast performance. MemoryDB is compatible with Redis OSS, a popular open source data store, 
@@ -296,7 +296,7 @@ pip install boto3
 See a [usage example](/docs/integrations/memory/aws_dynamodb).
 
 ```python
-from langchain.memory import DynamoDBChatMessageHistory
+from langchain_community.chat_message_histories import DynamoDBChatMessageHistory
 ```
 
 ## Graphs
@@ -308,7 +308,7 @@ See a [usage example](/docs/integrations/graphs/amazon_neptune_open_cypher).
 ```python
 from langchain_community.graphs import NeptuneGraph
 from langchain_community.graphs import NeptuneAnalyticsGraph
-from langchain.chains import NeptuneOpenCypherQAChain
+from langchain_community.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
 ```
 
 ### Amazon Neptune with SPARQL
@@ -317,12 +317,18 @@ See a [usage example](/docs/integrations/graphs/amazon_neptune_sparql).
 
 ```python
 from langchain_community.graphs import NeptuneRdfGraph
-from langchain.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
+from langchain_community.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
 ```
 
 
 
 ## Callbacks
+
+### Bedrock
+
+```python
+from langchain_community.callbacks.bedrock_anthropic_callback import BedrockAnthropicTokenUsageCallbackHandler
+```
 
 ### SageMaker Tracking
 
@@ -342,7 +348,7 @@ pip install google-search-results sagemaker
 See a [usage example](/docs/integrations/callbacks/sagemaker_tracking).
 
 ```python
-from langchain.callbacks import SageMakerCallbackHandler
+from langchain_community.callbacks import SageMakerCallbackHandler
 ```
 
 ## Chains
