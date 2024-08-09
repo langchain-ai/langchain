@@ -63,8 +63,11 @@ class FireCrawlLoader(BaseLoader):
                 f"Unrecognized mode '{self.mode}'. Expected one of 'crawl', 'scrape'."
             )
         for doc in firecrawl_docs:
+            metadata = doc.get("metadata", {})
+            if self.params.get('extractorOptions', {}).get('mode') == 'llm-extraction':
+                metadata['llm_extraction'] = doc.get("llm_extraction")
+
             yield Document(
                 page_content=doc.get("markdown", ""),
-                metadata=doc.get("metadata", {}),
-                llm_extraction= doc.get("llm_extraction") if self.params.get('extractorOptions', {}).get('mode') == 'llm-extraction' else None
+                metadata=metadata
             )
