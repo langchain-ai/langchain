@@ -186,6 +186,7 @@ def test_that_drop_deletes_vector_store(
     with pytest.raises(DBAPIError):
         store.add_texts(texts)
 
+
 def test_sqlserver_delete_text_by_id_valid_ids_provided(
     store: SQLServer_VectorStore,
 ) -> None:
@@ -291,4 +292,3 @@ def test_sqlserver_delete_text_by_id_no_ids_provided(
     # Should return False, since empty list of ids given
     if not result:
         pass
-
