@@ -42,17 +42,19 @@ class QdrantVectorStore(VectorStore):
     """Qdrant vector store integration.
 
     Setup:
-        Install ``langchain-qdrant`` and ``qdrant-client[fastembed]`` packages.
+        Install ``langchain-qdrant`` package.
 
         .. code-block:: bash
 
-            pip install -qU langchain-qdrant 'qdrant-client[fastembed]'
+            pip install -qU langchain-qdrant
 
     Key init args — indexing params:
         collection_name: str
             Name of the collection.
         embedding: Embeddings
             Embedding function to use.
+        sparse_embedding: SparseEmbeddings
+            Optional sparse embedding function to use.
 
     Key init args — client params:
         client: QdrantClient
