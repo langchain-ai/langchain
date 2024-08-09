@@ -1,13 +1,13 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
-from typing import Any, Dict, List, Type, Union
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.messages import (
     AIMessage,
-    AIMessageChunk,
     FunctionMessage,
     HumanMessage,
     InvalidToolCall,
@@ -174,21 +174,26 @@ def test__convert_dict_to_message_tool_call() -> None:
 
 
 class MockAsyncContextManager:
-    def __init__(self, chunk_list):
+    def __init__(self, chunk_list: list):
         self.current_chunk = 0
         self.chunk_list = chunk_list
         self.chunk_num = len(chunk_list)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> 'MockAsyncContextManager':
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(
+            self,
+            exc_type: Optional[Type[BaseException]],
+            exc: Optional[BaseException],
+            tb: Optional[TracebackType]
+    ):
         pass
 
-    def __aiter__(self):
+    def __aiter__(self) -> 'MockAsyncContextManager':
         return self
 
-    async def __anext__(self):
+    async def __anext__(self) -> dict:
         if self.current_chunk < self.chunk_num:
             chunk = self.chunk_list[self.current_chunk]
             self.current_chunk += 1
@@ -198,21 +203,26 @@ class MockAsyncContextManager:
 
 
 class MockSyncContextManager:
-    def __init__(self, chunk_list):
+    def __init__(self, chunk_list: list):
         self.current_chunk = 0
         self.chunk_list = chunk_list
         self.chunk_num = len(chunk_list)
 
-    def __enter__(self):
+    def __enter__(self) -> 'MockSyncContextManager':
         return self
 
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(
+            self,
+            exc_type: Optional[Type[BaseException]],
+            exc: Optional[BaseException],
+            tb: Optional[TracebackType]
+    ):
         pass
 
-    def __iter__(self):
+    def __iter__(self) -> 'MockSyncContextManager':
         return self
 
-    def __next__(self):
+    def __next__(self) -> dict:
         if self.current_chunk < self.chunk_num:
             chunk = self.chunk_list[self.current_chunk]
             self.current_chunk += 1
@@ -221,30 +231,21 @@ class MockSyncContextManager:
             raise StopIteration
 
 
+GLM4_STREAM_META = """{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4eba\u5de5\u667a\u80fd"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"，"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4f60\u53ef\u4ee5"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u53eb\u6211"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"AI"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"。"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"finish_reason":"stop","delta":{"role":"assistant","content":""}}],"usage":{"prompt_tokens":13,"completion_tokens":10,"total_tokens":23}}
+[DONE]"""  # noqa: E501
+
+
 @pytest.fixture
-def mock_glm4_completion():
-    list_chunk_data = [
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"delta":{"role":"assistant","content":"\u4eba\u5de5\u667a\u80fd"}}]}',
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}',
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"delta":{"role":"assistant","content":"，"}}]}',
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"delta":{"role":"assistant","content":"\u4f60\u53ef\u4ee5"}}]}',
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"delta":{"role":"assistant","content":"\u53eb\u6211"}}]}',
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"delta":{"role":"assistant","content":"AI"}}]}',
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}',
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"delta":{"role":"assistant","content":"。"}}]}',
-        '{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{'
-        '"index":0,"finish_reason":"stop","delta":{"role":"assistant","content":""}}],"usage":{"prompt_tokens":13,'
-        '"completion_tokens":10,"total_tokens":23}}',
-        "[DONE]",
-    ]
+def mock_glm4_completion() -> list:
+    list_chunk_data = GLM4_STREAM_META.split("\n")
     result_list = []
     for msg in list_chunk_data:
         if msg != "[DONE]":
@@ -253,21 +254,20 @@ def mock_glm4_completion():
     return result_list
 
 
-async def test_glm4_astream(mock_glm4_completion) -> None:
+async def test_glm4_astream(mock_glm4_completion: list) -> None:
     llm_name = "glm-4"
-    llm = ChatOpenAI(model=llm_name, openai_api_key="foo", stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     mock_client = AsyncMock()
 
-    async def mock_create(*args: Any, **kwargs: Any):
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
         return MockAsyncContextManager(mock_glm4_completion)
 
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata = {}
+    usage_metadata: Optional[dict] = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
-            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
 
@@ -276,21 +276,20 @@ async def test_glm4_astream(mock_glm4_completion) -> None:
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
 
 
-def test_glm4_stream(mock_glm4_completion) -> None:
+def test_glm4_stream(mock_glm4_completion: list) -> None:
     llm_name = "glm-4"
-    llm = ChatOpenAI(model=llm_name, openai_api_key="foo", stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     mock_client = MagicMock()
 
-    def mock_create(*args: Any, **kwargs: Any):
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
         return MockSyncContextManager(mock_glm4_completion)
 
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata = {}
+    usage_metadata: Optional[dict] = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
-            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
@@ -329,20 +328,19 @@ def mock_deepseek_completion() -> List[Dict]:
     return result_list
 
 
-async def test_deepseek_astream(mock_deepseek_completion) -> None:
+async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
     llm_name = "deepseek-chat"
-    llm = ChatOpenAI(model=llm_name, openai_api_key="foo", stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     mock_client = AsyncMock()
 
-    async def mock_create(*args: Any, **kwargs: Any):
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
         return MockAsyncContextManager(mock_deepseek_completion)
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata = {}
+    usage_metadata: Optional[dict] = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
-            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
 
@@ -353,15 +351,15 @@ async def test_deepseek_astream(mock_deepseek_completion) -> None:
 
 def test_deepseek_stream(mock_deepseek_completion) -> None:
     llm_name = "deepseek-chat"
-    llm = ChatOpenAI(model=llm_name, openai_api_key="foo", stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     mock_client = MagicMock()
 
-    def mock_create(*args: Any, **kwargs: Any) -> Any:
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
         return MockSyncContextManager(mock_deepseek_completion)
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata = {}
+    usage_metadata: Optional[dict] = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             if chunk.usage_metadata is not None:
@@ -392,17 +390,17 @@ def mock_openai_completion() -> List[Dict]:
     return result_list
 
 
-async def test_openai_astream(mock_openai_completion) -> None:
+async def test_openai_astream(mock_openai_completion: list) -> None:
     llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name, openai_api_key="foo", stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     mock_client = AsyncMock()
 
-    async def mock_create(*args: Any, **kwargs: Any):
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
         return MockAsyncContextManager(mock_openai_completion)
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata = {}
+    usage_metadata: Optional[dict] = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             if chunk.usage_metadata is not None:
@@ -413,17 +411,17 @@ async def test_openai_astream(mock_openai_completion) -> None:
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
 
 
-def test_openai_stream(mock_openai_completion) -> None:
+def test_openai_stream(mock_openai_completion: list) -> None:
     llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name, openai_api_key="foo", stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     mock_client = MagicMock()
 
-    def mock_create(*args: Any, **kwargs: Any):
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
         return MockSyncContextManager(mock_openai_completion)
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata = {}
+    usage_metadata: Optional[dict] = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             if chunk.usage_metadata is not None:

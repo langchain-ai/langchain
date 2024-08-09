@@ -322,6 +322,9 @@ def _convert_chunk_to_generation_chunk(
     if logprobs:
         generation_info["logprobs"] = logprobs
 
+    if usage_metadata and isinstance(message_chunk, AIMessageChunk):
+        message_chunk.usage_metadata = usage_metadata
+
     generation_chunk = ChatGenerationChunk(
         message=message_chunk, generation_info=generation_info or None
     )
