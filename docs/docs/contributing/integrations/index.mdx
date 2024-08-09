@@ -1,0 +1,75 @@
+---
+sidebar_position: 0
+sidebar_class_name: hidden
+---
+
+# Contribute Integrations
+
+<!-- 
+Vision: to maintain a comprehensive integrations ecosystem, we need integration partners to all build their integrations in standard ways.
+Steps. figure out which kind of integration, follow respective guide
+news: we have a new guide for contributing integrations
+-->
+
+In order to maintain a comprehensive integrations ecosystem, we need integration 
+partners to build their integrations in standard ways. This guide will help you 
+understand the different types of integrations and how to contribute them.
+
+In this section, you will find guides for the following types of integrations:
+
+<table style={{textAlign: "center"}}>
+  <tr>
+    <th rowspan="2">Type</th>
+    <th rowspan="2">Community</th>
+    <th colspan="3">Package in</th>
+  </tr>
+  <tr>
+    <th>Shared repo</th>
+    <th>LangChain repo</th>
+    <th>External repo</th>
+  </tr>
+  <tr>
+    <th>Package</th>
+    <td>
+      <a href="https://pypi.org/project/langchain-community"
+        ><code>langchain-community</code></a
+      >
+    </td>
+    <td colspan="3"><code>langchain-[partner]</code></td>
+  </tr>
+  <tr>
+    <th>Updates</th>
+    <td>Community</td>
+    <td colspan="3">Partner</td>
+  </tr>
+  <tr>
+    <th>Releases</th>
+    <td>LangChain</td>
+    <td>Partner &amp; LangChain</td>
+    <td>LangChain</td>
+    <td>Partner</td>
+  </tr>
+  <tr>
+    <th>Maintenance Help</th>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>❌</td>
+  </tr>
+  <tr>
+    <th>Integration Testing</th>
+    <td>❌</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>⚠️</td>
+  </tr>
+  <tr>
+    <th>Guide</th>
+    <td><a href="./community.mdx">Community Integration Guide</a></td>
+    <td colspan="3"><a href="./package.mdx">Package Guide</a></td>
+  </tr>
+</table>
+
+:::success
+Let's get started with your integration, and build a [**Community Integration**](./community.mdx).
+:::

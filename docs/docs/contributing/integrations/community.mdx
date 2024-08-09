@@ -1,0 +1,89 @@
+---
+sidebar_position: 1
+sidebar_label: Community
+---
+
+# Contribute Community Integrations
+
+:::info
+Before beginning, make sure you have read about the different types of integrations in the [Contributing Integrations](./index.mdx) guide.
+:::
+
+## What is a community integration
+
+Community integrations live in the `langchain-community` package and are maintained by the community.
+
+The `langchain-community` package is released by LangChain at least once every 7 days, and it contains
+integrations and implementations of the interfaces defined in the `langchain-core` package.
+
+## Why contribute a community integration
+
+If you are a company that wants to integrate with LangChain, you can contribute a community integration to:
+
+- Make it easy for users to use your product with LangChain
+- Quickly enable use cases that require multiple products
+- Allow LangChain users to try out your product with their existing project (e.g. 
+if you host a chat model, users can try yours out to compare the experience with 
+their current model)
+
+If you are a user of any service, we also welcome your contributions to community integrations!
+Service users often have some of the best insights into how to use a service, and your contributions
+can help other users get started with the service in as smooth a way as possible.
+
+## How to contribute a community integration
+
+In the following sections, we'll walk through how to contribute a chat model from a fake company, `Parrot Link AI`.
+
+### 1. Fork and clone the repository
+
+First, let's fork the [LangChain Repository](https://github.com/langchain-ai/langchain) 
+into a personal account fork, **not an organization fork** ([why?](/docs/contributing/faq/#how-do-i-allow-maintainers-to-edit-my-pr)).
+
+You can fork the repository [here](https://github.com/langchain-ai/langchain/fork), and if you are prompted to "Choose an owner," select your personal username.
+
+Now, clone the repository to your local machine:
+
+```bash
+git clone https://github.com/<your-username>/langchain.git
+```
+
+The `langchain-community` package is in `libs/community` and contains most integrations.
+
+It can be installed with `pip install langchain-community`, and exported members can be imported with code like 
+
+```python
+from langchain_community.chat_models import ChatParrotLink
+from langchain_community.llms import ParrotLinkLLM
+from langchain_community.vectorstores import ParrotLinkVectorStore
+```
+
+The `community` package relies on manually-installed dependent packages, so you will see errors 
+if you try to import a package that is not installed. In our fake example, if you tried to import `ParrotLinkLLM` without installing `parrot-link-sdk`, you will see an `ImportError` telling you to install it when trying to use it.
+
+Let's say we wanted to implement a chat model for Parrot Link AI. We would create a new file in `libs/community/langchain_community/chat_models/parrot_link.py` with the following code:
+
+```python
+from langchain_core.language_models.chat_models import BaseChatModel
+
+class ChatParrotLink(BaseChatModel):
+    """ChatParrotLink chat model.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatParrotLink
+
+            model = ChatParrotLink()
+    """
+
+    ...
+```
+
+And we would write tests in:
+
+- Unit tests: `libs/community/tests/unit_tests/chat_models/test_parrot_link.py`
+- Integration tests: `libs/community/tests/integration_tests/chat_models/test_parrot_link.py`
+
+And add documentation to:
+
+- `docs/docs/integrations/chat/parrot_link.ipynb`
