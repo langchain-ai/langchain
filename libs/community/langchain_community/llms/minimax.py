@@ -16,7 +16,12 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import (
+    convert_to_secret_str,
+    from_env,
+    get_from_dict_or_env,
+    pre_init,
+)
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -68,8 +73,12 @@ class MinimaxCommon(BaseModel):
     """Total probability mass of tokens to consider at each step."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    minimax_api_host: Optional[str] = None
-    minimax_group_id: Optional[str] = None
+    minimax_api_host: Optional[str] = Field(
+        default_factory=from_env("MINIMAX_API_HOST", default="https://api.minimax.chat")
+    )
+    minimax_group_id: Optional[str] = Field(
+        default_factory=from_env("MINIMAX_GROUP_ID", default=None)
+    )
     minimax_api_key: Optional[SecretStr] = None
 
     @pre_init
@@ -78,16 +87,7 @@ class MinimaxCommon(BaseModel):
         values["minimax_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "minimax_api_key", "MINIMAX_API_KEY")
         )
-        values["minimax_group_id"] = get_from_dict_or_env(
-            values, "minimax_group_id", "MINIMAX_GROUP_ID"
-        )
         # Get custom api url from environment.
-        values["minimax_api_host"] = get_from_dict_or_env(
-            values,
-            "minimax_api_host",
-            "MINIMAX_API_HOST",
-            default="https://api.minimax.chat",
-        )
         values["_client"] = _MinimaxEndpointClient(  # type: ignore[call-arg]
             host=values["minimax_api_host"],
             api_key=values["minimax_api_key"],

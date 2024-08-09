@@ -1,7 +1,12 @@
 from typing import Any, Dict
 
 from langchain_core.pydantic_v1 import Field, SecretStr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import (
+    convert_to_secret_str,
+    from_env,
+    get_from_dict_or_env,
+    pre_init,
+)
 
 from langchain_community.llms.openai import BaseOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -35,9 +40,13 @@ class OctoAIEndpoint(BaseOpenAI):
     """
 
     """Key word arguments to pass to the model."""
-    octoai_api_base: str = Field(default=DEFAULT_BASE_URL)
+    octoai_api_base: str = Field(
+        default_factory=from_env("OCTOAI_API_BASE", default=DEFAULT_BASE_URL)
+    )
     octoai_api_token: SecretStr = Field(default=None)
-    model_name: str = Field(default=DEFAULT_MODEL)
+    model_name: str = Field(
+        default_factory=from_env("MODEL_NAME", default=DEFAULT_MODEL)
+    )
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -69,20 +78,8 @@ class OctoAIEndpoint(BaseOpenAI):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["octoai_api_base"] = get_from_dict_or_env(
-            values,
-            "octoai_api_base",
-            "OCTOAI_API_BASE",
-            default=DEFAULT_BASE_URL,
-        )
         values["octoai_api_token"] = convert_to_secret_str(
             get_from_dict_or_env(values, "octoai_api_token", "OCTOAI_API_TOKEN")
-        )
-        values["model_name"] = get_from_dict_or_env(
-            values,
-            "model_name",
-            "MODEL_NAME",
-            default=DEFAULT_MODEL,
         )
 
         try:

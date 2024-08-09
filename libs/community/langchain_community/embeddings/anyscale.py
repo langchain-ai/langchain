@@ -5,7 +5,12 @@ from __future__ import annotations
 from typing import Dict
 
 from langchain_core.pydantic_v1 import Field, SecretStr
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import (
+    convert_to_secret_str,
+    from_env,
+    get_from_dict_or_env,
+    pre_init,
+)
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.utils.openai import is_openai_v1
@@ -21,7 +26,9 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
     """AnyScale Endpoints API keys."""
     model: str = Field(default=DEFAULT_MODEL)
     """Model name to use."""
-    anyscale_api_base: str = Field(default=DEFAULT_API_BASE)
+    anyscale_api_base: str = Field(
+        default_factory=from_env("ANYSCALE_API_BASE", default=DEFAULT_API_BASE)
+    )
     """Base URL path for API requests."""
     tiktoken_enabled: bool = False
     """Set this to False for non-OpenAI implementations of the embeddings API"""
@@ -43,12 +50,6 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
                 "anyscale_api_key",
                 "ANYSCALE_API_KEY",
             )
-        )
-        values["anyscale_api_base"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_base",
-            "ANYSCALE_API_BASE",
-            default=DEFAULT_API_BASE,
         )
         try:
             import openai

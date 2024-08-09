@@ -4,8 +4,8 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils import from_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -13,11 +13,15 @@ logger = logging.getLogger(__name__)
 class VolcanoEmbeddings(BaseModel, Embeddings):
     """`Volcengine Embeddings` embedding models."""
 
-    volcano_ak: Optional[str] = None
+    volcano_ak: Optional[str] = Field(
+        default_factory=from_env("VOLC_ACCESSKEY", default=None)
+    )
     """volcano access key
     learn more from: https://www.volcengine.com/docs/6459/76491#ak-sk"""
 
-    volcano_sk: Optional[str] = None
+    volcano_sk: Optional[str] = Field(
+        default_factory=from_env("VOLC_SECRETKEY", default=None)
+    )
     """volcano secret key
     learn more from: https://www.volcengine.com/docs/6459/76491#ak-sk"""
 
@@ -66,16 +70,6 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
             ValueError: volcengine package not found, please install it with
             `pip install volcengine`
         """
-        values["volcano_ak"] = get_from_dict_or_env(
-            values,
-            "volcano_ak",
-            "VOLC_ACCESSKEY",
-        )
-        values["volcano_sk"] = get_from_dict_or_env(
-            values,
-            "volcano_sk",
-            "VOLC_SECRETKEY",
-        )
 
         try:
             from volcengine.maas import MaasService

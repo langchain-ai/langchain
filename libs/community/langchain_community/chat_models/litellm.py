@@ -55,7 +55,7 @@ from langchain_core.outputs import (
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 logger = logging.getLogger(__name__)
@@ -219,12 +219,24 @@ class ChatLiteLLM(BaseChatModel):
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
     """Model name to use."""
-    openai_api_key: Optional[str] = None
-    azure_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
-    replicate_api_key: Optional[str] = None
-    cohere_api_key: Optional[str] = None
-    openrouter_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_KEY", default="")
+    )
+    azure_api_key: Optional[str] = Field(
+        default_factory=from_env("AZURE_API_KEY", default="")
+    )
+    anthropic_api_key: Optional[str] = Field(
+        default_factory=from_env("ANTHROPIC_API_KEY", default="")
+    )
+    replicate_api_key: Optional[str] = Field(
+        default_factory=from_env("REPLICATE_API_KEY", default="")
+    )
+    cohere_api_key: Optional[str] = Field(
+        default_factory=from_env("COHERE_API_KEY", default="")
+    )
+    openrouter_api_key: Optional[str] = Field(
+        default_factory=from_env("OPENROUTER_API_KEY", default="")
+    )
     streaming: bool = False
     api_base: Optional[str] = None
     organization: Optional[str] = None
@@ -302,24 +314,6 @@ class ChatLiteLLM(BaseChatModel):
                 "Please install it with `pip install litellm`"
             )
 
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY", default=""
-        )
-        values["azure_api_key"] = get_from_dict_or_env(
-            values, "azure_api_key", "AZURE_API_KEY", default=""
-        )
-        values["anthropic_api_key"] = get_from_dict_or_env(
-            values, "anthropic_api_key", "ANTHROPIC_API_KEY", default=""
-        )
-        values["replicate_api_key"] = get_from_dict_or_env(
-            values, "replicate_api_key", "REPLICATE_API_KEY", default=""
-        )
-        values["openrouter_api_key"] = get_from_dict_or_env(
-            values, "openrouter_api_key", "OPENROUTER_API_KEY", default=""
-        )
-        values["cohere_api_key"] = get_from_dict_or_env(
-            values, "cohere_api_key", "COHERE_API_KEY", default=""
-        )
         values["huggingface_api_key"] = get_from_dict_or_env(
             values, "huggingface_api_key", "HUGGINGFACE_API_KEY", default=""
         )

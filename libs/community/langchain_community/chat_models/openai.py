@@ -47,7 +47,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.utils import (
-    get_from_dict_or_env,
+    from_env,
     get_pydantic_field_names,
     pre_init,
 )
@@ -205,7 +205,9 @@ class ChatOpenAI(BaseChatModel):
     # When updating this to use a SecretStr
     # Check for classes that derive from this class (as some of them
     # may assume openai_api_key is a str)
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_KEY", default=None), alias="api_key"
+    )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
@@ -213,7 +215,9 @@ class ChatOpenAI(BaseChatModel):
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default="")
+    )
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -281,9 +285,6 @@ class ChatOpenAI(BaseChatModel):
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
 
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
             values["openai_organization"]
@@ -292,12 +293,6 @@ class ChatOpenAI(BaseChatModel):
         )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
         )
         try:
             import openai

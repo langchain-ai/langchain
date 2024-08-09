@@ -6,7 +6,7 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import pre_init
 
 from langchain_community.utilities.vertexai import get_client_info
 
@@ -58,9 +58,6 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
                 "Please install it with pip install google-cloud-contentwarehouse"
             ) from exc
 
-        values["project_number"] = get_from_dict_or_env(
-            values, "project_number", "PROJECT_NUMBER"
-        )
         values["client"] = DocumentServiceClient(
             client_info=get_client_info(module="document-ai-warehouse")
         )

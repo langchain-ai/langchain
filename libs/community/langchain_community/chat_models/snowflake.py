@@ -14,6 +14,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
@@ -111,19 +112,31 @@ class ChatSnowflakeCortex(BaseChatModel):
         cumulative probabilities. Value should be ranging between 0.0 and 1.0. 
     """
 
-    snowflake_username: Optional[str] = Field(default=None, alias="username")
+    snowflake_username: Optional[str] = Field(
+        default_factory=from_env("SNOWFLAKE_USERNAME", default=None), alias="username"
+    )
     """Automatically inferred from env var `SNOWFLAKE_USERNAME` if not provided."""
     snowflake_password: Optional[SecretStr] = Field(default=None, alias="password")
     """Automatically inferred from env var `SNOWFLAKE_PASSWORD` if not provided."""
-    snowflake_account: Optional[str] = Field(default=None, alias="account")
+    snowflake_account: Optional[str] = Field(
+        default_factory=from_env("SNOWFLAKE_ACCOUNT", default=None), alias="account"
+    )
     """Automatically inferred from env var `SNOWFLAKE_ACCOUNT` if not provided."""
-    snowflake_database: Optional[str] = Field(default=None, alias="database")
+    snowflake_database: Optional[str] = Field(
+        default_factory=from_env("SNOWFLAKE_DATABASE", default=None), alias="database"
+    )
     """Automatically inferred from env var `SNOWFLAKE_DATABASE` if not provided."""
-    snowflake_schema: Optional[str] = Field(default=None, alias="schema")
+    snowflake_schema: Optional[str] = Field(
+        default_factory=from_env("SNOWFLAKE_SCHEMA", default=None), alias="schema"
+    )
     """Automatically inferred from env var `SNOWFLAKE_SCHEMA` if not provided."""
-    snowflake_warehouse: Optional[str] = Field(default=None, alias="warehouse")
+    snowflake_warehouse: Optional[str] = Field(
+        default_factory=from_env("SNOWFLAKE_WAREHOUSE", default=None), alias="warehouse"
+    )
     """Automatically inferred from env var `SNOWFLAKE_WAREHOUSE` if not provided."""
-    snowflake_role: Optional[str] = Field(default=None, alias="role")
+    snowflake_role: Optional[str] = Field(
+        default_factory=from_env("SNOWFLAKE_ROLE", default=None), alias="role"
+    )
     """Automatically inferred from env var `SNOWFLAKE_ROLE` if not provided."""
 
     @root_validator(pre=True)
@@ -146,26 +159,8 @@ class ChatSnowflakeCortex(BaseChatModel):
                 "`pip install snowflake-snowpark-python`"
             )
 
-        values["snowflake_username"] = get_from_dict_or_env(
-            values, "snowflake_username", "SNOWFLAKE_USERNAME"
-        )
         values["snowflake_password"] = convert_to_secret_str(
             get_from_dict_or_env(values, "snowflake_password", "SNOWFLAKE_PASSWORD")
-        )
-        values["snowflake_account"] = get_from_dict_or_env(
-            values, "snowflake_account", "SNOWFLAKE_ACCOUNT"
-        )
-        values["snowflake_database"] = get_from_dict_or_env(
-            values, "snowflake_database", "SNOWFLAKE_DATABASE"
-        )
-        values["snowflake_schema"] = get_from_dict_or_env(
-            values, "snowflake_schema", "SNOWFLAKE_SCHEMA"
-        )
-        values["snowflake_warehouse"] = get_from_dict_or_env(
-            values, "snowflake_warehouse", "SNOWFLAKE_WAREHOUSE"
-        )
-        values["snowflake_role"] = get_from_dict_or_env(
-            values, "snowflake_role", "SNOWFLAKE_ROLE"
         )
 
         connection_params = {

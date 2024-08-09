@@ -30,6 +30,7 @@ from langchain_core.language_models.llms import BaseLLM, create_base_retry_decor
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import (
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
@@ -202,7 +203,9 @@ class BaseOpenAI(BaseLLM):
     # When updating this to use a SecretStr
     # Check for classes that derive from this class (as some of them
     # may assume openai_api_key is a str)
-    openai_api_key: Optional[str] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_KEY", default=None), alias="api_key"
+    )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service 
@@ -210,7 +213,9 @@ class BaseOpenAI(BaseLLM):
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = None
+    openai_proxy: Optional[str] = Field(
+        default_factory=from_env("OPENAI_PROXY", default="")
+    )
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
@@ -282,17 +287,8 @@ class BaseOpenAI(BaseLLM):
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
-        values["openai_api_key"] = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
-        )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
         )
         values["openai_organization"] = (
             values["openai_organization"]

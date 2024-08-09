@@ -21,6 +21,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
@@ -98,9 +99,13 @@ class ChatHunyuan(BaseChatModel):
     def lc_serializable(self) -> bool:
         return True
 
-    hunyuan_app_id: Optional[int] = None
+    hunyuan_app_id: Optional[int] = Field(
+        default_factory=from_env("HUNYUAN_APP_ID", default=None)
+    )
     """Hunyuan App ID"""
-    hunyuan_secret_id: Optional[str] = None
+    hunyuan_secret_id: Optional[str] = Field(
+        default_factory=from_env("HUNYUAN_SECRET_ID", default=None)
+    )
     """Hunyuan Secret ID"""
     hunyuan_secret_key: Optional[SecretStr] = None
     """Hunyuan Secret Key"""
@@ -163,16 +168,6 @@ class ChatHunyuan(BaseChatModel):
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
-        values["hunyuan_app_id"] = get_from_dict_or_env(
-            values,
-            "hunyuan_app_id",
-            "HUNYUAN_APP_ID",
-        )
-        values["hunyuan_secret_id"] = get_from_dict_or_env(
-            values,
-            "hunyuan_secret_id",
-            "HUNYUAN_SECRET_ID",
-        )
         values["hunyuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,

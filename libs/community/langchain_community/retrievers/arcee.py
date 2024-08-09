@@ -2,9 +2,14 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils import (
+    convert_to_secret_str,
+    from_env,
+    get_from_dict_or_env,
+    pre_init,
+)
 
 from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
 
@@ -37,13 +42,19 @@ class ArceeRetriever(BaseRetriever):
     model: str
     """Arcee DALM name"""
 
-    arcee_api_url: str = "https://api.arcee.ai"
+    arcee_api_url: str = Field(
+        default_factory=from_env("ARCEE_API_URL", default="https://api.arcee.ai")
+    )
     """Arcee API URL"""
 
-    arcee_api_version: str = "v2"
+    arcee_api_version: str = Field(
+        default_factory=from_env("ARCEE_API_VERSION", default="v2")
+    )
     """Arcee API Version"""
 
-    arcee_app_url: str = "https://app.arcee.ai"
+    arcee_app_url: str = Field(
+        default_factory=from_env("ARCEE_APP_URL", default="https://app.arcee.ai")
+    )
     """Arcee App URL"""
 
     model_kwargs: Optional[Dict[str, Any]] = None
@@ -79,24 +90,6 @@ class ArceeRetriever(BaseRetriever):
                 "arcee_api_key",
                 "ARCEE_API_KEY",
             )
-        )
-
-        values["arcee_api_url"] = get_from_dict_or_env(
-            values,
-            "arcee_api_url",
-            "ARCEE_API_URL",
-        )
-
-        values["arcee_app_url"] = get_from_dict_or_env(
-            values,
-            "arcee_app_url",
-            "ARCEE_APP_URL",
-        )
-
-        values["arcee_api_version"] = get_from_dict_or_env(
-            values,
-            "arcee_api_version",
-            "ARCEE_API_VERSION",
         )
 
         # validate model kwargs

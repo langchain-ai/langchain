@@ -23,6 +23,7 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     check_package_version,
+    from_env,
     get_from_dict_or_env,
     get_pydantic_field_names,
     pre_init,
@@ -57,7 +58,11 @@ class _AnthropicCommon(BaseLanguageModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: Optional[str] = None
+    anthropic_api_url: Optional[str] = Field(
+        default_factory=from_env(
+            "ANTHROPIC_API_URL", default="https://api.anthropic.com"
+        )
+    )
 
     anthropic_api_key: Optional[SecretStr] = None
 
@@ -82,12 +87,6 @@ class _AnthropicCommon(BaseLanguageModel):
             get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
         )
         # Get custom api url from environment.
-        values["anthropic_api_url"] = get_from_dict_or_env(
-            values,
-            "anthropic_api_url",
-            "ANTHROPIC_API_URL",
-            default="https://api.anthropic.com",
-        )
 
         try:
             import anthropic

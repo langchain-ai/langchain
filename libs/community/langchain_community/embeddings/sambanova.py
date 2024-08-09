@@ -3,8 +3,8 @@ from typing import Dict, Generator, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils import from_env, get_from_dict_or_env, pre_init
 
 
 class SambaStudioEmbeddings(BaseModel, Embeddings):
@@ -43,19 +43,27 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    sambastudio_embeddings_base_url: str = ""
+    sambastudio_embeddings_base_url: str = Field(
+        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_BASE_URL", default="")
+    )
     """Base url to use"""
 
     sambastudio_embeddings_base_uri: str = ""
     """endpoint base uri"""
 
-    sambastudio_embeddings_project_id: str = ""
+    sambastudio_embeddings_project_id: str = Field(
+        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_PROJECT_ID", default="")
+    )
     """Project id on sambastudio for model"""
 
-    sambastudio_embeddings_endpoint_id: str = ""
+    sambastudio_embeddings_endpoint_id: str = Field(
+        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_ENDPOINT_ID", default="")
+    )
     """endpoint id on sambastudio for model"""
 
-    sambastudio_embeddings_api_key: str = ""
+    sambastudio_embeddings_api_key: str = Field(
+        default_factory=from_env("SAMBASTUDIO_EMBEDDINGS_API_KEY", default="")
+    )
     """sambastudio api key"""
 
     model_kwargs: dict = {}
@@ -67,27 +75,11 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["sambastudio_embeddings_base_url"] = get_from_dict_or_env(
-            values, "sambastudio_embeddings_base_url", "SAMBASTUDIO_EMBEDDINGS_BASE_URL"
-        )
         values["sambastudio_embeddings_base_uri"] = get_from_dict_or_env(
             values,
             "sambastudio_embeddings_base_uri",
             "SAMBASTUDIO_EMBEDDINGS_BASE_URI",
             default="api/predict/generic",
-        )
-        values["sambastudio_embeddings_project_id"] = get_from_dict_or_env(
-            values,
-            "sambastudio_embeddings_project_id",
-            "SAMBASTUDIO_EMBEDDINGS_PROJECT_ID",
-        )
-        values["sambastudio_embeddings_endpoint_id"] = get_from_dict_or_env(
-            values,
-            "sambastudio_embeddings_endpoint_id",
-            "SAMBASTUDIO_EMBEDDINGS_ENDPOINT_ID",
-        )
-        values["sambastudio_embeddings_api_key"] = get_from_dict_or_env(
-            values, "sambastudio_embeddings_api_key", "SAMBASTUDIO_EMBEDDINGS_API_KEY"
         )
         return values
 

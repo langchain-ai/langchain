@@ -6,9 +6,9 @@ from typing import Dict, List, Optional
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import run_in_executor
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,15 @@ logger = logging.getLogger(__name__)
 class ErnieEmbeddings(BaseModel, Embeddings):
     """`Ernie Embeddings V1` embedding models."""
 
-    ernie_api_base: Optional[str] = None
-    ernie_client_id: Optional[str] = None
-    ernie_client_secret: Optional[str] = None
+    ernie_api_base: Optional[str] = Field(
+        default_factory=from_env("ERNIE_API_BASE", default="https://aip.baidubce.com")
+    )
+    ernie_client_id: Optional[str] = Field(
+        default_factory=from_env("ERNIE_CLIENT_ID", default=None)
+    )
+    ernie_client_secret: Optional[str] = Field(
+        default_factory=from_env("ERNIE_CLIENT_SECRET", default=None)
+    )
     access_token: Optional[str] = None
 
     chunk_size: int = 16
@@ -33,19 +39,6 @@ class ErnieEmbeddings(BaseModel, Embeddings):
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
-        values["ernie_api_base"] = get_from_dict_or_env(
-            values, "ernie_api_base", "ERNIE_API_BASE", "https://aip.baidubce.com"
-        )
-        values["ernie_client_id"] = get_from_dict_or_env(
-            values,
-            "ernie_client_id",
-            "ERNIE_CLIENT_ID",
-        )
-        values["ernie_client_secret"] = get_from_dict_or_env(
-            values,
-            "ernie_client_secret",
-            "ERNIE_CLIENT_SECRET",
-        )
         return values
 
     def _embedding(self, json: object) -> dict:

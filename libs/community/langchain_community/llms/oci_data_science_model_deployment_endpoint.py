@@ -5,7 +5,7 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Field
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class OCIModelDeploymentLLM(LLM):
     p: float = 0.75
     """Total probability mass of tokens to consider at each step."""
 
-    endpoint: str = ""
+    endpoint: str = Field(default_factory=from_env("OCI_LLM_ENDPOINT", default=""))
     """The uri of the endpoint from the deployed Model Deployment model."""
 
     best_of: int = 1
@@ -62,11 +62,6 @@ class OCIModelDeploymentLLM(LLM):
             ) from ex
         if not values.get("auth", None):
             values["auth"] = ads.common.auth.default_signer()
-        values["endpoint"] = get_from_dict_or_env(
-            values,
-            "endpoint",
-            "OCI_LLM_ENDPOINT",
-        )
         return values
 
     @property

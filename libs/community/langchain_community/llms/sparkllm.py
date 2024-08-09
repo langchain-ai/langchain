@@ -18,7 +18,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Field
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import from_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +42,23 @@ class SparkLLM(LLM):
     """
 
     client: Any = None  #: :meta private:
-    spark_app_id: Optional[str] = None
-    spark_api_key: Optional[str] = None
-    spark_api_secret: Optional[str] = None
-    spark_api_url: Optional[str] = None
-    spark_llm_domain: Optional[str] = None
+    spark_app_id: Optional[str] = Field(
+        default_factory=from_env("IFLYTEK_SPARK_APP_ID", default=None)
+    )
+    spark_api_key: Optional[str] = Field(
+        default_factory=from_env("IFLYTEK_SPARK_API_KEY", default=None)
+    )
+    spark_api_secret: Optional[str] = Field(
+        default_factory=from_env("IFLYTEK_SPARK_API_SECRET", default=None)
+    )
+    spark_api_url: Optional[str] = Field(
+        default_factory=from_env(
+            "IFLYTEK_SPARK_API_URL", default="wss://spark-api.xf-yun.com/v3.1/chat"
+        )
+    )
+    spark_llm_domain: Optional[str] = Field(
+        default_factory=from_env("IFLYTEK_SPARK_LLM_DOMAIN", default="generalv3")
+    )
     spark_user_id: str = "lc_user"
     streaming: bool = False
     request_timeout: int = 30
@@ -56,33 +68,6 @@ class SparkLLM(LLM):
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
-        values["spark_app_id"] = get_from_dict_or_env(
-            values,
-            "spark_app_id",
-            "IFLYTEK_SPARK_APP_ID",
-        )
-        values["spark_api_key"] = get_from_dict_or_env(
-            values,
-            "spark_api_key",
-            "IFLYTEK_SPARK_API_KEY",
-        )
-        values["spark_api_secret"] = get_from_dict_or_env(
-            values,
-            "spark_api_secret",
-            "IFLYTEK_SPARK_API_SECRET",
-        )
-        values["spark_api_url"] = get_from_dict_or_env(
-            values,
-            "spark_api_url",
-            "IFLYTEK_SPARK_API_URL",
-            "wss://spark-api.xf-yun.com/v3.1/chat",
-        )
-        values["spark_llm_domain"] = get_from_dict_or_env(
-            values,
-            "spark_llm_domain",
-            "IFLYTEK_SPARK_LLM_DOMAIN",
-            "generalv3",
-        )
         # put extra params into model_kwargs
         values["model_kwargs"]["temperature"] = values["temperature"] or cls.temperature
         values["model_kwargs"]["top_k"] = values["top_k"] or cls.top_k

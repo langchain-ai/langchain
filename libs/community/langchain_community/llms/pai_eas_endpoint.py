@@ -6,7 +6,7 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -54,12 +54,6 @@ class PaiEasEndpoint(LLM):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["eas_service_url"] = get_from_dict_or_env(
-            values, "eas_service_url", "EAS_SERVICE_URL"
-        )
-        values["eas_service_token"] = get_from_dict_or_env(
-            values, "eas_service_token", "EAS_SERVICE_TOKEN"
-        )
 
         return values
 
