@@ -116,6 +116,7 @@ class SemanticChunker(BaseDocumentTransformer):
         breakpoint_threshold_type: BreakpointThresholdType = "percentile",
         breakpoint_threshold_amount: Optional[float] = None,
         number_of_chunks: Optional[int] = None,
+        max_chunk_size: Optional[int] = None,
         sentence_split_regex: str = r"(?<=[.?!])\s+",
     ):
         self._add_start_index = add_start_index
@@ -123,6 +124,7 @@ class SemanticChunker(BaseDocumentTransformer):
         self.buffer_size = buffer_size
         self.breakpoint_threshold_type = breakpoint_threshold_type
         self.number_of_chunks = number_of_chunks
+        self.max_chunk_size = max_chunk_size
         self.sentence_split_regex = sentence_split_regex
         if breakpoint_threshold_amount is None:
             self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[
@@ -240,7 +242,11 @@ class SemanticChunker(BaseDocumentTransformer):
             # Slice the sentence_dicts from the current start index to the end index
             group = sentences[start_index : end_index + 1]
             combined_text = " ".join([d["sentence"] for d in group])
-            chunks.append(combined_text)
+
+            if self.max_chunk_size and len(combined_text) > self.max_chunk_size:
+                chunks.extend(self._split_large_chunk(group))
+            else:
+                chunks.append(combined_text)
 
             # Update the start index for the next group
             start_index = index + 1
@@ -248,8 +254,27 @@ class SemanticChunker(BaseDocumentTransformer):
         # The last group, if any sentences remain
         if start_index < len(sentences):
             combined_text = " ".join([d["sentence"] for d in sentences[start_index:]])
-            chunks.append(combined_text)
+            if self.max_chunk_size and len(combined_text) > self.max_chunk_size:
+                chunks.extend(self._split_large_chunk(sentences[start_index:]))
+            else:
+                chunks.append(combined_text)
         return chunks
+
+    def _split_large_chunk(self, group: List[dict]) -> List[str]:
+        """Split a large chunk into smaller ones based on max_chunk_size."""
+        sub_chunks = []
+
+        for sentence_dict in group:
+            sentence = sentence_dict["sentence"]
+            sentence_length = len(sentence)
+
+            while self.max_chunk_size and sentence_length > self.max_chunk_size:
+                sub_chunks.append(sentence[: self.max_chunk_size])
+                sentence = sentence[self.max_chunk_size :]
+                sentence_length = len(sentence)
+            sub_chunks.append(sentence)
+
+        return sub_chunks
 
     def create_documents(
         self, texts: List[str], metadatas: Optional[List[dict]] = None
