@@ -53,6 +53,7 @@
   --pst-pink-900: #2b0b27;
   --pst-foundation-white: #ffffff;
   --pst-foundation-black: #14181e;
+  --pst-green-10: #f1fdfd;
   --pst-green-50: #E0F7F6;
   --pst-green-100: #B3E8E6;
   --pst-green-200: #80D6D3;
@@ -73,11 +74,12 @@
   --pst-lilac-700: #5021B6;
   --pst-lilac-800: #431D95;
   --pst-lilac-900: #1e0e39;
+  --pst-header-height: 2.5rem;
 }
 
 html {
     --pst-font-family-base: 'Inter';
-    --pst-font-family-heading: 'Inter', sans-serif;
+    --pst-font-family-heading: 'Inter Tight', sans-serif;
 }
 
 /*******************************************************************************
@@ -117,8 +119,8 @@ html:not([data-theme]) {
   --pst-color-inline-code-links: #246161;
   --pst-color-target: #f3cf95;
   --pst-color-background: #ffffff;
-  --pst-color-on-background: #ffffff;
-  --pst-color-surface: #f3f4f5;
+  --pst-color-on-background: #F4F9F8;
+  --pst-color-surface: #F4F9F8;
   --pst-color-on-surface: #222832;
 }
 html:not([data-theme]) {
@@ -160,8 +162,8 @@ html[data-theme=light] {
   --pst-color-inline-code-links: #246161;
   --pst-color-target: #f3cf95;
   --pst-color-background: #ffffff;
-  --pst-color-on-background: #ffffff;
-  --pst-color-surface: #f3f4f5;
+  --pst-color-on-background: #F4F9F8;
+  --pst-color-surface: #F4F9F8;
   --pst-color-on-surface: #222832;
   color-scheme: light;
 }
@@ -317,4 +319,28 @@ html[data-theme=dark] .MathJax_SVG * {
   color: var(--pst-color-on-surface);
 }
 
-/*# sourceMappingURL=custom.css.map */
+
+
+/* Adjust the height of the navbar */
+.bd-header .bd-header__inner{
+    height: 52px; /* Adjust this value as needed */
+}
+
+.navbar-nav > li > a {
+    line-height: 52px; /* Vertically center the navbar links */
+}
+
+/* Make sure the navbar items align properly */
+.navbar-nav {
+    display: flex;
+    align-items: center;
+}
+
+
+.bd-header .navbar-header-items__start{
+  margin-left: 1rem
+}
+
+.bd-header button.primary-toggle {
+  margin-right: 0rem;
+}

@@ -497,30 +497,70 @@ def _build_index(dirs: List[str]) -> None:
         f"{header_name}<{dir_.replace('-', '_')}/index>"
         for header_name, dir_ in zip(main_headers, main_)
     )
+    main_grid = "\n".join(
+        f'- header: "**{header_name}**"\n  content: {_package_namespace(dir_)} {_get_package_version(_package_dir(dir_))}\n  link: {dir_.replace("-", "_")}/index.html'
+        for header_name, dir_ in zip(main_headers, main_)
+    )
     integration_tree = "\n".join(
         f"{header_name}<{dir_.replace('-', '_')}/index>"
         for header_name, dir_ in zip(integration_headers, integrations)
     )
-    doc = f"""# API reference
+
+    integration_grid = ""
+    integrations_to_show = [
+        "openai",
+        "anthropic",
+        "google-vertexai",
+        "aws",
+        "huggingface",
+        "mistralai",
+    ]
+    for header_name, dir_ in sorted(
+        zip(integration_headers, integrations),
+        key=lambda h_d: integrations_to_show.index(h_d[1])
+        if h_d[1] in integrations_to_show
+        else len(integrations_to_show),
+    )[: len(integrations_to_show)]:
+        integration_grid += f'\n- header: "**{header_name}**"\n  content: {_package_namespace(dir_)} {_get_package_version(_package_dir(dir_))}\n  link: {dir_.replace("-", "_")}/index.html'
+    doc = f"""# LangChain Python API Reference
 
 Welcome to the LangChain Python API reference. This is a reference for all 
-`langchain-x` packages. For user guides see 
-[https://python.langchain.com](https://python.langchain.com).
+`langchain-x` packages. 
+
+For user guides see [https://python.langchain.com](https://python.langchain.com).
 
 ## Base packages
 
+```{{gallery-grid}}
+:grid-columns: "1 2 2 3"
+
+{main_grid}
+```
+
 ```{{toctree}}
 :maxdepth: 1
+:hidden:
 
 {main_tree}
 ```
 
 ## Integration packages
 
+```{{gallery-grid}}
+:grid-columns: "1 2 2 3"
+
+{integration_grid}
+```
+
+See all packages in the Integrations dropdown.
+
 ```{{toctree}}
 :maxdepth: 1
+:hidden:
 
 {integration_tree}
+```
+
 """
     with open(HERE / "index.md", "w") as f:
         f.write(doc)

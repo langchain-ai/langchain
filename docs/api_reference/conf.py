@@ -114,6 +114,8 @@ extensions = [
     "sphinxcontrib.autodoc_pydantic",
     "IPython.sphinxext.ipython_console_highlighting",
     "myst_parser",
+    "_extensions.gallery_directive",
+    "sphinx_design",
 ]
 source_suffix = [".rst", ".md"]
 
@@ -165,17 +167,17 @@ html_theme_options = {
     #     # to True would repeat prev and next links. See
     #     # https://github.com/pydata/pydata-sphinx-theme/blob/b731dc230bc26a3d1d1bb039c56c977a9b3d25d8/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/layout.html#L118-L129
     "show_prev_next": False,
-    "search_bar_text": "Search the API ...",
+    "search_bar_text": "Search",
     "navigation_with_keys": True,
     "collapse_navigation": True,
     "navigation_depth": 2,
     "show_nav_level": 1,
     "show_toc_level": 2,
-    "navbar_align": "left",
+    "navbar_align": "content",
     "header_links_before_dropdown": 5,
     "header_dropdown_text": "Integrations",
     "logo": {
-        "image_light": "_static/wordmark-small.png",
+        "image_light": "_static/wordmark-api.svg",
         "image_dark": "_static/wordmark-dark-small.png",
     },
     "surface_warnings": True,
@@ -183,12 +185,12 @@ html_theme_options = {
     "navbar_start": ["navbar-logo"],
     #     # Note that the alignment of navbar_center is controlled by navbar_align
     "navbar_center": ["navbar-nav"],
-    "navbar_end": ["theme-switcher", "navbar-icon-links"],
+    "navbar_end": ["langchain_docs", "theme-switcher", "navbar-icon-links"],
     #     # navbar_persistent is persistent right (even when on mobiles)
-    "navbar_persistent": ["search-button"],
+    "navbar_persistent": ["search-field"],
     "article_header_start": ["breadcrumbs"],
     "article_header_end": [],
-    "article_footer_items": ["prev-next"],
+    "article_footer_items": [],
     "content_footer_items": [],
     #     # Use html_sidebars that map page patterns to list of sidebar templates
     #     "primary_sidebar_end": [],
@@ -203,12 +205,6 @@ html_theme_options = {
     #     "show_version_warning_banner": True,
     #     "announcement": None,
     "icon_links": [
-        {
-            "name": "LangChain docs",
-            "url": "/docs",
-            "icon": "_static/img/brand/favicon.png",
-            "type": "local",
-        },
         {
             # Label for this link
             "name": "GitHub",
