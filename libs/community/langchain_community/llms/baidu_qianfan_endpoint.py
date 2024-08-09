@@ -23,22 +23,102 @@ logger = logging.getLogger(__name__)
 
 
 class QianfanLLMEndpoint(LLM):
-    """Baidu Qianfan hosted open source or customized models.
+    """Baidu Qianfan completion model integration.
 
-    To use, you should have the ``qianfan`` python package installed, and
-    the environment variable ``qianfan_ak`` and ``qianfan_sk`` set with
-    your API key and Secret Key.
+    Setup:
+        Install ``qianfan`` and set environment variables ``QIANFAN_AK``, ``QIANFAN_SK``.
 
-    ak, sk are required parameters which you could get from
-    https://cloud.baidu.com/product/wenxinworkshop
+        .. code-block:: bash
 
-    Example:
+            pip install qianfan
+            export QIANFAN_AK="your-api-key"
+            export QIANFAN_SK="your-secret_key"
+
+    Key init args — completion params:
+        model: str
+            Name of Qianfan model to use.
+        temperature: Optional[float]
+            Sampling temperature.
+        endpoint: Optional[str]
+            Endpoint of the Qianfan LLM
+        top_p: Optional[float]
+            What probability mass to use.
+
+    Key init args — client params:
+        timeout: Optional[int]
+            Timeout for requests.
+        api_key: Optional[str]
+            Qianfan API KEY. If not passed in will be read from env var QIANFAN_AK.
+        secret_key: Optional[str]
+            Qianfan SECRET KEY. If not passed in will be read from env var QIANFAN_SK.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.llms import QianfanLLMEndpoint
-            qianfan_model = QianfanLLMEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
-    """
+
+            llm = QianfanLLMEndpoint(
+                model="ERNIE-3.5-8K",
+                # api_key="...",
+                # secret_key="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            llm.invoke(messages)
+
+        .. code-block:: python
+
+            'I like programming.'
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            I like
+            programming.
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block::
+
+            'I like programming.'
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(messages)
+
+            # stream:
+            # async for chunk in llm.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await llm.abatch([messages])
+
+        .. code-block:: python
+
+            'I like programming.'
+
+    """  # noqa: E501
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """init kwargs for qianfan client init, such as `query_per_second` which is 
@@ -49,8 +129,8 @@ class QianfanLLMEndpoint(LLM):
 
     client: Any
 
-    qianfan_ak: Optional[SecretStr] = None
-    qianfan_sk: Optional[SecretStr] = None
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
+    qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
 
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
@@ -68,7 +148,7 @@ class QianfanLLMEndpoint(LLM):
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
-    request_timeout: Optional[int] = 60
+    request_timeout: Optional[int] = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
 
     top_p: Optional[float] = 0.8
@@ -83,7 +163,7 @@ class QianfanLLMEndpoint(LLM):
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_ak",
+                ["qianfan_ak", "api_key"],
                 "QIANFAN_AK",
                 default="",
             )
@@ -91,7 +171,7 @@ class QianfanLLMEndpoint(LLM):
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_sk",
+                ["qianfan_sk", "secret_key"],
                 "QIANFAN_SK",
                 default="",
             )
