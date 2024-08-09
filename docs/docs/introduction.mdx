@@ -5,19 +5,20 @@ sidebar_class_name: hidden
 
 # Introduction
 
-**LangChain** is a framework for developing applications powered by large language models (LLMs).
+**LangChain** is a software framework that helps you build more reliable large language model (LLM) applications, faster.
 
-LangChain simplifies every stage of the LLM application lifecycle:
-- **Development**: Build your applications using LangChain's open-source [building blocks](/docs/concepts#langchain-expression-language-lcel), [components](/docs/concepts), and [third-party integrations](/docs/integrations/platforms/).
-Use [LangGraph](/docs/concepts/#langgraph) to build stateful agents with first-class streaming and human-in-the-loop support.
-- **Productionization**: Use [LangSmith](https://docs.smith.langchain.com/) to inspect, monitor and evaluate your chains, so that you can continuously optimize and deploy with confidence.
-- **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/).
+LangChain open-source libraries and commercial products simplify every stage of the LLM application lifecycle:
+- **Develop**: Quickly build applications that are highly modular and easy to iterate on with `langchain`'s
+[standard interfaces](/docs/concepts/#langchain-expression-language-lcel) for the most popular [models](/docs/concepts/#chat-models), [vector stores](/docs/concepts/#vector-stores), and [much more](/docs/concepts/#components).
+Create stateful, agentic workflows with first-class support for event streaming and human-in-the-loop architectures using [`langgraph`](/docs/concepts/#langgraph).
+- **Productionize**: Continuously deploy with confidence using [LangSmith](https://docs.smith.langchain.com/), a developer platform for inspecting, monitoring, evaluating, and optimizing LLM applications.
+- **Deploy**: Turn your LangGraph applications into production-ready Assistant APIs with [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/).
 
 import ThemedImage from '@theme/ThemedImage';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <ThemedImage
-  alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
+  alt="Outline of the LangChain framework."
   sources={{
     light: useBaseUrl('/svg/langchain_stack_062024.svg'),
     dark: useBaseUrl('/svg/langchain_stack_062024_dark.svg'),
@@ -28,18 +29,19 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 Concretely, the framework consists of the following open-source libraries:
 
-- **`langchain-core`**: Base abstractions and LangChain Expression Language.
-- **`langchain-community`**: Third party integrations.
-  - Partner packages (e.g. **`langchain-openai`**, **`langchain-anthropic`**, etc.): Some integrations have been further split into their own lightweight packages that only depend on **`langchain-core`**.
-- **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **[LangGraph](https://langchain-ai.github.io/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it.
-- **[LangServe](/docs/langserve)**: Deploy LangChain chains as REST APIs.
-- **[LangSmith](https://docs.smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
+- **`langchain-core`**: [Component abstractions](/docs/concepts/#components) and [LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel).
+- Integration packages (`langchain-openai`, `langchain-anthropic`, `langchain-community`, etc.): Standard interfaces for all the most popular third-party integrations.
+- **`langchain`**: Prebuilt chains, agents, and retrieval strategies for common cognitive architectures.
+- **[`langgraph`](https://langchain-ai.github.io/langgraph)**: Protocol for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates seamlessly with `langchain` and LangSmith, but can be used without them as well.
+- **[`langserve`](/docs/langserve)**: Library for serving `langchain` chains as REST APIs.
 
+And the following commercial products:
+- **[LangSmith](https://docs.smith.langchain.com)**: A developer platform that lets you debug, evaluate, monitor, and optimize LLM applications, whether or not they're built with LangChain libraries.
+- **[LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/)**: Turn your LangGraph applications into production-ready Assistant APIs.
 
 :::note
 
-These docs focus on the Python LangChain library. [Head here](https://js.langchain.com) for docs on the JavaScript LangChain library.
+These docs focus on the Python LangChain libraries (`langchain-core`, `langchain`, `langchain-community`, etc.). [Head here](https://js.langchain.com) for docs on the JavaScript LangChain libraries and [here](https://langchain-ai.github.io/langgraph) for docs on LangGraph.
 
 :::
 
@@ -55,12 +57,11 @@ These are the best ones to get started with:
 - [Build an Agent](/docs/tutorials/agents)
 - [Introduction to LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
 
-Explore the full list of LangChain tutorials [here](/docs/tutorials), and check out other [LangGraph tutorials here](https://langchain-ai.github.io/langgraph/tutorials/).
-
+Explore the full list of [LangChain tutorials here](/docs/tutorials), and check out [LangGraph tutorials here](https://langchain-ai.github.io/langgraph/tutorials/).
 
 ## [How-to guides](/docs/how_to)
 
-[Here](/docs/how_to) you’ll find short answers to “How do I….?” types of questions.
+[Here](/docs/how_to) you’ll find short answers to “How do I…?” types of questions.
 These how-to guides don’t cover topics in depth – you’ll find that material in the [Tutorials](/docs/tutorials) and the [API Reference](https://api.python.langchain.com/en/latest/).
 However, these guides will help you quickly accomplish common tasks.
 

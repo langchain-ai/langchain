@@ -7,18 +7,18 @@ This section contains introductions to key parts of LangChain.
 
 ## Architecture
 
-LangChain as a framework consists of a number of packages.
+LangChain as a framework consists of a number of packages and platforms.
 
 ### `langchain-core`
 This package contains base abstractions of different components and ways to compose them together.
 The interfaces for core components like LLMs, vector stores, retrievers and more are defined here.
 No third party integrations are defined here.
-The dependencies are kept purposefully very lightweight.
+The dependencies are intentionally kept very lightweight.
 
-### Partner packages
+### Integration packages
 
-While the long tail of integrations are in `langchain-community`, we split popular integrations into their own packages (e.g. `langchain-openai`, `langchain-anthropic`, etc).
-This was done in order to improve support for these important integrations.
+The most commonly-used integrations are split into their own packages (e.g. `langchain-openai`, `langchain-anthropic`, etc.) so that they can be properly versioned and tested, and their dependencies fully specified.
+Integrations that are not yet maintained in their own package live in the `langchain-community` package (see below).
 
 ### `langchain`
 
@@ -29,7 +29,7 @@ All chains, agents, and retrieval strategies here are NOT specific to any one in
 ### `langchain-community`
 
 This package contains third party integrations that are maintained by the LangChain community.
-Key partner packages are separated out (see below).
+Key integration are separated out into their own packages (see **Integration packages** above).
 This contains all integrations for various components (LLMs, vector stores, retrievers).
 All dependencies in this package are optional to keep the package as lightweight as possible.
 
@@ -37,8 +37,9 @@ All dependencies in this package are optional to keep the package as lightweight
 
 `langgraph` is an extension of `langchain` aimed at
 building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+`langgraph` exposes high level interfaces for creating common types of agents, as well as a low-level API for composing custom flows.
 
-LangGraph exposes high level interfaces for creating common types of agents, as well as a low-level API for composing custom flows.
+Head to the [`langgraph` docs here](https://langchain-ai.github.io/langgraph).
 
 ### [`langserve`](/docs/langserve)
 
@@ -46,7 +47,9 @@ A package to deploy LangChain chains as REST APIs. Makes it easy to get a produc
 
 ### [LangSmith](https://docs.smith.langchain.com)
 
-A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
+A developer platform that lets you debug, evaluate, monitor, and optimize LLM applications, whether they're built with LangChain libraries or not.
+
+Head to the [LangSmith docs here](https://docs.smith.langchain.com/).
 
 <ThemedImage
   alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
@@ -57,6 +60,12 @@ A developer platform that lets you debug, test, evaluate, and monitor LLM applic
   title="LangChain Framework Overview"
   style={{ width: "100%" }}
 />
+
+- **[LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/)**:
+
+Turn your LangGraph applications into production-ready Assistant APIs.
+
+Head to the [LangGraph Cloud docs here](https://langchain-ai.github.io/langgraph/cloud/).
 
 ## LangChain Expression Language (LCEL)
 <span data-heading-keywords="lcel"></span>
