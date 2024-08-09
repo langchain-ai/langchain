@@ -143,18 +143,12 @@ class HuggingFaceEndpoint(LLM):
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
                 f"Instead they were passed in as part of `model_kwargs` parameter."
             )
-
         values["model_kwargs"] = extra
-
-        values["endpoint_url"] = get_from_dict_or_env(
-            values, "endpoint_url", "HF_INFERENCE_ENDPOINT", None
-        )
-
-        if values["endpoint_url"] is None and "repo_id" not in values:
+        if values.get("endpoint_url") is None and "repo_id" not in values:
             raise ValueError(
                 "Please specify an `endpoint_url` or `repo_id` for the model."
             )
-        if values["endpoint_url"] is not None and "repo_id" in values:
+        if values.get("endpoint_url") is not None and "repo_id" in values:
             raise ValueError(
                 "Please specify either an `endpoint_url` OR a `repo_id`, not both."
             )
@@ -172,15 +166,12 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
+        import os
 
-        values["huggingfacehub_api_token"] = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
-        )
-
+        existing_key = next((key for key in ["HF_TOKEN", "HUGGINGFACEHUB_API_TOKEN"] if key in os.environ), "HUGGINGFACEHUB_API_TOKEN")
         huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HF_TOKEN", None
+            values, "huggingfacehub_api_token", f"{existing_key}", None
         )
-
         if huggingfacehub_api_token is not None:
             try:
                 login(token=huggingfacehub_api_token)
