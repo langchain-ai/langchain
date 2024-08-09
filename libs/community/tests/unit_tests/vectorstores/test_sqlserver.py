@@ -250,6 +250,6 @@ def test_sqlserver_delete_text_by_id_no_ids_provided(
     ]
     result = store.add_texts(texts, metadatas)
 
-    # Should return False since empty list of ids given
+    # Should return False, since empty list of ids given
     if not result:
         pass
