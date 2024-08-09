@@ -26,6 +26,7 @@ EXPECTED_ALL = [
     "stringify_value",
     "pre_init",
     "from_env",
+    "secret_from_env",
 ]
 
 
