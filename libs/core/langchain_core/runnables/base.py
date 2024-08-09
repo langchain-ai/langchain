@@ -310,6 +310,43 @@ class Runnable(Generic[Input, Output], ABC):
             __root__=(root_type, None),
         )
 
+    def get_input_jsonschema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Dict[str, Any]:
+        """Get a JSON schema that represents the input to the Runnable.
+
+        Args:
+            config: A config to use when generating the schema.
+
+        Returns:
+            A JSON schema that represents the input to the Runnable.
+
+        Example:
+
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                runnable = RunnableLambda(add_one)
+
+                print(runnable.get_input_jsonschema())
+
+        .. note:: JSON Schema has different versions
+
+            The JSON schema is currently formatted according to pydnatic.v1
+            which returns draft 7 JSON schema.
+
+            The format is likely to change after LangChain's upgrade to pydantic
+            v2 is completed. It will likely return the 2020-12 JSON schema as
+            is the default for pydantic.v2. However, this is still TBD.
+
+        .. versionadded:: 0.2.27
+        """
+        return self.get_input_schema(config).schema()
+
     @property
     def output_schema(self) -> Type[BaseModel]:
         """The type of output this Runnable produces specified as a pydantic model."""
@@ -341,6 +378,43 @@ class Runnable(Generic[Input, Output], ABC):
             self.get_name("Output"),
             __root__=(root_type, None),
         )
+
+    def get_output_jsonschema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Dict[str, Any]:
+        """Get a JSON schema that represents the output of the Runnable.
+
+        Args:
+            config: A config to use when generating the schema.
+
+        Returns:
+            A JSON schema that represents the output of the Runnable.
+
+        Example:
+
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                runnable = RunnableLambda(add_one)
+
+                print(runnable.get_output_jsonschema())
+
+        .. note:: JSON Schema has different versions
+
+            The JSON schema is currently formatted according to pydnatic.v1
+            which returns draft 7 JSON schema.
+
+            The format is likely to change after LangChain's upgrade to pydantic
+            v2 is completed. It will likely return the 2020-12 JSON schema as
+            is the default for pydantic.v2. However, this is still TBD.
+
+        .. versionadded:: 0.2.27
+        """
+        return self.get_output_schema(config).schema()
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -390,6 +464,30 @@ class Runnable(Generic[Input, Output], ABC):
                 if field_name in [i for i in include if i != "configurable"]
             },
         )
+
+    def get_config_jsonschema(
+        self, *, include: Optional[Sequence[str]] = None
+    ) -> Dict[str, Any]:
+        """Get a JSON schema that represents the output of the Runnable.
+
+        Args:
+            include: A list of fields to include in the config schema.
+
+        Returns:
+            A JSON schema that represents the output of the Runnable.
+
+        .. note:: JSON Schema has different versions
+
+            The JSON schema is currently formatted according to pydnatic.v1
+            which returns draft 7 JSON schema.
+
+            The format is likely to change after LangChain's upgrade to pydantic
+            v2 is completed. It will likely return the 2020-12 JSON schema as
+            is the default for pydantic.v2. However, this is still TBD.
+
+        .. versionadded:: 0.2.27
+        """
+        return self.config_schema(include=include).schema()
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         """Return a graph representation of this Runnable."""

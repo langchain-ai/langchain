@@ -7,7 +7,6 @@ import pytest
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
-from tests.unit_tests.pydantic_utils import _schema
 
 
 def test_prompt_valid() -> None:
@@ -70,7 +69,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo="bar") == "This is a bar test."
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"title": "Foo", "type": "string"}},
@@ -81,7 +80,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test."
     assert prompt.input_variables == ["bar", "foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
@@ -95,7 +94,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test bar."
     assert prompt.input_variables == ["bar", "foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
@@ -111,7 +110,7 @@ def test_mustache_prompt_from_template() -> None:
         "This foo is a bar test baz."
     )
     assert prompt.input_variables == ["foo", "obj"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {
@@ -135,7 +134,7 @@ def test_mustache_prompt_from_template() -> None:
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo="baz") == ("This {'foo': 'baz'} is a test.")
     assert prompt.input_variables == []
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {},
@@ -152,7 +151,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"$ref": "#/definitions/foo"}},
@@ -184,7 +183,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"$ref": "#/definitions/foo"}},
@@ -239,7 +238,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"$ref": "#/definitions/foo"}},
@@ -287,7 +286,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"$ref": "#/definitions/foo"}},
@@ -310,7 +309,7 @@ def test_mustache_prompt_from_template() -> None:
     is a test."""
     )
     assert prompt.input_variables == ["foo"]
-    assert _schema(prompt.input_schema) == {
+    assert prompt.get_input_jsonschema() == {
         "title": "PromptInput",
         "type": "object",
         "properties": {"foo": {"title": "Foo", "type": "object"}},
