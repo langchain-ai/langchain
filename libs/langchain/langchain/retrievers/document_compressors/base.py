@@ -16,8 +16,6 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
     """List of document filters that are chained together and run in sequence."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def compress_documents(

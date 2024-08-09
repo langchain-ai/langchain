@@ -27,10 +27,7 @@ class ChatGPTPluginRetriever(BaseRetriever):
     """Aiohttp session to use for requests."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
-        """Allow arbitrary types."""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

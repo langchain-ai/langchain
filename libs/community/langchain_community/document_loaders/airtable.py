@@ -16,7 +16,7 @@ class AirtableLoader(BaseLoader):
             api_token: Airtable API token.
             table_id: Airtable table ID.
             base_id:
-            **kwargs: Additional parameters to pass to Table.all(). Refer to the
+            kwargs: Additional parameters to pass to Table.all(). Refer to the
                 pyairtable documentation for available options:
                 https://pyairtable.readthedocs.io/en/latest/api.html#pyairtable.Table.all
         """  # noqa: E501

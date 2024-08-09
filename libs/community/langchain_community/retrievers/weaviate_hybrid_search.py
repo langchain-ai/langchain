@@ -66,8 +66,6 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
         return values
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     # added text_key

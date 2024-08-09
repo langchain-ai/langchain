@@ -215,10 +215,8 @@ class SelfQueryRetriever(BaseRetriever):
     """Use original query instead of the revised new query from LLM"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
         allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @root_validator(pre=True)
     def validate_translator(cls, values: Dict) -> Dict:

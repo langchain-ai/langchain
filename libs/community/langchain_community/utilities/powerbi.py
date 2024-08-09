@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 import aiohttp
 import requests
-from aiohttp import ServerTimeoutError
+from aiohttp import ClientTimeout, ServerTimeoutError
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
 from requests.exceptions import Timeout
 
@@ -41,8 +41,6 @@ class PowerBIDataset(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @validator("table_names", allow_reuse=True)
@@ -229,7 +227,7 @@ class PowerBIDataset(BaseModel):
                 self.request_url,
                 headers=self.headers,
                 json=self._create_json_content(command),
-                timeout=10,
+                timeout=ClientTimeout(total=10),
             ) as response:
                 if response.status == 403:
                     return "TokenError: Could not login to PowerBI, please check your credentials."  # noqa: E501
@@ -240,7 +238,7 @@ class PowerBIDataset(BaseModel):
                 self.request_url,
                 headers=self.headers,
                 json=self._create_json_content(command),
-                timeout=10,
+                timeout=ClientTimeout(total=10),
             ) as response:
                 if response.status == 403:
                     return "TokenError: Could not login to PowerBI, please check your credentials."  # noqa: E501
