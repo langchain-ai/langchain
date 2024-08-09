@@ -28,6 +28,15 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class BaseRetrievalQA(Chain):
     """Base class for question-answering chains."""
 
@@ -194,7 +203,15 @@ class BaseRetrievalQA(Chain):
             return {self.output_key: answer}
 
 
-@deprecated(since="0.1.17", alternative="create_retrieval_chain", removal="0.3.0")
+@deprecated(
+    since="0.1.17",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class RetrievalQA(BaseRetrievalQA):
     """Chain for question-answering against an index.
 
@@ -271,6 +288,15 @@ class RetrievalQA(BaseRetrievalQA):
         return "retrieval_qa"
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 

@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
@@ -95,6 +96,15 @@ def create_stuff_documents_chain(
     ).with_config(run_name="stuff_documents_chain")
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
+    ),
+)
 class StuffDocumentsChain(BaseCombineDocumentsChain):
     """Chain that combines documents by stuffing into context.
 
