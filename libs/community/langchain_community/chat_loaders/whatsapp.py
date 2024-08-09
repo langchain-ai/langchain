@@ -86,7 +86,8 @@ class WhatsAppChatLoader(BaseChatLoader):
                 logger.debug(f"Could not parse line: {line}")
         return ChatSession(messages=results)
 
-    def _iterate_files(self, path: str) -> Iterator[str]:
+    @staticmethod
+    def _iterate_files(path: str) -> Iterator[str]:
         """Iterate over the files in a directory or zip file.
 
         Args:
