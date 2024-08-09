@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 import re
 from typing import Any, Dict, List, Tuple, TypedDict, Union
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 
 from langchain_text_splitters.base import Language
@@ -16,6 +15,21 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
         """Initialize a MarkdownTextSplitter."""
         separators = self.get_separators_for_language(Language.MARKDOWN)
         super().__init__(separators=separators, **kwargs)
+
+
+class LineType(TypedDict):
+    """Line type as typed dict."""
+
+    metadata: Dict[str, str]
+    content: str
+
+
+class HeaderType(TypedDict):
+    """Header type as typed dict."""
+
+    level: int
+    name: str
+    data: str
 
 
 class MarkdownHeaderTextSplitter:
@@ -86,7 +100,19 @@ class MarkdownHeaderTextSplitter:
             for chunk in aggregated_chunks
         ]
 
+    @deprecated(
+        since="0.2.3",
+        removal="0.3.0",
+        alternative="split_text_to_doc()",
+        addendum=(
+            "To be able to combine MarkdownHeaderTextSplitter and "
+            "MarkdownTextSplitter later, they must not be ambiguous."
+        ),
+    )
     def split_text(self, text: str) -> List[Document]:
+        return self.split_text_to_doc(text)
+
+    def split_text_to_doc(self, text: str) -> List[Document]:
         """Split markdown file
         Args:
             text: Markdown file"""
@@ -207,21 +233,6 @@ class MarkdownHeaderTextSplitter:
                 Document(page_content=chunk["content"], metadata=chunk["metadata"])
                 for chunk in lines_with_metadata
             ]
-
-
-class LineType(TypedDict):
-    """Line type as typed dict."""
-
-    metadata: Dict[str, str]
-    content: str
-
-
-class HeaderType(TypedDict):
-    """Header type as typed dict."""
-
-    level: int
-    name: str
-    data: str
 
 
 class ExperimentalMarkdownSyntaxTextSplitter:
