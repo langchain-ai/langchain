@@ -342,6 +342,8 @@ class DatabricksVectorSearch(VectorStore):
         else:
             assert self.embeddings is not None, "embedding model is required."
             query_text = None
+            if query_type and query_type.lower() == "hybrid":
+                query_text = query
             query_vector = self.embeddings.embed_query(query)
         search_resp = self.index.similarity_search(
             columns=self.columns,
