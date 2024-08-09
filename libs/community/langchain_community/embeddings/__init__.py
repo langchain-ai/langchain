@@ -166,6 +166,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.ollama import (
         OllamaEmbeddings,
     )
+    from langchain_community.embeddings.onnx_embeddings import (
+        ONNXEmbeddings,
+    )
     from langchain_community.embeddings.openai import (
         OpenAIEmbeddings,
     )
@@ -315,6 +318,7 @@ __all__ = [
     "TitanTakeoffEmbed",
     "VertexAIEmbeddings",
     "VolcanoEmbeddings",
+    "ONNXEmbeddings",
     "VoyageEmbeddings",
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
@@ -400,6 +404,7 @@ _module_lookup = {
     "TitanTakeoffEmbed": "langchain_community.embeddings.titan_takeoff",
     "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
+    "ONNXEmbeddings": "langchain_community.embeddings.onnx_embeddings",
     "AscendEmbeddings": "langchain_community.embeddings.ascend",
     "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
 }
