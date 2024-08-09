@@ -23,6 +23,7 @@ LangChain maintains a number of legacy abstractions. Many of these can be reimpl
 [LangGraph](https://langchain-ai.github.io/langgraph/), built on top of LCEL, allows for performant orchestrations of application components while maintaining concise and readable code. It includes built-in persistence, support for cycles, and prioritizes controllability.
 If LCEL grows unwieldy for larger or more complex chains, they may benefit from a LangGraph implementation.
 
+### Advantages
 Using these frameworks for existing v0.0 chains confers some advantages:
 
 - The resulting chains typically implement the full `Runnable` interface, including streaming and asynchronous support where appropriate;
