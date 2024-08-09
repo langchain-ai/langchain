@@ -338,6 +338,8 @@ def test_pgvector_retriever_search_threshold() -> None:
         Document(page_content="foo", metadata={"page": "0"}),
         Document(page_content="bar", metadata={"page": "1"}),
     ]
+    assert output[0].metadata["similarity_score"] > 0
+    assert output[1].metadata["similarity_score"] > 0
 
 
 def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
