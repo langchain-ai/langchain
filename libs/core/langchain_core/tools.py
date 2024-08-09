@@ -96,7 +96,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
-    _get_fields,
+    get_fields,
     is_basemodel_subclass,
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
@@ -286,7 +286,7 @@ def create_schema_from_function(
     )
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = []
-    for field in _get_fields(inferred_model):
+    for field in get_fields(inferred_model):
         if not has_args:
             if field == "args":
                 continue
@@ -502,7 +502,7 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
-                key_ = next(iter(_get_fields(input_args).keys()))
+                key_ = next(iter(get_fields(input_args).keys()))
                 input_args.validate({key_: tool_input})
             return tool_input
         else:
