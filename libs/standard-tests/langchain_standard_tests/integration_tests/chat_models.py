@@ -481,3 +481,31 @@ class ChatModelIntegrationTests(ChatModelTests):
             ),
         ]
         model.bind_tools([color_picker]).invoke(messages)
+
+    def test_tool_message_error_status(self, model: BaseChatModel) -> None:
+        """Test that ToolMessage with status='error' can be handled."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([my_adder_tool])
+        messages = [
+            HumanMessage("What is 1 + 2"),
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": "my_adder_tool",
+                        "args": {"a": 1},
+                        "id": "abc123",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
+            ToolMessage(
+                "Error: Missing required argument 'b'.",
+                name="my_adder_tool",
+                tool_call_id="abc123",
+                status="error",
+            ),
+        ]
+        result = model_with_tools.invoke(messages)
+        assert isinstance(result, AIMessage)
