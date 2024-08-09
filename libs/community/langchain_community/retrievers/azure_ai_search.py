@@ -19,7 +19,71 @@ DEFAULT_URL_SUFFIX = "search.windows.net"
 
 
 class AzureAISearchRetriever(BaseRetriever):
-    """`Azure AI Search` service retriever."""
+    """`Azure AI Search` service retriever.
+
+    Setup:
+        See here for more detail: https://python.langchain.com/v0.2/docs/integrations/retrievers/azure_ai_search/
+
+        We will need to install the below dependencies and set the required
+        environment variables:
+
+        .. code-block:: bash
+
+            pip install -U langchain-community azure-identity azure-search-documents
+            export AZURE_AI_SEARCH_SERVICE_NAME="<YOUR_SEARCH_SERVICE_NAME>"
+            export AZURE_AI_SEARCH_INDEX_NAME="<YOUR_SEARCH_INDEX_NAME>"
+            export AZURE_AI_SEARCH_API_KEY="<YOUR_API_KEY>"
+
+    Key init args:
+        content_key: str
+        top_k: int
+        index_name: str
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.retrievers import AzureAISearchRetriever
+
+            retriever = AzureAISearchRetriever(
+                content_key="content", top_k=1, index_name="langchain-vector-demo"
+            )
+
+    Usage:
+        .. code-block:: python
+
+            retriever.invoke("here is my unstructured query string")
+
+    Use within a chain:
+        .. code-block:: python
+
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnablePassthrough
+            from langchain_openai import AzureChatOpenAI
+
+            prompt = ChatPromptTemplate.from_template(
+                \"\"\"Answer the question based only on the context provided.
+
+            Context: {context}
+
+            Question: {question}\"\"\"
+            )
+
+            llm = AzureChatOpenAI(azure_deployment="gpt-35-turbo")
+
+            def format_docs(docs):
+                return "\\n\\n".join(doc.page_content for doc in docs)
+
+            chain = (
+                {"context": retriever | format_docs, "question": RunnablePassthrough()}
+                | prompt
+                | llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("...")
+
+    """  # noqa: E501
 
     service_name: str = ""
     """Name of Azure AI Search service"""
