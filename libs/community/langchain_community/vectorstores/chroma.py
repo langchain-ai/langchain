@@ -33,21 +33,34 @@ logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
 
 
-def _results_to_docs(results: Any) -> List[Document]:
-    return [doc for doc, _ in _results_to_docs_and_scores(results)]
+def _results_to_docs(
+    results: Any, include_id: Optional[bool] = False
+) -> List[Document]:
+    return [doc for doc, _ in _results_to_docs_and_scores(results, include_id)]
 
 
-def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
-    return [
-        # TODO: Chroma can do batch querying,
-        # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
-        for result in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
-        )
-    ]
+def _results_to_docs_and_scores(
+    results: Any, include_id: Optional[bool] = False
+) -> List[Tuple[Document, float]]:
+    # TODO: Chroma can do batch querying,
+    # we shouldn't hard code to the 1st result
+    output = []
+
+    for result in zip(
+        results["documents"][0],
+        results["metadatas"][0],
+        results["distances"][0],
+        results["ids"][0],
+    ):
+        metadata = result[1] or {}
+        if include_id:
+            metadata["id"] = result[3]
+
+        doc = Document(page_content=result[0], metadata=metadata)
+
+        output.append((doc, result[2]))
+
+    return output
 
 
 @deprecated(since="0.2.9", removal="0.4", alternative_import="langchain_chroma.Chroma")
@@ -358,6 +371,7 @@ class Chroma(VectorStore):
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
+        include_id: Optional[bool] = False,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -365,6 +379,7 @@ class Chroma(VectorStore):
             embedding (List[float]): Embedding to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            include_id : Returns id of the vector as metadata if set to True
         Returns:
             List of Documents most similar to the query vector.
         """
@@ -375,7 +390,7 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs(results)
+        return _results_to_docs(results, include_id)
 
     def similarity_search_by_vector_with_relevance_scores(
         self,
@@ -899,3 +914,24 @@ class Chroma(VectorStore):
     def __len__(self) -> int:
         """Count the number of documents in the collection."""
         return self._collection.count()
+
+    def get_documents_by_ids(self, ids: int | str | List[int | str]) -> List[Document]:
+        if isinstance(ids, list):
+            output = self._collection.get(ids=[str(x) for x in ids])
+        else:
+            output = self._collection.get(ids=[str(ids)])
+
+        num_results = len(output["ids"])
+
+        output_docs = []
+
+        if num_results > 0:
+            for i in range(num_results):
+                metadata = output["metadatas"][i]  # type: ignore[index]
+                page_content = output["documents"][i]  # type: ignore[index]
+
+                output_docs.append(
+                    Document(page_content=page_content, metadata=metadata)
+                )
+
+        return output_docs

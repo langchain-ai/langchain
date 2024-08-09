@@ -328,6 +328,7 @@ class PineconeVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
+        include_id: Optional[bool] = False,
     ) -> List[Tuple[Document, float]]:
         """Return pinecone documents most similar to embedding, along with scores."""
 
@@ -343,6 +344,10 @@ class PineconeVectorStore(VectorStore):
         )
         for res in results["matches"]:
             metadata = res["metadata"]
+
+            if include_id:
+                metadata["id"] = res["id"]
+
             if self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 score = res["score"]
@@ -625,6 +630,33 @@ class PineconeVectorStore(VectorStore):
             raise ValueError("Either ids, delete_all, or filter must be provided.")
 
         return None
+
+    def get_documents_by_ids(self, ids: int | str | List[int | str]) -> List[Document]:
+        """Fetches vectors based on their IDs
+
+        Args:
+            ids : IDs of vectors to be retrieved
+        """
+
+        if isinstance(ids, list):
+            results = self._index.fetch(ids=[str(x) for x in ids])
+        else:
+            results = self._index.fetch(ids=[str(ids)])
+
+        output_docs = []
+
+        if len(results.vectors) > 0:
+            for id_value in results.vectors.keys():
+                metadata = results.vectors[id_value].get("metadata")
+                page_content = metadata.pop("text")
+
+                metadata["id"] = id_value
+
+                output_docs.append(
+                    Document(page_content=page_content, metadata=metadata)
+                )
+
+        return output_docs
 
 
 @deprecated(since="0.0.3", removal="0.3.0", alternative="PineconeVectorStore")

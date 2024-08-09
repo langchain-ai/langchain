@@ -745,6 +745,7 @@ class Milvus(VectorStore):
         param: Optional[dict] = None,
         expr: Optional[str] = None,
         timeout: Optional[float] = None,
+        include_id: Optional[bool] = False,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score.
@@ -761,6 +762,8 @@ class Milvus(VectorStore):
             expr (str, optional): Filtering expression. Defaults to None.
             timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
+            include_id (bool, optional): Returns id of the vector as metadata
+                if set to True
             kwargs: Collection.search() keyword arguments.
 
         Returns:
@@ -792,6 +795,9 @@ class Milvus(VectorStore):
         ret = []
         for result in res[0]:
             data = {x: result.entity.get(x) for x in output_fields}
+            if include_id:
+                data["id"] = result.id
+
             doc = self._parse_document(data)
             pair = (doc, result.score)
             ret.append(pair)
@@ -1088,3 +1094,40 @@ class Milvus(VectorStore):
                 "Failed to upsert entities: %s error: %s", self.collection_name, exc
             )
             raise exc
+
+    def get_documents_by_ids(self, ids: int | str | List[int | str]) -> List[Document]:
+        # Generating filtering expr for passing to query function
+        if isinstance(ids, list):
+            expr = "pk in ["
+
+            for id_value in ids:
+                expr += f"'{id_value}',"
+
+            expr += "]"
+
+        else:
+            expr = "pk in ['{id}']".format(id=ids)
+
+        output_fields = list(
+            set(self.fields).intersection(["source", "text", "pk", "page", "chunk_id"])
+        )
+
+        results = self.col.query(expr=expr, output_fields=output_fields)  # type: ignore[union-attr]
+
+        output_docs = []
+
+        if len(results) > 0:
+            for i in range(len(results)):
+                page_content = results[i]["text"]
+
+                metadata = {"pk": results[i]["pk"]}
+
+                for metadata_field in ["source", "page", "chunk_id"]:
+                    if metadata_field in output_fields:
+                        metadata[metadata_field] = results[i][metadata_field]
+
+                output_docs.append(
+                    Document(page_content=page_content, metadata=metadata)
+                )
+
+        return output_docs
