@@ -1,9 +1,19 @@
 import re
 from collections import defaultdict
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -264,6 +274,36 @@ class BedrockChat(BaseChatModel, BedrockBase):
             delta = chunk.text
             yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
 
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        provider = self._get_provider()
+        prompt, system, formatted_messages = None, None, None
+
+        if provider == "anthropic":
+            system, formatted_messages = ChatPromptAdapter.format_messages(
+                provider, messages
+            )
+        else:
+            prompt = ChatPromptAdapter.convert_messages_to_prompt(
+                provider=provider, messages=messages
+            )
+
+        async for chunk in self._aprepare_input_and_invoke_stream(
+            prompt=prompt,
+            system=system,
+            messages=formatted_messages,
+            stop=stop,
+            run_manager=run_manager,
+            **kwargs,
+        ):
+            delta = chunk.text
+            yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -295,6 +335,51 @@ class BedrockChat(BaseChatModel, BedrockBase):
                 params["stop_sequences"] = stop
 
             completion, usage_info = self._prepare_input_and_invoke(
+                prompt=prompt,
+                stop=stop,
+                run_manager=run_manager,
+                system=system,
+                messages=formatted_messages,
+                **params,
+            )
+
+            llm_output["usage"] = usage_info
+
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content=completion))],
+            llm_output=llm_output,
+        )
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        completion = ""
+        llm_output: Dict[str, Any] = {"model_id": self.model_id}
+
+        if self.streaming:
+            async for chunk in self._astream(messages, stop, run_manager, **kwargs):
+                completion += chunk.text
+        else:
+            provider = self._get_provider()
+            prompt, system, formatted_messages = None, None, None
+            params: Dict[str, Any] = {**kwargs}
+
+            if provider == "anthropic":
+                system, formatted_messages = ChatPromptAdapter.format_messages(
+                    provider, messages
+                )
+            else:
+                prompt = ChatPromptAdapter.convert_messages_to_prompt(
+                    provider=provider, messages=messages
+                )
+            if stop:
+                params["stop_sequences"] = stop
+
+            completion, usage_info = await self._aprepare_input_and_invoke(
                 prompt=prompt,
                 stop=stop,
                 run_manager=run_manager,
