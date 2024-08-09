@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -16,6 +16,18 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from google.cloud.firestore import Client, DocumentReference
+
+
+def _get_firestore_timestamp() -> Any:
+    try:
+        from firebase_admin import firestore
+    except ImportError:
+        raise ImportError(
+            "Could not import firebase-admin python package. "
+            "Please install it with `pip install firebase-admin`."
+        )
+
+    return firestore.SERVER_TIMESTAMP
 
 
 def _get_firestore_client() -> Client:
@@ -84,6 +96,11 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
                 self.messages = messages_from_dict(data["messages"])
 
     def add_message(self, message: BaseMessage) -> None:
+        message["additional_kwargs"] = {
+            **message["additional_kwargs"],
+            "timestamp": _get_firestore_timestamp(),
+        }
+
         self.messages.append(message)
         self.upsert_messages()
 
@@ -96,6 +113,7 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
                 "id": self.session_id,
                 "user_id": self.user_id,
                 "messages": messages_to_dict(self.messages),
+                "timestamp_last_message": _get_firestore_timestamp(),
             }
         )
 
