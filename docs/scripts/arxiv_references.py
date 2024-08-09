@@ -397,7 +397,7 @@ class ArxivAPIWrapper(BaseModel):
 
 
 def _format_doc_url(doc_path: str) -> str:
-    return f"https://{LANGCHAIN_PYTHON_URL}/{doc_path}"
+    return f"https://{LANGCHAIN_PYTHON_URL}/v0.2/{doc_path}"
 
 
 def _format_api_ref_url(doc_path: str, compact: bool = False) -> str:
