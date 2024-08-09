@@ -65,10 +65,15 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 
 class ChatModelIntegrationTests(ChatModelTests):
+<<<<<<< HEAD
+    def __init__(self):
+        print("params:", self.chat_model_params)
+=======
     @property
     def standard_chat_model_params(self) -> dict:
         return {}
 
+>>>>>>> 6d85c8a1c71fa9331fa4ef6ee05e6aeaeb66f0f9
     def test_invoke(self, model: BaseChatModel) -> None:
         result = model.invoke("Hello")
         assert result is not None
