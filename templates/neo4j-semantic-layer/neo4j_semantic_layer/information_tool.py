@@ -7,7 +7,7 @@ from langchain.callbacks.manager import (
 
 # Import things that are needed generically
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools import BaseTool
+from langchain_core.tools import BaseTool
 
 from neo4j_semantic_layer.utils import get_candidates, graph
 

@@ -7,8 +7,7 @@ from typing import Dict, List, Type
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Field
-
-from langchain_community.tools import Tool
+from langchain_core.tools import Tool
 
 
 def strip_markdown_code(md_string: str) -> str:

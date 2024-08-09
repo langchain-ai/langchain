@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Any, List
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.tools import BaseToolkit, Tool
+from langchain_core.tools import BaseTool, Tool
+from langchain_core.tools.base import BaseToolkit
 
 from langchain_community.agent_toolkits.json.base import create_json_agent
 from langchain_community.agent_toolkits.json.toolkit import JsonToolkit
 from langchain_community.agent_toolkits.openapi.prompt import DESCRIPTION
-from langchain_community.tools import BaseTool
 from langchain_community.tools.json.tool import JsonSpec
 from langchain_community.tools.requests.tool import (
     RequestsDeleteTool,

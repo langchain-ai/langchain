@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.clickup.prompt import (
     CLICKUP_FOLDER_CREATE_PROMPT,
     CLICKUP_GET_ALL_TEAMS_PROMPT,

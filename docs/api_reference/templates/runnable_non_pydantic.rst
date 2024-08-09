@@ -1,4 +1,4 @@
-:mod:`{{module}}`.{{objname}}
+{{ objname }}
 {{ underline }}==============
 
 .. NOTE:: {{objname}} implements the standard :py:class:`Runnable Interface <langchain_core.runnables.base.Runnable>`. 🏃
@@ -15,7 +15,7 @@
 
    .. autosummary::
    {% for item in attributes %}
-      ~{{ name }}.{{ item }}
+      ~{{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
@@ -26,11 +26,11 @@
 
    .. autosummary::
    {% for item in methods %}
-      ~{{ name }}.{{ item }}
+      ~{{ item }}
    {%- endfor %}
 
    {% for item in methods %}
-   .. automethod:: {{ name }}.{{ item }}
+   .. automethod:: {{ item }}
    {%- endfor %}
 
    {% endif %}

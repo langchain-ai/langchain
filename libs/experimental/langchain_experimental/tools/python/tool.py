@@ -8,12 +8,12 @@ from io import StringIO
 from typing import Any, Dict, Optional, Type
 
 from langchain.pydantic_v1 import BaseModel, Field, root_validator
-from langchain.tools.base import BaseTool
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.tools import BaseTool
 
 from langchain_experimental.utilities.python import PythonREPL
 

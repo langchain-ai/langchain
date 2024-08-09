@@ -239,7 +239,7 @@ def _construct_doc(
     package_namespace: str,
     members_by_namespace: Dict[str, ModuleMembers],
     package_version: str,
-) -> str:
+) -> List[typing.Tuple[str, str]]:
     """Construct the contents of the reference.rst file for the given package.
 
     Args:
@@ -251,15 +251,29 @@ def _construct_doc(
     Returns:
         The contents of the reference.rst file.
     """
-    full_doc = f"""\
-=======================
-``{package_namespace}`` {package_version}
-=======================
+    docs = []
+    index_doc = f"""\
+.. currentmodule:: {package_namespace}
 
+.. _{package_namespace}:
+
+======================================
+{package_namespace} {package_version}
+======================================
+
+.. toctree::
+    :maxdepth: 2
+    
 """
     namespaces = sorted(members_by_namespace)
 
     for module in namespaces:
+        index_doc += f"    {module}\n"
+        module_doc = f"""\
+.. currentmodule:: {package_namespace}
+
+.. _{module}:
+"""
         _members = members_by_namespace[module]
         classes = [
             el
@@ -281,9 +295,9 @@ def _construct_doc(
         ]
         if not (classes or functions):
             continue
-        section = f":mod:`{package_namespace}.{module}`"
+        section = f":mod:`{module}`"
         underline = "=" * (len(section) + 1)
-        full_doc += f"""\
+        module_doc += f"""
 {section}
 {underline}
 
@@ -294,9 +308,9 @@ def _construct_doc(
 """
 
         if classes:
-            full_doc += f"""\
-Classes
---------------
+            module_doc += f"""\
+**Classes**
+
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
@@ -317,7 +331,7 @@ Classes
                 else:
                     template = "class.rst"
 
-                full_doc += f"""\
+                module_doc += f"""\
     :template: {template}
     
     {class_["qualified_name"]}
@@ -327,9 +341,9 @@ Classes
         if functions:
             _functions = [f["qualified_name"] for f in functions]
             fstring = "\n    ".join(sorted(_functions))
-            full_doc += f"""\
-Functions
---------------
+            module_doc += f"""\
+**Functions**
+
 .. currentmodule:: {package_namespace}
 
 .. autosummary::
@@ -340,9 +354,8 @@ Functions
 
 """
         if deprecated_classes:
-            full_doc += f"""\
-Deprecated classes
---------------
+            module_doc += f"""\
+**Deprecated classes**
 
 .. currentmodule:: {package_namespace}
 
@@ -364,7 +377,7 @@ Deprecated classes
                 else:
                     template = "class.rst"
 
-                full_doc += f"""\
+                module_doc += f"""\
     :template: {template}
 
     {class_["qualified_name"]}
@@ -374,9 +387,8 @@ Deprecated classes
         if deprecated_functions:
             _functions = [f["qualified_name"] for f in deprecated_functions]
             fstring = "\n    ".join(sorted(_functions))
-            full_doc += f"""\
-Deprecated functions
---------------
+            module_doc += f"""\
+**Deprecated functions**
 
 .. currentmodule:: {package_namespace}
 
@@ -387,7 +399,9 @@ Deprecated functions
     {fstring}
 
 """
-    return full_doc
+        docs.append((f"{module}.rst", module_doc))
+    docs.append(("index.rst", index_doc))
+    return docs
 
 
 def _build_rst_file(package_name: str = "langchain") -> None:
@@ -399,13 +413,14 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     package_dir = _package_dir(package_name)
     package_members = _load_package_modules(package_dir)
     package_version = _get_package_version(package_dir)
-    with open(_out_file_path(package_name), "w") as f:
-        f.write(
-            _doc_first_line(package_name)
-            + _construct_doc(
-                _package_namespace(package_name), package_members, package_version
-            )
-        )
+    output_dir = _out_file_path(package_name)
+    os.mkdir(output_dir)
+    rsts = _construct_doc(
+        _package_namespace(package_name), package_members, package_version
+    )
+    for name, rst in rsts:
+        with open(output_dir / name, "w") as f:
+            f.write(rst)
 
 
 def _package_namespace(package_name: str) -> str:
@@ -455,12 +470,60 @@ def _get_package_version(package_dir: Path) -> str:
 
 def _out_file_path(package_name: str) -> Path:
     """Return the path to the file containing the documentation."""
-    return HERE / f"{package_name.replace('-', '_')}_api_reference.rst"
+    return HERE / f"{package_name.replace('-', '_')}"
 
 
-def _doc_first_line(package_name: str) -> str:
-    """Return the path to the file containing the documentation."""
-    return f".. {package_name.replace('-', '_')}_api_reference:\n\n"
+def _build_index(dirs: List[str]) -> None:
+    custom_names = {
+        "airbyte": "Airbyte",
+        "aws": "AWS",
+        "ai21": "AI21",
+    }
+    ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
+    main_ = [dir_ for dir_ in ordered if dir_ in dirs]
+    integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
+    main_headers = [
+        " ".join(custom_names.get(x, x.title()) for x in dir_.split("-"))
+        for dir_ in main_
+    ]
+    integration_headers = [
+        " ".join(
+            custom_names.get(x, x.title().replace("ai", "AI").replace("db", "DB"))
+            for x in dir_.split("-")
+        )
+        for dir_ in integrations
+    ]
+    main_tree = "\n".join(
+        f"{header_name}<{dir_.replace('-', '_')}/index>"
+        for header_name, dir_ in zip(main_headers, main_)
+    )
+    integration_tree = "\n".join(
+        f"{header_name}<{dir_.replace('-', '_')}/index>"
+        for header_name, dir_ in zip(integration_headers, integrations)
+    )
+    doc = f"""# API reference
+
+Welcome to the LangChain Python API reference. This is a reference for all 
+`langchain-x` packages. For user guides see 
+[https://python.langchain.com](https://python.langchain.com).
+
+## Base packages
+
+```{{toctree}}
+:maxdepth: 1
+
+{main_tree}
+```
+
+## Integration packages
+
+```{{toctree}}
+:maxdepth: 1
+
+{integration_tree}
+"""
+    with open(HERE / "index.md", "w") as f:
+        f.write(doc)
 
 
 def main(dirs: Optional[list] = None) -> None:
@@ -488,6 +551,8 @@ def main(dirs: Optional[list] = None) -> None:
         else:
             print("Building package:", dir_)
             _build_rst_file(package_name=dir_)
+
+    _build_index(dirs)
     print("API reference files built.")
 
 

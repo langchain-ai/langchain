@@ -7,7 +7,6 @@ This module contains various ways to render tools.
 
 # For backwards compatibility
 from langchain_core.tools import (
-    ToolsRenderer,
     render_text_description,
     render_text_description_and_args,
 )
@@ -17,7 +16,6 @@ from langchain_core.utils.function_calling import (
 )
 
 __all__ = [
-    "ToolsRenderer",
     "render_text_description",
     "render_text_description_and_args",
     "format_tool_to_openai_tool",

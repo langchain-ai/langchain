@@ -43,6 +43,7 @@ api_docs_quick_preview:
 ## api_docs_clean: Clean the API Reference documentation build artifacts.
 api_docs_clean:
 	find ./docs/api_reference -name '*_api_reference.rst' -delete
+	rm docs/api_reference/index.md
 	git clean -fdX ./docs/api_reference
 	
 
