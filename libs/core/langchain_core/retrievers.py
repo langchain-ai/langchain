@@ -187,7 +187,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         default_retriever_name = self.__class__.__name__
         if default_retriever_name.startswith("Retriever"):
-            default_retriever_name = default_retriever_name[9:].lower()
+            default_retriever_name = default_retriever_name[9:]
         elif default_retriever_name.endswith("Retriever"):
             default_retriever_name = default_retriever_name[:-9]
         default_retriever_name = default_retriever_name.lower()
