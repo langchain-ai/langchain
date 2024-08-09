@@ -5,17 +5,14 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional, cast
 
+from langchain_community.llms.utils import enforce_stop_tokens
+from langchain_community.llms.yandex import _BaseYandexGPT
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from tenacity import (
     before_sleep_log,
@@ -24,9 +21,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-from langchain_community.llms.utils import enforce_stop_tokens
-from langchain_community.llms.yandex import _BaseYandexGPT
 
 logger = logging.getLogger(__name__)
 
@@ -92,8 +86,11 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         """
         text = completion_with_retry(self, messages=messages)
         text = text if stop is None else enforce_stop_tokens(text, stop)
-        message = AIMessage(content=text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        message = AIMessage(content=text, response_metadata=self.metadata["llm_output"])
+        return ChatResult(
+            generations=[ChatGeneration(message=message)],
+            llm_output=self.metadata["llm_output"],
+        )
 
     async def _agenerate(
         self,
@@ -117,8 +114,11 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         """
         text = await acompletion_with_retry(self, messages=messages)
         text = text if stop is None else enforce_stop_tokens(text, stop)
-        message = AIMessage(content=text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        message = AIMessage(content=text, response_metadata=self.metadata["llm_output"])
+        return ChatResult(
+            generations=[ChatGeneration(message=message)],
+            llm_output=self.metadata["llm_output"],
+        )
 
 
 def _make_request(
@@ -134,23 +134,23 @@ def _make_request(
                 CompletionOptions,
                 Message,
             )
-            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (
                 CompletionRequest,
-            )
-            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+            )  # noqa: E501
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (
                 TextGenerationServiceStub,
-            )
+            )  # noqa: E501
         except ModuleNotFoundError:
             from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
                 CompletionOptions,
                 Message,
             )
-            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (
                 CompletionRequest,
-            )
-            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+            )  # noqa: E501
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (
                 TextGenerationServiceStub,
-            )
+            )  # noqa: E501
     except ImportError as e:
         raise ImportError(
             "Please install YandexCloud SDK  with `pip install yandexcloud` \
@@ -158,6 +158,8 @@ def _make_request(
         ) from e
     if not messages:
         raise ValueError("You should provide at least one message to start the chat!")
+    if self.metadata is None:
+        self.metadata = {}
     message_history = _parse_chat_history(messages)
     channel_credentials = grpc.ssl_channel_credentials()
     channel = grpc.secure_channel(self.url, channel_credentials)
@@ -171,7 +173,12 @@ def _make_request(
     )
     stub = TextGenerationServiceStub(channel)
     res = stub.Completion(request, metadata=self._grpc_metadata)
-    return list(res)[0].alternatives[0].message.text
+    list_res = list(res)
+    self.metadata["llm_output"] = {
+        "token_usage": list_res[0].usage,
+        "model_name": self.model_name,
+    }
+    return list_res[0].alternatives[0].message.text
 
 
 async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> str:
@@ -190,9 +197,9 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
                 CompletionRequest,
                 CompletionResponse,
             )
-            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (
                 TextGenerationAsyncServiceStub,
-            )
+            )  # noqa: E501
         except ModuleNotFoundError:
             from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
                 CompletionOptions,
@@ -219,6 +226,8 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
     message_history = _parse_chat_history(messages)
     operation_api_url = "operation.api.cloud.yandex.net:443"
     channel_credentials = grpc.ssl_channel_credentials()
+    if self.metadata is None:
+        self.metadata = {}
     async with grpc.aio.secure_channel(self.url, channel_credentials) as channel:
         request = CompletionRequest(
             model_uri=self.model_uri,
@@ -244,6 +253,10 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
 
         completion_response = CompletionResponse()
         operation.response.Unpack(completion_response)
+        self.metadata["llm_output"] = {
+            "token_usage": completion_response.usage,
+            "model_name": self.model_name,
+        }
         return completion_response.alternatives[0].message.text
 
 
