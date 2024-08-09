@@ -328,14 +328,17 @@ def test_secret_from_env_with_custom_error_message(
 def test_using_secret_from_env_as_default_factory(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Set the environment variable
-    monkeypatch.setenv("TEST_KEY", "secret_value")
-    # Get the function
     from langchain_core.pydantic_v1 import BaseModel, Field
 
     class Foo(BaseModel):
         secret: SecretStr = Field(default_factory=secret_from_env("TEST_KEY"))
 
+    # Pass the secret as a parameter
+    foo = Foo(secret="super_secret")  # type: ignore[arg-type]
+    assert foo.secret.get_secret_value() == "super_secret"
+
+    # Set the environment variable
+    monkeypatch.setenv("TEST_KEY", "secret_value")
     assert Foo().secret.get_secret_value() == "secret_value"
 
     class Bar(BaseModel):
