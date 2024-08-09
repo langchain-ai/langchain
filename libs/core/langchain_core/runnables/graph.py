@@ -174,6 +174,7 @@ class NodeStyles:
 class MermaidDrawMethod(Enum):
     """Enum for different draw methods supported by Mermaid"""
 
+    PLAYWRIGHT = "playwright"  # Uses Playwright to render the graph
     PYPPETEER = "pyppeteer"  # Uses Pyppeteer to render the graph
     API = "api"  # Uses Mermaid.INK API to render the graph
 

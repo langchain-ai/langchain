@@ -164,7 +164,15 @@ def draw_mermaid_png(
     Raises:
         ValueError: If an invalid draw method is provided.
     """
-    if draw_method == MermaidDrawMethod.PYPPETEER:
+    if draw_method == MermaidDrawMethod.PLAYWRIGHT:
+        import asyncio
+
+        img_bytes = asyncio.run(
+            _render_mermaid_using_playwright(
+                mermaid_syntax, output_file_path, background_color, padding
+            )
+        )
+    elif draw_method == MermaidDrawMethod.PYPPETEER:
         import asyncio
 
         img_bytes = asyncio.run(
@@ -184,6 +192,97 @@ def draw_mermaid_png(
         )
 
     return img_bytes
+
+
+async def _render_mermaid_using_playwright(
+    mermaid_syntax: str,
+    output_file_path: Optional[str] = None,
+    background_color: Optional[str] = "white",
+    padding: int = 10,
+    device_scale_factor: int = 3,
+) -> bytes:
+    """Renders Mermaid graph using Playwright."""
+    try:
+        from playwright.async_api import ViewportSize, async_playwright
+    except ImportError as e:
+        raise ImportError(
+            "Install Playwright to use the Playwright method: `pip install playwright`."
+        ) from e
+
+    async with async_playwright() as p:
+        img_bytes: bytes = b""
+
+        for browser_type in [p.chromium, p.firefox, p.webkit]:
+            try:
+                browser = await browser_type.launch()
+            except Exception:
+                continue
+
+            page = await browser.new_page()
+
+            # Setup Mermaid JS
+            _ = await page.goto("about:blank")
+            _ = await page.add_script_tag(
+                url="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"
+            )
+
+            await page.evaluate(
+                """() => {
+                        mermaid.initialize({startOnLoad:true});
+                    }"""
+            )
+
+            # Render SVG
+            svg_code = await page.evaluate(
+                """(mermaidGraph) => {
+                        return mermaid.mermaidAPI.render('mermaid', mermaidGraph);
+                    }""",
+                mermaid_syntax,
+            )
+
+            # Set the page background to white
+            await page.evaluate(
+                """([svg, background_color]) => {
+                    document.body.innerHTML = svg;
+                    document.body.style.background = background_color;
+                }""",
+                [svg_code["svg"], background_color],
+            )
+
+            # Take a screenshot
+            dimensions = await page.evaluate(
+                """() => {
+                    const svgElement = document.querySelector('svg');
+                    const rect = svgElement.getBoundingClientRect();
+                    return { width: rect.width, height: rect.height };
+                }"""
+            )
+
+            viewport_size = ViewportSize(
+                width=int(dimensions["width"] + padding),
+                height=int(dimensions["height"] + padding),
+            )
+
+            _ = await browser.new_context(
+                viewport=viewport_size,
+                device_scale_factor=device_scale_factor,
+            )
+
+            img_bytes = await page.screenshot(full_page=False)
+            await browser.close()
+
+            break
+
+        if len(img_bytes) == 0:
+            raise Exception(
+                "Install a Playwright supported browser with `playwright install`."
+            )
+
+        if output_file_path is not None:
+            with open(output_file_path, "wb") as file:
+                _ = file.write(img_bytes)
+
+        return img_bytes
 
 
 async def _render_mermaid_using_pyppeteer(
