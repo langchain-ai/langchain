@@ -6,8 +6,14 @@ import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core._api.deprecation import deprecated
 
 
+@deprecated(
+    since="0.2.12", 
+    removal="0.3.0", 
+    alternative_import="langchain_community.ClovaXEmbeddings"
+)
 class ClovaEmbeddings(BaseModel, Embeddings):
     """
     Clova's embedding service.

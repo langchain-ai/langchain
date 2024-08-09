@@ -151,6 +151,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.mosaicml import (
         MosaicMLInstructorEmbeddings,
     )
+    from langchain_community.embeddings.naver import (
+        ClovaXEmbeddings,
+    )
     from langchain_community.embeddings.nemo import (
         NeMoEmbeddings,
     )
@@ -250,6 +253,7 @@ __all__ = [
     "BookendEmbeddings",
     "ClarifaiEmbeddings",
     "ClovaEmbeddings",
+    "ClovaXEmbeddings",
     "CohereEmbeddings",
     "DashScopeEmbeddings",
     "DatabricksEmbeddings",
@@ -332,6 +336,7 @@ _module_lookup = {
     "BookendEmbeddings": "langchain_community.embeddings.bookend",
     "ClarifaiEmbeddings": "langchain_community.embeddings.clarifai",
     "ClovaEmbeddings": "langchain_community.embeddings.clova",
+    "ClovaXEmbeddings": "langchain_community.embeddings.naver",
     "CohereEmbeddings": "langchain_community.embeddings.cohere",
     "DashScopeEmbeddings": "langchain_community.embeddings.dashscope",
     "DatabricksEmbeddings": "langchain_community.embeddings.databricks",
