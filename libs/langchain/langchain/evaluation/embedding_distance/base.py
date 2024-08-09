@@ -114,8 +114,6 @@ class _EmbeddingDistanceChainMixin(Chain):
         return values
 
     class Config:
-        """Permit embeddings to go unvalidated."""
-
         arbitrary_types_allowed: bool = True
 
     @property

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -142,9 +142,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         return {**{"model": self.model}, **self._default_params}
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def _process_emb_response(self, input: str) -> List[float]:
         """Process a response from the API.

@@ -246,8 +246,6 @@ class SQLiteEntityStore(BaseEntityStore):
     conn: Any = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def __init__(

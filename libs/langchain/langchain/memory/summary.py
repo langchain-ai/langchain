@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Type
 
+from langchain_core._api import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
@@ -14,6 +15,14 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.prompt import SUMMARY_PROMPT
 
 
+@deprecated(
+    since="0.2.12",
+    removal="1.0",
+    message=(
+        "Refer here for how to incorporate summaries of conversation history: "
+        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"  # noqa: E501
+    ),
+)
 class SummarizerMixin(BaseModel):
     """Mixin for summarizer."""
 

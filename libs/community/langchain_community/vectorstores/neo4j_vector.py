@@ -1449,6 +1449,8 @@ class Neo4jVector(VectorStore):
                 "LIMIT 1000"
             )
             data = store.query(fetch_query, params={"props": text_node_properties})
+            if not data:
+                break
             text_embeddings = embedding.embed_documents([el["text"] for el in data])
 
             params = {
