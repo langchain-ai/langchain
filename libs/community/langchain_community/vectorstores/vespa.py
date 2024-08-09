@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever 
 
 
 class VespaStore(VectorStore):
@@ -54,6 +54,7 @@ class VespaStore(VectorStore):
         """
         try:
             from vespa.application import Vespa
+            from vespa.io import VespaResponse
         except ImportError:
             raise ImportError(
                 "Could not import Vespa python package. "
@@ -70,6 +71,7 @@ class VespaStore(VectorStore):
         self._embedding_field = embedding_field
         self._input_field = input_field
         self._metadata_fields = metadata_fields
+        self._vespa_response_type = VespaResponse
 
     def add_texts(
         self,
@@ -111,22 +113,14 @@ class VespaStore(VectorStore):
                         fields[metadata_field] = metadatas[i][metadata_field]
             batch.append({"id": ids[i], "fields": fields})
 
-        results = self._vespa_app.feed_batch(batch)
-        for result in results:
-            if not (str(result.status_code).startswith("2")):
+        def callback(response: self._vespa_response_type, id:str):
+            if not response.is_successfull():
                 raise RuntimeError(
-                    f"Could not add document to Vespa. "
-                    f"Error code: {result.status_code}. "
-                    f"Message: {result.json['message']}"
+                    f"Could not add document id: {id} to Vespa. "
+                    f"Error message: {response.get_json()}. "
                 )
+        self._vespa_app.feed_iterable(batch, callback=callback)
         return ids
-
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        if ids is None:
-            return False
-        batch = [{"id": id} for id in ids]
-        result = self._vespa_app.delete_batch(batch)
-        return sum([0 if r.status_code == 200 else 1 for r in result]) == 0
 
     def _create_query(
         self, query_embedding: List[float], k: int = 4, **kwargs: Any
