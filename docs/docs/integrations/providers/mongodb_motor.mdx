@@ -1,0 +1,27 @@
+# MongoDB Motor
+
+>[MongoDB](https://www.mongodb.com/) is a source-available, cross-platform, document-oriented 
+> database program. Classified as a `NoSQL` database product, `MongoDB` utilizes JSON-like 
+> documents with optional schemas.
+> 
+> [Motor](https://pypi.org/project/motor/) is a full-featured, non-blocking `MongoDB` driver 
+> for Python `asyncio` and `Tornado` applications. `Motor` presents a coroutine-based 
+> API for non-blocking access to MongoDB.
+
+## Installation and Setup
+
+We need to set up the configuratin parameters for the MongoDB database. See instructions [here](/docs/integrations/document_loaders/mongodb/).
+
+We also need to install `motor` python package.
+
+```bash
+pip install motor
+```
+
+## Document Loader
+
+See a [usage example](/docs/integrations/document_loaders/mongodb/).
+
+```python
+from langchain_community.document_loaders.mongodb import MongodbLoader
+```

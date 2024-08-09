@@ -237,21 +237,13 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
-## AI Agent Memory System
-
-[AI agent](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents) needs robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation.
-
-AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode. 
-
-Below are two available Azure Cosmos DB APIs that can provide vector store functionalities.
+## Vectorstores
 
 ### Azure Cosmos DB for MongoDB (vCore)
 
 >[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
 > You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
 > Use vector search in Azure Cosmos DB for MongoDB vCore to seamlessly integrate your AI-based applications with your data that's stored in Azure Cosmos DB.
-
-#### Installation and Setup
 
 See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db).
 
@@ -260,14 +252,6 @@ We need to install `pymongo` python package.
 ```bash
 pip install pymongo
 ```
-
-#### Deploy Azure Cosmos DB on Microsoft Azure
-
-Azure Cosmos DB for MongoDB vCore provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture.
-
-With Cosmos DB for MongoDB vCore, developers can enjoy the benefits of native Azure integrations, low total cost of ownership (TCO), and the familiar vCore architecture when migrating existing applications or building new ones.
-
-[Sign Up](https://azure.microsoft.com/en-us/free/) for free to get started today.
 
 See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
 
@@ -279,12 +263,7 @@ from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 
 >[Azure Cosmos DB for NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search) now offers vector indexing and search in preview.
 This feature is designed to handle high-dimensional vectors, enabling efficient and accurate vector search at any scale. You can now store vectors
-directly in the documents alongside your data. This means that each document in your database can contain not only traditional schema-free data,
-but also high-dimensional vectors as other properties of the documents. This colocation of data and vectors allows for efficient indexing and searching,
-as the vectors are stored in the same logical unit as the data they represent. This simplifies data management, AI application architectures, and the
-efficiency of vector-based operations.
-
-#### Installation and Setup
+directly in the documents alongside your data. 
 
 See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
 
@@ -294,13 +273,6 @@ We need to install `azure-cosmos` python package.
 pip install azure-cosmos
 ```
 
-#### Deploy Azure Cosmos DB on Microsoft Azure
-
-Azure Cosmos DB offers a solution for modern apps and intelligent workloads by being very responsive with dynamic and elastic autoscale. It is available
-in every Azure region and can automatically replicate data closer to users. It has SLA guaranteed low-latency and high availability.
-
-[Sign Up](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?pivots=devcontainer-codespace) for free to get started today.
-
 See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
 
 ```python
@@ -308,6 +280,7 @@ from langchain_community.vectorstores import AzureCosmosDBNoSQLVectorSearch
 ```
 
 ## Retrievers
+
 ### Azure AI Search
 
 >[Azure AI Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search` or `Azure Cognitive Search` ) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
@@ -406,6 +379,20 @@ from langchain_community.agent_toolkits import PowerBIToolkit
 from langchain_community.utilities.powerbi import PowerBIDataset
 ```
 
+
+## Memory
+
+### Azure CosmosDB Chat Message History
+
+We need to install a python package.
+
+```bash
+pip install azure-cosmos
+```
+
+```python
+from langchain_community.chat_message_histories import CosmosDBChatMessageHistory
+```
 
 ## Graphs
 
