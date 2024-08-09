@@ -176,18 +176,8 @@ const config = {
             items: [
               {
                 type: "doc",
-                docId: "people",
-                label: "People",
-              },
-              {
-                type: "doc",
                 docId: "contributing/index",
                 label: "Contributing",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
               },
               {
                 label: "Cookbooks",
@@ -195,17 +185,8 @@ const config = {
               },
               {
                 type: "doc",
-                docId: "additional_resources/tutorials",
-                label: "3rd party tutorials"
-              },
-              {
-                type: "doc",
-                docId: "additional_resources/youtube",
-                label: "YouTube"
-              },
-              {
-                to: "/docs/additional_resources/arxiv_references",
-                label: "arXiv"
+                docId: "people",
+                label: "People",
               },
             ]
           },
