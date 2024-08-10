@@ -139,10 +139,12 @@ class SQLServer_VectorStore(VectorStore):
                 embeddings = Column(
                     VARBINARY(8000),
                     CheckConstraint(
-                        text(EMBEDDING_LENGTH_CONSTRAINT)
-                        .bindparams(
-                            bindparam(EMBEDDING_LENGTH,
-                                    self._embedding_length))), nullable=False)
+                        text(EMBEDDING_LENGTH_CONSTRAINT).bindparams(
+                            bindparam(EMBEDDING_LENGTH, self._embedding_length)
+                        )
+                    ),
+                    nullable=False,
+                )
             else:
                 embeddings = Column(VARBINARY(8000), nullable=False)
 
@@ -319,6 +321,7 @@ class SQLServer_VectorStore(VectorStore):
         except ProgrammingError as e:
             logging.error(f"An error has occurred during the search.\n {e.__cause__}")
             raise Exception(e.__cause__) from None
+
         return results
 
     def _create_filter_clause(self, filter: dict) -> None:
@@ -336,19 +339,24 @@ class SQLServer_VectorStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Formats the input into a result of type Tuple[Document, float].
         If an invalid input is given, it does not attempt to format the value
-        and instead returns a tuple with None values."""
+        and instead logs an error."""
 
         docs_and_scores = []
 
         for result in results:
+            # Check that the value to be formatted is a row from the vector store.
+            # result will be of the form (EmbeddingStoreObject, float).
             if isinstance(result, Row):
-                embedding_store_value = result._asdict().pop("EmbeddingStore")
-                docs_and_scores.append((
-                    Document(
-                        page_content=embedding_store_value.content,
-                        metadata=embedding_store_value.content_metadata), result[1]))
+                docs_and_scores.append(
+                    (
+                        Document(
+                            page_content=result.EmbeddingStore.content,
+                            metadata=result.EmbeddingStore.content_metadata,
+                        ),
+                        result[1],
+                    )
+                )
             else:
-                docs_and_scores.append((None, None))
                 logging.error(INVALID_INPUT_ERROR_MESSAGE)
 
         return docs_and_scores
