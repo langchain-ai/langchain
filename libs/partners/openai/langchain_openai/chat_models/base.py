@@ -1430,7 +1430,7 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
@@ -1462,7 +1462,7 @@ class BaseChatOpenAI(BaseChatModel):
             if is_pydantic_schema and not tools:
                 output_parser = cast(Runnable, _oai_structured_outputs_parser)
             elif is_pydantic_schema and tools:
-                output_parser = PydanticOutputParser(pydantic_object=schema)
+                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
             else:
                 output_parser = JsonOutputParser()
         else:
@@ -2103,7 +2103,7 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
     return width, height
 
 
-def _add_additional_properties_false(schema):
+def _add_additional_properties_false(schema: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(schema, dict):
         # If type is "object", add additionalProperties: False
         if schema.get("type") == "object" and "additionalProperties" not in schema:
