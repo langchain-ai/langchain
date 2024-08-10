@@ -1108,6 +1108,7 @@ class BaseChatOpenAI(BaseChatModel):
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
+        tools: Optional[Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1392,6 +1393,8 @@ class BaseChatOpenAI(BaseChatModel):
             raise ValueError(
                 "Argument `strict` is not supported with `method`='json_mode'"
             )
+        if tools is None:
+            tools = []
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1401,7 +1404,7 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             llm = self.bind_tools(
-                [schema],
+                [schema] + tools,
                 tool_choice=tool_name,
                 parallel_tool_calls=False,
                 strict=strict,
@@ -1416,7 +1419,10 @@ class BaseChatOpenAI(BaseChatModel):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            if tools:
+                llm = self.bind_tools(response_format={"type": "json_object"}, tools=tools, tool_choice="none", strict=True)
+            else:
+                llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
@@ -1430,12 +1436,20 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
-            llm = self.bind(response_format=response_format)
-            output_parser = (
-                cast(Runnable, _oai_structured_outputs_parser)
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
+            if tools:
+                if not strict:
+                    raise ValueError(
+                        "strict must be True when binding tools with method='json_schema'.")
+                llm = self.bind_tools(response_format=response_format, tools=tools, tool_choice="none", strict=strict)
+            else:
+                llm = self.bind(response_format=response_format)
+
+            if is_pydantic_schema and not tools:
+                output_parser = cast(Runnable, _oai_structured_outputs_parser)
+            elif is_pydantic_schema and tools:
+                output_parser = PydanticOutputParser(pydantic_object=schema)
+            else:
+                output_parser = JsonOutputParser()
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
@@ -2074,11 +2088,43 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
     return width, height
 
 
+def _add_additional_properties_false(schema):
+    if isinstance(schema, dict):
+        # If type is "object", add additionalProperties: False
+        if schema.get('type') == 'object' and 'additionalProperties' not in schema:
+            schema['additionalProperties'] = False
+
+        # If properties field exists, process recursively
+        if 'properties' in schema:
+            for prop in schema['properties'].values():
+                _add_additional_properties_false(prop)
+
+        # If items field exists, process recursively (for arrays)
+        if 'items' in schema:
+            _add_additional_properties_false(schema['items'])
+
+        # If allOf, anyOf, oneOf fields exist, process recursively
+        for field in ['allOf', 'anyOf', 'oneOf']:
+            if field in schema:
+                for sub_schema in schema[field]:
+                    _add_additional_properties_false(sub_schema)
+
+        # If schema field exists, process recursively (at root level)
+        if 'schema' in schema:
+            _add_additional_properties_false(schema['schema'])
+
+    return schema
+
 def _convert_to_openai_response_format(
     schema: Union[Dict[str, Any], Type], strict: bool
 ) -> Union[Dict, TypeBaseModel]:
-    if isinstance(schema, type) and is_basemodel_subclass(schema):
+    if isinstance(schema, type) and is_basemodel_subclass(schema) and not strict:
         return schema
+    elif isinstance(schema, type) and is_basemodel_subclass(schema) and strict:
+        json_schema = convert_to_openai_function(schema, strict=strict)
+        json_schema["schema"] = json_schema.pop("parameters")
+        json_schema = _add_additional_properties_false(json_schema)
+        return {"type": "json_schema", "json_schema": json_schema}
     else:
         function = convert_to_openai_function(schema, strict=strict)
         function["schema"] = function.pop("parameters")
