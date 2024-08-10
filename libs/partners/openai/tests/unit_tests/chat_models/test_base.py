@@ -373,10 +373,10 @@ def test_with_structured_output(
 
 
 class DummyTool(BaseTool):
-    name = "dummy"
-    description = "A dummy tool for testing"
+    name: str = "dummy"
+    description: str = "A dummy tool for testing"
 
-    def _run(self):
+    def _run(self) -> str:
         return "Dummy result"
 
 
@@ -416,7 +416,7 @@ def test_with_structured_output_and_tools(
         assert structured_llm is not None
 
 
-def test_with_structured_output_json_schema_strict():
+def test_with_structured_output_json_schema_strict() -> None:
     """Test with_structured_output method with json_schema and strict mode."""
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     structured_llm = llm.with_structured_output(
@@ -425,7 +425,7 @@ def test_with_structured_output_json_schema_strict():
     assert structured_llm is not None
 
 
-def test_with_structured_output_function_calling_with_tools():
+def test_with_structured_output_function_calling_with_tools() -> None:
     """Test with_structured_output method with function_calling and tools."""
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     structured_llm = llm.with_structured_output(
@@ -434,7 +434,7 @@ def test_with_structured_output_function_calling_with_tools():
     assert structured_llm is not None
 
 
-def test_with_structured_output_json_mode_with_tools():
+def test_with_structured_output_json_mode_with_tools() -> None:
     """Test with_structured_output method with json_mode and tools."""
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     structured_llm = llm.with_structured_output(

@@ -1430,7 +1430,7 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                PydanticOutputParser(pydantic_object=schema)
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
