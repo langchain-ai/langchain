@@ -4,7 +4,15 @@ from typing import Any, Iterable, List, Optional, Tuple, Type, Union
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
-from sqlalchemy import Column, Uuid, asc, bindparam, create_engine, text
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    Uuid,
+    asc,
+    bindparam,
+    create_engine,
+    text,
+)
 from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
@@ -34,12 +42,16 @@ Base = declarative_base()  # type: Any
 
 _embedding_store: Any = None
 
+# String Constants
+#
 DISTANCE = "distance"
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
-DEFAULT_EMBEDDING_LENGTH = 8000
 DISTANCE_STRATEGY = "distancestrategy"
 EMBEDDING = "embedding"
+EMBEDDING_LENGTH = "embedding_length"
 EMBEDDING_VALUES = "embeddingvalues"
+
+EMBEDDING_LENGTH_CONSTRAINT = f"ISVECTOR(embeddings, :{EMBEDDING_LENGTH}) = 1"
 JSON_TO_ARRAY_QUERY = f"select JSON_ARRAY_TO_VECTOR (:{EMBEDDING_VALUES})"
 VECTOR_DISTANCE_QUERY = f"""
 VECTOR_DISTANCE(:{DISTANCE_STRATEGY}, JSON_ARRAY_TO_VECTOR(:{EMBEDDING}), embeddings) 
@@ -61,7 +73,7 @@ class SQLServer_VectorStore(VectorStore):
         connection_string: str,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         embedding_function: Embeddings,
-        embedding_length: int = DEFAULT_EMBEDDING_LENGTH,
+        embedding_length: Optional[int] = None,
         table_name: str,
     ) -> None:
         """Initialize the SQL Server vector store.
@@ -76,8 +88,12 @@ class SQLServer_VectorStore(VectorStore):
                 - EUCLIDEAN
             embedding_function: Any embedding function implementing
                 `langchain.embeddings.base.Embeddings` interface.
-            embedding_length: The length of the vectors to be stored in the table
-                Defaults to 8000 if not specified.
+            embedding_length: The length (dimension) of the vectors to be stored in the
+                table. Default - None.
+                Note that if `embedding_length` is defined, only vectors of the same
+                size will be accepted. If not defined, vectors of different sizes can
+                be stored in the table, however, similarity search will not be possible
+                against the vector store.
             table_name: The name of the table to use for storing embeddings.
 
         """
@@ -94,7 +110,7 @@ class SQLServer_VectorStore(VectorStore):
         self._create_table_if_not_exists()
 
     def _create_engine(self) -> Engine:
-        return create_engine(url=self.connection_string, echo=True)
+        return create_engine(url=self.connection_string)
 
     def _create_table_if_not_exists(self) -> None:
         logging.info(f"Creating table {self.table_name}.")
@@ -112,9 +128,22 @@ class SQLServer_VectorStore(VectorStore):
             __tablename__ = name
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
             custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
-            query_metadata = Column(JSON, nullable=True)
-            query = Column(NVARCHAR, nullable=False)  # defaults to NVARCHAR(MAX)
-            embeddings = Column(VARBINARY(self._embedding_length), nullable=False)
+            content_metadata = Column(JSON, nullable=True)
+            content = Column(NVARCHAR, nullable=False)  # defaults to NVARCHAR(MAX)
+
+            if self._embedding_length:
+                # Add check constraint to embeddings column
+                # this will ensure only vectors of the same size
+                # are allowed in the vector store.
+                embeddings = Column(
+                    VARBINARY(8000),
+                    CheckConstraint(
+                        text(EMBEDDING_LENGTH_CONSTRAINT)
+                        .bindparams(
+                            bindparam(EMBEDDING_LENGTH,
+                                    self._embedding_length))), nullable=False)
+            else:
+                embeddings = Column(VARBINARY(8000), nullable=False)
 
         _embedding_store = EmbeddingStore
         return _embedding_store
@@ -305,7 +334,7 @@ class SQLServer_VectorStore(VectorStore):
         docs_and_scores = [
             (
                 Document(
-                    page_content=result[0].query, metadata=result[0].query_metadata
+                    page_content=result[0].content, metadata=result[0].content_metadata
                 ),
                 result[1],
             )
@@ -368,16 +397,16 @@ class SQLServer_VectorStore(VectorStore):
                     result = session.scalar(sqlquery)
                     embedding_store = self.EmbeddingStore(
                         custom_id=id,
-                        query_metadata=metadata,
-                        query=query,
+                        content_metadata=metadata,
+                        content=query,
                         embeddings=result,
                     )
                     documents.append(embedding_store)
                 session.bulk_save_objects(documents)
                 session.commit()
         except DBAPIError as e:
-            logging.error(f"Add text failed:\n {e.__cause__}")
-            raise
+            logging.error(f"Add text failed:\n {e.__cause__}\n")
+            raise Exception(e.__cause__) from None
         except AttributeError:
             logging.error("Metadata must be a list of dictionaries.")
             raise
