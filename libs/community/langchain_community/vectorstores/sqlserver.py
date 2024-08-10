@@ -28,6 +28,11 @@ import logging
 import uuid
 
 
+_embedding_store: Any = None # One vector store used for the entirety of the program.
+
+Base = declarative_base()  # type: Any
+
+
 class DistanceStrategy(str, Enum):
     """Enumerator of the distance strategies for calculating distances
     between vectors.
@@ -37,10 +42,6 @@ class DistanceStrategy(str, Enum):
     COSINE = "cosine"
     DOT = "dot"
 
-
-Base = declarative_base()  # type: Any
-
-_embedding_store: Any = None
 
 # String Constants
 #

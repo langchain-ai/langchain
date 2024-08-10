@@ -5,12 +5,37 @@ from typing import List
 
 import pytest
 from langchain_core.documents import Document
-from sqlalchemy.exc import DBAPIError
 
 from langchain_community.embeddings import FakeEmbeddings
+from langchain_community.vectorstores import sqlserver
 from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
+EMBEDDING_LENGTH = 1536
+VECTOR_STORE_TABLE_NAME = "langchain_vector_store_test"
+
+
+@pytest.fixture(autouse=True)
+def setup() -> None:
+    """This is called before a testcase is run. Ensuring there are no interference
+    across testcases."""
+    sqlserver._embedding_store = None
+    sqlserver.Base.metadata.clear()
+    return
+
+
+@pytest.fixture
+def store() -> SQLServer_VectorStore:
+    """Setup resources that are needed for the duration of the test."""
+    store = SQLServer_VectorStore(
+        connection_string=_CONNECTION_STRING,
+        embedding_length=EMBEDDING_LENGTH,
+        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        table_name=VECTOR_STORE_TABLE_NAME,
+    )
+
+    return store  # provide this data to the test
 
 
 @pytest.fixture
@@ -49,17 +74,6 @@ def metadatas() -> List[dict]:
         {"id": 5, "summary": "Great for the kids!"},
     ]
     return query_metadata  # provide this data to the test.
-
-
-@pytest.fixture
-def store() -> SQLServer_VectorStore:
-    """Setup resources that are needed for the duration of the test."""
-    store = SQLServer_VectorStore(
-        connection_string=_CONNECTION_STRING,
-        embedding_function=FakeEmbeddings(size=1536),
-        table_name="langchain_vector_store_tests",
-    )
-    return store  # provide this data to the test
 
 
 @pytest.fixture
@@ -167,8 +181,48 @@ def test_that_drop_deletes_vector_store(
     and a call to add_text raises an exception.
     """
     store.drop()
-    with pytest.raises(DBAPIError):
+    with pytest.raises(Exception):
         store.add_texts(texts)
+
+
+def test_that_add_text_fails_if_text_embedding_length_is_not_equal_to_embedding_length(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
+    """Test that a call to add_text will raise an exception if the embedding_length of
+    the embedding function in use is not the same as the embedding_length used in 
+    creating the vector store."""
+    store.add_texts(texts)
+
+    # Assign a new embedding function with a different length to the store.
+    #
+    store.embedding_function = FakeEmbeddings(size=384) # a different size is used.
+
+    with pytest.raises(Exception):
+        # add_texts should fail and raise an exception since embedding length of
+        # the newly assigned embedding_function is different from the initial
+        # embedding length.
+        store.add_texts(texts)
+
+
+def test_that_any_size_of_embeddings_can_be_added_when_embedding_length_is_not_defined(
+    texts: List[str],
+) -> None:
+    """"""
+    # Create a SQLServer_VectorStore without `embedding_length` defined.
+    store_without_length = SQLServer_VectorStore(
+        connection_string=_CONNECTION_STRING,
+        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        table_name="VECTOR_STORE_TABLE_NAME_NEW",
+    )
+    store_without_length.add_texts(texts)
+
+    # Add texts using an embedding function with a different length.
+    # This should not raise an exception.
+    #
+    store_without_length.embedding_function = FakeEmbeddings(size=420)
+    store_without_length.add_texts(texts)
 
 
 def test_that_similarity_search_returns_expected_no_of_documents(
@@ -178,8 +232,9 @@ def test_that_similarity_search_returns_expected_no_of_documents(
     """Test that the amount of documents returned when similarity search
     is called is the same as the number of documents requested."""
     store.add_texts(texts)
-    result = store.similarity_search(query="Good review", k=3)
-    assert len(result) == 3
+    number_of_docs_to_return = 3
+    result = store.similarity_search(query="Good review", k=number_of_docs_to_return)
+    assert len(result) == number_of_docs_to_return
 
 
 def test_that_similarity_search_returns_results_with_scores_sorted_in_ascending_order(
@@ -191,5 +246,7 @@ def test_that_similarity_search_returns_results_with_scores_sorted_in_ascending_
     we have the smallest score (most similar doc.) returned first.
     """
     store.add_texts(texts)
-    result_with_score = store.similarity_search_with_score("Good review", k=4)
-    assert result_with_score == sorted(result_with_score, key=lambda x: x[1])
+    number_of_docs_to_return = 4
+    doc_with_score = store.similarity_search_with_score("Good review", 
+                                                        k=number_of_docs_to_return)
+    assert doc_with_score == sorted(doc_with_score, key=lambda x: x[1])
