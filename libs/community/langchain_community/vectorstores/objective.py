@@ -148,7 +148,7 @@ class Objective(VectorStore):
         if "index_id" not in kwargs:
             raise ObjectiveError("index_id is required for search")
         if "filter_query" in kwargs:
-            logger.error("Filter queries are not yet supported and will be ignored.")
+            logger.warning("Filter queries are not yet supported and will be ignored.")
 
         index_id = kwargs.pop("index_id")
         params = {"query": query}
@@ -157,7 +157,7 @@ class Objective(VectorStore):
 
         response = self._request(
             method="GET",
-            endpoint=f"indexes/{index_id}/search",
+            endpoint=f"indexes/{index_id}/search?object_fields=page_content,metadata",
             params=params,
         )
         return [self._doc_from_response(obj) for obj in response["results"]]
