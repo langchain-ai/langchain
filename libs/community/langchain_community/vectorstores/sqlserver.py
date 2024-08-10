@@ -14,7 +14,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
-from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.engine import Connection, Engine, Row
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.orm import Session
 
@@ -27,7 +27,7 @@ import json
 import logging
 import uuid
 
-_embedding_store: Any = None # One vector store used for the entirety of the program.
+_embedding_store: Any = None  # One vector store used for the entirety of the program.
 
 Base = declarative_base()  # type: Any
 
@@ -50,6 +50,7 @@ DISTANCE_STRATEGY = "distancestrategy"
 EMBEDDING = "embedding"
 EMBEDDING_LENGTH = "embedding_length"
 EMBEDDING_VALUES = "embeddingvalues"
+INVALID_INPUT_ERROR_MESSAGE = "Input is not valid."
 
 EMBEDDING_LENGTH_CONSTRAINT = f"ISVECTOR(embeddings, :{EMBEDDING_LENGTH}) = 1"
 JSON_TO_ARRAY_QUERY = f"select JSON_ARRAY_TO_VECTOR (:{EMBEDDING_VALUES})"
@@ -317,29 +318,39 @@ class SQLServer_VectorStore(VectorStore):
                 )
         except ProgrammingError as e:
             logging.error(f"An error has occurred during the search.\n {e.__cause__}")
+            raise Exception(e.__cause__) from None
         return results
 
     def _create_filter_clause(self, filter: dict) -> None:
         """TODO: parse filter and create a sql clause."""
 
-    def _docs_from_result(self, results: Any) -> List[Document]:
+    def _docs_from_result(
+        self, results: List[Tuple[Document, float]]
+    ) -> List[Document]:
         """Formats the input into a result of type List[Document]."""
-        docs = [result[0] for result in results]
+        docs = [doc for doc, _ in results]
         return docs
 
     def _docs_and_scores_from_result(
-        self, results: Any
+        self, results: List[Any]
     ) -> List[Tuple[Document, float]]:
-        """Formats the input into a result of type Tuple[Document, float]."""
-        docs_and_scores = [
-            (
-                Document(
-                    page_content=result[0].content, metadata=result[0].content_metadata
-                ),
-                result[1],
-            )
-            for result in results
-        ]
+        """Formats the input into a result of type Tuple[Document, float].
+        If an invalid input is given, it does not attempt to format the value
+        and instead returns a tuple with None values."""
+
+        docs_and_scores = []
+
+        for result in results:
+            if isinstance(result, Row):
+                embedding_store_value = result._asdict().pop("EmbeddingStore")
+                docs_and_scores.append((
+                    Document(
+                        page_content=embedding_store_value.content,
+                        metadata=embedding_store_value.content_metadata), result[1]))
+            else:
+                docs_and_scores.append((None, None))
+                logging.error(INVALID_INPUT_ERROR_MESSAGE)
+
         return docs_and_scores
 
     def _insert_embeddings(
