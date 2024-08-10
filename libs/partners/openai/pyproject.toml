@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-openai"
-version = "0.1.21rc2"
+version = "0.1.21"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
