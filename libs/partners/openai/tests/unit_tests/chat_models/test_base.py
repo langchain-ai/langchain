@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Literal, Optional, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from langchain_core.tools import BaseTool
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
@@ -372,11 +371,14 @@ def test_with_structured_output(
         schema, method=method, strict=strict, include_raw=include_raw
     )
 
+
 class DummyTool(BaseTool):
     name = "dummy"
     description = "A dummy tool for testing"
+
     def _run(self):
         return "Dummy result"
+
 
 @pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
 @pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
@@ -394,17 +396,25 @@ def test_with_structured_output_and_tools(
     if method == "json_mode":
         strict = None
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    
+
     if method == "json_schema" and tools and strict is False:
-        with pytest.raises(ValueError, match="strict must be True when binding tools with method='json_schema'."):
+        with pytest.raises(
+            ValueError,
+            match="strict must be True when binding tools with method='json_schema'.",
+        ):
             llm.with_structured_output(
-                schema, method=method, strict=strict, include_raw=include_raw, tools=tools
+                schema,
+                method=method,
+                strict=strict,
+                include_raw=include_raw,
+                tools=tools,
             )
     else:
         structured_llm = llm.with_structured_output(
             schema, method=method, strict=strict, include_raw=include_raw, tools=tools
         )
         assert structured_llm is not None
+
 
 def test_with_structured_output_json_schema_strict():
     """Test with_structured_output method with json_schema and strict mode."""
@@ -414,6 +424,7 @@ def test_with_structured_output_json_schema_strict():
     )
     assert structured_llm is not None
 
+
 def test_with_structured_output_function_calling_with_tools():
     """Test with_structured_output method with function_calling and tools."""
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
@@ -421,6 +432,7 @@ def test_with_structured_output_function_calling_with_tools():
         GenerateUsername, method="function_calling", tools=[DummyTool()]
     )
     assert structured_llm is not None
+
 
 def test_with_structured_output_json_mode_with_tools():
     """Test with_structured_output method with json_mode and tools."""
