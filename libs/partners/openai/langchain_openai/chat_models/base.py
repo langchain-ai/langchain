@@ -1108,7 +1108,9 @@ class BaseChatOpenAI(BaseChatModel):
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
-        tools: Optional[Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]] = None,
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1420,7 +1422,12 @@ class BaseChatOpenAI(BaseChatModel):
                 )
         elif method == "json_mode":
             if tools:
-                llm = self.bind_tools(response_format={"type": "json_object"}, tools=tools, tool_choice="none", strict=True)
+                llm = self.bind_tools(
+                    response_format={"type": "json_object"},
+                    tools=tools,
+                    tool_choice="none",
+                    strict=True,
+                )
             else:
                 llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
@@ -1435,12 +1442,21 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             strict = strict if strict is not None else True
-            response_format = _convert_to_openai_response_format(schema, strict=strict)
+            response_format = _convert_to_openai_response_format(
+                schema, strict=strict, with_tools=bool(tools)
+            )
             if tools:
                 if not strict:
                     raise ValueError(
-                        "strict must be True when binding tools with method='json_schema'.")
-                llm = self.bind_tools(response_format=response_format, tools=tools, tool_choice="none", strict=strict)
+                        "strict must be True when binding tools with "
+                        "method='json_schema'."
+                    )
+                llm = self.bind_tools(
+                    response_format=response_format,
+                    tools=tools,
+                    tool_choice="none",
+                    strict=strict,
+                )
             else:
                 llm = self.bind(response_format=response_format)
 
@@ -2091,36 +2107,37 @@ def _resize(width: int, height: int) -> Tuple[int, int]:
 def _add_additional_properties_false(schema):
     if isinstance(schema, dict):
         # If type is "object", add additionalProperties: False
-        if schema.get('type') == 'object' and 'additionalProperties' not in schema:
-            schema['additionalProperties'] = False
+        if schema.get("type") == "object" and "additionalProperties" not in schema:
+            schema["additionalProperties"] = False
 
         # If properties field exists, process recursively
-        if 'properties' in schema:
-            for prop in schema['properties'].values():
+        if "properties" in schema:
+            for prop in schema["properties"].values():
                 _add_additional_properties_false(prop)
 
         # If items field exists, process recursively (for arrays)
-        if 'items' in schema:
-            _add_additional_properties_false(schema['items'])
+        if "items" in schema:
+            _add_additional_properties_false(schema["items"])
 
         # If allOf, anyOf, oneOf fields exist, process recursively
-        for field in ['allOf', 'anyOf', 'oneOf']:
+        for field in ["allOf", "anyOf", "oneOf"]:
             if field in schema:
                 for sub_schema in schema[field]:
                     _add_additional_properties_false(sub_schema)
 
         # If schema field exists, process recursively (at root level)
-        if 'schema' in schema:
-            _add_additional_properties_false(schema['schema'])
+        if "schema" in schema:
+            _add_additional_properties_false(schema["schema"])
 
     return schema
 
+
 def _convert_to_openai_response_format(
-    schema: Union[Dict[str, Any], Type], strict: bool
+    schema: Union[Dict[str, Any], Type], strict: bool, with_tools: bool
 ) -> Union[Dict, TypeBaseModel]:
-    if isinstance(schema, type) and is_basemodel_subclass(schema) and not strict:
+    if isinstance(schema, type) and is_basemodel_subclass(schema) and not with_tools:
         return schema
-    elif isinstance(schema, type) and is_basemodel_subclass(schema) and strict:
+    elif isinstance(schema, type) and is_basemodel_subclass(schema) and with_tools:
         json_schema = convert_to_openai_function(schema, strict=strict)
         json_schema["schema"] = json_schema.pop("parameters")
         json_schema = _add_additional_properties_false(json_schema)
