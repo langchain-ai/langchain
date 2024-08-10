@@ -27,7 +27,6 @@ import json
 import logging
 import uuid
 
-
 _embedding_store: Any = None # One vector store used for the entirety of the program.
 
 Base = declarative_base()  # type: Any
