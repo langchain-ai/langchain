@@ -1,5 +1,6 @@
 from typing import Any, List, Optional, Type, Union, cast
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import BaseLLMOutputParser
@@ -25,6 +26,15 @@ class AnswerWithSources(BaseModel):
     )
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This function is deprecated. Refer to this guide on retrieval and question "
+        "answering with structured responses: "
+        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
+    ),
+)
 def create_qa_with_structure_chain(
     llm: BaseLanguageModel,
     schema: Union[dict, Type[BaseModel]],
@@ -95,6 +105,15 @@ def create_qa_with_structure_chain(
     return chain
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This function is deprecated. Refer to this guide on retrieval and question "
+        "answering with sources: "
+        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/#structure-sources-in-model-response"  # noqa: E501
+    ),
+)
 def create_qa_with_sources_chain(
     llm: BaseLanguageModel, verbose: bool = False, **kwargs: Any
 ) -> LLMChain:
