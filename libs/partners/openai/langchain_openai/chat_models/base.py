@@ -1108,9 +1108,7 @@ class BaseChatOpenAI(BaseChatModel):
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
-        tools: Optional[
-            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
-        ] = None,
+        tools: Optional[List[Union[Dict[str, Any], Type, Callable, BaseTool]]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1397,6 +1395,7 @@ class BaseChatOpenAI(BaseChatModel):
             )
         if tools is None:
             tools = []
+
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1431,7 +1430,7 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                PydanticOutputParser(pydantic_object=schema)
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
@@ -2149,7 +2148,7 @@ def _convert_to_openai_response_format(
 
 
 @chain
-def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:
+def _oai_structured_outputs_parser(ai_msg: AIMessage) -> PydanticBaseModel:  # type: ignore[no-untyped-def]
     if ai_msg.additional_kwargs.get("parsed"):
         return ai_msg.additional_kwargs["parsed"]
     elif ai_msg.additional_kwargs.get("refusal"):
