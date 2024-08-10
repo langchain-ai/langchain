@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Literal, Optional, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from langchain_core.tools import BaseTool
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
@@ -15,6 +16,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.tools import BaseTool
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -365,10 +367,68 @@ def test_with_structured_output(
     """Test passing in manually construct tool call message."""
     if method == "json_mode":
         strict = None
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     llm.with_structured_output(
         schema, method=method, strict=strict, include_raw=include_raw
     )
+
+class DummyTool(BaseTool):
+    name = "dummy"
+    description = "A dummy tool for testing"
+    def _run(self):
+        return "Dummy result"
+
+@pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
+@pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
+@pytest.mark.parametrize("include_raw", [True, False])
+@pytest.mark.parametrize("strict", [True, False, None])
+@pytest.mark.parametrize("tools", [None, [DummyTool()]])
+def test_with_structured_output_and_tools(
+    schema: Union[Type, Dict[str, Any]],
+    method: Literal["function_calling", "json_mode", "json_schema"],
+    include_raw: bool,
+    strict: Optional[bool],
+    tools: Optional[List[BaseTool]],
+) -> None:
+    """Test with_structured_output method with tools."""
+    if method == "json_mode":
+        strict = None
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    
+    if method == "json_schema" and tools and strict is False:
+        with pytest.raises(ValueError, match="strict must be True when binding tools with method='json_schema'."):
+            llm.with_structured_output(
+                schema, method=method, strict=strict, include_raw=include_raw, tools=tools
+            )
+    else:
+        structured_llm = llm.with_structured_output(
+            schema, method=method, strict=strict, include_raw=include_raw, tools=tools
+        )
+        assert structured_llm is not None
+
+def test_with_structured_output_json_schema_strict():
+    """Test with_structured_output method with json_schema and strict mode."""
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    structured_llm = llm.with_structured_output(
+        GenerateUsername, method="json_schema", strict=True
+    )
+    assert structured_llm is not None
+
+def test_with_structured_output_function_calling_with_tools():
+    """Test with_structured_output method with function_calling and tools."""
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    structured_llm = llm.with_structured_output(
+        GenerateUsername, method="function_calling", tools=[DummyTool()]
+    )
+    assert structured_llm is not None
+
+def test_with_structured_output_json_mode_with_tools():
+    """Test with_structured_output method with json_mode and tools."""
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    structured_llm = llm.with_structured_output(
+        GenerateUsername, method="json_mode", tools=[DummyTool()]
+    )
+    assert structured_llm is not None
 
 
 def test_get_num_tokens_from_messages() -> None:
