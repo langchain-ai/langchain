@@ -662,62 +662,46 @@ class OpenAI(BaseOpenAI):
     Invoke:
         .. code-block:: python
 
-            messages = [
-                (
-                    "system",
-                    "You are a helpful translator. Translate the user sentence to French.",
-                ),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
+            input_text = "The meaning of life is "
+            llm.invoke(input_text)
 
-        .. code-block:: python
+        .. code-block:: none
 
-            "\nFrench: J'aime programmer."
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
 
     Stream:
         .. code-block:: python
 
-            for chunk in llm.stream(messages):
-                print(chunk)
+            for chunk in llm.stream(input_text):
+                print(chunk, end="|")
+
+        .. code-block:: none
+
+            a| philosophical| question| that| has| been| debated| by| thinkers| and| scholars| for| centuries|.
 
         .. code-block:: python
 
-            French
-            :
-             J
-            'a
-            ime
-             programmer
-            .
+            "".join(llm.stream(input_text))
 
-        .. code-block:: python
+        .. code-block:: none
 
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
-
-        .. code-block:: python
-
-            "\nFrench: J'aime programmer."
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
 
     Async:
         .. code-block:: python
 
-            await llm.ainvoke(messages)
+            await llm.ainvoke(input_text)
 
             # stream:
-            # async for chunk in llm.astream(messages):
+            # async for chunk in (await llm.astream(input_text)):
             #    print(chunk)
 
             # batch:
-            # await llm.abatch([messages])
+            # await llm.abatch([input_text])
 
-        .. code-block:: python
+        .. code-block:: none
 
-            "\nFrench: J'aime programmer."
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
 
     """  # noqa: E501
 
