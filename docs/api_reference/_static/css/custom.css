@@ -333,7 +333,6 @@ html[data-theme=dark] .MathJax_SVG * {
 /* Make sure the navbar items align properly */
 .navbar-nav {
     display: flex;
-    align-items: center;
 }
 
 
@@ -343,4 +342,12 @@ html[data-theme=dark] .MathJax_SVG * {
 
 .bd-header button.primary-toggle {
   margin-right: 0rem;
+}
+
+.dropdown-menu {
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.bd-sidebar-primary {
+    width: 18%;  /* Adjust this value to your preference */
 }

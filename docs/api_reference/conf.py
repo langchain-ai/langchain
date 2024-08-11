@@ -187,7 +187,7 @@ html_theme_options = {
     "navbar_center": ["navbar-nav"],
     "navbar_end": ["langchain_docs", "theme-switcher", "navbar-icon-links"],
     #     # navbar_persistent is persistent right (even when on mobiles)
-    "navbar_persistent": ["search-field"],
+    "navbar_persistent": ["search-button"],
     "article_header_start": ["breadcrumbs"],
     "article_header_end": [],
     "article_footer_items": [],

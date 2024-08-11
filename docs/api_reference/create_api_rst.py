@@ -261,8 +261,13 @@ def _construct_doc(
 {package_namespace} {package_version}
 ======================================
 
+.. automodule:: {package_namespace}
+    :no-members:
+    :no-inherited-members:
+
 .. toctree::
     :maxdepth: 2
+    :hidden:
     
 """
     namespaces = sorted(members_by_namespace)
@@ -493,12 +498,12 @@ def _build_index(dirs: List[str]) -> None:
         )
         for dir_ in integrations
     ]
-    main_tree = "\n".join(
-        f"{header_name}<{dir_.replace('-', '_')}/index>"
+    main_trees = "\n\n".join(
+        f"```{{toctree}}\n:maxdepth: 1\n:hidden:\n:caption: {_package_namespace(dir_)}\n{header_name}<{dir_.replace('-', '_')}/index>\n```"
         for header_name, dir_ in zip(main_headers, main_)
     )
     main_grid = "\n".join(
-        f'- header: "**{header_name}**"\n  content: {_package_namespace(dir_)} {_get_package_version(_package_dir(dir_))}\n  link: {dir_.replace("-", "_")}/index.html'
+        f'- header: "**{header_name}**"\n  content: "{_package_namespace(dir_)}: {_get_package_version(_package_dir(dir_))}"\n  link: {dir_.replace("-", "_")}/index.html'
         for header_name, dir_ in zip(main_headers, main_)
     )
     integration_tree = "\n".join(
@@ -537,12 +542,7 @@ For user guides see [https://python.langchain.com](https://python.langchain.com)
 {main_grid}
 ```
 
-```{{toctree}}
-:maxdepth: 1
-:hidden:
-
-{main_tree}
-```
+{main_trees}
 
 ## Integration packages
 

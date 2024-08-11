@@ -1,3 +1,7 @@
+"""``langchain-core`` defines abstractions for common components and a syntax for combining them.
+
+The interfaces for core components like chat models, LLMs, vector stores, retrievers, and more are defined here. No third-party integrations are defined here. The dependencies are kept purposefully very lightweight.
+"""
 from importlib import metadata
 
 from langchain_core._api import (
