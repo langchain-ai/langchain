@@ -119,12 +119,10 @@ class PyPDFParser(BaseBlobParser):
                 )
 
         with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
-            import pypdf.errors
-
             try:
                 pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
-            except pypdf.errors.PyPdfError as e:
-                raise e
+            except Exception as e:
+                raise ValueError(f"Your PDF could not be read due to error {e}")
             try:
                 yield from [
                     Document(
@@ -134,13 +132,7 @@ class PyPDFParser(BaseBlobParser):
                     )
                     for page_number, page in enumerate(pdf_reader.pages)
                 ]
-            except (
-                pypdf.errors.PyPdfError,
-                pypdf.errors.EmptyFileError,
-                pypdf.errors.PdfReadError,
-                pypdf.errors.PdfStreamError,
-                RecursionError,
-            ) as e:
+            except Exception as e:
                 raise ValueError(f"Your PDF could not be read due to error {e}")
 
     def _extract_images_from_page(self, page: pypdf._page.PageObject) -> str:
