@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional
 import requests
 from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
@@ -76,9 +76,7 @@ class SolarEmbeddings(BaseModel, Embeddings):
     """API Key for Solar API."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

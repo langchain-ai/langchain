@@ -25,9 +25,6 @@ class CassandraDatabaseToolkit(BaseToolkit):
     db: CassandraDatabase = Field(exclude=True)
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        # Allow arbitrary types. This is needed for the `db` field.
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

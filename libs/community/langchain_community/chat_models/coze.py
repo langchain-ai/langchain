@@ -112,8 +112,6 @@ class ChatCoze(BaseChatModel):
     the client needs to assemble the final reply based on the type of message. """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)

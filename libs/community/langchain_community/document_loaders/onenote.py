@@ -21,11 +21,9 @@ class _OneNoteGraphSettings(BaseSettings):
     client_secret: SecretStr = Field(..., env="MS_GRAPH_CLIENT_SECRET")
 
     class Config:
-        """Config for OneNoteGraphSettings."""
-
-        env_prefix = ""
         case_sentive = False
         env_file = ".env"
+        env_prefix = ""
 
 
 class OneNoteLoader(BaseLoader, BaseModel):

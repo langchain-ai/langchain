@@ -15,7 +15,7 @@ from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
+from langchain_experimental.pydantic_v1 import Field, root_validator
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 SQL_QUERY = "SQLQuery:"
@@ -67,10 +67,8 @@ class SQLDatabaseChain(Chain):
     """The prompt template that should be used by the query checker"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:

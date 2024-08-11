@@ -25,6 +25,8 @@ EXPECTED_ALL = [
     "comma_list",
     "stringify_value",
     "pre_init",
+    "from_env",
+    "secret_from_env",
 ]
 
 
