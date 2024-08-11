@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 
 import pytest
 from langchain_core.documents import Document
+from langchain_milvus.utils.sparse import BM25SparseEmbedding
 
 from langchain_milvus.vectorstores import Milvus
 from tests.integration_tests.utils import (
@@ -302,6 +303,24 @@ def test_milvus_enable_dynamic_field_with_partition_key() -> None:
         docsearch._partition_key_field,
     }
 
+
+def test_milvus_sparse_embeddings() -> None:
+    texts = [
+        "In 'The Clockwork Kingdom' by Augusta Wynter, a brilliant inventor discovers a hidden world of clockwork "
+        "machines and ancient magic, where a rebellion is brewing against the tyrannical ruler of the land.",
+        "In 'The Phantom Pilgrim' by Rowan Welles, a charismatic smuggler is hired by a mysterious organization to "
+        "transport a valuable artifact across a war-torn continent, but soon finds themselves pursued by deadly "
+        "assassins and rival factions.",
+        "In 'The Dreamwalker's Journey' by Lyra Snow, a young dreamwalker discovers she has the ability to enter "
+        "people's dreams, but soon finds herself trapped in a surreal world of nightmares and illusions, "
+        "where the boundaries between reality and fantasy blur.",
+    ]
+    sparse_embedding_func = BM25SparseEmbedding(corpus=texts)
+    docsearch = Milvus.from_texts(texts=texts, embedding=sparse_embedding_func,
+                                  connection_args={"uri": "./milvus_demo.db"}, drop_old=True)
+
+    output = docsearch.similarity_search("Pilgrim", k=1)
+    assert "Pilgrim" in output[0].page_content
 
 # if __name__ == "__main__":
 #     test_milvus()
