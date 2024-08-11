@@ -200,7 +200,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
                 ("human", "我喜欢编程。"),
             ]
-            qianfan_chat.invoke(message)
+            qianfan_chat.invoke(messages)
 
         .. code-block:: python
 
@@ -219,6 +219,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
         .. code-block:: python
 
+            stream = chat.stream(messages)
             full = next(stream)
             for chunk in stream:
                 full += chunk
