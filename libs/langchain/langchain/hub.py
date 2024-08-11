@@ -17,7 +17,13 @@ def _get_client(
     try:
         from langsmith import Client as LangSmithClient
 
-        return LangSmithClient(api_url, api_key=api_key)
+        ls_client = LangSmithClient(api_url, api_key=api_key)
+        if hasattr(ls_client, "push_prompt") and hasattr(ls_client, "pull_prompt"):
+            return ls_client
+        else:
+            from langchainhub import Client as LangChainHubClient
+
+            return LangChainHubClient(api_url, api_key=api_key)
     except ImportError:
         try:
             from langchainhub import Client as LangChainHubClient
