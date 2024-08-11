@@ -56,7 +56,7 @@ class ClovaEmbeddings(BaseModel, Embeddings):
     class Config:
         extra = "forbid"
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key exists in environment."""
         values["clova_emb_api_key"] = convert_to_secret_str(
