@@ -190,13 +190,13 @@ def test_that_add_text_fails_if_text_embedding_length_is_not_equal_to_embedding_
     texts: List[str],
 ) -> None:
     """Test that a call to add_text will raise an exception if the embedding_length of
-    the embedding function in use is not the same as the embedding_length used in 
+    the embedding function in use is not the same as the embedding_length used in
     creating the vector store."""
     store.add_texts(texts)
 
     # Assign a new embedding function with a different length to the store.
     #
-    store.embedding_function = FakeEmbeddings(size=384) # a different size is used.
+    store.embedding_function = FakeEmbeddings(size=384)  # a different size is used.
 
     with pytest.raises(Exception):
         # add_texts should fail and raise an exception since embedding length of
@@ -247,6 +247,7 @@ def test_that_similarity_search_returns_results_with_scores_sorted_in_ascending_
     """
     store.add_texts(texts)
     number_of_docs_to_return = 4
-    doc_with_score = store.similarity_search_with_score("Good review", 
-                                                        k=number_of_docs_to_return)
+    doc_with_score = store.similarity_search_with_score(
+        "Good review", k=number_of_docs_to_return
+    )
     assert doc_with_score == sorted(doc_with_score, key=lambda x: x[1])
