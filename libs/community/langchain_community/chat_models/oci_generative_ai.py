@@ -38,7 +38,7 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function
@@ -135,7 +135,7 @@ class Provider(ABC):
 
 
 class CohereProvider(Provider):
-    stop_sequence_key = "stop_sequences"
+    stop_sequence_key: str = "stop_sequences"
 
     def __init__(self) -> None:
         from oci.generative_ai_inference import models
@@ -364,7 +364,7 @@ class CohereProvider(Provider):
 
 
 class MetaProvider(Provider):
-    stop_sequence_key = "stop"
+    stop_sequence_key: str = "stop"
 
     def __init__(self) -> None:
         from oci.generative_ai_inference import models
@@ -500,9 +500,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
     """  # noqa: E501
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @property
     def _llm_type(self) -> str:

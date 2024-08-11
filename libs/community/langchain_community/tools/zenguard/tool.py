@@ -51,12 +51,12 @@ class ZenGuardTool(BaseTool):
         "ZenGuard AI integration package. ZenGuard AI - the fastest GenAI guardrails."
     )
     args_schema = ZenGuardInput
-    return_direct = True
+    return_direct: bool = True
 
     zenguard_api_key: Optional[str] = Field(default=None)
 
-    _ZENGUARD_API_URL_ROOT = "https://api.zenguard.ai/"
-    _ZENGUARD_API_KEY_ENV_NAME = "ZENGUARD_API_KEY"
+    _ZENGUARD_API_URL_ROOT: str = "https://api.zenguard.ai/"
+    _ZENGUARD_API_KEY_ENV_NAME: str = "ZENGUARD_API_KEY"
 
     @validator("zenguard_api_key", pre=True, always=True, check_fields=False)
     def set_api_key(cls, v: str) -> str:
