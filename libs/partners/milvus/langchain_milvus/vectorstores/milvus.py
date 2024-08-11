@@ -8,6 +8,7 @@ import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+
 from langchain_milvus.utils.sparse import BaseSparseEmbedding
 
 logger = logging.getLogger(__name__)
@@ -276,7 +277,10 @@ class Milvus(VectorStore):
             },
             "GPU_IVF_FLAT": {"metric_type": "L2", "params": {"nprobe": 10}},
             "GPU_IVF_PQ": {"metric_type": "L2", "params": {"nprobe": 10}},
-            "SPARSE_INVERTED_INDEX": {"metric_type": "IP", "params": {"drop_ratio_build": 0.2}},
+            "SPARSE_INVERTED_INDEX": {
+                "metric_type": "IP",
+                "params": {"drop_ratio_build": 0.2},
+            },
             "SPARSE_WAND": {"metric_type": "IP", "params": {"drop_ratio_build": 0.2}},
         }
 
@@ -520,7 +524,9 @@ class Milvus(VectorStore):
             )
         else:
             fields.append(
-                FieldSchema(self._vector_field, infer_dtype_bydata(embeddings[0]), dim=dim)
+                FieldSchema(
+                    self._vector_field, infer_dtype_bydata(embeddings[0]), dim=dim
+                )
             )
 
         # Create the schema for the collection
