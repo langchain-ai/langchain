@@ -344,8 +344,9 @@ html[data-theme=dark] .MathJax_SVG * {
   margin-right: 0rem;
 }
 
-.dropdown-menu {
+.bd-header ul.navbar-nav .dropdown .dropdown-menu {
   overflow-y: auto; /* Enable vertical scrolling */
+  max-height: 80vh
 }
 
 .bd-sidebar-primary {
