@@ -79,7 +79,7 @@ class StructuredPrompt(ChatPromptTemplate):
                   A message can be represented using the following formats:
                   (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
                   (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (4) a string which is
+                  (4) 2-tuple of (message class, template), (5) a string which is
                   shorthand for ("human", template); e.g., "{user_input}"
             schema: a dictionary representation of function call, or a Pydantic model.
 
@@ -138,6 +138,19 @@ class StructuredPrompt(ChatPromptTemplate):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Dict, Other]:
+        """Pipe the structured prompt to a language model.
+
+        Args:
+            others: The language model to pipe the structured prompt to.
+            name: The name of the pipeline. Defaults to None.
+
+        Returns:
+            A RunnableSequence object.
+
+        Raises:
+            NotImplementedError: If the first element of `others`
+            is not a language model.
+        """
         if (
             others
             and isinstance(others[0], BaseLanguageModel)

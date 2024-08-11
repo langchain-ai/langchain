@@ -20,10 +20,10 @@ def mock_confluence():  # type: ignore
 
 @pytest.mark.requires("atlassian", "bs4", "lxml")
 class TestConfluenceLoader:
-    CONFLUENCE_URL = "https://example.atlassian.com/wiki"
-    MOCK_USERNAME = "user@gmail.com"
-    MOCK_API_TOKEN = "api_token"
-    MOCK_SPACE_KEY = "spaceId123"
+    CONFLUENCE_URL: str = "https://example.atlassian.com/wiki"
+    MOCK_USERNAME: str = "user@gmail.com"
+    MOCK_API_TOKEN: str = "api_token"
+    MOCK_SPACE_KEY: str = "spaceId123"
 
     def test_confluence_loader_initialization(self, mock_confluence: MagicMock) -> None:
         ConfluenceLoader(

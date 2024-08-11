@@ -8,7 +8,8 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -18,16 +19,14 @@ CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 class Provider(ABC):
     @property
     @abstractmethod
-    def stop_sequence_key(self) -> str:
-        ...
+    def stop_sequence_key(self) -> str: ...
 
     @abstractmethod
-    def completion_response_to_text(self, response: Any) -> str:
-        ...
+    def completion_response_to_text(self, response: Any) -> str: ...
 
 
 class CohereProvider(Provider):
-    stop_sequence_key = "stop_sequences"
+    stop_sequence_key: str = "stop_sequences"
 
     def __init__(self) -> None:
         from oci.generative_ai_inference import models
@@ -39,7 +38,7 @@ class CohereProvider(Provider):
 
 
 class MetaProvider(Provider):
-    stop_sequence_key = "stop"
+    stop_sequence_key: str = "stop"
 
     def __init__(self) -> None:
         from oci.generative_ai_inference import models
@@ -101,7 +100,7 @@ class OCIGenAIBase(BaseModel, ABC):
     is_stream: bool = False
     """Whether to stream back partial progress"""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that OCI config and python package exists in environment."""
 
@@ -144,13 +143,13 @@ class OCIGenAIBase(BaseModel, ABC):
                     oci_config=client_kwargs["config"]
                 )
             elif values["auth_type"] == OCIAuthType(3).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                )
             elif values["auth_type"] == OCIAuthType(4).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.get_resource_principals_signer()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.get_resource_principals_signer()
+                )
             else:
                 raise ValueError(
                     "Please provide valid value to auth_type, "
@@ -232,9 +231,7 @@ class OCIGenAI(LLM, OCIGenAIBase):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @property
     def _llm_type(self) -> str:

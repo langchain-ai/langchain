@@ -57,7 +57,17 @@ def maximal_marginal_relevance(
     lambda_mult: float = 0.5,
     k: int = 4,
 ) -> List[int]:
-    """Calculate maximal marginal relevance."""
+    """Calculate maximal marginal relevance.
+
+    Args:
+        query_embedding: The query embedding.
+        embedding_list: The list of embeddings.
+        lambda_mult: The lambda multiplier. Defaults to 0.5.
+        k: The number of results to return. Defaults to 4.
+
+    Returns:
+        List[int]: The list of indices.
+    """
     if min(k, len(embedding_list)) <= 0:
         return []
     if query_embedding.ndim == 1:
@@ -86,95 +96,126 @@ def maximal_marginal_relevance(
 
 
 class Milvus(VectorStore):
-    """`Milvus` vector store.
+    """Milvus vector store integration.
 
-    You need to install `pymilvus` and run Milvus.
+    Setup:
+        Install ``langchain_milvus`` package:
 
-    See the following documentation for how to run a Milvus instance:
-    https://milvus.io/docs/install_standalone-docker.md
+        .. code-block:: bash
 
-    If looking for a hosted Milvus, take a look at this documentation:
-    https://zilliz.com/cloud and make use of the Zilliz vectorstore found in
-    this project.
+            pip install -qU  langchain_milvus
 
-    IF USING L2/IP metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
+    Key init args — indexing params:
+        collection_name: str
+            Name of the collection.
+        collection_description: str
+            Description of the collection.
+        embedding_function: Embeddings
+            Embedding function to use.
 
-    Args:
-        embedding_function (Embeddings): Function used to embed the text.
-        collection_name (str): Which Milvus collection to use. Defaults to
-            "LangChainCollection".
-        collection_description (str): The description of the collection. Defaults to
-            "".
-        collection_properties (Optional[dict[str, any]]): The collection properties.
-            Defaults to None.
-            If set, will override collection existing properties.
-            For example: {"collection.ttl.seconds": 60}.
-        connection_args (Optional[dict[str, any]]): The connection args used for
-            this class comes in the form of a dict.
-        consistency_level (str): The consistency level to use for a collection.
-            Defaults to "Session".
-        index_params (Optional[dict]): Which index params to use. Defaults to
-            HNSW/AUTOINDEX depending on service.
-        search_params (Optional[dict]): Which search params to use. Defaults to
-            default of index.
-        drop_old (Optional[bool]): Whether to drop the current collection. Defaults
-            to False.
-        auto_id (bool): Whether to enable auto id for primary key. Defaults to False.
-            If False, you needs to provide text ids (string less than 65535 bytes).
-            If True, Milvus will generate unique integers as primary keys.
-        primary_field (str): Name of the primary key field. Defaults to "pk".
-        text_field (str): Name of the text field. Defaults to "text".
-        vector_field (str): Name of the vector field. Defaults to "vector".
-        metadata_field (str): Name of the metadta field. Defaults to None.
-            When metadata_field is specified,
-            the document's metadata will store as json.
+    Key init args — client params:
+        connection_args: Optional[dict]
+            Connection arguments.
 
-    The connection args used for this class comes in the form of a dict,
-    here are a few of the options:
-        address (str): The actual address of Milvus
-            instance. Example address: "localhost:19530"
-        uri (str): The uri of Milvus instance. Example uri:
-            "http://randomwebsite:19530",
-            "tcp:foobarsite:19530",
-            "https://ok.s3.south.com:19530".
-            or "path/to/local/directory/milvus_demo.db" for Milvus Lite.
-        host (str): The host of Milvus instance. Default at "localhost",
-            PyMilvus will fill in the default host if only port is provided.
-        port (str/int): The port of Milvus instance. Default at 19530, PyMilvus
-            will fill in the default port if only host is provided.
-        user (str): Use which user to connect to Milvus instance. If user and
-            password are provided, we will add related header in every RPC call.
-        password (str): Required when user is provided. The password
-            corresponding to the user.
-        secure (bool): Default is false. If set to true, tls will be enabled.
-        client_key_path (str): If use tls two-way authentication, need to
-            write the client.key path.
-        client_pem_path (str): If use tls two-way authentication, need to
-            write the client.pem path.
-        ca_pem_path (str): If use tls two-way authentication, need to write
-            the ca.pem path.
-        server_pem_path (str): If use tls one-way authentication, need to
-            write the server.pem path.
-        server_name (str): If use tls, need to write the common name.
-
-    Example:
+    Instantiate:
         .. code-block:: python
 
-        from langchain_milvus.vectorstores import Milvus
-        from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_milvus import Milvus
+            from langchain_openai import OpenAIEmbeddings
 
-        embedding = OpenAIEmbeddings()
-        # Connect to a milvus instance on localhost
-        milvus_store = Milvus(
-            embedding_function = Embeddings,
-            collection_name = "LangChainCollection",
-            drop_old = True,
-            auto_id = True
-        )
+            URI = "./milvus_example.db"
 
-    Raises:
-        ValueError: If the pymilvus python package is not installed.
-    """
+            vector_store = Milvus(
+                embedding_function=OpenAIEmbeddings(),
+                connection_args={"uri": URI},
+            )
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"baz": "baz"})
+            document_3 = Document(page_content="i will be deleted :(", metadata={"baz": "qux"})
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'baz': 'baz', 'pk': '2'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'baz': 'baz', 'pk': '2'}]
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.335463] foo [{'baz': 'bar', 'pk': '1'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.335463] foo [{'baz': 'bar', 'pk': '1'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            [Document(metadata={'baz': 'baz', 'pk': '2'}, page_content='thud')]
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -192,6 +233,7 @@ class Milvus(VectorStore):
         primary_field: str = "pk",
         text_field: str = "text",
         vector_field: str = "vector",
+        enable_dynamic_field: bool = False,
         metadata_field: Optional[str] = None,
         partition_key_field: Optional[str] = None,
         partition_names: Optional[list] = None,
@@ -250,6 +292,17 @@ class Milvus(VectorStore):
         self._text_field = text_field
         # In order for compatibility, the vector field needs to be called "vector"
         self._vector_field = vector_field
+        if metadata_field:
+            logger.warning(
+                "DeprecationWarning: `metadata_field` is about to be deprecated, "
+                "please set `enable_dynamic_field`=True instead."
+            )
+        if enable_dynamic_field and metadata_field:
+            metadata_field = None
+            logger.warning(
+                "When `enable_dynamic_field` is True, `metadata_field` is ignored."
+            )
+        self.enable_dynamic_field = enable_dynamic_field
         self._metadata_field = metadata_field
         self._partition_key_field = partition_key_field
         self.fields: list[str] = []
@@ -379,13 +432,43 @@ class Milvus(VectorStore):
         # Determine embedding dim
         dim = len(embeddings[0])
         fields = []
-        if self._metadata_field is not None:
+        # If enable_dynamic_field, we don't need to create fields, and just pass it.
+        # In the future, when metadata_field is deprecated,
+        # This logical structure will be simplified like this:
+        # ```
+        # if not self.enable_dynamic_field and metadatas:
+        #     for key, value in metadatas[0].items():
+        #         ...
+        # ```
+        if self.enable_dynamic_field:
+            # If both dynamic fields and partition key field are enabled
+            if self._partition_key_field is not None:
+                # create the partition field
+                fields.append(
+                    FieldSchema(
+                        self._partition_key_field, DataType.VARCHAR, max_length=65_535
+                    )
+                )
+        elif self._metadata_field is not None:
             fields.append(FieldSchema(self._metadata_field, DataType.JSON))
         else:
             # Determine metadata schema
             if metadatas:
                 # Create FieldSchema for each entry in metadata.
                 for key, value in metadatas[0].items():
+                    if key in [
+                        self._vector_field,
+                        self._primary_field,
+                        self._text_field,
+                    ]:
+                        logger.error(
+                            (
+                                "Failure to create collection, "
+                                "metadata key: %s is reserved."
+                            ),
+                            key,
+                        )
+                        raise ValueError(f"Metadata key {key} is reserved.")
                     # Infer the corresponding datatype of the metadata
                     dtype = infer_dtype_bydata(value)
                     # Datatype isn't compatible
@@ -398,7 +481,7 @@ class Milvus(VectorStore):
                             key,
                         )
                         raise ValueError(f"Unrecognized datatype for {key}.")
-                    # Dataype is a string/varchar equivalent
+                    # Datatype is a string/varchar equivalent
                     elif dtype == DataType.VARCHAR:
                         fields.append(
                             FieldSchema(key, DataType.VARCHAR, max_length=65_535)
@@ -437,6 +520,7 @@ class Milvus(VectorStore):
             fields,
             description=self.collection_description,
             partition_key_field=self._partition_key_field,
+            enable_dynamic_field=self.enable_dynamic_field,
         )
 
         # Create the collection
@@ -607,15 +691,25 @@ class Milvus(VectorStore):
 
         texts = list(texts)
         if not self.auto_id:
-            assert isinstance(
-                ids, list
-            ), "A list of valid ids are required when auto_id is False."
+            assert isinstance(ids, list), (
+                "A list of valid ids are required when auto_id is False. "
+                "You can set `auto_id` to True in this Milvus instance to generate "
+                "ids automatically, or specify string-type ids for each text."
+            )
             assert len(set(ids)) == len(
                 texts
             ), "Different lengths of texts and unique ids are provided."
+            assert all(isinstance(x, str) for x in ids), "All ids should be strings."
             assert all(
                 len(x.encode()) <= 65_535 for x in ids
             ), "Each id should be a string less than 65535 bytes."
+
+        else:
+            if ids is not None:
+                logger.warning(
+                    "The ids parameter is ignored when auto_id is True. "
+                    "The ids will be generated automatically."
+                )
 
         try:
             embeddings = self.embedding_func.embed_documents(texts)
@@ -637,34 +731,39 @@ class Milvus(VectorStore):
                 kwargs["timeout"] = self.timeout
             self._init(**kwargs)
 
-        # Dict to hold all insert columns
-        insert_dict: dict[str, list] = {
-            self._text_field: texts,
-            self._vector_field: embeddings,
-        }
+        insert_list: list[dict] = []
 
-        if not self.auto_id:
-            insert_dict[self._primary_field] = ids  # type: ignore[assignment]
+        assert len(texts) == len(
+            embeddings
+        ), "Mismatched lengths of texts and embeddings."
+        if metadatas is not None:
+            assert len(texts) == len(
+                metadatas
+            ), "Mismatched lengths of texts and metadatas."
 
-        if self._metadata_field is not None:
-            for d in metadatas:  # type: ignore[union-attr]
-                insert_dict.setdefault(self._metadata_field, []).append(d)
-        else:
-            # Collect the metadata into the insert dict.
-            if metadatas is not None:
-                for d in metadatas:
-                    for key, value in d.items():
-                        keys = (
-                            [x for x in self.fields if x != self._primary_field]
-                            if self.auto_id
-                            else [x for x in self.fields]
-                        )
-                        if key in keys:
-                            insert_dict.setdefault(key, []).append(value)
+        for i, text, embedding in zip(range(len(texts)), texts, embeddings):
+            entity_dict = {}
+            metadata = metadatas[i] if metadatas else {}
+            if not self.auto_id:
+                entity_dict[self._primary_field] = ids[i]  # type: ignore[index]
+
+            entity_dict[self._text_field] = text
+            entity_dict[self._vector_field] = embedding
+
+            if self._metadata_field and not self.enable_dynamic_field:
+                entity_dict[self._metadata_field] = metadata
+            else:
+                for key, value in metadata.items():
+                    # if not enable_dynamic_field, skip fields not in the collection.
+                    if not self.enable_dynamic_field and key not in self.fields:
+                        continue
+                    # If enable_dynamic_field, all fields are allowed.
+                    entity_dict[key] = value
+
+            insert_list.append(entity_dict)
 
         # Total insert count
-        vectors: list = insert_dict[self._vector_field]
-        total_count = len(vectors)
+        total_count = len(insert_list)
 
         pks: list[str] = []
 
@@ -672,15 +771,12 @@ class Milvus(VectorStore):
         for i in range(0, total_count, batch_size):
             # Grab end index
             end = min(i + batch_size, total_count)
-            # Convert dict to list of lists batch for insertion
-            insert_list = [
-                insert_dict[x][i:end] for x in self.fields if x in insert_dict
-            ]
+            batch_insert_list = insert_list[i:end]
             # Insert into the collection.
             try:
                 res: Collection
                 timeout = self.timeout or timeout
-                res = self.col.insert(insert_list, timeout=timeout, **kwargs)
+                res = self.col.insert(batch_insert_list, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
                 logger.error(
@@ -688,6 +784,61 @@ class Milvus(VectorStore):
                 )
                 raise e
         return pks
+
+    def _collection_search(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        timeout: Optional[float] = None,
+        **kwargs: Any,
+    ) -> "pymilvus.client.abstract.SearchResult | None":  # type: ignore[name-defined] # noqa: F821
+        """Perform a search on an embedding and return milvus search results.
+
+        For more information about the search parameters, take a look at the pymilvus
+        documentation found here:
+        https://milvus.io/api-reference/pymilvus/v2.4.x/ORM/Collection/search.md
+
+        Args:
+            embedding (List[float]): The embedding vector being searched.
+            k (int, optional): The amount of results to return. Defaults to 4.
+            param (dict): The search params for the specified index.
+                Defaults to None.
+            expr (str, optional): Filtering expression. Defaults to None.
+            timeout (float, optional): How long to wait before timeout error.
+                Defaults to None.
+            kwargs: Collection.search() keyword arguments.
+
+        Returns:
+            pymilvus.client.abstract.SearchResult: Milvus search result.
+        """
+        if self.col is None:
+            logger.debug("No existing collection to search.")
+            return None
+
+        if param is None:
+            param = self.search_params
+
+        # Determine result metadata fields with PK.
+        if self.enable_dynamic_field:
+            output_fields = ["*"]
+        else:
+            output_fields = self.fields[:]
+            output_fields.remove(self._vector_field)
+        timeout = self.timeout or timeout
+        # Perform the search.
+        res = self.col.search(
+            data=[embedding],
+            anns_field=self._vector_field,
+            param=param,
+            limit=k,
+            expr=expr,
+            output_fields=output_fields,
+            timeout=timeout,
+            **kwargs,
+        )
+        return res
 
     def similarity_search(
         self,
@@ -768,7 +919,7 @@ class Milvus(VectorStore):
 
         For more information about the search parameters, take a look at the pymilvus
         documentation found here:
-        https://milvus.io/api-reference/pymilvus/v2.2.6/Collection/search().md
+        https://milvus.io/api-reference/pymilvus/v2.4.x/ORM/Collection/search.md
 
         Args:
             query (str): The text being searched.
@@ -804,11 +955,11 @@ class Milvus(VectorStore):
         timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Perform a search on a query string and return results with score.
+        """Perform a search on an embedding and return results with score.
 
         For more information about the search parameters, take a look at the pymilvus
         documentation found here:
-        https://milvus.io/api-reference/pymilvus/v2.2.6/Collection/search().md
+        https://milvus.io/api-reference/pymilvus/v2.4.x/ORM/Collection/search.md
 
         Args:
             embedding (List[float]): The embedding vector being searched.
@@ -823,32 +974,14 @@ class Milvus(VectorStore):
         Returns:
             List[Tuple[Document, float]]: Result doc and score.
         """
-        if self.col is None:
-            logger.debug("No existing collection to search.")
-            return []
-
-        if param is None:
-            param = self.search_params
-
-        # Determine result metadata fields with PK.
-        output_fields = self.fields[:]
-        output_fields.remove(self._vector_field)
-        timeout = self.timeout or timeout
-        # Perform the search.
-        res = self.col.search(
-            data=[embedding],
-            anns_field=self._vector_field,
-            param=param,
-            limit=k,
-            expr=expr,
-            output_fields=output_fields,
-            timeout=timeout,
-            **kwargs,
+        col_search_res = self._collection_search(
+            embedding=embedding, k=k, param=param, expr=expr, timeout=timeout, **kwargs
         )
-        # Organize results.
+        if col_search_res is None:
+            return []
         ret = []
-        for result in res[0]:
-            data = {x: result.entity.get(x) for x in output_fields}
+        for result in col_search_res[0]:
+            data = {x: result.entity.get(x) for x in result.entity.fields}
             doc = self._parse_document(data)
             pair = (doc, result.score)
             ret.append(pair)
@@ -937,40 +1070,27 @@ class Milvus(VectorStore):
         Returns:
             List[Document]: Document results for search.
         """
-        if self.col is None:
-            logger.debug("No existing collection to search.")
-            return []
-
-        if param is None:
-            param = self.search_params
-
-        # Determine result metadata fields.
-        output_fields = self.fields[:]
-        output_fields.remove(self._vector_field)
-        timeout = self.timeout or timeout
-        # Perform the search.
-        res = self.col.search(
-            data=[embedding],
-            anns_field=self._vector_field,
+        col_search_res = self._collection_search(
+            embedding=embedding,
+            k=fetch_k,
             param=param,
-            limit=fetch_k,
             expr=expr,
-            output_fields=output_fields,
             timeout=timeout,
             **kwargs,
         )
-        # Organize results.
+        if col_search_res is None:
+            return []
         ids = []
         documents = []
         scores = []
-        for result in res[0]:
-            data = {x: result.entity.get(x) for x in output_fields}
+        for result in col_search_res[0]:
+            data = {x: result.entity.get(x) for x in result.entity.fields}
             doc = self._parse_document(data)
             documents.append(doc)
             scores.append(result.score)
             ids.append(result.id)
 
-        vectors = self.col.query(
+        vectors = self.col.query(  # type: ignore[union-attr]
             expr=f"{self._primary_field} in {ids}",
             output_fields=[self._primary_field, self._vector_field],
             timeout=timeout,
@@ -1079,10 +1199,41 @@ class Milvus(VectorStore):
         return vector_db
 
     def _parse_document(self, data: dict) -> Document:
+        if self._vector_field in data:
+            data.pop(self._vector_field)
         return Document(
             page_content=data.pop(self._text_field),
             metadata=data.pop(self._metadata_field) if self._metadata_field else data,
         )
+
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        # TODO: Handle the case where the user doesn't provide ids on the Collection
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return self.add_texts(texts, metadatas, **kwargs)
+
+    async def aadd_documents(
+        self, documents: List[Document], **kwargs: Any
+    ) -> List[str]:
+        """Run more documents through the embeddings and add to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return await self.aadd_texts(texts, metadatas, **kwargs)
 
     def get_pks(self, expr: str, **kwargs: Any) -> List[int] | None:
         """Get primary keys with expression
@@ -1110,7 +1261,7 @@ class Milvus(VectorStore):
         pks = [item.get(self._primary_field) for item in query_result]
         return pks
 
-    def upsert(
+    def upsert(  # type: ignore
         self,
         ids: Optional[List[str]] = None,
         documents: List[Document] | None = None,

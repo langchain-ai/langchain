@@ -1,4 +1,5 @@
 """Transform documents"""
+
 from typing import Any, Callable, List, Sequence
 
 import numpy as np
@@ -153,8 +154,6 @@ class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
     to be considered redundant."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def transform_documents(
@@ -203,8 +202,6 @@ class EmbeddingsClusteringFilter(BaseDocumentTransformer, BaseModel):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def transform_documents(

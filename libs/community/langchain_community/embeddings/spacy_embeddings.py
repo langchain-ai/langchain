@@ -2,7 +2,7 @@ import importlib.util
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class SpacyEmbeddings(BaseModel, Embeddings):
@@ -23,9 +23,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
     nlp: Optional[Any] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid  # Forbid extra attributes during model initialization
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

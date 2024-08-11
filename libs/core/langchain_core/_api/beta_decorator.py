@@ -212,25 +212,10 @@ def beta(
                 wrapper.__doc__ = new_doc
                 return cast(T, wrapper)
 
-        old_doc = inspect.cleandoc(old_doc or "").strip("\n")
-
-        # old_doc can be None
-        if not old_doc:
-            old_doc = ""
-
-        # Modify the docstring to include a beta notice.
-        notes_header = "\nNotes\n-----"
-        components = [
-            message,
-            addendum,
-        ]
+        old_doc = inspect.cleandoc(old_doc or "").strip("\n") or ""
+        components = [message, addendum]
         details = " ".join([component.strip() for component in components if component])
-        new_doc = (
-            f"[*Beta*] {old_doc}\n"
-            f"{notes_header if notes_header not in old_doc else ''}\n"
-            f".. beta::\n"
-            f"   {details}"
-        )
+        new_doc = f".. beta::\n" f"   {details}\n\n" f"{old_doc}\n"
 
         if inspect.iscoroutinefunction(obj):
             finalized = finalize(awarning_emitting_wrapper, new_doc)

@@ -1,4 +1,5 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
+
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain_core.callbacks.manager import Callbacks
@@ -103,7 +104,7 @@ class LLMChainFilter(BaseDocumentCompressor):
         Args:
             llm: The language model to use for filtering.
             prompt: The prompt to use for the filter.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
 
         Returns:
             A LLMChainFilter that uses the given language model.

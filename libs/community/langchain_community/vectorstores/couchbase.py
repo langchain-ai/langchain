@@ -60,10 +60,10 @@ class CouchbaseVectorStore(VectorStore):
     """
 
     # Default batch size
-    DEFAULT_BATCH_SIZE = 100
-    _metadata_key = "metadata"
-    _default_text_key = "text"
-    _default_embedding_key = "embedding"
+    DEFAULT_BATCH_SIZE: int = 100
+    _metadata_key: str = "metadata"
+    _default_text_key: str = "text"
+    _default_embedding_key: str = "embedding"
 
     def _check_bucket_exists(self) -> bool:
         """Check if the bucket exists in the linked Couchbase cluster"""

@@ -156,6 +156,20 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onedrive).
 from langchain_community.document_loaders import OneDriveLoader
 ```
 
+### Microsoft OneDrive File
+
+>[Microsoft OneDrive](https://en.wikipedia.org/wiki/OneDrive) (formerly `SkyDrive`) is a file-hosting service operated by Microsoft.
+
+First, you need to install a python package.
+
+```bash
+pip install o365
+```
+
+```python
+from langchain_community.document_loaders import OneDriveFileLoader
+```
+
 
 ### Microsoft Word
 
@@ -223,9 +237,15 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
-## Vector stores
+## AI Agent Memory System
 
-### Azure Cosmos DB MongoDB vCore
+[AI agent](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents) needs robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation.
+
+AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode. 
+
+Below are two available Azure Cosmos DB APIs that can provide vector store functionalities.
+
+### Azure Cosmos DB for MongoDB (vCore)
 
 >[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
 > You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
@@ -332,7 +352,7 @@ Follow the documentation [here](/docs/integrations/tools/bing_search) to get a d
 
 The environment variable `BING_SUBSCRIPTION_KEY` and `BING_SEARCH_URL` are required from Bing Search resource.
 
-```bash
+```python
 from langchain_community.tools.bing_search import BingSearchResults
 from langchain_community.utilities import BingSearchAPIWrapper
 
@@ -350,7 +370,7 @@ We need to install several python packages.
 pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
 ```
 
-See a [usage example](/docs/integrations/toolkits/azure_ai_services).
+See a [usage example](/docs/integrations/tools/azure_ai_services).
 
 ```python
 from langchain_community.agent_toolkits import azure_ai_services
@@ -365,7 +385,7 @@ pip install O365
 ```
 
 
-See a [usage example](/docs/integrations/toolkits/office365).
+See a [usage example](/docs/integrations/tools/office365).
 
 ```python
 from langchain_community.agent_toolkits import O365Toolkit
@@ -379,7 +399,7 @@ We need to install `azure-identity` python package.
 pip install azure-identity
 ```
 
-See a [usage example](/docs/integrations/toolkits/powerbi).
+See a [usage example](/docs/integrations/tools/powerbi).
 
 ```python
 from langchain_community.agent_toolkits import PowerBIToolkit

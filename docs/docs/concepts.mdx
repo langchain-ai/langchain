@@ -51,10 +51,11 @@ A developer platform that lets you debug, test, evaluate, and monitor LLM applic
 <ThemedImage
   alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
   sources={{
-    light: useBaseUrl('/svg/langchain_stack.svg'),
-    dark: useBaseUrl('/svg/langchain_stack_dark.svg'),
+    light: useBaseUrl('/svg/langchain_stack_062024.svg'),
+    dark: useBaseUrl('/svg/langchain_stack_062024_dark.svg'),
   }}
   title="LangChain Framework Overview"
+  style={{ width: "100%" }}
 />
 
 ## LangChain Expression Language (LCEL)
@@ -85,11 +86,16 @@ Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas i
 As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
 With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.smith.langchain.com/) for maximum observability and debuggability.
 
-[**Seamless LangServe deployment**](/docs/langserve)
-Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
+LCEL aims to provide consistency around behavior and customization over legacy subclassed chains such as `LLMChain` and
+`ConversationalRetrievalChain`. Many of these legacy chains hide important details like prompts, and as a wider variety
+of viable models emerge, customization has become more and more important.
+
+If you are currently using one of these legacy chains, please see [this guide for guidance on how to migrate](/docs/versions/migrating_chains).
+
+For guides on how to do specific tasks with LCEL, check out [the relevant how-to guides](/docs/how_to/#langchain-expression-language-lcel).
 
 ### Runnable interface
-<span data-heading-keywords="invoke"></span>
+<span data-heading-keywords="invoke,runnable"></span>
 
 To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
 
@@ -159,7 +165,7 @@ Some important things to note:
 ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the API reference for that model.
 
 :::important
-**Tool Calling** Some chat models have been fine-tuned for tool calling and provide a dedicated API for tool calling.
+Some chat models have been fine-tuned for **tool calling** and provide a dedicated API for it.
 Generally, such models are better at tool calling than non-fine-tuned models, and are recommended for use cases that require tool calling.
 Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
 :::
@@ -230,7 +236,7 @@ This is where information like log-probs and token usage may be stored.
 These represent a decision from an language model to call a tool. They are included as part of an `AIMessage` output.
 They can be accessed from there with the `.tool_calls` property.
 
-This property returns a list of dictionaries. Each dictionary has the following keys:
+This property returns a list of `ToolCall`s. A `ToolCall` is a dictionary with the following arguments:
 
 - `name`: The name of the tool that should be called.
 - `args`: The arguments to that tool.
@@ -240,13 +246,18 @@ This property returns a list of dictionaries. Each dictionary has the following 
 
 This represents a system message, which tells the model how to behave. Not every model provider supports this.
 
-#### FunctionMessage
-
-This represents the result of a function call. In addition to `role` and `content`, this message has a `name` parameter which conveys the name of the function that was called to produce this result.
-
 #### ToolMessage
 
-This represents the result of a tool call. This is distinct from a FunctionMessage in order to match OpenAI's `function` and `tool` message types. In addition to `role` and `content`, this message has a `tool_call_id` parameter which conveys the id of the call to the tool that was called to produce this result.
+This represents the result of a tool call. In addition to `role` and `content`, this message has:
+
+- a `tool_call_id` field which conveys the id of the call to the tool that was called to produce this result.
+- an `artifact` field which can be used to pass along arbitrary artifacts of the tool execution which are useful to track but which should not be sent to the model.
+
+#### (Legacy) FunctionMessage
+
+This is a legacy message type, corresponding to OpenAI's legacy function-calling API. `ToolMessage` should be used instead to correspond to the updated tool-calling API.
+
+This represents the result of a function call. In addition to `role` and `content`, this message has a `name` parameter which conveys the name of the function that was called to produce this result.
 
 
 ### Prompt templates
@@ -487,36 +498,130 @@ Retrievers accept a string query as input and return a list of Document's as out
 
 For specifics on how to use retrievers, see the [relevant how-to guides here](/docs/how_to/#retrievers).
 
+### Key-value stores
+
+For some techniques, such as [indexing and retrieval with multiple vectors per document](/docs/how_to/multi_vector/) or
+[caching embeddings](/docs/how_to/caching_embeddings/), having a form of key-value (KV) storage is helpful.
+
+LangChain includes a [`BaseStore`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) interface,
+which allows for storage of arbitrary data. However, LangChain components that require KV-storage accept a
+more specific `BaseStore[str, bytes]` instance that stores binary data (referred to as a `ByteStore`), and internally take care of
+encoding and decoding data for their specific needs.
+
+This means that as a user, you only need to think about one type of store rather than different ones for different types of data.
+
+#### Interface
+
+All [`BaseStores`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) support the following interface. Note that the interface allows
+for modifying **multiple** key-value pairs at once:
+
+- `mget(key: Sequence[str]) -> List[Optional[bytes]]`: get the contents of multiple keys, returning `None` if the key does not exist
+- `mset(key_value_pairs: Sequence[Tuple[str, bytes]]) -> None`: set the contents of multiple keys
+- `mdelete(key: Sequence[str]) -> None`: delete multiple keys
+- `yield_keys(prefix: Optional[str] = None) -> Iterator[str]`: yield all keys in the store, optionally filtering by a prefix
+
+For key-value store implementations, see [this section](/docs/integrations/stores/).
+
 ### Tools
 <span data-heading-keywords="tool,tools"></span>
 
-Tools are interfaces that an agent, a chain, or a chat model / LLM can use to interact with the world.
+Tools are utilities designed to be called by a model: their inputs are designed to be generated by models, and their outputs are designed to be passed back to models.
+Tools are needed whenever you want a model to control parts of your code or call out to external APIs.
 
-A tool consists of the following components:
+A tool consists of:
 
-1. The name of the tool
-2. A description of what the tool does
-3. JSON schema of what the inputs to the tool are
-4. The function to call
-5. Whether the result of a tool should be returned directly to the user (only relevant for agents)
+1. The name of the tool.
+2. A description of what the tool does.
+3. A JSON schema defining the inputs to the tool.
+4. A function (and, optionally, an async variant of the function).
 
-The name, description and JSON schema are provided as context
-to the LLM, allowing the LLM to determine how to use the tool
-appropriately.
+When a tool is bound to a model, the name, description and JSON schema are provided as context to the model.
+Given a list of tools and a set of instructions, a model can request to call one or more tools with specific inputs.
+Typical usage may look like the following:
 
-Given a list of available tools and a prompt, an LLM can request
-that one or more tools be invoked with appropriate arguments.
+```python
+tools = [...] # Define a list of tools
+llm_with_tools = llm.bind_tools(tools)
+ai_msg = llm_with_tools.invoke("do xyz...")
+# -> AIMessage(tool_calls=[ToolCall(...), ...], ...)
+```
 
-Generally, when designing tools to be used by a chat model or LLM, it is important to keep in mind the following:
+The `AIMessage` returned from the model MAY have `tool_calls` associated with it.
+Read [this guide](/docs/concepts/#aimessage) for more information on what the response type may look like.
 
-- Chat models that have been fine-tuned for tool calling will be better at tool calling than non-fine-tuned models.
-- Non fine-tuned models may not be able to use tools at all, especially if the tools are complex or require multiple tool calls.
-- Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas.
-- Simpler tools are generally easier for models to use than more complex tools.
+Once the chosen tools are invoked, the results can be passed back to the model so that it can complete whatever task
+it's performing.
+There are generally two different ways to invoke the tool and pass back the response:
 
-For specifics on how to use tools, see the [relevant how-to guides here](/docs/how_to/#tools).
+#### Invoke with just the arguments
+
+When you invoke a tool with just the arguments, you will get back the raw tool output (usually a string).
+This generally looks like:
+
+```python
+# You will want to previously check that the LLM returned tool calls
+tool_call = ai_msg.tool_calls[0]
+# ToolCall(args={...}, id=..., ...)
+tool_output = tool.invoke(tool_call["args"])
+tool_message = ToolMessage(
+    content=tool_output,
+    tool_call_id=tool_call["id"],
+    name=tool_call["name"]
+)
+```
+
+Note that the `content` field will generally be passed back to the model.
+If you do not want the raw tool response to be passed to the model, but you still want to keep it around,
+you can transform the tool output but also pass it as an artifact (read more about [`ToolMessage.artifact` here](/docs/concepts/#toolmessage))
+
+```python
+... # Same code as above
+response_for_llm = transform(response)
+tool_message = ToolMessage(
+    content=response_for_llm,
+    tool_call_id=tool_call["id"],
+    name=tool_call["name"],
+    artifact=tool_output
+)
+```
+
+#### Invoke with `ToolCall`
+
+The other way to invoke a tool is to call it with the full `ToolCall` that was generated by the model.
+When you do this, the tool will return a ToolMessage.
+The benefits of this are that you don't have to write the logic yourself to transform the tool output into a ToolMessage.
+This generally looks like:
+
+```python
+tool_call = ai_msg.tool_calls[0]
+# -> ToolCall(args={...}, id=..., ...)
+tool_message = tool.invoke(tool_call)
+# -> ToolMessage(
+    content="tool result foobar...",
+    tool_call_id=...,
+    name="tool_name"
+)
+```
+
+If you are invoking the tool this way and want to include an [artifact](/docs/concepts/#toolmessage) for the ToolMessage, you will need to have the tool return two things.
+Read more about [defining tools that return artifacts here](/docs/how_to/tool_artifacts/).
+
+#### Best practices
+
+When designing tools to be used by a model, it is important to keep in mind that:
+
+- Chat models that have explicit [tool-calling APIs](/docs/concepts/#functiontool-calling) will be better at tool calling than non-fine-tuned models.
+- Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas. This another form of prompt engineering.
+- Simple, narrowly scoped tools are easier for models to use than complex tools.
+
+#### Related
+
+For specifics on how to use tools, see the [tools how-to guides](/docs/how_to/#tools).
+
+To use a pre-built tool, see the [tool integration docs](/docs/integrations/tools/).
 
 ### Toolkits
+<span data-heading-keywords="toolkit,toolkits"></span>
 
 Toolkits are collections of tools that are designed to be used together for specific tasks. They have convenient loading methods.
 
@@ -761,6 +866,61 @@ units (like words or subwords) that carry meaning, rather than individual charac
 to learn and understand the structure of the language, including grammar and context.
 Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
 
+### Function/tool calling
+
+:::info
+We use the term tool calling interchangeably with function calling. Although
+function calling is sometimes meant to refer to invocations of a single function,
+we treat all models as though they can return multiple tool or function calls in
+each message.
+:::
+
+Tool calling allows a [chat model](/docs/concepts/#chat-models) to respond to a given prompt by generating output that
+matches a user-defined schema.
+
+While the name implies that the model is performing
+some action, this is actually not the case! The model only generates the arguments to a tool, and actually running the tool (or not) is up to the user.
+One common example where you **wouldn't** want to call a function with the generated arguments
+is if you want to [extract structured output matching some schema](/docs/concepts/#structured-output)
+from unstructured text. You would give the model an "extraction" tool that takes
+parameters matching the desired schema, then treat the generated output as your final
+result.
+
+![Diagram of a tool call by a chat model](/img/tool_call.png)
+
+Tool calling is not universal, but is supported by many popular LLM providers, including [Anthropic](/docs/integrations/chat/anthropic/), 
+[Cohere](/docs/integrations/chat/cohere/), [Google](/docs/integrations/chat/google_vertex_ai_palm/), 
+[Mistral](/docs/integrations/chat/mistralai/), [OpenAI](/docs/integrations/chat/openai/), and even for locally-running models via [Ollama](/docs/integrations/chat/ollama/).
+
+LangChain provides a standardized interface for tool calling that is consistent across different models.
+
+The standard interface consists of:
+
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) as well as [Pydantic](https://pydantic.dev/) objects.
+* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+
+#### Tool usage
+
+After the model calls tools, you can use the tool by invoking it, then passing the arguments back to the model.
+LangChain provides the [`Tool`](/docs/concepts/#tools) abstraction to help you handle this.
+
+The general flow is this:
+
+1. Generate tool calls with a chat model in response to a query.
+2. Invoke the appropriate tools using the generated tool call as arguments.
+3. Format the result of the tool invocations as [`ToolMessages`](/docs/concepts/#toolmessage).
+4. Pass the entire list of messages back to the model so that it can generate a final answer (or call more tools).
+
+![Diagram of a complete tool calling flow](/img/tool_calling_flow.png)
+
+This is how tool calling [agents](/docs/concepts/#agents) perform tasks and answer queries.
+
+Check out some more focused guides below:
+
+- [How to use chat models to call tools](/docs/how_to/tool_calling/)
+- [How to pass tool outputs to chat models](/docs/how_to/tool_results_pass_to_model/)
+- [Building an agent with LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
+
 ### Structured output
 
 LLMs are capable of generating arbitrary text. This enables the model to respond appropriately to a wide
@@ -776,13 +936,53 @@ a few ways to get structured output from models in LangChain.
 
 #### `.with_structured_output()`
 
-For convenience, some LangChain chat models support a `.with_structured_output()` method.
-This method only requires a schema as input, and returns a dict or Pydantic object.
+For convenience, some LangChain chat models support a [`.with_structured_output()`](/docs/how_to/structured_output/#the-with_structured_output-method)
+method. This method only requires a schema as input, and returns a dict or Pydantic object.
 Generally, this method is only present on models that support one of the more advanced methods described below,
 and will use one of them under the hood. It takes care of importing a suitable output parser and
 formatting the schema in the right format for the model.
 
+Here's an example:
+
+```python
+from typing import Optional
+
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+class Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str = Field(description="The setup of the joke")
+    punchline: str = Field(description="The punchline to the joke")
+    rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+structured_llm = llm.with_structured_output(Joke)
+
+structured_llm.invoke("Tell me a joke about cats")
+```
+
+```
+Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+
+```
+
+We recommend this method as a starting point when working with structured output:
+
+- It uses other model-specific features under the hood, without the need to import an output parser.
+- For the models that use tool calling, no special prompting is needed.
+- If multiple underlying techniques are supported, you can supply a `method` parameter to
+[toggle which one is used](/docs/how_to/structured_output/#advanced-specifying-the-method-for-structuring-outputs).
+
+You may want or need to use other techniques if:
+
+- The chat model you are using does not support tool calling.
+- You are working with very complex schemas and the model is having trouble generating outputs that conform.
+
 For more information, check out this [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method).
+
+You can also check out [this table](/docs/integrations/chat/#advanced-features) for a list of models that support
+`with_structured_output()`.
 
 #### Raw prompting
 
@@ -806,9 +1006,8 @@ for smooth parsing can be surprisingly difficult and model-specific.
 Some may be better at interpreting [JSON schema](https://json-schema.org/), others may be best with TypeScript definitions,
 and still others may prefer XML.
 
-While we'll next go over some ways that you can take advantage of features offered by
-model providers to increase reliability, prompting techniques remain important for tuning your
-results no matter what method you choose.
+While features offered by model providers may increase reliability, prompting techniques remain important for tuning your
+results no matter which method you choose.
 
 #### JSON mode
 <span data-heading-keywords="json mode"></span>
@@ -818,10 +1017,11 @@ Some models, such as [Mistral](/docs/integrations/chat/mistralai/), [OpenAI](/do
 support a feature called **JSON mode**, usually enabled via config.
 
 When enabled, JSON mode will constrain the model's output to always be some sort of valid JSON.
-Often they require some custom prompting, but it's usually much less burdensome and along the lines of,
-`"you must always return JSON"`, and the [output is easier to parse](/docs/how_to/output_parser_json/).
+Often they require some custom prompting, but it's usually much less burdensome than completely raw prompting and
+more along the lines of, `"you must always return JSON"`. The [output also generally easier to parse](/docs/how_to/output_parser_json/).
 
-It's also generally simpler and more commonly available than tool calling.
+It's also generally simpler to use directly and more commonly available than tool calling, and can give
+more flexibility around prompting and shaping results than tool calling.
 
 Here's an example:
 
@@ -853,48 +1053,48 @@ chain.invoke({ "question": "What is the powerhouse of the cell?" })
 
 For a full list of model providers that support JSON mode, see [this table](/docs/integrations/chat/#advanced-features).
 
-#### Function/tool calling
+#### Tool calling {#structured-output-tool-calling}
 
-:::info
-We use the term tool calling interchangeably with function calling. Although
-function calling is sometimes meant to refer to invocations of a single function,
-we treat all models as though they can return multiple tool or function calls in
-each message
-:::
+For models that support it, [tool calling](/docs/concepts/#functiontool-calling) can be very convenient for structured output. It removes the
+guesswork around how best to prompt schemas in favor of a built-in model feature.
 
-Tool calling allows a model to respond to a given prompt by generating output that
-matches a user-defined schema. While the name implies that the model is performing
-some action, this is actually not the case! The model is coming up with the
-arguments to a tool, and actually running the tool (or not) is up to the user -
-for example, if you want to [extract output matching some schema](/docs/tutorials/extraction)
-from unstructured text, you could give the model an "extraction" tool that takes
-parameters matching the desired schema, then treat the generated output as your final
-result.
+It works by first binding the desired schema either directly or via a [LangChain tool](/docs/concepts/#tools) to a
+[chat model](/docs/concepts/#chat-models) using the `.bind_tools()` method. The model will then generate an `AIMessage` containing
+a `tool_calls` field containing `args` that match the desired shape.
 
-For models that support it, tool calling can be very convenient. It removes the
-guesswork around how best to prompt schemas in favor of a built-in model feature. It can also
-more naturally support agentic flows, since you can just pass multiple tool schemas instead
-of fiddling with enums or unions.
+There are several acceptable formats you can use to bind tools to a model in LangChain. Here's one example:
 
-Many LLM providers, including [Anthropic](https://www.anthropic.com/),
-[Cohere](https://cohere.com/), [Google](https://cloud.google.com/vertex-ai),
-[Mistral](https://mistral.ai/), [OpenAI](https://openai.com/), and others,
-support variants of a tool calling feature. These features typically allow requests
-to the LLM to include available tools and their schemas, and for responses to include
-calls to these tools. For instance, given a search engine tool, an LLM might handle a
-query by first issuing a call to the search engine. The system calling the LLM can
-receive the tool call, execute it, and return the output to the LLM to inform its
-response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/)
-and supports several methods for defining your own [custom tools](/docs/how_to/custom_tools).
+```python
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_openai import ChatOpenAI
 
-LangChain provides a standardized interface for tool calling that is consistent across different models.
+class ResponseFormatter(BaseModel):
+    """Always use this tool to structure your response to the user."""
 
-The standard interface consists of:
+    answer: str = Field(description="The answer to the user's question")
+    followup_question: str = Field(description="A followup question the user could ask")
 
-* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) here.
-* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+model = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0,
+)
 
-The following how-to guides are good practical resources for using function/tool calling:
+model_with_tools = model.bind_tools([ResponseFormatter])
+
+ai_msg = model_with_tools.invoke("What is the powerhouse of the cell?")
+
+ai_msg.tool_calls[0]["args"]
+```
+
+```
+{'answer': "The powerhouse of the cell is the mitochondrion. It generates most of the cell's supply of adenosine triphosphate (ATP), which is used as a source of chemical energy.",
+ 'followup_question': 'How do mitochondria generate ATP?'}
+```
+
+Tool calling is a generally consistent way to get a model to generate structured output, and is the default technique
+used for the [`.with_structured_output()`](/docs/concepts/#with_structured_output) method when a model supports it.
+
+The following how-to guides are good practical resources for using function/tool calling for structured output:
 
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
 - [How to use a model to call tools](/docs/how_to/tool_calling)
@@ -975,7 +1175,7 @@ See our [blog post overview](https://blog.langchain.dev/query-construction/) and
 
 #### Indexing
 
-Fouth, consider the design of your document index. A simple and powerful idea is to **decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.** Indexing frequently uses embedding models with vector stores, which [compress the semantic information in documents to fixed-size vectors](/docs/concepts/#embedding-models).
+Fourth, consider the design of your document index. A simple and powerful idea is to **decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.** Indexing frequently uses embedding models with vector stores, which [compress the semantic information in documents to fixed-size vectors](/docs/concepts/#embedding-models).
 
 Many RAG approaches focus on splitting documents into chunks and retrieving some number based on similarity to an input question for the LLM. But chunk size and chunk number can be difficult to set and affect results if they do not provide full context for the LLM to answer a question. Furthermore, LLMs are increasingly capable of processing millions of tokens. 
 
@@ -1055,7 +1255,7 @@ See several videos and cookbooks showcasing RAG with LangGraph:
 - [Cookbooks for RAG using LangGraph](https://github.com/langchain-ai/langgraph/tree/main/examples/rag)
 
 See our LangGraph RAG recipes with partners:
-- [Meta](https://github.com/meta-llama/llama-recipes/tree/main/recipes/use_cases/agents/langchain) 
+- [Meta](https://github.com/meta-llama/llama-recipes/tree/main/recipes/3p_integrations/langchain)
 - [Mistral](https://github.com/mistralai/cookbook/tree/main/third_party/langchain)
 
 :::
@@ -1083,7 +1283,7 @@ Table columns:
 | Token    | [many classes](/docs/how_to/split_by_token/)                                                                                                                                  | Tokens                                                                                                          |               | Splits text on tokens. There exist a few different ways to measure tokens.                                                                                                                                                                                                   |
 | Character  | [CharacterTextSplitter](/docs/how_to/character_text_splitter/)                                                                                                                | A user defined character                                                                                        |               | Splits text based on a user defined character. One of the simpler methods.                                                                                                                                                                                                   |
 | Semantic Chunker (Experimental) | [SemanticChunker](/docs/how_to/semantic-chunker/)                                                                                                                             | Sentences                                                                                                       |               | First splits on sentences. Then combines ones next to each other if they are semantically similar enough. Taken from [Greg Kamradt](https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb) |
-| Integration: AI21 Semantic | [AI21SemanticTextSplitter](/docs/integrations/document_transformers/ai21_semantic_text_splitter/)                                                                                                                    |    ✅           | Identifies distinct topics that form coherent pieces of text and splits along those.                                                                                                                                                                                         |
+| Integration: AI21 Semantic | [AI21SemanticTextSplitter](/docs/integrations/document_transformers/ai21_semantic_text_splitter/)                                                                                                 |                  |    ✅           | Identifies distinct topics that form coherent pieces of text and splits along those.                                                                                                                                                                                         |
 
 ### Evaluation
 <span data-heading-keywords="evaluation,evaluate"></span>
@@ -1101,3 +1301,13 @@ This process is vital for building reliable applications.
 - It allows you to track results over time and automatically run your evaluators on a schedule or as part of CI/Code
 
 To learn more, check out [this LangSmith guide](https://docs.smith.langchain.com/concepts/evaluation).
+
+### Tracing
+<span data-heading-keywords="trace,tracing"></span>
+
+A trace is essentially a series of steps that your application takes to go from input to output.
+Traces contain individual steps called `runs`. These can be individual calls from a model, retriever,
+tool, or sub-chains.
+Tracing gives you observability inside your chains and agents, and is vital in diagnosing issues.
+
+For a deeper dive, check out [this LangSmith conceptual guide](https://docs.smith.langchain.com/concepts/tracing).

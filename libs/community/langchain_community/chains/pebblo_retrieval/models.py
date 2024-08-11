@@ -129,10 +129,14 @@ class Context(BaseModel):
     retrieved_from: Optional[str]
     doc: Optional[str]
     vector_db: str
+    pb_checksum: Optional[str]
 
 
 class Prompt(BaseModel):
-    data: str
+    data: Optional[Union[list, str]]
+    entityCount: Optional[int]
+    entities: Optional[dict]
+    prompt_gov_enabled: Optional[bool]
 
 
 class Qa(BaseModel):

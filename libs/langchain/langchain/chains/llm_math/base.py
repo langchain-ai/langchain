@@ -1,4 +1,5 @@
 """Chain that interprets a prompt and executes python code to do math."""
+
 from __future__ import annotations
 
 import math
@@ -12,7 +13,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -39,10 +40,8 @@ class LLMMathChain(Chain):
     output_key: str = "answer"  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:

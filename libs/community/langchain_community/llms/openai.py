@@ -29,7 +29,12 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import (
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+    pre_init,
+)
+from langchain_core.utils.pydantic import get_fields
 from langchain_core.utils.utils import build_extra_kwargs
 
 from langchain_community.utils.openai import is_openai_v1
@@ -255,8 +260,6 @@ class BaseOpenAI(BaseLLM):
         return super().__new__(cls)
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -269,7 +272,7 @@ class BaseOpenAI(BaseLLM):
         )
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -818,7 +821,7 @@ class AzureOpenAI(BaseOpenAI):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "openai"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -1014,7 +1017,7 @@ class OpenAIChat(BaseLLM):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {field.alias for field in get_fields(cls).values()}
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
@@ -1025,7 +1028,7 @@ class OpenAIChat(BaseLLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(

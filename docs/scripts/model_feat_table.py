@@ -17,28 +17,24 @@ CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
 CHAT_MODEL_FEAT_TABLE = {
     "ChatAnthropic": {
         "tool_calling": True,
-        "structured_output": True,
         "multimodal": True,
         "package": "langchain-anthropic",
         "link": "/docs/integrations/chat/anthropic/",
     },
     "ChatMistralAI": {
         "tool_calling": True,
-        "structured_output": True,
         "json_model": True,
         "package": "langchain-mistralai",
         "link": "/docs/integrations/chat/mistralai/",
     },
     "ChatFireworks": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-fireworks",
         "link": "/docs/integrations/chat/fireworks/",
     },
     "AzureChatOpenAI": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "multimodal": True,
         "package": "langchain-openai",
@@ -46,7 +42,6 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatOpenAI": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "multimodal": True,
         "package": "langchain-openai",
@@ -54,14 +49,12 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatTogether": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-together",
         "link": "/docs/integrations/chat/together/",
     },
     "ChatVertexAI": {
         "tool_calling": True,
-        "structured_output": True,
         "multimodal": True,
         "package": "langchain-google-vertexai",
         "link": "/docs/integrations/chat/google_vertex_ai_palm/",
@@ -74,14 +67,12 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatGroq": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-groq",
         "link": "/docs/integrations/chat/groq/",
     },
     "ChatCohere": {
         "tool_calling": True,
-        "structured_output": True,
         "package": "langchain-cohere",
         "link": "/docs/integrations/chat/cohere/",
     },
@@ -96,31 +87,51 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-huggingface",
         "link": "/docs/integrations/chat/huggingface/",
     },
+    "ChatNVIDIA": {
+        "tool_calling": True,
+        "json_mode": False,
+        "local": True,
+        "multimodal": False,
+        "package": "langchain-nvidia-ai-endpoints",
+        "link": "/docs/integrations/chat/nvidia_ai_endpoints/",
+    },
     "ChatOllama": {
+        "tool_calling": True,
         "local": True,
         "json_mode": True,
-        "package": "langchain-community",
+        "package": "langchain-ollama",
         "link": "/docs/integrations/chat/ollama/",
     },
     "vLLM Chat (via ChatOpenAI)": {
         "local": True,
-        "package": "langchain-community",
+        "package": "langchain-openai",
         "link": "/docs/integrations/chat/vllm/",
-    },
-    "ChatEdenAI": {
-        "tool_calling": True,
-        "structured_output": True,
-        "package": "langchain-community",
-        "link": "/docs/integrations/chat/edenai/",
     },
     "ChatLlamaCpp": {
         "tool_calling": True,
-        "structured_output": True,
         "local": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/llamacpp",
     },
+    "ChatAI21": {
+        "tool_calling": True,
+        "package": "langchain-ai21",
+        "link": "/docs/integrations/chat/ai21",
+    },
+    "ChatWatsonx": {
+        "tool_calling": True,
+        "package": "langchain-ibm",
+        "link": "/docs/integrations/chat/ibm_watsonx",
+    },
+    "ChatUpstage": {
+        "tool_calling": True,
+        "package": "langchain-upstage",
+        "link": "/docs/integrations/chat/upstage",
+    },
 }
+
+for feats in CHAT_MODEL_FEAT_TABLE.values():
+    feats["structured_output"] = feats.get("tool_calling", False)
 
 
 LLM_TEMPLATE = """\
@@ -132,6 +143,13 @@ custom_edit_url:
 ---
 
 # LLMs
+
+:::info
+
+If you'd like to write your own LLM, see [this how-to](/docs/how_to/custom_llm/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+
+:::
 
 ## Features (natively supported)
 All LLMs implement the Runnable interface, which comes with default implementations of all methods, ie. `ainvoke`, `batch`, `abatch`, `stream`, `astream`. This gives all LLMs basic support for async, streaming and batch, which by default is implemented as below:
@@ -156,9 +174,22 @@ hide_table_of_contents: true
 
 # Chat models
 
+:::info
+
+If you'd like to write your own chat model, see [this how-to](/docs/how_to/custom_chat_model/).
+If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/integrations/).
+
+:::
+
 ## Advanced features
 
-The following table shows all the chat models that support one or more advanced features.
+The following table shows all the chat model classes that support one or more advanced features.
+
+:::info
+While all these LangChain classes support the indicated advanced feature, you may have
+to open the provider-specific documentation to learn which hosted models or backends support
+the feature.
+:::
 
 {table}
 
@@ -248,7 +279,11 @@ def get_chat_model_table() -> str:
         for h in header[1:]:
             value = feats.get(h)
             if h == "package":
-                row.append(value or "langchain-community")
+                value = value or "langchain-community"
+                name = value[len("langchain-") :]
+                link = f"https://api.python.langchain.com/en/latest/{name}_api_reference.html"
+                value = f"[{value}]({link})"
+                row.append(value)
             else:
                 if value == "partial":
                     row.append("🟡")

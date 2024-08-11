@@ -1,4 +1,5 @@
 """Tools for interacting with a Power BI dataset."""
+
 import logging
 from time import perf_counter
 from typing import Any, Dict, Optional, Tuple
@@ -39,8 +40,6 @@ class QueryPowerBITool(BaseTool):
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @validator("llm_chain")
@@ -99,9 +98,9 @@ class QueryPowerBITool(BaseTool):
         logger.debug(f"PBI Query duration: {end_time - start_time:0.6f}")
         result, error = self._parse_output(pbi_result)
         if error is not None and "TokenExpired" in error:
-            self.session_cache[
-                tool_input
-            ] = "Authentication token expired or invalid, please try reauthenticate."
+            self.session_cache[tool_input] = (
+                "Authentication token expired or invalid, please try reauthenticate."
+            )
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
@@ -153,9 +152,9 @@ class QueryPowerBITool(BaseTool):
         logger.debug(f"PBI Query duration: {end_time - start_time:0.6f}")
         result, error = self._parse_output(pbi_result)
         if error is not None and ("TokenExpired" in error or "TokenError" in error):
-            self.session_cache[
-                tool_input
-            ] = "Authentication token expired or invalid, please try to reauthenticate or check the scope of the credential."  # noqa: E501
+            self.session_cache[tool_input] = (
+                "Authentication token expired or invalid, please try to reauthenticate or check the scope of the credential."  # noqa: E501
+            )
             return self.session_cache[tool_input]
 
         iterations = kwargs.get("iterations", 0)
@@ -227,8 +226,6 @@ class InfoPowerBITool(BaseTool):
     powerbi: PowerBIDataset = Field(exclude=True)
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def _run(
@@ -255,8 +252,6 @@ class ListPowerBITool(BaseTool):
     powerbi: PowerBIDataset = Field(exclude=True)
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def _run(

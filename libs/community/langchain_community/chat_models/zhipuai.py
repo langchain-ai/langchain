@@ -48,7 +48,7 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
         client: The HTTP client.
         method: The HTTP method.
         url: The URL.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Yields:
         The event source.
@@ -69,7 +69,7 @@ async def aconnect_sse(
         client: The HTTP client.
         method: The HTTP method.
         url: The URL.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Yields:
         The event source.
@@ -373,8 +373,6 @@ class ChatZhipuAI(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -447,7 +445,7 @@ class ChatZhipuAI(BaseChatModel):
         import httpx
 
         with httpx.Client(headers=headers, timeout=60) as client:
-            response = client.post(self.zhipuai_api_base, json=payload)
+            response = client.post(self.zhipuai_api_base, json=payload)  # type: ignore[arg-type]
             response.raise_for_status()
         return self._create_chat_result(response.json())
 
@@ -496,9 +494,10 @@ class ChatZhipuAI(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
+
                     if finish_reason is not None:
                         break
 
@@ -534,7 +533,7 @@ class ChatZhipuAI(BaseChatModel):
         import httpx
 
         async with httpx.AsyncClient(headers=headers, timeout=60) as client:
-            response = await client.post(self.zhipuai_api_base, json=payload)
+            response = await client.post(self.zhipuai_api_base, json=payload)  # type: ignore[arg-type]
             response.raise_for_status()
         return self._create_chat_result(response.json())
 
@@ -582,8 +581,9 @@ class ChatZhipuAI(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
+
                     if finish_reason is not None:
                         break

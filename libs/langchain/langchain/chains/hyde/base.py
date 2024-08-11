@@ -2,6 +2,7 @@
 
 https://arxiv.org/abs/2212.10496
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -11,7 +12,6 @@ from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra
 
 from langchain.chains.base import Chain
 from langchain.chains.hyde.prompts import PROMPT_MAP
@@ -28,10 +28,8 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
     llm_chain: LLMChain
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

@@ -3,12 +3,13 @@
 In order to set this up, follow instructions at:
 https://docs.tavily.com/docs/tavily-api/introduction
 """
+
 import json
 from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 TAVILY_API_URL = "https://api.tavily.com"
@@ -20,9 +21,7 @@ class TavilySearchAPIWrapper(BaseModel):
     tavily_api_key: SecretStr
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
