@@ -119,7 +119,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
             resp = self.client.embeddings.create(
                 model=self.model,
                 input=texts,
-                dimensions=self.dimensions
+                dimensions=self.dimensions,
             )
         else:
             resp = self.client.embeddings.create(model=self.model, input=texts)
