@@ -135,7 +135,7 @@ Use the following format:
 Question: Question here
 SQLQuery: SQL Query to run
 SQLResult: Result of the SQLQuery
-Answer: Final answer here
+Answer: Final answer here (make sure the queiry do not contain 'sql' at the start, the query should start with SELECT)
 
 """
 
