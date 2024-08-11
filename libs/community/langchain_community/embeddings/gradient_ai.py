@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from packaging.version import parse
 
@@ -51,11 +51,9 @@ class GradientEmbeddings(BaseModel, Embeddings):
 
     # LLM call kwargs
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 
@@ -67,8 +65,15 @@ class GradientEmbeddings(BaseModel, Embeddings):
         )
 
         values["gradient_api_url"] = get_from_dict_or_env(
-            values, "gradient_api_url", "GRADIENT_API_URL"
+            values,
+            "gradient_api_url",
+            "GRADIENT_API_URL",
+            default="https://api.gradient.ai/api",
         )
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
         try:
             import gradientai
         except ImportError:
@@ -87,7 +92,6 @@ class GradientEmbeddings(BaseModel, Embeddings):
             host=values["gradient_api_url"],
         )
         values["client"] = gradient.get_embeddings_model(slug=values["model"])
-
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

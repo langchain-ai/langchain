@@ -10,7 +10,6 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.pydantic_v1 import Extra
 
 from langchain.chains.base import Chain
 
@@ -62,10 +61,8 @@ class MultiRouteChain(Chain):
     Defaults to False."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
