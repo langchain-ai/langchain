@@ -46,10 +46,13 @@ def test_valid_sparql(max_fix_retries: int) -> None:
     assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
     assert chain.sparql_fix_chain.with_config().invoke.call_count == 0
     assert chain.qa_chain.with_config().invoke.call_count == 1
-    assert result == inputs | {
-        chain.output_key_generated_sparql: generated_sparql,
-        chain.output_key_answer: answer,
-    }
+    inputs.update(
+        {
+            chain.output_key_generated_sparql: generated_sparql,
+            chain.output_key_answer: answer,
+        }
+    )
+    assert result == inputs
 
 
 @pytest.mark.requires("langchain_openai", "SPARQLWrapper")
@@ -134,10 +137,13 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
     assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
     assert chain.sparql_fix_chain.with_config().invoke.call_count == 1
     assert chain.qa_chain.with_config().invoke.call_count == 1
-    assert result == inputs | {
-        chain.output_key_generated_sparql: generated_valid_sparql,
-        chain.output_key_answer: answer,
-    }
+    inputs.update(
+        {
+            chain.output_key_generated_sparql: generated_valid_sparql,
+            chain.output_key_answer: answer,
+        }
+    )
+    assert result == inputs
 
 
 @pytest.mark.requires("langchain_openai", "SPARQLWrapper")
@@ -232,10 +238,13 @@ def test_valid_sparql_after_some_retries(
         == number_of_invalid_responses + 1
     )
     assert chain.qa_chain.with_config().invoke.call_count == 1
-    assert result == inputs | {
-        chain.output_key_generated_sparql: generated_valid_sparql,
-        chain.output_key_answer: answer,
-    }
+    inputs.update(
+        {
+            chain.output_key_generated_sparql: generated_valid_sparql,
+            chain.output_key_answer: answer,
+        }
+    )
+    assert result == inputs
 
 
 @pytest.mark.requires("langchain_openai", "SPARQLWrapper")
@@ -283,10 +292,13 @@ def test_custom_sparql_generation_prompt_variables() -> None:
     assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
     assert chain.sparql_fix_chain.with_config().invoke.call_count == 0
     assert chain.qa_chain.with_config().invoke.call_count == 1
-    assert result == inputs | {
-        chain.output_key_generated_sparql: generated_valid_sparql,
-        chain.output_key_answer: answer,
-    }
+    inputs.update(
+        {
+            chain.output_key_generated_sparql: generated_valid_sparql,
+            chain.output_key_answer: answer,
+        }
+    )
+    assert result == inputs
 
 
 @pytest.mark.requires("langchain_openai", "SPARQLWrapper")

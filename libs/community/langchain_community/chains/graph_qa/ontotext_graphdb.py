@@ -106,9 +106,8 @@ class OntotextGraphDBQAChain(Chain):
             verbose=self.verbose,
         )
 
-        answer = self.qa_chain.with_config(callbacks=callbacks).invoke(
-            inputs | {"context": query_results_str}
-        )
+        inputs.update({"context": query_results_str})
+        answer = self.qa_chain.with_config(callbacks=callbacks).invoke(inputs)
 
         _run_manager.on_text(
             f"Finished chain for {time.time() - start:.2f} seconds",
@@ -185,15 +184,15 @@ class OntotextGraphDBQAChain(Chain):
                     verbose=self.verbose,
                 )
                 try:
-                    generated_sparql = self.sparql_fix_chain.with_config(
-                        callbacks=callbacks
-                    ).invoke(
-                        inputs
-                        | {
+                    inputs.update(
+                        {
                             "error_message": error_message,
                             "generated_sparql": generated_sparql,
                         }
                     )
+                    generated_sparql = self.sparql_fix_chain.with_config(
+                        callbacks=callbacks
+                    ).invoke(inputs)
                     _run_manager.on_text(
                         "Generated query:",
                         end="\n",
