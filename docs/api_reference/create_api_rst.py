@@ -404,6 +404,16 @@ def _construct_doc(
 
 """
         docs.append((f"{module}.rst", module_doc))
+    docs.append(("secondary_index.rst", index_doc))
+
+    dummy_index = """\
+# API reference
+
+.. toctree::
+    :hidden:
+    
+    index.rst
+"""
     docs.append(("index.rst", index_doc))
     return docs
 
