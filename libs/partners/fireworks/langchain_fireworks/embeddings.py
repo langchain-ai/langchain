@@ -11,7 +11,8 @@ class FireworksEmbeddings(BaseModel, Embeddings):
     """Fireworks embedding model integration.
 
      Setup:
-         Install ``langchain_fireworks`` and set environment variable ``FIREWORKS_API_KEY``.
+         Install ``langchain_fireworks`` and set environment variable
+         ``FIREWORKS_API_KEY``.
 
          .. code-block:: bash
 
