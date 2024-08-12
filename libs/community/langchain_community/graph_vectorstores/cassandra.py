@@ -32,6 +32,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
+        **kwargs: Any,
     ):
         """
         Create the hybrid graph store.
@@ -74,6 +75,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             session=session,
             keyspace=keyspace,
             setup_mode=_setup_mode,
+            **kwargs,
         )
 
     @property
