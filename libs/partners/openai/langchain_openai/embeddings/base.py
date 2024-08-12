@@ -143,7 +143,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
              )
 
      Embed single text:
-
          .. code-block:: python
 
              input_text = "The meaning of life is 42"
@@ -155,7 +154,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
              [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
 
      Embed multiple texts:
-
          .. code-block:: python
 
              vectors = embeddings.embed_documents(["hello", "goodbye"])
