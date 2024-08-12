@@ -224,7 +224,7 @@ class ChatZhipuAI(BaseChatModel):
 
     Key init args — completion params:
         model: Optional[str]
-            Name of OpenAI model to use.
+            Name of ZhipuAI model to use.
         temperature: float
             Sampling temperature.
         max_tokens: Optional[int]
@@ -232,9 +232,9 @@ class ChatZhipuAI(BaseChatModel):
 
     Key init args — client params:
         api_key: Optional[str]
-        ZhipuAI API key. If not passed in will be read from env var ZHIPUAI_API_KEY.
+            ZhipuAI API key. If not passed in will be read from env var ZHIPUAI_API_KEY.
         api_base: Optional[str]
-        Base URL for API requests.
+            Base URL for API requests.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -280,7 +280,7 @@ class ChatZhipuAI(BaseChatModel):
 
         .. code-block:: python
 
-            stream = llm.stream(messages)
+            stream = zhipuai_chat.stream(messages)
             full = next(stream)
             for chunk in stream:
                 full += chunk
