@@ -4,14 +4,19 @@ from langchain_core.language_models import FakeListChatModel
 from langchain.retrievers.document_compressors import LLMChainExtractor
 
 
-def test_llm_chain_extractor():
+def test_llm_chain_extractor() -> None:
     documents = [
         Document(
-            page_content="The sky is blue. Candlepin bowling is popular in New England.",
+            page_content=(
+                "The sky is blue. Candlepin bowling is popular in New England."
+            ),
             metadata={"a": 1},
         ),
         Document(
-            page_content="Mercury is the closest planet to the Sun. Candlepin bowling balls are smaller.",
+            page_content=(
+                "Mercury is the closest planet to the Sun. "
+                "Candlepin bowling balls are smaller."
+            ),
             metadata={"b": 2},
         ),
         Document(page_content="The moon is round.", metadata={"c": 3}),
@@ -39,14 +44,19 @@ def test_llm_chain_extractor():
     assert output == expected
 
 
-async def test_llm_chain_extractor_async():
+async def test_llm_chain_extractor_async() -> None:
     documents = [
         Document(
-            page_content="The sky is blue. Candlepin bowling is popular in New England.",
+            page_content=(
+                "The sky is blue. Candlepin bowling is popular in New England."
+            ),
             metadata={"a": 1},
         ),
         Document(
-            page_content="Mercury is the closest planet to the Sun. Candlepin bowling balls are smaller.",
+            page_content=(
+                "Mercury is the closest planet to the Sun. "
+                "Candlepin bowling balls are smaller."
+            ),
             metadata={"b": 2},
         ),
         Document(page_content="The moon is round.", metadata={"c": 3}),
