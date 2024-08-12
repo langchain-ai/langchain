@@ -74,6 +74,7 @@ class AI21Embeddings(Embeddings, AI21Base):
             2
             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
     """
+
     batch_size: int = _DEFAULT_BATCH_SIZE
     """Maximum number of texts to embed in each batch"""
 
