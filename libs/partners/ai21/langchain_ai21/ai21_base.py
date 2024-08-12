@@ -16,9 +16,17 @@ class AI21Base(BaseModel):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     api_key: Optional[SecretStr] = None
+    """API key for AI21 API."""
     api_host: Optional[str] = None
+    """Host URL"""
     timeout_sec: Optional[float] = None
+    """Timeout in seconds.
+    
+    If not set, it will default to the value of the environment 
+    variable `AI21_TIMEOUT_SEC` or 300 seconds.
+    """
     num_retries: Optional[int] = None
+    """Maximum number of retries for API requests before giving up."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
