@@ -1,9 +1,12 @@
-"""``langchain-core`` defines abstractions for common components and a syntax for combining them.
+"""``langchain-core`` defines the base abstractions for the LangChain ecosystem.
 
 The interfaces for core components like chat models, LLMs, vector stores, retrievers,
-and more are defined here. No third-party integrations are defined here. The
-dependencies are kept purposefully very lightweight.
-"""  # noqa: E501
+and more are defined here. The universal invocation protocol (Runnables) along with
+a syntax for combining components (LangChain Expression Language) are also defined here.
+
+No third-party integrations are defined here. The dependencies are kept purposefully
+very lightweight.
+"""
 
 from importlib import metadata
 

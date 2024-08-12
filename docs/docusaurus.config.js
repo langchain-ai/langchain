@@ -170,11 +170,11 @@ const config = {
             position: "left",
             items: [
               {
-                label: "Canary",
-                href: "/api_reference/"
+                label: "Latest",
+                to: "https://langchain-git-bagatur-apistyling-langchain.vercel.app/v0.2/api_reference/reference.html",
               },
               {
-                label: "Stable (ReadTheDocs)",
+                label: "Legacy",
                 href: "https://api.python.langchain.com/"
               }
             ]

@@ -552,7 +552,7 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
 {main_tree}
 ```
 
-## Integration packages
+## Integrations
 
 ```{{gallery-grid}}
 :grid-columns: "1 2 2 3"

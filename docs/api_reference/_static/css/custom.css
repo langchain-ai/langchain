@@ -337,7 +337,7 @@ html[data-theme=dark] .MathJax_SVG * {
 
 
 .bd-header .navbar-header-items__start{
-  margin-left: 1rem
+  margin-left: 0rem
 }
 
 .bd-header button.primary-toggle {
@@ -350,5 +350,5 @@ html[data-theme=dark] .MathJax_SVG * {
 }
 
 .bd-sidebar-primary {
-    width: 25%;  /* Adjust this value to your preference */
+    width: 22%;  /* Adjust this value to your preference */
 }
