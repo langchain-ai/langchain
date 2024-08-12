@@ -158,10 +158,11 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
         return_value={
             "text": generated_valid_sparql,
             "error_message": (
-                "QueryBadFormed: A bad request has been sent to the endpoint: probably the SPARQL "
-                "query is badly formed. \n\n"
+                "QueryBadFormed: A bad request has been sent to the endpoint: "
+                "probably the SPARQL query is badly formed. \n\n"
                 "Response:"
-                "b\"MALFORMED QUERY: Lexical error at line 1, column 1.  Encountered: '96' (96),\""
+                'b"MALFORMED QUERY: Lexical error at line 1, column 1.  '
+                "Encountered: '96' (96),\""
             ),
             "generated_sparql": generated_invalid_sparql,
             "question": question,
@@ -226,10 +227,11 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
         return_value={
             "text": generated_invalid_sparql,
             "error_message": (
-                "QueryBadFormed: A bad request has been sent to the endpoint: probably the SPARQL "
-                "query is badly formed. \n\n"
+                "QueryBadFormed: A bad request has been sent to the endpoint: "
+                "probably the SPARQL query is badly formed. \n\n"
                 "Response:"
-                "b\"MALFORMED QUERY: Lexical error at line 1, column 1.  Encountered: '96' (96),\""
+                'b"MALFORMED QUERY: Lexical error at line 1, column 1.  '
+                "Encountered: '96' (96),\""
             ),
             "generated_sparql": generated_invalid_sparql,
             "question": question,
@@ -299,10 +301,11 @@ def test_valid_sparql_after_some_retries(
         {
             "text": generated_invalid_sparql,
             "error_message": (
-                "QueryBadFormed: A bad request has been sent to the endpoint: probably the SPARQL "
-                "query is badly formed. \n\n"
+                "QueryBadFormed: A bad request has been sent to the endpoint: "
+                "probably the SPARQL query is badly formed. \n\n"
                 "Response:"
-                "b\"MALFORMED QUERY: Lexical error at line 1, column 1.  Encountered: '96' (96),\""
+                'b"MALFORMED QUERY: Lexical error at line 1, column 1.  '
+                "Encountered: '96' (96),\""
             ),
             "generated_sparql": generated_invalid_sparql,
             "question": question,
@@ -312,10 +315,11 @@ def test_valid_sparql_after_some_retries(
         {
             "text": generated_valid_sparql,
             "error_message": (
-                "QueryBadFormed: A bad request has been sent to the endpoint: probably the SPARQL "
-                "query is badly formed. \n\n"
+                "QueryBadFormed: A bad request has been sent to the endpoint: "
+                "probably the SPARQL query is badly formed. \n\n"
                 "Response:"
-                "b\"MALFORMED QUERY: Lexical error at line 1, column 1.  Encountered: '96' (96),\""
+                'b"MALFORMED QUERY: Lexical error at line 1, column 1.  '
+                "Encountered: '96' (96),\""
             ),
             "generated_sparql": generated_invalid_sparql,
             "question": question,
