@@ -267,7 +267,6 @@ def _construct_doc(
 
 .. toctree::
     :maxdepth: 2
-    :hidden:
     
 """
     namespaces = sorted(members_by_namespace)
