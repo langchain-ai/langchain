@@ -116,10 +116,9 @@ class LLMChainExtractor(BaseDocumentCompressor):
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input
-        llm_with_kwargs = llm.bind(**llm_chain_kwargs) if llm_chain_kwargs else llm
         if _prompt.output_parser is not None:
             parser = _prompt.output_parser
         else:
             parser = StrOutputParser()
-        llm_chain = _prompt | llm_with_kwargs | parser
+        llm_chain = _prompt | llm | parser
         return cls(llm_chain=llm_chain, get_input=_get_input)  # type: ignore[arg-type]

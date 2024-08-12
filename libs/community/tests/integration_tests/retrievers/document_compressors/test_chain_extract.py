@@ -6,14 +6,6 @@ from langchain_core.documents import Document
 from langchain_community.chat_models import ChatOpenAI
 
 
-def test_llm_construction_with_kwargs() -> None:
-    llm_chain_kwargs = {"verbose": True}
-    compressor = LLMChainExtractor.from_llm(
-        ChatOpenAI(), llm_chain_kwargs=llm_chain_kwargs
-    )
-    assert compressor.llm_chain.verbose is True
-
-
 def test_llm_chain_extractor() -> None:
     texts = [
         "The Roman Empire followed the Roman Republic.",
