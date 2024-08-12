@@ -98,7 +98,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
-    """
+    """  # noqa: E501
 
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.
