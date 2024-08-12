@@ -165,10 +165,19 @@ const config = {
             label: "Integrations",
           },
           {
-            type: "doc",
-            docId: "api_redirect",
-            label: "API Reference",
+            type: "dropdown",
+            label: "API reference",
             position: "left",
+            items: [
+              {
+                label: "Canary",
+                href: "/api_reference/"
+              },
+              {
+                label: "Stable (ReadTheDocs)",
+                href: "https://api.python.langchain.com/"
+              }
+            ]
           },
           {
             type: "dropdown",

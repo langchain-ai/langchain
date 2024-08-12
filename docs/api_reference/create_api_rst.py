@@ -534,6 +534,8 @@ Welcome to the LangChain Python API reference. This is a reference for all
 
 For user guides see [https://python.langchain.com](https://python.langchain.com).
 
+For the legacy API reference hosted on ReadTheDocs see [https://api.python.langchain.com/](https://api.python.langchain.com/).
+
 ## Base packages
 
 ```{{gallery-grid}}
@@ -543,7 +545,7 @@ For user guides see [https://python.langchain.com](https://python.langchain.com)
 ```
 
 ```{{toctree}}
-:maxdepth: 3
+:maxdepth: 2
 :hidden:
 :caption: Base packages
 
@@ -558,7 +560,7 @@ For user guides see [https://python.langchain.com](https://python.langchain.com)
 {integration_grid}
 ```
 
-See all packages in the Integrations dropdown.
+See all packages in the Integrations section of the sidebar.
 
 ```{{toctree}}
 :maxdepth: 2
@@ -576,7 +578,7 @@ See all packages in the Integrations dropdown.
 # API reference
 
 ```{toctree}
-:maxdepth: 2
+:maxdepth: 3
 :hidden:
 
 Reference<reference>

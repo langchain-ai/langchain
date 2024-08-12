@@ -116,6 +116,7 @@ extensions = [
     "myst_parser",
     "_extensions.gallery_directive",
     "sphinx_design",
+    "sphinx_copybutton",
 ]
 source_suffix = [".rst", ".md"]
 
@@ -170,9 +171,9 @@ html_theme_options = {
     "search_bar_text": "Search",
     "navigation_with_keys": True,
     "collapse_navigation": True,
-    "navigation_depth": 2,
+    "navigation_depth": 3,
     "show_nav_level": 1,
-    "show_toc_level": 2,
+    "show_toc_level": 3,
     "navbar_align": "left",
     "header_links_before_dropdown": 5,
     "header_dropdown_text": "Integrations",
@@ -187,7 +188,7 @@ html_theme_options = {
     "navbar_center": ["navbar-nav"],
     "navbar_end": ["langchain_docs", "theme-switcher", "navbar-icon-links"],
     #     # navbar_persistent is persistent right (even when on mobiles)
-    "navbar_persistent": ["search-button"],
+    "navbar_persistent": ["search-field"],
     "article_header_start": ["breadcrumbs"],
     "article_header_end": [],
     "article_footer_items": [],
@@ -222,6 +223,9 @@ html_theme_options = {
         },
     ],
     "icon_links_label": "Quick Links",
+    "external_links": [
+        {"name": "Legacy reference", "url": "https://api.python.langchain.com/"},
+    ],
 }
 
 

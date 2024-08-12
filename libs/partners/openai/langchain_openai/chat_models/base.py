@@ -1549,7 +1549,7 @@ class ChatOpenAI(BaseChatOpenAI):
             ]
             llm.invoke(messages)
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             AIMessage(
                 content="J'adore la programmation.",
