@@ -9,16 +9,82 @@ from ollama import AsyncClient, Client
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
-    """OllamaEmbeddings embedding model.
+    """Ollama embedding model integration.
 
-    Example:
+    Setup:
+    * Follow the instructions here: https://github.com/ollama/ollama to set up and
+      run a local Ollama instance.
+    * Fetch available LLM model via `ollama pull <name-of-model>`.
+        * View a list of available models via the model library (https://ollama.com/library)
+        * For example, `ollama pull llama3`
+    * This will download the default tagged version of the model. Typically, the default points to the latest, smallest sized-parameter model.
+        * On Mac, the models will be downloaded to ~/.ollama/models
+        * On Linux (or WSL), the models will be stored at /usr/share/ollama/.ollama/models
+    * Specify the exact version of the model of interest as such ollama pull vicuna:13b-v1.5-16k-q4_0 (View the various tags for the Vicuna model in this instance)
+    * To view all pulled models, use `ollama list`.
+    * View the Ollama documentation for more commands. https://github.com/ollama/ollama
+    * Run `ollama help` in the terminal to see available commands too.
+
+    Setup:
+        .. code-block:: bash
+
+            pip install -U langchain_ollama
+
+    Key init args — completion params:
+        model: str
+            Name of Ollama model to use.
+        base_url: Optional[str]
+            Base url the model is hosted under.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_ollama import OllamaEmbeddings
 
-            embedder = OllamaEmbeddings(model="llama3")
-            embedder.embed_query("what is the place that jonathan worked at?")
-    """
+            embed = OllamaEmbeddings(
+                model="llama3"
+            )
+
+    Embed single text:
+        .. code-block:: python
+
+            input_text = "The meaning of life is 42"
+            vector = embed.embed_query(input_text)
+            print(vector[:3])
+
+        .. code-block:: python
+
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+    Embed multiple texts:
+        .. code-block:: python
+
+             input_texts = ["Document 1...", "Document 2..."]
+            vectors = embed.embed_documents(input_texts)
+            print(len(vectors))
+            # The first 3 coordinates for the first vector
+            print(vectors[0][:3])
+
+        .. code-block:: python
+
+            2
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+    Async:
+        .. code-block:: python
+
+            vector = await embed.aembed_query(input_text)
+           print(vector[:3])
+
+            # multiple:
+            # await embed.aembed_documents(input_texts)
+
+        .. code-block:: python
+
+            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+    """  # noqa: E501
 
     model: str
     """Model name to use."""
