@@ -9,9 +9,6 @@ from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.utilities.pebblo import (
-    _DEFAULT_CLASSIFIER_URL as CLASSIFIER_URL,
-)
-from langchain_community.utilities.pebblo import (
     BATCH_SIZE_BYTES,
     PLUGIN_VERSION,
     App,
@@ -50,7 +47,6 @@ class PebbloSafeLoader(BaseLoader):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
         self.app_name = name
-        self.api_key = os.environ.get("PEBBLO_API_KEY") or api_key
         self.load_id = str(uuid.uuid4())
         self.loader = langchain_loader
         self.load_semantic = os.environ.get("PEBBLO_LOAD_SEMANTIC") or load_semantic
@@ -62,13 +58,6 @@ class PebbloSafeLoader(BaseLoader):
         loader_name = str(type(self.loader)).split(".")[-1].split("'")[0]
         self.source_type = get_loader_type(loader_name)
         self.source_path_size = get_source_size(self.source_path)
-        self.pb_client = PebbloAPIWrapper(
-            api_key=api_key,
-            classifier_location=classifier_location,
-            classifier_url=classifier_url,
-        )
-        self.classifier_url = classifier_url or CLASSIFIER_URL
-        self.classifier_location = classifier_location
         self.batch_size = BATCH_SIZE_BYTES
         self.loader_details = {
             "loader": loader_name,
@@ -82,6 +71,12 @@ class PebbloSafeLoader(BaseLoader):
         }
         # generate app
         self.app = self._get_app_details()
+        # initialize Pebblo API client
+        self.pb_client = PebbloAPIWrapper(
+            api_key=api_key,
+            classifier_location=classifier_location,
+            classifier_url=classifier_url,
+        )
         self.pb_client.loader_discover(self.app)
 
     def load(self) -> List[Document]:
