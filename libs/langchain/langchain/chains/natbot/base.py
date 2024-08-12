@@ -65,12 +65,6 @@ class NatBotChain(Chain):
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
-        warnings.warn(
-            "NatBotChain is being moved to langchain_community. "
-            "Please import from langchain_community instead: "
-            "from langchain_community.chains.natbot import NatBotChain. "
-            "You may need to pip install -U langchain-community."
-        )
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
