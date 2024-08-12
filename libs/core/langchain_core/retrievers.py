@@ -185,7 +185,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
         """Get standard params for tracing."""
 
-        default_retriever_name = self.__class__.__name__
+        default_retriever_name = self.get_name()
         if default_retriever_name.startswith("Retriever"):
             default_retriever_name = default_retriever_name[9:]
         elif default_retriever_name.endswith("Retriever"):
