@@ -7,10 +7,11 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.runnables import Runnable
 
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
 
 
@@ -37,7 +38,7 @@ class NatBotChain(Chain):
             natbot = NatBotChain.from_default("Buy me a new hat.")
     """
 
-    llm_chain: LLMChain
+    llm_chain: Runnable
     objective: str
     """Objective that NatBot is tasked with completing."""
     llm: Optional[BaseLanguageModel] = None
@@ -60,7 +61,7 @@ class NatBotChain(Chain):
                 "class method."
             )
             if "llm_chain" not in values and values["llm"] is not None:
-                values["llm_chain"] = LLMChain(llm=values["llm"], prompt=PROMPT)
+                values["llm_chain"] = PROMPT | values["llm"] | StrOutputParser()
         return values
 
     @classmethod
@@ -77,7 +78,7 @@ class NatBotChain(Chain):
         cls, llm: BaseLanguageModel, objective: str, **kwargs: Any
     ) -> NatBotChain:
         """Load from LLM."""
-        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
+        llm_chain = PROMPT | llm | StrOutputParser()
         return cls(llm_chain=llm_chain, objective=objective, **kwargs)
 
     @property
@@ -104,12 +105,14 @@ class NatBotChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         url = inputs[self.input_url_key]
         browser_content = inputs[self.input_browser_content_key]
-        llm_cmd = self.llm_chain.predict(
-            objective=self.objective,
-            url=url[:100],
-            previous_command=self.previous_command,
-            browser_content=browser_content[:4500],
-            callbacks=_run_manager.get_child(),
+        llm_cmd = self.llm_chain.invoke(
+            {
+                "objective": self.objective,
+                "url": url[:100],
+                "previous_command": self.previous_command,
+                "browser_content": browser_content[:4500],
+            },
+            config={"callbacks": _run_manager.get_child()},
         )
         llm_cmd = llm_cmd.strip()
         self.previous_command = llm_cmd
