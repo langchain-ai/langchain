@@ -38,7 +38,8 @@ class TogetherEmbeddings(BaseModel, Embeddings):
     """Together embedding model integration.
 
      Setup:
-         Install ``langchain_together`` and set environment variable ``TOGETHER_API_KEY``.
+         Install ``langchain_together`` and set environment variable
+         ``TOGETHER_API_KEY``.
 
          .. code-block:: bash
 
