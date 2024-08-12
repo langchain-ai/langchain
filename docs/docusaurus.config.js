@@ -166,7 +166,7 @@ const config = {
           },
           {
             type: "doc",
-            docId: "/docs/api_redirect/",
+            docId: "api_redirect",
             label: "API Reference",
             position: "left",
           },

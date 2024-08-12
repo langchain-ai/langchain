@@ -173,7 +173,7 @@ html_theme_options = {
     "navigation_depth": 2,
     "show_nav_level": 1,
     "show_toc_level": 2,
-    "navbar_align": "content",
+    "navbar_align": "left",
     "header_links_before_dropdown": 5,
     "header_dropdown_text": "Integrations",
     "logo": {

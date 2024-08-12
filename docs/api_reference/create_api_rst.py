@@ -498,8 +498,8 @@ def _build_index(dirs: List[str]) -> None:
         )
         for dir_ in integrations
     ]
-    main_trees = "\n\n".join(
-        f"```{{toctree}}\n:maxdepth: 1\n:hidden:\n:caption: {_package_namespace(dir_)}\n{header_name}<{dir_.replace('-', '_')}/index>\n```"
+    main_tree = "\n".join(
+        f"{dir_.replace('-', '_')}/index"
         for header_name, dir_ in zip(main_headers, main_)
     )
     main_grid = "\n".join(
@@ -507,7 +507,7 @@ def _build_index(dirs: List[str]) -> None:
         for header_name, dir_ in zip(main_headers, main_)
     )
     integration_tree = "\n".join(
-        f"{header_name}<{dir_.replace('-', '_')}/index>"
+        f"{dir_.replace('-', '_')}/index"
         for header_name, dir_ in zip(integration_headers, integrations)
     )
 
@@ -542,7 +542,13 @@ For user guides see [https://python.langchain.com](https://python.langchain.com)
 {main_grid}
 ```
 
-{main_trees}
+```{{toctree}}
+:maxdepth: 3
+:hidden:
+:caption: Base packages
+
+{main_tree}
+```
 
 ## Integration packages
 
@@ -555,24 +561,25 @@ For user guides see [https://python.langchain.com](https://python.langchain.com)
 See all packages in the Integrations dropdown.
 
 ```{{toctree}}
-:maxdepth: 1
+:maxdepth: 3
 :hidden:
+:caption: Integrations
 
 {integration_tree}
 ```
 
 """
-    with open(HERE / "secondary_index.md", "w") as f:
+    with open(HERE / "reference.md", "w") as f:
         f.write(doc)
 
     dummy_index = """\
 # API reference
 
 ```{toctree}
-:maxdepth: 1
+:maxdepth: 2
 :hidden:
 
-API reference<secondary_index>
+Reference<reference>
 ```
 """
     with open(HERE / "index.md", "w") as f:
