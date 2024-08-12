@@ -87,7 +87,7 @@
       "destination": "/v0.2/docs/integrations/tools/:path*"
     },
     {
-      "source": "v0.2/api_reference/",
+      "source": "/v0.2/api_reference/",
       "destination": "/v0.2/api_reference/index.html"
     }
   ]
