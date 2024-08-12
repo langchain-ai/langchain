@@ -258,7 +258,7 @@ def _construct_doc(
 .. _{package_namespace}:
 
 ======================================
-{package_namespace} {package_version}
+{package_namespace.replace('_', '-')}: {package_version}
 ======================================
 
 .. automodule:: {package_namespace}

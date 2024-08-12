@@ -165,7 +165,7 @@ const config = {
             label: "Integrations",
           },
           {
-            to: "/api_reference/",
+            to: "/api_redirect/",
             label: "API Reference",
             position: "left",
             target: "_self",
