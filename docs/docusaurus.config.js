@@ -169,7 +169,7 @@ const config = {
             to: "/api_reference/",
             label: "API Reference",
             position: "left",
-            component: StaticPageLink,
+            target: "_self",
           },
           {
             type: "dropdown",
