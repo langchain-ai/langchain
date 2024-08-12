@@ -32,7 +32,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
      Instantiate:
          .. code-block:: python
 
-             from __module_name__ import FireworksEmbeddings
+             from langchain_fireworks import FireworksEmbeddings
 
              model = FireworksEmbeddings(
                  model='nomic-ai/nomic-embed-text-v1.5'
