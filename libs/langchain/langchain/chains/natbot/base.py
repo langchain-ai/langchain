@@ -5,6 +5,7 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
@@ -15,6 +16,16 @@ from langchain.chains.base import Chain
 from langchain.chains.natbot.prompt import PROMPT
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "Importing NatBotChain from langchain is deprecated and will be removed in "
+        "langchain 1.0. Please import from langchain_community instead: "
+        "from langchain_community.chains.natbot import NatBotChain. "
+        "You may need to pip install -U langchain-community."
+    ),
+    removal="1.0",
+)
 class NatBotChain(Chain):
     """Implement an LLM driven browser.
 
@@ -54,6 +65,12 @@ class NatBotChain(Chain):
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
+        warnings.warn(
+            "NatBotChain is being moved to langchain_community. "
+            "Please import from langchain_community instead: "
+            "from langchain_community.chains.natbot import NatBotChain. "
+            "You may need to pip install -U langchain-community."
+        )
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
