@@ -561,7 +561,7 @@ For user guides see [https://python.langchain.com](https://python.langchain.com)
 See all packages in the Integrations dropdown.
 
 ```{{toctree}}
-:maxdepth: 3
+:maxdepth: 2
 :hidden:
 :caption: Integrations
 
