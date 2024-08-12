@@ -404,17 +404,8 @@ def _construct_doc(
 
 """
         docs.append((f"{module}.rst", module_doc))
-    docs.append(("secondary_index.rst", index_doc))
-
-    dummy_index = """\
-# API reference
-
-.. toctree::
-    :hidden:
-    
-    index.rst
-"""
     docs.append(("index.rst", index_doc))
+
     return docs
 
 
@@ -571,8 +562,21 @@ See all packages in the Integrations dropdown.
 ```
 
 """
-    with open(HERE / "index.md", "w") as f:
+    with open(HERE / "secondary_index.md", "w") as f:
         f.write(doc)
+
+    dummy_index = """\
+# API reference
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+API reference<secondary_index>
+```
+"""
+    with open(HERE / "index.md", "w") as f:
+        f.write(dummy_index)
 
 
 def main(dirs: Optional[list] = None) -> None:
