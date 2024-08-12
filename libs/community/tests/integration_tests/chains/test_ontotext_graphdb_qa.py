@@ -2,6 +2,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock
 
 import pytest
+from langchain.chains import LLMChain
 from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain_community.chains.graph_qa.ontotext_graphdb import OntotextGraphDBQAChain
@@ -30,22 +31,36 @@ def test_valid_sparql(max_fix_retries: int) -> None:
         graph=graph,
         max_fix_retries=max_fix_retries,
     )
-    chain.sparql_generation_chain = Mock()
-    chain.sparql_fix_chain = Mock()
-    chain.qa_chain = Mock()
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_fix_chain = Mock(LLMChain)
+    chain.qa_chain = Mock(LLMChain)
 
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_sparql
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
     )
-    chain.sparql_fix_chain.with_config().invoke = MagicMock()
-    chain.qa_chain.with_config().invoke = MagicMock(return_value=answer)
+    chain.sparql_fix_chain.output_key = "text"
+    chain.sparql_fix_chain.invoke = MagicMock()
+    chain.qa_chain.output_key = "text"
+    chain.qa_chain.invoke = MagicMock(
+        return_value={
+            "text": answer,
+            "question": question,
+            "ontology_schema": "",
+            "context": [],
+        }
+    )
 
     inputs = {"question": question, "ontology_schema": ""}
     result = chain.invoke(inputs)
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
-    assert chain.sparql_fix_chain.with_config().invoke.call_count == 0
-    assert chain.qa_chain.with_config().invoke.call_count == 1
+    assert chain.sparql_generation_chain.invoke.call_count == 1
+    assert chain.sparql_fix_chain.invoke.call_count == 0
+    assert chain.qa_chain.invoke.call_count == 1
     inputs.update(
         {
             chain.output_key_generated_sparql: generated_sparql,
@@ -72,15 +87,22 @@ def test_invalid_sparql_non_positive_max_fix_retries(
         graph=graph,
         max_fix_retries=max_fix_retries,
     )
-    chain.sparql_generation_chain = Mock()
-    chain.sparql_fix_chain = Mock()
-    chain.qa_chain = Mock()
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_fix_chain = Mock(LLMChain)
+    chain.qa_chain = Mock(LLMChain)
 
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value="```sparql SELECT * {?s ?p ?o} LIMIT 1```"
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": "```sparql SELECT * {?s ?p ?o} LIMIT 1```",
+            "question": question,
+            "ontology_schema": "",
+        }
     )
-    chain.sparql_fix_chain.with_config().invoke = MagicMock()
-    chain.qa_chain.with_config().invoke = MagicMock()
+    chain.sparql_fix_chain.output_key = "text"
+    chain.sparql_fix_chain.invoke = MagicMock()
+    chain.qa_chain.output_key = "text"
+    chain.qa_chain.invoke = MagicMock()
 
     from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
 
@@ -96,9 +118,9 @@ def test_invalid_sparql_non_positive_max_fix_retries(
         "Encountered: '96' (96),\""
     )
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
-    assert chain.sparql_fix_chain.with_config().invoke.call_count == 0
-    assert chain.qa_chain.with_config().invoke.call_count == 0
+    assert chain.sparql_generation_chain.invoke.call_count == 1
+    assert chain.sparql_fix_chain.invoke.call_count == 0
+    assert chain.qa_chain.invoke.call_count == 0
 
 
 @pytest.mark.requires("langchain_openai", "SPARQLWrapper")
@@ -119,24 +141,49 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
         graph=graph,
         max_fix_retries=max_fix_retries,
     )
-    chain.sparql_generation_chain = Mock()
-    chain.sparql_fix_chain = Mock()
-    chain.qa_chain = Mock()
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_fix_chain = Mock(LLMChain)
+    chain.qa_chain = Mock(LLMChain)
 
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_invalid_sparql
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
     )
-    chain.sparql_fix_chain.with_config().invoke = MagicMock(
-        return_value=generated_valid_sparql
+    chain.sparql_fix_chain.output_key = "text"
+    chain.sparql_fix_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_valid_sparql,
+            "error_message": (
+                "QueryBadFormed: A bad request has been sent to the endpoint: probably the SPARQL "
+                "query is badly formed. \n\n"
+                "Response:"
+                "b\"MALFORMED QUERY: Lexical error at line 1, column 1.  Encountered: '96' (96),\""
+            ),
+            "generated_sparql": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
     )
-    chain.qa_chain.with_config().invoke = MagicMock(return_value=answer)
+    chain.qa_chain.output_key = "text"
+    chain.qa_chain.invoke = MagicMock(
+        return_value={
+            "text": answer,
+            "question": question,
+            "ontology_schema": "",
+            "context": [],
+        }
+    )
 
     inputs = {"question": question, "ontology_schema": ""}
     result = chain.invoke(inputs)
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
-    assert chain.sparql_fix_chain.with_config().invoke.call_count == 1
-    assert chain.qa_chain.with_config().invoke.call_count == 1
+    assert chain.sparql_generation_chain.invoke.call_count == 1
+    assert chain.sparql_fix_chain.invoke.call_count == 1
+    assert chain.qa_chain.invoke.call_count == 1
     inputs.update(
         {
             chain.output_key_generated_sparql: generated_valid_sparql,
@@ -162,17 +209,35 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
         graph=graph,
         max_fix_retries=max_fix_retries,
     )
-    chain.sparql_generation_chain = Mock()
-    chain.sparql_fix_chain = Mock()
-    chain.qa_chain = Mock()
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_fix_chain = Mock(LLMChain)
+    chain.qa_chain = Mock(LLMChain)
 
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_invalid_sparql
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
     )
-    chain.sparql_fix_chain.with_config().invoke = MagicMock(
-        return_value=generated_invalid_sparql
+    chain.sparql_fix_chain.output_key = "text"
+    chain.sparql_fix_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_invalid_sparql,
+            "error_message": (
+                "QueryBadFormed: A bad request has been sent to the endpoint: probably the SPARQL "
+                "query is badly formed. \n\n"
+                "Response:"
+                "b\"MALFORMED QUERY: Lexical error at line 1, column 1.  Encountered: '96' (96),\""
+            ),
+            "generated_sparql": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
     )
-    chain.qa_chain.with_config().invoke = MagicMock()
+    chain.qa_chain.output_key = "text"
+    chain.qa_chain.invoke = MagicMock()
 
     from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
 
@@ -188,9 +253,9 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
         "Encountered: '96' (96),\""
     )
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
-    assert chain.sparql_fix_chain.with_config().invoke.call_count == max_fix_retries
-    assert chain.qa_chain.with_config().invoke.call_count == 0
+    assert chain.sparql_generation_chain.invoke.call_count == 1
+    assert chain.sparql_fix_chain.invoke.call_count == max_fix_retries
+    assert chain.qa_chain.invoke.call_count == 0
 
 
 @pytest.mark.requires("langchain_openai", "SPARQLWrapper")
@@ -216,28 +281,63 @@ def test_valid_sparql_after_some_retries(
         graph=graph,
         max_fix_retries=max_fix_retries,
     )
-    chain.sparql_generation_chain = Mock()
-    chain.sparql_fix_chain = Mock()
-    chain.qa_chain = Mock()
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_fix_chain = Mock(LLMChain)
+    chain.qa_chain = Mock(LLMChain)
 
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_invalid_sparql
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
     )
-    chain.sparql_fix_chain.with_config().invoke = Mock()
-    chain.sparql_fix_chain.with_config().invoke.side_effect = [
-        generated_invalid_sparql
-    ] * number_of_invalid_responses + [generated_valid_sparql]
-    chain.qa_chain.with_config().invoke = MagicMock(return_value=answer)
+    chain.sparql_fix_chain.output_key = "text"
+    chain.sparql_fix_chain.invoke = Mock()
+    chain.sparql_fix_chain.invoke.side_effect = [
+        {
+            "text": generated_invalid_sparql,
+            "error_message": (
+                "QueryBadFormed: A bad request has been sent to the endpoint: probably the SPARQL "
+                "query is badly formed. \n\n"
+                "Response:"
+                "b\"MALFORMED QUERY: Lexical error at line 1, column 1.  Encountered: '96' (96),\""
+            ),
+            "generated_sparql": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
+    ] * number_of_invalid_responses + [
+        {
+            "text": generated_valid_sparql,
+            "error_message": (
+                "QueryBadFormed: A bad request has been sent to the endpoint: probably the SPARQL "
+                "query is badly formed. \n\n"
+                "Response:"
+                "b\"MALFORMED QUERY: Lexical error at line 1, column 1.  Encountered: '96' (96),\""
+            ),
+            "generated_sparql": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
+    ]
+    chain.qa_chain.output_key = "text"
+    chain.qa_chain.invoke = MagicMock(
+        return_value={
+            "text": answer,
+            "question": question,
+            "ontology_schema": "",
+            "context": [],
+        }
+    )
 
     inputs = {"question": question, "ontology_schema": ""}
     result = chain.invoke(inputs)
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
-    assert (
-        chain.sparql_fix_chain.with_config().invoke.call_count
-        == number_of_invalid_responses + 1
-    )
-    assert chain.qa_chain.with_config().invoke.call_count == 1
+    assert chain.sparql_generation_chain.invoke.call_count == 1
+    assert chain.sparql_fix_chain.invoke.call_count == number_of_invalid_responses + 1
+    assert chain.qa_chain.invoke.call_count == 1
     inputs.update(
         {
             chain.output_key_generated_sparql: generated_valid_sparql,
@@ -266,15 +366,31 @@ def test_custom_sparql_generation_prompt_variables() -> None:
             template="""{x}""",
         ),
     )
-    chain.sparql_generation_chain = Mock()
-    chain.sparql_fix_chain = Mock()
-    chain.qa_chain = Mock()
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_fix_chain = Mock(LLMChain)
+    chain.qa_chain = Mock(LLMChain)
 
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_valid_sparql
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_valid_sparql,
+            "question": question,
+            "ontology_schema": "",
+            "x": "",
+        }
     )
-    chain.sparql_fix_chain.with_config().invoke = Mock()
-    chain.qa_chain.with_config().invoke = MagicMock(return_value=answer)
+    chain.sparql_fix_chain.output_key = "text"
+    chain.sparql_fix_chain.invoke = Mock()
+    chain.qa_chain.output_key = "text"
+    chain.qa_chain.invoke = MagicMock(
+        return_value={
+            "text": answer,
+            "question": question,
+            "ontology_schema": "",
+            "x": "",
+            "context": [],
+        }
+    )
 
     inputs = {"w": question}
     with pytest.raises(ValueError) as e:
@@ -282,16 +398,16 @@ def test_custom_sparql_generation_prompt_variables() -> None:
 
     assert str(e.value) == "Missing some input keys: {'x'}"
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 0
-    assert chain.sparql_fix_chain.with_config().invoke.call_count == 0
-    assert chain.qa_chain.with_config().invoke.call_count == 0
+    assert chain.sparql_generation_chain.invoke.call_count == 0
+    assert chain.sparql_fix_chain.invoke.call_count == 0
+    assert chain.qa_chain.invoke.call_count == 0
 
     inputs = {"x": question}
     result = chain.invoke(inputs)
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
-    assert chain.sparql_fix_chain.with_config().invoke.call_count == 0
-    assert chain.qa_chain.with_config().invoke.call_count == 1
+    assert chain.sparql_generation_chain.invoke.call_count == 1
+    assert chain.sparql_fix_chain.invoke.call_count == 0
+    assert chain.qa_chain.invoke.call_count == 1
     inputs.update(
         {
             chain.output_key_generated_sparql: generated_valid_sparql,
@@ -397,19 +513,28 @@ def test_custom_sparql_fix_prompt() -> None:
         ),
     )
 
-    chain.sparql_generation_chain = Mock()
+    question = "What is Luke Skywalker's home planet?"
     generated_invalid_sparql = "```sparql SELECT * {?s ?p ?o} LIMIT 1```"
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_invalid_sparql
+
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+        }
     )
 
     inputs = {
-        "question": "What is Luke Skywalker's home planet?",
+        "question": question,
         "ontology_schema": "",
     }
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError) as e:
         chain.invoke(inputs)
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
+    assert str(e.value) == "Missing some input keys: {'x'}"
+
+    assert chain.sparql_generation_chain.invoke.call_count == 1
 
     template = """{x}
 The following SPARQL query delimited by triple backticks
@@ -448,21 +573,26 @@ The ontology schema delimited by triple backticks in Turtle format is:
             template=template,
         ),
     )
-    chain.sparql_generation_chain = Mock()
-    generated_invalid_sparql = "```sparql SELECT * {?s ?p ?o} LIMIT 1```"
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_invalid_sparql
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_invalid_sparql,
+            "question": question,
+            "ontology_schema": "",
+            "x": "",
+        }
     )
 
     schema_file_path = Path(__file__).parent.parent / "examples" / "ontology-schema.ttl"
     inputs = {
-        "question": "What is Luke Skywalker's home planet?",
+        "question": question,
         "ontology_schema": schema_file_path.read_text(encoding="utf-8"),
         "x": "",
     }
     chain.invoke(inputs)
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
+    assert chain.sparql_generation_chain.invoke.call_count == 1
 
 
 @pytest.mark.requires("langchain_openai", "SPARQLWrapper")
@@ -485,21 +615,27 @@ def test_custom_qa_prompt() -> None:
             template="{x} {context}",
         ),
     )
+    question = "What is Luke Skywalker's home planet?"
 
-    chain.sparql_generation_chain = Mock()
-    generated_valid_sparql = "SELECT * {?s ?p ?o} LIMIT 1"
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_valid_sparql
+    chain.sparql_generation_chain = Mock(LLMChain)
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": "SELECT * {?s ?p ?o} LIMIT 1",
+            "question": question,
+            "ontology_schema": "",
+        }
     )
 
     inputs = {
-        "question": "What is Luke Skywalker's home planet?",
+        "question": question,
         "ontology_schema": "",
     }
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError) as e:
         chain.invoke(inputs)
+    assert str(e.value) == "Missing some input keys: {'x'}"
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
+    assert chain.sparql_generation_chain.invoke.call_count == 1
 
     template = """{x} The data ```{context}``` is the answer 
 to the question \"\"\"{question}\"\"\". 
@@ -517,7 +653,8 @@ Generate a human readable answer to the question using the provided data.
             template=template,
         ),
     )
-    chain.sparql_generation_chain = Mock()
+
+    chain.sparql_generation_chain = Mock(LLMChain)
     generated_valid_sparql = (
         "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> "
         "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
@@ -527,16 +664,22 @@ Generate a human readable answer to the question using the provided data.
         "  <https://swapi.co/resource/human/1> voc:homeworld / rdfs:label ?homePlanet"
         "}"
     )
-    chain.sparql_generation_chain.with_config().invoke = MagicMock(
-        return_value=generated_valid_sparql
+    chain.sparql_generation_chain.output_key = "text"
+    chain.sparql_generation_chain.invoke = MagicMock(
+        return_value={
+            "text": generated_valid_sparql,
+            "question": question,
+            "ontology_schema": "",
+            "x": "",
+        }
     )
 
     schema_file_path = Path(__file__).parent.parent / "examples" / "ontology-schema.ttl"
     inputs = {
-        "question": "What is Luke Skywalker's home planet?",
+        "question": question,
         "ontology_schema": schema_file_path.read_text(encoding="utf-8"),
         "x": "",
     }
     chain.invoke(inputs)
 
-    assert chain.sparql_generation_chain.with_config().invoke.call_count == 1
+    assert chain.sparql_generation_chain.invoke.call_count == 1

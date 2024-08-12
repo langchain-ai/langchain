@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 import json
-import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
-
-from langchain_core.runnables import RunnableSerializable
 
 if TYPE_CHECKING:
     import SPARQLWrapper
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.manager import CallbackManager, CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
 
@@ -29,10 +26,10 @@ class OntotextGraphDBQAChain(Chain):
     """
 
     graph: OntotextGraphDBGraph = Field(exclude=True)
-    sparql_generation_chain: RunnableSerializable[dict[Any, Any], str]
-    sparql_fix_chain: RunnableSerializable[dict[Any, Any], str]
+    sparql_generation_chain: LLMChain
+    sparql_fix_chain: LLMChain
     max_fix_retries: int
-    qa_chain: RunnableSerializable[dict[Any, Any], str]
+    qa_chain: LLMChain
 
     input_variables: List[str]
     output_key_answer: str = "answer"  #: :meta private:
@@ -59,10 +56,10 @@ class OntotextGraphDBQAChain(Chain):
         **kwargs: Any,
     ) -> OntotextGraphDBQAChain:
         """Initialize from LLM."""
-        sparql_generation_chain = sparql_generation_prompt | llm | StrOutputParser()
-        sparql_fix_chain = sparql_fix_prompt | llm | StrOutputParser()
+        sparql_generation_chain = LLMChain(llm=llm, prompt=sparql_generation_prompt)
+        sparql_fix_chain = LLMChain(llm=llm, prompt=sparql_fix_prompt)
         max_fix_retries = max_fix_retries
-        qa_chain = qa_prompt | llm | StrOutputParser()
+        qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
         return cls(
             sparql_generation_chain=sparql_generation_chain,
             sparql_fix_chain=sparql_fix_chain,
@@ -84,10 +81,12 @@ class OntotextGraphDBQAChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
 
-        start = time.time()
-        generated_sparql = self.sparql_generation_chain.with_config(
-            callbacks=callbacks
-        ).invoke(inputs)
+        sparql_generation_chain_result = self.sparql_generation_chain.invoke(
+            inputs, callbacks=callbacks
+        )
+        generated_sparql = sparql_generation_chain_result[
+            self.sparql_generation_chain.output_key
+        ]
 
         generated_valid_sparql, query_results = self._execute_query(
             inputs, generated_sparql, _run_manager, callbacks
@@ -107,13 +106,8 @@ class OntotextGraphDBQAChain(Chain):
         )
 
         inputs.update({"context": query_results_str})
-        answer = self.qa_chain.with_config(callbacks=callbacks).invoke(inputs)
-
-        _run_manager.on_text(
-            f"Finished chain for {time.time() - start:.2f} seconds",
-            end="\n",
-            verbose=self.verbose,
-        )
+        qa_chain_result = self.qa_chain.invoke(inputs, callbacks=callbacks)
+        answer = qa_chain_result[self.qa_chain.output_key]
 
         return {
             self.output_key_answer: answer,
@@ -190,9 +184,12 @@ class OntotextGraphDBQAChain(Chain):
                             "generated_sparql": generated_sparql,
                         }
                     )
-                    generated_sparql = self.sparql_fix_chain.with_config(
-                        callbacks=callbacks
-                    ).invoke(inputs)
+                    sparql_fix_chain_result = self.sparql_fix_chain.invoke(
+                        inputs, callbacks=callbacks
+                    )
+                    generated_sparql = sparql_fix_chain_result[
+                        self.sparql_fix_chain.output_key
+                    ]
                     _run_manager.on_text(
                         "Generated query:",
                         end="\n",
