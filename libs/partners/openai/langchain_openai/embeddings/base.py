@@ -142,6 +142,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 # dimensions=1024
             )
 
+    Embed single text:
+
+        .. code-block:: python
+
+            input_text = "The meaning of life is 42"
+            vector = embeddings.embed_query('hello')
+            print(vector[:3])
+
+        .. code-block:: python
+
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
     Embed multiple texts:
 
         .. code-block:: python
@@ -154,18 +166,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             2
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
-
-    Embed single text:
-
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            vector = embeddings.embed_query('hello')
-            print(vector[:3])
-
-        .. code-block:: python
-
             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
 
     Async:
