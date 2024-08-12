@@ -35,7 +35,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     """MistralAI embedding model integration.
 
     Setup:
-        Install ``langchain_mistralai`` and set environment variable ``MISTRAL_API_KEY``.
+        Install ``langchain_mistralai`` and set environment variable
+        ``MISTRAL_API_KEY``.
 
         .. code-block:: bash
 
