@@ -69,15 +69,13 @@ class LLMChainExtractor(BaseDocumentCompressor):
         compressed_docs = []
         for doc in documents:
             _input = self.get_input(query, doc)
+            output_ = self.llm_chain.invoke(_input, config={"callbacks": callbacks})
             if isinstance(self.llm_chain, LLMChain):
-                output_dict = self.llm_chain.invoke(
-                    _input, config={"callbacks": callbacks}
-                )
-                output = output_dict[self.llm_chain.output_key]
+                output = output_[self.llm_chain.output_key]
                 if self.llm_chain.prompt.output_parser is not None:
                     output = self.llm_chain.prompt.output_parser.parse(output)
             else:
-                output = self.llm_chain.invoke(_input, config={"callbacks": callbacks})
+                output = output_
             if len(output) == 0:
                 continue
             compressed_docs.append(
@@ -119,5 +117,9 @@ class LLMChainExtractor(BaseDocumentCompressor):
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
         _get_input = get_input if get_input is not None else default_get_input
         llm_with_kwargs = llm.bind(**llm_chain_kwargs) if llm_chain_kwargs else llm
-        llm_chain = _prompt | llm_with_kwargs | StrOutputParser()
+        if _prompt.output_parser is not None:
+            parser = _prompt.output_parser
+        else:
+            parser = StrOutputParser()
+        llm_chain = _prompt | llm_with_kwargs | parser
         return cls(llm_chain=llm_chain, get_input=_get_input)  # type: ignore[arg-type]
