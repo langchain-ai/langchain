@@ -1,4 +1,8 @@
 import React from "react";
+import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+import {
+  useDocById,
+} from '@docusaurus/theme-common/internal';
 
 interface Column {
     title: string | React.ReactNode;
@@ -134,13 +138,13 @@ function toTable(columns: Column[], items: any[]) {
         <table>
             <thead>
                 <tr>
-                    {headers.map((header) => <th>{header}</th>)}
+                    {headers.map((header, i) => <th key={`header-${i}`}>{header}</th>)}
                 </tr>
             </thead>
             <tbody>
-                {items.map((item) => (
-                    <tr>
-                        {columns.map((col) => <td>{col.formatter(item)}</td>)}
+                {items.map((item, i) => (
+                    <tr key={`row-${i}`}>
+                        {columns.map((col, j) => <td key={`cell-${i}-${j}`}>{col.formatter(item)}</td>)}
                     </tr>
                 ))}
             </tbody>
@@ -160,4 +164,34 @@ export function ItemTable({category, item}: {category: string, item: string}) {
         throw new Error(`Item ${item} not found in category ${category}`);
     }
     return toTable(cat.columns, [row]);
+}
+
+type Row = {
+    className: string;
+    docId: string;
+    href: string;
+    label: string;
+    type: string;
+}
+
+function truncate(str: string, n: number) {
+    return (str.length > n) ? str.substring(0, n-1) + '...' : str;
+}
+
+export function IndexTable() {
+    // docusaurus ts typing is confused, so we cast as Row[]
+    const {items} = useCurrentSidebarCategory() as {items: Row[]};
+    const rows = items.filter(item => !item.docId?.endsWith?.('/index')).map(item => ({
+        ...item,
+        description: useDocById(item.docId ?? undefined)?.description,
+    }));
+    return toTable(
+        [
+            {title: "Label", formatter: (item) => <a href={
+                item.href
+            }>{item.label}</a>},
+            {title: "Description", formatter: (item) => truncate(item.description ?? "", 70)},
+        ],
+        rows,
+    );
 }
