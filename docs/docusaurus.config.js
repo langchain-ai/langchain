@@ -8,7 +8,6 @@ require("dotenv").config();
 
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
-const StaticPageLink = require('./src/components/StaticPageLink');
 
 const baseUrl = "/v0.2/";
 
