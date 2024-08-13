@@ -1,18 +1,4 @@
 import React from "react";
-import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
-import {
-  useDocById,
-} from '@docusaurus/theme-common/internal';
-
-interface Column {
-    title: string | React.ReactNode;
-    formatter: (item: any) => React.ReactNode;
-}
-interface Category {
-    link: string;
-    columns: Column[];
-    items: any[];
-}
 
 const FeatureTables: Record<string, Category> = {
     chat: {
@@ -634,7 +620,7 @@ const FeatureTables: Record<string, Category> = {
     }
 };
 
-function toTable(columns: Column[], items: any[]) {
+function toTable(columns, items) {
     const headers = columns.map((col) => col.title);
     return (
         <table>
@@ -654,12 +640,12 @@ function toTable(columns: Column[], items: any[]) {
     );
 }
 
-export function CategoryTable({category}: {category: string}) {
+export function CategoryTable({ category }) {
     const cat = FeatureTables[category];
     return toTable(cat.columns, cat.items);
 }
 
-export function ItemTable({category, item}: {category: string, item: string}) {
+export function ItemTable({ category, item }) {
     const cat = FeatureTables[category];
     const row = cat.items.find((i) => i.name === item);
     if (!row) {
@@ -668,31 +654,20 @@ export function ItemTable({category, item}: {category: string, item: string}) {
     return toTable(cat.columns, [row]);
 }
 
-type Row = {
-    className: string;
-    docId: string;
-    href: string;
-    label: string;
-    type: string;
-}
-
-function truncate(str: string, n: number) {
+function truncate(str, n) {
     return (str.length > n) ? str.substring(0, n-1) + '...' : str;
 }
 
 export function IndexTable() {
-    // docusaurus ts typing is confused, so we cast as Row[]
-    const {items} = useCurrentSidebarCategory() as {items: Row[]};
+    const { items } = useCurrentSidebarCategory();
     const rows = items.filter(item => !item.docId?.endsWith?.('/index')).map(item => ({
         ...item,
         description: useDocById(item.docId ?? undefined)?.description,
     }));
     return toTable(
         [
-            {title: "Label", formatter: (item) => <a href={
-                item.href
-            }>{item.label}</a>},
-            {title: "Description", formatter: (item) => truncate(item.description ?? "", 70)},
+            { title: "Label", formatter: (item) => <a href={item.href}>{item.label}</a> },
+            { title: "Description", formatter: (item) => truncate(item.description ?? "", 70) },
         ],
         rows,
     );
