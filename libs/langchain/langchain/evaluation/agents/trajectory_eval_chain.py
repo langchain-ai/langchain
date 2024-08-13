@@ -27,11 +27,11 @@ from langchain_core.callbacks.manager import (
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
+from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.pydantic_v1 import Field
-from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 
+from langchain.chains.llm import LLMChain
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
@@ -147,7 +147,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
 
     agent_tools: Optional[List[BaseTool]] = None
     """A list of tools available to the agent."""
-    eval_chain: Runnable
+    eval_chain: LLMChain
     """The language model chain used for evaluation."""
     output_parser: TrajectoryOutputParser = Field(
         default_factory=TrajectoryOutputParser
@@ -253,7 +253,7 @@ The following is the expected answer. Use this to measure correctness:
             prompt = EVAL_CHAT_PROMPT
         else:
             prompt = TOOL_FREE_EVAL_CHAT_PROMPT
-        eval_chain = prompt | llm | StrOutputParser()
+        eval_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
             agent_tools=agent_tools,  # type: ignore[arg-type]
             eval_chain=eval_chain,
@@ -303,8 +303,8 @@ The following is the expected answer. Use this to measure correctness:
         if self.agent_tools:
             chain_input["tool_descriptions"] = self._tools_description
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        raw_output = self.eval_chain.invoke(
-            chain_input, {"callbacks": _run_manager.get_child()}
+        raw_output = self.eval_chain.run(
+            chain_input, callbacks=_run_manager.get_child()
         )
         return cast(dict, self.output_parser.parse(raw_output))
 
@@ -327,8 +327,8 @@ The following is the expected answer. Use this to measure correctness:
         if self.agent_tools:
             chain_input["tool_descriptions"] = self._tools_description
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
-        raw_output = await self.eval_chain.ainvoke(
-            chain_input, {"callbacks": _run_manager.get_child()}
+        raw_output = await self.eval_chain.arun(
+            chain_input, callbacks=_run_manager.get_child()
         )
         return cast(dict, self.output_parser.parse(raw_output))
 
