@@ -226,18 +226,6 @@ const FeatureTables: Record<string, Category> = {
                 item.apiLink
             }>{item.package}</a>},
         ],
-        /*
-        - AI21
-        - Anthropic
-        - AzureOpenAI
-        - Bedrock
-        - Cohere
-        - Fireworks https://api.python.langchain.com/en/latest/llms/langchain_fireworks.llms.Fireworks.html#langchain_fireworks.llms.Fireworks
-        - Ollama https://api.python.langchain.com/en/latest/llms/langchain_ollama.llms.OllamaLLM.html#langchain_ollama.llms.OllamaLLM
-        - OpenAI https://api.python.langchain.com/en/latest/llms/langchain_openai.llms.base.OpenAI.html#langchain_openai.llms.base.OpenAI
-        - Together https://api.python.langchain.com/en/latest/llms/langchain_together.llms.Together.html#langchain_together.llms.Together
-        - VertexAI https://api.python.langchain.com/en/latest/llms/langchain_google_vertexai.llms.VertexAI.html#langchain_google_vertexai.llms.VertexAI
-        */
         items: [
             {
                 name: "AI21LLM",
@@ -309,11 +297,59 @@ const FeatureTables: Record<string, Category> = {
         ],
         items:[
             {
+                name: "AzureOpenAI",
+                link: "azure_openai",
+                package: "langchain-openai",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_openai.embeddings.azure.AzureOpenAIEmbeddings.html#langchain_openai.embeddings.azure.AzureOpenAIEmbeddings"
+            },
+            {
+                name: "Ollama",
+                link: "ollama",
+                package: "langchain-ollama",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_ollama.embeddings.OllamaEmbeddings.html#langchain_ollama.embeddings.OllamaEmbeddings"
+            },
+            {
+                name: "AI21",
+                link: "ai21",
+                package: "langchain-ai21",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_ai21.embeddings.AI21Embeddings.html#langchain_ai21.embeddings.AI21Embeddings"
+            },
+            {
+                name: "Fake",
+                link: "fake",
+                package: "langchain-core",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_core.embeddings.fake.FakeEmbeddings.html#langchain_core.embeddings.fake.FakeEmbeddings"
+            },
+            {
+                name: "OpenAI",
+                link: "openai",
+                package: "langchain-openai",
+                apiLink: "https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html#langchain_openai.chat_models.base.ChatOpenAI"
+            },
+            {
+                name: "Together",
+                link: "together",
+                package: "langchain-together",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_together.embeddings.TogetherEmbeddings.html#langchain_together.embeddings.TogetherEmbeddings"
+            },
+            {
+                name: "Fireworks",
+                link: "fireworks",
+                package: "langchain-fireworks",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_fireworks.embeddings.FireworksEmbeddings.html#langchain_fireworks.embeddings.FireworksEmbeddings"
+            },
+            {
+                name: "MistralAI",
+                link: "mistral",
+                package: "langchain-mistralai",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_mistralai.embeddings.MistralAIEmbeddings.html#langchain_mistralai.embeddings.MistralAIEmbeddings"
+            },
+            {
                 name: "Cohere",
                 link: "cohere",
                 package: "langchain-cohere",
                 apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_cohere.embeddings.CohereEmbeddings.html#langchain_cohere.embeddings.CohereEmbeddings"
-            }
+            },
         ]
     },
     document_retrievers: {
@@ -402,6 +438,11 @@ const FeatureTables: Record<string, Category> = {
             }
         ]
 
+    },
+    document_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [],
+        items: [],
     },
     vectorstores: {
         link: 'docs/integrations/vectorstores',
