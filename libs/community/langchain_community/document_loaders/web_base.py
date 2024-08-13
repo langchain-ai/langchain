@@ -102,12 +102,13 @@ class WebBaseLoader(BaseLoader):
             print(docs[0].metadata)
 
         .. code-block:: python
-            
+
             ESPN - Serving Sports Fans. Anytime. Anywhere.
 
             {'source': 'https://www.espn.com/', 'title': 'ESPN - Serving Sports Fans. Anytime. Anywhere.', 'description': 'Visit ESPN for live scores, highlights and sports news. Stream exclusive games on ESPN+ and play fantasy sports.', 'language': 'en'}
 
     """  # noqa: E501
+
     def __init__(
         self,
         web_path: Union[str, Sequence[str]] = "",
