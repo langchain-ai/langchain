@@ -4,16 +4,18 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
+from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables import RunnableConfig
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
-from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.eval_chain import (
     CRITERIA_TYPE,
     Criteria,
@@ -144,7 +146,7 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
+class ScoreStringEvalChain(StringEvaluator, LLMEvalChain):
     """A chain for scoring on a scale of 1-10 the output of a model.
 
     Attributes:
@@ -178,9 +180,39 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """The value to normalize the score by, if specified."""
     criterion_name: str
     """The name of the criterion being evaluated."""
+    llm: BaseLanguageModel
+    """The language model to use for scoring."""
+    prompt: BasePromptTemplate
+    """The prompt to use for scoring."""
 
     class Config:
         extra = "ignore"
+
+    @property
+    def input_keys(self) -> List[str]:
+        """Will be whatever keys the prompt expects.
+
+        :meta private:
+        """
+        return self.prompt.input_variables
+
+    @property
+    def output_keys(self) -> List[str]:
+        """Will always return text key.
+
+        :meta private:
+        """
+        return [self.output_key]
+
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        chain = self.prompt | self.llm | self.output_parser
+        response = chain.invoke(inputs, config={"callbacks": _run_manager.get_child()})
+        return {self.output_key: response}
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -348,13 +380,16 @@ Performance may be significantly worse with other models."
 
         """
         input_ = self._prepare_input(prediction, input, reference)
-        result = self(
-            inputs=input_,
-            callbacks=callbacks,
-            tags=tags,
-            metadata=metadata,
-            include_run_info=include_run_info,
+        config = cast(
+            RunnableConfig,
+            {
+                "callbacks": callbacks,
+                "tags": tags,
+                "metadata": metadata,
+            },
         )
+        output = self.invoke(input_, config=config)
+        result = {**input_, **output}
         return self._prepare_output(result)
 
     async def _aevaluate_string_pairs(
@@ -385,13 +420,16 @@ Performance may be significantly worse with other models."
 
         """
         input_ = self._prepare_input(prediction, input, reference)
-        result = await self.acall(
-            inputs=input_,
-            callbacks=callbacks,
-            tags=tags,
-            metadata=metadata,
-            include_run_info=include_run_info,
+        config = cast(
+            RunnableConfig,
+            {
+                "callbacks": callbacks,
+                "tags": tags,
+                "metadata": metadata,
+            },
         )
+        output = await self.ainvoke(input_, config=config)
+        result = {**input_, **output}
         return self._prepare_output(result)
 
 
