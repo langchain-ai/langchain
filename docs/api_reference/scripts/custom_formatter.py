@@ -1,3 +1,4 @@
+import sys
 from glob import glob
 from pathlib import Path
 
@@ -31,7 +32,8 @@ def process_toc_h3_elements(html_content: str) -> str:
 
 
 if __name__ == "__main__":
-    for fn in glob(str(CUR_DIR / "_build/html/**/*.html"), recursive=True):
+    dir = sys.argv[1]
+    for fn in glob(str(f"{dir.rstrip('/')}/**/*.html"), recursive=True):
         with open(fn, "r") as f:
             html = f.read()
         processed_html = process_toc_h3_elements(html)
