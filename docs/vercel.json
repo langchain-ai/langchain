@@ -79,6 +79,14 @@
       "destination": "/v0.2/docs/integrations/document_loaders/airbyte/"
     },
     {
+      "source": "/v0.2/docs/integrations/tools/connery_toolkit/",
+      "destination": "/v0.2/docs/integrations/tools/connery/"
+    },
+    {
+      "source": "/v0.2/docs/integrations/tools/polygon_toolkit/",
+      "destination": "/v0.2/docs/integrations/tools/polygon/"
+    },
+    {
       "source": "/v0.2/docs/integrations/toolkits/document_comparison_toolkit(/?)",
       "destination": "/v0.2/docs/tutorials/rag/"
     },
