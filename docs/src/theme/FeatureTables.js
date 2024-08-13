@@ -1,6 +1,6 @@
 import React from "react";
 
-const FeatureTables: Record<string, Category> = {
+const FeatureTables = {
     chat: {
         link: "/docs/integrations/chat",
         columns: [
