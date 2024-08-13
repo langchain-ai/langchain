@@ -77,7 +77,7 @@ class PebbloSafeLoader(BaseLoader):
             classifier_location=classifier_location,
             classifier_url=classifier_url,
         )
-        self.pb_client.loader_discover(self.app)
+        self.pb_client.send_loader_discover(self.app)
 
     def load(self) -> List[Document]:
         """Load Documents.
