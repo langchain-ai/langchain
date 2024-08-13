@@ -1,4 +1,8 @@
 import React from "react";
+import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+import {
+  useDocById,
+} from '@docusaurus/theme-common/internal';
 
 const FeatureTables = {
     chat: {
