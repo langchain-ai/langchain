@@ -77,43 +77,38 @@ class SparkLLM(LLM):
     Invoke:
         .. code-block:: python
 
-            messages = [
-                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
-                ("human", "我喜欢编程。"),
-            ]
-            llm.invoke(messages)
+            input_text = "用50个字左右阐述，生命的意义在于"
+            llm.invoke(input_text)
 
         .. code-block:: python
 
-            'I like programming.'
+            '生命的意义在于实现自我价值，追求内心的平静与快乐，同时为他人和社会带来正面影响。'
 
     Stream:
         .. code-block:: python
 
-            for chunk in llm.stream(messages):
+            for chunk in llm.stream(input_text):
                 print(chunk)
 
         .. code-block:: python
 
-            I
-             like programming
-            .
+            生命 | 的意义在于 | 不断探索和 | 实现个人潜能，通过 | 学习 | 、成长和对社会 | 的贡献，追求内心的满足和幸福。
 
     Async:
         .. code-block:: python
 
-            await llm.ainvoke(messages)
+            await llm.ainvoke(input_text)
 
             # stream:
-            # async for chunk in llm.astream(messages):
+            # async for chunk in llm.astream(input_text):
             #    print(chunk)
 
             # batch:
-            # await llm.abatch([messages])
+            # await llm.abatch([input_text])
 
         .. code-block:: python
 
-            'I like programming.'
+            '生命的意义在于实现自我价值，追求内心的平静与快乐，同时为他人和社会带来正面影响。'
 
     """  # noqa: E501
 
