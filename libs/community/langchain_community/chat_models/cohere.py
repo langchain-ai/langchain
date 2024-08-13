@@ -111,15 +111,13 @@ class ChatCohere(BaseChatModel, BaseCohere):
             from langchain_community.chat_models import ChatCohere
             from langchain_core.messages import HumanMessage
 
-            chat = ChatCohere(model="command", max_tokens=256, temperature=0.75)
+            chat = ChatCohere(max_tokens=256, temperature=0.75)
 
             messages = [HumanMessage(content="knock knock")]
             chat.invoke(messages)
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 

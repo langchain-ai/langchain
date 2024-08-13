@@ -25,7 +25,7 @@ class ConneryAction(BaseTool):
     def _run(
         self,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Dict[str, str],
+        **kwargs: Any,
     ) -> Dict[str, str]:
         """
         Runs the Connery Action with the provided input.
@@ -40,7 +40,7 @@ class ConneryAction(BaseTool):
     async def _arun(
         self,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        **kwargs: Dict[str, str],
+        **kwargs: Any,
     ) -> Dict[str, str]:
         """
         Runs the Connery Action asynchronously with the provided input.

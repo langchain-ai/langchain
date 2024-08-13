@@ -44,13 +44,13 @@ class DocugamiLoader(BaseLoader, BaseModel):
     access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY")
     """The Docugami API access token to use."""
 
-    max_text_length = 4096
+    max_text_length: int = 4096
     """Max length of chunk text returned."""
 
     min_text_length: int = 32
     """Threshold under which chunks are appended to next to avoid over-chunking."""
 
-    max_metadata_length = 512
+    max_metadata_length: int = 512
     """Max length of metadata text returned."""
 
     include_xml_tags: bool = False

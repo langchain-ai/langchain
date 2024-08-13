@@ -40,6 +40,7 @@ jinja2>=3,<4
 jq>=1.4.1,<2
 jsonschema>1
 keybert>=0.8.5
+litellm>=1.30,<=1.39.5
 lxml>=4.9.3,<6.0
 markdownify>=0.11.6,<0.12
 motor>=3.3.1,<4
@@ -90,3 +91,4 @@ vdms>=0.0.20
 xata>=1.0.0a7,<2
 xmltodict>=0.13.0,<0.14
 nanopq==0.2.1
+mlflow[genai]>=2.14.0
