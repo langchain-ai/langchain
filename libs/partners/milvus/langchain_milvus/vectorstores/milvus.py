@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
@@ -221,7 +221,7 @@ class Milvus(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Embeddings | BaseSparseEmbedding,
+        embedding_function: Embeddings,
         collection_name: str = "LangChainCollection",
         collection_description: str = "",
         collection_properties: Optional[dict[str, Any]] = None,
@@ -242,6 +242,7 @@ class Milvus(VectorStore):
         replica_number: int = 1,
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
+        sparse_embedding_function: Optional[BaseSparseEmbedding] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -285,6 +286,7 @@ class Milvus(VectorStore):
         }
 
         self.embedding_func = embedding_function
+        self.sparse_embedding_func = sparse_embedding_function
         self.collection_name = collection_name
         self.collection_description = collection_description
         self.collection_properties = collection_properties
@@ -345,7 +347,7 @@ class Milvus(VectorStore):
         )
 
     @property
-    def embeddings(self) -> Embeddings | BaseSparseEmbedding:
+    def embeddings(self) -> Embeddings:
         return self.embedding_func
 
     def _create_connection_alias(self, connection_args: dict) -> str:
@@ -518,7 +520,7 @@ class Milvus(VectorStore):
                 )
             )
         # Create the vector field, supports binary or float vectors
-        if isinstance(self.embedding_func, BaseSparseEmbedding):
+        if isinstance(self.sparse_embedding_func, BaseSparseEmbedding):
             fields.append(
                 FieldSchema(self._vector_field, DataType.SPARSE_FLOAT_VECTOR, dim=dim)
             )
@@ -592,7 +594,7 @@ class Milvus(VectorStore):
             try:
                 # If no index params, use a default HNSW based one
                 if self.index_params is None:
-                    if isinstance(self.embedding_func, BaseSparseEmbedding):
+                    if isinstance(self.sparse_embedding_func, BaseSparseEmbedding):
                         self.index_params = {
                             "metric_type": "IP",
                             "index_type": "SPARSE_INVERTED_INDEX",
@@ -732,10 +734,15 @@ class Milvus(VectorStore):
                     "The ids will be generated automatically."
                 )
 
+        embedding_func: Embeddings | BaseSparseEmbedding = (
+            self.embedding_func
+            if not self.sparse_embedding_func
+            else self.sparse_embedding_func
+        )
         try:
-            embeddings = self.embedding_func.embed_documents(texts)
+            embeddings: list = embedding_func.embed_documents(texts)
         except NotImplementedError:
-            embeddings = [self.embedding_func.embed_query(x) for x in texts]
+            embeddings = [embedding_func.embed_query(x) for x in texts]
 
         if len(embeddings) == 0:
             logger.debug("Nothing to insert, skipping.")
@@ -808,7 +815,7 @@ class Milvus(VectorStore):
 
     def _collection_search(
         self,
-        embedding: List[float],
+        embedding: List[float] | Dict[int, float],
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
@@ -960,7 +967,12 @@ class Milvus(VectorStore):
             return []
 
         # Embed the query text.
-        embedding = self.embedding_func.embed_query(query)
+        embedding_func: Embeddings | BaseSparseEmbedding = (
+            self.embedding_func
+            if not self.sparse_embedding_func
+            else self.sparse_embedding_func
+        )
+        embedding = embedding_func.embed_query(query)
         timeout = self.timeout or timeout
         res = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, param=param, expr=expr, timeout=timeout, **kwargs
@@ -969,7 +981,7 @@ class Milvus(VectorStore):
 
     def similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: List[float] | Dict[int, float],
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
@@ -1046,7 +1058,12 @@ class Milvus(VectorStore):
             logger.debug("No existing collection to search.")
             return []
 
-        embedding = self.embedding_func.embed_query(query)
+        embedding_func: Embeddings | BaseSparseEmbedding = (
+            self.embedding_func
+            if not self.sparse_embedding_func
+            else self.sparse_embedding_func
+        )
+        embedding = embedding_func.embed_query(query)
         timeout = self.timeout or timeout
         return self.max_marginal_relevance_search_by_vector(
             embedding=embedding,
@@ -1061,7 +1078,7 @@ class Milvus(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: list[float],
+        embedding: list[float] | dict[int, float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -1164,7 +1181,7 @@ class Milvus(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Embeddings | BaseSparseEmbedding,
+        embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         collection_name: str = "LangChainCollection",
         connection_args: dict[str, Any] = DEFAULT_MILVUS_CONNECTION,
