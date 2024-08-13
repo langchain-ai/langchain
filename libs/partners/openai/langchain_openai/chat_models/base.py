@@ -1108,6 +1108,9 @@ class BaseChatOpenAI(BaseChatModel):
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
+        tools: Optional[
+            Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1195,6 +1198,11 @@ class BaseChatOpenAI(BaseChatModel):
 
                     ``strict`` will default to True when ``method`` is
                     "function_calling" as of version `0.2.0`.
+            tools:
+                A list of tool definitions to bind to this chat model.
+                Supports any tool definition handled by
+                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                The tools will never be called but it will be noticed by the model.
             kwargs: Additional keyword args aren't supported.
 
         Returns:
@@ -1392,6 +1400,9 @@ class BaseChatOpenAI(BaseChatModel):
             raise ValueError(
                 "Argument `strict` is not supported with `method`='json_mode'"
             )
+        if tools is None:
+            tools = []
+
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1401,7 +1412,7 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
             llm = self.bind_tools(
-                [schema],
+                [schema, *tools] if tools else [schema],
                 tool_choice=tool_name,
                 parallel_tool_calls=False,
                 strict=strict,
@@ -1416,7 +1427,15 @@ class BaseChatOpenAI(BaseChatModel):
                     key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            if tools:
+                llm = self.bind_tools(
+                    response_format={"type": "json_object"},
+                    tools=tools,
+                    tool_choice="none",
+                    strict=True,
+                )
+            else:
+                llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
@@ -1430,7 +1449,21 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             strict = strict if strict is not None else True
             response_format = _convert_to_openai_response_format(schema, strict=strict)
-            llm = self.bind(response_format=response_format)
+            if tools:
+                if not strict:
+                    raise ValueError(
+                        "strict must be True when binding tools with "
+                        "method='json_schema'."
+                    )
+                llm = self.bind_tools(
+                    response_format=response_format,
+                    tools=tools,
+                    tool_choice="none",
+                    strict=strict,
+                )
+            else:
+                llm = self.bind(response_format=response_format)
+
             output_parser = (
                 cast(Runnable, _oai_structured_outputs_parser)
                 if is_pydantic_schema
