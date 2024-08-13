@@ -61,7 +61,7 @@ class BaseMessage(Serializable):
 
         Args:
             content: The string contents of the message.
-            **kwargs: Additional fields to pass to the
+            kwargs: Additional fields to pass to the
         """
         super().__init__(content=content, **kwargs)
 
@@ -139,7 +139,7 @@ def merge_content(
         else:
             # If the last element of the first content is a string
             # Add the second content to the last element
-            if isinstance(merged[-1], str):
+            if merged and isinstance(merged[-1], str):
                 merged[-1] += content
             # If second content is an empty string, treat as a no-op
             elif content == "":

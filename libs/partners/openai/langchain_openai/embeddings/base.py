@@ -99,21 +99,85 @@ def _process_batched_chunked_embeddings(
 
 
 class OpenAIEmbeddings(BaseModel, Embeddings):
-    """OpenAI embedding models.
+    """OpenAI embedding model integration.
 
-    To use, you should have the
-    environment variable ``OPENAI_API_KEY`` set with your API key or pass it
-    as a named parameter to the constructor.
+     Setup:
+         Install ``langchain_openai`` and set environment variable ``OPENAI_API_KEY``.
 
-    In order to use the library with Microsoft Azure endpoints, use
-    AzureOpenAIEmbeddings.
+         .. code-block:: bash
 
-    Example:
-        .. code-block:: python
+             pip install -U langchain_openai
+             export OPENAI_API_KEY="your-api-key"
 
-            from langchain_openai import OpenAIEmbeddings
+     Key init args — embedding params:
+         model: str
+             Name of OpenAI model to use.
+         dimensions: Optional[int] = None
+             The number of dimensions the resulting output embeddings should have.
+             Only supported in `text-embedding-3` and later models.
 
-            model = OpenAIEmbeddings(model="text-embedding-3-large")
+    Key init args — client params:
+         api_key: Optional[SecretStr] = None
+             OpenAI API key.
+         organization: Optional[str] = None
+             OpenAI organization ID. If not passed in will be read
+             from env var OPENAI_ORG_ID.
+         max_retries: int = 2
+             Maximum number of retries to make when generating.
+         request_timeout: Optional[Union[float, Tuple[float, float], Any]] = None
+             Timeout for requests to OpenAI completion API
+
+     See full list of supported init args and their descriptions in the params section.
+
+     Instantiate:
+         .. code-block:: python
+
+             from langchain_openai import OpenAIEmbeddings
+
+             embed = OpenAIEmbeddings(
+                 model="text-embedding-3-large"
+                 # With the `text-embedding-3` class
+                 # of models, you can specify the size
+                 # of the embeddings you want returned.
+                 # dimensions=1024
+             )
+
+     Embed single text:
+         .. code-block:: python
+
+             input_text = "The meaning of life is 42"
+             vector = embeddings.embed_query("hello")
+             print(vector[:3])
+
+         .. code-block:: python
+
+             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+     Embed multiple texts:
+         .. code-block:: python
+
+             vectors = embeddings.embed_documents(["hello", "goodbye"])
+             # Showing only the first 3 coordinates
+             print(len(vectors))
+             print(vectors[0][:3])
+
+         .. code-block:: python
+
+             2
+             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+     Async:
+         .. code-block:: python
+
+             await embed.aembed_query(input_text)
+             print(vector[:3])
+
+             # multiple:
+             # await embed.aembed_documents(input_texts)
+
+         .. code-block:: python
+
+             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -282,12 +346,44 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
         }
+
+        if values["openai_proxy"] and (
+            values["http_client"] or values["http_async_client"]
+        ):
+            openai_proxy = values["openai_proxy"]
+            http_client = values["http_client"]
+            http_async_client = values["http_async_client"]
+            raise ValueError(
+                "Cannot specify 'openai_proxy' if one of "
+                "'http_client'/'http_async_client' is already specified. Received:\n"
+                f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
+            )
         if not values.get("client"):
+            if values["openai_proxy"] and not values["http_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
             sync_specific = {"http_client": values["http_client"]}
             values["client"] = openai.OpenAI(
                 **client_params, **sync_specific
             ).embeddings
         if not values.get("async_client"):
+            if values["openai_proxy"] and not values["http_async_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_async_client"] = httpx.AsyncClient(
+                    proxy=values["openai_proxy"]
+                )
             async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific

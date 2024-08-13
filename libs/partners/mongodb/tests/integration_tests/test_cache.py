@@ -10,7 +10,8 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
 from langchain_mongodb.cache import MongoDBAtlasSemanticCache, MongoDBCache
-from tests.utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM
+
+from ..utils import ConsistentFakeEmbeddings, FakeChatModel, FakeLLM
 
 CONN_STRING = os.environ.get("MONGODB_ATLAS_URI")
 INDEX_NAME = "langchain-test-index-semantic-cache"
@@ -31,7 +32,7 @@ def llm_cache(cls: Any) -> BaseCache:
             database_name=DATABASE,
             index_name=INDEX_NAME,
             score_threshold=0.5,
-            wait_until_ready=True,
+            wait_until_ready=15.0,
         )
     )
     assert get_llm_cache()

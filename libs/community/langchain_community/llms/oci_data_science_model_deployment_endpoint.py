@@ -244,7 +244,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     """Watermarking with `A Watermark for Large Language Models <https://arxiv.org/abs/2301.10226>`_.
     Defaults to True."""
 
-    return_full_text = False
+    return_full_text: bool = False
     """Whether to prepend the prompt to the generated text. Defaults to False."""
 
     @property
