@@ -730,9 +730,7 @@ class BaseOpenAI(BaseLLM):
         return self.max_context_size - num_tokens
 
 
-@deprecated(
-    since="0.0.10", removal="1.0", alternative_import="langchain_openai.OpenAI"
-)
+@deprecated(since="0.0.10", removal="1.0", alternative_import="langchain_openai.OpenAI")
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
 

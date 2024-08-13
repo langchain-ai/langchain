@@ -121,9 +121,7 @@ class BaseCohere(Serializable):
         return values
 
 
-@deprecated(
-    since="0.1.14", removal="1.0", alternative_import="langchain_cohere.Cohere"
-)
+@deprecated(since="0.1.14", removal="1.0", alternative_import="langchain_cohere.Cohere")
 class Cohere(LLM, BaseCohere):
     """Cohere large language models.
 
