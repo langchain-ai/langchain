@@ -889,5 +889,85 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         yield from self.parser.parse(blob)
 
 
+class HuridocsPDFLoader(BasePDFLoader):
+    """Load a PDF with Huridocs: https://github.com/huridocs/pdf-document-layout-analysis"""
+
+    def __init__(
+        self,
+        file_path: str,
+        server_url: str,
+        fast : Optional[bool] = False,
+    ) -> None:
+        """
+        Initialize the object for PDF file processing with Huridocs pdf-document-layout-analysis.
+
+        This constructor initializes a HuridocsPDFLoader object to be used
+        for parsing files using the pdf-document-layout-analysis API. 
+        Loader uses VGT layout model from here: https://github.com/AlibabaResearch/AdvancedLiterateMachinery/tree/main/DocumentUnderstanding/VGT 
+        Parameters:
+        -----------
+        file_path : str
+            The path to the file that needs to be parsed.
+        server_url: str
+            The path to pdf-document-layout-analysis self-hosted API server.
+
+        Examples:
+        ---------
+        >>> obj = HuridocsPDFLoader(
+        ...     file_path="path/to/file",
+        ...     server_url="path/to/sef-hosted/api"
+        ... )
+        """
+        self.server_url = server_url
+        self.fast = fast
+
+        try:
+            response = requests.get(self.server_url)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            raise err
+        
+        super().__init__(file_path)
+
+    def send_pdf(self) -> str:
+        with open(self.file_path, "rb") as f:
+            files = {"file": f}
+            try:   
+                data = {"fast": self.fast}
+                response = requests.post(f"{self.server_url}/", 
+                                         files=files, 
+                                         data=data
+                                         )
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as err:
+                raise err
+            
+        response_data = response.json()
+
+        return response_data
+    
+    def load(self) -> List[Document]:
+        """Load data into Document objects."""
+        return list(self.lazy_load())
+    
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazy load given path as pages."""
+        elements = self.send_pdf()
+
+        for el in elements:
+            yield Document(page_content=el["text"], metadata={"coordinates" : (el["left"], 
+                                                                               el["top"], 
+                                                                               el["width"],
+                                                                               el["height"]),
+
+                                                              "page_number" : el["page_number"],
+                                                              "page_width" : el["page_width"],
+                                                              "page_height" : el["page_height"],
+                                                              
+                                                              "type" : el["type"]})
+        
+
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
