@@ -731,7 +731,7 @@ class BaseOpenAI(BaseLLM):
 
 
 @deprecated(
-    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.OpenAI"
+    since="0.0.10", removal="1.0", alternative_import="langchain_openai.OpenAI"
 )
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
@@ -760,7 +760,7 @@ class OpenAI(BaseOpenAI):
 
 
 @deprecated(
-    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.AzureOpenAI"
+    since="0.0.10", removal="1.0", alternative_import="langchain_openai.AzureOpenAI"
 )
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
@@ -968,7 +968,7 @@ class AzureOpenAI(BaseOpenAI):
 
 @deprecated(
     since="0.0.1",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_openai.ChatOpenAI",
 )
 class OpenAIChat(BaseLLM):

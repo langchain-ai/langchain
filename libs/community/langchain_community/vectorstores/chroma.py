@@ -705,7 +705,7 @@ class Chroma(VectorStore):
             "Since Chroma 0.4.x the manual persistence method is no longer "
             "supported as docs are automatically persisted."
         ),
-        removal="0.3.0",
+        removal="1.0",
     )
     def persist(self) -> None:
         """Persist the collection.
