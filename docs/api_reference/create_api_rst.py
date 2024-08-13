@@ -253,6 +253,8 @@ def _construct_doc(
     """
     docs = []
     index_doc = f"""\
+:html_theme.sidebar_secondary.remove:
+
 .. currentmodule:: {package_namespace}
 
 .. _{package_namespace}:
@@ -266,8 +268,11 @@ def _construct_doc(
     :no-inherited-members:
 
 .. toctree::
+    :hidden:
     :maxdepth: 2
     
+"""
+    index_autosummary = """
 """
     namespaces = sorted(members_by_namespace)
 
@@ -311,6 +316,13 @@ def _construct_doc(
 
 """
 
+        index_autosummary += f"""
+:ref:`{module}`
+{'^' * (len(module) + 5)}
+ 
+.. autosummary::
+"""
+
         if classes:
             module_doc += f"""\
 **Classes**
@@ -340,6 +352,9 @@ def _construct_doc(
     
     {class_["qualified_name"]}
     
+"""
+                index_autosummary += f"""
+    {class_['qualified_name']}
 """
 
         if functions:
@@ -404,7 +419,7 @@ def _construct_doc(
 
 """
         docs.append((f"{module}.rst", module_doc))
-    docs.append(("index.rst", index_doc))
+    docs.append(("index.rst", index_doc + index_autosummary))
 
     return docs
 
