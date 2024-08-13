@@ -126,7 +126,7 @@ async def test_merge_config_callbacks() -> None:
         assert isinstance(merged.handlers[0], StdOutCallbackHandler)
 
     async with atrace_as_chain_group("test_async") as gm:
-        group_manager: RunnableConfig = {
+        group_manager = {
             "callbacks": gm,
         }
         merged = merge_configs(group_manager, handlers)["callbacks"]

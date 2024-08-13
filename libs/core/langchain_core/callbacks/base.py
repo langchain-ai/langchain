@@ -941,6 +941,7 @@ class BaseCallbackManager(CallbackManagerMixin):
 
         for handler in inheritable_handlers:
             manager.add_handler(handler, inherit=True)
+        return manager
 
     @property
     def is_async(self) -> bool:
