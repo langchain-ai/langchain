@@ -126,9 +126,9 @@ class ChatSparkLLM(BaseChatModel):
 
             from langchain_community.chat_models import ChatSparkLLM
 
-            chat = MiniMaxChat(
-                api_key=api_key,
-                api_secret=ak,
+            chat = ChatSparkLLM(
+                api_key="your-api-key",
+                api_secret="your-api-secret",
                 model='Spark4.0 Ultra',
                 # temperature=...,
                 # other params...
