@@ -503,7 +503,7 @@ def _build_index(dirs: List[str]) -> None:
         for header_name, dir_ in zip(main_headers, main_)
     )
     main_grid = "\n".join(
-        f'- header: "**{header_name}**"\n  content: "{_package_namespace(dir_)}: {_get_package_version(_package_dir(dir_))}"\n  link: {dir_.replace("-", "_")}/index.html'
+        f'- header: "**{header_name}**"\n  content: "{_package_namespace(dir_).replace("_", "-")}: {_get_package_version(_package_dir(dir_))}"\n  link: {dir_.replace("-", "_")}/index.html'
         for header_name, dir_ in zip(main_headers, main_)
     )
     integration_tree = "\n".join(
@@ -526,7 +526,7 @@ def _build_index(dirs: List[str]) -> None:
         if h_d[1] in integrations_to_show
         else len(integrations_to_show),
     )[: len(integrations_to_show)]:
-        integration_grid += f'\n- header: "**{header_name}**"\n  content: {_package_namespace(dir_)} {_get_package_version(_package_dir(dir_))}\n  link: {dir_.replace("-", "_")}/index.html'
+        integration_grid += f'\n- header: "**{header_name}**"\n  content: {_package_namespace(dir_).replace("_", "-")} {_get_package_version(_package_dir(dir_))}\n  link: {dir_.replace("-", "_")}/index.html'
     doc = f"""# LangChain Python API Reference
 
 Welcome to the LangChain Python API reference. This is a reference for all 

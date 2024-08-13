@@ -352,3 +352,13 @@ html[data-theme=dark] .MathJax_SVG * {
 .bd-sidebar-primary {
     width: 22%;  /* Adjust this value to your preference */
 }
+
+.toc-entry a.nav-link, .toc-entry a>code {  
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.bd-sidebar-primary code{
+  background-color: transparent;
+  border-color: transparent;
+}

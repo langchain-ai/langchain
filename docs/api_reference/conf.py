@@ -62,7 +62,7 @@ class ExampleLinksDirective(SphinxDirective):
             item_node.append(para_node)
             list_node.append(item_node)
         if list_node.children:
-            title_node = nodes.title()
+            title_node = nodes.rubric()
             title_node.append(nodes.Text(f"Examples using {class_or_func_name}"))
             return [title_node, list_node]
         return [list_node]
