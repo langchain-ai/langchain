@@ -646,7 +646,8 @@ function toTable(columns, items) {
 
 export function CategoryTable({ category }) {
     const cat = FEATURE_TABLES[category];
-    return toTable(cat.columns, cat.items);
+    const rtn = toTable(cat.columns, cat.items);
+    return rtn;
 }
 
 export function ItemTable({ category, item }) {
@@ -655,7 +656,8 @@ export function ItemTable({ category, item }) {
     if (!row) {
         throw new Error(`Item ${item} not found in category ${category}`);
     }
-    return toTable(cat.columns, [row]);
+    const rtn = toTable(cat.columns, [row]);
+    return rtn;
 }
 
 function truncate(str, n) {
@@ -664,15 +666,17 @@ function truncate(str, n) {
 
 export function IndexTable() {
     const { items } = useCurrentSidebarCategory();
+
     const rows = items.filter(item => !item.docId?.endsWith?.('/index')).map(item => ({
         ...item,
         description: useDocById(item.docId ?? undefined)?.description,
     }));
-    return toTable(
+    const rtn = toTable(
         [
             { title: "Label", formatter: (item) => <a href={item.href}>{item.label}</a> },
             { title: "Description", formatter: (item) => truncate(item.description ?? "", 70) },
         ],
         rows,
     );
+    return rtn;
 }
