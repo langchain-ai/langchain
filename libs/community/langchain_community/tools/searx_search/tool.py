@@ -60,6 +60,7 @@ class SearxSearchResults(BaseTool):
     wrapper: SearxSearchWrapper
     num_results: int = 4
     kwargs: dict = Field(default_factory=dict)
+    args_schema: Type[BaseModel] = SearxSearchQueryInput
 
     class Config:
         extra = "allow"
