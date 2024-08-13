@@ -351,6 +351,11 @@ html[data-theme=dark] .MathJax_SVG * {
 
 .bd-sidebar-primary {
     width: 22%;  /* Adjust this value to your preference */
+    line-height: 1.4;
+}
+
+.bd-sidebar-secondary {
+    line-height: 1.4;
 }
 
 .toc-entry a.nav-link, .toc-entry a>code {  
@@ -361,4 +366,18 @@ html[data-theme=dark] .MathJax_SVG * {
 .bd-sidebar-primary code{
   background-color: transparent;
   border-color: transparent;
+}
+
+
+.toctree-wrapper li[class^=toctree-l1]>a {
+  font-size: 1.3em
+}
+
+.toctree-wrapper li[class^=toctree-l1] {
+  margin-bottom: 2em;
+}
+
+.toctree-wrapper li[class^=toctree-l]>ul {
+  margin-top: 0.5em;
+  font-size: 0.9em;
 }

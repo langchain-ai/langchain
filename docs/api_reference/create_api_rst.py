@@ -560,7 +560,7 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
 {integration_grid}
 ```
 
-See all packages in the Integrations section of the sidebar.
+See the full list of integrations in the Section Navigation.
 
 ```{{toctree}}
 :maxdepth: 2
