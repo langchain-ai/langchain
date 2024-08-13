@@ -50,8 +50,12 @@ DISTANCE_STRATEGY = "distancestrategy"
 EMBEDDING = "embedding"
 EMBEDDING_LENGTH = "embedding_length"
 EMBEDDING_VALUES = "embeddingvalues"
+EMPTY_IDS_ERROR_MESSAGE = "Empty list of ids provided"
+INVALID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
 INVALID_INPUT_ERROR_MESSAGE = "Input is not valid."
 
+# Query Constants
+#
 EMBEDDING_LENGTH_CONSTRAINT = f"ISVECTOR(embeddings, :{EMBEDDING_LENGTH}) = 1"
 JSON_TO_ARRAY_QUERY = f"select JSON_ARRAY_TO_VECTOR (:{EMBEDDING_VALUES})"
 VECTOR_DISTANCE_QUERY = f"""
@@ -430,3 +434,39 @@ class SQLServer_VectorStore(VectorStore):
             logging.error("Metadata must be a list of dictionaries.")
             raise
         return ids
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete embeddings in the vectorstore by the ids.
+
+        Args:
+            ids: List of IDs to delete.
+            kwargs: vectorstore specific parameters.
+
+        Returns:
+            Optional[bool]
+        """
+
+        if ids is None or len(ids) == 0:
+            logging.info(EMPTY_IDS_ERROR_MESSAGE)
+            return False
+
+        result = self._delete_texts_by_ids(ids)
+        if result == 0:
+            logging.info(INVALID_IDS_ERROR_MESSAGE)
+            return False
+
+        logging.info(result, " rows affected.")
+        return True
+
+    def _delete_texts_by_ids(self, ids: Optional[List[str]] = None) -> int:
+        try:
+            with Session(bind=self._bind) as session:
+                result = (
+                    session.query(_embedding_store)
+                    .filter(_embedding_store.custom_id.in_(ids))
+                    .delete()
+                )
+                session.commit()
+        except DBAPIError as e:
+            logging.error(e.__cause__)
+        return result
