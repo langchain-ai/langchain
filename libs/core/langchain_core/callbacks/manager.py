@@ -1612,13 +1612,13 @@ class CallbackManagerForChainGroup(CallbackManager):
     def copy(self) -> CallbackManagerForChainGroup:
         """Copy the callback manager."""
         return self.__class__(
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
+            handlers=self.handlers.copy(),
+            inheritable_handlers=self.inheritable_handlers.copy(),
             parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-            metadata=self.metadata,
-            inheritable_metadata=self.inheritable_metadata,
+            tags=self.tags.copy(),
+            inheritable_tags=self.inheritable_tags.copy(),
+            metadata=self.metadata.copy(),
+            inheritable_metadata=self.inheritable_metadata.copy(),
             parent_run_manager=self.parent_run_manager,
         )
 
@@ -2066,13 +2066,13 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
     def copy(self) -> AsyncCallbackManagerForChainGroup:
         """Copy the async callback manager."""
         return self.__class__(
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
+            handlers=self.handlers.copy(),
+            inheritable_handlers=self.inheritable_handlers.copy(),
             parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-            metadata=self.metadata,
-            inheritable_metadata=self.inheritable_metadata,
+            tags=self.tags.copy(),
+            inheritable_tags=self.inheritable_tags.copy(),
+            metadata=self.metadata.copy(),
+            inheritable_metadata=self.inheritable_metadata.copy(),
             parent_run_manager=self.parent_run_manager,
         )
 
