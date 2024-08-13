@@ -15,31 +15,304 @@ interface Category {
 }
 
 const FeatureTables: Record<string, Category> = {
+    chat: {
+        link: "/docs/integrations/chat",
+        columns: [
+            {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
+            {title: <a href="/docs/how_to/tool_calling">Tool calling</a>, formatter: (item) => item.tool_calling ? "✅" : "❌"},
+            {title: <a href="/docs/how_to/structured_output/">Structured output</a>, formatter: (item) => item.structured_output ? "✅" : "❌"},
+            {title: "JSON mode", formatter: (item) => item.json_mode ? "✅" : "❌"},
+            {title: "Local", formatter: (item) => item.local ? "✅" : "❌"},
+            {title: <a href="/docs/how_to/multimodal_inputs/">Multimodal</a>, formatter: (item) => item.multimodal ? "✅" : "❌"},
+            {title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a>},
+        ],
+        items: [
+            {
+                "name": "ChatAnthropic",
+                "package": "langchain-anthropic",
+                "link": "anthropic/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_anthropic.chat_models.ChatAnthropic.html#langchain_anthropic.chat_models.ChatAnthropic"
+            },
+            {
+                "name": "ChatMistralAI",
+                "package": "langchain-mistralai",
+                "link": "mistralai/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_mistralai.chat_models.ChatMistralAI.html#langchain_mistralai.chat_models.ChatMistralAI"
+            },
+            {
+                "name": "ChatFireworks",
+                "package": "langchain-fireworks",
+                "link": "fireworks/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_fireworks.chat_models.ChatFireworks.html#langchain_fireworks.chat_models.ChatFireworks"
+            },
+            {
+                "name": "AzureChatOpenAI",
+                "package": "langchain-openai",
+                "link": "azure_chat_openai/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.azure.AzureChatOpenAI.html#langchain_openai.chat_models.azure.AzureChatOpenAI"
+            },
+            {
+                "name": "ChatOpenAI",
+                "package": "langchain-openai",
+                "link": "openai/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html#langchain_openai.chat_models.base.ChatOpenAI"
+            },
+            {
+                "name": "ChatTogether",
+                "package": "langchain-together",
+                "link": "together/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_together.chat_models.ChatTogether.html#langchain_together.chat_models.ChatTogether"
+            },
+            {
+                "name": "ChatVertexAI",
+                "package": "langchain-google-vertexai",
+                "link": "google_vertex_ai_palm/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_google_vertexai.chat_models.ChatVertexAI.html#langchain_google_vertexai.chat_models.ChatVertexAI"
+            },
+            {
+                "name": "ChatGoogleGenerativeAI",
+                "package": "langchain-google-genai",
+                "link": "google_generative_ai/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_google_genai.chat_models.ChatGoogleGenerativeAI.html#langchain_google_genai.chat_models.ChatGoogleGenerativeAI"
+            },
+            {
+                "name": "ChatGroq",
+                "package": "langchain-groq",
+                "link": "groq/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_groq.chat_models.ChatGroq.html#langchain_groq.chat_models.ChatGroq"
+            },
+            {
+                "name": "ChatCohere",
+                "package": "langchain-cohere",
+                "link": "cohere/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_cohere.chat_models.ChatCohere.html#langchain_cohere.chat_models.ChatCohere"
+            },
+            {
+                "name": "ChatBedrock",
+                "package": "langchain-aws",
+                "link": "bedrock/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_aws.chat_models.bedrock.ChatBedrock.html#langchain_aws.chat_models.bedrock.ChatBedrock"
+            },
+            {
+                "name": "ChatHuggingFace",
+                "package": "langchain-huggingface",
+                "link": "huggingface/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": true,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_huggingface.chat_models.huggingface.ChatHuggingFace.html#langchain_huggingface.chat_models.huggingface.ChatHuggingFace",
+            },
+            {
+                "name": "ChatNVIDIA",
+                "package": "langchain-nvidia-ai-endpoints",
+                "link": "nvidia_ai_endpoints/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": true,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_nvidia_ai_endpoints.chat_models.ChatNVIDIA.html#langchain_nvidia_ai_endpoints.chat_models.ChatNVIDIA"
+            },
+            {
+                "name": "ChatOllama",
+                "package": "langchain-ollama",
+                "link": "ollama/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": false,
+                "local": true,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_ollama.chat_models.ChatOllama.html#langchain_ollama.chat_models.ChatOllama"
+            },
+            {
+                "name": "ChatLlamaCpp",
+                "package": "langchain-community",
+                "link": "llamacpp",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": true,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_community.chat_models.llamacpp.ChatLlamaCpp.html#langchain_community.chat_models.llamacpp.ChatLlamaCpp"
+            },
+            {
+                "name": "ChatAI21",
+                "package": "langchain-ai21",
+                "link": "ai21",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_ai21.chat_models.ChatAI21.html#langchain_ai21.chat_models.ChatAI21"
+            },
+            {
+                "name": "ChatUpstage",
+                "package": "langchain-upstage",
+                "link": "upstage",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false, 
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://api.python.langchain.com/en/latest/chat_models/langchain_upstage.chat_models.ChatUpstage.html#langchain_upstage.chat_models.ChatUpstage"
+            }
+        ],
+    },
     llms: {
         link: "/docs/integrations/llms",
         columns: [
-            {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
-            {title: "Package", formatter: (item) => <a href={`https://pypi.org/project/${item.package}/`}>{item.package}</a>},
+            {title: "Provider", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Package", formatter: (item) => <a href={
+                item.apiLink
+            }>{item.package}</a>},
         ],
-        items:[
+        /*
+        - AI21
+        - Anthropic
+        - AzureOpenAI
+        - Bedrock
+        - Cohere
+        - Fireworks https://api.python.langchain.com/en/latest/llms/langchain_fireworks.llms.Fireworks.html#langchain_fireworks.llms.Fireworks
+        - Ollama https://api.python.langchain.com/en/latest/llms/langchain_ollama.llms.OllamaLLM.html#langchain_ollama.llms.OllamaLLM
+        - OpenAI https://api.python.langchain.com/en/latest/llms/langchain_openai.llms.base.OpenAI.html#langchain_openai.llms.base.OpenAI
+        - Together https://api.python.langchain.com/en/latest/llms/langchain_together.llms.Together.html#langchain_together.llms.Together
+        - VertexAI https://api.python.langchain.com/en/latest/llms/langchain_google_vertexai.llms.VertexAI.html#langchain_google_vertexai.llms.VertexAI
+        */
+        items: [
             {
-                name: "Anthropic",
-                link: "anthropic.ipynb",
+                name: "AI21LLM",
+                link: "ai21",
+                package: "langchain-ai21",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_ai21.llms.AI21LLM.html#langchain_ai21.llms.AI21LLM"
+            },
+            {
+                name: "AnthropicLLM",
+                link: "anthropic",
                 package: "langchain-anthropic",
-            }
-        ]
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_anthropic.llms.AnthropicLLM.html#langchain_anthropic.llms.AnthropicLLM"
+            },
+            {
+                name: "AzureOpenAI",
+                link: "azure_openai",
+                package: "langchain-openai",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_openai.llms.azure.AzureOpenAI.html#langchain_openai.llms.azure.AzureOpenAI"
+            },
+            {
+                name: "BedrockLLM",
+                link: "bedrock",
+                package: "langchain-aws",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_aws.llms.bedrock.BedrockLLM.html#langchain_aws.llms.bedrock.BedrockLLM"
+            },
+            {
+                name: "CohereLLM",
+                link: "cohere",
+                package: "langchain-cohere",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_cohere.llms.Cohere.html#langchain_cohere.llms.Cohere"
+            },
+            {
+                name: "FireworksLLM",
+                link: "fireworks",
+                package: "langchain-fireworks",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_fireworks.llms.Fireworks.html#langchain_fireworks.llms.Fireworks"
+            },
+            {
+                name: "OllamaLLM",
+                link: "ollama",
+                package: "langchain-ollama",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_ollama.llms.OllamaLLM.html#langchain_ollama.llms.OllamaLLM"
+            },
+            {
+                name: "OpenAILLM",
+                link: "openai",
+                package: "langchain-openai",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_openai.llms.base.OpenAI.html#langchain_openai.llms.base.OpenAI"
+            },
+            {
+                name: "TogetherLLM",
+                link: "together",
+                package: "langchain-together",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_together.llms.Together.html#langchain_together.llms.Together"
+            },
+            {
+                name: "VertexAILLM",
+                link: "google_vertexai",
+                package: "langchain-google_vertexai",
+                apiLink: "https://api.python.langchain.com/en/latest/llms/langchain_google_vertexai.llms.VertexAI.html#langchain_google_vertexai.llms.VertexAI"
+            },
+        ],
     },
     text_embedding: {
         link: "/docs/integrations/text_embedding",
         columns: [
             {title: "Provider", formatter: (item) => <a href={item.link}>{item.name}</a>},
-            {title: "Package", formatter: (item) => <a href={`https://pypi.org/project/${item.package}/`}>{item.package}</a>},
+            {title: "Package", formatter: (item) => <a href={item.apiLink}>{item.package}</a>},
         ],
         items:[
             {
                 name: "Cohere",
-                link: "cohere.ipynb",
+                link: "cohere",
                 package: "langchain-cohere",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_cohere.embeddings.CohereEmbeddings.html#langchain_cohere.embeddings.CohereEmbeddings"
             }
         ]
     },
@@ -129,6 +402,194 @@ const FeatureTables: Record<string, Category> = {
             }
         ]
 
+    },
+    vectorstores: {
+        link: 'docs/integrations/vectorstores',
+        columns: [
+            {title: "Vectorstore", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Delete by ID", formatter: (item) => item.deleteById ? "✅" : "❌"},
+            {title: "Filtering", formatter: (item) => item.filtering ? "✅" : "❌"},
+            {title: "Search by Vector", formatter: (item) => item.searchByVector ? "✅" : "❌"},
+            {title: "Search with score", formatter: (item) => item.searchWithScore ? "✅" : "❌"},
+            {title: "Async", formatter: (item) => item.async ? "✅" : "❌"},
+            {title: "Passes Standard Tests", formatter: (item) => item.passesStandardTests ? "✅" : "❌"},
+            {title: "Multi Tenancy", formatter: (item) => item.multiTenancy ? "✅" : "❌"},
+            {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
+            {title: "IDs in add Documents", formatter: (item) => item.idsInAddDocuments ? "✅" : "❌"},
+        ],
+        items: [
+            {
+                name: "AstraDBVectorStore",
+                link: "astradb",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "Chroma",
+                link: "chroma",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "Clickhouse",
+                link: "clickhouse",
+                deleteById: true,
+                filtering: true,
+                searchByVector: false,
+                searchWithScore: true,
+                async: false,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "CouchbaseVectorStore",
+                link: "couchbase",
+                deleteById: true,
+                filtering: true,
+                searchByVector: false,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "ElasticsearchStore",
+                link: "elasticsearch",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: false,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "FAISS",
+                link: "faiss",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "InMemoryVectorStore",
+                link: "in_memory",
+                deleteById: true,
+                filtering: true,
+                searchByVector: false,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "Milvus",
+                link: "milvus",
+                deleteById: true,
+                filtering: true,
+                searchByVector: false,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "MongoDBAtlasVectorSearch",
+                link: "mongodb_atlas",
+                deleteById: true,
+                filtering: true,
+                searchByVector: false,
+                searchWithScore: false,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "PGVector",
+                link: "pg_vector",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "PineconeVectorStore",
+                link: "pinecone",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: false,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "QdrantVectorStore",
+                link: "qdrant",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            },
+            {
+                name: "Redis",
+                link: "redis",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: false,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+            }
+        ],
     }
 };
 
