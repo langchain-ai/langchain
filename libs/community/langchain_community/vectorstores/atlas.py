@@ -29,7 +29,7 @@ class AtlasDB(VectorStore):
                 vectorstore = AtlasDB("my_project", embeddings.embed_query)
     """
 
-    _ATLAS_DEFAULT_ID_FIELD = "atlas_id"
+    _ATLAS_DEFAULT_ID_FIELD: str = "atlas_id"
 
     def __init__(
         self,

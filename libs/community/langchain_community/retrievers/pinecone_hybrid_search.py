@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.utils import pre_init
 
 
 def hash_text(text: str) -> str:
@@ -114,10 +114,8 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """Namespace value for index partition."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     def add_texts(
         self,
@@ -136,7 +134,7 @@ class PineconeHybridSearchRetriever(BaseRetriever):
             namespace=namespace,
         )
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:

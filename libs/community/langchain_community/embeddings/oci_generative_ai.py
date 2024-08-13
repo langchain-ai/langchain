@@ -2,7 +2,8 @@ from enum import Enum
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import pre_init
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -85,11 +86,9 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
      per request"""
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument
         """Validate that OCI config and python package exists in environment."""
 

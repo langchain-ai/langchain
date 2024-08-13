@@ -24,7 +24,7 @@ class LineListOutputParser(BaseOutputParser[List[str]]):
 
     def parse(self, text: str) -> List[str]:
         lines = text.strip().split("\n")
-        return lines
+        return list(filter(None, lines))  # Remove empty lines
 
 
 # Default prompt
@@ -72,6 +72,8 @@ class MultiQueryRetriever(BaseRetriever):
         Args:
             retriever: retriever to query documents from
             llm: llm for query generation using DEFAULT_QUERY_PROMPT
+            prompt: The prompt which aims to generate several different versions
+                of the given user query
             include_original: Whether to include the original query in the list of
                 generated queries.
 
@@ -95,7 +97,7 @@ class MultiQueryRetriever(BaseRetriever):
         """Get relevant documents given a user query.
 
         Args:
-            question: user query
+            query: user query
 
         Returns:
             Unique union of relevant documents from all generated queries
@@ -158,7 +160,7 @@ class MultiQueryRetriever(BaseRetriever):
         """Get relevant documents given a user query.
 
         Args:
-            question: user query
+            query: user query
 
         Returns:
             Unique union of relevant documents from all generated queries

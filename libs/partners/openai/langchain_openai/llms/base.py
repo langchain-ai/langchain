@@ -110,6 +110,11 @@ class BaseOpenAI(BaseLLM):
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+    seed: Optional[int] = None
+    """Seed for generation"""
+    logprobs: Optional[int] = None
+    """Include the log probabilities on the logprobs most likely output tokens,
+     as well the chosen tokens."""
     streaming: bool = False
     """Whether to stream the results or not."""
     allowed_special: Union[Literal["all"], AbstractSet[str]] = set()
@@ -220,6 +225,8 @@ class BaseOpenAI(BaseLLM):
             "presence_penalty": self.presence_penalty,
             "n": self.n,
             "logit_bias": self.logit_bias,
+            "seed": self.seed,
+            "logprobs": self.logprobs,
         }
 
         if self.max_tokens is not None:
@@ -530,6 +537,7 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
+            "gpt-4o-mini": 128_000,
             "gpt-4o": 128_000,
             "gpt-4o-2024-05-13": 128_000,
             "gpt-4": 8192,
@@ -597,21 +605,105 @@ class BaseOpenAI(BaseLLM):
 
 
 class OpenAI(BaseOpenAI):
-    """OpenAI large language models.
+    """OpenAI completion model integration.
 
-    To use, you should have the environment variable ``OPENAI_API_KEY``
-    set with your API key, or pass it as a named parameter to the constructor.
+    Setup:
+        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
 
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+        .. code-block:: bash
 
-    Example:
+            pip install -U langchain-openai
+            export OPENAI_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of OpenAI model to use.
+        temperature: float
+            Sampling temperature.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        logprobs: Optional[bool]
+            Whether to return logprobs.
+        stream_options: Dict
+            Configure streaming outputs, like whether to return token usage when
+            streaming (``{"include_usage": True}``).
+
+    Key init args — client params:
+        timeout: Union[float, Tuple[float, float], Any, None]
+            Timeout for requests.
+        max_retries: int
+            Max number of retries.
+        api_key: Optional[str]
+            OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
+        base_url: Optional[str]
+            Base URL for API requests. Only specify if using a proxy or service
+            emulator.
+        organization: Optional[str]
+            OpenAI organization ID. If not passed in will be read from env
+            var OPENAI_ORG_ID.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_openai import OpenAI
 
-            model = OpenAI(model_name="gpt-3.5-turbo-instruct")
-    """
+            llm = OpenAI(
+                model="gpt-3.5-turbo-instruct",
+                temperature=0,
+                max_retries=2,
+                # api_key="...",
+                # base_url="...",
+                # organization="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            input_text = "The meaning of life is "
+            llm.invoke(input_text)
+
+        .. code-block:: none
+
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(input_text):
+                print(chunk, end="|")
+
+        .. code-block:: none
+
+            a| philosophical| question| that| has| been| debated| by| thinkers| and| scholars| for| centuries|.
+
+        .. code-block:: python
+
+            "".join(llm.stream(input_text))
+
+        .. code-block:: none
+
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(input_text)
+
+            # stream:
+            # async for chunk in (await llm.astream(input_text)):
+            #    print(chunk)
+
+            # batch:
+            # await llm.abatch([input_text])
+
+        .. code-block:: none
+
+            "a philosophical question that has been debated by thinkers and scholars for centuries."
+
+    """  # noqa: E501
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

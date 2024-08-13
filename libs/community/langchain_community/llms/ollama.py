@@ -1,5 +1,18 @@
+from __future__ import annotations
+
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import aiohttp
 import requests
@@ -10,7 +23,6 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Extra
 
 
 def _stream_response_to_generation_chunk(
@@ -112,23 +124,29 @@ class _OllamaCommon(BaseLanguageModel):
     """Timeout for the request stream"""
 
     keep_alive: Optional[Union[int, str]] = None
-    """How long the model will stay loaded into memory."""
+    """How long the model will stay loaded into memory.
 
-    raw: Optional[bool] = None
-    """raw or not.""
     The parameter (Default: 5 minutes) can be set to:
     1. a duration string in Golang (such as "10m" or "24h");
     2. a number in seconds (such as 3600);
     3. any negative number which will keep the model loaded \
         in memory (e.g. -1 or "-1m");
     4. 0 which will unload the model immediately after generating a response;
+
     See the [Ollama documents](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-keep-a-model-loaded-in-memory-or-make-it-unload-immediately)"""
+
+    raw: Optional[bool] = None
+    """raw or not."""
 
     headers: Optional[dict] = None
     """Additional headers to pass to endpoint (e.g. Authorization, Referer).
     This is useful when Ollama is hosted on cloud services that require
     tokens for authentication.
     """
+
+    auth: Union[Callable, Tuple, None] = None
+    """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
+    Expects the same format, type and values as requests.request auth parameter."""
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -235,6 +253,7 @@ class _OllamaCommon(BaseLanguageModel):
                 "Content-Type": "application/json",
                 **(self.headers if isinstance(self.headers, dict) else {}),
             },
+            auth=self.auth,
             json=request_payload,
             stream=True,
             timeout=self.timeout,
@@ -298,8 +317,9 @@ class _OllamaCommon(BaseLanguageModel):
                     "Content-Type": "application/json",
                     **(self.headers if isinstance(self.headers, dict) else {}),
                 },
+                auth=self.auth,  # type: ignore[arg-type]
                 json=request_payload,
-                timeout=self.timeout,
+                timeout=self.timeout,  # type: ignore[arg-type]
             ) as response:
                 if response.status != 200:
                     if response.status == 404:
@@ -378,9 +398,7 @@ class Ollama(BaseLLM, _OllamaCommon):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @property
     def _llm_type(self) -> str:

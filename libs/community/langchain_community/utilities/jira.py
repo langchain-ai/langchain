@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -15,11 +15,10 @@ class JiraAPIWrapper(BaseModel):
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
+    jira_cloud: Optional[bool] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -39,6 +38,10 @@ class JiraAPIWrapper(BaseModel):
         )
         values["jira_instance_url"] = jira_instance_url
 
+        jira_cloud_str = get_from_dict_or_env(values, "jira_cloud", "JIRA_CLOUD")
+        jira_cloud = jira_cloud_str.lower() == "true"
+        values["jira_cloud"] = jira_cloud
+
         try:
             from atlassian import Confluence, Jira
         except ImportError:
@@ -51,21 +54,21 @@ class JiraAPIWrapper(BaseModel):
             jira = Jira(
                 url=jira_instance_url,
                 token=jira_api_token,
-                cloud=True,
+                cloud=jira_cloud,
             )
         else:
             jira = Jira(
                 url=jira_instance_url,
                 username=jira_username,
                 password=jira_api_token,
-                cloud=True,
+                cloud=jira_cloud,
             )
 
         confluence = Confluence(
             url=jira_instance_url,
             username=jira_username,
             password=jira_api_token,
-            cloud=True,
+            cloud=jira_cloud,
         )
 
         values["jira"] = jira

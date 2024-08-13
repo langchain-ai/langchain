@@ -177,6 +177,16 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             if isinstance(vectorstore, PGVector):
                 return NewPGVectorTranslator()
 
+        try:
+            # Added in langchain-community==0.2.11
+            from langchain_community.query_constructors.hanavector import HanaTranslator
+            from langchain_community.vectorstores import HanaDB
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, HanaDB):
+                return HanaTranslator()
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
@@ -205,10 +215,8 @@ class SelfQueryRetriever(BaseRetriever):
     """Use original query instead of the revised new query from LLM"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
         allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @root_validator(pre=True)
     def validate_translator(cls, values: Dict) -> Dict:
