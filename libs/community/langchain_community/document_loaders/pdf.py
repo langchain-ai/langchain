@@ -161,10 +161,66 @@ class OnlinePDFLoader(BasePDFLoader):
 
 
 class PyPDFLoader(BasePDFLoader):
-    """Load PDF using pypdf into list of documents.
-
-    Loader chunks by page and stores page numbers in metadata.
     """
+    PyPDFLoader document loader integration
+
+    Setup:
+        Install ``langchain-community``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-community
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import PyPDFLoader
+
+            loader = PyPDFLoader(
+                file_path = "./example_data/layout-parser-paper.pdf",
+                password = "my-pasword",
+                extract_images = True,
+                # headers = None
+                # extraction_mode = "plain",
+                # extraction_kwargs = None,
+            )
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            LayoutParser : A Uniﬁed Toolkit for Deep
+            Learning Based Document Image Analysis
+            Zejiang Shen1( ), R
+            {'source': './example_data/layout-parser-paper.pdf', 'page': 0}
+
+    # TODO: Delete if async load is not implemented
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            LayoutParser : A Uniﬁed Toolkit for Deep
+            Learning Based Document Image Analysis
+            Zejiang Shen1( ), R
+            {'source': './example_data/layout-parser-paper.pdf', 'page': 0}
+    """  # noqa: E501
 
     def __init__(
         self,
