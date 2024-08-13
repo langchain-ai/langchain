@@ -607,8 +607,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt and additional model provider-specific output.
         """
         params = self._get_invocation_params(stop=stop, **kwargs)
-        if 'stream' in params:
-            kwargs['stream'] = params['stream']
+        if "stream" in params:
+            kwargs["stream"] = params["stream"]
         options = {"stop": stop}
         inheritable_metadata = {
             **(metadata or {}),
@@ -700,8 +700,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt and additional model provider-specific output.
         """
         params = self._get_invocation_params(stop=stop, **kwargs)
-        if 'stream' in params:
-            kwargs['stream'] = params['stream']
+        if "stream" in params:
+            kwargs["stream"] = params["stream"]
         options = {"stop": stop}
         inheritable_metadata = {
             **(metadata or {}),
