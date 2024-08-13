@@ -438,9 +438,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 return input_val[0]
             return list(input_val)
         else:
-            import pdb
-
-            pdb.set_trace()
             raise ValueError(
                 f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
                 f"Got {input_val}."
@@ -476,9 +473,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         elif isinstance(output_val, (list, tuple)):
             return list(output_val)
         else:
-            import pdb
-
-            pdb.set_trace()
             raise ValueError(
                 f"Expected str, BaseMessage, List[BaseMessage]. Got {output_val}."
             )
