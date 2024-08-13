@@ -206,7 +206,7 @@ class ChatBaichuan(BaseChatModel):
 
     Key init args — client params:
         api_key: Optional[str]
-            MiniMax API key. If not passed in will be read from env var BAICHUAN_API_KEY.
+            Baichuan API key. If not passed in will be read from env var BAICHUAN_API_KEY.
         base_url: Optional[str]
             Base URL for API requests.
 
@@ -376,8 +376,6 @@ class ChatBaichuan(BaseChatModel):
     """Holds any model parameters valid for API call not explicitly specified."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
