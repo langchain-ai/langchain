@@ -36,6 +36,11 @@ const FeatureTables: Record<string, Category> = {
                 name: "Cohere",
                 link: "cohere.ipynb",
                 package: "langchain-cohere",
+            },
+            {
+                name: "Fireworks",
+                link: "fireworks.ipynb",
+                package: "langchain-fireworks",
             }
         ]
     },
