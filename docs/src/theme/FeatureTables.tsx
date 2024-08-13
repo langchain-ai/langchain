@@ -298,7 +298,7 @@ const FeatureTables: Record<string, Category> = {
         items:[
             {
                 name: "AzureOpenAI",
-                link: "azure_openai",
+                link: "azureopenai",
                 package: "langchain-openai",
                 apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_openai.embeddings.azure.AzureOpenAIEmbeddings.html#langchain_openai.embeddings.azure.AzureOpenAIEmbeddings"
             },
@@ -340,7 +340,7 @@ const FeatureTables: Record<string, Category> = {
             },
             {
                 name: "MistralAI",
-                link: "mistral",
+                link: "mistralai",
                 package: "langchain-mistralai",
                 apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_mistralai.embeddings.MistralAIEmbeddings.html#langchain_mistralai.embeddings.MistralAIEmbeddings"
             },
