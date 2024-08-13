@@ -35,17 +35,74 @@ logger = logging.getLogger(__name__)
 
 
 class TogetherEmbeddings(BaseModel, Embeddings):
-    """TogetherEmbeddings embedding model.
+    """Together embedding model integration.
 
-    To use, set the environment variable `TOGETHER_API_KEY` with your API key or
-    pass it as a named parameter to the constructor.
+    Setup:
+        Install ``langchain_together`` and set environment variable
+        ``TOGETHER_API_KEY``.
 
-    Example:
+        .. code-block:: bash
+
+            pip install -U langchain_together
+            export TOGETHER_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Together model to use.
+
+    Key init args — client params:
+      api_key: Optional[SecretStr]
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
-            from langchain_together import TogetherEmbeddings
+            from __module_name__ import TogetherEmbeddings
 
-            model = TogetherEmbeddings()
+            embed = TogetherEmbeddings(
+                model="togethercomputer/m2-bert-80M-8k-retrieval",
+                # api_key="...",
+                # other params...
+            )
+
+    Embed single text:
+        .. code-block:: python
+
+            input_text = "The meaning of life is 42"
+            vector = embed.embed_query(input_text)
+            print(vector[:3])
+
+        .. code-block:: python
+
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+    Embed multiple texts:
+        .. code-block:: python
+
+             input_texts = ["Document 1...", "Document 2..."]
+            vectors = embed.embed_documents(input_texts)
+            print(len(vectors))
+            # The first 3 coordinates for the first vector
+            print(vectors[0][:3])
+
+        .. code-block:: python
+
+            2
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+    Async:
+        .. code-block:: python
+
+            vector = await embed.aembed_query(input_text)
+           print(vector[:3])
+
+            # multiple:
+            # await embed.aembed_documents(input_texts)
+
+        .. code-block:: python
+
+            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
