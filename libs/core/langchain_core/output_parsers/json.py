@@ -97,7 +97,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         """
         return self.parse_result([Generation(text=text)])
 
-    def get_format_instructions(self) -> str:
+    def get_format_instructions(self, **kwargs) -> str:
         """Return the format instructions for the JSON output.
 
         Returns:
@@ -116,7 +116,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             if "type" in reduced_schema:
                 del reduced_schema["type"]
             # Ensure json in context is well-formed with double quotes.
-            schema_str = json.dumps(reduced_schema)
+            schema_str = json.dumps(reduced_schema, **kwargs)
             return JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
     @property
