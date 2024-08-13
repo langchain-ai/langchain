@@ -82,7 +82,7 @@ vercel-build: install-vercel-deps build generate-references
 	rm -rf docs
 	mv $(OUTPUT_NEW_DOCS_DIR) docs
 	rm -rf build
-	NODE_OPTIONS=--max-old-space-size=10248 yarn run docusaurus build
+	NODE_OPTIONS=--max-old-space-size=2500 yarn run docusaurus build
 	mv build v0.2
 	mkdir build
 	mv v0.2 build
