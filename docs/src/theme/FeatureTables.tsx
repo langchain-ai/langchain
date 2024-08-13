@@ -457,8 +457,8 @@ const FeatureTables: Record<string, Category> = {
             {title: "Async", formatter: (item) => item.async ? "✅" : "❌"},
             {title: "Passes Standard Tests", formatter: (item) => item.passesStandardTests ? "✅" : "❌"},
             {title: "Multi Tenancy", formatter: (item) => item.multiTenancy ? "✅" : "❌"},
-            {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
             {title: "IDs in add Documents", formatter: (item) => item.idsInAddDocuments ? "✅" : "❌"},
+            {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
         ],
         items: [
             {
@@ -472,7 +472,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "Chroma",
@@ -485,7 +485,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "Clickhouse",
@@ -498,7 +498,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "CouchbaseVectorStore",
@@ -511,7 +511,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "ElasticsearchStore",
@@ -524,7 +524,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "FAISS",
@@ -537,7 +537,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "InMemoryVectorStore",
@@ -550,7 +550,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "Milvus",
@@ -563,7 +563,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "MongoDBAtlasVectorSearch",
@@ -576,7 +576,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "PGVector",
@@ -589,7 +589,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "PineconeVectorStore",
@@ -602,7 +602,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "QdrantVectorStore",
@@ -615,7 +615,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             },
             {
                 name: "Redis",
@@ -628,7 +628,7 @@ const FeatureTables: Record<string, Category> = {
                 passesStandardTests: false,
                 multiTenancy: false,
                 local: true,
-                idsInAddDocuments: true,
+                idsInAddDocuments: false,
             }
         ],
     }
