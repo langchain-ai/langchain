@@ -4,7 +4,7 @@ import {
   useDocById,
 } from '@docusaurus/theme-common/internal';
 
-const FeatureTables = {
+const FEATURE_TABLES = {
     chat: {
         link: "/docs/integrations/chat",
         columns: [
@@ -645,12 +645,12 @@ function toTable(columns, items) {
 }
 
 export function CategoryTable({ category }) {
-    const cat = FeatureTables[category];
+    const cat = FEATURE_TABLES[category];
     return toTable(cat.columns, cat.items);
 }
 
 export function ItemTable({ category, item }) {
-    const cat = FeatureTables[category];
+    const cat = FEATURE_TABLES[category];
     const row = cat.items.find((i) => i.name === item);
     if (!row) {
         throw new Error(`Item ${item} not found in category ${category}`);
