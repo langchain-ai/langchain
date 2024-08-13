@@ -920,6 +920,28 @@ class BaseCallbackManager(CallbackManagerMixin):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    def merge(self: T, other: BaseCallbackManager) -> T:
+        manager = self.__class__(
+            parent_run_id=self.parent_run_id or other.parent_run_id,
+            handlers=[],
+            inheritable_handlers=[],
+            tags=list(set(self.tags + other.tags)),
+            inheritable_tags=list(set(self.inheritable_tags + other.inheritable_tags)),
+            metadata={
+                **self.metadata,
+                **other.metadata,
+            },
+        )
+
+        handlers = self.handlers + other.handlers
+        inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
+
+        for handler in handlers:
+            manager.add_handler(handler)
+
+        for handler in inheritable_handlers:
+            manager.add_handler(handler, inherit=True)
+
     @property
     def is_async(self) -> bool:
         """Whether the callback manager is async."""

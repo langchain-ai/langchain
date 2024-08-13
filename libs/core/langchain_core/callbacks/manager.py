@@ -1622,6 +1622,32 @@ class CallbackManagerForChainGroup(CallbackManager):
             parent_run_manager=self.parent_run_manager,
         )
 
+    def merge(
+        self: CallbackManagerForChainGroup, other: BaseCallbackManager
+    ) -> CallbackManagerForChainGroup:
+        manager = self.__class__(
+            parent_run_id=self.parent_run_id or other.parent_run_id,
+            handlers=[],
+            inheritable_handlers=[],
+            tags=list(set(self.tags + other.tags)),
+            inheritable_tags=list(set(self.inheritable_tags + other.inheritable_tags)),
+            metadata={
+                **self.metadata,
+                **other.metadata,
+            },
+            parent_run_manager=self.parent_run_manager,
+        )
+
+        handlers = self.handlers + other.handlers
+        inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
+
+        for handler in handlers:
+            manager.add_handler(handler)
+
+        for handler in inheritable_handlers:
+            manager.add_handler(handler, inherit=True)
+        return manager
+
     def on_chain_end(self, outputs: Union[Dict[str, Any], Any], **kwargs: Any) -> None:
         """Run when traced chain group ends.
 
@@ -2049,6 +2075,32 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
             parent_run_manager=self.parent_run_manager,
         )
+
+    def merge(
+        self: AsyncCallbackManagerForChainGroup, other: BaseCallbackManager
+    ) -> AsyncCallbackManagerForChainGroup:
+        manager = self.__class__(
+            parent_run_id=self.parent_run_id or other.parent_run_id,
+            handlers=[],
+            inheritable_handlers=[],
+            tags=list(set(self.tags + other.tags)),
+            inheritable_tags=list(set(self.inheritable_tags + other.inheritable_tags)),
+            metadata={
+                **self.metadata,
+                **other.metadata,
+            },
+            parent_run_manager=self.parent_run_manager,
+        )
+
+        handlers = self.handlers + other.handlers
+        inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
+
+        for handler in handlers:
+            manager.add_handler(handler)
+
+        for handler in inheritable_handlers:
+            manager.add_handler(handler, inherit=True)
+        return manager
 
     async def on_chain_end(
         self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
