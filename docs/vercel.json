@@ -93,6 +93,14 @@
     {
       "source": "/v0.2/docs/integrations/toolkits/:path(.*/?)*",
       "destination": "/v0.2/docs/integrations/tools/:path*"
+    },
+    {
+      "source": "/v0.2/docs/integrations/toolkits/spark/",
+      "destination": "/v0.2/docs/integrations/tools/spark_sql/"
+    },
+    {
+      "source": "/v0.2/docs/integrations/toolkits/xorbits/",
+      "destination": "/v0.2/docs/integrations/tools#search"
     }
   ]
 }
