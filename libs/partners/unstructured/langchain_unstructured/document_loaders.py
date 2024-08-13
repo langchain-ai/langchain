@@ -82,7 +82,7 @@ class UnstructuredLoader(BaseLoader):
     https://docs.unstructured.io/api-reference/api-services/overview
     https://docs.unstructured.io/open-source/core-functionality/partitioning
     https://docs.unstructured.io/open-source/core-functionality/chunking
-    """ # noqa: E501
+    """  # noqa: E501
 
     def __init__(
         self,
