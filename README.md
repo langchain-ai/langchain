@@ -1,4 +1,4 @@
-# 🦜️🔗 LangChain
+# 🦅🔗 LangChain
 
 ⚡ Build context-aware reasoning applications ⚡
 
@@ -119,9 +119,9 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 ## 🌐 Ecosystem
 
-- [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
-- [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
-- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
+- [🦅🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
+- [🦅🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
+- [🦅🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
 
 
 ## 💁 Contributing
