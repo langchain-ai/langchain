@@ -237,6 +237,26 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
+### Playwright URL Loader
+
+>[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool 
+> developed by `Microsoft` that allows you to programmatically control and automate 
+> web browsers. It is designed for end-to-end testing, scraping, and automating 
+> tasks across various web browsers such as `Chromium`, `Firefox`, and `WebKit`.
+
+
+First, let's install dependencies:
+
+```bash
+pip install playwright unstructured
+```
+
+See a [usage example](/docs/integrations/document_loaders/url/#playwright-url-loader).
+
+```python
+from langchain_community.document_loaders.onenote import OneNoteLoader
+```
+
 ## AI Agent Memory System
 
 [AI agent](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents) needs robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation.
@@ -406,6 +426,24 @@ from langchain_community.agent_toolkits import PowerBIToolkit
 from langchain_community.utilities.powerbi import PowerBIDataset
 ```
 
+### PlayWright Browser Toolkit
+
+>[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool 
+> developed by `Microsoft` that allows you to programmatically control and automate 
+> web browsers. It is designed for end-to-end testing, scraping, and automating 
+> tasks across various web browsers such as `Chromium`, `Firefox`, and `WebKit`.
+
+We need to install several python packages.
+
+```bash
+pip install playwright lxml
+```
+
+See a [usage example](/docs/integrations/tools/playwright).
+
+```python
+from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
+```
 
 ## Graphs
 
