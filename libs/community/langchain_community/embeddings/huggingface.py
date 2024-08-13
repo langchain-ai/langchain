@@ -171,7 +171,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         if "show_progress_bar" in self.encode_kwargs:
             warn_deprecated(
                 since="0.2.5",
-                removal="0.4.0",
+                removal="1.0",
                 name="encode_kwargs['show_progress_bar']",
                 alternative=f"the show_progress method on {self.__class__.__name__}",
             )
@@ -298,7 +298,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         if "show_progress_bar" in self.encode_kwargs:
             warn_deprecated(
                 since="0.2.5",
-                removal="0.4.0",
+                removal="1.0",
                 name="encode_kwargs['show_progress_bar']",
                 alternative=f"the show_progress method on {self.__class__.__name__}",
             )
