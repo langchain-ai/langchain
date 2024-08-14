@@ -30,6 +30,7 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+import copy
 import json
 import logging
 import uuid
@@ -119,6 +120,7 @@ class SQLServer_VectorStore(VectorStore):
         connection_string: str,
         db_schema: Optional[str] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
+        db_schema: Optional[str] = None,
         embedding_function: Embeddings,
         embedding_length: int,
         table_name: str,
@@ -178,6 +180,7 @@ class SQLServer_VectorStore(VectorStore):
             """This is the base model for SQL vector store."""
 
             __tablename__ = name
+            __table_args__ = {"schema": schema}
             __table_args__ = {"schema": schema}
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
             custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
@@ -345,6 +348,7 @@ class SQLServer_VectorStore(VectorStore):
                 session.commit()
 
             logging.info(f"Vector store `{self.table_name}` dropped successfully.")
+
         except ProgrammingError as e:
             logging.error(f"Unable to drop vector store.\n {e.__cause__}.")
 
