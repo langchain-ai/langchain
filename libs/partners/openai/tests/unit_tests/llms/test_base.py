@@ -14,6 +14,16 @@ def test_openai_model_param() -> None:
     llm = OpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
 
+    # Test standard tracing params
+    ls_params = llm._get_ls_params()
+    assert ls_params == {
+        "ls_provider": "openai",
+        "ls_model_type": "llm",
+        "ls_model_name": "foo",
+        "ls_temperature": 0.7,
+        "ls_max_tokens": 256,
+    }
+
 
 def test_openai_model_kwargs() -> None:
     llm = OpenAI(model_kwargs={"foo": "bar"})
