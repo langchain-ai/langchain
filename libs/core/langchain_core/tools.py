@@ -332,7 +332,7 @@ class ChildTool(BaseTool):
     """Callbacks to be called during tool execution."""
 
     callback_manager: Optional[BaseCallbackManager] = deprecated(
-        name="callback_manager", since="0.1.7", removal="0.3.0", alternative="callbacks"
+        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
     )(
         Field(
             default=None,
@@ -740,7 +740,7 @@ class ChildTool(BaseTool):
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
-    @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.47", alternative="invoke", removal="1.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable."""
         return self.run(tool_input, callbacks=callbacks)

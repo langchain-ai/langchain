@@ -81,7 +81,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_pydantic_to_openai_function(
     model: Type[BaseModel],
@@ -121,7 +121,7 @@ def convert_pydantic_to_openai_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_pydantic_to_openai_tool(
     model: Type[BaseModel],
@@ -155,7 +155,7 @@ def _get_python_function_name(function: Callable) -> str:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_python_function_to_openai_function(
     function: Callable,
@@ -268,7 +268,7 @@ def _convert_any_typed_dicts_to_pydantic(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API.
@@ -305,7 +305,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
     """Format tool into the OpenAI function API.
