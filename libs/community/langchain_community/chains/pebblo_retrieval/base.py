@@ -6,9 +6,8 @@ against a vector database.
 import datetime
 import inspect
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-import requests  # type: ignore
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain_core.callbacks import (
@@ -31,9 +30,7 @@ from langchain_community.chains.pebblo_retrieval.models import (
     SemanticContext,
 )
 from langchain_community.chains.pebblo_retrieval.utilities import (
-    CLASSIFIER_URL,
     PLUGIN_VERSION,
-    PROMPT_GOV_URL,
     PebbloAPIWrapper,
     get_runtime,
 )
@@ -68,7 +65,7 @@ class PebbloRetrievalQA(Chain):
     """Description of app."""
     api_key: Optional[str] = None  #: :meta private:
     """Pebblo cloud API key for app."""
-    classifier_url: str = CLASSIFIER_URL  #: :meta private:
+    classifier_url: Optional[str] = None  #: :meta private:
     """Classifier endpoint."""
     classifier_location: str = "local"  #: :meta private:
     """Classifier location. It could be either of 'local' or 'pebblo-cloud'."""
@@ -100,7 +97,7 @@ class PebbloRetrievalQA(Chain):
         question = inputs[self.input_key]
         auth_context = inputs.get(self.auth_context_key)
         semantic_context = inputs.get(self.semantic_context_key)
-        _, prompt_entities = self._check_prompt_validity(question)
+        _, prompt_entities = self.pb_client.check_prompt_validity(question)
 
         accepts_run_manager = (
             "run_manager" in inspect.signature(self._get_docs).parameters
@@ -156,7 +153,7 @@ class PebbloRetrievalQA(Chain):
             "run_manager" in inspect.signature(self._aget_docs).parameters
         )
 
-        _, prompt_entities = self._check_prompt_validity(question)
+        _, prompt_entities = self.pb_client.check_prompt_validity(question)
 
         if accepts_run_manager:
             docs = await self._aget_docs(
@@ -212,7 +209,7 @@ class PebbloRetrievalQA(Chain):
         chain_type: str = "stuff",
         chain_type_kwargs: Optional[dict] = None,
         api_key: Optional[str] = None,
-        classifier_url: str = CLASSIFIER_URL,
+        classifier_url: Optional[str] = None,
         classifier_location: str = "local",
         **kwargs: Any,
     ) -> "PebbloRetrievalQA":
@@ -319,66 +316,6 @@ class PebbloRetrievalQA(Chain):
     @classmethod
     def set_discover_sent(cls) -> None:
         cls._discover_sent = True
-
-    def _check_prompt_validity(self, question: str) -> Tuple[bool, Dict[str, Any]]:
-        """
-        Check the validity of the given prompt using a remote classification service.
-
-        This method sends a prompt to a remote classifier service and return entities
-        present in prompt or not.
-
-        Args:
-            question (str): The prompt question to be validated.
-
-        Returns:
-            bool: True if the prompt is valid (does not contain deny list entities),
-            False otherwise.
-            dict: The entities present in the prompt
-        """
-
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-        prompt_payload = {"prompt": question}
-        is_valid_prompt: bool = True
-        prompt_gov_api_url = f"{self.classifier_url}{PROMPT_GOV_URL}"
-        pebblo_resp = None
-        prompt_entities: dict = {"entities": {}, "entityCount": 0}
-        if self.classifier_location == "local":
-            try:
-                pebblo_resp = requests.post(
-                    prompt_gov_api_url,
-                    headers=headers,
-                    json=prompt_payload,
-                    timeout=20,
-                )
-
-                logger.debug("prompt-payload: %s", prompt_payload)
-                logger.debug(
-                    "send_prompt[local]: request url %s, body %s len %s\
-                        response status %s body %s",
-                    pebblo_resp.request.url,
-                    str(pebblo_resp.request.body),
-                    str(
-                        len(
-                            pebblo_resp.request.body if pebblo_resp.request.body else []
-                        )
-                    ),
-                    str(pebblo_resp.status_code),
-                    pebblo_resp.json(),
-                )
-                logger.debug(f"pebblo_resp.json() {pebblo_resp.json()}")
-                prompt_entities["entities"] = pebblo_resp.json().get("entities", {})
-                prompt_entities["entityCount"] = pebblo_resp.json().get(
-                    "entityCount", 0
-                )
-
-            except requests.exceptions.RequestException:
-                logger.warning("Unable to reach pebblo server.")
-            except Exception as e:
-                logger.warning("An Exception caught in _send_discover: local %s", e)
-        return is_valid_prompt, prompt_entities
 
     @classmethod
     def get_chain_details(cls, llm: BaseLanguageModel, **kwargs) -> List[ChainInfo]:

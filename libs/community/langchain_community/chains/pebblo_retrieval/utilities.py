@@ -26,14 +26,8 @@ logger = logging.getLogger(__name__)
 
 PLUGIN_VERSION = "0.1.1"
 
-CLASSIFIER_URL = os.getenv("PEBBLO_CLASSIFIER_URL", "http://localhost:8000")
-PEBBLO_CLOUD_URL = os.getenv("PEBBLO_CLOUD_URL", "https://api.daxa.ai")
 _DEFAULT_CLASSIFIER_URL = "http://localhost:8000"
 _DEFAULT_PEBBLO_CLOUD_URL = "https://api.daxa.ai"
-
-PROMPT_URL = "/v1/prompt"
-PROMPT_GOV_URL = "/v1/prompt/governance"
-APP_DISCOVER_URL = "/v1/app/discover"
 
 
 class Routes(str, Enum):
@@ -202,6 +196,38 @@ class PebbloAPIWrapper(BaseModel):
         elif self.classifier_location == "pebblo-cloud":
             logger.warning("API key is missing for sending prompt to Pebblo cloud.")
             raise NameError("API key is missing for sending prompt to Pebblo cloud.")
+
+    def check_prompt_validity(self, question: str) -> Tuple[bool, Dict[str, Any]]:
+        """
+        Check the validity of the given prompt using a remote classification service.
+
+        This method sends a prompt to a remote classifier service and return entities
+        present in prompt or not.
+
+        Args:
+            question (str): The prompt question to be validated.
+
+        Returns:
+            bool: True if the prompt is valid (does not contain deny list entities),
+            False otherwise.
+            dict: The entities present in the prompt
+        """
+        prompt_payload = {"prompt": question}
+        prompt_entities: dict = {"entities": {}, "entityCount": 0}
+        is_valid_prompt: bool = True
+        if self.classifier_location == "local":
+            headers = self._make_headers()
+            prompt_gov_api_url = f"{self.classifier_url}{Routes.prompt_governance}"
+            pebblo_resp = self.make_request(
+                "POST", prompt_gov_api_url, headers, prompt_payload
+            )
+            if pebblo_resp:
+                logger.debug(f"pebblo_resp.json() {pebblo_resp.json()}")
+                prompt_entities["entities"] = pebblo_resp.json().get("entities", {})
+                prompt_entities["entityCount"] = pebblo_resp.json().get(
+                    "entityCount", 0
+                )
+        return is_valid_prompt, prompt_entities
 
     def _make_headers(self, cloud_request: bool = False) -> dict:
         """
