@@ -171,7 +171,7 @@ const config = {
             items: [
               {
                 label: "Latest",
-                to: "https://langchain-git-bagatur-apistyling-langchain.vercel.app/v0.2/api_reference/reference.html",
+                to: "https://python.langchain.com/v0.2/api_reference/reference.html",
               },
               {
                 label: "Legacy",
