@@ -121,7 +121,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     model: str = "mistral-embed"
 
     class Config:
-        extra="forbid"
+        extra = "forbid"
         arbitrary_types_allowed = True
         allow_population_by_field_name = True
 
