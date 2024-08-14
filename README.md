@@ -181,7 +181,7 @@ chat = GigaChat(credentials=<авторизационные_данные>, verif
 ```py
 """Пример работы с чатом через gigachain"""
 from langchain.schema import HumanMessage, SystemMessage
-from langchain.chat_models.gigachat import GigaChat
+from langchain_community.chat_models.gigachat import GigaChat
 
 # Авторизация в сервисе GigaChat
 chat = GigaChat(credentials=<авторизационные_данные>, verify_ssl_certs=False)
@@ -195,7 +195,7 @@ messages = [
 while(True):
     user_input = input("User: ")
     messages.append(HumanMessage(content=user_input))
-    res = chat(messages)
+    res = chat.invoke(messages)
     messages.append(res)
     print("Bot: ", res.content)
 ```
@@ -390,13 +390,13 @@ GigaChain — это проект с открытым исходным кодо�
 - [How-to guides](https://python.langchain.com/v0.2/docs/how_to/): Answers to “How do I….?” type questions. These guides are goal-oriented and concrete; they're meant to help you complete a specific task.
 - [Conceptual guide](https://python.langchain.com/v0.2/docs/concepts/): Conceptual explanations of the key parts of the framework.
 - [API Reference](https://api.python.langchain.com): Thorough documentation of every class and method.
-
+<!--
 ## 🌐 Ecosystem
 
 - [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
 - [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
 - [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
-
+-->
 ## Лицензия
 
 Проект распространяется по лицензии MIT, доступной в файле `LICENSE`.

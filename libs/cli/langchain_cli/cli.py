@@ -102,5 +102,15 @@ def install_rus_certs() -> None:
         exit("Сертификат Минцифры установлен!")
 
 
+@app.command()
+def info() -> None:
+    """
+    Получение информации об установленых пакетах GigaChain
+    """
+    import langchain_core.sys_info as si
+
+    si.print_sys_info()
+
+
 if __name__ == "__main__":
     app()
