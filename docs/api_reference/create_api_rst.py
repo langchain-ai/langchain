@@ -514,7 +514,7 @@ def _build_index(dirs: List[str]) -> None:
         for dir_ in integrations
     ]
     main_tree = "\n".join(
-        f"{dir_.replace('-', '_')}/index"
+        f"{header_name}<{dir_.replace('-', '_')}/index>"
         for header_name, dir_ in zip(main_headers, main_)
     )
     main_grid = "\n".join(
@@ -522,7 +522,7 @@ def _build_index(dirs: List[str]) -> None:
         for header_name, dir_ in zip(main_headers, main_)
     )
     integration_tree = "\n".join(
-        f"{dir_.replace('-', '_')}/index"
+        f"{header_name}<{dir_.replace('-', '_')}/index>"
         for header_name, dir_ in zip(integration_headers, integrations)
     )
 

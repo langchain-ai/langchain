@@ -1481,6 +1481,8 @@ class ChatOpenAI(BaseChatOpenAI):
         stream_options: Dict
             Configure streaming outputs, like whether to return token usage when
             streaming (``{"include_usage": True}``).
+            
+        See full list of supported init args and their descriptions in the params section.
 
     .. dropdown:: Key init args — client params
 
@@ -1497,7 +1499,7 @@ class ChatOpenAI(BaseChatOpenAI):
             OpenAI organization ID. If not passed in will be read from env
             var OPENAI_ORG_ID.
 
-    See full list of supported init args and their descriptions in the params section.
+        See full list of supported init args and their descriptions in the params section.
 
     .. dropdown:: Instantiate
 

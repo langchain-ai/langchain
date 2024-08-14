@@ -381,3 +381,31 @@ html[data-theme=dark] .MathJax_SVG * {
   margin-top: 0.5em;
   font-size: 0.9em;
 }
+
+*, :after, :before {
+  font-style: normal;
+}
+
+div.deprecated {
+  margin-top: 0.5em;
+  margin-bottom: 2em;
+}
+
+.admonition-beta.admonition, div.admonition-beta.admonition {
+  border-color: var(--pst-color-warning);
+  margin-top:0.5em;
+  margin-bottom: 2em;
+}
+
+.admonition-beta>.admonition-title, div.admonition-beta>.admonition-title {
+  background-color: var(--pst-color-warning-bg);
+}
+
+dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dd {
+  margin-left: 1rem;
+}
+
+p {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
