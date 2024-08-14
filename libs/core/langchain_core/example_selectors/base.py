@@ -10,7 +10,7 @@ class BaseExampleSelector(ABC):
     """Interface for selecting examples to include in prompts."""
 
     @abstractmethod
-    def add_example(self, example: Dict[str, str]) -> Any:
+    def add_example(self, example: Dict[str, Any]) -> Any:
         """Add new example to store.
 
         Args:
@@ -18,7 +18,7 @@ class BaseExampleSelector(ABC):
                 values.
         """
 
-    async def aadd_example(self, example: Dict[str, str]) -> Any:
+    async def aadd_example(self, example: Dict[str, Any]) -> Any:
         """Async add new example to store.
 
         Args:

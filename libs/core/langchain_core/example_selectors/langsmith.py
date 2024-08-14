@@ -13,7 +13,9 @@ from langchain_core.runnables import Runnable, RunnableConfig
 
 
 @beta()
-class LangSmithExampleSelector(BaseExampleSelector, Runnable[Dict, List[Dict]]):
+class LangSmithExampleSelector(
+    BaseExampleSelector, Runnable[Dict[str, Any], Dict[str, Any]]
+):
     """Select examples using a LangSmith few-shot index.
 
     .. dropdown:: Index creation
@@ -45,18 +47,25 @@ class LangSmithExampleSelector(BaseExampleSelector, Runnable[Dict, List[Dict]]):
                 dataset_name="foo_bar_task_few_shot_examples",
                 ...
             )
-            example_prompt = ChatPromptTemplate(
-                [("human", "{{inputs.question}}"), ("ai", "{{outputs.answer}}")],
-                template_format="mustache",
-            )
-            prompt = ChatPromptTemplate([
-                ("system", "..."),
-                ("examples", example_prompt),
-                ("human", "{question}"),
-            ])
+
+            instructions = "..."
+            def construct_prompt(input_: dict) -> list:
+
+                examples = []
+                for ex in input_["examples"]:
+                    examples.extend([
+                        HumanMessage(ex["inputs"]["question"], name="example_user"),
+                        AIMessage(ex["outputs"]["answer"], name="example_assistant")
+                    ])
+
+                return [
+                    SystemMessage(instructions),
+                    *examples,
+                    HumanMessage(input_["question"])
+                ]
             llm = init_chat_model("gpt-4o", temperature=0)
 
-            chain = example_selector | prompt | llm
+            chain = example_selector | construct_prompt | llm
 
             ...
 
@@ -133,7 +142,7 @@ class LangSmithExampleSelector(BaseExampleSelector, Runnable[Dict, List[Dict]]):
             outputs=[e["outputs"] for e in examples],
         )
 
-    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+    def select_examples(self, input_variables: Dict[str, str]) -> List[Dict[str, Any]]:
         """Select which examples to use based on the inputs.
 
         Args:
@@ -211,31 +220,39 @@ class LangSmithExampleSelector(BaseExampleSelector, Runnable[Dict, List[Dict]]):
             return str(dataset.id)
 
     def invoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
-    ) -> Dict:
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
         return {
             **input,
             **{
                 "examples": self._call_with_config(
-                    self.select_examples,
+                    self.select_examples,  # type: ignore[arg-type]
                     input,
                     config,
                     run_type="example_selector",
+                    **kwargs,
                 )
             },
         }
 
     async def ainvoke(
-        self, input: Dict[str, Any], config: Optional[RunnableConfig] = None
-    ) -> Dict:
+        self,
+        input: Dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
         return {
             **input,
             **{
                 "examples": await self._acall_with_config(
-                    self.aselect_examples,
+                    self.aselect_examples,  # type: ignore[arg-type]
                     input,
                     config,
                     run_type="example_selector",
+                    **kwargs,
                 )
             },
         }
