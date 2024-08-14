@@ -79,7 +79,7 @@ class SQLServer_VectorStore(VectorStore):
             raise Exception(e.__cause__) from None
 
     def _get_embedding_store(self, name: str, schema: Optional[str]) -> Any:
-         
+
         DynamicBase = declarative_base(class_registry=dict())  # type: Any
         class EmbeddingStore(DynamicBase):
             """This is the base model for SQL vector store."""
@@ -179,7 +179,6 @@ class SQLServer_VectorStore(VectorStore):
             metadatas = [{} for _ in texts]
 
         if ids is None:
-
             # Copy data from metadatas so data is not updated in-place
             metadata_to_format = copy.deepcopy(metadatas)
             ids = [metadata.pop("id", uuid.uuid4()) for metadata in metadata_to_format]
@@ -197,8 +196,8 @@ class SQLServer_VectorStore(VectorStore):
                         id = ids[-1]
                     embedding = embeddings[idx]
                     metadata = (
-                        metadata_to_format[idx] 
-                        if idx < len(metadata_to_format) 
+                        metadata_to_format[idx]
+                        if idx < len(metadata_to_format)
                         else None
                     )
 
