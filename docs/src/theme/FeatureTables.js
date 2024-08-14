@@ -732,6 +732,23 @@ const FEATURE_TABLES = {
     }
 };
 
+const DEPRECATED_DOC_IDS = [
+  "integrations/chat/anthropic_functions",
+  "integrations/chat/ernie",
+  "integrations/chat/ollama_functions",
+  "integrations/document_loaders/airbyte_cdk",
+  "integrations/document_loaders/airbyte_gong",
+  "integrations/document_loaders/airbyte_hubspot",
+  "integrations/document_loaders/airbyte_json",
+  "integrations/document_loaders/airbyte_salesforce",
+  "integrations/document_loaders/airbyte_shopify",
+  "integrations/document_loaders/airbyte_stripe",
+  "integrations/document_loaders/airbyte_typeform",
+  "integrations/document_loaders/airbyte_zendesk_support",
+  "integrations/llms/anthropic",
+  "integrations/text_embedding/ernie",
+];
+
 function toTable(columns, items) {
     const headers = columns.map((col) => col.title);
     return (
@@ -773,18 +790,30 @@ function truncate(str, n) {
 }
 
 export function IndexTable() {
-    const { items } = useCurrentSidebarCategory();
+  const { items } = useCurrentSidebarCategory();
 
-    const rows = items.filter(item => !item.docId?.endsWith?.('/index')).map(item => ({
-        ...item,
-        description: useDocById(item.docId ?? undefined)?.description,
+  const rows = items
+    .filter(
+      (item) =>
+        !item.docId?.endsWith?.("/index") &&
+        !DEPRECATED_DOC_IDS.includes(item.docId)
+    )
+    .map((item) => ({
+      ...item,
+      description: useDocById(item.docId ?? undefined)?.description,
     }));
-    const rtn = toTable(
-        [
-            { title: "Label", formatter: (item) => <a href={item.href}>{item.label}</a> },
-            { title: "Description", formatter: (item) => truncate(item.description ?? "", 70) },
-        ],
-        rows,
-    );
-    return rtn;
+  const rtn = toTable(
+    [
+      {
+        title: "Name",
+        formatter: (item) => <a href={item.href}>{item.label}</a>,
+      },
+      {
+        title: "Description",
+        formatter: (item) => truncate(item.description ?? "", 70),
+      },
+    ],
+    rows,
+  );
+  return rtn;
 }
