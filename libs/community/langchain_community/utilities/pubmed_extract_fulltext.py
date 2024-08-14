@@ -1,25 +1,25 @@
 from __future__ import absolute_import, print_function, unicode_literals
-from builtins import str
+
 import logging
-import os.path
-import requests
-from lxml import etree
-from lxml.etree import QName
-import xml.etree.ElementTree as ET
-from indra.literature import pubmed_client
-from indra.util import UnicodeXMLTreeBuilder as UTB
 import os
+import os.path
 import shutil
+import xml.etree.ElementTree as ET
+from builtins import str
+from typing import Any, ClassVar, Dict
+
 import boto3
+import requests
 from botocore import UNSIGNED
 from botocore.config import Config
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-from typing import Any, Dict
 from bs4 import BeautifulSoup
+from indra.literature import pubmed_client
+from indra.util import UnicodeXMLTreeBuilder as UTB
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from lxml import etree
+from lxml.etree import QName
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
-from typing import ClassVar
-
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -39,21 +39,17 @@ class PmcIDSearchWrapper(BaseModel):
 
     # model_config = ConfigDict(ignored_types=(IgnoredType,))
     parse: Any  #: :meta private:
-    
+
     # Default values for the parameters
-    
-    pmc_url = 'https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi'
-    pmid_convert_url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/'
+
+    pmc_url = "https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi"
+    pmid_convert_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
 
     # Paths to resource files
-    pmids_fulltext_path = os.path.join(os.path.dirname(__file__),
-                                       'pmids_fulltext.txt')
-    pmids_oa_xml_path = os.path.join(os.path.dirname(__file__),
-                                     'pmids_oa_xml.txt')
-    pmids_oa_txt_path = os.path.join(os.path.dirname(__file__),
-                                     'pmids_oa_txt.txt')
-    pmids_auth_xml_path = os.path.join(os.path.dirname(__file__),
-                                       'pmids_auth_xml.txt')
+    pmids_fulltext_path = os.path.join(os.path.dirname(__file__), "pmids_fulltext.txt")
+    pmids_oa_xml_path = os.path.join(os.path.dirname(__file__), "pmids_oa_xml.txt")
+    pmids_oa_txt_path = os.path.join(os.path.dirname(__file__), "pmids_oa_txt.txt")
+    pmids_auth_xml_path = os.path.join(os.path.dirname(__file__), "pmids_auth_xml.txt")
     # Define global dict containing lists of PMIDs among mineable PMCs
     # to be lazily initialized
     pmids_fulltext_dict = {}
@@ -79,18 +75,18 @@ class PmcIDSearchWrapper(BaseModel):
 
         try:
             self.download_pmc_s3(query)
-        except Exception as e:  
+        except Exception as e:
             raise ("This pmcid is wrong or the pmcid doesn't have free full text")
 
-        try: 
-            fileName = str('pmc/' + query + '.xml')
+        try:
+            fileName = str("pmc/" + query + ".xml")
             text = self.read_and_extract_xml_data(fileName)
             return text
-        except Exception as e:                                 
+        except Exception as e:
             print(f"Error read and extract pmcid {query}: {e}")
 
     def read_and_extract_xml_data(self, fileName):
-        with open(fileName, 'r') as f:
+        with open(fileName, "r") as f:
             data = f.read()
         xml_data = BeautifulSoup(data, "xml")
         text = self.extract_text(xml_data)
@@ -118,48 +114,47 @@ class PmcIDSearchWrapper(BaseModel):
             A dictionary with keys 'pmid', 'pmcid', and 'doi' containing the
             corresponding IDs, or an empty dict if lookup fails.
         """
-        if idtype is not None and idtype not in ('pmid', 'pmcid', 'doi'):
-            raise ValueError("Invalid idtype %s; must be 'pmid', 'pmcid', "
-                             "or 'doi'." % idtype)
-        if paper_id.upper().startswith('PMC'):
-            idtype = 'pmcid'
+        if idtype is not None and idtype not in ("pmid", "pmcid", "doi"):
+            raise ValueError(
+                "Invalid idtype %s; must be 'pmid', 'pmcid', " "or 'doi'." % idtype
+            )
+        if paper_id.upper().startswith("PMC"):
+            idtype = "pmcid"
         # Strip off any prefix
-        if paper_id.upper().startswith('PMID'):
+        if paper_id.upper().startswith("PMID"):
             paper_id = paper_id[4:]
-        elif paper_id.upper().startswith('DOI'):
+        elif paper_id.upper().startswith("DOI"):
             paper_id = paper_id[3:]
-        data = {'ids': paper_id}
+        data = {"ids": paper_id}
         if idtype is not None:
-            data['idtype'] = idtype
+            data["idtype"] = idtype
         try:
             tree = pubmed_client.send_request(self.pmid_convert_url, data)
         except Exception as e:
-            logger.error('Error looking up PMID in PMC: %s' % e)
+            logger.error("Error looking up PMID in PMC: %s" % e)
             return {}
         if tree is None:
             return {}
-        record = tree.find('record')
+        record = tree.find("record")
         if record is None:
             return {}
-        doi = record.attrib.get('doi')
-        pmid = record.attrib.get('pmid')
-        pmcid = record.attrib.get('pmcid')
-        ids = {'doi': doi,
-                'pmid': pmid,
-                'pmcid': pmcid}
+        doi = record.attrib.get("doi")
+        pmid = record.attrib.get("pmid")
+        pmcid = record.attrib.get("pmcid")
+        ids = {"doi": doi, "pmid": pmid, "pmcid": pmcid}
         return ids
         # def get_ids(search_term, retmax=1000):
         #     return pubmed_client.get_ids(search_term, retmax=retmax, db='pmc')
 
     def get_xml(self, pmc_id):
         """Returns XML for the article corresponding to a PMC ID."""
-        if pmc_id.upper().startswith('PMC'):
+        if pmc_id.upper().startswith("PMC"):
             pmc_id = pmc_id[3:]
         # Request params
         params = {}
-        params['verb'] = 'GetRecord'
-        params['identifier'] = 'oai:pubmedcentral.nih.gov:%s' % pmc_id
-        params['metadataPrefix'] = 'pmc'
+        params["verb"] = "GetRecord"
+        params["identifier"] = "oai:pubmedcentral.nih.gov:%s" % pmc_id
+        params["metadataPrefix"] = "pmc"
         # Submit the request
         res = requests.get(self.pmc_url, params)
         if not res.status_code == 200:
@@ -168,30 +163,31 @@ class PmcIDSearchWrapper(BaseModel):
         # Read the bytestream
         xml_bytes = res.content
         # Check for any XML errors; xml_str should still be bytes
-        #tree = ET.XML(xml_bytes, parser=UTB())
+        # tree = ET.XML(xml_bytes, parser=UTB())
         tree = ET.XML(xml_bytes)
         xmlns = "http://www.openarchives.org/OAI/2.0/"
-        err_tag = tree.find('{%s}error' % xmlns)
+        err_tag = tree.find("{%s}error" % xmlns)
         if err_tag is not None:
-            err_code = err_tag.attrib['code']
+            err_code = err_tag.attrib["code"]
             err_text = err_tag.text
-            logger.warning('PMC client returned with error %s: %s'
-                                % (err_code, err_text))
+            logger.warning(
+                "PMC client returned with error %s: %s" % (err_code, err_text)
+            )
             return None
         # If no error, return the XML as a unicode string
         else:
-            return xml_bytes.decode('utf-8')
+            return xml_bytes.decode("utf-8")
 
     def get_xml_from_file(self, file):
         # Check for any XML errors; xml_str should still be bytes
-        #tree = ET.XML(xml_bytes, parser=UTB())
+        # tree = ET.XML(xml_bytes, parser=UTB())
         tree = ET.parse(file)
 
         # Get the root element of the XML file
         root = tree.getroot()
 
         # Convert the entire ElementTree (from root) to a string
-        xml_string = ET.tostring(root, encoding='unicode')
+        xml_string = ET.tostring(root, encoding="unicode")
 
         return xml_string
 
@@ -212,7 +208,7 @@ class PmcIDSearchWrapper(BaseModel):
         """
         paragraphs = self.extract_paragraphs(xml_string)
         if paragraphs:
-            return '\n'.join(paragraphs) + '\n'
+            return "\n".join(paragraphs) + "\n"
         else:
             return None
 
@@ -248,9 +244,9 @@ class PmcIDSearchWrapper(BaseModel):
             List of extracted paragraphs from the input NLM XML
         """
         output = []
-        tree = etree.fromstring(xml_string.encode('utf-8'))
+        tree = etree.fromstring(xml_string.encode("utf-8"))
         # Remove namespaces if any exist
-        if tree.tag.startswith('{'):
+        if tree.tag.startswith("{"):
             for element in tree.getiterator():
                 # The following code will throw a ValueError for some
                 # exceptional tags such as comments and processing instructions.
@@ -261,23 +257,23 @@ class PmcIDSearchWrapper(BaseModel):
                     continue
             etree.cleanup_namespaces(tree)
         # Strip out latex
-        self._remove_elements_by_tag(tree, 'tex-math')
+        self._remove_elements_by_tag(tree, "tex-math")
         # Strip out all content in unwanted elements except the captions
         self._replace_unwanted_elements_with_their_captions(tree)
         # First process front element. Titles alt-titles and abstracts
         # are pulled from here.
-        front_elements = self._select_from_top_level(tree, 'front')
+        front_elements = self._select_from_top_level(tree, "front")
         for element in front_elements:
             output.extend(self._extract_from_front(element))
         # All paragraphs except those in unwanted elements are extracted
         # from the article body
-        body_elements = self._select_from_top_level(tree, 'body')
+        body_elements = self._select_from_top_level(tree, "body")
         for element in body_elements:
             output.extend(self._extract_from_body(element))
         # Only the body sections of subarticles are processed. All
         # unwanted elements are removed entirely, including captions.
         # Even boxed-text elements are removed.
-        subarticles = self._select_from_top_level(tree, 'sub-article')
+        subarticles = self._select_from_top_level(tree, "sub-article")
         for element in subarticles:
             output.extend(self._extract_from_subarticle(element))
         return output
@@ -297,19 +293,22 @@ class PmcIDSearchWrapper(BaseModel):
         """
         global pmids_fulltext_dict
         # Check args
-        if source_type not in ('fulltext', 'oa_xml', 'oa_txt', 'auth_xml'):
-            raise ValueError("source_type must be one of: 'fulltext', 'oa_xml', "
-                             "'oa_txt', or 'auth_xml'.")
+        if source_type not in ("fulltext", "oa_xml", "oa_txt", "auth_xml"):
+            raise ValueError(
+                "source_type must be one of: 'fulltext', 'oa_xml', "
+                "'oa_txt', or 'auth_xml'."
+            )
         # Check if we've loaded this type, and lazily initialize
         if pmids_fulltext_dict.get(source_type) is None:
-            fulltext_list_path = os.path.join(os.path.dirname(__file__),
-                                              'pmids_%s.txt' % source_type)
-            with open(fulltext_list_path, 'rb') as f:
-                fulltext_list = set([line.strip().decode('utf-8')
-                                    for line in f.readlines()])
+            fulltext_list_path = os.path.join(
+                os.path.dirname(__file__), "pmids_%s.txt" % source_type
+            )
+            with open(fulltext_list_path, "rb") as f:
+                fulltext_list = set(
+                    [line.strip().decode("utf-8") for line in f.readlines()]
+                )
                 pmids_fulltext_dict[source_type] = fulltext_list
-        return list(set(pmid_list).intersection(
-            pmids_fulltext_dict.get(source_type)))
+        return list(set(pmid_list).intersection(pmids_fulltext_dict.get(source_type)))
 
     def _select_from_top_level(self, tree, tag):
         """Select direct children of the article element of a tree by tag.
@@ -334,16 +333,16 @@ class PmcIDSearchWrapper(BaseModel):
             Typically there is only one front and one body that are direct chilren
             of the article element, but there can be multiple subarticles.
         """
-        if tree.tag == 'article':
+        if tree.tag == "article":
             article = tree
         else:
-            article = tree.xpath('.//article')
+            article = tree.xpath(".//article")
             if not len(article):
-                raise ValueError('Input XML contains no article element')
+                raise ValueError("Input XML contains no article element")
             # Assume there is only one article
             article = article[0]
         output = []
-        xpath = './%s' % tag
+        xpath = "./%s" % tag
         for element in article.xpath(xpath):
             output.append(element)
         return output
@@ -363,18 +362,18 @@ class PmcIDSearchWrapper(BaseModel):
             author statements are excluded.
         """
         output = []
-        title_xpath = './article-meta/title-group/article-title'
-        alt_title_xpath = './article-meta/title-group/alt-title'
-        abstracts_xpath = './article-meta/abstract'
-        for element in front_element.xpath(self._xpath_union(title_xpath,
-                                           alt_title_xpath,
-                                           abstracts_xpath)):
-            if element.tag == 'abstract':
+        title_xpath = "./article-meta/title-group/article-title"
+        alt_title_xpath = "./article-meta/title-group/alt-title"
+        abstracts_xpath = "./article-meta/abstract"
+        for element in front_element.xpath(
+            self._xpath_union(title_xpath, alt_title_xpath, abstracts_xpath)
+        ):
+            if element.tag == "abstract":
                 # Extract paragraphs from abstracts
                 output.extend(self._extract_paragraphs_from_tree(element))
             else:
                 # No paragraphs in titles, Just strip tags
-                output.append(' '.join(element.itertext()))
+                output.append(" ".join(element.itertext()))
         return output
 
     def _extract_from_body(self, body_element):
@@ -388,7 +387,7 @@ class PmcIDSearchWrapper(BaseModel):
         See DocString for extract_paragraphs for more info.
         """
         # Get only body element
-        body = subarticle_element.xpath('./body')
+        body = subarticle_element.xpath("./body")
         if not body:
             return []
         body = body[0]
@@ -407,7 +406,7 @@ class PmcIDSearchWrapper(BaseModel):
         tree : :py:class:`lxml.etree._Element`
             etree element for valid NLM XML
         """
-        bad_xpath = self._xpath_union(*['.//%s' % tag for tag in tags])
+        bad_xpath = self._xpath_union(*[".//%s" % tag for tag in tags])
         for element in tree.xpath(bad_xpath):
             element.getparent().remove(element)
 
@@ -420,8 +419,8 @@ class PmcIDSearchWrapper(BaseModel):
             etree element for valid NLM XML
         """
         floats_xpath = "//*[@position='float']"
-        figs_xpath = './/fig'
-        tables_xpath = './/table-wrap'
+        figs_xpath = ".//fig"
+        tables_xpath = ".//table-wrap"
         unwanted_xpath = self._xpath_union(floats_xpath, figs_xpath, tables_xpath)
         unwanted = tree.xpath(unwanted_xpath)
         # Iterating through xpath nodes in reverse leads to processing these
@@ -429,10 +428,10 @@ class PmcIDSearchWrapper(BaseModel):
         for element in unwanted[::-1]:
             # Don't remove floats that are boxed-text elements. These often contain
             # useful information
-            if element.tag == 'boxed-text':
+            if element.tag == "boxed-text":
                 continue
-            captions = element.xpath('./caption')
-            captions_element = etree.Element('captions')
+            captions = element.xpath("./caption")
+            captions_element = etree.Element("captions")
             for caption in captions:
                 captions_element.append(caption)
             element.getparent().replace(element, captions_element)
@@ -448,12 +447,12 @@ class PmcIDSearchWrapper(BaseModel):
         tree : :py:class:`lxml.etree._Element`
             etree element for valid NLM XML
         """
-        for element in tree.xpath('.//*'):
-            if element.tag == 'title':
-                element.tag = 'p'
-        for element in tree.xpath('.//*'):
+        for element in tree.xpath(".//*"):
+            if element.tag == "title":
+                element.tag = "p"
+        for element in tree.xpath(".//*"):
             parent = element.getparent()
-            if parent is not None and element.tag != 'p':
+            if parent is not None and element.tag != "p":
                 etree.strip_tags(element.getparent(), element.tag)
 
     def _pull_nested_paragraphs_to_top(self, tree):
@@ -474,7 +473,7 @@ class PmcIDSearchWrapper(BaseModel):
         # depth 2 elements may themselves be the parents of additional p elements).
         # The algorithm terminates when there are no depth 2 elements remaining.
         # Find depth 2 p elements
-        nested_paragraphs = tree.xpath('./p/p')
+        nested_paragraphs = tree.xpath("./p/p")
         while nested_paragraphs:
             # This points to the location where the next depth 2 p element will
             # be appended
@@ -496,36 +495,36 @@ class PmcIDSearchWrapper(BaseModel):
                 # the parent's text and then clear out p.tail
                 if not parent.text and p.tail:
                     parent.text = p.tail
-                    p.tail = ''
+                    p.tail = ""
                 elif parent.text and p.tail:
-                    parent.text += ' ' + p.tail
-                    p.tail = ''
+                    parent.text += " " + p.tail
+                    p.tail = ""
                 # Place child in its new location
                 last.addnext(p)
                 last = p
-            nested_paragraphs = tree.xpath('./p/p')
+            nested_paragraphs = tree.xpath("./p/p")
 
     def _extract_paragraphs_from_tree(self, tree):
         """Preprocess tree and return it's paragraphs."""
         self._retain_only_pars(tree)
         self._pull_nested_paragraphs_to_top(tree)
         paragraphs = []
-        for element in tree.xpath('./p'):
-            paragraph = ''.join([x.strip() for x in element.itertext()])
+        for element in tree.xpath("./p"):
+            paragraph = "".join([x.strip() for x in element.itertext()])
             paragraphs.append(paragraph)
         return paragraphs
 
     def _xpath_union(self, *xpath_list):
         """Form union of xpath expressions"""
-        return ' | '.join(xpath_list)
+        return " | ".join(xpath_list)
 
     def get_title(self, pmcid):
         xml_string = self.get_xml(pmcid)
         if not xml_string:
             return
-        tree = etree.fromstring(xml_string.encode('utf-8'))
+        tree = etree.fromstring(xml_string.encode("utf-8"))
         # Remove namespaces if any exist
-        if tree.tag.startswith('{'):
+        if tree.tag.startswith("{"):
             for element in tree.getiterator():
                 # The following code will throw a ValueError for some
                 # exceptional tags such as comments and processing instructions.
@@ -536,19 +535,25 @@ class PmcIDSearchWrapper(BaseModel):
                     continue
             etree.cleanup_namespaces(tree)
         # Strip out latex
-        self._remove_elements_by_tag(tree, 'tex-math')
+        self._remove_elements_by_tag(tree, "tex-math")
         # Strip out all content in unwanted elements except the captions
         self._replace_unwanted_elements_with_their_captions(tree)
         # First process front element. Titles alt-titles and abstracts
         # are pulled from here.
-        front_elements = self._select_from_top_level(tree, 'front')
-        title_xpath = './article-meta/title-group/article-title'
+        front_elements = self._select_from_top_level(tree, "front")
+        title_xpath = "./article-meta/title-group/article-title"
         for front_element in front_elements:
             for element in front_element.xpath(title_xpath):
-                return ' '.join(element.itertext())
+                return " ".join(element.itertext())
 
-
-    def download_pmc_s3(self, pmc_id, file_type='xml', output_dir='pmc', cache_dir='pmc', bucket_name='pmc-oa-opendata'):
+    def download_pmc_s3(
+        self,
+        pmc_id,
+        file_type="xml",
+        output_dir="pmc",
+        cache_dir="pmc",
+        bucket_name="pmc-oa-opendata",
+    ):
         """
         Download PMC files from AWS S3
         :param str pmc_id: PMC ID
@@ -560,32 +565,34 @@ class PmcIDSearchWrapper(BaseModel):
         >>> download_pmc_s3('PMC3898398')
         """
 
-        s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
+        s3 = boto3.client("s3", config=Config(signature_version=UNSIGNED))
 
         os.makedirs(output_dir, exist_ok=True)
         os.makedirs(cache_dir, exist_ok=True)
 
-        output_path = os.path.join(output_dir, f'{pmc_id}.{file_type}')
-        cache_path = os.path.join(cache_dir, f'{pmc_id}.{file_type}')
+        output_path = os.path.join(output_dir, f"{pmc_id}.{file_type}")
+        cache_path = os.path.join(cache_dir, f"{pmc_id}.{file_type}")
 
         if not os.path.exists(output_path):
-            if os.path.exists(cache_path): 
+            if os.path.exists(cache_path):
                 shutil.copy(cache_path, output_path)
-            else: 
-                logger.info(f"Attempting to download {pmc_id}.{file_type} to {output_path}")
+            else:
+                logger.info(
+                    f"Attempting to download {pmc_id}.{file_type} to {output_path}"
+                )
 
                 try:
-                    file_key = f'oa_comm/{file_type}/all/{pmc_id}.{file_type}'
+                    file_key = f"oa_comm/{file_type}/all/{pmc_id}.{file_type}"
                     s3.download_file(bucket_name, file_key, cache_path)
                     shutil.copy(cache_path, output_path)
                 except Exception as e:
                     try:
-                        file_key = f'oa_noncomm/{file_type}/all/{pmc_id}.{file_type}'
+                        file_key = f"oa_noncomm/{file_type}/all/{pmc_id}.{file_type}"
                         s3.download_file(bucket_name, file_key, cache_path)
                         shutil.copy(cache_path, output_path)
                     except Exception as e:
                         try:
-                            file_key = f'author_manuscript/{file_type}/all/{pmc_id}.{file_type}'
+                            file_key = f"author_manuscript/{file_type}/all/{pmc_id}.{file_type}"
                             s3.download_file(bucket_name, file_key, cache_path)
                             shutil.copy(cache_path, output_path)
                         except Exception as e:
@@ -594,4 +601,3 @@ class PmcIDSearchWrapper(BaseModel):
 
         if os.path.exists(cache_path):
             logger.info(f"DONE: File: {output_path}")
-
