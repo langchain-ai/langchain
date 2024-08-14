@@ -39,6 +39,7 @@ from langchain_community.chains.pebblo_retrieval.utilities import (
     PLUGIN_VERSION,
     PROMPT_GOV_URL,
     PROMPT_URL,
+    PebbloAPIWrapper,
     get_runtime,
 )
 
@@ -82,6 +83,7 @@ class PebbloRetrievalQA(Chain):
     """Flag to check if prompt payload has been sent."""
     enable_prompt_gov: bool = True  #: :meta private:
     """Flag to check if prompt governance is enabled or not"""
+    api_wrapper: PebbloAPIWrapper = Field(default_factory=PebbloAPIWrapper)
 
     def _call(
         self,
