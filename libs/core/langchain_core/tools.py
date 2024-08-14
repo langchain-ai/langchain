@@ -510,7 +510,7 @@ class ChildTool(BaseTool):
         if isinstance(tool_input, str):
             return (tool_input,), {}
         else:
-            return (), tool_input
+            return (), dict(tool_input)
 
     def run(
         self,
