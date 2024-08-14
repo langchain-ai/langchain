@@ -122,6 +122,12 @@ if TYPE_CHECKING:
     from langchain_community.utilities.pubmed import (
         PubMedAPIWrapper,
     )
+    from langchain_community.utilities.pubmed_extract_fulltext import (
+        PmcIDSearchWrapper,
+    )
+    from langchain_community.utilities.pubmed_full_text_by_id import (
+        PmcIDyRun,
+    )
     from langchain_community.utilities.rememberizer import RememberizerAPIWrapper
     from langchain_community.utilities.requests import (
         Requests,
@@ -213,6 +219,8 @@ __all__ = [
     "PowerBIDataset",
     "PubMedAPIWrapper",
     "RememberizerAPIWrapper",
+    "PmcIDSearchWrapper",
+    "PmcIDyRun",
     "Requests",
     "RequestsWrapper",
     "RivaASR",
@@ -275,6 +283,8 @@ _module_lookup = {
     "Portkey": "langchain_community.utilities.portkey",
     "PowerBIDataset": "langchain_community.utilities.powerbi",
     "PubMedAPIWrapper": "langchain_community.utilities.pubmed",
+    "PmcIDyRun": "langchain_community.utilities.pubmed_full_text_by_id",
+    "PmcIDSearchWrapper": "langchain_community.utilities.pubmed_extract_fulltext",
     "RememberizerAPIWrapper": "langchain_community.utilities.rememberizer",
     "Requests": "langchain_community.utilities.requests",
     "RequestsWrapper": "langchain_community.utilities.requests",
