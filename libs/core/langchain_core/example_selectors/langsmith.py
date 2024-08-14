@@ -41,6 +41,10 @@ class LangSmithExampleSelector(BaseExampleSelector, Runnable[Dict, List[Dict]]):
             from langchain_core.prompts import ChatPromptTemplate
             from langchain.chat_models import init_chat_model
 
+            example_selector = LangSmithExampleSelector(
+                dataset_name="foo_bar_task_few_shot_examples",
+                ...
+            )
             example_prompt = ChatPromptTemplate(
                 [("human", "{{inputs.question}}"), ("ai", "{{outputs.answer}}")],
                 template_format="mustache",
@@ -51,11 +55,6 @@ class LangSmithExampleSelector(BaseExampleSelector, Runnable[Dict, List[Dict]]):
                 ("human", "{question}"),
             ])
             llm = init_chat_model("gpt-4o", temperature=0)
-
-            example_selector = LangSmithExampleSelector(
-                dataset_name="foo_bar_task_few_shot_examples",
-                ...
-            )
 
             chain = example_selector | prompt | llm
 
@@ -77,9 +76,9 @@ class LangSmithExampleSelector(BaseExampleSelector, Runnable[Dict, List[Dict]]):
 
         .. note::
 
-            Initializing the ``LangSmithExampleSelector`` does *not* create a dataset.
+            Initializing the ``LangSmithExampleSelector`` does **not** create a dataset.
             This must be done explicitly, either outside the example selector or using
-            the ``create_dataset(...)`` method.
+            the ``LangSmithExampleSelector(...).create_dataset(...)`` method.
 
         Args:
             k: ...
