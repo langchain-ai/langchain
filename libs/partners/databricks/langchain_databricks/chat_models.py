@@ -1,63 +1,100 @@
 """Databricks chat models."""
 
-from typing import Any, List, Optional
-
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
+import json
+import logging
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
+from urllib.parse import urlparse
+
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models.base import LanguageModelInput
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    FunctionMessage,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+    ToolMessage,
+    ToolMessageChunk,
+)
+from langchain_core.messages.tool import tool_call_chunk
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    PrivateAttr,
+)
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
+
+
+logger = logging.getLogger(__name__)
 
 
 class ChatDatabricks(BaseChatModel):
-    # TODO: Replace all TODOs in docstring. See example docstring:
-    # https://github.com/langchain-ai/langchain/blob/7ff05357bac6eaedf5058a2af88f23a1817d40fe/libs/partners/openai/langchain_openai/chat_models/base.py#L1120
     """Databricks chat model integration.
 
-    # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``langchain-databricks`` and set environment variable ``DATABRICKS_API_KEY``.
+        Install ``langchain-databricks``.
 
         .. code-block:: bash
 
             pip install -U langchain-databricks
-            export DATABRICKS_API_KEY="your-api-key"
 
-    # TODO: Populate with relevant params.
+        If you are outside Databricks, set the Databricks workspace hostname and personal access token to environment variables:
+
+        .. code-block:: bash
+
+            export DATABRICKS_HOSTNAME="https://your-databricks-workspace"
+            export DATABRICKS_TOKEN="your-personal-access-token"
+
     Key init args — completion params:
-        model: str
-            Name of Databricks model to use.
+        endpoint: str
+            Name of Databricks Model Serving endpoint to query.
+        target_uri: str
+            The target URI to use. Defaults to ``databricks``.
         temperature: float
-            Sampling temperature.
+            Sampling temperature. Higher values make the model more creative.
+        n: Optional[int]
+            The number of completion choices to generate.
+        stop: Optional[List[str]]
+            List of strings to stop generation at.
         max_tokens: Optional[int]
             Max number of tokens to generate.
+        extra_params: Optional[Dict[str, Any]]
+            Any extra parameters to pass to the endpoint.
 
-    # TODO: Populate with relevant params.
-    Key init args — client params:
-        timeout: Optional[float]
-            Timeout for requests.
-        max_retries: int
-            Max number of retries.
-        api_key: Optional[str]
-            Databricks API key. If not passed in will be read from env var DATABRICKS_API_KEY.
-
-    See full list of supported init args and their descriptions in the params section.
-
-    # TODO: Replace with relevant init params.
     Instantiate:
         .. code-block:: python
 
             from langchain_databricks import ChatDatabricks
-
             llm = ChatDatabricks(
-                model="...",
+                endpoint="databricks-meta-llama-3-1-405b-instruct",
                 temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # other params...
+                max_tokens=500,
             )
 
     Invoke:
@@ -71,9 +108,16 @@ class ChatDatabricks(BaseChatModel):
 
         .. code-block:: python
 
-            # TODO: Example output.
+            AIMessage(
+                content="J'adore la programmation.",
+                response_metadata={
+                    'prompt_tokens': 32,
+                    'completion_tokens': 9,
+                    'total_tokens': 41
+                },
+                id='run-64eebbdd-88a8-4a25-b508-21e9a5f146c5-0'
+            )
 
-    # TODO: Delete if token-level streaming isn't supported.
     Stream:
         .. code-block:: python
 
@@ -82,7 +126,15 @@ class ChatDatabricks(BaseChatModel):
 
         .. code-block:: python
 
-            # TODO: Example output.
+            content='J' id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
+            content="'" id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
+            content='ad' id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
+            content='ore' id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
+            content=' la' id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
+            content=' programm' id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
+            content='ation' id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
+            content='.' id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
+            content='' response_metadata={'finish_reason': 'stop'} id='run-609b8f47-e580-4691-9ee4-e2109f53155e'
 
         .. code-block:: python
 
@@ -94,25 +146,37 @@ class ChatDatabricks(BaseChatModel):
 
         .. code-block:: python
 
-            # TODO: Example output.
+            AIMessageChunk(
+                content="J'adore la programmation.",
+                response_metadata={
+                    'finish_reason': 'stop'
+                },
+                id='run-4cef851f-6223-424f-ad26-4a54e5852aa5'
+            )
 
-    # TODO: Delete if native async isn't supported.
     Async:
         .. code-block:: python
 
             await llm.ainvoke(messages)
 
             # stream:
-            # async for chunk in (await llm.astream(messages))
+            # async for chunk in llm.astream(messages)
 
             # batch:
             # await llm.abatch([messages])
 
         .. code-block:: python
 
-            # TODO: Example output.
+            AIMessage(
+                content="J'adore la programmation.",
+                response_metadata={
+                    'prompt_tokens': 32,
+                    'completion_tokens': 9,
+                    'total_tokens': 41
+                },
+                id='run-e4bb043e-772b-4e1d-9f98-77ccc00c0271-0'
+            )
 
-    # TODO: Delete if .bind_tools() isn't supported.
     Tool calling:
         .. code-block:: python
 
@@ -134,131 +198,74 @@ class ChatDatabricks(BaseChatModel):
 
         .. code-block:: python
 
-              # TODO: Example output.
-
-        See ``ChatDatabricks.bind_tools()`` method for more.
-
-    # TODO: Delete if .with_structured_output() isn't supported.
-    Structured output:
-        .. code-block:: python
-
-            from typing import Optional
-
-            from langchain_core.pydantic_v1 import BaseModel, Field
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
-
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-        See ``ChatDatabricks.with_structured_output()`` for more.
-
-    # TODO: Delete if JSON mode response format isn't supported.
-    JSON mode:
-        .. code-block:: python
-
-            # TODO: Replace with appropriate bind arg.
-            json_llm = llm.bind(response_format={"type": "json_object"})
-            ai_msg = json_llm.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
-            ai_msg.content
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if image inputs aren't supported.
-    Image input:
-        .. code-block:: python
-
-            import base64
-            import httpx
-            from langchain_core.messages import HumanMessage
-
-            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-            # TODO: Replace with appropriate message content format.
-            message = HumanMessage(
-                content=[
-                    {"type": "text", "text": "describe the weather in this image"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {
+                        'location': 'Los Angeles, CA'
                     },
-                ],
-            )
-            ai_msg = llm.invoke([message])
-            ai_msg.content
+                    'id': 'call_ea0a6004-8e64-4ae8-a192-a40e295bfa24',
+                    'type': 'tool_call'
+                }
+            ]
 
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if audio inputs aren't supported.
-    Audio input:
-        .. code-block:: python
-
-            # TODO: Example input
-
-        .. code-block:: python
-
-            # TODO: Example output
-
-    # TODO: Delete if video inputs aren't supported.
-    Video input:
-        .. code-block:: python
-
-            # TODO: Example input
-
-        .. code-block:: python
-
-            # TODO: Example output
-
-    # TODO: Delete if token usage metadata isn't supported.
-    Token usage:
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
-
-    # TODO: Delete if logprobs aren't supported.
-    Logprobs:
-        .. code-block:: python
-
-            # TODO: Replace with appropriate bind arg.
-            logprobs_llm = llm.bind(logprobs=True)
-            ai_msg = logprobs_llm.invoke(messages)
-            ai_msg.response_metadata["logprobs"]
-
-        .. code-block:: python
-
-              # TODO: Example output.
-
-    Response metadata
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
-        .. code-block:: python
-
-             # TODO: Example output.
+        To use tool calls, your model endpoint must support ``tools`` parameter. See [Function calling on Databricks](https://python.langchain.com/v0.2/docs/integrations/chat/databricks/#function-calling-on-databricks) for more information.
 
     """  # noqa: E501
+    endpoint: str
+    """Name of Databricks Model Serving endpoint to query."""
+    target_uri: str = "databricks"
+    """The target URI to use. Defaults to ``databricks``."""
+    temperature: float = 0.0
+    """Sampling temperature. Higher values make the model more creative."""
+    n: int = 1
+    """The number of completion choices to generate."""
+    stop: Optional[List[str]] = None
+    """List of strings to stop generation at."""
+    max_tokens: Optional[int] = None
+    """The maximum number of tokens to generate."""
+    extra_params: dict = Field(default_factory=dict)
+    """Any extra parameters to pass to the endpoint."""
+    _client: Any = PrivateAttr()
 
-    # TODO: This method must be implemented to generate chat responses.
+
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+        self._validate_uri()
+        try:
+            from mlflow.deployments import get_deploy_client
+
+            self._client = get_deploy_client(self.target_uri)
+        except ImportError as e:
+            raise ImportError(
+                "Failed to create the client. "
+                f"Please run `pip install mlflow` to install "
+                "required dependencies."
+            ) from e
+
+
+    def _validate_uri(self) -> None:
+        if self.target_uri == "databricks":
+            return
+
+        if urlparse(self.target_uri).scheme != "databricks":
+            raise ValueError(
+                "Invalid target URI. The target URI must be a valid databricks URI."
+            )
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        params: Dict[str, Any] = {
+            "target_uri": self.target_uri,
+            "endpoint": self.endpoint,
+            "temperature": self.temperature,
+            "n": self.n,
+            "stop": self.stop,
+            "max_tokens": self.max_tokens,
+            "extra_params": self.extra_params,
+        }
+        return params
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -266,36 +273,292 @@ class ChatDatabricks(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        raise NotImplementedError()
+        data = self._prepare_inputs(messages, stop, **kwargs)
+        resp = self._client.predict(endpoint=self.endpoint, inputs=data)
+        return self._convert_response_to_chat_result(resp)
 
-    # TODO: Implement if ChatDatabricks supports streaming. Otherwise delete method.
-    # def _stream(
-    #     self,
-    #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[CallbackManagerForLLMRun] = None,
-    #     **kwargs: Any,
-    # ) -> Iterator[ChatGenerationChunk]:
+    def _prepare_inputs(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        data: Dict[str, Any] = {
+            "messages": [_convert_message_to_dict(msg) for msg in messages],
+            "temperature": self.temperature,
+            "n": self.n,
+            **self.extra_params,
+            **kwargs,
+        }
+        if stop := self.stop or stop:
+            data["stop"] = stop
+        if self.max_tokens is not None:
+            data["max_tokens"] = self.max_tokens
 
-    # TODO: Implement if ChatDatabricks supports async streaming. Otherwise delete.
-    # async def _astream(
-    #     self,
-    #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    #     **kwargs: Any,
-    # ) -> AsyncIterator[ChatGenerationChunk]:
+        return data
 
-    # TODO: Implement if ChatDatabricks supports async generation. Otherwise delete.
-    # async def _agenerate(
-    #     self,
-    #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    #     **kwargs: Any,
-    # ) -> ChatResult:
+    def _convert_response_to_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        generations = [
+            ChatGeneration(
+                message=_convert_dict_to_message(choice["message"]),
+                generation_info=choice.get("usage", {}))
+            for choice in response["choices"]
+        ]
+        usage = response.get("usage", {})
+        return ChatResult(generations=generations, llm_output=usage)
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        data = self._prepare_inputs(messages, stop, **kwargs)
+        first_chunk_role = None
+        for chunk in self._client.predict_stream(endpoint=self.endpoint, inputs=data):
+            if chunk["choices"]:
+                choice = chunk["choices"][0]
+
+                chunk_delta = choice["delta"]
+                if first_chunk_role is None:
+                    first_chunk_role = chunk_delta.get("role")
+
+                chunk_message = _convert_dict_to_message_chunk(chunk_delta, first_chunk_role)
+
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                if logprobs := choice.get("logprobs"):
+                    generation_info["logprobs"] = logprobs
+
+                chunk = ChatGenerationChunk(
+                    message=chunk_message, generation_info=generation_info or None
+                )
+
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text, chunk=chunk, logprobs=logprobs
+                    )
+
+                yield chunk
+            else:
+                # Handle the case where choices are empty if needed
+                continue
+
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Options are:
+                name of the tool (str): calls corresponding tool;
+                "auto": automatically selects a tool (including no tool);
+                "none": model does not generate any tool calls and instead must
+                    generate a standard assistant message;
+                "required": the model picks the most relevant tool in tools and
+                    must generate a tool call;
+
+                or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "required"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+            elif isinstance(tool_choice, dict):
+                tool_names = [
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
+                ]
+                if not any(
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
+
 
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "chat-databricks"
+
+### Conversion function to convert Pydantic models to dictionaries and vice versa. ###
+
+def _convert_message_to_dict(message: BaseMessage) -> dict:
+    message_dict = {"content": message.content}
+
+    # OpenAI supports "name" field in messages.
+    if (name := message.name or message.additional_kwargs.get("name")) is not None:
+        message_dict["name"] = name
+
+    if id := message.id:
+        message_dict["id"] = id
+
+    if isinstance(message, ChatMessage):
+        return {"role": message.role, **message_dict}
+    elif isinstance(message, HumanMessage):
+        return {"role": "user", **message_dict}
+    elif isinstance(message, AIMessage):
+        if tool_calls := _get_tool_calls_from_ai_message(message):
+            message_dict["tool_calls"] = tool_calls
+            # If tool calls present, content null value should be None not empty string.
+            message_dict["content"] = message_dict["content"] or None  # type: ignore[assignment]
+        return { "role": "assistant", **message_dict}
+    elif isinstance(message, SystemMessage):
+        return {"role": "system", **message_dict}
+    elif isinstance(message, ToolMessage):
+        return {
+            "role": "tool",
+            "tool_call_id": message.tool_call_id,
+            **message_dict,
+        }
+    elif isinstance(message, FunctionMessage) or "function_call" in message.additional_kwargs:
+        raise ValueError(
+            "Function messages are not supported by Databricks. Please"
+            " create a feature request at https://github.com/mlflow/mlflow/issues."
+        )
+    else:
+        raise ValueError(f"Got unknown message type: {type(message)}")
+
+
+def _get_tool_calls_from_ai_message(message: AIMessage) -> List[Dict]:
+    tool_calls = [
+        {
+            "type": "function",
+            "id": tc["id"],
+            "function": {
+                "name": tc["name"],
+                "arguments": json.dumps(tc["args"]),
+            },
+        }
+        for tc in message.tool_calls
+    ]
+
+    invalid_tool_calls = [
+        {
+            "type": "function",
+            "id": tc["id"],
+            "function": {
+                "name": tc["name"],
+                "arguments": tc["args"],
+            },
+        }
+        for tc in message.invalid_tool_calls
+    ]
+
+    if tool_calls or invalid_tool_calls:
+        return tool_calls + invalid_tool_calls
+
+    # Get tool calls from additional kwargs if present.
+    return [
+        {
+            k: v
+            for k, v in tool_call.items()  # type: ignore[union-attr]
+            if k in {"id", "type", "function"}
+        }
+        for tool_call in message.additional_kwargs.get("tool_calls", [])
+    ]
+
+
+def _convert_dict_to_message(_dict: Dict) -> BaseMessage:
+    role = _dict.get("role")
+    content = _dict.get("content")
+    content = content if content is not None else ""
+
+    if role == "user":
+        return HumanMessage(content=content)
+    elif role == "system":
+        return SystemMessage(content=content)
+    elif role == "assistant":
+        additional_kwargs: Dict = {}
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)))
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            id=_dict.get("id"),
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+        )
+    else:
+        return ChatMessage(content=content, role=role)
+
+
+def _convert_dict_to_message_chunk(_dict: Mapping[str, Any], default_role: str) -> BaseMessageChunk:
+    role = _dict.get("role", default_role)
+    content = _dict.get("content")
+    content = content if content is not None else ""
+
+    if role == "user":
+        return HumanMessageChunk(content=content)
+    elif role == "system":
+        return SystemMessageChunk(content=content)
+    elif role == "tool":
+        return ToolMessageChunk(
+            content=content,tool_call_id=_dict["tool_call_id"], id=_dict.get("id")
+        )
+    elif role == "assistant":
+        additional_kwargs: Dict = {}
+        tool_call_chunks = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            try:
+                tool_call_chunks = [
+                    tool_call_chunk(
+                        name=tc["function"].get("name"),
+                        args=tc["function"].get("arguments"),
+                        id=tc.get("id"),
+                        index=tc["index"],
+                    )
+                    for tc in raw_tool_calls
+                ]
+            except KeyError:
+                pass
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            id=_dict.get("id"),
+            tool_call_chunks=tool_call_chunks,
+        )
+    else:
+        return ChatMessageChunk(content=content, role=role)
