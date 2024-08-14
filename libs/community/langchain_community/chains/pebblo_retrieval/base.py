@@ -27,6 +27,7 @@ from langchain_community.chains.pebblo_retrieval.enforcement_filters import (
 from langchain_community.chains.pebblo_retrieval.models import (
     App,
     AuthContext,
+    ChainInfo,
     SemanticContext,
 )
 from langchain_community.chains.pebblo_retrieval.utilities import (
@@ -380,9 +381,7 @@ class PebbloRetrievalQA(Chain):
         return is_valid_prompt, prompt_entities
 
     @classmethod
-    def get_chain_details(
-        cls, llm: BaseLanguageModel, **kwargs
-    ) -> List[Dict[str, Any]]:
+    def get_chain_details(cls, llm: BaseLanguageModel, **kwargs) -> List[ChainInfo]:
         """
         Get chain details.
 
@@ -417,4 +416,5 @@ class PebbloRetrievalQA(Chain):
                 ],
             },
         ]
+        chains = [ChainInfo(**chain) for chain in chains]
         return chains

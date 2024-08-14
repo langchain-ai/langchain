@@ -109,7 +109,7 @@ class VectorDB(BaseModel):
     embedding_model: Optional[str] = None
 
 
-class Chains(BaseModel):
+class ChainInfo(BaseModel):
     name: str
     model: Optional[Model]
     vector_dbs: Optional[List[VectorDB]]
@@ -121,7 +121,7 @@ class App(BaseModel):
     description: Optional[str]
     runtime: Runtime
     framework: Framework
-    chains: List[Chains]
+    chains: List[ChainInfo]
     plugin_version: str
 
 
