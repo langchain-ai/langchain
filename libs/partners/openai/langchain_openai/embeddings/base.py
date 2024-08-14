@@ -23,7 +23,6 @@ import tiktoken
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     SecretStr,
     root_validator,
@@ -261,7 +260,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = "forbid"
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
