@@ -176,7 +176,7 @@ class SQLServer_VectorStore(VectorStore):
             metadatas = [{} for _ in texts]
 
         if ids is None:
-            # Copy data from metadatas so data is not updated in-place
+            # Copy data from metadatas so data is not updated in-place.
             metadata_to_format = copy.deepcopy(metadatas)
             ids = [metadata.pop("id", uuid.uuid4()) for metadata in metadata_to_format]
 
