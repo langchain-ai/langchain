@@ -295,3 +295,22 @@ def test_sqlserver_delete_text_by_id_no_ids_provided(
     # Should return False, since empty list of ids given
     if not result:
         pass
+
+
+def test_that_multiple_vector_stores_can_be_created(
+    store: SQLServer_VectorStore,
+) -> None:
+    """Tests that when multiple SQLServer_VectorStore objects are
+    created, the first created vector store is not reused, but
+    multiple vector stores are created."""
+
+    # Create another vector store with a different table name.
+    new_store = SQLServer_VectorStore(
+        connection_string=_CONNECTION_STRING,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name="langchain_vector_store_tests_2",
+    )
+
+    # Check that the name of the table being created for the embeddingstore
+    # is what is expected.
+    assert new_store._embedding_store.__table__.name == "langchain_vector_store_tests_2"
