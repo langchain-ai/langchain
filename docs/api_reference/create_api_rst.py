@@ -394,7 +394,7 @@ def _construct_doc(
 """
 
             index_autosummary += """
-**Deprecated classes*
+**Deprecated classes**
 
 .. autosummary::
 """
@@ -438,7 +438,7 @@ def _construct_doc(
     {fstring}
 
 """
-            index_autosummary += """
+            index_autosummary += f"""
 **Deprecated functions**
 
 .. autosummary::
