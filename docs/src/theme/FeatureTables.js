@@ -452,6 +452,13 @@ const FEATURE_TABLES = {
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"
             },
             {
+                name: "RecursiveURL",
+                link: "recursive_url",
+                source: "Recursively scrapes all child links from a root URL",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.recursive_url_loader.RecursiveUrlLoader.html"
+            },
+            {
                 name: "Sitemap",
                 link: "sitemap",
                 source: "Scrapes all pages on a given sitemap",
@@ -483,7 +490,50 @@ const FEATURE_TABLES = {
                 source: "Uses `pypdf` to load and parse PDFs",
                 api: "Package",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFLoader.html"
+            },
+            {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "Uses Unstructured's open source library to load PDFs",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
+                name: "Amazon Textract",
+                link: "amazon_textract",
+                source: "Uses AWS API to load PDFs",
+                api: "API",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.AmazonTextractPDFLoader.html"
             }
+        ]
+    },
+    common_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Data Type", formatter: (item) => item.source},
+        ],
+        items: [
+            {
+                name: "CSVLoader",
+                link: "csv",
+                source: "CSV files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.csv_loader.CSVLoader.html"
+            },
+            {
+                name: "DirectoryLoader",
+                link: "document_loader_directory",
+                source: "All files in a given directory",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.directory.DirectoryLoader.html"
+            },
+            {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "All file types",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
         ]
     },
     vectorstores: {
