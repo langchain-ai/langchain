@@ -368,8 +368,7 @@ def _get_iter(use_tool_calls: bool = False) -> Any:
         list_to_iter = STREAMED_MESSAGES
 
     def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in list_to_iter:
-            yield msg
+        yield from list_to_iter
 
     return input_iter
 

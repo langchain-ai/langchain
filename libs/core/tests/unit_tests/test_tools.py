@@ -1765,7 +1765,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
 
-    class Mixin(object):
+    class Mixin:
         def foo(self) -> str:
             return "foo"
 
@@ -1822,7 +1822,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
 
-    class Mixin(object):
+    class Mixin:
         def foo(self) -> str:
             return "foo"
 

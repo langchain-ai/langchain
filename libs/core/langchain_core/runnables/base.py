@@ -3208,8 +3208,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             else:
                 final_pipeline = step.transform(final_pipeline, config)
 
-        for output in final_pipeline:
-            yield output
+        yield from final_pipeline
 
     async def _atransform(
         self,
@@ -4577,13 +4576,12 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         if hasattr(self, "func"):
-            for output in self._transform_stream_with_config(
+            yield from self._transform_stream_with_config(
                 input,
                 self._transform,
                 self._config(config, self.func),
                 **kwargs,
-            ):
-                yield output
+            )
         else:
             raise TypeError(
                 "Cannot stream a coroutine function synchronously."
