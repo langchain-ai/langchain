@@ -530,7 +530,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "DirectoryLoader",
-                link: "document_loader_directory",
+                link: "../../how_to/document_loader_directory",
                 source: "All files in a given directory",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.directory.DirectoryLoader.html"
             },
