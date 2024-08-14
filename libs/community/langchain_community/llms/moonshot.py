@@ -39,14 +39,12 @@ class MoonshotCommon(BaseModel):
     """Moonshot API key. Get it here: https://platform.moonshot.cn/console/api-keys"""
     model_name: str = Field(default="moonshot-v1-8k", alias="model")
     """Model name. Available models listed here: https://platform.moonshot.cn/pricing"""
-    max_tokens = 1024
+    max_tokens: int = 1024
     """Maximum number of tokens to generate."""
-    temperature = 0.3
+    temperature: float = 0.3
     """Temperature parameter (higher values make the model more creative)."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @property
@@ -115,8 +113,6 @@ class Moonshot(MoonshotCommon, LLM):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     def _call(

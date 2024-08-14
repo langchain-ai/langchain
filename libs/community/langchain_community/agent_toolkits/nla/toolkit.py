@@ -76,7 +76,7 @@ class NLAToolkit(BaseToolkit):
             spec: The OpenAPI spec.
             requests: Optional requests object. Default is None.
             verbose: Whether to print verbose output. Default is False.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             The toolkit.
@@ -102,7 +102,7 @@ class NLAToolkit(BaseToolkit):
             open_api_url: The URL of the OpenAPI spec.
             requests: Optional requests object. Default is None.
             verbose: Whether to print verbose output. Default is False.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             The toolkit.

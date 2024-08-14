@@ -53,7 +53,7 @@ fi
 # Forbid vanilla usage of @root_validator
 # This prevents the code from using either @root_validator or @root_validator()
 # Search for lines matching the pattern within the specified repository
-result=$(git -C "$repository_path" grep -En '(@root_validator\s*$)|(@root_validator\(\))' -- '*.py')
+result=$(git -C "$repository_path" grep -En '(@root_validator\s*$)|(@root_validator\(\)|@root_validator\(pre=False\))' -- '*.py')
 
 # Check if any matching lines were found
 if [ -n "$result" ]; then
