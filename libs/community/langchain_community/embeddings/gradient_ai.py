@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -105,7 +106,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
         """
         inputs = [{"input": text} for text in texts]
 
-        result = self.client.embed(inputs=inputs).embeddings
+        result = langchain_experimental.rl_chain.helpers.embed(inputs=inputs).embeddings
 
         return [e.embedding for e in result]
 

@@ -1,5 +1,6 @@
 from typing import Any, List, Optional, Sequence
 
+import langchain_experimental.rl_chain.helpers
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings, SparseVector
 
 
@@ -57,7 +58,7 @@ class FastEmbedSparse(SparseEmbeddings):
         )
 
     def embed_documents(self, texts: List[str]) -> List[SparseVector]:
-        results = self._model.embed(
+        results = langchain_experimental.rl_chain.helpers.embed(
             texts, batch_size=self._batch_size, parallel=self._parallel
         )
         return [

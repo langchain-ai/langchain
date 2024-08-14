@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -58,7 +59,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
 
-        embeddings = [self.client.embed(text) for text in texts]
+        embeddings = [langchain_experimental.rl_chain.helpers.embed(text) for text in texts]
         return [list(map(float, e)) for e in embeddings]
 
     def embed_query(self, text: str) -> List[float]:

@@ -3,6 +3,8 @@ import importlib.metadata
 from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
+
+import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
@@ -114,7 +116,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
                 texts, batch_size=self.batch_size, parallel=self.parallel
             )
         else:
-            embeddings = self._model.embed(
+            embeddings = langchain_experimental.rl_chain.helpers.embed(
                 texts, batch_size=self.batch_size, parallel=self.parallel
             )
         return [e.tolist() for e in embeddings]

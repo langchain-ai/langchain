@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Union
 
+import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -176,7 +177,7 @@ class TitanTakeoffEmbed(Embeddings):
                     "response to as TitanTakeoffEmbed was not initialized with an "
                     "embedding reader."
                 )
-        return self.client.embed(input, consumer_group)
+        return langchain_experimental.rl_chain.helpers.embed(input, consumer_group)
 
     def embed_documents(
         self, texts: List[str], consumer_group: Optional[str] = None

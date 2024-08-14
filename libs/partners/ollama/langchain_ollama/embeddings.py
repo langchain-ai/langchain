@@ -3,6 +3,7 @@ from typing import (
     Optional,
 )
 
+import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from ollama import AsyncClient, Client
@@ -152,7 +153,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = self._client.embed(self.model, texts)["embeddings"]
+        embedded_docs = langchain_experimental.rl_chain.helpers.embed(self.model, texts)["embeddings"]
         return embedded_docs
 
     def embed_query(self, text: str) -> List[float]:
@@ -161,7 +162,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        embedded_docs = (await self._async_client.embed(self.model, texts))[
+        embedded_docs = (await langchain_experimental.rl_chain.helpers.embed(self.model, texts))[
             "embeddings"
         ]
         return embedded_docs

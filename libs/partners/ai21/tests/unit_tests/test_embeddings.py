@@ -8,6 +8,7 @@ from ai21 import AI21Client, MissingApiKeyError
 from ai21.models import EmbedResponse, EmbedResult, EmbedType
 from pytest_mock import MockerFixture
 
+import langchain_experimental.rl_chain.helpers
 from langchain_ai21.embeddings import AI21Embeddings
 from tests.unit_tests.conftest import DUMMY_API_KEY, temporarily_unset_api_key
 
@@ -35,8 +36,8 @@ def test_initialization__when_no_api_key__should_raise_exception() -> None:
 @pytest.fixture
 def mock_client_with_embeddings(mocker: MockerFixture) -> Mock:
     mock_client = mocker.MagicMock(spec=AI21Client)
-    mock_client.embed = mocker.MagicMock()
-    mock_client.embed.create.return_value = _EXAMPLE_EMBEDDING_RESPONSE
+    langchain_experimental.rl_chain.helpers.embed = mocker.MagicMock()
+    langchain_experimental.rl_chain.helpers.embed.create.return_value = _EXAMPLE_EMBEDDING_RESPONSE
 
     return mock_client
 

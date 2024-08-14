@@ -4,6 +4,7 @@ import asyncio
 from logging import getLogger
 from typing import Any, Dict, List, Optional
 
+import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -118,11 +119,11 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
             )
             async with self:
                 # spawning threadpool for multithreaded encode, tokenization
-                embeddings, _ = await self.engine.embed(texts)
+                embeddings, _ = await langchain_experimental.rl_chain.helpers.embed(texts)
             # stopping threadpool on exit
             logger.warning("Stopped infinity engine after usage.")
         else:
-            embeddings, _ = await self.engine.embed(texts)
+            embeddings, _ = await langchain_experimental.rl_chain.helpers.embed(texts)
         return embeddings
 
     async def aembed_query(self, text: str) -> List[float]:

@@ -3,6 +3,8 @@ import os
 from typing import Dict, Iterable, List, Optional
 
 import aiohttp
+
+import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -129,7 +131,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
 
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
-            response = self._client.inference.embed(
+            response = langchain_experimental.rl_chain.helpers.embed(
                 model=self.model,
                 parameters=self.document_params,
                 inputs=texts[i : i + self.batch_size],
@@ -152,7 +154,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        return self._client.inference.embed(
+        return langchain_experimental.rl_chain.helpers.embed(
             model=self.model, parameters=self.query_params, inputs=[text]
         )[0]["values"]
 
