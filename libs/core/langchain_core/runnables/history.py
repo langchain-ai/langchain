@@ -319,21 +319,22 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             history_chain = RunnablePassthrough.assign(
                 **{messages_key: history_chain}
             ).with_config(run_name="insert_history")
-        with_sync_listeners = runnable.with_listeners(on_end=self._exit_history)
-        with_async_listeners = runnable.with_alisteners(on_end=self._aexit_history)
 
-        def func(input_: Any):
-            return with_sync_listeners
+        runnable_sync: Runnable = runnable.with_listeners(on_end=self._exit_history)
+        runnable_async: Runnable = runnable.with_alisteners(on_end=self._aexit_history)
 
-        async def afunc(input: Any):
-            return with_async_listeners
+        def _call_runnable_sync(_input: Any) -> Runnable:
+            return runnable_sync
+
+        async def _call_runnable_async(_input: Any) -> Runnable:
+            return runnable_async
 
         bound: Runnable = (
             history_chain
             | RunnableLambda(
-                func=func,
-                afunc=afunc,
-            ).with_config(run_name="RunnableWithListeners")
+                _call_runnable_sync,
+                _call_runnable_async,
+            ).with_config(run_name="check_sync_or_async")
         ).with_config(run_name="RunnableWithMessageHistory")
 
         if history_factory_config:
@@ -474,7 +475,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return list(output_val)
         else:
             raise ValueError(
-                f"Expected str, BaseMessage, List[BaseMessage]. Got {output_val}."
+                f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
+                f"Got {output_val}."
             )
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:

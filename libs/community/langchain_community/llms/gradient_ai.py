@@ -77,7 +77,7 @@ class GradientLLM(BaseLLM):
         allow_population_by_field_name = True
         extra = "forbid"
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 
@@ -88,6 +88,26 @@ class GradientLLM(BaseLLM):
             values, "gradient_workspace_id", "GRADIENT_WORKSPACE_ID"
         )
 
+        values["gradient_api_url"] = get_from_dict_or_env(
+            values, "gradient_api_url", "GRADIENT_API_URL"
+        )
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        """Post init validation."""
+        # Can be most to post_init_validation
+        try:
+            import gradientai  # noqa
+        except ImportError:
+            logging.warning(
+                "DeprecationWarning: `GradientLLM` will use "
+                "`pip install gradientai` in future releases of langchain."
+            )
+        except Exception:
+            pass
+
+        # Can be most to post_init_validation
         if (
             values["gradient_access_token"] is None
             or len(values["gradient_access_token"]) < 10
@@ -113,20 +133,6 @@ class GradientLLM(BaseLLM):
 
             if 0 >= kw.get("max_generated_token_count", 1):
                 raise ValueError("`max_generated_token_count` must be positive")
-
-        values["gradient_api_url"] = get_from_dict_or_env(
-            values, "gradient_api_url", "GRADIENT_API_URL"
-        )
-
-        try:
-            import gradientai  # noqa
-        except ImportError:
-            logging.warning(
-                "DeprecationWarning: `GradientLLM` will use "
-                "`pip install gradientai` in future releases of langchain."
-            )
-        except Exception:
-            pass
 
         return values
 
