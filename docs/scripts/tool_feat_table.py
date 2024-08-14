@@ -212,7 +212,7 @@ The following table shows tools that can be used to automate tasks in databases:
 
 ## All tools
 
-import { IndexTable } from "@theme/FeatureTables";
+import {{ IndexTable }} from "@theme/FeatureTables";
 <IndexTable />
 
 """  # noqa: E501
