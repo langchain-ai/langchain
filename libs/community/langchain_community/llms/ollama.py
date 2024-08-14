@@ -174,6 +174,7 @@ class _OllamaCommon(BaseLanguageModel):
             "template": self.template,
             "keep_alive": self.keep_alive,
             "raw": self.raw,
+            "context": None,
         }
 
     @property
