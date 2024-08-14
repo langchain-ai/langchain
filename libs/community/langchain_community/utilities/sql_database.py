@@ -287,7 +287,7 @@ class SQLDatabase:
             return sorted(self._include_tables)
         return sorted(self._all_tables - self._ignore_tables)
 
-    @deprecated("0.0.1", alternative="get_usable_table_names", removal="0.3.0")
+    @deprecated("0.0.1", alternative="get_usable_table_names", removal="1.0")
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
         return self.get_usable_table_names()

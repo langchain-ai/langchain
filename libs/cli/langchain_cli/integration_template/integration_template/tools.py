@@ -57,12 +57,12 @@ class __ModuleName__Tool(BaseTool):
         .. code-block:: python
 
             # TODO: invoke args
-            tool.invoke({"args": {...}, "id": "1", "name": tool.name, "type": "tool_call})
+            tool.invoke({"args": {...}, "id": "1", "name": tool.name, "type": "tool_call"})
 
         .. code-block:: python
 
             # TODO: output of invocation
-    """
+    """ # noqa: E501
 
     # TODO: Set tool name and description
     name: str = "TODO: Tool name"
