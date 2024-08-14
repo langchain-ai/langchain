@@ -562,17 +562,15 @@ def test__format_messages_with_cache_control() -> None:
     expected_system = [
         {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
     ]
-    expected_messages = (
-        [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
-                    {"type": "text", "text": "foo"},
-                ],
-            }
-        ],
-    )
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": "foo"},
+            ],
+        }
+    ]
     actual_system, actual_messages = _format_messages(messages)
     assert expected_system == actual_system
     assert expected_messages == actual_messages

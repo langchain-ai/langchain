@@ -170,7 +170,15 @@ def _format_messages(
         if message.type == "system":
             if i != 0:
                 raise ValueError("System message must be at beginning of message list.")
-            system = message.content
+            if isinstance(message.content, list):
+                system = [
+                    block
+                    if isinstance(block, dict)
+                    else {"type": "text", "text": "block"}
+                    for block in message.content
+                ]
+            else:
+                system = message.content
             continue
 
         role = _message_type_lookups[message.type]
@@ -217,7 +225,13 @@ def _format_messages(
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
-                            content.append({"type": "text", "text": text})
+                            content.append(
+                                {
+                                    k: v
+                                    for k, v in item.items()
+                                    if k in ("type", "text", "cache_control")
+                                }
+                            )
                     else:
                         content.append(item)
                 else:
@@ -876,10 +890,10 @@ class ChatAnthropic(BaseChatModel):
                 llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
-        
+
         Example — cache specific tools:
             .. code-block:: python
-                
+
                 from langchain_anthropic import ChatAnthropic, convert_to_anthropic_tool
                 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -897,30 +911,30 @@ class ChatAnthropic(BaseChatModel):
                 # before passing to bind_tools so that we can set the 'cache_control'
                 # field on our tool.
                 cached_price_tool = convert_to_anthropic_tool(GetPrice)
-                # Currently the only supported "cache_control" value is 
+                # Currently the only supported "cache_control" value is
                 # {"type": "ephemeral"}.
                 cached_price_tool["cache_control"] = {"type": "ephemeral"}
-                
-                # We need to pass in extra headers to enable use of the beta cache 
+
+                # We need to pass in extra headers to enable use of the beta cache
                 # control API.
                 llm = ChatAnthropic(
-                    model="claude-3-opus-20240229", 
+                    model="claude-3-opus-20240229",
                     temperature=0,
                     extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}
                 )
                 llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
-            
+
             This outputs:
             .. code-block:: pycon
-            
+
                 AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
-            
+
             If we invoke the tool again, we can see that the "usage" information in the AIMessage.response_metadata shows that we had a cache hit:
             .. code-block:: pycon
-                
+
                 AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
-                
+
         """  # noqa: E501
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
         if not tool_choice:
@@ -1091,7 +1105,7 @@ class AnthropicTool(TypedDict):
 
 
 def convert_to_anthropic_tool(
-    tool: Union[Dict[str, Any], Type, Callable, BaseTool]
+    tool: Union[Dict[str, Any], Type, Callable, BaseTool],
 ) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format
