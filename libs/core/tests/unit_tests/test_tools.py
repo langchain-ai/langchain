@@ -25,6 +25,7 @@ import pytest
 from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 from typing_extensions import Annotated, TypedDict, TypeVar
 
+from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -1904,3 +1905,26 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     assert foo.invoke({"x": [0] * 10})
     with pytest.raises(ValidationErrorV2):
         foo.invoke({"x": [0] * 9})
+
+
+def test_imports() -> None:
+    expected_all = [
+        "FILTERED_ARGS",
+        "SchemaAnnotationError",
+        "create_schema_from_function",
+        "ToolException",
+        "BaseTool",
+        "Tool",
+        "StructuredTool",
+        "tool",
+        "RetrieverInput",
+        "create_retriever_tool",
+        "ToolsRenderer",
+        "render_text_description",
+        "render_text_description_and_args",
+        "BaseToolkit",
+        "convert_runnable_to_tool",
+        "InjectedToolArg",
+    ]
+    for module_name in expected_all:
+        assert hasattr(tools, module_name) and getattr(tools, module_name) is not None
