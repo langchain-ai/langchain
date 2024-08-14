@@ -79,6 +79,7 @@ class SQLServer_VectorStore(VectorStore):
 
     def _get_embedding_store(self, name: str, schema: Optional[str]) -> Any:
         DynamicBase = declarative_base(class_registry=dict())  # type: Any
+
         class EmbeddingStore(DynamicBase):
             """This is the base model for SQL vector store."""
 
