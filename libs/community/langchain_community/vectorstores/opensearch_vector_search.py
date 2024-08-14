@@ -974,6 +974,49 @@ class OpenSearchVectorSearch(VectorStore):
 
         return payload
     
+
+    def _hybrid_search_with_post_filter(self, options: dict) -> dict:
+        """Returns payload for performing hybrid search with post filter for given options.
+        Args: options: dict containing the following
+            query: The query text to search for.
+            embeded_query: The embedding vector to search for.
+            top_k: Number of Documents to return. Defaults to 4.
+            post_filter: The post filter to apply.
+        Returns: payload: dict containing the payload for hybrid search with post filter.
+        """
+        payload = {
+            "_source": {
+                 "exclude": [
+                    "vector_field"
+                    ]
+                },
+            "query": {
+                    "hybrid": {
+                        "queries": [
+                                {
+                                "match": {
+                                    "text": {
+                                        "query": options["query"],
+                                            }
+                                        }
+                                },
+                                {
+                                "knn": {
+                                        "vector_field": {
+                                        "vector": options["embeded_query"],
+                                        "k": options["top_k"]
+                                        }
+                                    }
+                                }
+                            ]
+                        }       
+                    },
+        "size":options["top_k"], 
+        "post_filter": options["post_filter"]      
+        }
+
+        return payload
+    
     def _raw_similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -1128,7 +1171,12 @@ class OpenSearchVectorSearch(VectorStore):
             "post_filter": post_filter
             }
             
-            payload = self._hybrid_search(options)
+            if post_filter != {}: 
+                # hybrid search with post filter
+                payload = self._hybrid_search_with_post_filter(options)
+            else:
+                # hybrid search without post filter
+                payload = self._hybrid_search(options)
 
             r = requests.get(url, auth=auth, json=payload, verify=False)
             response = r.json()
