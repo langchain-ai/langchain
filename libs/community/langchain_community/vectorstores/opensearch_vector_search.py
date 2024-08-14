@@ -746,7 +746,7 @@ class OpenSearchVectorSearch(VectorStore):
         pipeline_name: str,
         keyword_weight: float = 0.7,
         vector_weight: float = 0.3,
-    ):
+    )-> requests.Response:
         path=f"_search/pipeline/{pipeline_name}"
         auth = self.http_auth
         url = f"{self.opensearch_url}/{path}"
@@ -772,8 +772,14 @@ class OpenSearchVectorSearch(VectorStore):
             }
         ]
         }
-        response = requests.put(url, auth=auth, json=payload, verify=False)
-        return response
+        try:
+            response = requests.put(url, auth=auth, json=payload, verify=False)
+            return response
+        except requests.HTTPError as http_err:
+            print(f"HTTP error occurred: {http_err}")
+        except Exception as err:
+            print(f"An error occurred: {err}")
+           
     
     def similarity_search(
         self,
@@ -1211,10 +1217,15 @@ class OpenSearchVectorSearch(VectorStore):
             else:
                 # hybrid search without post filter
                 payload = self._hybrid_search(options)
-
-            r = requests.get(url, auth=auth, json=payload, verify=False)
-            response = r.json()
-            return [hit for hit in response["hits"]["hits"]]
+            
+            try:
+                r = requests.get(url, auth=auth, json=payload, verify=False)
+                response = r.json()
+                return [hit for hit in response["hits"]["hits"]]
+            except requests.HTTPError as http_err:
+                print(f"HTTP error occurred: {http_err}")
+            except Exception as err:
+                print(f"An error occurred: {err}")
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
