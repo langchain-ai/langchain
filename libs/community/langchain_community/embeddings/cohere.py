@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional
 
-import langchain_experimental.rl_chain.helpers
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -88,7 +87,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         @retry_decorator
         def _embed_with_retry(**kwargs: Any) -> Any:
-            return langchain_experimental.rl_chain.helpers.embed(**kwargs)
+            return self.client.embed(**kwargs)
 
         return _embed_with_retry(**kwargs)
 
@@ -98,7 +97,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         @retry_decorator
         async def _embed_with_retry(**kwargs: Any) -> Any:
-            return await langchain_experimental.rl_chain.helpers.embed(**kwargs)
+            return await self.async_client.embed(**kwargs)
 
         return _embed_with_retry(**kwargs)
 
