@@ -1458,7 +1458,9 @@ class BaseChatOpenAI(BaseChatModel):
 class ChatOpenAI(BaseChatOpenAI):
     """OpenAI chat model integration.
 
-    Setup:
+    .. dropdown:: Setup
+        :open:
+
         Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
 
         .. code-block:: bash
@@ -1466,7 +1468,8 @@ class ChatOpenAI(BaseChatOpenAI):
             pip install -U langchain-openai
             export OPENAI_API_KEY="your-api-key"
 
-    Key init args — completion params:
+    .. dropdown:: Key init args — completion params
+
         model: str
             Name of OpenAI model to use.
         temperature: float
@@ -1479,7 +1482,10 @@ class ChatOpenAI(BaseChatOpenAI):
             Configure streaming outputs, like whether to return token usage when
             streaming (``{"include_usage": True}``).
 
-    Key init args — client params:
+        See full list of supported init args and their descriptions in the params section.
+
+    .. dropdown:: Key init args — client params
+
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
         max_retries: int
@@ -1493,9 +1499,10 @@ class ChatOpenAI(BaseChatOpenAI):
             OpenAI organization ID. If not passed in will be read from env
             var OPENAI_ORG_ID.
 
-    See full list of supported init args and their descriptions in the params section.
+        See full list of supported init args and their descriptions in the params section.
 
-    Instantiate:
+    .. dropdown:: Instantiate
+
         .. code-block:: python
 
             from langchain_openai import ChatOpenAI
@@ -1512,9 +1519,10 @@ class ChatOpenAI(BaseChatOpenAI):
                 # other params...
             )
 
-    **NOTE**: Any param which is not explicitly supported will be passed directly to the
-    ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
-    invoked. For example:
+        **NOTE**: Any param which is not explicitly supported will be passed directly to the
+        ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
+        invoked. For example:
+
         .. code-block:: python
 
             from langchain_openai import ChatOpenAI
@@ -1530,7 +1538,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
             ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
 
-    Invoke:
+    .. dropdown:: Invoke
+
         .. code-block:: python
 
             messages = [
@@ -1542,7 +1551,7 @@ class ChatOpenAI(BaseChatOpenAI):
             ]
             llm.invoke(messages)
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             AIMessage(
                 content="J'adore la programmation.",
@@ -1561,7 +1570,8 @@ class ChatOpenAI(BaseChatOpenAI):
                 usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
             )
 
-    Stream:
+    .. dropdown:: Stream
+
         .. code-block:: python
 
             for chunk in llm.stream(messages):
@@ -1599,7 +1609,8 @@ class ChatOpenAI(BaseChatOpenAI):
                 id="run-bf917526-7f58-4683-84f7-36a6b671d140",
             )
 
-    Async:
+    .. dropdown:: Async
+
         .. code-block:: python
 
             await llm.ainvoke(messages)
@@ -1629,7 +1640,8 @@ class ChatOpenAI(BaseChatOpenAI):
                 usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
             )
 
-    Tool calling:
+    .. dropdown:: Tool calling
+
         .. code-block:: python
 
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -1712,7 +1724,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
         See ``ChatOpenAI.bind_tools()`` method for more.
 
-    Structured output:
+    .. dropdown:: Structured output
+
         .. code-block:: python
 
             from typing import Optional
@@ -1741,7 +1754,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
         See ``ChatOpenAI.with_structured_output()`` for more.
 
-    JSON mode:
+    .. dropdown:: JSON mode
+
         .. code-block:: python
 
             json_llm = llm.bind(response_format={"type": "json_object"})
@@ -1754,7 +1768,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
             '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
 
-    Image input:
+    .. dropdown:: Image input
+
         .. code-block:: python
 
             import base64
@@ -1779,7 +1794,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
             "The weather in the image appears to be clear and pleasant. The sky is mostly blue with scattered, light clouds, suggesting a sunny day with minimal cloud cover. There is no indication of rain or strong winds, and the overall scene looks bright and calm. The lush green grass and clear visibility further indicate good weather conditions."
 
-    Token usage:
+    .. dropdown:: Token usage
+
         .. code-block:: python
 
             ai_msg = llm.invoke(messages)
@@ -1813,7 +1829,8 @@ class ChatOpenAI(BaseChatOpenAI):
             llm = ChatOpenAI(model="gpt-4o", stream_usage=True)
             structured_llm = llm.with_structured_output(...)
 
-    Logprobs:
+    .. dropdown:: Logprobs
+
         .. code-block:: python
 
             logprobs_llm = llm.bind(logprobs=True)
@@ -1872,7 +1889,8 @@ class ChatOpenAI(BaseChatOpenAI):
                 ]
             }
 
-    Response metadata
+    .. dropdown:: Response metadata
+
         .. code-block:: python
 
             ai_msg = llm.invoke(messages)

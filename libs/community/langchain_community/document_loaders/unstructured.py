@@ -168,7 +168,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 
 @deprecated(
     since="0.2.8",
-    removal="0.4.0",
+    removal="1.0",
     alternative_import="langchain_unstructured.UnstructuredLoader",
 )
 class UnstructuredFileLoader(UnstructuredBaseLoader):
@@ -269,7 +269,7 @@ def get_elements_from_api(
 
 @deprecated(
     since="0.2.8",
-    removal="0.4.0",
+    removal="1.0",
     alternative_import="langchain_unstructured.UnstructuredLoader",
 )
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
@@ -351,7 +351,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
 @deprecated(
     since="0.2.8",
-    removal="0.4.0",
+    removal="1.0",
     alternative_import="langchain_unstructured.UnstructuredLoader",
 )
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
@@ -418,7 +418,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
 @deprecated(
     since="0.2.8",
-    removal="0.4.0",
+    removal="1.0",
     alternative_import="langchain_unstructured.UnstructuredLoader",
 )
 class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):

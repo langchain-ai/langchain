@@ -38,7 +38,7 @@ DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."
 
 @deprecated(
     since="0.0.37",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_huggingface.ChatHuggingFace",
 )
 class ChatHuggingFace(BaseChatModel):

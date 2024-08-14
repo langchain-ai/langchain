@@ -440,6 +440,108 @@ const FEATURE_TABLES = {
         columns: [],
         items: [],
     },
+    webpage_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Description", formatter: (item) => item.source},
+            {title: "Package/API", formatter: (item) => item.api},
+        ],
+        items: [
+            {
+                name: "Web",
+                link: "web_base",
+                source: "Uses urllib and BeautifulSoup to load and parse HTML web pages",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"
+            },
+            {
+                name: "RecursiveURL",
+                link: "recursive_url",
+                source: "Recursively scrapes all child links from a root URL",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.recursive_url_loader.RecursiveUrlLoader.html"
+            },
+            {
+                name: "Sitemap",
+                link: "sitemap",
+                source: "Scrapes all pages on a given sitemap",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.sitemap.SitemapLoader.html"
+            },
+            {
+                name: "Firecrawl",
+                link: "firecrawl",
+                source: "API service that can be deployed locally, hosted version has free credits.",
+                api: "API",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.firecrawl.FireCrawlLoader.html"
+            }
+        ]
+    },
+    pdf_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Description", formatter: (item) => item.source},
+            {title: "Package/API", formatter: (item) => item.api},
+        ],
+        items: [
+            {
+                name: "PyPDF",
+                link: "pypdfloader",
+                source: "Uses `pypdf` to load and parse PDFs",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFLoader.html"
+            },
+            {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "Uses Unstructured's open source library to load PDFs",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
+                name: "Amazon Textract",
+                link: "amazon_textract",
+                source: "Uses AWS API to load PDFs",
+                api: "API",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.AmazonTextractPDFLoader.html"
+            }
+        ]
+    },
+    common_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Data Type", formatter: (item) => item.source},
+        ],
+        items: [
+            {
+                name: "CSVLoader",
+                link: "csv",
+                source: "CSV files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.csv_loader.CSVLoader.html"
+            },
+            {
+                name: "DirectoryLoader",
+                link: "document_loader_directory",
+                source: "All files in a given directory",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.directory.DirectoryLoader.html"
+            },
+            {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "All file types",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+        ]
+    },
     vectorstores: {
         link: 'docs/integrations/vectorstores',
         columns: [
@@ -630,6 +732,23 @@ const FEATURE_TABLES = {
     }
 };
 
+const DEPRECATED_DOC_IDS = [
+  "integrations/chat/anthropic_functions",
+  "integrations/chat/ernie",
+  "integrations/chat/ollama_functions",
+  "integrations/document_loaders/airbyte_cdk",
+  "integrations/document_loaders/airbyte_gong",
+  "integrations/document_loaders/airbyte_hubspot",
+  "integrations/document_loaders/airbyte_json",
+  "integrations/document_loaders/airbyte_salesforce",
+  "integrations/document_loaders/airbyte_shopify",
+  "integrations/document_loaders/airbyte_stripe",
+  "integrations/document_loaders/airbyte_typeform",
+  "integrations/document_loaders/airbyte_zendesk_support",
+  "integrations/llms/anthropic",
+  "integrations/text_embedding/ernie",
+];
+
 function toTable(columns, items) {
     const headers = columns.map((col) => col.title);
     return (
@@ -671,18 +790,30 @@ function truncate(str, n) {
 }
 
 export function IndexTable() {
-    const { items } = useCurrentSidebarCategory();
+  const { items } = useCurrentSidebarCategory();
 
-    const rows = items.filter(item => !item.docId?.endsWith?.('/index')).map(item => ({
-        ...item,
-        description: useDocById(item.docId ?? undefined)?.description,
+  const rows = items
+    .filter(
+      (item) =>
+        !item.docId?.endsWith?.("/index") &&
+        !DEPRECATED_DOC_IDS.includes(item.docId)
+    )
+    .map((item) => ({
+      ...item,
+      description: useDocById(item.docId ?? undefined)?.description,
     }));
-    const rtn = toTable(
-        [
-            { title: "Label", formatter: (item) => <a href={item.href}>{item.label}</a> },
-            { title: "Description", formatter: (item) => truncate(item.description ?? "", 70) },
-        ],
-        rows,
-    );
-    return rtn;
+  const rtn = toTable(
+    [
+      {
+        title: "Name",
+        formatter: (item) => <a href={item.href}>{item.label}</a>,
+      },
+      {
+        title: "Description",
+        formatter: (item) => truncate(item.description ?? "", 70),
+      },
+    ],
+    rows,
+  );
+  return rtn;
 }

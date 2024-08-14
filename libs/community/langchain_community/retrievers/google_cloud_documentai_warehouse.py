@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 @deprecated(
     since="0.0.32",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.DocumentAIWarehouseRetriever",
 )
 class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
