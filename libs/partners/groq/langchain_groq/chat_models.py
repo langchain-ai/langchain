@@ -370,7 +370,7 @@ class ChatGroq(BaseChatModel):
         return values
 
     @root_validator(pre=True)
-    def pre_init(cls, value: Dict) -> Dict:
+    def pre_init(cls, values: Dict) -> Dict:
         """Assign defaults."""
         if values["temperature"] == 0:
             values["temperature"] = 1e-8
