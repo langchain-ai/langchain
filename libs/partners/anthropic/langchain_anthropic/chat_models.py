@@ -21,6 +21,8 @@ from typing import (
 )
 
 import anthropic
+from typing_extensions import NotRequired
+
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -147,7 +149,7 @@ def _merge_messages(
     return merged
 
 
-def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[Dict]]:
+def _format_messages(messages: List[BaseMessage]) -> Tuple[Union[str, List[Dict], None], List[Dict]]:
     """Format messages for anthropic."""
 
     """
@@ -159,7 +161,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                 for m in messages
             ]
     """
-    system: Optional[str] = None
+    system: Union[str, List[Dict], None] = None
     formatted_messages: List[Dict] = []
 
     merged_messages = _merge_messages(messages)
@@ -167,11 +169,6 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
         if message.type == "system":
             if i != 0:
                 raise ValueError("System message must be at beginning of message list.")
-            if not isinstance(message.content, str):
-                raise ValueError(
-                    "System message must be a string, "
-                    f"instead was: {type(message.content)}"
-                )
             system = message.content
             continue
 
@@ -1044,24 +1041,33 @@ class AnthropicTool(TypedDict):
     name: str
     description: str
     input_schema: Dict[str, Any]
+    cache_control: NotRequired[Dict[str, str]]
 
 
 def convert_to_anthropic_tool(
-    tool: Union[Dict[str, Any], Type, Callable, BaseTool],
+    tool: Union[Dict[str, Any], Type, Callable, BaseTool]
 ) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition."""
+    if isinstance(tool, dict) and all(k in tool for k in ("tool", "cache_control")):
+        cache_control = tool["cache_control"]
+        tool = tool["tool"]
+    else:
+        cache_control = None
     # already in Anthropic tool format
     if isinstance(tool, dict) and all(
         k in tool for k in ("name", "description", "input_schema")
     ):
-        return AnthropicTool(tool)  # type: ignore
+        anthropic_formatted = AnthropicTool(tool)  # type: ignore
     else:
-        formatted = convert_to_openai_tool(tool)["function"]
-        return AnthropicTool(
-            name=formatted["name"],
-            description=formatted["description"],
-            input_schema=formatted["parameters"],
+        oai_formatted = convert_to_openai_tool(tool)["function"]
+        anthropic_formatted = AnthropicTool(
+            name=oai_formatted["name"],
+            description=oai_formatted["description"],
+            input_schema=oai_formatted["parameters"],
         )
+    if cache_control:
+        tool["cache_control"] = {"type": "ephemeral"}
+    return anthropic_formatted
 
 
 def _tools_in_params(params: dict) -> bool:
