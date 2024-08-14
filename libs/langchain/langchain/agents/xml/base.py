@@ -8,13 +8,13 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.tools.render import ToolsRenderer, render_text_description
 
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.format_scratchpad import format_xml
 from langchain.agents.output_parsers import XMLAgentOutputParser
 from langchain.agents.xml.prompt import agent_instructions
 from langchain.chains.llm import LLMChain
-from langchain.tools.render import ToolsRenderer, render_text_description
 
 
 @deprecated("0.1.0", alternative="create_xml_agent", removal="1.0")
