@@ -7,7 +7,6 @@ import httpx
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     SecretStr,
     root_validator,
@@ -122,7 +121,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     model: str = "mistral-embed"
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
         arbitrary_types_allowed = True
         allow_population_by_field_name = True
 
