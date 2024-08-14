@@ -237,7 +237,7 @@ class PyPDFLoader(BasePDFLoader):
             import pypdf  # noqa:F401
         except ImportError:
             raise ImportError(
-                "pypdf package not found, please install it with " "`pip install pypdf`"
+                "pypdf package not found, please install it with `pip install pypdf`"
             )
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFParser(
