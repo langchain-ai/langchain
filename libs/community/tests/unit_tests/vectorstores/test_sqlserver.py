@@ -1,7 +1,7 @@
 """Test SQLServer_VectorStore functionality."""
 
 import os
-from typing import List
+from typing import Generator, List
 
 import pytest
 from langchain_core.documents import Document
@@ -14,14 +14,17 @@ _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING")
 
 
 @pytest.fixture
-def store() -> SQLServer_VectorStore:
+def store() -> Generator[SQLServer_VectorStore, None, None]:
     """Setup resources that are needed for the duration of the test."""
     store = SQLServer_VectorStore(
         connection_string=_CONNECTION_STRING,
         embedding_function=FakeEmbeddings(size=1536),
         table_name="langchain_vector_store_tests",
     )
-    return store  # provide this data to the test
+    yield store  # provide this data to the test
+
+    # Drop store after it's done being used in the test case.
+    store.drop()
 
 
 @pytest.fixture
