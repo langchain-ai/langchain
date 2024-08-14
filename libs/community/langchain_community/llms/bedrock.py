@@ -713,7 +713,7 @@ class BedrockBase(BaseModel, ABC):
 
 
 @deprecated(
-    since="0.0.34", removal="0.3", alternative_import="langchain_aws.BedrockLLM"
+    since="0.0.34", removal="1.0", alternative_import="langchain_aws.BedrockLLM"
 )
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.

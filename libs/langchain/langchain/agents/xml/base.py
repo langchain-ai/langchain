@@ -17,7 +17,7 @@ from langchain.agents.xml.prompt import agent_instructions
 from langchain.chains.llm import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_xml_agent", removal="0.3.0")
+@deprecated("0.1.0", alternative="create_xml_agent", removal="1.0")
 class XMLAgent(BaseSingleActionAgent):
     """Agent that uses XML tags.
 

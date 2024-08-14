@@ -7,6 +7,39 @@ sidebar_class_name: hidden
 
 import { CategoryTable, IndexTable } from "@theme/FeatureTables";
 
+DocumentLoaders load data into the standard LangChain Document format.
+
+Each DocumentLoader has its own specific parameters, but they can all be invoked in the same way with the .load method.
+An example use case is as follows:
+
+```python
+from langchain_community.document_loaders.csv_loader import CSVLoader
+
+loader = CSVLoader(
+    ...  # <-- Integration specific parameters here
+)
+data = loader.load()
+```
+
+## Common File Types
+
+The below document loaders allow you to load data from common data formats.
+
+<CategoryTable category="common_loaders" />
+
+## PDFs
+
+The below document loaders allow you to load documents.
+
+<CategoryTable category="pdf_loaders" />
+
+## Webpages
+
+The below document loaders allow you to load webpages.
+
+<CategoryTable category="webpage_loaders" />
+
+
 ## All document loaders
 
 <IndexTable />

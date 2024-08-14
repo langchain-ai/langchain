@@ -50,7 +50,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     ]
 
 
-@deprecated(since="0.2.9", removal="0.4", alternative_import="langchain_chroma.Chroma")
+@deprecated(since="0.2.9", removal="1.0", alternative_import="langchain_chroma.Chroma")
 class Chroma(VectorStore):
     """`ChromaDB` vector store.
 
@@ -705,7 +705,7 @@ class Chroma(VectorStore):
             "Since Chroma 0.4.x the manual persistence method is no longer "
             "supported as docs are automatically persisted."
         ),
-        removal="0.3.0",
+        removal="1.0",
     )
     def persist(self) -> None:
         """Persist the collection.
