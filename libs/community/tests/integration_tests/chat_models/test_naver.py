@@ -31,9 +31,7 @@ async def test_abatch_tags() -> None:
     """Test batch tokens from ChatClovaX."""
     llm = ChatClovaX()
 
-    result = await llm.abatch(
-        ["I'm Clova", "I'm not Clova"], config={"tags": ["foo"]}
-    )
+    result = await llm.abatch(["I'm Clova", "I'm not Clova"], config={"tags": ["foo"]})
     for token in result:
         assert isinstance(token.content, str)
 

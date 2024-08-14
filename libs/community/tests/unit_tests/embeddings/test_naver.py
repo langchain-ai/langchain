@@ -3,7 +3,7 @@
 import os
 from typing import cast
 
-from pydantic.v1 import SecretStr
+from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_community.embeddings import ClovaXEmbeddings
 

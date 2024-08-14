@@ -1,23 +1,46 @@
 import logging
 from typing import (
-    Any, AsyncIterator, Iterator, List, Optional, Dict, cast, Tuple, AsyncContextManager, Union, Callable, Type
+    Any,
+    AsyncContextManager,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
 )
 
 import httpx
 from httpx_sse import (
-    connect_sse, aconnect_sse, EventSource, ServerSentEvent, SSEError,
+    EventSource,
+    ServerSentEvent,
+    SSEError,
+    aconnect_sse,
+    connect_sse,
 )
-
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun,
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import LangSmithParams, BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
-    BaseMessage, AIMessage, ChatMessage, HumanMessage, SystemMessage, BaseMessageChunk,
-    AIMessageChunk, HumanMessageChunk, SystemMessageChunk, ChatMessageChunk
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
 )
-from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGeneration
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
@@ -69,16 +92,29 @@ def _convert_naver_chat_message_to_message(
     _message: Dict,
 ) -> BaseMessage:
     role = _message["role"]
-    assert role in ("assistant", "system", "user"), f"Expected role to be 'assistant', 'system', 'user', got {role}"
+    assert role in (
+        "assistant",
+        "system",
+        "user",
+    ), f"Expected role to be 'assistant', 'system', 'user', got {role}"
     content = cast(str, _message["content"])
     additional_kwargs: Dict = {}
 
     if role == "user":
-        return HumanMessage(content=content, additional_kwargs=additional_kwargs,)
+        return HumanMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+        )
     elif role == "system":
-        return SystemMessage(content=content, additional_kwargs=additional_kwargs,)
+        return SystemMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+        )
     elif role == "assistant":
-        return AIMessage(content=content, additional_kwargs=additional_kwargs,)
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+        )
     else:
         assert True, f"Expected role to be 'assistant', 'system', 'user', got {role}"
 
@@ -126,7 +162,7 @@ class ChatClovaX(BaseChatModel):
     following environment variables set or passed in constructor in lower case:
     - ``NCP_CLOVASTUDIO_API_KEY``
     - ``NCP_APIGW_API_KEY``
-    
+
     Example:
         .. code-block:: python
 
@@ -141,18 +177,31 @@ class ChatClovaX(BaseChatModel):
     client: httpx.Client = Field(default=None)  #: :meta private:
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
 
-    model_name: str = Field(default="HCX-003", alias="model", description="NCP ClovaStudio chat model name")
-    task_id: Optional[str] = Field(default=None, description="NCP Clova Studio chat model tuning task ID")
-    service_app: bool = Field(default=False, description="false: use testapp, true: use service app on NCP Clova Studio")
+    model_name: str = Field(
+        default="HCX-003", alias="model", description="NCP ClovaStudio chat model name"
+    )
+    task_id: Optional[str] = Field(
+        default=None, description="NCP Clova Studio chat model tuning task ID"
+    )
+    service_app: bool = Field(
+        default=False,
+        description="false: use testapp, true: use service app on NCP Clova Studio",
+    )
 
-    ncp_clovastudio_api_key: Optional[SecretStr] = Field(default=None, alias="clovastudio_api_key")
+    ncp_clovastudio_api_key: Optional[SecretStr] = Field(
+        default=None, alias="clovastudio_api_key"
+    )
     """Automatically inferred from env are `NCP_CLOVASTUDIO_API_KEY` if not provided."""
 
     ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
-    base_url: Optional[str] = Field(default=DEFAULT_BASE_URL, alias="ncp_clovastudio_api_base_url")
-    """Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided."""
+    base_url: Optional[str] = Field(
+        default=DEFAULT_BASE_URL, alias="ncp_clovastudio_api_base_url"
+    )
+    """
+    Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
+    """
 
     temperature: Optional[float] = None
     top_k: Optional[int] = None
@@ -224,7 +273,9 @@ class ChatClovaX(BaseChatModel):
         app_type = "serviceapp" if self.service_app else "testapp"
 
         if self.task_id:
-            return f"{self.base_url}/{app_type}/v2/tasks/{self.task_id}/chat-completions"
+            return (
+                f"{self.base_url}/{app_type}/v2/tasks/{self.task_id}/chat-completions"
+            )
         else:
             return f"{self.base_url}/{app_type}/v1/chat-completions/{self.model_name}"
 
@@ -239,7 +290,10 @@ class ChatClovaX(BaseChatModel):
         if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
             raise ValueError("top_p must be in the range [0.0, 1.0]")
 
-        if values["repeat_penalty"] is not None and not 0 < values["repeat_penalty"] <= 10:
+        if (
+            values["repeat_penalty"] is not None
+            and not 0 < values["repeat_penalty"] <= 10
+        ):
             raise ValueError("repeat_penalty must be in the range (0.0, 10]")
 
         if values["max_tokens"] is not None and not 0 <= values["max_tokens"] <= 4096:
@@ -253,12 +307,16 @@ class ChatClovaX(BaseChatModel):
 
         """Validate that api key and python package exists in environment."""
         values["ncp_clovastudio_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY")
+            get_from_dict_or_env(
+                values, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY"
+            )
         )
         values["ncp_apigw_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY")
         )
-        values["base_url"] = get_from_dict_or_env(values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL")
+        values["base_url"] = get_from_dict_or_env(
+            values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL"
+        )
 
         if not values.get("client"):
             values["client"] = httpx.Client(
@@ -276,12 +334,16 @@ class ChatClovaX(BaseChatModel):
 
     @staticmethod
     def default_headers(values):
-        clovastudio_api_key = values["ncp_clovastudio_api_key"].get_secret_value() \
-            if values["ncp_clovastudio_api_key"] \
+        clovastudio_api_key = (
+            values["ncp_clovastudio_api_key"].get_secret_value()
+            if values["ncp_clovastudio_api_key"]
             else None
-        apigw_api_key = values["ncp_apigw_api_key"].get_secret_value() \
-            if values["ncp_apigw_api_key"] \
+        )
+        apigw_api_key = (
+            values["ncp_apigw_api_key"].get_secret_value()
+            if values["ncp_apigw_api_key"]
             else None
+        )
         return {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -313,7 +375,10 @@ class ChatClovaX(BaseChatModel):
                     _raise_on_error(event_source.response)
                     for sse in event_source.iter_sse():
                         event_data = sse.json()
-                        if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
+                        if (
+                            sse.event == "signal"
+                            and event_data.get("data", {}) == "[DONE]"
+                        ):
                             return
                         if sse.event == "error":
                             raise SSEError(message=sse.data)
@@ -326,9 +391,9 @@ class ChatClovaX(BaseChatModel):
             return response.json()
 
     async def _acompletion_with_retry(
-            self,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Any:
         """Use tenacity to retry the async completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
@@ -402,7 +467,9 @@ class ChatClovaX(BaseChatModel):
             gen_chunk = ChatGenerationChunk(message=new_chunk)
 
             if run_manager:
-                run_manager.on_llm_new_token(token=cast(str, new_chunk.content), chunk=gen_chunk)
+                run_manager.on_llm_new_token(
+                    token=cast(str, new_chunk.content), chunk=gen_chunk
+                )
 
             yield gen_chunk
 
@@ -416,7 +483,9 @@ class ChatClovaX(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
 
-        response = await self._acompletion_with_retry(messages=message_dicts, run_manager=run_manager, **params)
+        response = await self._acompletion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        )
 
         return self._create_chat_result(response)
 
@@ -439,7 +508,9 @@ class ChatClovaX(BaseChatModel):
             gen_chunk = ChatGenerationChunk(message=new_chunk)
 
             if run_manager:
-                await run_manager.on_llm_new_token(token=cast(str, new_chunk.content), chunk=gen_chunk)
+                await run_manager.on_llm_new_token(
+                    token=cast(str, new_chunk.content), chunk=gen_chunk
+                )
 
             yield gen_chunk
 

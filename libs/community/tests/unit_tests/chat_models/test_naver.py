@@ -1,24 +1,23 @@
 """Test chat model integration."""
 import json
 import os
-from typing import Any, cast, Generator, AsyncGenerator
+from typing import Any, AsyncGenerator, Generator, cast
 from unittest.mock import patch
 
 import pytest
 from httpx_sse import ServerSentEvent
-from pydantic.v1 import SecretStr
-
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_community.chat_models import ChatClovaX
 from langchain_community.chat_models.naver import (
+    _convert_message_to_naver_chat_message,
     _convert_naver_chat_message_to_message,
-    _convert_message_to_naver_chat_message
 )
 
 os.environ["NCP_CLOVASTUDIO_API_KEY"] = "test_api_key"
@@ -28,7 +27,9 @@ os.environ["NCP_APIGW_API_KEY"] = "test_gw_key"
 def test_initialization_api_key() -> None:
     """Test chat model initialization."""
     chat_model = ChatClovaX(clovastudio_api_key="foo", apigw_api_key="bar")
-    assert cast(SecretStr, chat_model.ncp_clovastudio_api_key).get_secret_value() == "foo"
+    assert (
+        cast(SecretStr, chat_model.ncp_clovastudio_api_key).get_secret_value() == "foo"
+    )
     assert cast(SecretStr, chat_model.ncp_apigw_api_key).get_secret_value() == "bar"
 
 
@@ -66,37 +67,27 @@ def test_convert_dict_to_message_system() -> None:
 @pytest.fixture
 def mock_chat_completion_response() -> dict:
     return {
-        "status": {
-            "code": "20000",
-            "message": "OK"
-        },
+        "status": {"code": "20000", "message": "OK"},
         "result": {
             "message": {
                 "role": "assistant",
-                "content": "Phrases: Record what happened today and prepare for tomorrow. "
-                           "The diary will make your life richer."
+                "content": "Phrases: Record what happened today and prepare "
+                "for tomorrow. "
+                "The diary will make your life richer.",
             },
             "stopReason": "LENGTH",
             "inputLength": 100,
             "outputLength": 10,
             "aiFilter": [
-                {
-                    "groupName": "curse",
-                    "name": "insult",
-                    "score": "1"
-                },
-                {
-                    "groupName": "curse",
-                    "name": "discrimination",
-                    "score": "0"
-                },
+                {"groupName": "curse", "name": "insult", "score": "1"},
+                {"groupName": "curse", "name": "discrimination", "score": "0"},
                 {
                     "groupName": "unsafeContents",
                     "name": "sexualHarassment",
-                    "score": "2"
-                }
-            ]
-        }
+                    "score": "2",
+                },
+            ],
+        },
     }
 
 
@@ -109,10 +100,13 @@ def test_naver_invoke(mock_chat_completion_response: dict) -> None:
         completed = True
         return mock_chat_completion_response
 
-    with (patch.object(ChatClovaX, '_completion_with_retry', mock_completion_with_retry)):
+    with patch.object(ChatClovaX, "_completion_with_retry", mock_completion_with_retry):
         res = llm.invoke("Let's test it.")
-        assert res.content == \
-               "Phrases: Record what happened today and prepare for tomorrow. The diary will make your life richer."
+        assert (
+            res.content
+            == "Phrases: Record what happened today and prepare for tomorrow. "
+            "The diary will make your life richer."
+        )
     assert completed
 
 
@@ -125,10 +119,15 @@ async def test_naver_ainvoke(mock_chat_completion_response: dict) -> None:
         completed = True
         return mock_chat_completion_response
 
-    with patch.object(ChatClovaX, "_acompletion_with_retry", mock_acompletion_with_retry):
+    with patch.object(
+        ChatClovaX, "_acompletion_with_retry", mock_acompletion_with_retry
+    ):
         res = await llm.ainvoke("Let's test it.")
-        assert res.content == \
-               "Phrases: Record what happened today and prepare for tomorrow. The diary will make your life richer."
+        assert (
+            res.content
+            == "Phrases: Record what happened today and prepare for tomorrow. "
+            "The diary will make your life richer."
+        )
     assert completed
 
 
@@ -143,9 +142,9 @@ def _make_completion_response_from_token(token: str) -> ServerSentEvent:
                 message=dict(
                     content=token,
                     role="assistant",
-                )
+                ),
             )
-        )
+        ),
     )
 
 
@@ -172,7 +171,10 @@ class MyCustomHandler(BaseCallbackHandler):
         self.last_token = token
 
 
-@patch("langchain_community.chat_models.ChatClovaX._completion_with_retry", new=mock_chat_stream)
+@patch(
+    "langchain_community.chat_models.ChatClovaX._completion_with_retry",
+    new=mock_chat_stream,
+)
 def test_stream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatClovaX(callbacks=[callback])
@@ -180,7 +182,10 @@ def test_stream_with_callback() -> None:
         assert callback.last_token == token.content
 
 
-@patch("langchain_community.chat_models.ChatClovaX._acompletion_with_retry", new=mock_chat_astream)
+@patch(
+    "langchain_community.chat_models.ChatClovaX._acompletion_with_retry",
+    new=mock_chat_astream,
+)
 async def test_astream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatClovaX(callbacks=[callback])
