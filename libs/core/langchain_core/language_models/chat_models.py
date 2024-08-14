@@ -208,11 +208,30 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     """  # noqa: E501
 
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """[DEPRECATED] Callback manager to add to the run trace."""
+    callback_manager: Optional[BaseCallbackManager] = deprecated(
+        name="callback_manager", since="0.1.7", removal="0.3.0", alternative="callbacks"
+    )(
+        Field(
+            default=None,
+            exclude=True,
+            description="Callback manager to add to the run trace.",
+        )
+    )
 
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
-    """An optional rate limiter to use for limiting the number of requests."""
+    "An optional rate limiter to use for limiting the number of requests."
+
+    disable_streaming: Union[bool, Literal["tool_calling"]] = False
+    """Whether to disable streaming for this model.
+    
+    If streaming is bypassed, then ``stream()/astream()`` will defer to 
+    ``invoke()/ainvoke()``.
+
+    - If True, will always bypass streaming case.
+    - If "tool_calling", will bypass streaming case only when the model is called
+      with a ``tools`` keyword argument.
+    - If False (default), will always use streaming case if available.
+    """
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -302,6 +321,41 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
         return cast(ChatGeneration, llm_result.generations[0][0]).message
 
+    def _should_stream(
+        self,
+        *,
+        async_api: bool,
+        run_manager: Optional[
+            Union[CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun]
+        ] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """Determine if a given model call should hit the streaming API."""
+        sync_not_implemented = type(self)._stream == BaseChatModel._stream
+        async_not_implemented = type(self)._astream == BaseChatModel._astream
+
+        # Check if streaming is implemented.
+        if (not async_api) and sync_not_implemented:
+            return False
+        # Note, since async falls back to sync we check both here.
+        if async_api and async_not_implemented and sync_not_implemented:
+            return False
+
+        # Check if streaming has been disabled on this instance.
+        if self.disable_streaming is True:
+            return False
+        # We assume tools are passed in via "tools" kwarg in all models.
+        if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
+            return False
+
+        # Check if a runtime streaming flag has been passed in.
+        if "stream" in kwargs:
+            return kwargs["stream"]
+
+        # Check if any streaming callback handlers have been passed in.
+        handlers = run_manager.handlers if run_manager else []
+        return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
+
     def stream(
         self,
         input: LanguageModelInput,
@@ -310,7 +364,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
-        if type(self)._stream == BaseChatModel._stream:
+        if not self._should_stream(async_api=False, **{**kwargs, **{"stream": True}}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
                 BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
@@ -380,10 +434,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        if (
-            type(self)._astream is BaseChatModel._astream
-            and type(self)._stream is BaseChatModel._stream
-        ):
+        if not self._should_stream(async_api=True, **{**kwargs, **{"stream": True}}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
@@ -471,9 +522,37 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
-        ls_params = LangSmithParams(ls_model_type="chat")
+
+        # get default provider from class name
+        default_provider = self.__class__.__name__
+        if default_provider.startswith("Chat"):
+            default_provider = default_provider[4:].lower()
+        elif default_provider.endswith("Chat"):
+            default_provider = default_provider[:-4]
+        default_provider = default_provider.lower()
+
+        ls_params = LangSmithParams(ls_provider=default_provider, ls_model_type="chat")
         if stop:
             ls_params["ls_stop"] = stop
+
+        # model
+        if hasattr(self, "model") and isinstance(self.model, str):
+            ls_params["ls_model_name"] = self.model
+        elif hasattr(self, "model_name") and isinstance(self.model_name, str):
+            ls_params["ls_model_name"] = self.model_name
+
+        # temperature
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+            ls_params["ls_temperature"] = kwargs["temperature"]
+        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+            ls_params["ls_temperature"] = self.temperature
+
+        # max_tokens
+        if "max_tokens" in kwargs and isinstance(kwargs["max_tokens"], int):
+            ls_params["ls_max_tokens"] = kwargs["max_tokens"]
+        elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
+            ls_params["ls_max_tokens"] = self.max_tokens
+
         return ls_params
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
@@ -760,20 +839,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
-        if type(self)._stream != BaseChatModel._stream and kwargs.pop(
-            "stream",
-            (
-                next(
-                    (
-                        True
-                        for h in run_manager.handlers
-                        if isinstance(h, _StreamingCallbackHandler)
-                    ),
-                    False,
-                )
-                if run_manager
-                else False
-            ),
+        if self._should_stream(
+            async_api=False,
+            run_manager=run_manager,
+            **kwargs,
         ):
             chunks: List[ChatGenerationChunk] = []
             for chunk in self._stream(messages, stop=stop, **kwargs):
@@ -847,23 +916,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
-        if (
-            type(self)._astream != BaseChatModel._astream
-            or type(self)._stream != BaseChatModel._stream
-        ) and kwargs.pop(
-            "stream",
-            (
-                next(
-                    (
-                        True
-                        for h in run_manager.handlers
-                        if isinstance(h, _StreamingCallbackHandler)
-                    ),
-                    False,
-                )
-                if run_manager
-                else False
-            ),
+        if self._should_stream(
+            async_api=True,
+            run_manager=run_manager,
+            **kwargs,
         ):
             chunks: List[ChatGenerationChunk] = []
             async for chunk in self._astream(messages, stop=stop, **kwargs):

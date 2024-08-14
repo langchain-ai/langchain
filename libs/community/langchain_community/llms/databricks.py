@@ -9,7 +9,6 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     PrivateAttr,
     root_validator,
@@ -397,7 +396,7 @@ class Databricks(LLM):
     _client: _DatabricksClientBase = PrivateAttr()
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     @property
