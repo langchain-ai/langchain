@@ -372,6 +372,9 @@ class ChatGroq(BaseChatModel):
     @root_validator(pre=True)
     def pre_init(cls, values: Dict) -> Dict:
         """Assign defaults."""
+        if "temperature" in values and values["temperature"] == 0:
+            values["temperature"] = 1e-8
+
         values["groq_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "groq_api_key", "GROQ_API_KEY")
         )
@@ -382,9 +385,6 @@ class ChatGroq(BaseChatModel):
     @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        if values["temperature"] == 0:
-            values["temperature"] = 1e-8
-
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
