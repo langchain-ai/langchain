@@ -2,8 +2,6 @@ from itertools import islice
 from typing import Any, Iterator, List, Optional
 
 from ai21.models import EmbedType
-
-import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 
 from langchain_ai21.ai21_base import AI21Base
@@ -115,7 +113,7 @@ class AI21Embeddings(Embeddings, AI21Base):
     ) -> List[List[float]]:
         chunks = _split_texts_into_batches(texts, batch_size)
         responses = [
-            langchain_experimental.rl_chain.helpers.embed.create(
+            self.client.embed.create(
                 texts=chunk,
                 type=embed_type,
                 **kwargs,

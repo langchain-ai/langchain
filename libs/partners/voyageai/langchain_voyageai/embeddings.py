@@ -3,8 +3,6 @@ import os
 from typing import Iterable, List, Optional
 
 import voyageai  # type: ignore
-
-import langchain_experimental.rl_chain.helpers
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -89,7 +87,7 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
             embeddings.extend(
-                langchain_experimental.rl_chain.helpers.embed(
+                self._client.embed(
                     texts[i : i + self.batch_size],
                     model=self.model,
                     input_type="document",
@@ -101,7 +99,7 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        return langchain_experimental.rl_chain.helpers.embed(
+        return self._client.embed(
             [text], model=self.model, input_type="query", truncation=self.truncation
         ).embeddings[0]
 
@@ -110,7 +108,7 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
 
         _iter = self._get_batch_iterator(texts)
         for i in _iter:
-            r = await langchain_experimental.rl_chain.helpers.embed(
+            r = await self._aclient.embed(
                 texts[i : i + self.batch_size],
                 model=self.model,
                 input_type="document",
@@ -121,7 +119,7 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         return embeddings
 
     async def aembed_query(self, text: str) -> List[float]:
-        r = await langchain_experimental.rl_chain.helpers.embed(
+        r = await self._aclient.embed(
             [text],
             model=self.model,
             input_type="query",
