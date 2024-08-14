@@ -1,4 +1,4 @@
-"""GitHub Toolkit."""
+"""GitLab Toolkit."""
 
 from typing import Dict, List
 
