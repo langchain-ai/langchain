@@ -8,7 +8,6 @@ class DatabricksEmbeddings(Embeddings):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``langchain-databricks`` and set environment variable ``DATABRICKS_API_KEY``.
 
         .. code-block:: bash
 

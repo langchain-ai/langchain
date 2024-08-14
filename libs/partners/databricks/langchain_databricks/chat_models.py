@@ -50,7 +50,6 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -212,6 +211,7 @@ class ChatDatabricks(BaseChatModel):
         To use tool calls, your model endpoint must support ``tools`` parameter. See [Function calling on Databricks](https://python.langchain.com/v0.2/docs/integrations/chat/databricks/#function-calling-on-databricks) for more information.
 
     """  # noqa: E501
+
     endpoint: str
     """Name of Databricks Model Serving endpoint to query."""
     target_uri: str = "databricks"
@@ -228,21 +228,18 @@ class ChatDatabricks(BaseChatModel):
     """Any extra parameters to pass to the endpoint."""
     _client: Any = PrivateAttr()
 
-
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self._validate_uri()
         try:
-            from mlflow.deployments import get_deploy_client
+            from mlflow.deployments import get_deploy_client  # type: ignore
 
             self._client = get_deploy_client(self.target_uri)
         except ImportError as e:
             raise ImportError(
-                "Failed to create the client. "
-                f"Please run `pip install mlflow` to install "
-                "required dependencies."
+                "Failed to create the client. Please run `pip install mlflow` to "
+                "install required dependencies."
             ) from e
-
 
     def _validate_uri(self) -> None:
         if self.target_uri == "databricks":
@@ -297,11 +294,14 @@ class ChatDatabricks(BaseChatModel):
 
         return data
 
-    def _convert_response_to_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+    def _convert_response_to_chat_result(
+        self, response: Mapping[str, Any]
+    ) -> ChatResult:
         generations = [
             ChatGeneration(
                 message=_convert_dict_to_message(choice["message"]),
-                generation_info=choice.get("usage", {}))
+                generation_info=choice.get("usage", {}),
+            )
             for choice in response["choices"]
         ]
         usage = response.get("usage", {})
@@ -324,7 +324,9 @@ class ChatDatabricks(BaseChatModel):
                 if first_chunk_role is None:
                     first_chunk_role = chunk_delta.get("role")
 
-                chunk_message = _convert_dict_to_message_chunk(chunk_delta, first_chunk_role)
+                chunk_message = _convert_dict_to_message_chunk(
+                    chunk_delta, first_chunk_role
+                )
 
                 generation_info = {}
                 if finish_reason := choice.get("finish_reason"):
@@ -345,7 +347,6 @@ class ChatDatabricks(BaseChatModel):
             else:
                 # Handle the case where choices are empty if needed
                 continue
-
 
     def bind_tools(
         self,
@@ -409,13 +410,14 @@ class ChatDatabricks(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
-
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "chat-databricks"
 
+
 ### Conversion function to convert Pydantic models to dictionaries and vice versa. ###
+
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict = {"content": message.content}
@@ -433,10 +435,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         return {"role": "user", **message_dict}
     elif isinstance(message, AIMessage):
         if tool_calls := _get_tool_calls_from_ai_message(message):
-            message_dict["tool_calls"] = tool_calls
+            message_dict["tool_calls"] = tool_calls  # type: ignore[assignment]
             # If tool calls present, content null value should be None not empty string.
             message_dict["content"] = message_dict["content"] or None  # type: ignore[assignment]
-        return { "role": "assistant", **message_dict}
+        return {"role": "assistant", **message_dict}
     elif isinstance(message, SystemMessage):
         return {"role": "system", **message_dict}
     elif isinstance(message, ToolMessage):
@@ -445,7 +447,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             "tool_call_id": message.tool_call_id,
             **message_dict,
         }
-    elif isinstance(message, FunctionMessage) or "function_call" in message.additional_kwargs:
+    elif (
+        isinstance(message, FunctionMessage)
+        or "function_call" in message.additional_kwargs
+    ):
         raise ValueError(
             "Function messages are not supported by Databricks. Please"
             " create a feature request at https://github.com/mlflow/mlflow/issues."
@@ -494,7 +499,7 @@ def _get_tool_calls_from_ai_message(message: AIMessage) -> List[Dict]:
 
 
 def _convert_dict_to_message(_dict: Dict) -> BaseMessage:
-    role = _dict.get("role")
+    role = _dict["role"]
     content = _dict.get("content")
     content = content if content is not None else ""
 
@@ -512,7 +517,9 @@ def _convert_dict_to_message(_dict: Dict) -> BaseMessage:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
-                    invalid_tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)))
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -524,7 +531,9 @@ def _convert_dict_to_message(_dict: Dict) -> BaseMessage:
         return ChatMessage(content=content, role=role)
 
 
-def _convert_dict_to_message_chunk(_dict: Mapping[str, Any], default_role: str) -> BaseMessageChunk:
+def _convert_dict_to_message_chunk(
+    _dict: Mapping[str, Any], default_role: str
+) -> BaseMessageChunk:
     role = _dict.get("role", default_role)
     content = _dict.get("content")
     content = content if content is not None else ""
@@ -535,7 +544,7 @@ def _convert_dict_to_message_chunk(_dict: Mapping[str, Any], default_role: str) 
         return SystemMessageChunk(content=content)
     elif role == "tool":
         return ToolMessageChunk(
-            content=content,tool_call_id=_dict["tool_call_id"], id=_dict.get("id")
+            content=content, tool_call_id=_dict["tool_call_id"], id=_dict.get("id")
         )
     elif role == "assistant":
         additional_kwargs: Dict = {}
