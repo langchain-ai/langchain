@@ -340,6 +340,12 @@ const FEATURE_TABLES = {
                 package: "langchain-cohere",
                 apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_cohere.embeddings.CohereEmbeddings.html#langchain_cohere.embeddings.CohereEmbeddings"
             },
+            {
+                name: "Nomic",
+                link: "cohere",
+                package: "langchain-nomic",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html#langchain_nomic.embeddings.NomicEmbeddings"
+            },
         ]
     },
     document_retrievers: {
