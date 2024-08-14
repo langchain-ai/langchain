@@ -1,7 +1,9 @@
 import base64
 import re
 from dataclasses import asdict
-from typing import Dict, List, Optional
+from functools import lru_cache
+from pathlib import Path
+from typing import Dict, List, Literal, Optional, Union
 
 from langchain_core.runnables.graph import (
     CurveStyle,
@@ -10,6 +12,15 @@ from langchain_core.runnables.graph import (
     Node,
     NodeStyles,
 )
+
+
+@lru_cache()
+def _get_vendored_mermaid_js() -> str:
+    """Get vendored Mermaid JS file contents."""
+    HERE = Path(__file__).parent
+    path = HERE / "_vendored/mermaid.min.js"
+    with open(path, "r") as file:
+        return file.read()
 
 
 def draw_mermaid(
@@ -142,7 +153,9 @@ def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
 def draw_mermaid_png(
     mermaid_syntax: str,
     output_file_path: Optional[str] = None,
-    draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
+    draw_method: Union[
+        MermaidDrawMethod, Literal["api", "playwright", "pyppeteer"]
+    ] = MermaidDrawMethod.API,
     background_color: Optional[str] = "white",
     padding: int = 10,
 ) -> bytes:
@@ -152,7 +165,7 @@ def draw_mermaid_png(
         mermaid_syntax (str): Mermaid graph syntax.
         output_file_path (str, optional): Path to save the PNG image.
             Defaults to None.
-        draw_method (MermaidDrawMethod, optional): Method to draw the graph.
+        draw_method: Method to draw the graph.
             Defaults to MermaidDrawMethod.API.
         background_color (str, optional): Background color of the image.
             Defaults to "white".
@@ -164,15 +177,20 @@ def draw_mermaid_png(
     Raises:
         ValueError: If an invalid draw method is provided.
     """
-    if draw_method == MermaidDrawMethod.PLAYWRIGHT:
-        import asyncio
+    if draw_method == "api":
+        draw_method_ = MermaidDrawMethod.API
+    elif draw_method == "playwright":
+        draw_method_ = MermaidDrawMethod.PLAYWRIGHT
+    elif draw_method == "pyppeteer":
+        draw_method_ = MermaidDrawMethod.PYPPETEER
+    else:
+        draw_method_ = draw_method
 
-        img_bytes = asyncio.run(
-            _render_mermaid_using_playwright(
-                mermaid_syntax, output_file_path, background_color, padding
-            )
+    if draw_method_ == MermaidDrawMethod.PLAYWRIGHT:
+        img_bytes = _render_mermaid_using_playwright_sync(
+            mermaid_syntax, output_file_path, background_color, padding
         )
-    elif draw_method == MermaidDrawMethod.PYPPETEER:
+    elif draw_method_ == MermaidDrawMethod.PYPPETEER:
         import asyncio
 
         img_bytes = asyncio.run(
@@ -180,18 +198,164 @@ def draw_mermaid_png(
                 mermaid_syntax, output_file_path, background_color, padding
             )
         )
-    elif draw_method == MermaidDrawMethod.API:
+    elif draw_method_ == MermaidDrawMethod.API:
         img_bytes = _render_mermaid_using_api(
             mermaid_syntax, output_file_path, background_color
         )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
         raise ValueError(
-            f"Invalid draw method: {draw_method}. "
+            f"Invalid draw method: {draw_method_}. "
             f"Supported draw methods are: {supported_methods}"
         )
 
     return img_bytes
+
+
+async def adraw_mermaid_png(
+    mermaid_syntax: str,
+    output_file_path: Optional[str] = None,
+    draw_method: Union[
+        MermaidDrawMethod, Literal["api", "playwright", "pyppeteer"]
+    ] = MermaidDrawMethod.API,
+    background_color: Optional[str] = "white",
+    padding: int = 10,
+) -> bytes:
+    """Draws a Mermaid graph as PNG using provided syntax.
+
+    Args:
+        mermaid_syntax (str): Mermaid graph syntax.
+        output_file_path (str, optional): Path to save the PNG image.
+            Defaults to None.
+        draw_method: Method to draw the graph.
+            Defaults to MermaidDrawMethod.API.
+        background_color (str, optional): Background color of the image.
+            Defaults to "white".
+        padding (int, optional): Padding around the image. Defaults to 10.
+
+    Returns:
+        bytes: PNG image bytes.
+
+    Raises:
+        ValueError: If an invalid draw method is provided.
+    """
+    if draw_method == "api":
+        draw_method_ = MermaidDrawMethod.API
+    elif draw_method == "playwright":
+        draw_method_ = MermaidDrawMethod.PLAYWRIGHT
+    elif draw_method == "pyppeteer":
+        draw_method_ = MermaidDrawMethod.PYPPETEER
+    else:
+        draw_method_ = draw_method
+
+    if draw_method_ == MermaidDrawMethod.PLAYWRIGHT:
+        img_bytes = await _render_mermaid_using_playwright(
+            mermaid_syntax, output_file_path, background_color, padding
+        )
+    elif draw_method_ == MermaidDrawMethod.PYPPETEER:
+        img_bytes = await _render_mermaid_using_pyppeteer(
+            mermaid_syntax, output_file_path, background_color, padding
+        )
+    elif draw_method_ == MermaidDrawMethod.API:
+        img_bytes = _render_mermaid_using_api(
+            mermaid_syntax, output_file_path, background_color
+        )
+    else:
+        supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
+        raise ValueError(
+            f"Invalid draw method: {draw_method_}. "
+            f"Supported draw methods are: {supported_methods}"
+        )
+
+    return img_bytes
+
+
+def _render_mermaid_using_playwright_sync(
+    mermaid_syntax: str,
+    output_file_path: Optional[str] = None,
+    background_color: Optional[str] = "white",
+    padding: int = 10,
+    device_scale_factor: int = 3,
+) -> bytes:
+    try:
+        from playwright.sync_api import ViewportSize, sync_playwright
+    except ImportError as e:
+        raise ImportError(
+            "Install Playwright to use the Playwright method: `pip install playwright`."
+        ) from e
+
+    with sync_playwright() as p:
+        img_bytes: bytes = b""
+
+        for browser_type in [p.chromium, p.firefox, p.webkit]:
+            try:
+                browser = browser_type.launch()
+            except Exception:
+                continue
+
+            page = browser.new_page()
+
+            # Setup Mermaid JS
+            page.goto("about:blank")
+            page.add_script_tag(content=_get_vendored_mermaid_js())
+
+            page.evaluate(
+                """() => {
+                        mermaid.initialize({startOnLoad:true});
+                    }"""
+            )
+
+            # Render SVG
+            svg_code = page.evaluate(
+                """(mermaidGraph) => {
+                        return mermaid.mermaidAPI.render('mermaid', mermaidGraph);
+                    }""",
+                mermaid_syntax,
+            )
+
+            # Set the page background to white
+            page.evaluate(
+                """([svg, background_color]) => {
+                    document.body.innerHTML = svg;
+                    document.body.style.background = background_color;
+                }""",
+                [svg_code["svg"], background_color],
+            )
+
+            # Take a screenshot
+            dimensions = page.evaluate(
+                """() => {
+                    const svgElement = document.querySelector('svg');
+                    const rect = svgElement.getBoundingClientRect();
+                    return { width: rect.width, height: rect.height };
+                }"""
+            )
+
+            viewport_size = ViewportSize(
+                width=int(dimensions["width"] + padding),
+                height=int(dimensions["height"] + padding),
+            )
+
+            browser.new_context(
+                viewport=viewport_size,
+                device_scale_factor=device_scale_factor,
+            )
+
+            img_bytes = page.screenshot(full_page=False)
+            browser.close()
+
+            break
+
+        if len(img_bytes) == 0:
+            raise Exception(
+                "Install a Playwright supported browser with `playwright install`."
+            )
+
+        if output_file_path is not None:
+            with open(output_file_path, "wb") as file:
+                file.write(img_bytes)
+
+        return img_bytes
 
 
 async def _render_mermaid_using_playwright(
@@ -221,10 +385,8 @@ async def _render_mermaid_using_playwright(
             page = await browser.new_page()
 
             # Setup Mermaid JS
-            _ = await page.goto("about:blank")
-            _ = await page.add_script_tag(
-                url="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"
-            )
+            await page.goto("about:blank")
+            await page.add_script_tag(content=_get_vendored_mermaid_js())
 
             await page.evaluate(
                 """() => {
@@ -263,7 +425,7 @@ async def _render_mermaid_using_playwright(
                 height=int(dimensions["height"] + padding),
             )
 
-            _ = await browser.new_context(
+            await browser.new_context(
                 viewport=viewport_size,
                 device_scale_factor=device_scale_factor,
             )
@@ -280,7 +442,7 @@ async def _render_mermaid_using_playwright(
 
         if output_file_path is not None:
             with open(output_file_path, "wb") as file:
-                _ = file.write(img_bytes)
+                file.write(img_bytes)
 
         return img_bytes
 
@@ -305,8 +467,8 @@ async def _render_mermaid_using_pyppeteer(
 
     # Setup Mermaid JS
     await page.goto("about:blank")
-    await page.addScriptTag(
-        {"url": "https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"}
+    await page.add_script_tag(
+        content=_get_vendored_mermaid_js(),
     )
     await page.evaluate(
         """() => {

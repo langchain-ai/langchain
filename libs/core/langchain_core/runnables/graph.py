@@ -173,9 +173,21 @@ class NodeStyles:
 class MermaidDrawMethod(Enum):
     """Enum for different draw methods supported by Mermaid"""
 
-    PLAYWRIGHT = "playwright"  # Uses Playwright to render the graph
-    PYPPETEER = "pyppeteer"  # Uses Pyppeteer to render the graph
-    API = "api"  # Uses Mermaid.INK API to render the graph
+    API = "api"
+    """Use Mermaid.INK API to render the graph. This is the default method."""
+    PLAYWRIGHT = "playwright"
+    """Use playwright to render the graph.
+    
+    Playwright is a library that allows using different browser engines to render 
+    the graph.
+    
+    See: https://playwright.dev/python/docs/intro 
+    """
+    PYPPETEER = "pyppeteer"
+    """Use Pyppeteer to render the graph. 
+    
+    This is DEPRECATED as the pyppetter library is no longer maintained.
+    """
 
 
 def node_data_str(id: str, data: Union[Type[BaseModel], RunnableType]) -> str:
@@ -626,6 +638,49 @@ class Graph:
             wrap_label_n_words=wrap_label_n_words,
         )
         return draw_mermaid_png(
+            mermaid_syntax=mermaid_syntax,
+            output_file_path=output_file_path,
+            draw_method=draw_method,
+            background_color=background_color,
+            padding=padding,
+        )
+
+    async def adraw_mermaid_png(
+        self,
+        *,
+        curve_style: CurveStyle = CurveStyle.LINEAR,
+        node_colors: NodeStyles = NodeStyles(),
+        wrap_label_n_words: int = 9,
+        output_file_path: Optional[str] = None,
+        draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
+        background_color: str = "white",
+        padding: int = 10,
+    ) -> bytes:
+        """Draw the graph as a PNG image using Mermaid (async variant).
+
+        Args:
+            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
+            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            wrap_label_n_words: The number of words to wrap the node labels at.
+                Defaults to 9.
+            output_file_path: The path to save the image to. If None, the image
+                is not saved. Defaults to None.
+            draw_method: The method to use to draw the graph.
+                Defaults to MermaidDrawMethod.API.
+            background_color: The color of the background. Defaults to "white".
+            padding: The padding around the graph. Defaults to 10.
+
+        Returns:
+            The PNG image as bytes.
+        """
+        from langchain_core.runnables.graph_mermaid import adraw_mermaid_png
+
+        mermaid_syntax = self.draw_mermaid(
+            curve_style=curve_style,
+            node_colors=node_colors,
+            wrap_label_n_words=wrap_label_n_words,
+        )
+        return await adraw_mermaid_png(
             mermaid_syntax=mermaid_syntax,
             output_file_path=output_file_path,
             draw_method=draw_method,
