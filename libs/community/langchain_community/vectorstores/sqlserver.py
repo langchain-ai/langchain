@@ -46,7 +46,7 @@ class SQLServer_VectorStore(VectorStore):
             connection: Optional SQLServer connection.
             connection_string: SQLServer connection string.
             db_schema: The schema in which the vector store will be created.
-                This schema must exist and user must have permissions to the schema.
+                This schema must exist and the user must have permissions to the schema.
             embedding_function: Any embedding function implementing
                 `langchain.embeddings.base.Embeddings` interface.
             table_name: The name of the table to use for storing embeddings.
