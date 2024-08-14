@@ -5,9 +5,7 @@ against a vector database.
 
 import datetime
 import inspect
-import json
 import logging
-from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests  # type: ignore
@@ -29,16 +27,12 @@ from langchain_community.chains.pebblo_retrieval.enforcement_filters import (
 from langchain_community.chains.pebblo_retrieval.models import (
     App,
     AuthContext,
-    Qa,
     SemanticContext,
 )
 from langchain_community.chains.pebblo_retrieval.utilities import (
-    APP_DISCOVER_URL,
     CLASSIFIER_URL,
-    PEBBLO_CLOUD_URL,
     PLUGIN_VERSION,
     PROMPT_GOV_URL,
-    PROMPT_URL,
     PebbloAPIWrapper,
     get_runtime,
 )
@@ -79,11 +73,10 @@ class PebbloRetrievalQA(Chain):
     """Classifier location. It could be either of 'local' or 'pebblo-cloud'."""
     _discover_sent: bool = False  #: :meta private:
     """Flag to check if discover payload has been sent."""
-    _prompt_sent: bool = False  #: :meta private:
-    """Flag to check if prompt payload has been sent."""
     enable_prompt_gov: bool = True  #: :meta private:
     """Flag to check if prompt governance is enabled or not"""
-    api_wrapper: PebbloAPIWrapper = Field(default_factory=PebbloAPIWrapper)
+    pb_client: PebbloAPIWrapper = Field(default_factory=PebbloAPIWrapper)
+    """Pebblo API client"""
 
     def _call(
         self,
@@ -102,11 +95,10 @@ class PebbloRetrievalQA(Chain):
         answer, docs = res['result'], res['source_documents']
         """
         prompt_time = datetime.datetime.now().isoformat()
-        PebbloRetrievalQA.set_prompt_sent(value=False)
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
-        auth_context = inputs.get(self.auth_context_key, {})
-        semantic_context = inputs.get(self.semantic_context_key, {})
+        auth_context = inputs.get(self.auth_context_key)
+        semantic_context = inputs.get(self.semantic_context_key)
         _, prompt_entities = self._check_prompt_validity(question)
 
         accepts_run_manager = (
@@ -122,43 +114,17 @@ class PebbloRetrievalQA(Chain):
             input_documents=docs, question=question, callbacks=_run_manager.get_child()
         )
 
-        qa = {
-            "name": self.app_name,
-            "context": [
-                {
-                    "retrieved_from": doc.metadata.get(
-                        "full_path", doc.metadata.get("source")
-                    ),
-                    "doc": doc.page_content,
-                    "vector_db": self.retriever.vectorstore.__class__.__name__,
-                    **(
-                        {"pb_checksum": doc.metadata.get("pb_checksum")}
-                        if doc.metadata.get("pb_checksum")
-                        else {}
-                    ),
-                }
-                for doc in docs
-                if isinstance(doc, Document)
-            ],
-            "prompt": {
-                "data": question,
-                "entities": prompt_entities.get("entities", {}),
-                "entityCount": prompt_entities.get("entityCount", 0),
-                "prompt_gov_enabled": self.enable_prompt_gov,
-            },
-            "response": {
-                "data": answer,
-            },
-            "prompt_time": prompt_time,
-            "user": auth_context.user_id if auth_context else "unknown",
-            "user_identities": auth_context.user_auth
-            if auth_context and hasattr(auth_context, "user_auth")
-            else [],
-            "classifier_location": self.classifier_location,
-        }
-
-        qa_payload = Qa(**qa)
-        self._send_prompt(qa_payload)
+        self.pb_client.send_prompt(
+            self.app_name,
+            self.retriever,
+            question,
+            answer,
+            auth_context,
+            docs,
+            prompt_entities,
+            prompt_time,
+            self.enable_prompt_gov,
+        )
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
@@ -265,14 +231,14 @@ class PebbloRetrievalQA(Chain):
             llm=llm,
             **kwargs,
         )
-
-        PebbloRetrievalQA._send_discover(
-            app,
+        # initialize Pebblo API client
+        pb_client = PebbloAPIWrapper(
             api_key=api_key,
-            classifier_url=classifier_url,
             classifier_location=classifier_location,
+            classifier_url=classifier_url,
         )
-
+        # send app discovery request
+        pb_client.send_app_discover(app)
         return cls(
             combine_documents_chain=combine_documents_chain,
             app_name=app_name,
@@ -281,6 +247,7 @@ class PebbloRetrievalQA(Chain):
             api_key=api_key,
             classifier_url=classifier_url,
             classifier_location=classifier_location,
+            pb_client=pb_client,
             **kwargs,
         )
 
@@ -348,184 +315,9 @@ class PebbloRetrievalQA(Chain):
         )
         return app
 
-    @staticmethod
-    def _send_discover(
-        app: App,
-        api_key: Optional[str],
-        classifier_url: str,
-        classifier_location: str,
-    ) -> None:  # type: ignore
-        """Send app discovery payload to pebblo-server. Internal method."""
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-        payload = app.dict(exclude_unset=True)
-        if classifier_location == "local":
-            app_discover_url = f"{classifier_url}{APP_DISCOVER_URL}"
-            try:
-                pebblo_resp = requests.post(
-                    app_discover_url, headers=headers, json=payload, timeout=20
-                )
-                logger.debug("discover-payload: %s", payload)
-                logger.debug(
-                    "send_discover[local]: request url %s, body %s len %s\
-                        response status %s body %s",
-                    pebblo_resp.request.url,
-                    str(pebblo_resp.request.body),
-                    str(
-                        len(
-                            pebblo_resp.request.body if pebblo_resp.request.body else []
-                        )
-                    ),
-                    str(pebblo_resp.status_code),
-                    pebblo_resp.json(),
-                )
-                if pebblo_resp.status_code in [HTTPStatus.OK, HTTPStatus.BAD_GATEWAY]:
-                    PebbloRetrievalQA.set_discover_sent()
-                else:
-                    logger.warning(
-                        "Received unexpected HTTP response code:"
-                        + f"{pebblo_resp.status_code}"
-                    )
-            except requests.exceptions.RequestException:
-                logger.warning("Unable to reach pebblo server.")
-            except Exception as e:
-                logger.warning("An Exception caught in _send_discover: local %s", e)
-
-        if api_key:
-            try:
-                headers.update({"x-api-key": api_key})
-                pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{APP_DISCOVER_URL}"
-                pebblo_cloud_response = requests.post(
-                    pebblo_cloud_url, headers=headers, json=payload, timeout=20
-                )
-
-                logger.debug(
-                    "send_discover[cloud]: request url %s, body %s len %s\
-                        response status %s body %s",
-                    pebblo_cloud_response.request.url,
-                    str(pebblo_cloud_response.request.body),
-                    str(
-                        len(
-                            pebblo_cloud_response.request.body
-                            if pebblo_cloud_response.request.body
-                            else []
-                        )
-                    ),
-                    str(pebblo_cloud_response.status_code),
-                    pebblo_cloud_response.json(),
-                )
-            except requests.exceptions.RequestException:
-                logger.warning("Unable to reach Pebblo cloud server.")
-            except Exception as e:
-                logger.warning("An Exception caught in _send_discover: cloud %s", e)
-
     @classmethod
     def set_discover_sent(cls) -> None:
         cls._discover_sent = True
-
-    @classmethod
-    def set_prompt_sent(cls, value: bool = True) -> None:
-        cls._prompt_sent = value
-
-    def _send_prompt(self, qa_payload: Qa) -> None:
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-        app_discover_url = f"{self.classifier_url}{PROMPT_URL}"
-        pebblo_resp = None
-        payload = qa_payload.dict(exclude_unset=True)
-        if self.classifier_location == "local":
-            try:
-                pebblo_resp = requests.post(
-                    app_discover_url,
-                    headers=headers,
-                    json=payload,
-                    timeout=20,
-                )
-                logger.debug("prompt-payload: %s", payload)
-                logger.debug(
-                    "send_prompt[local]: request url %s, body %s len %s\
-                        response status %s body %s",
-                    pebblo_resp.request.url,
-                    str(pebblo_resp.request.body),
-                    str(
-                        len(
-                            pebblo_resp.request.body if pebblo_resp.request.body else []
-                        )
-                    ),
-                    str(pebblo_resp.status_code),
-                    pebblo_resp.json(),
-                )
-                if pebblo_resp.status_code in [HTTPStatus.OK, HTTPStatus.BAD_GATEWAY]:
-                    PebbloRetrievalQA.set_prompt_sent()
-                else:
-                    logger.warning(
-                        "Received unexpected HTTP response code:"
-                        + f"{pebblo_resp.status_code}"
-                    )
-            except requests.exceptions.RequestException:
-                logger.warning("Unable to reach pebblo server.")
-            except Exception as e:
-                logger.warning("An Exception caught in _send_discover: local %s", e)
-
-        # If classifier location is local, then response, context and prompt
-        # should be fetched from pebblo_resp and replaced in payload.
-        if self.api_key:
-            if self.classifier_location == "local":
-                if pebblo_resp:
-                    resp = json.loads(pebblo_resp.text)
-                    if resp:
-                        payload["response"].update(
-                            resp.get("retrieval_data", {}).get("response", {})
-                        )
-                        payload["response"].pop("data")
-                        payload["prompt"].update(
-                            resp.get("retrieval_data", {}).get("prompt", {})
-                        )
-                        payload["prompt"].pop("data")
-                        context = payload["context"]
-                        for context_data in context:
-                            context_data.pop("doc")
-                        payload["context"] = context
-                else:
-                    payload["response"] = {}
-                    payload["prompt"] = {}
-                    payload["context"] = []
-            headers.update({"x-api-key": self.api_key})
-            pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{PROMPT_URL}"
-            try:
-                pebblo_cloud_response = requests.post(
-                    pebblo_cloud_url,
-                    headers=headers,
-                    json=payload,
-                    timeout=20,
-                )
-
-                logger.debug(
-                    "send_prompt[cloud]: request url %s, body %s len %s\
-                        response status %s body %s",
-                    pebblo_cloud_response.request.url,
-                    str(pebblo_cloud_response.request.body),
-                    str(
-                        len(
-                            pebblo_cloud_response.request.body
-                            if pebblo_cloud_response.request.body
-                            else []
-                        )
-                    ),
-                    str(pebblo_cloud_response.status_code),
-                    pebblo_cloud_response.json(),
-                )
-            except requests.exceptions.RequestException:
-                logger.warning("Unable to reach Pebblo cloud server.")
-            except Exception as e:
-                logger.warning("An Exception caught in _send_prompt: cloud %s", e)
-        elif self.classifier_location == "pebblo-cloud":
-            logger.warning("API key is missing for sending prompt to Pebblo cloud.")
-            raise NameError("API key is missing for sending prompt to Pebblo cloud.")
 
     def _check_prompt_validity(self, question: str) -> Tuple[bool, Dict[str, Any]]:
         """
@@ -588,9 +380,21 @@ class PebbloRetrievalQA(Chain):
         return is_valid_prompt, prompt_entities
 
     @classmethod
-    def get_chain_details(cls, llm: BaseLanguageModel, **kwargs):  # type: ignore
+    def get_chain_details(
+        cls, llm: BaseLanguageModel, **kwargs
+    ) -> List[Dict[str, Any]]:
+        """
+        Get chain details.
+
+        Args:
+            llm (BaseLanguageModel): Language model instance.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Dict[str, Any]]: Chain details.
+        """
         llm_dict = llm.__dict__
-        chain = [
+        chains = [
             {
                 "name": cls.__name__,
                 "model": {
@@ -613,4 +417,4 @@ class PebbloRetrievalQA(Chain):
                 ],
             },
         ]
-        return chain
+        return chains
