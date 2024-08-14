@@ -393,7 +393,7 @@ def _construct_doc(
     :toctree: {module}
 """
 
-            index_autosummary += f"""
+            index_autosummary += """
 **Deprecated classes*
 
 .. autosummary::
@@ -438,7 +438,7 @@ def _construct_doc(
     {fstring}
 
 """
-            index_autosummary += f"""
+            index_autosummary += """
 **Deprecated functions**
 
 .. autosummary::
