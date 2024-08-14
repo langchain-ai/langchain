@@ -540,6 +540,24 @@ const FEATURE_TABLES = {
                 source: "All file types",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
             },
+            {
+                name: "JSONLoader",
+                link: "json",
+                source: "JSON files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.json_loader.JSONLoader.html"
+            },
+            {
+                name: "UnstructuredMarkdownLoader",
+                link: "unstructured_markdown",
+                source: "Markdown files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.markdown.UnstructuredMarkdownLoader.html"
+            },
+            {
+                name: "BSHTMLLoader",
+                link: "bshtml",
+                source: "HTML files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
+            }
         ]
     },
     vectorstores: {
