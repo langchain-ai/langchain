@@ -1481,7 +1481,7 @@ class ChatOpenAI(BaseChatOpenAI):
         stream_options: Dict
             Configure streaming outputs, like whether to return token usage when
             streaming (``{"include_usage": True}``).
-            
+
         See full list of supported init args and their descriptions in the params section.
 
     .. dropdown:: Key init args — client params
