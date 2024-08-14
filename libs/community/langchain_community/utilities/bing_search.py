@@ -3,7 +3,7 @@
 from typing import Dict, List
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 # BING_SEARCH_ENDPOINT is the default endpoint for Bing Web Search API.
@@ -35,9 +35,7 @@ class BingSearchAPIWrapper(BaseModel):
     """Additional keyword arguments to pass to the search request."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def _bing_search_results(self, search_term: str, count: int) -> List[dict]:
         headers = {"Ocp-Apim-Subscription-Key": self.bing_subscription_key}

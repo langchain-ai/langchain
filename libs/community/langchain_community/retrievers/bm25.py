@@ -25,8 +25,6 @@ class BM25Retriever(BaseRetriever):
     """ Preprocessing function to use on the text before BM25 vectorization."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @classmethod
