@@ -45,7 +45,7 @@ class BSHTMLLoader(BaseLoader):
 
         .. code-block:: python
 
-            
+
             Test Title
 
 
@@ -65,8 +65,8 @@ class BSHTMLLoader(BaseLoader):
 
         .. code-block:: python
 
-            
-            
+
+
             Test Title
 
 
@@ -76,7 +76,7 @@ class BSHTMLLoader(BaseLoader):
 
 
             {'source': './example_data/fake-content.html', 'title': 'Test Title'}
-            
+
     """  # noqa: E501
 
     def __init__(
