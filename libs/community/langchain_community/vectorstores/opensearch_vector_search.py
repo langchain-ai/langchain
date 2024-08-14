@@ -435,7 +435,7 @@ class OpenSearchVectorSearch(VectorStore):
         self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
         self.engine = kwargs.get("engine")
 
-        # opensearch_url
+        # added for hybrid search
         self.opensearch_url = opensearch_url
         self.http_auth = http_auth
 
