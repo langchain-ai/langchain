@@ -139,7 +139,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra="forbid"
+        extra = "forbid"
 
     @root_validator(pre=False, skip_on_failure=True)
     def _set_clients(cls, values: dict) -> dict:
