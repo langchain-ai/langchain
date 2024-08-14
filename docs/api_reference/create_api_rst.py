@@ -330,11 +330,11 @@ def _construct_doc(
 .. autosummary::
     :toctree: {module}
 """
-            index_autosummary += '''
+            index_autosummary += """
 **Classes**
 
 .. autosummary::
-'''
+"""
 
             for class_ in sorted(classes, key=lambda c: c["qualified_name"]):
                 if class_["kind"] == "TypedDict":
@@ -376,13 +376,13 @@ def _construct_doc(
 
 """
 
-            index_autosummary += f'''
+            index_autosummary += f"""
 **Functions**
 
 .. autosummary::
 
     {fstring}
-'''
+"""
         if deprecated_classes:
             module_doc += f"""\
 **Deprecated classes**
@@ -393,11 +393,11 @@ def _construct_doc(
     :toctree: {module}
 """
 
-            index_autosummary += f'''
+            index_autosummary += f"""
 **Deprecated classes*
 
 .. autosummary::
-'''
+"""
 
             for class_ in sorted(deprecated_classes, key=lambda c: c["qualified_name"]):
                 if class_["kind"] == "TypedDict":
@@ -438,14 +438,14 @@ def _construct_doc(
     {fstring}
 
 """
-            index_autosummary += f'''
+            index_autosummary += f"""
 **Deprecated functions**
 
 .. autosummary::
 
     {fstring}
 
-'''
+"""
         docs.append((f"{module}.rst", module_doc))
     docs.append(("index.rst", index_doc + index_autosummary))
 
