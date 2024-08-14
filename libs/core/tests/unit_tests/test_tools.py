@@ -39,15 +39,17 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import (
     BaseTool,
-    InjectedToolArg,
-    SchemaAnnotationError,
     StructuredTool,
     Tool,
     ToolException,
+    tool,
+)
+from langchain_core.tools.base import (
+    InjectedToolArg,
+    SchemaAnnotationError,
     _get_all_basemodel_annotations,
     _is_message_content_block,
     _is_message_content_type,
-    tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model

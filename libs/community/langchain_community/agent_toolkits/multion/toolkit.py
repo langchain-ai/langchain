@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import List
 
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.multion.close_session import MultionCloseSession
 from langchain_community.tools.multion.create_session import MultionCreateSession
 from langchain_community.tools.multion.update_session import MultionUpdateSession
