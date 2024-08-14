@@ -73,13 +73,11 @@ class SQLServer_VectorStore(VectorStore):
                 self._embedding_store.__table__.create(
                     session.get_bind(), checkfirst=True
                 )
-
         except ProgrammingError as e:
             logging.error(f"Create table {self.table_name} failed.")
             raise Exception(e.__cause__) from None
 
     def _get_embedding_store(self, name: str, schema: Optional[str]) -> Any:
-
         DynamicBase = declarative_base(class_registry=dict())  # type: Any
         class EmbeddingStore(DynamicBase):
             """This is the base model for SQL vector store."""
@@ -150,7 +148,6 @@ class SQLServer_VectorStore(VectorStore):
                 self._embedding_store.__table__.drop(session.get_bind())
 
             logging.info(f"Vector store `{self.table_name}` dropped successfully.")
-
         except ProgrammingError as e:
             logging.error(f"Unable to drop vector store.\n {e.__cause__}.")
 
