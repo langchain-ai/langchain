@@ -334,7 +334,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             | RunnableLambda(
                 _call_runnable_sync,
                 _call_runnable_async,
-            )
+            ).with_config(run_name="check_sync_or_async")
         ).with_config(run_name="RunnableWithMessageHistory")
 
         if history_factory_config:
