@@ -657,7 +657,7 @@ def _alias_filters(kwargs: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if "filters" in kwargs:
         warn_deprecated(
             since="0.2.11",
-            removal="0.3",
+            removal="1.0",
             message="DatabricksVectorSearch received a key `filters` in search_kwargs. "
             "`filters` was deprecated since langchain-community 0.2.11 and will "
             "be removed in 0.3. Please use `filter` instead.",

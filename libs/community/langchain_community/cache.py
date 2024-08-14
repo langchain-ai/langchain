@@ -1614,7 +1614,7 @@ ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 @deprecated(
     since="0.0.28",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_astradb.AstraDBCache",
 )
 class AstraDBCache(BaseCache):
@@ -1819,7 +1819,7 @@ def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
 
 @deprecated(
     since="0.0.28",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_astradb.AstraDBSemanticCache",
 )
 class AstraDBSemanticCache(BaseCache):
