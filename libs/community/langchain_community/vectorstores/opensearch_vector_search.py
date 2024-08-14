@@ -741,6 +741,40 @@ class OpenSearchVectorSearch(VectorStore):
             item.get("delete", {}).get("error") for item in response["items"]
         )
     
+    def create_search_pipelines(
+        self,
+        pipeline_name: str,
+        keyword_weight: float = 0.7,
+        vector_weight: float = 0.3,
+    ):
+        path=f"_search/pipeline/{pipeline_name}"
+        auth = self.http_auth
+        url = f"{self.opensearch_url}/{path}"
+
+        payload = {
+        "description": "Post processor for hybrid search",
+        "phase_results_processors": [
+            {
+            "normalization-processor": {
+                "normalization": {
+                "technique": "min_max"
+                },
+                "combination": {
+                "technique": "arithmetic_mean",
+                "parameters": {
+                    "weights": [
+                    keyword_weight,
+                    vector_weight
+                    ]
+                }
+                }
+            }
+            }
+        ]
+        }
+        response = requests.put(url, auth=auth, json=payload, verify=False)
+        return response
+    
     def similarity_search(
         self,
         query: str,
