@@ -172,7 +172,7 @@ def _import_databricks() -> Type[BaseLLM]:
 def _import_databricks_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
-        removal="0.3",
+        removal="1.0",
         alternative_import="langchain_community.chat_models.ChatDatabricks",
     )
     from langchain_community.chat_models.databricks import ChatDatabricks
@@ -342,7 +342,7 @@ def _import_mlflow() -> Type[BaseLLM]:
 def _import_mlflow_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
-        removal="0.3",
+        removal="1.0",
         alternative_import="langchain_community.chat_models.ChatMlflow",
     )
     from langchain_community.chat_models.mlflow import ChatMlflow

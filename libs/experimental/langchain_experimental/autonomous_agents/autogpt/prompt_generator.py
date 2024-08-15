@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 
 FINISH_NAME = "finish"
 

@@ -11,7 +11,7 @@ from langchain_core._api import deprecated
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class AgentType(str, Enum):
     """An enum for agent types.
