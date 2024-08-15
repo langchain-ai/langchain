@@ -19,6 +19,9 @@ class LangSmithExampleSelector(
 ):
     """Select examples using a LangSmith few-shot index.
 
+    Head to the LangSmith docs for more on how dataset indexing works:
+    `LangSmith docs <https://docs.smith.langchain.com/how_to_guides/datasets/index_datasets_for_dynamic_few_shot_example_selection>`_.
+
     .. dropdown:: Index creation
 
         .. code-block:: python
@@ -69,7 +72,7 @@ class LangSmithExampleSelector(
 
             chain = example_selector | construct_prompt | llm
             chain.invoke({"question": "..."})
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
