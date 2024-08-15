@@ -349,4 +349,4 @@ def test_that_schema_input_is_used() -> None:
 
     # Confirm table in that schema exists.
     result = connection.execute(text(sys_table_query))
-    assert result.fetchone() is not None
+    assert result.fetchone() is not None, f"Table {schema}.{table_name} does not exist."
