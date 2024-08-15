@@ -96,7 +96,7 @@ def get_cohere_chat_request(
 
 
 @deprecated(
-    since="0.0.30", removal="0.3.0", alternative_import="langchain_cohere.ChatCohere"
+    since="0.0.30", removal="1.0", alternative_import="langchain_cohere.ChatCohere"
 )
 class ChatCohere(BaseChatModel, BaseCohere):
     """`Cohere` chat large language models.
@@ -118,8 +118,6 @@ class ChatCohere(BaseChatModel, BaseCohere):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 

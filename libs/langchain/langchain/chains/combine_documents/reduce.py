@@ -6,7 +6,6 @@ from typing import Any, Callable, List, Optional, Protocol, Tuple
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 
@@ -206,10 +205,8 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     Otherwise, after it reaches the max number, it will throw an error"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def _collapse_chain(self) -> BaseCombineDocumentsChain:

@@ -32,7 +32,6 @@ omit = [ "tests/*",]
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5"
 markers = [ "compile: mark placeholder test used to compile integration tests without running them", "scheduled: mark tests to run in scheduled testing",]
-filterwarnings = [ "error", "ignore::ResourceWarning:", "ignore:The method `ChatGroq.with_structured_output` is in beta", "default:The `dict` method is deprecated; use `model_dump` instead:DeprecationWarning", "ignore:tool_choice='any' is not currently supported. Converting to 'auto'.",]
 asyncio_mode = "auto"
 
 [tool.poetry.group.test]

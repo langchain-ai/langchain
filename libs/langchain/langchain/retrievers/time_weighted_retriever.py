@@ -47,8 +47,6 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def _document_get_date(self, field: str, document: Document) -> datetime.datetime:

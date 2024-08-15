@@ -9,6 +9,7 @@ from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.prompts import BasePromptTemplate
 
 import langchain_experimental.rl_chain.base as base
+from langchain_experimental.rl_chain.helpers import embed
 
 logger = logging.getLogger(__name__)
 
@@ -90,14 +91,14 @@ class PickBestFeatureEmbedder(base.Embedder[PickBestEvent]):
             return None, None, None
 
     def get_context_and_action_embeddings(self, event: PickBestEvent) -> tuple:
-        context_emb = base.embed(event.based_on, self.model) if event.based_on else None
+        context_emb = embed(event.based_on, self.model) if event.based_on else None
         to_select_from_var_name, to_select_from = next(
             iter(event.to_select_from.items()), (None, None)
         )
 
         action_embs = (
             (
-                base.embed(to_select_from, self.model, to_select_from_var_name)
+                embed(to_select_from, self.model, to_select_from_var_name)
                 if event.to_select_from
                 else None
             )

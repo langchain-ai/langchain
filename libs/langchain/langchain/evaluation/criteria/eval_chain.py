@@ -8,7 +8,7 @@ from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -237,9 +237,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         return False
 
     class Config:
-        """Configuration for the QAEvalChain."""
-
-        extra = Extra.ignore
+        extra = "ignore"
 
     @property
     def requires_reference(self) -> bool:
