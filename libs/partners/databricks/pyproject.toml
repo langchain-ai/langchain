@@ -33,7 +33,6 @@ optional = true
 pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
-langchain = { path = "../../langchain", develop = true }
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.codespell]

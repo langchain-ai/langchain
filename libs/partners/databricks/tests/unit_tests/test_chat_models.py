@@ -1,12 +1,11 @@
 """Test chat model integration."""
 
 import json
-from typing import Any, Generator
+from typing import Generator
 from unittest import mock
 
 import mlflow  # type: ignore # noqa: F401
 import pytest
-from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -21,9 +20,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.messages.tool import ToolCallChunk
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import _PYDANTIC_MAJOR_VERSION, BaseModel
-from langchain_core.tools import StructuredTool
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_databricks.chat_models import (
     ChatDatabricks,
@@ -183,38 +180,26 @@ def test_chat_mlflow_stream(llm: ChatDatabricks) -> None:
         assert chunk.content == expected["choices"][0]["delta"]["content"]  # type: ignore[index]
 
 
-@pytest.mark.skipif(
-    _PYDANTIC_MAJOR_VERSION < 2,
-    reason="The tool mock is not compatible with pydantic 1.x",
-)
 def test_chat_mlflow_bind_tools(llm: ChatDatabricks) -> None:
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are a helpful assistant. Make sure to use tool for information.",
-            ),
-            ("placeholder", "{chat_history}"),
-            ("human", "{input}"),
-            ("placeholder", "{agent_scratchpad}"),
-        ]
-    )
+    class GetWeather(BaseModel):
+        """Get the current weather in a given location"""
 
-    def tool_func(*args: Any, **kwargs: Any) -> str:
-        return "36939 x 8922.4 = 329,511,111.6"
-
-    tools = [
-        StructuredTool(
-            name="name",
-            description="description",
-            args_schema=BaseModel,
-            func=tool_func,
+        location: str = Field(
+            ..., description="The city and state, e.g. San Francisco, CA"
         )
-    ]
-    agent = create_tool_calling_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)  # type: ignore[arg-type]
-    result = agent_executor.invoke({"input": "36939 * 8922.4"})
-    assert result["output"] == "36939x8922.4 = 329,511,111.6"
+
+    class GetPopulation(BaseModel):
+        """Get the current population in a given location"""
+
+        location: str = Field(
+            ..., description="The city and state, e.g. San Francisco, CA"
+        )
+
+    llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+    response = llm_with_tools.invoke(
+        "Which city is hotter today and which is bigger: LA or NY?"
+    )
+    assert isinstance(response, AIMessage)
 
 
 ### Test data conversion functions ###
