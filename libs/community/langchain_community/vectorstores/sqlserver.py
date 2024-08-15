@@ -178,7 +178,7 @@ class SQLServer_VectorStore(VectorStore):
             metadatas = [{} for _ in texts]
 
         if ids is None:
-            # Copy data from metadatas so data is not updated in-place.
+            # Get IDs from metadata if available.
             ids = [metadata.get("id", uuid.uuid4()) for metadata in metadatas]
 
         try:
