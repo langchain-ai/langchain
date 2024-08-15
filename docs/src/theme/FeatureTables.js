@@ -527,7 +527,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "PyPDFDirectry",
-                link: "pypdfdirectry",
+                link: "pypdfdirectory",
                 source: "Load a directory with PDF files",
                 api: "Package",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFDirectoryLoader.html"
