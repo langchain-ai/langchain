@@ -98,7 +98,7 @@ class BoxLoader(BaseLoader, BaseModel):
                 "generated with langchain_box.utilities.BoxAuth"
             )
 
-        box = BoxAPIWrapper(
+        box = BoxAPIWrapper(  # type: ignore[call-arg]
             box_developer_token=values.get("box_developer_token"),
             box_auth=values.get("box_auth"),
             get_text_rep=values.get("get_text_rep"),
@@ -130,7 +130,7 @@ class BoxLoader(BaseLoader, BaseModel):
         """Load documents."""
         if self.box_file_ids:
             for file_id in self.box_file_ids:
-                file = self.box.get_document_by_file_id(file_id)
+                file = self.box.get_document_by_file_id(file_id)  # type: ignore[union-attr]
 
                 if file is not None:
                     yield file

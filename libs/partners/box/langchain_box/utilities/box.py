@@ -1,14 +1,14 @@
 """Util that calls Box APIs."""
-import box_sdk_gen  # type: ignore
-from enum import Enum
 import errno
-from io import BufferedIOBase, BufferedWriter
-from pathlib import Path
-import requests
 import shutil
 import tempfile
+from enum import Enum
+from io import BufferedIOBase
+from pathlib import Path
 from typing import Any, Dict, Optional
 
+import box_sdk_gen  # type: ignore
+import requests
 from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_community.document_loaders.excel import UnstructuredExcelLoader
 from langchain_community.document_loaders.image import UnstructuredImageLoader
@@ -209,15 +209,17 @@ class BoxAuth(BaseModel):
 
         return values
 
-    def authorize(self):
+    def authorize(self) -> None:
         """Create a Box client."""
         match self.auth_type:
             case "token":
                 try:
-                    auth = box_sdk_gen.BoxDeveloperTokenAuth(token=self.box_developer_token)
-                    self.box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
-                        extra_headers=self.custom_header
+                    auth = box_sdk_gen.BoxDeveloperTokenAuth(
+                        token=self.box_developer_token
                     )
+                    self.box_client = box_sdk_gen.BoxClient(
+                        auth=auth
+                    ).with_extra_headers(extra_headers=self.custom_header)
 
                 except box_sdk_gen.BoxSDKError as bse:
                     raise RuntimeError(
@@ -236,15 +238,15 @@ class BoxAuth(BaseModel):
                     )
                     auth = box_sdk_gen.BoxJWTAuth(config=jwt_config)
 
-                    self.box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
-                        extra_headers=self.custom_header
-                    )
+                    self.box_client = box_sdk_gen.BoxClient(
+                        auth=auth
+                    ).with_extra_headers(extra_headers=self.custom_header)
 
                     if self.box_user_id is not None:
                         user_auth = auth.with_user_subject(self.box_user_id)
-                        self.box_client = box_sdk_gen.BoxClient(auth=user_auth).with_extra_headers(
-                            extra_headers=self.custom_header
-                        )
+                        self.box_client = box_sdk_gen.BoxClient(
+                            auth=user_auth
+                        ).with_extra_headers(extra_headers=self.custom_header)
 
                 except box_sdk_gen.BoxSDKError as bse:
                     raise RuntimeError(
@@ -272,9 +274,9 @@ class BoxAuth(BaseModel):
                         )
                     auth = box_sdk_gen.BoxCCGAuth(config=ccg_config)
 
-                    self.box_client = box_sdk_gen.BoxClient(auth=auth).with_extra_headers(
-                        extra_headers=self.custom_header
-                    )
+                    self.box_client = box_sdk_gen.BoxClient(
+                        auth=auth
+                    ).with_extra_headers(extra_headers=self.custom_header)
 
                 except box_sdk_gen.BoxSDKError as bse:
                     raise RuntimeError(
@@ -293,7 +295,7 @@ class BoxAuth(BaseModel):
                 TOKEN, CCG, or JWT."
                 )
 
-    def get_client(self):
+    def get_client(self) -> box_sdk_gen.BoxClient:
         if self.box_client is None:
             self.authorize()
 
@@ -318,7 +320,7 @@ class BoxAPIWrapper(BaseModel):
        is False, and images will be skipped"""
     get_images: Optional[bool] = False
 
-    box: Optional[box_sdk_gen.BoxClient] = None
+    box: Optional[box_sdk_gen.BoxClient]
     file_count: int = 0
 
     class Config:
@@ -340,20 +342,20 @@ class BoxAPIWrapper(BaseModel):
                 )
         else:
             box_auth = values.get("box_auth")
-            values["box"] = box_auth.get_client()
+            values["box"] = box_auth.get_client()  #  type: ignore[union-attr]
 
         return values
 
-    def get_box_client(self):
+    def get_box_client(self) -> box_sdk_gen.BoxClient:
         box_auth = BoxAuth(
             auth_type=BoxAuthType.TOKEN, box_developer_token=self.box_developer_token
         )
 
         self.box = box_auth.get_client()
 
-    def _do_request(self, url: str) -> str:
+    def _do_request(self, url: str) -> Any:
         try:
-            access_token = self.box.auth.retrieve_token().access_token
+            access_token = self.box.auth.retrieve_token().access_token  #  type: ignore[union-attr]
         except box_sdk_gen.BoxSDKError as bse:
             raise RuntimeError(f"Error getting client from jwt token: {bse.message}")
 
@@ -361,12 +363,12 @@ class BoxAPIWrapper(BaseModel):
         resp.raise_for_status()
         return resp.content
 
-    def get_folder_items(self, folder_id: str):
+    def get_folder_items(self, folder_id: str) -> box_sdk_gen.Items:
         if self.box is None:
             self.get_box_client()
 
         try:
-            folder_contents = self.box.folders.get_folder_items(
+            folder_contents = self.box.folders.get_folder_items(  #  type: ignore[union-attr]
                 folder_id, fields=["id", "type", "name"]
             )
         except box_sdk_gen.BoxAPIError as bae:
@@ -380,22 +382,17 @@ class BoxAPIWrapper(BaseModel):
 
         return folder_contents.entries
 
-    def get_text_representation(
-        self, query: str = None, file_id: str = None
-    ) -> tuple[str, str, str]:
+    def get_text_representation(self, file_id: str = "") -> tuple[str, str, str]:
         try:
             from box_sdk_gen import BoxAPIError, BoxSDKError
         except ImportError:
             raise ImportError("You must run `pip install box-sdk-gen`")
 
-        if file_id is None:
-            file_id = self.box_file_id
-
         if self.box is None:
             self.get_box_client()
 
         try:
-            file = self.box.files.get_file_by_id(
+            file = self.box.files.get_file_by_id(  #  type: ignore[union-attr]
                 file_id,
                 x_rep_hints="[extracted_text]",
                 fields=["name", "representations", "type"],
@@ -405,12 +402,12 @@ class BoxAPIWrapper(BaseModel):
         except BoxSDKError as bse:
             raise RuntimeError(f"BoxSDKError: Error getting text rep: {bse.message}")
         except Exception:
-            return None, None, None
+            return None, None, None  #   type: ignore[return-value]
 
         file_repr = file.representations.entries
 
         if len(file_repr) <= 0:
-            return None, None, None
+            return None, None, None  #   type: ignore[return-value]
 
         for entry in file_repr:
             if entry.representation == "extracted_text":
@@ -425,18 +422,20 @@ class BoxAPIWrapper(BaseModel):
                 try:
                     raw_content = self._do_request(url)
                 except requests.exceptions.HTTPError:
-                    return None, None, None
+                    return None, None, None  #   type: ignore[return-value]
 
-                if self.character_limit > 0:
+                if self.character_limit > 0:  #   type: ignore[operator]
                     content = raw_content[0 : self.character_limit]
                 else:
                     content = raw_content
 
                 return file_name, content, url
 
-    def get_pdf_representation(self, file_id: str) -> tuple[str, str, str]:
+        return None, None, None  #   type: ignore[return-value]
+
+    def get_pdf_representation(self, file_id: str) -> Path:
         try:
-            file = self.box.files.get_file_by_id(
+            file = self.box.files.get_file_by_id(  #  type: ignore[union-attr]
                 file_id,
                 x_rep_hints="[pdf]",
                 fields=["name", "representations", "type"],
@@ -446,12 +445,12 @@ class BoxAPIWrapper(BaseModel):
         except box_sdk_gen.BoxSDKError as bse:
             raise RuntimeError(f"BoxSDKError: Error getting text rep: {bse.message}")
         except Exception:
-            return None, None, None
+            return None  #   type: ignore[return-value]
 
         file_repr = file.representations.entries
 
         if len(file_repr) <= 0:
-            return None, None, None
+            return None  #   type: ignore[return-value]
 
         for entry in file_repr:
             if entry.representation == "pdf":
@@ -463,7 +462,7 @@ class BoxAPIWrapper(BaseModel):
                 url = entry.content.url_template.replace("{+asset_path}", "")
                 file_name = file.name.replace(".", "_").replace(" ", "_") + ".pdf"
 
-                content = self.do_request(url)
+                content = self._do_request(url)
 
                 temp_dir = tempfile.mkdtemp()
                 pdf_path = Path(temp_dir) / file_name
@@ -472,9 +471,10 @@ class BoxAPIWrapper(BaseModel):
                     file.write(content)
 
                 return pdf_path
+        return None  #   type: ignore[return-value]
 
-    def download_file(self, file_id: str, file_name: str) -> BufferedWriter:
-        file_content_stream: BufferedIOBase = self.box.downloads.download_file(
+    def download_file(self, file_id: str, file_name: str) -> Path:
+        file_content_stream: BufferedIOBase = self.box.downloads.download_file(  #  type: ignore[union-attr]
             file_id=file_id
         )
 
@@ -489,7 +489,7 @@ class BoxAPIWrapper(BaseModel):
 
     def get_pdf_document(
         self, file_id: str, file_name: str, file_extension: str
-    ) -> tuple[str, str, str]:
+    ) -> Document:
         pdf_file = None
 
         if file_extension == "pdf":
@@ -505,17 +505,19 @@ class BoxAPIWrapper(BaseModel):
             if docs:
                 return docs[0]
 
+            return None  #   type: ignore[return-value]
+
         except Exception as e:
             print(f"Error loading pdf document {file_name}: {e}")  # noqa: T201
-            return None
+            return None  #   type: ignore[return-value]
         finally:
             try:
-                shutil.rmtree(pdf_file.name)  # delete directory
+                shutil.rmtree(pdf_file.name)  #  type: ignore[union-attr]
             except OSError as exc:
                 if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
                     raise  # re-raise exception
 
-    def get_image_document(self, file_id: str, file_name: str) -> tuple[str, str, str]:
+    def get_image_document(self, file_id: str, file_name: str) -> Document:
         try:
             image_path = self.download_file(file_id, file_name)
 
@@ -535,7 +537,7 @@ class BoxAPIWrapper(BaseModel):
                 if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
                     raise  # re-raise exception
 
-    def get_csv_document(self, file_id: str, file_name: str) -> tuple[str, str, str]:
+    def get_csv_document(self, file_id: str, file_name: str) -> Document:
         try:
             csv_path = self.download_file(file_id, file_name)
 
@@ -555,7 +557,7 @@ class BoxAPIWrapper(BaseModel):
                 if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
                     raise  # re-raise exception
 
-    def get_xlsx_document(self, file_id: str, file_name: str) -> tuple[str, str, str]:
+    def get_xlsx_document(self, file_id: str, file_name: str) -> Document:
         try:
             xlsx_path = self.download_file(file_id, file_name)
 
@@ -575,7 +577,7 @@ class BoxAPIWrapper(BaseModel):
                 if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
                     raise  # re-raise exception
 
-    def get_docx_document(self, file_id: str, file_name: str) -> tuple[str, str, str]:
+    def get_docx_document(self, file_id: str, file_name: str) -> Document:
         try:
             docx_path = self.download_file(file_id, file_name)
 
@@ -595,7 +597,7 @@ class BoxAPIWrapper(BaseModel):
                 if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
                     raise  # re-raise exception
 
-    def get_pptx_document(self, file_id: str, file_name: str) -> tuple[str, str, str]:
+    def get_pptx_document(self, file_id: str, file_name: str) -> Document:
         try:
             pptx_path = self.download_file(file_id, file_name)
 
@@ -644,7 +646,7 @@ class BoxAPIWrapper(BaseModel):
         if self.box is None:
             self.get_box_client()
 
-        file = self.box.files.get_file_by_id(
+        file = self.box.files.get_file_by_id(  #  type: ignore[union-attr]
             file_id, fields=["name", "type", "extension"]
         )
 

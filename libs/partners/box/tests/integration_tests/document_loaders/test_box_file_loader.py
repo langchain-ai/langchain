@@ -10,7 +10,7 @@ def test_file_load(mocker: MockerFixture) -> None:
         "langchain_box.utilities.BoxAPIWrapper.get_document_by_file_id", return_value=[]
     )
 
-    loader = BoxLoader(
+    loader = BoxLoader(  # type: ignore[call-arg]
         box_developer_token="box_developer_token",
         box_file_ids=["box_file_ids"],
     )
@@ -28,7 +28,7 @@ def test_file_load(mocker: MockerFixture) -> None:
         ),
     )
 
-    loader = BoxLoader(
+    loader = BoxLoader(  # type: ignore[call-arg]
         box_developer_token="box_developer_token",
         box_file_ids=["box_file_ids"],
     )
