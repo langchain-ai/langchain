@@ -82,6 +82,7 @@ class Together(LLM):
         """Configuration for this pydantic object."""
 
         extra = "forbid"
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
