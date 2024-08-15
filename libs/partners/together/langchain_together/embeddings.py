@@ -198,7 +198,7 @@ class TogetherEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         together_api_key = get_from_dict_or_env(
@@ -210,6 +210,11 @@ class TogetherEmbeddings(BaseModel, Embeddings):
         values["together_api_base"] = values["together_api_base"] or os.getenv(
             "TOGETHER_API_BASE"
         )
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(self, values: Dict) -> Dict:
+        """Logic that will post Pydantic initialization."""
         client_params = {
             "api_key": (
                 values["together_api_key"].get_secret_value()
