@@ -43,7 +43,6 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-import copy
 import json
 import logging
 import struct
