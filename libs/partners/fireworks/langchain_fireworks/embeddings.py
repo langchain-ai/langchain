@@ -1,9 +1,8 @@
-import os
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str
+from langchain_core.utils import secret_from_env
 from openai import OpenAI  # type: ignore
 
 
@@ -67,22 +66,25 @@ class FireworksEmbeddings(BaseModel, Embeddings):
     """
 
     _client: OpenAI = Field(default=None)
-    fireworks_api_key: SecretStr = convert_to_secret_str("")
+    fireworks_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            "FIREWORKS_API_KEY",
+            default="",
+        ),
+    )
+    """Fireworks API key.
+    
+    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+    """
     model: str = "nomic-ai/nomic-embed-text-v1.5"
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate environment variables."""
-        fireworks_api_key = convert_to_secret_str(
-            values.get("fireworks_api_key") or os.getenv("FIREWORKS_API_KEY") or ""
-        )
-        values["fireworks_api_key"] = fireworks_api_key
-
-        # note this sets it globally for module
-        # there isn't currently a way to pass it into client
-        api_key = fireworks_api_key.get_secret_value()
         values["_client"] = OpenAI(
-            api_key=api_key, base_url="https://api.fireworks.ai/inference/v1"
+            api_key=values["fireworks_api_key"].get_secret_value(),
+            base_url="https://api.fireworks.ai/inference/v1",
         )
         return values
 
