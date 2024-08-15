@@ -76,6 +76,7 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     from_env,
     get_pydantic_field_names,
+    secret_from_env,
 )
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
@@ -306,7 +307,9 @@ class ChatGroq(BaseChatModel):
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    groq_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    groq_api_key: Optional[SecretStr] = Field(
+        alias="api_key", default_factory=secret_from_env("GROQ_API_KEY", default=None)
+    )
     """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
     groq_api_base: Optional[str] = Field(
         alias="base_url", default_factory=from_env("GROQ_API_BASE", default=None)
