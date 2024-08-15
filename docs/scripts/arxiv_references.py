@@ -315,17 +315,6 @@ def _is_url_ok(url: str) -> bool:
     return True
 
 
-def _replace_spaces(sentence):
-    """Use it to make the Title column wider."""
-    parts = sentence.split(" ")
-    for i in range(len(parts) - 1):
-        if i < 5:
-            parts[i] += "&#160;"  # Add a non-breaking space after the word
-        else:
-            parts[i] += " "  # Add a regular space after the word
-    return "".join(parts).strip()
-
-
 class ArxivAPIWrapper(BaseModel):
     arxiv_search: Any  #: :meta private:
     arxiv_exceptions: Any  # :meta private:
@@ -575,13 +564,13 @@ Here you find papers that reference:
                 refs += [
                     "`Cookbook:` "
                     + ", ".join(
-                        f"[{key}]({url})"
+                        f"[{str(key).replace('_', ' ').title()}]({url})"
                         for key, url in paper.referencing_cookbook2url.items()
                     )
                 ]
             refs_str = ", ".join(refs)
 
-            title_link = f"[{_replace_spaces(paper.title)}]({paper.url})"
+            title_link = f"[{paper.title}]({paper.url})"
             f.write(
                 f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date.replace('-', '&#8209;'), refs_str])}\n"
             )
