@@ -184,7 +184,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain):
         reference labels in the prompt. Otherwise, the `PROMPT` template will be
         used, which is a reference-free prompt.
     **kwargs : Any
-        Additional keyword arguments to pass to the `LLMChain` constructor.
+        Additional keyword arguments to pass to the `Chain` constructor.
 
     Returns
     -------
@@ -352,7 +352,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain):
             The prompt template to use for generating prompts. If not provided,
             a default prompt template will be used.
         **kwargs : Any
-            Additional keyword arguments to pass to the `LLMChain`
+            Additional keyword arguments to pass to the `Chain`
             constructor.
 
         Returns
@@ -453,7 +453,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain):
         input : Optional[str], default=None
             The input text used to generate the prediction.
         **kwargs : Any
-            Additional keyword arguments to pass to the `LLMChain` `__call__`
+            Additional keyword arguments to pass to the `Chain` `invoke`
             method.
 
         Returns
@@ -512,7 +512,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain):
         input : Optional[str], default=None
             The input text used to generate the prediction.
         **kwargs : Any
-            Additional keyword arguments to pass to the `LLMChain` `acall`
+            Additional keyword arguments to pass to the `Chain` `acall`
             method.
 
         Returns
@@ -599,7 +599,7 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
             The prompt template to use for generating prompts. If not provided,
             a default prompt will be used.
         **kwargs : Any
-            Additional keyword arguments to pass to the `LLMChain`
+            Additional keyword arguments to pass to the `Chain`
             constructor.
 
         Returns
