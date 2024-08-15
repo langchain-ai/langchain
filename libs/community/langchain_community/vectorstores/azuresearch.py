@@ -428,7 +428,7 @@ class AzureSearch(VectorStore):
             logger.debug("Nothing to insert, skipping.")
             return []
 
-        # when `keys`` are not passed in and there is `ids` in kwargs, use those instead
+        # when `keys` are not passed in and there is `ids` in kwargs, use those instead
         # base class expects `ids` passed in rather than `keys`
         # https://github.com/langchain-ai/langchain/blob/4cdaca67dc51dba887289f56c6fead3c1a52f97d/libs/core/langchain_core/vectorstores/base.py#L65
         if (not keys) and ('ids' in kwargs) and (len(kwargs['ids'])==len(embeddings)):
@@ -458,7 +458,7 @@ class AzureSearch(VectorStore):
             logger.debug("Nothing to insert, skipping.")
             return []
         
-        # when `keys`` are not passed in and there is `ids` in kwargs, use those instead
+        # when `keys` are not passed in and there is `ids` in kwargs, use those instead
         # base class expects `ids` passed in rather than `keys`
         # https://github.com/langchain-ai/langchain/blob/4cdaca67dc51dba887289f56c6fead3c1a52f97d/libs/core/langchain_core/vectorstores/base.py#L65        
         if (not keys) and ('ids' in kwargs) and (len(kwargs['ids'])==len(embeddings)):
