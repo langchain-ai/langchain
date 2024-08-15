@@ -14,7 +14,6 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-import copy
 import json
 import logging
 import uuid
@@ -73,6 +72,7 @@ class SQLServer_VectorStore(VectorStore):
                 self._embedding_store.__table__.create(
                     session.get_bind(), checkfirst=True
                 )
+                session.commit()
         except ProgrammingError as e:
             logging.error(f"Create table {self.table_name} failed.")
             raise Exception(e.__cause__) from None
@@ -147,6 +147,7 @@ class SQLServer_VectorStore(VectorStore):
             with Session(bind=self._bind) as session:
                 # Drop the table associated with the session bind.
                 self._embedding_store.__table__.drop(session.get_bind())
+                session.commit()
 
             logging.info(f"Vector store `{self.table_name}` dropped successfully.")
         except ProgrammingError as e:
@@ -178,8 +179,7 @@ class SQLServer_VectorStore(VectorStore):
 
         if ids is None:
             # Copy data from metadatas so data is not updated in-place.
-            metadata_to_format = copy.deepcopy(metadatas)
-            ids = [metadata.pop("id", uuid.uuid4()) for metadata in metadata_to_format]
+            ids = [metadata.get("id", uuid.uuid4()) for metadata in metadatas]
 
         try:
             with Session(self._bind) as session:
@@ -193,11 +193,7 @@ class SQLServer_VectorStore(VectorStore):
                         ids.append(str(uuid.uuid4()))
                         id = ids[-1]
                     embedding = embeddings[idx]
-                    metadata = (
-                        metadata_to_format[idx]
-                        if idx < len(metadata_to_format)
-                        else None
-                    )
+                    metadata = metadatas[idx] if idx < len(metadatas) else None
 
                     # Construct text, embedding, metadata as EmbeddingStore model
                     # to be inserted into the table.

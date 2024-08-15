@@ -5,6 +5,7 @@ from typing import Generator, List
 
 import pytest
 from langchain_core.documents import Document
+from sqlalchemy import create_engine, text
 from sqlalchemy.exc import DBAPIError
 
 from langchain_community.embeddings import FakeEmbeddings
@@ -314,3 +315,38 @@ def test_that_multiple_vector_stores_can_be_created(
     # Check that the name of the table being created for the embeddingstore
     # is what is expected.
     assert new_store._embedding_store.__table__.name == "langchain_vector_store_tests_2"
+
+    # Drop the new_store table to clean up this test run.
+    new_store.drop()
+
+
+def test_that_schema_input_is_used() -> None:
+    """Tests that when a schema is given as input to the SQLServer_VectorStore object,
+    a vector store is created within the schema."""
+
+    schema = "lc_test"
+    table_name = "langchain_vector_store_tests"
+    sys_table_query = f"""
+    select object_id from sys.tables where name = '{table_name}'
+    and schema_name(schema_id) = '{schema}'"""
+
+    # Connect to the DB
+    engine = create_engine(url=_CONNECTION_STRING)
+    connection = engine.connect()
+
+    # Create a schema in the DB
+    connection.execute(text(f"create schema {schema}"))
+
+    # Create a vector store in the DB with the schema just created
+    sqlserver_vectorstore = SQLServer_VectorStore(
+        connection=connection,
+        connection_string=_CONNECTION_STRING,
+        db_schema=schema,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name=table_name,
+    )
+    sqlserver_vectorstore.add_texts(["cats"])
+
+    # Confirm table in that schema exists.
+    result = connection.execute(text(sys_table_query))
+    assert result.fetchone() is not None
