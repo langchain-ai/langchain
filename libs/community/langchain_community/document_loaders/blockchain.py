@@ -15,8 +15,21 @@ class BlockchainType(Enum):
 
     ETH_MAINNET = "eth-mainnet"
     ETH_SEPOLIA = "eth-sepolia"
+    ETH_HOLESKY = "eth-holesky"
     POLYGON_MAINNET = "polygon-mainnet"
     POLYGON_AMOY = "polygon-amoy"
+    ARB_MAINNET = "arb-mainnet"
+    ARB_SEPOLIA = "arb-sepolia"
+    OP_MAINNET = "opt-mainnet"
+    OP_SEPOLIA = "opt-sepolia"
+    BASE_MAINNET = "base-mainnet"
+    BASE_SEPOLIA = "base-sepolia"
+    BLAST_MAINNET = "blast-mainnet"
+    BLAST_SEPOLIA = "blast-sepolia"
+    ZKSYNC_MAINNET = "zksync-mainnet"
+    ZKSYNC_SEPOLIA = "zksync-sepolia"
+    ZORA_MAINNET = "zora-mainnet"
+    ZORA_SEPOLIA = "zora-sepolia"
 
 
 class BlockchainDocumentLoader(BaseLoader):
@@ -43,7 +56,7 @@ class BlockchainDocumentLoader(BaseLoader):
 
     Future versions of this loader can:
         - Support additional Alchemy APIs (e.g. getTransactions, etc.)
-        - Support additional blockain APIs (e.g. Infura, Opensea, etc.)
+        - Support additional blockchain APIs (e.g. Infura, Opensea, etc.)
     """
 
     def __init__(
