@@ -317,13 +317,13 @@ def _is_url_ok(url: str) -> bool:
 
 def _replace_spaces(sentence):
     """Use it to make the Title column wider."""
-    parts = sentence.split(' ')
+    parts = sentence.split(" ")
     for i in range(len(parts) - 1):
         if i < 5:
-            parts[i] += '&#160;'  # Add a non-breaking space after the word
+            parts[i] += "&#160;"  # Add a non-breaking space after the word
         else:
-            parts[i] += ' '  # Add a regular space after the word
-    return ''.join(parts).strip()
+            parts[i] += " "  # Add a regular space after the word
+    return "".join(parts).strip()
 
 
 class ArxivAPIWrapper(BaseModel):
