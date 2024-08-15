@@ -23,10 +23,13 @@ from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
-    get_from_dict_or_env,
     get_pydantic_field_names,
 )
-from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
+from langchain_core.utils.utils import (
+    build_extra_kwargs,
+    from_env,
+    secret_from_env,
+)
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -56,9 +59,25 @@ class _AnthropicCommon(BaseLanguageModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: Optional[str] = None
+    anthropic_api_url: Optional[str] = Field(
+        alias="base_url",
+        default_factory=from_env(
+            "ANTHROPIC_API_URL",
+            default="https://api.anthropic.com",
+        ),
+    )
+    """Base URL for API requests. Only specify if using a proxy or service emulator.
 
-    anthropic_api_key: Optional[SecretStr] = None
+    If a value isn't passed in, will attempt to read the value from
+    ANTHROPIC_API_URL. If not set, the default value of 'https://api.anthropic.com' will
+    be used.
+    """
+
+    anthropic_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
+    )
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     HUMAN_PROMPT: Optional[str] = None
     AI_PROMPT: Optional[str] = None
@@ -74,20 +93,9 @@ class _AnthropicCommon(BaseLanguageModel):
         )
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["anthropic_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "anthropic_api_key", "ANTHROPIC_API_KEY")
-        )
-        # Get custom api url from environment.
-        values["anthropic_api_url"] = get_from_dict_or_env(
-            values,
-            "anthropic_api_url",
-            "ANTHROPIC_API_URL",
-            default="https://api.anthropic.com",
-        )
-
         values["client"] = anthropic.Anthropic(
             base_url=values["anthropic_api_url"],
             api_key=values["anthropic_api_key"].get_secret_value(),
@@ -158,7 +166,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_warning(cls, values: Dict) -> Dict:
         """Raise warning that this class is deprecated."""
         warnings.warn(
