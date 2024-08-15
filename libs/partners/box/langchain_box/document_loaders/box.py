@@ -26,7 +26,25 @@ class BoxLoader(BaseLoader, BaseModel):
     * Your administratormust install and enable your application.
 
     Example Implementation
-    ```
+
+    ```python
+    from langchain_box.document_loaders import BoxLoader
+    from langchain_box.utilities import BoxAuth, BoxAuthType
+
+    auth = BoxAuth(
+        auth_type=BoxAuthType.TOKEN,
+        box_developer_token=box_developer_token
+    )
+
+    loader = BoxLoader(
+        box_auth=auth,
+        box_file_ids=["12345", "67890"],
+        character_limit=10000,  # Optional. Defaults to no limit
+        get_text_rep=True,  # Get text rep first when available, default True
+        get_images=False  # Download images, defaults to False
+    )
+
+    docs = loader.lazy_load()
     ```
 
     Initialization variables
@@ -110,7 +128,7 @@ class BoxLoader(BaseLoader, BaseModel):
 
         return values
 
-    def get_files_from_folder(self, folder_id):  # type: ignore[no-untyped-def]
+    def _get_files_from_folder(self, folder_id):  # type: ignore[no-untyped-def]
         folder_content = self.box.get_folder_items(folder_id)
 
         for file in folder_content:
@@ -122,12 +140,12 @@ class BoxLoader(BaseLoader, BaseModel):
 
             elif file.type == "folder" and self.recursive:
                 try:
-                    yield from self.get_files_from_folder(file.id)
+                    yield from self._get_files_from_folder(file.id)
                 except TypeError:
                     pass
 
     def lazy_load(self) -> Iterator[Document]:
-        """Load documents."""
+        """Load documents. Accepts no arguments. Returns `Iterator[Document]`"""
         if self.box_file_ids:
             for file_id in self.box_file_ids:
                 file = self.box.get_document_by_file_id(file_id)  # type: ignore[union-attr]
@@ -136,7 +154,7 @@ class BoxLoader(BaseLoader, BaseModel):
                     yield file
         elif self.box_folder_id:
             try:
-                yield from self.get_files_from_folder(self.box_folder_id)
+                yield from self._get_files_from_folder(self.box_folder_id)
             except TypeError:
                 pass
             except Exception as e:

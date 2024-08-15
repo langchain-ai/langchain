@@ -137,27 +137,84 @@ class ImageFiles(Enum):
             Provide `box_developer_token`.
     CCG - Client Credentials Grant.
           provide `box_client_id`, `box_client_secret`,
-          `box_enterprise_id` and optionally `box_user_id`.
+          and `box_enterprise_id` or optionally `box_user_id`.
     JWT - Use JWT for authentication. Config should be stored on the file
           system accessible to your app.
-          provide `box_jwt_path`. 
+          provide `box_jwt_path`. Optionally, provide `box_user_id` to 
+          act as a specific user
 """
-
-
 class BoxAuthType(Enum):
+    """Use a developer token or a token retrieved from box-sdk-gen"""
     TOKEN = "token"
+    """Use `client_credentials` type grant"""
     CCG = "ccg"
+    """Use JWT bearer token auth"""
     JWT = "jwt"
 
 
+"""
+`BoxAuth` supports the following authentication methods:
+
+* Token — either a developer token or any token generated through the Box SDK
+* JWT with a service account
+* JWT with a specified user
+* CCG with a service account
+* CCG with a specified user
+
+> [!NOTE]
+> If using JWT authentication, you will need to download the configuration from the Box
+> developer console after generating your public/private key pair. Place this file in your 
+> application directory structure somewhere. You will use the path to this file when using
+> the `BoxAuth` helper class.
+
+For more information, learn about how to 
+[set up a Box application](https://developer.box.com/guides/getting-started/first-application/),
+and check out the 
+[Box authentication guide](https://developer.box.com/guides/authentication/select/)
+for more about our different authentication options.
+
+Simple implementation
+
+```python
+from langchain_box.document_loaders import BoxLoader
+from langchain_box.utilities import BoxAuth, BoxAuthType
+
+auth = BoxAuth(
+    auth_type=BoxAuthType.TOKEN,
+    box_developer_token=box_developer_token
+)
+
+loader = BoxLoader(
+    box_auth=auth,
+    ...
+)
+```
+
+To see examples for each supported authentication methodology, visit the 
+[Box providers](/docs/integrations/providers/box) page. If you want to 
+use OAuth 2.0 `authorization_code` flow, use 
+[box-sdk-gen](https://github.com/box/box-python-sdk-gen) SDK, get your 
+token, and use `BoxAuthType.TOKEN` type.
+
+"""
 class BoxAuth(BaseModel):
+    """ Authentication type to use. Must pass BoxAuthType enum"""
     auth_type: BoxAuthType
+    """ If using BoxAuthType.TOKEN, provide your token here"""
     box_developer_token: Optional[str] = None
-    box_client_id: Optional[str] = None
-    box_client_secret: Optional[str] = None
-    box_user_id: Optional[str] = None
-    box_enterprise_id: Optional[str] = None
+    """If using BoxAuthType.JWT, provide local path to your
+       JWT configuration file"""
     box_jwt_path: Optional[str] = None
+    """If using BoxAuthType.CCG, provide your app's client ID"""
+    box_client_id: Optional[str] = None
+    """If using BoxAuthType.CCG, provide your app's client secret"""
+    box_client_secret: Optional[str] = None
+    """If using BoxAuthType.CCG, provide your enterprise ID.
+       Only required if you are not sending `box_user_id`"""
+    box_enterprise_id: Optional[str] = None
+    """If using BoxAuthType.CCG or BoxAuthType.JWT, providing 
+       `box_user_id` will act on behalf of a specific user"""
+    box_user_id: Optional[str] = None
 
     box_client: Optional[box_sdk_gen.BoxClient] = None
     custom_header: Dict = dict({"x-box-ai-library": "langchain"})
@@ -210,7 +267,7 @@ class BoxAuth(BaseModel):
         return values
 
     def authorize(self) -> None:
-        """Create a Box client."""
+        
         match self.auth_type:
             case "token":
                 try:
@@ -296,6 +353,7 @@ class BoxAuth(BaseModel):
                 )
 
     def get_client(self) -> box_sdk_gen.BoxClient:
+        """Instantiate the Box SDK."""
         if self.box_client is None:
             self.authorize()
 
@@ -364,6 +422,8 @@ class BoxAPIWrapper(BaseModel):
         return resp.content
 
     def get_folder_items(self, folder_id: str) -> box_sdk_gen.Items:
+        """Get all the items in a folder. Accepts folder_id as str. 
+           returns box_sdk_gen.Items"""
         if self.box is None:
             self.get_box_client()
 
@@ -641,7 +701,8 @@ class BoxAPIWrapper(BaseModel):
         return None
 
     def get_document_by_file_id(self, file_id: str) -> Optional[Document]:
-        """Load a file from a Box id."""
+        """Load a file from a Box id. Accepts file_id as str.
+            Returns `Document`"""
 
         if self.box is None:
             self.get_box_client()
