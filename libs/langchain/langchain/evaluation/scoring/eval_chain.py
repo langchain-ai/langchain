@@ -393,8 +393,7 @@ Performance may be significantly worse with other models."
         if metadata is not None:
             config["metadata"] = metadata
 
-        output = self.invoke(input_, config=config, include_run_info=include_run_info)
-        result = {**input_, **output}
+        result = self.invoke(input_, config=config, include_run_info=include_run_info)
         return self._prepare_output(result)
 
     async def _aevaluate_string_pairs(
@@ -435,10 +434,9 @@ Performance may be significantly worse with other models."
         if metadata is not None:
             config["metadata"] = metadata
 
-        output = await self.ainvoke(
+        result = await self.ainvoke(
             input_, config=config, include_run_info=include_run_info
         )
-        result = {**input_, **output}
         return self._prepare_output(result)
 
 
