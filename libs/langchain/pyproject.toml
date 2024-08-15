@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gigachain"
-version = "0.2.12"
+version = "0.2.12post1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -45,7 +45,7 @@ requests = "^2"
 PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
-gigachat = "^0.1.33"
+gigachat = "^0.1.35"
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"

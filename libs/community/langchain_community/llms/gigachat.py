@@ -76,6 +76,8 @@ class _BaseGigaChat(Serializable):
     """ Use GigaChat API for tokens count """
     verbose: bool = False
     """ Verbose logging """
+    flags: Optional[List[str]] = None
+    """ Feature flags """
     top_p: Optional[float] = None
     """ top_p value to use for nucleus sampling. Must be between 0.0 and 1.0 """
     repetition_penalty: Optional[float] = None
@@ -122,6 +124,7 @@ class _BaseGigaChat(Serializable):
             key_file=self.key_file,
             key_file_password=self.key_file_password,
             verbose=self.verbose,
+            flags=self.flags,
         )
 
     @pre_init
@@ -243,6 +246,8 @@ class GigaChat(_BaseGigaChat, BaseLLM):
             payload["repetition_penalty"] = self.repetition_penalty
         if self.update_interval is not None:
             payload["update_interval"] = self.update_interval
+        if self.flags is not None:
+            payload["flags"] = self.flags
 
         if self.verbose:
             logger.warning("Giga request: %s", json.dumps(payload, ensure_ascii=False))
