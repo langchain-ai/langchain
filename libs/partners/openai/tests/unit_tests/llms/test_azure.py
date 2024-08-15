@@ -1,13 +1,16 @@
-import os
+from typing import Any
 
 from langchain_openai import AzureOpenAI
 
-os.environ["AZURE_OPENAI_API_KEY"] = "foo"
-os.environ["OPENAI_API_VERSION"] = "bar"
 
-
-def test_openai_model_param() -> None:
-    llm = AzureOpenAI(azure_deployment="gpt-35-turbo-instruct", azure_endpoint="baz")
+def test_azure_model_param(monkeypatch: Any) -> None:
+    monkeypatch.delenv("OPENAI_API_BASE", raising=False)
+    llm = AzureOpenAI(
+        openai_api_key="secret-api-key",  # type: ignore[call-arg]
+        azure_endpoint="endpoint",
+        api_version="version",
+        azure_deployment="gpt-35-turbo-instruct",
+    )
 
     # Test standard tracing params
     ls_params = llm._get_ls_params()
