@@ -344,6 +344,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         # get default provider from class name
         default_provider = self.__class__.__name__
+        if default_provider.endswith("LLM"):
+            default_provider = default_provider[:-3]
         default_provider = default_provider.lower()
 
         ls_params = LangSmithParams(ls_provider=default_provider, ls_model_type="llm")
