@@ -921,6 +921,35 @@ class BaseCallbackManager(CallbackManagerMixin):
         )
 
     def merge(self: T, other: BaseCallbackManager) -> T:
+        """Merge the callback manager with another callback manager.
+
+        May be overwritten in subclasses. Primarily used internally
+        within merge_configs.
+
+        Returns:
+            BaseCallbackManager: The merged callback manager of the same type
+                as the current object.
+
+        Example: Merging two callback managers.
+
+            .. code-block:: python
+
+                from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
+                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+
+                manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+                with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                    merged_manager = group_manager.merge(manager)
+                    print(merged_manager.handlers)
+                    # [
+                    #    <langchain_core.callbacks.stdout.StdOutCallbackHandler object at ...>,
+                    #    <langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler object at ...>,
+                    # ]
+
+                    print(merged_manager.tags)
+                    #    ['tag2', 'tag1']
+
+        """  # noqa: E501
         manager = self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,
             handlers=[],
