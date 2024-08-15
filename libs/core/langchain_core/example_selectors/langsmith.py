@@ -21,7 +21,7 @@ class LangSmithExampleSelector(
 
     Head to the LangSmith docs for more on how dataset indexing works:
     `LangSmith docs <https://docs.smith.langchain.com/how_to_guides/datasets/index_datasets_for_dynamic_few_shot_example_selection>`_.
-    
+
     Note, initializing the ``LangSmithExampleSelector`` does **not** create a dataset.
     This must be done explicitly, either outside the example selector or using
     the ``LangSmithExampleSelector(...).create_dataset(...)`` method.

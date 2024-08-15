@@ -2,6 +2,7 @@ from langchain_core.example_selectors import __all__
 
 EXPECTED_ALL = [
     "BaseExampleSelector",
+    "LangSmithExampleSelector",
     "LengthBasedExampleSelector",
     "MaxMarginalRelevanceExampleSelector",
     "SemanticSimilarityExampleSelector",
