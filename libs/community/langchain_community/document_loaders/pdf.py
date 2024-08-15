@@ -890,7 +890,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
 
 
 class HuridocsPDFLoader(BasePDFLoader):
-    """Load a PDF with Huridocs: https://github.com/huridocs/pdf-document-layout-analysis"""
+    """Load a PDF with Huridocs"""
 
     def __init__(
         self,
@@ -899,11 +899,12 @@ class HuridocsPDFLoader(BasePDFLoader):
         fast : Optional[bool] = False,
     ) -> None:
         """
-        Initialize the object for PDF file processing with Huridocs pdf-document-layout-analysis.
+        Initialize the object for PDF file processing with 
+        Huridocs pdf-document-layout-analysis.
 
         This constructor initializes a HuridocsPDFLoader object to be used
         for parsing files using the pdf-document-layout-analysis API. 
-        Loader uses VGT layout model from here: https://github.com/AlibabaResearch/AdvancedLiterateMachinery/tree/main/DocumentUnderstanding/VGT 
+        Loader uses VGT layout model.
         Parameters:
         -----------
         file_path : str
@@ -957,16 +958,18 @@ class HuridocsPDFLoader(BasePDFLoader):
         elements = self.send_pdf()
 
         for el in elements:
-            yield Document(page_content=el["text"], metadata={"coordinates" : (el["left"], 
-                                                                               el["top"], 
-                                                                               el["width"],
-                                                                               el["height"]),
+            yield Document(page_content=el["text"], 
+                           metadata={"coordinates" : (el["left"], 
+                                                      el["top"], 
+                                                      el["width"],
+                                                      el["height"]),
 
-                                                              "page_number" : el["page_number"],
-                                                              "page_width" : el["page_width"],
-                                                              "page_height" : el["page_height"],
+                                      "page_number" : el["page_number"],
+                                      "page_width" : el["page_width"],
+                                      "page_height" : el["page_height"],
                                                               
-                                                              "type" : el["type"]})
+                                      "type" : el["type"]
+                                    })
         
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
