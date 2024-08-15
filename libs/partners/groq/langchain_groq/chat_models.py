@@ -78,6 +78,8 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
+    from_env,
+    secret_from_env,
 )
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
@@ -310,11 +312,15 @@ class ChatGroq(BaseChatModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
-    groq_api_base: Optional[str] = Field(default=None, alias="base_url")
+    groq_api_base: Optional[str] = Field(
+        alias="base_url", default_factory=from_env("GROQ_API_BASE", default=None)
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     # to support explicit proxy for Groq
-    groq_proxy: Optional[str] = None
+    groq_proxy: Optional[str] = Field(
+        default_factory=from_env("GROQ_PROXY", default=None)
+    )
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -369,19 +375,6 @@ class ChatGroq(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=True)
-    def pre_init(cls, values: Dict) -> Dict:
-        """Assign defaults."""
-        if "temperature" in values and values["temperature"] == 0:
-            values["temperature"] = 1e-8
-
-        values["groq_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "groq_api_key", "GROQ_API_KEY")
-        )
-        values["groq_api_base"] = values["groq_api_base"] or os.getenv("GROQ_API_BASE")
-        values["groq_proxy"] = os.getenv("GROQ_PROXY")
-        return values
-
     @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -389,6 +382,8 @@ class ChatGroq(BaseChatModel):
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
+        if values["temperature"] == 0:
+            values["temperature"] = 1e-8
 
         client_params = {
             "api_key": values["groq_api_key"].get_secret_value(),
