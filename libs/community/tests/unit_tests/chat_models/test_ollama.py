@@ -10,7 +10,7 @@ def test_standard_params() -> None:
     class ExpectedParams(BaseModel):
         ls_provider: str
         ls_model_name: str
-        ls_model_type: Literal["chat"]
+        ls_model_type: Literal["chat", "llm"]
         ls_temperature: Optional[float]
         ls_max_tokens: Optional[int]
         ls_stop: Optional[List[str]]
