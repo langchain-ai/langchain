@@ -1894,10 +1894,10 @@ async def test_runnable_with_message_history() -> None:
     # so we can raise them in this main thread
     raised_errors = []
 
-    def collect_errors(fn):
+    def collect_errors(fn):  # type: ignore
         nonlocal raised_errors
 
-        def _get_output_messages(*args, **kwargs):
+        def _get_output_messages(*args, **kwargs):  # type: ignore
             try:
                 return fn(*args, **kwargs)
             except Exception as e:
