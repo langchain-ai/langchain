@@ -143,8 +143,11 @@ class ImageFiles(Enum):
           provide `box_jwt_path`. Optionally, provide `box_user_id` to 
           act as a specific user
 """
+
+
 class BoxAuthType(Enum):
     """Use a developer token or a token retrieved from box-sdk-gen"""
+
     TOKEN = "token"
     """Use `client_credentials` type grant"""
     CCG = "ccg"
@@ -163,9 +166,9 @@ class BoxAuthType(Enum):
 
 > [!NOTE]
 > If using JWT authentication, you will need to download the configuration from the Box
-> developer console after generating your public/private key pair. Place this file in your 
-> application directory structure somewhere. You will use the path to this file when using
-> the `BoxAuth` helper class.
+> developer console after generating your public/private key pair. Place this file in 
+> your application directory structure somewhere. You will use the path to this file 
+> when using the `BoxAuth` helper class.
 
 For more information, learn about how to 
 [set up a Box application](https://developer.box.com/guides/getting-started/first-application/),
@@ -197,8 +200,11 @@ use OAuth 2.0 `authorization_code` flow, use
 token, and use `BoxAuthType.TOKEN` type.
 
 """
+
+
 class BoxAuth(BaseModel):
-    """ Authentication type to use. Must pass BoxAuthType enum"""
+    """Authentication type to use. Must pass BoxAuthType enum"""
+
     auth_type: BoxAuthType
     """ If using BoxAuthType.TOKEN, provide your token here"""
     box_developer_token: Optional[str] = None
@@ -267,7 +273,6 @@ class BoxAuth(BaseModel):
         return values
 
     def authorize(self) -> None:
-        
         match self.auth_type:
             case "token":
                 try:
@@ -422,8 +427,8 @@ class BoxAPIWrapper(BaseModel):
         return resp.content
 
     def get_folder_items(self, folder_id: str) -> box_sdk_gen.Items:
-        """Get all the items in a folder. Accepts folder_id as str. 
-           returns box_sdk_gen.Items"""
+        """Get all the items in a folder. Accepts folder_id as str.
+        returns box_sdk_gen.Items"""
         if self.box is None:
             self.get_box_client()
 
@@ -702,7 +707,7 @@ class BoxAPIWrapper(BaseModel):
 
     def get_document_by_file_id(self, file_id: str) -> Optional[Document]:
         """Load a file from a Box id. Accepts file_id as str.
-            Returns `Document`"""
+        Returns `Document`"""
 
         if self.box is None:
             self.get_box_client()
