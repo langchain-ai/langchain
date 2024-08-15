@@ -1179,13 +1179,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "gigachat"
-version = "0.1.33"
+version = "0.1.35"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "gigachat-0.1.33-py3-none-any.whl", hash = "sha256:cc2a00c8216e539c89eb37b77420a0d99234b68675c2d87799e37ad4a695e5da"},
-    {file = "gigachat-0.1.33.tar.gz", hash = "sha256:edbb6adffd9186ade131772260a08436c7e0cc95dafac4f66700932a78540dbc"},
+    {file = "gigachat-0.1.35-py3-none-any.whl", hash = "sha256:4e142b1f10807a3655d7c54740103571aca073f2fc91aad2eefbff378121f5a1"},
+    {file = "gigachat-0.1.35.tar.gz", hash = "sha256:508de76d99659c96bb5345d33242095c7b358c453eaa645c5379b06691cfb454"},
 ]
 
 [package.dependencies]
@@ -4697,4 +4697,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6b688e948196626fb5c85cb04f8267ac97bbd60584528a1b883a789b9462fe4d"
+content-hash = "4ac33493d04c6b991040584ee321639cd9968f040f2e83811f2dbb7b5a10f740"
