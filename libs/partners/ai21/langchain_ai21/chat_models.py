@@ -83,13 +83,11 @@ class ChatAI21(BaseChatModel, AI21Base):
 
     _chat_adapter: ChatAdapter
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        values = super().validate_environment(values)
-        model = values.get("model")
-
-        values["_chat_adapter"] = create_chat_adapter(model)  # type: ignore
-
+        """Validate the environment."""
+        model = values["model"]
+        values["_chat_adapter"] = create_chat_adapter(model)
         return values
 
     class Config:
