@@ -816,6 +816,60 @@ class OpenSearchVectorSearch(VectorStore):
         return not any(
             item.get("delete", {}).get("error") for item in response["items"]
         )
+    
+    
+    def configure_search_pipelines(
+        self,
+        pipeline_name: str,
+        keyword_weight: float = 0.7,
+        vector_weight: float = 0.3,
+    )-> dict:
+        """
+        Configures a search pipeline for hybrid search.
+        Args:
+            pipeline_name: Name of the pipeline
+            keyword_weight: Weight for keyword search
+            vector_weight: Weight for vector search
+        Returns:
+            response: Acknowledgement of the pipeline creation. 
+            (if there is any error while configuring the pipeline, it will return None)
+        Raises:
+            Exception: If an error occurs
+        """
+        path=f"/_search/pipeline/{pipeline_name}"
+
+        payload = {
+        "description": "Post processor for hybrid search",
+        "phase_results_processors": [
+            {
+            "normalization-processor": {
+                "normalization": {
+                "technique": "min_max"
+                },
+                "combination": {
+                "technique": "arithmetic_mean",
+                "parameters": {
+                    "weights": [
+                    keyword_weight,
+                    vector_weight
+                    ]
+                }
+                }
+            }
+            }
+        ]
+        }
+        try:
+            response = self.client.transport.perform_request(
+                method="PUT",
+                url=path,
+                body=payload
+            )
+            return response
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
+
 
     def similarity_search(
         self,
