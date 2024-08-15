@@ -73,7 +73,7 @@ def convert_messages_to_prompt_anthropic(
 
 @deprecated(
     since="0.0.28",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_anthropic.ChatAnthropic",
 )
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):

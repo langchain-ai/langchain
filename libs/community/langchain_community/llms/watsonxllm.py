@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.0.18", removal="0.3", alternative_import="langchain_ibm.WatsonxLLM"
+    since="0.0.18", removal="1.0", alternative_import="langchain_ibm.WatsonxLLM"
 )
 class WatsonxLLM(BaseLLM):
     """

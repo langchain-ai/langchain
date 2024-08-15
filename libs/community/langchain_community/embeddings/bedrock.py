@@ -12,7 +12,7 @@ from langchain_core.runnables.config import run_in_executor
 
 @deprecated(
     since="0.2.11",
-    removal="0.4.0",
+    removal="1.0",
     alternative_import="langchain_aws.BedrockEmbeddings",
 )
 class BedrockEmbeddings(BaseModel, Embeddings):
