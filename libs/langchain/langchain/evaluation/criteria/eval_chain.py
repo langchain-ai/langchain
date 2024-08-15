@@ -4,14 +4,14 @@ import re
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables import RunnableConfig
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
-from langchain.chains.llm import LLMChain
 from langchain.evaluation.criteria.prompt import PROMPT, PROMPT_WITH_REFERENCES
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.schema import RUN_KEY
@@ -164,7 +164,7 @@ def resolve_criteria(
     return criteria_
 
 
-class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
+class CriteriaEvalChain(StringEvaluator, LLMEvalChain):
     """LLM Chain for evaluating runs against criteria.
 
     Parameters
@@ -231,6 +231,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     criterion_name: str
     """The name of the criterion being evaluated."""
     output_key: str = "results"  #: :meta private:
+    llm: BaseLanguageModel
+    """The language model to use for scoring."""
+    prompt: BasePromptTemplate
+    """The prompt to use for scoring."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -266,6 +270,22 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             f"Ignoring reference in {self.__class__.__name__}, as it is not expected."
             "\nTo use references, use the labeled_criteria instead."
         )
+
+    @property
+    def input_keys(self) -> List[str]:
+        """Will be whatever keys the prompt expects.
+
+        :meta private:
+        """
+        return self.prompt.input_variables
+
+    @property
+    def output_keys(self) -> List[str]:
+        """Will always return text key.
+
+        :meta private:
+        """
+        return [self.output_key]
 
     @classmethod
     def _resolve_prompt(
@@ -396,6 +416,19 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             parsed[RUN_KEY] = result[RUN_KEY]
         return parsed
 
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        if run_manager:
+            config = RunnableConfig(callbacks=run_manager.get_child())
+        else:
+            config = None
+        chain = self.prompt | self.llm | self.output_parser
+        response = chain.invoke(inputs, config=config)
+        return {self.output_key: response}
+
     def _evaluate_strings(
         self,
         *,
@@ -442,13 +475,17 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             )
         """
         input_ = self._get_eval_input(prediction, reference, input)
-        result = self(
-            input_,
-            callbacks=callbacks,
-            tags=tags,
-            metadata=metadata,
-            include_run_info=include_run_info,
-        )
+
+        # prep config
+        config: RunnableConfig = {}
+        if callbacks is not None:
+            config["callbacks"] = callbacks
+        if tags is not None:
+            config["tags"] = tags
+        if metadata is not None:
+            config["metadata"] = metadata
+
+        result = self.invoke(input_, config=config, include_run_info=include_run_info)
         return self._prepare_output(result)
 
     async def _aevaluate_strings(
@@ -497,12 +534,18 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             )
         """
         input_ = self._get_eval_input(prediction, reference, input)
-        result = await self.acall(
-            input_,
-            callbacks=callbacks,
-            tags=tags,
-            metadata=metadata,
-            include_run_info=include_run_info,
+
+        # prep config
+        config: RunnableConfig = {}
+        if callbacks is not None:
+            config["callbacks"] = callbacks
+        if tags is not None:
+            config["tags"] = tags
+        if metadata is not None:
+            config["metadata"] = metadata
+
+        result = await self.ainvoke(
+            input_, config=config, include_run_info=include_run_info
         )
         return self._prepare_output(result)
 
