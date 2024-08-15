@@ -4,11 +4,10 @@ from langchain_openai import AzureOpenAI
 
 os.environ["AZURE_OPENAI_API_KEY"] = "foo"
 os.environ["OPENAI_API_VERSION"] = "bar"
-os.environ["AZURE_OPENAI_ENDPOINT"] = "baz"
 
 
 def test_openai_model_param() -> None:
-    llm = AzureOpenAI(azure_deployment="gpt-35-turbo-instruct")
+    llm = AzureOpenAI(azure_deployment="gpt-35-turbo-instruct", azure_endpoint="baz")
 
     # Test standard tracing params
     ls_params = llm._get_ls_params()
