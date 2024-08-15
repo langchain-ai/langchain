@@ -11,9 +11,6 @@ from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
-from langchain_openai import OpenAIEmbeddings
-
-import requests
 
 IMPORT_OPENSEARCH_PY_ERROR = (
     "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
@@ -84,6 +81,7 @@ def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
             f"Got error: {e} "
         )
     return client
+
 
 def _get_async_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
     """Get AsyncOpenSearch client from the opensearch_url, otherwise raise error."""
@@ -403,6 +401,89 @@ def _default_painless_scripting_query(
         },
     }
 
+def _default_hybrid_search(self, options: dict) -> dict:
+        """Returns payload for performing hybrid search for given options.
+        Args: options: dict containing the following
+            query: The query text to search for.
+            embeded_query: The embedding vector to search for.
+            top_k: Number of Documents to return. Defaults to 4.
+        Returns: payload: dict containing the payload for hybrid search.
+
+        """
+        payload = {
+            "_source": {
+                 "exclude": [
+                    "vector_field"
+                    ]
+                },
+                "query": {
+                    "hybrid": {
+                        "queries": [
+                            {
+                            "match": {
+                                "text": {
+                                    "query": options["query"],
+                                        }
+                                    }
+                            },
+                            {
+                            "knn": {
+                                    "vector_field": {
+                                    "vector": options["embeded_query"],
+                                    "k": options["top_k"]
+                                    }
+                                }
+                            }
+                            ]
+                        }       
+                    },
+        "size":options["top_k"],     
+        }
+
+        return payload
+    
+def _hybrid_search_with_post_filter(self, options: dict) -> dict:
+    """Returns payload for performing hybrid search with post filter for given options.
+    Args: options: dict containing the following
+        query: The query text to search for.
+        embeded_query: The embedding vector to search for.
+        top_k: Number of Documents to return. Defaults to 4.
+        post_filter: The post filter to apply.
+    Returns: payload: dict containing the payload for hybrid search with post filter.
+    """
+    payload = {
+        "_source": {
+                "exclude": [
+                "vector_field"
+                ]
+            },
+        "query": {
+                    "hybrid": {
+                        "queries": [
+                            {
+                            "match": {
+                                "text": {
+                                    "query": options["query"],
+                                        }
+                                    }
+                            },
+                            {
+                            "knn": {
+                                    "vector_field": {
+                                    "vector": options["embeded_query"],
+                                    "k": options["top_k"]
+                                    }
+                                }
+                            }
+                        ]
+                    }       
+                },
+    "size":options["top_k"], 
+    "post_filter": options["post_filter"]      
+    }
+
+    return payload
+
 
 class OpenSearchVectorSearch(VectorStore):
     """`Amazon OpenSearch Vector Engine` vector store.
@@ -434,11 +515,6 @@ class OpenSearchVectorSearch(VectorStore):
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
         self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
         self.engine = kwargs.get("engine")
-
-        # added for hybrid search
-        self.opensearch_url = opensearch_url
-        self.http_auth = http_auth
-
 
     @property
     def embeddings(self) -> Embeddings:
@@ -740,47 +816,7 @@ class OpenSearchVectorSearch(VectorStore):
         return not any(
             item.get("delete", {}).get("error") for item in response["items"]
         )
-    
-    def create_search_pipelines(
-        self,
-        pipeline_name: str,
-        keyword_weight: float = 0.7,
-        vector_weight: float = 0.3,
-    )-> requests.Response:
-        path=f"_search/pipeline/{pipeline_name}"
-        auth = self.http_auth
-        url = f"{self.opensearch_url}/{path}"
 
-        payload = {
-        "description": "Post processor for hybrid search",
-        "phase_results_processors": [
-            {
-            "normalization-processor": {
-                "normalization": {
-                "technique": "min_max"
-                },
-                "combination": {
-                "technique": "arithmetic_mean",
-                "parameters": {
-                    "weights": [
-                    keyword_weight,
-                    vector_weight
-                    ]
-                }
-                }
-            }
-            }
-        ]
-        }
-        try:
-            response = requests.put(url, auth=auth, json=payload, verify=False)
-            return response
-        except requests.HTTPError as http_err:
-            print(f"HTTP error occurred: {http_err}")
-        except Exception as err:
-            print(f"An error occurred: {err}")
-           
-    
     def similarity_search(
         self,
         query: str,
@@ -803,12 +839,6 @@ class OpenSearchVectorSearch(VectorStore):
             List of Documents most similar to the query.
 
         Optional Args:
-            search_type: The type of search to perform. Can be one of:
-                - "approximate_search" (default)
-                - "script_scoring"
-                - "painless_scripting"
-                - "hybrid_search"
-
             vector_field: Document field embeddings are stored in. Defaults to
             "vector_field".
 
@@ -851,9 +881,6 @@ class OpenSearchVectorSearch(VectorStore):
 
             pre_filter: script_score query to pre-filter documents before identifying
             nearest neighbors; default: {"match_all": {}}
-
-        Optional Args for Hybrid Search:
-            hybrid_search_weights: a tuple for the weighting of the keyword search and the KNN search respectively; default: (0.7, 0.3)
         """
         docs_with_scores = self.similarity_search_with_score(
             query, k, score_threshold, **kwargs
@@ -880,48 +907,27 @@ class OpenSearchVectorSearch(VectorStore):
         score_threshold: Optional[float] = 0.0,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and their similarity scores based on the input query.
+        """Return docs and it's scores most similar to query.
+
+        By default, supports Approximate Search.
+        Also supports Script Scoring and Painless Scripting.
 
         Args:
-            query: The query text to search for.
+            query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             score_threshold: Specify a score threshold to return only documents
             above the threshold. Defaults to 0.0.
 
         Returns:
-            List of tuples containing the Document and its similarity score.
+            List of Documents along with its scores most similar to the query.
 
         Optional Args:
-            search_type: The type of search to perform. Can be one of:
-                - "approximate_search" (default)
-                - "script_scoring"
-                - "painless_scripting"
-                - "hybrid_search"
-            query_text: The query text to use for keyword search in hybrid search.
-            Other optional arguments are the same as `similarity_search`.
+            same as `similarity_search`
         """
         embedding = self.embedding_function.embed_query(query)
-        hits = self._raw_similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, query_text=query, **kwargs
+        return self.similarity_search_with_score_by_vector(
+            embedding, k, score_threshold, **kwargs
         )
-        text_field = kwargs.get("text_field", "text")
-        metadata_field = kwargs.get("metadata_field", "metadata")
-
-        documents_with_scores = [
-            (
-                Document(
-                    page_content=hit["_source"][text_field],
-                    metadata=(
-                        hit["_source"]
-                        if metadata_field == "*" or metadata_field not in hit["_source"]
-                        else hit["_source"][metadata_field]
-                    ),
-                ),
-                hit["_score"],
-            )
-            for hit in hits
-        ]
-        return documents_with_scores
 
     def similarity_search_with_score_by_vector(
         self,
@@ -930,31 +936,28 @@ class OpenSearchVectorSearch(VectorStore):
         score_threshold: Optional[float] = 0.0,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and their similarity scores based on the input vector.
+        """Return docs and it's scores most similar to the embedding vector.
+
+        By default, supports Approximate Search.
+        Also supports Script Scoring and Painless Scripting.
 
         Args:
-            embedding: The embedding vector to search for.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             score_threshold: Specify a score threshold to return only documents
             above the threshold. Defaults to 0.0.
 
         Returns:
-            List of tuples containing the Document and its similarity score.
+            List of Documents along with its scores most similar to the query.
 
         Optional Args:
-            search_type: The type of search to perform. Can be one of:
-                - "approximate_search" (default)
-                - "script_scoring"
-                - "painless_scripting"
-                - "hybrid_search"
-            query_text: The query text to use for keyword search in hybrid search.
-            Other optional arguments are the same as `similarity_search`.
+            same as `similarity_search`
         """
         text_field = kwargs.get("text_field", "text")
         metadata_field = kwargs.get("metadata_field", "metadata")
 
         hits = self._raw_similarity_search_with_score_by_vector(
-          embedding=embedding, k=k, query_text=kwargs.get("query_text", ""), **kwargs
+            embedding=embedding, k=k, score_threshold=score_threshold, **kwargs
         )
 
         documents_with_scores = [
@@ -973,90 +976,6 @@ class OpenSearchVectorSearch(VectorStore):
         ]
         return documents_with_scores
 
-    def _hybrid_search(self, options: dict) -> dict:
-        """Returns payload for performing hybrid search for given options.
-        Args: options: dict containing the following
-            query: The query text to search for.
-            embeded_query: The embedding vector to search for.
-            top_k: Number of Documents to return. Defaults to 4.
-        Returns: payload: dict containing the payload for hybrid search.
-
-        """
-        payload = {
-            "_source": {
-                 "exclude": [
-                    "vector_field"
-                    ]
-                },
-            "query": {
-                    "hybrid": {
-                        "queries": [
-                                {
-                                "match": {
-                                    "text": {
-                                        "query": options["query"],
-                                            }
-                                        }
-                                },
-                                {
-                                "knn": {
-                                        "vector_field": {
-                                        "vector": options["embeded_query"],
-                                        "k": options["top_k"]
-                                        }
-                                    }
-                                }
-                            ]
-                        }       
-                    },
-        "size":options["top_k"],     
-        }
-
-        return payload
-    
-
-    def _hybrid_search_with_post_filter(self, options: dict) -> dict:
-        """Returns payload for performing hybrid search with post filter for given options.
-        Args: options: dict containing the following
-            query: The query text to search for.
-            embeded_query: The embedding vector to search for.
-            top_k: Number of Documents to return. Defaults to 4.
-            post_filter: The post filter to apply.
-        Returns: payload: dict containing the payload for hybrid search with post filter.
-        """
-        payload = {
-            "_source": {
-                 "exclude": [
-                    "vector_field"
-                    ]
-                },
-            "query": {
-                    "hybrid": {
-                        "queries": [
-                                {
-                                "match": {
-                                    "text": {
-                                        "query": options["query"],
-                                            }
-                                        }
-                                },
-                                {
-                                "knn": {
-                                        "vector_field": {
-                                        "vector": options["embeded_query"],
-                                        "k": options["top_k"]
-                                        }
-                                    }
-                                }
-                            ]
-                        }       
-                    },
-        "size":options["top_k"], 
-        "post_filter": options["post_filter"]      
-        }
-
-        return payload
-    
     def _raw_similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -1191,48 +1110,41 @@ class OpenSearchVectorSearch(VectorStore):
                 vector_field,
                 score_threshold=score_threshold,
             )
+        
         elif search_type == HYBRID_SEARCH:
             search_pipeline = kwargs.get("search_pipeline", "")
             post_filter = kwargs.get("post_filter", {})
             query_text = kwargs.get("query_text", "")
-            path = f"{index_name}/_search?search_pipeline={search_pipeline}" 
-            auth = self.http_auth
-            url = f"{self.opensearch_url}/{path}"
+            path = f"/{index_name}/_search?search_pipeline={search_pipeline}" 
 
             # embedding the query_text 
             embeded_query = self.embedding_function.embed_query(query_text)
 
-            options =  {
-            "query": query_text,
-            "top_k": k,
-            "embeded_query": embeded_query,
-            "url": url,
-            "auth": auth,
-            "post_filter": post_filter
-            }
-            
+            # if post filter is provided
             if post_filter != {}: 
                 # hybrid search with post filter
-                payload = self._hybrid_search_with_post_filter(options)
+                payload = _hybrid_search_with_post_filter(query_text, embeded_query, k, post_filter)
             else:
                 # hybrid search without post filter
-                payload = self._hybrid_search(options)
-            
-            try:
-                r = requests.get(url, auth=auth, json=payload, verify=False)
-                response = r.json()
+                payload = _default_hybrid_search(query_text, embeded_query, k)
+            try: 
+                response = self.client.transport.perform_request(
+                    method="GET",
+                    url=path,
+                    body=payload
+                )
                 return [hit for hit in response["hits"]["hits"]]
-            except requests.HTTPError as http_err:
-                print(f"HTTP error occurred: {http_err}")
-            except Exception as err:
-                print(f"An error occurred: {err}")
+        
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                return None
+        
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
         response = self.client.search(index=index_name, body=search_query)
 
         return [hit for hit in response["hits"]["hits"]]
-    
 
     def max_marginal_relevance_search(
         self,
