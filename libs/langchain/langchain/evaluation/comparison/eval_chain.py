@@ -6,14 +6,15 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, Union
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables import RunnableConfig
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
-from langchain.chains.llm import LLMChain
 from langchain.evaluation.comparison.prompt import (
     COMPARISON_TEMPLATE,
     COMPARISON_TEMPLATE_WITH_REFERENCE,
@@ -151,7 +152,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
+class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain):
     """A chain for comparing two outputs, such as the outputs
      of two models, prompts, or outputs of a single model on similar inputs.
 
@@ -186,6 +187,10 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     output_parser: BaseOutputParser = Field(
         default_factory=PairwiseStringResultOutputParser
     )
+    llm: BaseLanguageModel
+    """The language model to use for scoring."""
+    prompt: BasePromptTemplate
+    """The prompt to use for scoring."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -227,6 +232,22 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             "\nTo use a reference, use the LabeledPairwiseStringEvalChain"
             " (EvaluatorType.LABELED_PAIRWISE_STRING) instead."
         )
+
+    @property
+    def input_keys(self) -> List[str]:
+        """Will be whatever keys the prompt expects.
+
+        :meta private:
+        """
+        return self.prompt.input_variables
+
+    @property
+    def output_keys(self) -> List[str]:
+        """Will always return text key.
+
+        :meta private:
+        """
+        return [self.output_key]
 
     @classmethod
     def from_llm(
@@ -305,6 +326,19 @@ Performance may be significantly worse with other models."
             parsed[RUN_KEY] = result[RUN_KEY]
         return parsed
 
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        if run_manager:
+            config = RunnableConfig(callbacks=run_manager.get_child())
+        else:
+            config = None
+        chain = self.prompt | self.llm | self.output_parser
+        response = chain.invoke(inputs, config=config)
+        return {self.output_key: response}
+
     def _evaluate_string_pairs(
         self,
         *,
@@ -338,13 +372,17 @@ Performance may be significantly worse with other models."
 
         """
         input_ = self._prepare_input(prediction, prediction_b, input, reference)
-        result = self(
-            inputs=input_,
-            callbacks=callbacks,
-            tags=tags,
-            metadata=metadata,
-            include_run_info=include_run_info,
-        )
+
+        # prep config
+        config: RunnableConfig = {}
+        if callbacks is not None:
+            config["callbacks"] = callbacks
+        if tags is not None:
+            config["tags"] = tags
+        if metadata is not None:
+            config["metadata"] = metadata
+
+        result = self.invoke(input_, config=config, include_run_info=include_run_info)
         return self._prepare_output(result)
 
     async def _aevaluate_string_pairs(
@@ -380,13 +418,20 @@ Performance may be significantly worse with other models."
 
         """
         input_ = self._prepare_input(prediction, prediction_b, input, reference)
-        result = await self.acall(
-            inputs=input_,
-            callbacks=callbacks,
-            tags=tags,
-            metadata=metadata,
-            include_run_info=include_run_info,
+
+        # prep config
+        config: RunnableConfig = {}
+        if callbacks is not None:
+            config["callbacks"] = callbacks
+        if tags is not None:
+            config["tags"] = tags
+        if metadata is not None:
+            config["metadata"] = metadata
+
+        result = await self.ainvoke(
+            input_, config=config, include_run_info=include_run_info
         )
+
         return self._prepare_output(result)
 
 
