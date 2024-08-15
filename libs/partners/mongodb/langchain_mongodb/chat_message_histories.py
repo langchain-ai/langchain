@@ -68,6 +68,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         session_id_key: str = DEFAULT_SESSION_ID_KEY,
         history_key: str = DEFAULT_HISTORY_KEY,
         create_index: bool = True,
+        doc_limit: int = None,
         index_kwargs: Optional[Dict] = None,
     ):
         """Initialize with a MongoDBChatMessageHistory instance.
@@ -88,6 +89,8 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
                 name of the field that stores the chat history.
             create_index: Optional[bool]
                 whether to create an index on the session id field.
+            doc_limit: Optional[int]
+                limit the most recent documents to fetch from MongoDB database.
             index_kwargs: Optional[Dict]
                 additional keyword arguments to pass to the index creation.
         """
@@ -97,6 +100,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         self.collection_name = collection_name
         self.session_id_key = session_id_key
         self.history_key = history_key
+        self.doc_limit = doc_limit
 
         try:
             self.client: MongoClient = MongoClient(connection_string)
@@ -114,7 +118,8 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from MongoDB"""
         try:
-            cursor = self.collection.find({self.session_id_key: self.session_id})
+            skip_count = max(0, self.collection.count_documents({}) - self.doc_limit) if self.doc_limit != None else 0
+            cursor = self.collection.find({self.session_id_key: self.session_id}, skip=skip_count)
         except errors.OperationFailure as error:
             logger.error(error)
 
