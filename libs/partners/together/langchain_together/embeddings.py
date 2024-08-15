@@ -1,7 +1,6 @@
 """Wrapper around Together AI's Embeddings API."""
 
 import logging
-import os
 import warnings
 from typing import (
     Any,
@@ -25,9 +24,7 @@ from langchain_core.pydantic_v1 import (
     root_validator,
 )
 from langchain_core.utils import (
-    convert_to_secret_str,
     from_env,
-    get_from_dict_or_env,
     get_pydantic_field_names,
     secret_from_env,
 )
