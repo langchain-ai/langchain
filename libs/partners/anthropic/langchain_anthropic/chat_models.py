@@ -1,4 +1,3 @@
-import os
 import re
 import warnings
 from operator import itemgetter
@@ -64,8 +63,9 @@ from langchain_core.runnables import (
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     build_extra_kwargs,
-    convert_to_secret_str,
+    from_env,
     get_pydantic_field_names,
+    secret_from_env,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -541,14 +541,26 @@ class ChatAnthropic(BaseChatModel):
     stop_sequences: Optional[List[str]] = Field(None, alias="stop")
     """Default stop sequences."""
 
-    anthropic_api_url: Optional[str] = Field(None, alias="base_url")
+    anthropic_api_url: Optional[str] = Field(
+        alias="base_url",
+        default_factory=from_env(
+            ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+            default="https://api.anthropic.com",
+        ),
+    )
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
-    If a value isn't passed in and environment variable ANTHROPIC_BASE_URL is set, value
-    will be read from there.
+    If a value isn't passed in, will attempt to read the value first from
+    ANTHROPIC_API_URL and if that is not set, ANTHROPIC_BASE_URL.
+    If neither are set, the default value of 'https://api.anthropic.com' will
+    be used.
     """
 
-    anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
+    anthropic_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
+    )
+
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     default_headers: Optional[Mapping[str, str]] = None
@@ -623,20 +635,10 @@ class ChatAnthropic(BaseChatModel):
         )
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        anthropic_api_key = convert_to_secret_str(
-            values.get("anthropic_api_key") or os.environ.get("ANTHROPIC_API_KEY") or ""
-        )
-        values["anthropic_api_key"] = anthropic_api_key
-        api_key = anthropic_api_key.get_secret_value()
-        api_url = (
-            values.get("anthropic_api_url")
-            or os.environ.get("ANTHROPIC_API_URL")
-            or os.environ.get("ANTHROPIC_BASE_URL")
-            or "https://api.anthropic.com"
-        )
-        values["anthropic_api_url"] = api_url
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        api_key = values["anthropic_api_key"].get_secret_value()
+        api_url = values["anthropic_api_url"]
         client_params = {
             "api_key": api_key,
             "base_url": api_url,

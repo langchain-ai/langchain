@@ -7,7 +7,7 @@ import importlib
 import os
 import warnings
 from importlib.metadata import version
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Union, overload
+from typing import Any, Callable, Dict, Optional, Sequence, Set, Tuple, Union, overload
 
 from packaging.version import parse
 from requests import HTTPError, Response
@@ -281,12 +281,16 @@ def from_env(key: str, /, *, default: str) -> Callable[[], str]: ...
 
 
 @overload
+def from_env(key: Sequence[str], /, *, default: str) -> Callable[[], str]: ...
+
+
+@overload
 def from_env(key: str, /, *, error_message: str) -> Callable[[], str]: ...
 
 
 @overload
 def from_env(
-    key: str, /, *, default: str, error_message: Optional[str]
+    key: Union[str, Sequence[str]], /, *, default: str, error_message: Optional[str]
 ) -> Callable[[], str]: ...
 
 
@@ -301,7 +305,7 @@ def from_env(key: str, /, *, default: None) -> Callable[[], Optional[str]]: ...
 
 
 def from_env(
-    key: str,
+    key: Union[str, Sequence[str]],
     /,
     *,
     default: Union[str, _NoDefaultType, None] = _NoDefault,
@@ -310,7 +314,10 @@ def from_env(
     """Create a factory method that gets a value from an environment variable.
 
     Args:
-        key: The environment variable to look up.
+        key: The environment variable to look up. If a list of keys is provided,
+            the first key found in the environment will be used.
+            If no key is found, the default value will be used if set,
+            otherwise an error will be raised.
         default: The default value to return if the environment variable is not set.
         error_message: the error message which will be raised if the key is not found
             and no default value is provided.
@@ -319,9 +326,15 @@ def from_env(
 
     def get_from_env_fn() -> Optional[str]:
         """Get a value from an environment variable."""
-        if key in os.environ:
-            return os.environ[key]
-        elif isinstance(default, (str, type(None))):
+        if isinstance(key, (list, tuple)):
+            for k in key:
+                if k in os.environ:
+                    return os.environ[k]
+        if isinstance(key, str):
+            if key in os.environ:
+                return os.environ[key]
+
+        if isinstance(default, (str, type(None))):
             return default
         else:
             if error_message:
