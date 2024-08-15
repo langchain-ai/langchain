@@ -11,7 +11,7 @@ from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GoogleSearchRun",
 )
 class GoogleSearchRun(BaseTool):
@@ -36,7 +36,7 @@ class GoogleSearchRun(BaseTool):
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GoogleSearchResults",
 )
 class GoogleSearchResults(BaseTool):
