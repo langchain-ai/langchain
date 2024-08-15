@@ -15,9 +15,15 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.0"
 mlflow = ">=2.9"
+
+# MLflow depends on following libraries, which require different version for Python 3.8 vs 3.12
 numpy = [
     {version = ">=1.26.0", python = ">=3.12"},
     {version = ">=1.24.0", python = "<3.12"},
+]
+scipy = [
+    {version = ">=1.11", python = ">=3.12"},
+    {version = "<2", python = "<3.12"}
 ]
 
 [tool.poetry.group.test]
