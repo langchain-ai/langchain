@@ -385,7 +385,9 @@ class ChatGroq(BaseChatModel):
             values["temperature"] = 1e-8
 
         client_params = {
-            "api_key": values["groq_api_key"].get_secret_value(),
+            "api_key": values["groq_api_key"].get_secret_value()
+            if values["groq_api_key"]
+            else None,
             "base_url": values["groq_api_base"],
             "timeout": values["request_timeout"],
             "max_retries": values["max_retries"],
