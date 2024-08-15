@@ -390,7 +390,7 @@ Performance may be significantly worse with other models."
         if metadata is not None:
             config["metadata"] = metadata
 
-        output = self.invoke(input_, config=config)
+        output = self.invoke(input_, config=config, include_run_info=include_run_info)
         result = {**input_, **output}
         return self._prepare_output(result)
 
@@ -432,7 +432,9 @@ Performance may be significantly worse with other models."
         if metadata is not None:
             config["metadata"] = metadata
 
-        output = await self.ainvoke(input_, config=config)
+        output = await self.ainvoke(
+            input_, config=config, include_run_info=include_run_info
+        )
         result = {**input_, **output}
         return self._prepare_output(result)
 
