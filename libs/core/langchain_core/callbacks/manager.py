@@ -1632,8 +1632,8 @@ class CallbackManagerForChainGroup(CallbackManager):
         from the current object.
 
         Returns:
-            CallbackManagerForChainGroup: The merged callback manager of the same type
-                as the current object.
+            CallbackManagerForChainGroup: A copy of the current object with the
+                handlers, tags, and other attributes merged from the other object.
 
         Example: Merging two callback managers.
 
@@ -2124,8 +2124,8 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         from the current object.
 
         Returns:
-            CallbackManagerForChainGroup: The merged callback manager of the same type
-                as the current object.
+            AsyncCallbackManagerForChainGroup: A copy of the current AsyncCallbackManagerForChainGroup
+                with the handlers, tags, etc. of the other callback manager merged in.
 
         Example: Merging two callback managers.
 
