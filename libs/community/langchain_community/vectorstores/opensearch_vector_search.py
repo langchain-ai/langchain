@@ -401,56 +401,42 @@ def _default_painless_scripting_query(
         },
     }
 
+
 def _default_hybrid_search(
-        query_text: str,
-        query_vector: List[float],
-        k: int = 4 
+    query_text: str, query_vector: List[float], k: int = 4
 ) -> Dict:
-        """Returns payload for performing hybrid search for given options.
-        Args: options: dict containing the following
-            query: The query text to search for.
-            embeded_query: The embedding vector to search for.
-            top_k: Number of Documents to return. Defaults to 4.
-        Returns: payload: dict containing the payload for hybrid search.
+    """Returns payload for performing hybrid search for given options.
+    Args: options: dict containing the following
+        query: The query text to search for.
+        embeded_query: The embedding vector to search for.
+        top_k: Number of Documents to return. Defaults to 4.
+    Returns: payload: dict containing the payload for hybrid search.
 
-        """
-        payload = {
-            "_source": {
-                 "exclude": [
-                    "vector_field"
-                    ]
-                },
-                "query": {
-                    "hybrid": {
-                        "queries": [
-                            {
-                            "match": {
-                                "text": {
-                                    "query": query_text,
-                                        }
-                                    }
-                            },
-                            {
-                            "knn": {
-                                    "vector_field": {
-                                    "vector": query_vector,
-                                    "k": k
-                                    }
-                                }
+    """
+    payload = {
+        "_source": {"exclude": ["vector_field"]},
+        "query": {
+            "hybrid": {
+                "queries": [
+                    {
+                        "match": {
+                            "text": {
+                                "query": query_text,
                             }
-                            ]
-                        }       
+                        }
                     },
-        "size":k,     
-        }
+                    {"knn": {"vector_field": {"vector": query_vector, "k": k}}},
+                ]
+            }
+        },
+        "size": k,
+    }
 
-        return payload
-    
+    return payload
+
+
 def _hybrid_search_with_post_filter(
-        query_text: str,
-        query_vector: List[float],
-        k: int,
-        post_filter: Optional[Dict] = {}
+    query_text: str, query_vector: List[float], k: int, post_filter: Optional[Dict] = {}
 ) -> Dict:
     """Returns payload for performing hybrid search with post filter for given options.
     Args: options: dict containing the following
@@ -461,34 +447,23 @@ def _hybrid_search_with_post_filter(
     Returns: payload: dict containing the payload for hybrid search with post filter.
     """
     payload = {
-        "_source": {
-                "exclude": [
-                "vector_field"
-                ]
-            },
+        "_source": {"exclude": ["vector_field"]},
         "query": {
-                    "hybrid": {
-                        "queries": [
-                            {
-                            "match": {
-                                "text": {
-                                    "query": query_text,
-                                        }
-                                    }
-                            },
-                            {
-                            "knn": {
-                                    "vector_field": {
-                                    "vector": query_vector,
-                                    "k": k
-                                    }
-                                }
+            "hybrid": {
+                "queries": [
+                    {
+                        "match": {
+                            "text": {
+                                "query": query_text,
                             }
-                        ]
-                    }       
-                },
-    "size":k, 
-    "post_filter": post_filter      
+                        }
+                    },
+                    {"knn": {"vector_field": {"vector": query_vector, "k": k}}},
+                ]
+            }
+        },
+        "size": k,
+        "post_filter": post_filter,
     }
 
     return payload
@@ -825,14 +800,13 @@ class OpenSearchVectorSearch(VectorStore):
         return not any(
             item.get("delete", {}).get("error") for item in response["items"]
         )
-    
-    
+
     def configure_search_pipelines(
         self,
         pipeline_name: str,
         keyword_weight: float = 0.7,
         vector_weight: float = 0.3,
-    )-> dict:
+    ) -> dict:
         """
         Configures a search pipeline for hybrid search.
         Args:
@@ -840,45 +814,35 @@ class OpenSearchVectorSearch(VectorStore):
             keyword_weight: Weight for keyword search
             vector_weight: Weight for vector search
         Returns:
-            response: Acknowledgement of the pipeline creation. 
+            response: Acknowledgement of the pipeline creation.
             (if there is any error while configuring the pipeline, it will return None)
         Raises:
             Exception: If an error occurs
         """
-        path=f"/_search/pipeline/{pipeline_name}"
+        path = f"/_search/pipeline/{pipeline_name}"
 
         payload = {
-        "description": "Post processor for hybrid search",
-        "phase_results_processors": [
-            {
-            "normalization-processor": {
-                "normalization": {
-                "technique": "min_max"
-                },
-                "combination": {
-                "technique": "arithmetic_mean",
-                "parameters": {
-                    "weights": [
-                    keyword_weight,
-                    vector_weight
-                    ]
+            "description": "Post processor for hybrid search",
+            "phase_results_processors": [
+                {
+                    "normalization-processor": {
+                        "normalization": {"technique": "min_max"},
+                        "combination": {
+                            "technique": "arithmetic_mean",
+                            "parameters": {"weights": [keyword_weight, vector_weight]},
+                        },
+                    }
                 }
-                }
-            }
-            }
-        ]
+            ],
         }
         try:
             response = self.client.transport.perform_request(
-                method="PUT",
-                url=path,
-                body=payload
+                method="PUT", url=path, body=payload
             )
             return response
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
-
 
     def similarity_search(
         self,
@@ -987,7 +951,7 @@ class OpenSearchVectorSearch(VectorStore):
         Optional Args:
             same as `similarity_search`
         """
-        # added query_text to kwargs for Hybrid Search 
+        # added query_text to kwargs for Hybrid Search
         kwargs["query_text"] = query
         embedding = self.embedding_function.embed_query(query)
         return self.similarity_search_with_score_by_vector(
@@ -1175,35 +1139,35 @@ class OpenSearchVectorSearch(VectorStore):
                 vector_field,
                 score_threshold=score_threshold,
             )
-        
+
         elif search_type == HYBRID_SEARCH:
             search_pipeline = kwargs.get("search_pipeline", "")
             post_filter = kwargs.get("post_filter", {})
             query_text = kwargs.get("query_text", "")
-            path = f"/{index_name}/_search?search_pipeline={search_pipeline}" 
+            path = f"/{index_name}/_search?search_pipeline={search_pipeline}"
 
-            # embedding the query_text 
+            # embedding the query_text
             embeded_query = self.embedding_function.embed_query(query_text)
 
             # if post filter is provided
-            if post_filter != {}: 
+            if post_filter != {}:
                 # hybrid search with post filter
-                payload = _hybrid_search_with_post_filter(query_text, embeded_query, k, post_filter)
+                payload = _hybrid_search_with_post_filter(
+                    query_text, embeded_query, k, post_filter
+                )
             else:
                 # hybrid search without post filter
                 payload = _default_hybrid_search(query_text, embeded_query, k)
-            try: 
+            try:
                 response = self.client.transport.perform_request(
-                    method="GET",
-                    url=path,
-                    body=payload
+                    method="GET", url=path, body=payload
                 )
                 return [hit for hit in response["hits"]["hits"]]
-        
+
             except Exception as e:
                 print(f"An error occurred: {e}")
                 return None
-        
+
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
