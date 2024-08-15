@@ -22,24 +22,3 @@ from langchain_databricks import ChatDatabricks
 llm = ChatDatabricks()
 llm.invoke("Sing a ballad of LangChain.")
 ```
-
-## Embeddings
-
-`DatabricksEmbeddings` class exposes embeddings from Databricks.
-
-```python
-from langchain_databricks import DatabricksEmbeddings
-
-embeddings = DatabricksEmbeddings()
-embeddings.embed_query("What is the meaning of life?")
-```
-
-## LLMs
-`DatabricksLLM` class exposes LLMs from Databricks.
-
-```python
-from langchain_databricks import DatabricksLLM
-
-llm = DatabricksLLM()
-llm.invoke("The meaning of life is")
-```
