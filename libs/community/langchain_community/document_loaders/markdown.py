@@ -66,7 +66,7 @@ class UnstructuredMarkdownLoader(UnstructuredFileLoader):
     References
     ----------
     https://unstructured-io.github.io/unstructured/core/partition.html#partition-md
-    """
+    """  # noqa: E501
 
     def _get_elements(self) -> List:
         from unstructured.__version__ import __version__ as __unstructured_version__
