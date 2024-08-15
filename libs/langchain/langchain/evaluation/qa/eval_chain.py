@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import re
 import string
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.runnables import RunnableConfig
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
@@ -67,10 +70,14 @@ def _parse_string_eval_output(text: str) -> dict:
     }
 
 
-class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
+class QAEvalChain(StringEvaluator, LLMEvalChain):
     """LLM Chain for evaluating question answering."""
 
     output_key: str = "results"  #: :meta private:
+    llm: BaseLanguageModel
+    """The language model to use for scoring."""
+    prompt: BasePromptTemplate
+    """The prompt to use for scoring."""
 
     class Config:
         extra = "ignore"
@@ -90,6 +97,35 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     @property
     def requires_input(self) -> bool:
         return True
+
+    @property
+    def input_keys(self) -> List[str]:
+        """Will be whatever keys the prompt expects.
+
+        :meta private:
+        """
+        return self.prompt.input_variables
+
+    @property
+    def output_keys(self) -> List[str]:
+        """Will always return text key.
+
+        :meta private:
+        """
+        return [self.output_key]
+
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        if run_manager:
+            config = RunnableConfig(callbacks=run_manager.get_child())
+        else:
+            config = None
+        chain = self.prompt | self.llm | StrOutputParser()
+        response = chain.invoke(inputs, config=config)
+        return {self.output_key: response}
 
     @classmethod
     def from_llm(
@@ -141,8 +177,14 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
             }
             for i, example in enumerate(examples)
         ]
+        if callbacks:
+            config = RunnableConfig(callbacks=callbacks)
+        else:
+            config = None
+        outputs = self.batch(inputs, config=config)
 
-        return self.apply(inputs, callbacks=callbacks)
+        # Subset to output key only
+        return [{self.output_key: output[self.output_key]} for output in outputs]
 
     def _prepare_output(self, result: dict) -> dict:
         parsed_result = _parse_string_eval_output(result[self.output_key])
@@ -174,14 +216,17 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         Returns:
             dict: The evaluation results containing the score or value.
         """
-        result = self(
+        if callbacks:
+            config = RunnableConfig(callbacks=callbacks)
+        else:
+            config = None
+        result = self.invoke(
             {
                 "query": input,
                 "answer": reference,
                 "result": prediction,
             },
-            callbacks=callbacks,
-            include_run_info=include_run_info,
+            config=config,
         )
         return self._prepare_output(result)
 
@@ -195,10 +240,17 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        result = await self.acall(
-            inputs={"query": input, "answer": reference, "result": prediction},
-            callbacks=callbacks,
-            include_run_info=include_run_info,
+        if callbacks:
+            config = RunnableConfig(callbacks=callbacks)
+        else:
+            config = None
+        result = await self.ainvoke(
+            {
+                "query": input,
+                "answer": reference,
+                "result": prediction,
+            },
+            config=config,
         )
         return self._prepare_output(result)
 
