@@ -203,7 +203,9 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         params = super()._get_ls_params(stop=stop, **kwargs)
         identifying_params = self._identifying_params
         params["ls_provider"] = "anthropic"
-        if max_tokens := identifying_params.get("max_tokens"):
+        if max_tokens := kwargs.get("max_tokens_to_sample") or identifying_params.get(
+            "max_tokens"
+        ):
             params["ls_max_tokens"] = max_tokens
         return params
 
