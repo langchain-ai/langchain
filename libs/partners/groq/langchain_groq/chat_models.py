@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import warnings
 from operator import itemgetter
 from typing import (
@@ -75,11 +74,8 @@ from langchain_core.pydantic_v1 import (
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-    get_pydantic_field_names,
     from_env,
-    secret_from_env,
+    get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
