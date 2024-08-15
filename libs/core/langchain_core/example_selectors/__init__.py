@@ -4,6 +4,7 @@ This allows us to select examples that are most relevant to the input.
 """
 
 from langchain_core.example_selectors.base import BaseExampleSelector
+from langchain_core.example_selectors.langsmith import LangSmithExampleSelector
 from langchain_core.example_selectors.length_based import (
     LengthBasedExampleSelector,
 )
@@ -19,4 +20,5 @@ __all__ = [
     "MaxMarginalRelevanceExampleSelector",
     "SemanticSimilarityExampleSelector",
     "sorted_values",
+    "LangSmithExampleSelector",
 ]
