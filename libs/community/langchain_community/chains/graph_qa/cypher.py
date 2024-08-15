@@ -198,7 +198,7 @@ class GraphCypherQAChain(Chain):
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the chain."""
         super().__init__(**kwargs)
-        if self.allow_dangerous_requests is False:
+        if self.allow_dangerous_requests is not True:
             raise ValueError(
                 "In order to use this chain, you must acknowledge that it can make "
                 "dangerous requests by setting `allow_dangerous_requests` to `True`."
