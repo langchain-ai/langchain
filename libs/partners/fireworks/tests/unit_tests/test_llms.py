@@ -73,7 +73,7 @@ def test_fireworks_uses_actual_secret_value_from_secretstr() -> None:
 
 def test_fireworks_model_params() -> None:
     # Test standard tracing params
-    llm = Fireworks(model="foo", fireworks_api_key="secret-api-key")
+    llm = Fireworks(model="foo", api_key="secret-api-key")  # type: ignore[arg-type]
 
     ls_params = llm._get_ls_params()
     assert ls_params == {
@@ -84,7 +84,7 @@ def test_fireworks_model_params() -> None:
 
     llm = Fireworks(
         model="foo",
-        fireworks_api_key="secret-api-key",
+        api_key="secret-api-key",  # type: ignore[arg-type]
         max_tokens=10,
         temperature=0.1,
     )

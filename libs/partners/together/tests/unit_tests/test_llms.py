@@ -71,7 +71,7 @@ def test_together_uses_actual_secret_value_from_secretstr_api_key() -> None:
     assert cast(SecretStr, llm.together_api_key).get_secret_value() == "secret-api-key"
 
 
-def test_anthropic_model_params() -> None:
+def test_together_model_params() -> None:
     # Test standard tracing params
     llm = Together(
         api_key="secret-api-key",  # type: ignore[arg-type]

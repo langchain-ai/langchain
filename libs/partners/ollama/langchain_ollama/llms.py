@@ -160,7 +160,6 @@ class OllamaLLM(BaseLLM):
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = super()._get_ls_params(stop=stop, **kwargs)
-        params["ls_provider"] = "ollama"
         if max_tokens := kwargs.get("num_predict", self.num_predict):
             params["ls_max_tokens"] = max_tokens
         return params

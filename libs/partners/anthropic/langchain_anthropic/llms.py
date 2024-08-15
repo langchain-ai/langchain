@@ -202,7 +202,6 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         """Get standard params for tracing."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         identifying_params = self._identifying_params
-        params["ls_provider"] = "anthropic"
         if max_tokens := kwargs.get(
             "max_tokens_to_sample",
             identifying_params.get("max_tokens"),
