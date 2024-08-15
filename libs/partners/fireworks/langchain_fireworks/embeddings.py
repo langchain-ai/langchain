@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -66,15 +66,11 @@ class FireworksEmbeddings(BaseModel, Embeddings):
     """
 
     _client: OpenAI = Field(default=None)
-    fireworks_api_key: SecretStr = Field(
+    fireworks_api_key: Optional[SecretStr] = Field(
         alias="api_key",
         default_factory=secret_from_env(
             "FIREWORKS_API_KEY",
-            error_message=(
-                "You must specify an api key. "
-                "You can pass it an argument as `api_key=...` or "
-                "set the environment variable `FIREWORKS_API_KEY`."
-            ),
+            default=None,
         ),
     )
     """Fireworks API key.
@@ -86,8 +82,13 @@ class FireworksEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate environment variables."""
+        api_key = (
+            values["fireworks_api_key"].get_secret_value()
+            if values["fireworks_api_key"] is not None
+            else None
+        )
         values["_client"] = OpenAI(
-            api_key=values["fireworks_api_key"].get_secret_value(),
+            api_key=api_key,
             base_url="https://api.fireworks.ai/inference/v1",
         )
         return values
