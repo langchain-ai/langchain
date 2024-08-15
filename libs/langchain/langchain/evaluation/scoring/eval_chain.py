@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.callbacks.manager import Callbacks
@@ -380,14 +380,16 @@ Performance may be significantly worse with other models."
 
         """
         input_ = self._prepare_input(prediction, input, reference)
-        config = cast(
-            RunnableConfig,
-            {
-                "callbacks": callbacks,
-                "tags": tags,
-                "metadata": metadata,
-            },
-        )
+
+        # prep config
+        config: RunnableConfig = {}
+        if callbacks is not None:
+            config["callbacks"] = callbacks
+        if tags is not None:
+            config["tags"] = tags
+        if metadata is not None:
+            config["metadata"] = metadata
+
         output = self.invoke(input_, config=config)
         result = {**input_, **output}
         return self._prepare_output(result)
@@ -420,14 +422,16 @@ Performance may be significantly worse with other models."
 
         """
         input_ = self._prepare_input(prediction, input, reference)
-        config = cast(
-            RunnableConfig,
-            {
-                "callbacks": callbacks,
-                "tags": tags,
-                "metadata": metadata,
-            },
-        )
+
+        # prep config
+        config: RunnableConfig = {}
+        if callbacks is not None:
+            config["callbacks"] = callbacks
+        if tags is not None:
+            config["tags"] = tags
+        if metadata is not None:
+            config["metadata"] = metadata
+
         output = await self.ainvoke(input_, config=config)
         result = {**input_, **output}
         return self._prepare_output(result)
