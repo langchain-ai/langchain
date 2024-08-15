@@ -340,6 +340,12 @@ const FEATURE_TABLES = {
                 package: "langchain-cohere",
                 apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_cohere.embeddings.CohereEmbeddings.html#langchain_cohere.embeddings.CohereEmbeddings"
             },
+            {
+                name: "Nomic",
+                link: "cohere",
+                package: "langchain-nomic",
+                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html#langchain_nomic.embeddings.NomicEmbeddings"
+            },
         ]
     },
     document_retrievers: {
@@ -433,6 +439,175 @@ const FEATURE_TABLES = {
         link: 'docs/integrations/loaders',
         columns: [],
         items: [],
+    },
+    webpage_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Description", formatter: (item) => item.source},
+            {title: "Package/API", formatter: (item) => item.api},
+        ],
+        items: [
+            {
+                name: "Web",
+                link: "web_base",
+                source: "Uses urllib and BeautifulSoup to load and parse HTML web pages",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html"
+            },
+            {
+                name: "RecursiveURL",
+                link: "recursive_url",
+                source: "Recursively scrapes all child links from a root URL",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.recursive_url_loader.RecursiveUrlLoader.html"
+            },
+            {
+                name: "Sitemap",
+                link: "sitemap",
+                source: "Scrapes all pages on a given sitemap",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.sitemap.SitemapLoader.html"
+            },
+            {
+                name: "Firecrawl",
+                link: "firecrawl",
+                source: "API service that can be deployed locally, hosted version has free credits.",
+                api: "API",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.firecrawl.FireCrawlLoader.html"
+            }
+        ]
+    },
+    pdf_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Description", formatter: (item) => item.source},
+            {title: "Package/API", formatter: (item) => item.api},
+        ],
+        items: [
+            {
+                name: "PyPDF",
+                link: "pypdfloader",
+                source: "Uses `pypdf` to load and parse PDFs",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFLoader.html"
+            },
+            {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "Uses Unstructured's open source library to load PDFs",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
+                name: "Amazon Textract",
+                link: "amazon_textract",
+                source: "Uses AWS API to load PDFs",
+                api: "API",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.AmazonTextractPDFLoader.html"
+            },
+            {
+                name: "MathPix",
+                link: "mathpix",
+                source: "Uses MathPix to laod PDFs",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.MathpixPDFLoader.html"
+            },
+            {
+                name: "PDFPlumber",
+                link: "pdfplumber",
+                source: "Load PDF files using PDFPlumber",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PDFPlumberLoader.html"
+            },
+            {
+                name: "PyPDFDirectry",
+                link: "pypdfdirectory",
+                source: "Load a directory with PDF files",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFDirectoryLoader.html"
+            },
+            {
+                name: "PyPDFium2",
+                link: "pypdfium2",
+                source: "Load PDF files using PyPDFium2",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFium2Loader.html"
+            },
+            {
+                name: "UnstructuredPDFLoader",
+                link: "unstructured_pdfloader",
+                source: "Load PDF files using Unstructured",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.UnstructuredPDFLoader.html"
+            },
+            {
+                name: "PyMuPDF",
+                link: "pymupdf",
+                source: "Load PDF files using PyMuPDF",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyMuPDFLoader.html"
+            },
+            {
+                name: "PDFMiner",
+                link: "pdfminer",
+                source: "Load PDF files using PDFMiner",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PDFMinerLoader.html"
+            }
+        ]
+    },
+    common_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Data Type", formatter: (item) => item.source},
+        ],
+        items: [
+            {
+                name: "CSVLoader",
+                link: "csv",
+                source: "CSV files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.csv_loader.CSVLoader.html"
+            },
+            {
+                name: "DirectoryLoader",
+                link: "../../how_to/document_loader_directory",
+                source: "All files in a given directory",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.directory.DirectoryLoader.html"
+            },
+            {
+                name: "Unstructured",
+                link: "unstructured_file",
+                source: "All file types",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
+            },
+            {
+                name: "JSONLoader",
+                link: "json",
+                source: "JSON files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.json_loader.JSONLoader.html"
+            },
+            {
+                name: "UnstructuredMarkdownLoader",
+                link: "unstructured_markdown",
+                source: "Markdown files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.markdown.UnstructuredMarkdownLoader.html"
+            },
+            {
+                name: "BSHTMLLoader",
+                link: "bshtml",
+                source: "HTML files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
+            }
+        ]
     },
     vectorstores: {
         link: 'docs/integrations/vectorstores',
@@ -624,6 +799,23 @@ const FEATURE_TABLES = {
     }
 };
 
+const DEPRECATED_DOC_IDS = [
+  "integrations/chat/anthropic_functions",
+  "integrations/chat/ernie",
+  "integrations/chat/ollama_functions",
+  "integrations/document_loaders/airbyte_cdk",
+  "integrations/document_loaders/airbyte_gong",
+  "integrations/document_loaders/airbyte_hubspot",
+  "integrations/document_loaders/airbyte_json",
+  "integrations/document_loaders/airbyte_salesforce",
+  "integrations/document_loaders/airbyte_shopify",
+  "integrations/document_loaders/airbyte_stripe",
+  "integrations/document_loaders/airbyte_typeform",
+  "integrations/document_loaders/airbyte_zendesk_support",
+  "integrations/llms/anthropic",
+  "integrations/text_embedding/ernie",
+];
+
 function toTable(columns, items) {
     const headers = columns.map((col) => col.title);
     return (
@@ -665,18 +857,30 @@ function truncate(str, n) {
 }
 
 export function IndexTable() {
-    const { items } = useCurrentSidebarCategory();
+  const { items } = useCurrentSidebarCategory();
 
-    const rows = items.filter(item => !item.docId?.endsWith?.('/index')).map(item => ({
-        ...item,
-        description: useDocById(item.docId ?? undefined)?.description,
+  const rows = items
+    .filter(
+      (item) =>
+        !item.docId?.endsWith?.("/index") &&
+        !DEPRECATED_DOC_IDS.includes(item.docId)
+    )
+    .map((item) => ({
+      ...item,
+      description: useDocById(item.docId ?? undefined)?.description,
     }));
-    const rtn = toTable(
-        [
-            { title: "Label", formatter: (item) => <a href={item.href}>{item.label}</a> },
-            { title: "Description", formatter: (item) => truncate(item.description ?? "", 70) },
-        ],
-        rows,
-    );
-    return rtn;
+  const rtn = toTable(
+    [
+      {
+        title: "Name",
+        formatter: (item) => <a href={item.href}>{item.label}</a>,
+      },
+      {
+        title: "Description",
+        formatter: (item) => truncate(item.description ?? "", 70),
+      },
+    ],
+    rows,
+  );
+  return rtn;
 }

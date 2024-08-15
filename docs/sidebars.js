@@ -374,10 +374,6 @@ module.exports = {
               },
             },
           ],
-          // link: {
-          //   type: "generated-index",
-          //   slug: "integrations/providers",
-          // },
         },
         
       ],

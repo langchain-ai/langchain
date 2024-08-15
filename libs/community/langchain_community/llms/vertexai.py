@@ -203,7 +203,7 @@ class _VertexAICommon(_VertexAIBase):
 
 @deprecated(
     since="0.0.12",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_vertexai.VertexAI",
 )
 class VertexAI(_VertexAICommon, BaseLLM):
@@ -393,7 +393,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
 
 @deprecated(
     since="0.0.12",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_vertexai.VertexAIModelGarden",
 )
 class VertexAIModelGarden(_VertexAIBase, BaseLLM):
