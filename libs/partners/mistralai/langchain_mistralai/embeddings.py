@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List
 
 import httpx
 from langchain_core.embeddings import Embeddings
