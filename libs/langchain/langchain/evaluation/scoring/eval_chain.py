@@ -209,9 +209,12 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain):
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
-        _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        if run_manager:
+            config = RunnableConfig(callbacks=run_manager.get_child())
+        else:
+            config = None
         chain = self.prompt | self.llm | self.output_parser
-        response = chain.invoke(inputs, config={"callbacks": _run_manager.get_child()})
+        response = chain.invoke(inputs, config=config)
         return {self.output_key: response}
 
     @classmethod
