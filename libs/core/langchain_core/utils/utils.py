@@ -296,6 +296,10 @@ def from_env(
 ) -> Callable[[], Optional[str]]: ...
 
 
+@overload
+def from_env(key: str, /, *, default: None) -> Callable[[], Optional[str]]: ...
+
+
 def from_env(
     key: str,
     /,
