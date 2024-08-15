@@ -401,7 +401,11 @@ def _default_painless_scripting_query(
         },
     }
 
-def _default_hybrid_search(self, options: dict) -> dict:
+def _default_hybrid_search(
+        query_text: str,
+        query_vector: List[float],
+        k: int = 4 
+) -> Dict:
         """Returns payload for performing hybrid search for given options.
         Args: options: dict containing the following
             query: The query text to search for.
@@ -422,27 +426,32 @@ def _default_hybrid_search(self, options: dict) -> dict:
                             {
                             "match": {
                                 "text": {
-                                    "query": options["query"],
+                                    "query": query_text,
                                         }
                                     }
                             },
                             {
                             "knn": {
                                     "vector_field": {
-                                    "vector": options["embeded_query"],
-                                    "k": options["top_k"]
+                                    "vector": query_vector,
+                                    "k": k
                                     }
                                 }
                             }
                             ]
                         }       
                     },
-        "size":options["top_k"],     
+        "size":k,     
         }
 
         return payload
     
-def _hybrid_search_with_post_filter(self, options: dict) -> dict:
+def _hybrid_search_with_post_filter(
+        query_text: str,
+        query_vector: List[float],
+        k: int,
+        post_filter: Optional[Dict] = {}
+) -> Dict:
     """Returns payload for performing hybrid search with post filter for given options.
     Args: options: dict containing the following
         query: The query text to search for.
@@ -463,23 +472,23 @@ def _hybrid_search_with_post_filter(self, options: dict) -> dict:
                             {
                             "match": {
                                 "text": {
-                                    "query": options["query"],
+                                    "query": query_text,
                                         }
                                     }
                             },
                             {
                             "knn": {
                                     "vector_field": {
-                                    "vector": options["embeded_query"],
-                                    "k": options["top_k"]
+                                    "vector": query_vector,
+                                    "k": k
                                     }
                                 }
                             }
                         ]
                     }       
                 },
-    "size":options["top_k"], 
-    "post_filter": options["post_filter"]      
+    "size":k, 
+    "post_filter": post_filter      
     }
 
     return payload
@@ -978,6 +987,8 @@ class OpenSearchVectorSearch(VectorStore):
         Optional Args:
             same as `similarity_search`
         """
+        # added query_text to kwargs for Hybrid Search 
+        kwargs["query_text"] = query
         embedding = self.embedding_function.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding, k, score_threshold, **kwargs
