@@ -14,9 +14,9 @@ class BlockchainType(Enum):
     """Enumerator of the supported blockchains."""
 
     ETH_MAINNET = "eth-mainnet"
-    ETH_GOERLI = "eth-goerli"
+    ETH_SEPOLIA = "eth-sepolia"
     POLYGON_MAINNET = "polygon-mainnet"
-    POLYGON_MUMBAI = "polygon-mumbai"
+    POLYGON_AMOY = "polygon-amoy"
 
 
 class BlockchainDocumentLoader(BaseLoader):
