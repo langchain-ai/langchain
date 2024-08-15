@@ -167,7 +167,7 @@ EXAMPLE_SEARCH_RESPONSE_WITH_EMBEDDING = {
     "next_page_token": "",
 }
 
-ALL_QUERY_TYPES = [
+ANN_QUERY_TYPES = [
     None,
     "ANN",
     "HYBRID",
@@ -482,7 +482,46 @@ def test_delete_fail_no_ids() -> None:
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
-    "index_details, query_type", itertools.product(ALL_INDEXES, ALL_QUERY_TYPES)
+    "index_details", ALL_INDEXES
+)
+def test_similarity_search_hybrid(index_details: dict) -> None:
+    query_type = "HYBRID"
+    index = mock_index(index_details)
+    index.similarity_search.return_value = EXAMPLE_SEARCH_RESPONSE
+    vectorsearch = default_databricks_vector_search(index)
+    query = "foo"
+    filters = {"some filter": True}
+    limit = 7
+
+    search_result = vectorsearch.similarity_search(
+        query, k=limit, filter=filters, query_type=query_type
+    )
+    if index_details == DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS:
+        index.similarity_search.assert_called_once_with(
+            columns=[DEFAULT_PRIMARY_KEY, DEFAULT_TEXT_COLUMN],
+            query_text=query,
+            query_vector=None,
+            filters=filters,
+            num_results=limit,
+            query_type=query_type,
+        )
+    else:
+        index.similarity_search.assert_called_once_with(
+            columns=[DEFAULT_PRIMARY_KEY, DEFAULT_TEXT_COLUMN],
+            query_text=query,
+            query_vector=DEFAULT_EMBEDDING_MODEL.embed_query(query),
+            filters=filters,
+            num_results=limit,
+            query_type=query_type,
+        )
+    assert len(search_result) == len(fake_texts)
+    assert sorted([d.page_content for d in search_result]) == sorted(fake_texts)
+    assert all([DEFAULT_PRIMARY_KEY in d.metadata for d in search_result])
+
+
+@pytest.mark.requires("databricks", "databricks.vector_search")
+@pytest.mark.parametrize(
+    "index_details, query_type", itertools.product(ALL_INDEXES, ANN_QUERY_TYPES)
 )
 def test_similarity_search(index_details: dict, query_type: Optional[str]) -> None:
     index = mock_index(index_details)
