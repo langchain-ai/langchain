@@ -169,8 +169,7 @@ EXAMPLE_SEARCH_RESPONSE_WITH_EMBEDDING = {
 
 ANN_QUERY_TYPES = [
     None,
-    "ANN",
-    "HYBRID",
+    "ANN"
 ]
 
 
