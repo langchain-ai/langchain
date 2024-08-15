@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypeVar, Union
 from uuid import UUID
 
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
     from langchain_core.messages import BaseMessage
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class RetrieverManagerMixin:
@@ -950,6 +953,11 @@ class BaseCallbackManager(CallbackManagerMixin):
                     #    ['tag2', 'tag1']
 
         """  # noqa: E501
+        if self.parent_run_id != other.parent_run_id:
+            _LOGGER.warning(
+                f"{self.__class__.__name__}.merge(): Parent run IDs do not match."
+                " Using the parent run ID of the first callback manager."
+            )
         manager = self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,
             handlers=[],
