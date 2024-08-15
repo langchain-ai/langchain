@@ -80,7 +80,7 @@ class LangSmithExampleSelector(
         client: Optional[Client] = None,
         **client_kwargs: Any,
     ) -> None:
-        """Initialize selector.
+        """
 
         .. note::
 
@@ -122,9 +122,10 @@ class LangSmithExampleSelector(
                The config supports standard keys like 'tags', 'metadata' for tracing
                purposes, 'max_concurrency' for controlling how much work to do
                in parallel, and other keys. Please refer to the
-               ~:class:`langchain_core.runnables.RunnableConfig` for more details.
-            kwargs: Additional keyword arguments are pased through to
-                ~:method:`LangSmithClientExecutor.select_examples()`.
+               :class:`~langchain_core.runnables.config.RunnableConfig` for more
+               details.
+            kwargs: Additional keyword arguments are passed through to
+                ``select_examples()``.
 
         Returns:
             A dictionary with the inputs plus an "examples" key which contains a list
@@ -158,9 +159,10 @@ class LangSmithExampleSelector(
                The config supports standard keys like 'tags', 'metadata' for tracing
                purposes, 'max_concurrency' for controlling how much work to do
                in parallel, and other keys. Please refer to the
-               ~:class:`langchain_core.runnables.RunnableConfig` for more details.
-            kwargs: Additional keyword arguments are pased through to
-                ~:method:`LangSmithClientExecutor.select_examples()`.
+               :class:`~langchain_core.runnables.config.RunnableConfig` for more
+               details.
+            kwargs: Additional keyword arguments are passed through to
+                ``select_examples()``.
 
         Returns:
             A dictionary with the inputs plus an "examples" key which contains a list
