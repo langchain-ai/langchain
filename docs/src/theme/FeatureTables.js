@@ -510,6 +510,55 @@ const FEATURE_TABLES = {
                 source: "Uses AWS API to load PDFs",
                 api: "API",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.AmazonTextractPDFLoader.html"
+            },
+            {
+                name: "MathPix",
+                link: "mathpix",
+                source: "Uses MathPix to laod PDFs",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.MathpixPDFLoader.html"
+            },
+            {
+                name: "PDFPlumber",
+                link: "pdfplumber",
+                source: "Load PDF files using PDFPlumber",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PDFPlumberLoader.html"
+            },
+            {
+                name: "PyPDFDirectry",
+                link: "pypdfdirectory",
+                source: "Load a directory with PDF files",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFDirectoryLoader.html"
+            },
+            {
+                name: "PyPDFium2",
+                link: "pypdfium2",
+                source: "Load PDF files using PyPDFium2",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFium2Loader.html"
+            },
+            {
+                name: "UnstructuredPDFLoader",
+                link: "unstructured_pdfloader",
+                source: "Load PDF files using Unstructured",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.UnstructuredPDFLoader.html"
+            },
+            {
+                name: "PyMuPDF",
+                link: "pymupdf",
+                source: "Load PDF files using PyMuPDF",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyMuPDFLoader.html"
+            },
+            {
+                name: "PDFMiner",
+                link: "pdfminer",
+                source: "Load PDF files using PDFMiner",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PDFMinerLoader.html"
             }
         ]
     },
