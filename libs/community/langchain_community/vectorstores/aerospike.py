@@ -178,7 +178,7 @@ class Aerospike(VectorStore):
             wait_for_index: If True, wait for the all the texts to be indexed
                 before returning. Requires index_name to be provided. Defaults
                 to True.
-            **kwargs: Additional keyword arguments to pass to the client upsert call.
+            kwargs: Additional keyword arguments to pass to the client upsert call.
 
         Returns:
             List of ids from adding the texts into the vectorstore.

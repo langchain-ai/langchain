@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 
 if TYPE_CHECKING:
     from flashrank import Ranker, RerankRequest
@@ -34,10 +34,8 @@ class FlashrankRerank(BaseDocumentCompressor):
     """Prefix for flashrank_rerank metadata keys"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

@@ -3,9 +3,9 @@
 from typing import List
 
 from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
-from langchain_community.tools import BaseTool
 from langchain_community.tools.cassandra_database.tool import (
     GetSchemaCassandraDatabaseTool,
     GetTableDataCassandraDatabaseTool,
@@ -25,9 +25,6 @@ class CassandraDatabaseToolkit(BaseToolkit):
     db: CassandraDatabase = Field(exclude=True)
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        # Allow arbitrary types. This is needed for the `db` field.
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

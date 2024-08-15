@@ -10,6 +10,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool, Tool
+from langchain_core.tools.render import render_text_description
 
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain.agents.agent_types import AgentType
@@ -17,7 +18,6 @@ from langchain.agents.mrkl.output_parser import MRKLOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.utils import validate_tools_single_input
 from langchain.chains import LLMChain
-from langchain.tools.render import render_text_description
 
 
 class ChainConfig(NamedTuple):
@@ -34,7 +34,7 @@ class ChainConfig(NamedTuple):
     action_description: str
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="0.3.0")
+@deprecated("0.1.0", alternative="create_react_agent", removal="1.0")
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain.
 
@@ -128,7 +128,7 @@ class ZeroShotAgent(Agent):
             format_instructions: The format instructions to use.
                 Defaults to FORMAT_INSTRUCTIONS.
             input_variables: The input variables to use. Defaults to None.
-            **kwargs: Additional parameters to pass to the agent.
+            kwargs: Additional parameters to pass to the agent.
         """
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
@@ -168,7 +168,7 @@ class ZeroShotAgent(Agent):
         super()._validate_tools(tools)
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class MRKLChain(AgentExecutor):
     """Chain that implements the MRKL system."""
 

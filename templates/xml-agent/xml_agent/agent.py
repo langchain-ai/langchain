@@ -3,10 +3,10 @@ from typing import List, Tuple
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_xml
 from langchain.tools import DuckDuckGoSearchRun
-from langchain.tools.render import render_text_description
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools.render import render_text_description
 
 from xml_agent.prompts import conversational_prompt, parse_output
 

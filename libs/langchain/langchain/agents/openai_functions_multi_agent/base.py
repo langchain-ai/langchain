@@ -94,7 +94,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
     )
 
 
-@deprecated("0.1.0", alternative="create_openai_tools_agent", removal="0.3.0")
+@deprecated("0.1.0", alternative="create_openai_tools_agent", removal="1.0")
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     """Agent driven by OpenAIs function powered API.
 
@@ -307,7 +307,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
             extra_prompt_messages: Extra prompt messages to use. Default is None.
             system_message: The system message to use.
                 Default is a default system message.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
         """
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,

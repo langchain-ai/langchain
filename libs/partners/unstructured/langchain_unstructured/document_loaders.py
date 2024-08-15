@@ -24,29 +24,9 @@ _DEFAULT_URL = "https://api.unstructuredapp.io/general/v0/general"
 class UnstructuredLoader(BaseLoader):
     """Unstructured document loader interface.
 
-    Partition and load files using either the `unstructured-client` sdk and the
-    Unstructured API or locally using the `unstructured` library.
-
-    API:
-    This package is configured to work with the Unstructured API by default.
-    To use the Unstructured API, set
-    `partition_via_api=True` and define `api_key`. If you are running the unstructured
-    API locally, you can change the API rule by defining `url` when you initialize the
-    loader. The hosted Unstructured API requires an API key. See the links below to
-    learn more about our API offerings and get an API key.
-
-    Local:
-    To partition files locally, you must have the `unstructured` package installed.
-    You can install it with `pip install unstructured`.
-    By default the file loader uses the Unstructured `partition` function and will
-    automatically detect the file type.
-
-    In addition to document specific partition parameters, Unstructured has a rich set
-    of "chunking" parameters for post-processing elements into more useful text segments
-    for uses cases such as Retrieval Augmented Generation (RAG). You can pass additional
-    Unstructured kwargs to the loader to configure different unstructured settings.
-
     Setup:
+        Install ``langchain-unstructured`` and set environment variable ``UNSTRUCTURED_API_KEY``.
+
         .. code-block:: bash
             pip install -U langchain-unstructured
             export UNSTRUCTURED_API_KEY="your-api-key"
@@ -63,12 +43,38 @@ class UnstructuredLoader(BaseLoader):
                 strategy="fast",
             )
 
-    Load:
+    Lazy load:
         .. code-block:: python
-            docs = loader.load()
 
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
+
+        .. code-block:: python
+
+            1 2 0 2
+            {'source': './example_data/layout-parser-paper.pdf', 'coordinates': {'points': ((16.34, 213.36), (16.34, 253.36), (36.34, 253.36), (36.34, 213.36)), 'system': 'PixelSpace', 'layout_width': 612, 'layout_height': 792}, 'file_directory': './example_data', 'filename': 'layout-parser-paper.pdf', 'languages': ['eng'], 'last_modified': '2024-07-25T21:28:58', 'page_number': 1, 'filetype': 'application/pdf', 'category': 'UncategorizedText', 'element_id': 'd3ce55f220dfb75891b4394a18bcb973'}
+
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            1 2 0 2
+            {'source': './example_data/layout-parser-paper.pdf', 'coordinates': {'points': ((16.34, 213.36), (16.34, 253.36), (36.34, 253.36), (36.34, 213.36)), 'system': 'PixelSpace', 'layout_width': 612, 'layout_height': 792}, 'file_directory': './example_data', 'filename': 'layout-parser-paper.pdf', 'languages': ['eng'], 'last_modified': '2024-07-25T21:28:58', 'page_number': 1, 'filetype': 'application/pdf', 'category': 'UncategorizedText', 'element_id': 'd3ce55f220dfb75891b4394a18bcb973'}
+
 
     References
     ----------
@@ -76,7 +82,7 @@ class UnstructuredLoader(BaseLoader):
     https://docs.unstructured.io/api-reference/api-services/overview
     https://docs.unstructured.io/open-source/core-functionality/partitioning
     https://docs.unstructured.io/open-source/core-functionality/chunking
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -88,14 +94,14 @@ class UnstructuredLoader(BaseLoader):
         # SDK parameters
         api_key: Optional[str] = None,
         client: Optional[UnstructuredClient] = None,
-        server_url: Optional[str] = None,
+        url: Optional[str] = None,
         **kwargs: Any,
     ):
         """Initialize loader."""
         if file_path is not None and file is not None:
             raise ValueError("file_path and file cannot be defined simultaneously.")
         if client is not None:
-            disallowed_params = [("api_key", api_key), ("server_url", server_url)]
+            disallowed_params = [("api_key", api_key), ("url", url)]
             bad_params = [
                 param for param, value in disallowed_params if value is not None
             ]
@@ -106,8 +112,8 @@ class UnstructuredLoader(BaseLoader):
                     f"params: {', '.join(bad_params)}."
                 )
 
-        unstructured_api_key = api_key or os.getenv("UNSTRUCTURED_API_KEY")
-        unstructured_url = server_url or os.getenv("UNSTRUCTURED_URL") or _DEFAULT_URL
+        unstructured_api_key = api_key or os.getenv("UNSTRUCTURED_API_KEY") or ""
+        unstructured_url = url or os.getenv("UNSTRUCTURED_URL") or _DEFAULT_URL
 
         self.client = client or UnstructuredClient(
             api_key_auth=unstructured_api_key, server_url=unstructured_url
@@ -165,7 +171,6 @@ class _SingleDocumentLoader(BaseLoader):
         file: Optional[IO[bytes]] = None,
         partition_via_api: bool = False,
         post_processors: Optional[list[Callable[[str], str]]] = None,
-        # SDK parameters
         **kwargs: Any,
     ):
         """Initialize loader."""

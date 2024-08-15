@@ -41,7 +41,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
-    removal="0.3.0",
+    removal="1.0",
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -159,7 +159,7 @@ def create_openai_fn_runnable(
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
-    removal="0.3.0",
+    removal="1.0",
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -224,7 +224,7 @@ def create_structured_output_runnable(
             structured outputs or a single one. If True and model does not return any 
             structured outputs then chain output is None. If False and model does not 
             return any structured outputs then chain output is an empty list.
-        **kwargs: Additional named arguments.
+        kwargs: Additional named arguments.
 
     Returns:
         A runnable sequence that will return a structured output(s) matching the given 

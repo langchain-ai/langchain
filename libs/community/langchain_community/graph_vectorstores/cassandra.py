@@ -32,6 +32,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
+        **kwargs: Any,
     ):
         """
         Create the hybrid graph store.
@@ -45,8 +46,8 @@ class CassandraGraphVectorStore(GraphVectorStore):
             from ragstack_knowledge_store import EmbeddingModel, graph_store
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
-                "Could not import ragstack-knowledge-store python package. "
-                "Please install it with `pip install ragstack-knowledge-store`."
+                "Could not import ragstack_knowledge_store python package. "
+                "Please install it with `pip install ragstack-ai-knowledge-store`."
             )
 
         self._embedding = embedding
@@ -74,6 +75,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             session=session,
             keyspace=keyspace,
             setup_mode=_setup_mode,
+            **kwargs,
         )
 
     @property
