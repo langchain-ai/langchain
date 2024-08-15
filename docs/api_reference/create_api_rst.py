@@ -281,7 +281,7 @@ def _construct_doc(
         module_doc = f"""\
 .. currentmodule:: {package_namespace}
 
-.. _{module}:
+.. _{package_namespace}_{module}:
 """
         _members = members_by_namespace[module]
         classes = [
@@ -317,7 +317,7 @@ def _construct_doc(
 """
 
         index_autosummary += f"""
-:ref:`{module}`
+:ref:`{package_namespace}_{module}`
 {'^' * (len(module) + 5)}
 """
 
