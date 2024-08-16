@@ -346,6 +346,12 @@ def secret_from_env(key: str, /, *, default: str) -> Callable[[], SecretStr]: ..
 
 @overload
 def secret_from_env(
+    key: Sequence[str], /, *, default: None
+) -> Callable[[], Optional[SecretStr]]: ...
+
+
+@overload
+def secret_from_env(
     key: str, /, *, default: None
 ) -> Callable[[], Optional[SecretStr]]: ...
 
@@ -355,7 +361,7 @@ def secret_from_env(key: str, /, *, error_message: str) -> Callable[[], SecretSt
 
 
 def secret_from_env(
-    key: str,
+    key: Union[str, Sequence[str]],
     /,
     *,
     default: Union[str, _NoDefaultType, None] = _NoDefault,
@@ -376,9 +382,14 @@ def secret_from_env(
 
     def get_secret_from_env() -> Optional[SecretStr]:
         """Get a value from an environment variable."""
-        if key in os.environ:
-            return SecretStr(os.environ[key])
-        elif isinstance(default, str):
+        if isinstance(key, (list, tuple)):
+            for k in key:
+                if k in os.environ:
+                    return SecretStr(os.environ[k])
+        if isinstance(key, str):
+            if key in os.environ:
+                return SecretStr(os.environ[key])
+        if isinstance(default, str):
             return SecretStr(default)
         elif isinstance(default, type(None)):
             return None
