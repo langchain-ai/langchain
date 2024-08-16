@@ -1,7 +1,7 @@
+import datetime
 import json
 import uuid
-import datetime
-from typing import Any, Callable, Iterator, Optional, Union, Sequence
+from typing import Any, Callable, Iterator, Optional, Sequence, Union
 
 from langsmith import Client as LangSmithClient
 
@@ -49,7 +49,7 @@ class LangSmithLoader(BaseLoader):
     def __init__(
         self,
         *,
-        dataset_id: Optional[ Union[uuid.UUID, str] ] = None,
+        dataset_id: Optional[Union[uuid.UUID, str]] = None,
         dataset_name: Optional[str] = None,
         example_ids: Optional[Sequence[Union[uuid.UUID, str]]] = None,
         as_of: Optional[Union[datetime.datetime, str]] = None,
@@ -91,7 +91,7 @@ class LangSmithLoader(BaseLoader):
             offset=self.offset,
             limit=self.limit,
             metadata=self.metadata,
-            filter=self.filter
+            filter=self.filter,
         ):
             content: Any = example.inputs
             for key in self.content_key:
@@ -102,6 +102,7 @@ class LangSmithLoader(BaseLoader):
             for k in ("dataset_id", "created_at", "modified_at", "source_run_id", "id"):
                 metadata[k] = str(metadata[k])
             yield Document(content_str, metadata=metadata)
+
 
 def _stringify(x: Union[str, dict]) -> str:
     if isinstance(x, str):

@@ -465,6 +465,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
+    name: Optional[str] = Field(default=None)
 
     _msg_class: Type[BaseMessage]
 
@@ -1453,6 +1454,13 @@ def _convert_to_message(
                     cast(str, template), template_format=template_format
                 )
             )
+    elif isinstance(message, dict):
+        message_type_str = message.get("type") or message.get("role")
+        if not message_type_str:
+            raise ValueError()
+        _message = _create_template_from_message_type(
+            message_type_str, template, template_format=template_format
+        )
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 
