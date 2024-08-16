@@ -6,8 +6,10 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores.opensearch_vector_search import (
     PAINLESS_SCRIPTING_SEARCH,
     SCRIPT_SCORING_SEARCH,
+    HYBRID_SEARCH,
     OpenSearchVectorSearch,
 )
+
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -68,7 +70,6 @@ def test_opensearch_with_custom_field_name() -> None:
 
 ## Integration tests for Hybrid Search ##
 
-
 def test_configure_search_pipeline() -> None:
     """Test configuration of search pipeline functionality and checks if pipeline configured or not."""
     test_search_pipeline_name = "test_search_pipeline"
@@ -98,6 +99,71 @@ def test_get_search_pipeline_info() -> None:
     )
     test_pipeline_info = docsearch.get_search_pipeline_info(test_search_pipeline_name)
     assert test_pipeline_info == {'test_search_pipeline': {'description': 'Post processor for hybrid search', 'phase_results_processors': [{'normalization-processor': {'normalization': {'technique': 'min_max'}, 'combination': {'technique': 'arithmetic_mean', 'parameters': {'weights': [0.7, 0.3]}}}}]}}
+
+
+def test_hybrid_search() -> None:
+    """Test hybrid search with """
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, 
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        opensearch_url=DEFAULT_OPENSEARCH_URL
+    )
+    output = docsearch.similarity_search(
+                query="foo",
+                k=2,
+                search_type=HYBRID_SEARCH,
+                search_pipeline="test_search_pipeline",
+            )
+    
+    assert output == [
+        Document(page_content="foo", metadata={"page": 0}),
+        Document(page_content="bar", metadata={"page": 1})
+    ]
+
+
+def test_hybrid_search_with_score() -> None:
+    """Test similarity search with score using Approximate Search."""
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, 
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        opensearch_url=DEFAULT_OPENSEARCH_URL
+    )
+    output = docsearch.similarity_search_with_score(
+                query="foo",
+                k=2,
+                search_type=HYBRID_SEARCH,
+                search_pipeline = "test_search_pipeline",
+            )
+    assert output == [
+        (Document(page_content="foo", metadata={"page": 0}), 1.0),
+        (Document(page_content="bar", metadata={"page": 1}), 0.0003),
+    ]
+
+
+def test_hybrid_search_with_post_filter() -> None:
+    """Test hybrid search with """
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, 
+        ConsistentFakeEmbeddings(),
+        metadatas=metadatas,
+        opensearch_url=DEFAULT_OPENSEARCH_URL
+    )
+    output = docsearch.similarity_search(
+                query="foo",
+                k=2,
+                search_type="hybrid_search",
+                search_pipeline = "test_search_pipeline",
+                post_filter = {"bool": {"filter": {"term": {"metadata.page": 1}}}}
+            )
+    
+    assert output == [
+        Document(page_content="bar", metadata={"page": 1})
+    ]
 
 
 def test_opensearch_with_metadatas() -> None:
@@ -373,3 +439,4 @@ def test_appx_search_with_faiss_efficient_filter() -> None:
         "foo", k=3, efficient_filter=efficient_filter_val
     )
     assert output == [Document(page_content="bar")]
+
