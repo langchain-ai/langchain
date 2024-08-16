@@ -211,21 +211,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     """  # noqa: E501
 
-    callback_manager: Annotated[Optional[BaseCallbackManager], SkipValidation()] = (
-        deprecated(
-            name="callback_manager",
-            since="0.1.7",
-            removal="0.3.0",
-            alternative="callbacks",
-        )(
-            Field(
-                default=None,
-                exclude=True,
-                description="Callback manager to add to the run trace.",
-            )
-        )
-    )
-
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
     "An optional rate limiter to use for limiting the number of requests."
 
