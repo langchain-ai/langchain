@@ -27,9 +27,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import (
-    get_pydantic_field_names,
-)
+from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
 
 logger = logging.getLogger(__name__)
@@ -169,7 +167,7 @@ class BaseOpenAI(BaseLLM):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:

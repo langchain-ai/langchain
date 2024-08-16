@@ -293,7 +293,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):

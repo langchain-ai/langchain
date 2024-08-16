@@ -124,7 +124,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         ),
     )
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
-    open_api_version = Field(
+    openai_api_version: Optional[str] = Field(
         default_factory=from_env("OPENAI_API_VERSION", default="2023-05-15")
     )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided.
@@ -149,8 +149,6 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     openai_api_type: Optional[str] = Field(
         default_factory=from_env("OPENAI_API_TYPE", default="azure")
     )
-    openai_api_version: Optional[str] = Field(default=None, alias="api_version")
-    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     validate_base_url: bool = True
     chunk_size: int = 2048
     """Maximum number of texts to embed in each batch"""
