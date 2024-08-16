@@ -17,7 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel, LangSmithParams
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.prompt_values import PromptValue
@@ -203,6 +203,19 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             "default_request_timeout": self.default_request_timeout,
             "max_retries": self.max_retries,
         }
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        identifying_params = self._identifying_params
+        if max_tokens := kwargs.get(
+            "max_tokens_to_sample",
+            identifying_params.get("max_tokens"),
+        ):
+            params["ls_max_tokens"] = max_tokens
+        return params
 
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
