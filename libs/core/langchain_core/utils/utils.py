@@ -301,7 +301,9 @@ def from_env(
 
 
 @overload
-def from_env(key: str, /, *, default: None) -> Callable[[], Optional[str]]: ...
+def from_env(
+    key: Union[str, Sequence[str]], /, *, default: None
+) -> Callable[[], Optional[str]]: ...
 
 
 def from_env(
