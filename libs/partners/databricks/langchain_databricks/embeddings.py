@@ -45,8 +45,14 @@ class DatabricksEmbeddings(Embeddings, BaseModel):
         .. code-block:: python
             input_text = "The meaning of life is 42"
             embed.embed_query(input_text)
+
         .. code-block:: python
-            # TODO: Example output.
+            [
+                0.01605224609375,
+                -0.0298309326171875,
+                ...
+            ]
+
     """
 
     endpoint: str

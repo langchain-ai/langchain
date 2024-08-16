@@ -48,7 +48,8 @@ class DatabricksVectorSearch(VectorStore):
 
     Key init args — indexing params:
 
-        index: A Databricks Vector Search index object. You can get this by calling the `get_index` method on a `VectorSearchClient` object with the endpoint name and the index name.
+        endpoint: The name of the Databricks Vector Search endpoint.
+        index_name: The name of the index to use. Format: "catalog.schema.index".
         embedding: The embedding model.
                   Required for direct-access index or delta-sync index
                   with self-managed embeddings.
@@ -60,14 +61,36 @@ class DatabricksVectorSearch(VectorStore):
                 Defaults to ``[primary_key, text_column]``.
 
     Instantiate:
+
+        `DatabricksVectorSearch` supports two types of indexes:
+
+        * **Delta Sync Index** automatically syncs with a source Delta Table, automatically and incrementally updating the index as the underlying data in the Delta Table changes.
+
+        * **Direct Vector Access Index** supports direct read and write of vectors and metadata. The user is responsible for updating this table using the REST API or the Python SDK.
+
+        Also for delta-sync index, you can choose to use Databricks-managed embeddings or self-managed embeddings (via LangChain embeddings classes).
+
+        If you are using a delta-sync index with Databricks-managed embeddings:
+
         .. code-block:: python
 
             from langchain_databricks.vectorstores import DatabricksVectorSearch
             from langchain_openai import OpenAIEmbeddings
 
             vector_store = DatabricksVectorSearch(
-                endpoint_name="<your-endpoint-name>",
-                index_name="<your-index-name>"  # format: "catalog.schema.index"
+                endpoint="<your-endpoint-name>",
+                index_name="<your-index-name>"
+            )
+
+        If you are using a direct-access index or a delta-sync index with self-managed embeddings,
+        you also need to provide the embedding model and text column in your source table to
+        use for the embeddings:
+
+        .. code-block:: python
+
+            vector_store = DatabricksVectorSearch(
+                endpoint="<your-endpoint-name>",
+                index_name="<your-index-name>",
                 embedding=OpenAIEmbeddings(),
                 text_column="document_content"
             )
@@ -75,6 +98,7 @@ class DatabricksVectorSearch(VectorStore):
     Add Documents:
         .. code-block:: python
             from langchain_core.documents import Document
+
             document_1 = Document(page_content="foo", metadata={"baz": "bar"})
             document_2 = Document(page_content="thud", metadata={"bar": "baz"})
             document_3 = Document(page_content="i will be deleted :(")
@@ -86,45 +110,66 @@ class DatabricksVectorSearch(VectorStore):
         .. code-block:: python
             vector_store.delete(ids=["3"])
 
+        .. note::
+
+            The `delete` method is only supported for direct-access index.
+
     Search:
         .. code-block:: python
             results = vector_store.similarity_search(query="thud",k=1)
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
         .. code-block:: python
-            # TODO: Example output
-    # TODO: Fill out with relevant variables and example output.
+            * thud [{'id': '2'}]
+
+        .. note:
+
+            By default, similarity search only returns the primary key and text column.
+            If you want to retrieve the custom metadata associated with the document,
+            pass the additional columns in the `columns` parameter when initializing the vector store.
+
+            .. code-block:: python
+
+                vector_store = DatabricksVectorSearch(
+                    endpoint="<your-endpoint-name>",
+                    index_name="<your-index-name>",
+                    columns=["baz", "bar"],
+                )
+
+                vector_store.similarity_search(query="thud",k=1)
+                # Output: * thud [{'bar': 'baz', 'baz': None, 'id': '2'}]
+
     Search with filter:
         .. code-block:: python
             results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
         .. code-block:: python
-            # TODO: Example output
-    # TODO: Fill out with relevant variables and example output.
+            * thud [{'id': '2'}]
+
     Search with score:
         .. code-block:: python
             results = vector_store.similarity_search_with_score(query="qux",k=1)
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
         .. code-block:: python
-            # TODO: Example output
-    # TODO: Fill out with relevant variables and example output.
+            * [SIM=0.748804] foo [{'id': '1'}]
+
     Async:
         .. code-block:: python
             # add documents
-            # await vector_store.aadd_documents(documents=documents, ids=ids)
+            await vector_store.aadd_documents(documents=documents, ids=ids)
             # delete documents
-            # await vector_store.adelete(ids=["3"])
+            await vector_store.adelete(ids=["3"])
             # search
-            # results = vector_store.asimilarity_search(query="thud",k=1)
+            results = vector_store.asimilarity_search(query="thud",k=1)
             # search with score
             results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
             for doc,score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
         .. code-block:: python
-            # TODO: Example output
-    # TODO: Fill out with relevant variables and example output.
+            * [SIM=0.748807] foo [{'id': '1'}]
+
     Use as Retriever:
         .. code-block:: python
             retriever = vector_store.as_retriever(
@@ -133,7 +178,7 @@ class DatabricksVectorSearch(VectorStore):
             )
             retriever.invoke("thud")
         .. code-block:: python
-            # TODO: Example output
+            [Document(metadata={'id': '2'}, page_content='thud')]
     """  # noqa: E501
 
     def __init__(
