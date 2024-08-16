@@ -633,7 +633,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
@@ -724,7 +724,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.

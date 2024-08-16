@@ -6,7 +6,6 @@ import aiohttp
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     SecretStr,
     root_validator,
@@ -49,7 +48,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
     pinecone_api_key: Optional[SecretStr] = None
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def set_default_config(cls, values: dict) -> dict:
