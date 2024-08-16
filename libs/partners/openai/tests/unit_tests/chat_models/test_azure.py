@@ -40,9 +40,7 @@ def test_initialize_more() -> None:
 
 
 def test_initialize_azure_openai_with_openai_api_base_set() -> None:
-    with mock.patch.dict(
-        os.environ, {"OPENAI_API_BASE": "https://api.openai.com"}
-    ):
+    with mock.patch.dict(os.environ, {"OPENAI_API_BASE": "https://api.openai.com"}):
         llm = AzureChatOpenAI(  # type: ignore[call-arg, call-arg]
             api_key="xyz",  # type: ignore[arg-type]
             azure_endpoint="my-base-url",

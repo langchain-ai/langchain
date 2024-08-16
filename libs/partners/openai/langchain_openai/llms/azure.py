@@ -4,8 +4,8 @@ import logging
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import openai
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import from_env, secret_from_env
+from pydantic import Field, SecretStr, root_validator
 
 from langchain_openai.llms.base import BaseOpenAI
 
