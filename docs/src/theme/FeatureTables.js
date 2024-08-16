@@ -510,6 +510,55 @@ const FEATURE_TABLES = {
                 source: "Uses AWS API to load PDFs",
                 api: "API",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.AmazonTextractPDFLoader.html"
+            },
+            {
+                name: "MathPix",
+                link: "mathpix",
+                source: "Uses MathPix to laod PDFs",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.MathpixPDFLoader.html"
+            },
+            {
+                name: "PDFPlumber",
+                link: "pdfplumber",
+                source: "Load PDF files using PDFPlumber",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PDFPlumberLoader.html"
+            },
+            {
+                name: "PyPDFDirectry",
+                link: "pypdfdirectory",
+                source: "Load a directory with PDF files",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFDirectoryLoader.html"
+            },
+            {
+                name: "PyPDFium2",
+                link: "pypdfium2",
+                source: "Load PDF files using PyPDFium2",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyPDFium2Loader.html"
+            },
+            {
+                name: "UnstructuredPDFLoader",
+                link: "unstructured_pdfloader",
+                source: "Load PDF files using Unstructured",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.UnstructuredPDFLoader.html"
+            },
+            {
+                name: "PyMuPDF",
+                link: "pymupdf",
+                source: "Load PDF files using PyMuPDF",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PyMuPDFLoader.html"
+            },
+            {
+                name: "PDFMiner",
+                link: "pdfminer",
+                source: "Load PDF files using PDFMiner",
+                api: "Package",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.pdf.PDFMinerLoader.html"
             }
         ]
     },
@@ -530,7 +579,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "DirectoryLoader",
-                link: "document_loader_directory",
+                link: "../../how_to/document_loader_directory",
                 source: "All files in a given directory",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.directory.DirectoryLoader.html"
             },
@@ -540,6 +589,24 @@ const FEATURE_TABLES = {
                 source: "All file types",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_unstructured.document_loaders.UnstructuredLoader.html"
             },
+            {
+                name: "JSONLoader",
+                link: "json",
+                source: "JSON files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.json_loader.JSONLoader.html"
+            },
+            {
+                name: "UnstructuredMarkdownLoader",
+                link: "unstructured_markdown",
+                source: "Markdown files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.markdown.UnstructuredMarkdownLoader.html"
+            },
+            {
+                name: "BSHTMLLoader",
+                link: "bshtml",
+                source: "HTML files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
+            }
         ]
     },
     vectorstores: {
@@ -732,6 +799,23 @@ const FEATURE_TABLES = {
     }
 };
 
+const DEPRECATED_DOC_IDS = [
+  "integrations/chat/anthropic_functions",
+  "integrations/chat/ernie",
+  "integrations/chat/ollama_functions",
+  "integrations/document_loaders/airbyte_cdk",
+  "integrations/document_loaders/airbyte_gong",
+  "integrations/document_loaders/airbyte_hubspot",
+  "integrations/document_loaders/airbyte_json",
+  "integrations/document_loaders/airbyte_salesforce",
+  "integrations/document_loaders/airbyte_shopify",
+  "integrations/document_loaders/airbyte_stripe",
+  "integrations/document_loaders/airbyte_typeform",
+  "integrations/document_loaders/airbyte_zendesk_support",
+  "integrations/llms/anthropic",
+  "integrations/text_embedding/ernie",
+];
+
 function toTable(columns, items) {
     const headers = columns.map((col) => col.title);
     return (
@@ -773,18 +857,30 @@ function truncate(str, n) {
 }
 
 export function IndexTable() {
-    const { items } = useCurrentSidebarCategory();
+  const { items } = useCurrentSidebarCategory();
 
-    const rows = items.filter(item => !item.docId?.endsWith?.('/index')).map(item => ({
-        ...item,
-        description: useDocById(item.docId ?? undefined)?.description,
+  const rows = items
+    .filter(
+      (item) =>
+        !item.docId?.endsWith?.("/index") &&
+        !DEPRECATED_DOC_IDS.includes(item.docId)
+    )
+    .map((item) => ({
+      ...item,
+      description: useDocById(item.docId ?? undefined)?.description,
     }));
-    const rtn = toTable(
-        [
-            { title: "Label", formatter: (item) => <a href={item.href}>{item.label}</a> },
-            { title: "Description", formatter: (item) => truncate(item.description ?? "", 70) },
-        ],
-        rows,
-    );
-    return rtn;
+  const rtn = toTable(
+    [
+      {
+        title: "Name",
+        formatter: (item) => <a href={item.href}>{item.label}</a>,
+      },
+      {
+        title: "Description",
+        formatter: (item) => truncate(item.description ?? "", 70),
+      },
+    ],
+    rows,
+  );
+  return rtn;
 }
