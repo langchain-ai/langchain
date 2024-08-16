@@ -25,6 +25,7 @@ from sqlalchemy import (
     asc,
     bindparam,
     cast,
+    cast,
     create_engine,
     event,
     label,
