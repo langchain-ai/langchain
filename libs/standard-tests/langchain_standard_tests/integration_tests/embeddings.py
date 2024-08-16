@@ -6,7 +6,7 @@ from langchain_standard_tests.unit_tests.embeddings import EmbeddingsTests
 
 
 class EmbeddingsIntegrationTests(EmbeddingsTests):
-    def test_embed_query(self, model: Embeddings):
+    def test_embed_query(self, model: Embeddings) -> None:
         embedding_1 = model.embed_query("foo")
 
         assert isinstance(embedding_1, List)
@@ -17,7 +17,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
         assert len(embedding_1) > 0
         assert len(embedding_1) == len(embedding_2)
 
-    def test_embed_documents(self, model: Embeddings):
+    def test_embed_documents(self, model: Embeddings) -> None:
         documents = ["foo", "bar", "baz"]
         embeddings = model.embed_documents(documents)
 
@@ -27,7 +27,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
         assert len(embeddings[0]) > 0
         assert all(len(embedding) == len(embeddings[0]) for embedding in embeddings)
 
-    async def test_aembed_query(self, model: Embeddings):
+    async def test_aembed_query(self, model: Embeddings) -> None:
         embedding_1 = await model.aembed_query("foo")
 
         assert isinstance(embedding_1, List)
@@ -38,7 +38,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
         assert len(embedding_1) > 0
         assert len(embedding_1) == len(embedding_2)
 
-    async def test_aembed_documents(self, model: Embeddings):
+    async def test_aembed_documents(self, model: Embeddings) -> None:
         documents = ["foo", "bar", "baz"]
         embeddings = await model.aembed_documents(documents)
 
