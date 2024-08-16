@@ -228,13 +228,7 @@ def test_openai_invoke(llm: AzureChatOpenAI) -> None:
     assert result.response_metadata.get("model_name") is not None
 
 
-def test_json_mode() -> None:
-    llm = AzureChatOpenAI(  # type: ignore[call-arg, call-arg, call-arg]
-        deployment_name="gpt-4o-mini",
-        openai_api_version=OPENAI_API_VERSION,
-        azure_endpoint=OPENAI_API_BASE,
-        openai_api_key=OPENAI_API_KEY,
-    )
+def test_json_mode(llm: AzureChatOpenAI) -> None:
     response = llm.invoke(
         "Return this as json: {'a': 1}", response_format={"type": "json_object"}
     )
@@ -252,13 +246,7 @@ def test_json_mode() -> None:
     assert json.loads(full.content) == {"a": 1}
 
 
-async def test_json_mode_async() -> None:
-    llm = AzureChatOpenAI(  # type: ignore[call-arg, call-arg, call-arg]
-        deployment_name="gpt-4o-mini",
-        openai_api_version=OPENAI_API_VERSION,
-        azure_endpoint=OPENAI_API_BASE,
-        openai_api_key=OPENAI_API_KEY,
-    )
+async def test_json_mode_async(llm: AzureChatOpenAI) -> None:
     response = await llm.ainvoke(
         "Return this as json: {'a': 1}", response_format={"type": "json_object"}
     )
