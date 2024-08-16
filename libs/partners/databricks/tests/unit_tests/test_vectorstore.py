@@ -176,11 +176,10 @@ def test_init(index_name: str) -> None:
 
 
 def test_init_fail_text_column_mismatch() -> None:
-    with pytest.raises(ValueError, match=f"The index {DELTA_SYNC_INDEX} has"):
+    with pytest.raises(ValueError, match=f"The index '{DELTA_SYNC_INDEX}' has"):
         DatabricksVectorSearch(
             endpoint=ENDPOINT_NAME,
             index_name=DELTA_SYNC_INDEX,
-            embedding=EMBEDDING_MODEL,
             text_column="some_other_column",
         )
 
@@ -242,7 +241,8 @@ def test_from_texts_not_supported() -> None:
 def test_add_texts_not_supported_for_delta_sync_index(index_name: str) -> None:
     vectorsearch = init_vector_search(index_name)
     with pytest.raises(
-        ValueError, match="`add_texts` is only supported for direct-access index."
+        NotImplementedError,
+        match="`add_texts` is only supported for direct-access index.",
     ):
         vectorsearch.add_texts(INPUT_TEXTS)
 
@@ -358,7 +358,7 @@ def test_delete_fail_no_ids() -> None:
 def test_delete_not_supported_for_delta_sync_index(index_name: str) -> None:
     vectorsearch = init_vector_search(index_name)
     with pytest.raises(
-        ValueError, match="`delete` is only supported for direct-access index."
+        NotImplementedError, match="`delete` is only supported for direct-access"
     ):
         vectorsearch.delete(["some id"])
 
@@ -560,7 +560,7 @@ def test_similarity_search_by_vector_not_supported_for_managed_embedding() -> No
     limit = 7
 
     with pytest.raises(
-        ValueError, match="`similarity_search_by_vector` is not supported"
+        NotImplementedError, match="`similarity_search_by_vector` is not supported"
     ):
         vectorsearch.similarity_search_by_vector(
             query_embedding, k=limit, filters=filters

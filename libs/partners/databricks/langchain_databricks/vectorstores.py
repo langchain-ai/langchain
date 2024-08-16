@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import uuid
+from enum import Enum
 from functools import partial
 from typing import (
     Any,
@@ -24,6 +25,17 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
 
 logger = logging.getLogger(__name__)
+
+
+class IndexType(str, Enum):
+    DIRECT_ACCESS = "DIRECT_ACCESS"
+    DELTA_SYNC = "DELTA_SYNC"
+
+
+_DIRECT_ACCESS_ONLY_MSG = "`%s` is only supported for direct-access index."
+_NON_MANAGED_EMB_ONLY_MSG = (
+    "`%s` is not supported for index with Databricks-managed embeddings."
+)
 
 
 class DatabricksVectorSearch(VectorStore):
@@ -200,89 +212,22 @@ class DatabricksVectorSearch(VectorStore):
             ) from e
 
         self.index = VectorSearchClient().get_index(endpoint, index_name)
+        self._index_details = IndexDetails(self.index)
 
-        # index_details
-        index_details = self.index.describe()
-        self.primary_key = index_details["primary_key"]
-        self.index_type = index_details.get("index_type")
-        self._delta_sync_index_spec = index_details.get("delta_sync_index_spec", {})
-        self._direct_access_index_spec = index_details.get(
-            "direct_access_index_spec", {}
+        _validate_embedding(embedding, self._index_details)
+        self._embeddings = embedding
+        self._text_column = _validate_and_get_text_column(
+            text_column, self._index_details
         )
-
-        # text_column
-        if self._is_databricks_managed_embeddings():
-            index_source_column = self._embedding_source_column_name()
-            # text_column should not be specified if it is already defined in the index
-            if text_column is not None:
-                raise ValueError(
-                    f"The index {index_name} has a source column "
-                    f"'{index_source_column}' that will be used as the text column. "
-                    "Please do not pass the `text_column` parameter when initializing "
-                    "vector store."
-                )
-            self.text_column = index_source_column
-        else:
-            if text_column is None:
-                raise ValueError(
-                    "The `text_column` parameter is required for a direct-access index "
-                    "or delta-sync index with self-managed embedding."
-                )
-            self.text_column = text_column
-
-        # columns
-        self.columns = columns or []
-        # add primary key column and source column if not in columns
-        if self.primary_key not in self.columns:
-            self.columns.append(self.primary_key)
-        if self.text_column and self.text_column not in self.columns:
-            self.columns.append(self.text_column)
-
-        # Validate specified columns are in the index
-        if self._is_direct_access_index() and (index_schema := self._index_schema()):
-            if missing_columns := [c for c in self.columns if c not in index_schema]:
-                raise ValueError(
-                    "Some columns specified in `columns` are not "
-                    f"in the index schema: {missing_columns}"
-                )
-
-        # embedding model
-        if self._is_databricks_managed_embeddings():
-            if embedding is not None:
-                managed_embedding = self._embedding_source_column()[
-                    "embedding_model_endpoint_name"
-                ]
-                raise ValueError(
-                    f"The index '{index_name}' uses Databricks-managed "
-                    f"embeddings '{managed_embedding}'. Please do not pass "
-                    "the `embedding` parameter when initializing vector store."
-                )
-            self._embedding = None
-        else:
-            # embedding model is required for direct-access index
-            # or delta-sync index with self-managed embedding
-            if not embedding:
-                raise ValueError(
-                    "The `embedding` parameter is required for a direct-access index "
-                    "or delta-sync index with self-managed embedding."
-                )
-
-            self._embedding = embedding
-            # validate dimension matches
-            index_embedding_dimension = self._embedding_vector_column_dimension()
-            if index_embedding_dimension is not None:
-                inferred_embedding_dimension = self._infer_embedding_dimension()
-                if inferred_embedding_dimension != index_embedding_dimension:
-                    raise ValueError(
-                        f"embedding model's dimension '{inferred_embedding_dimension}' "
-                        f"does not match with the index's dimension "
-                        f"'{index_embedding_dimension}'."
-                    )
+        self._columns = _validate_and_get_return_columns(
+            columns or [], self._text_column, self._index_details
+        )
+        self._primary_key = self._index_details.primary_key
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
         """Access the query embedding object if available."""
-        return self._embedding
+        return self._embeddings
 
     @classmethod
     def from_texts(
@@ -306,7 +251,9 @@ class DatabricksVectorSearch(VectorStore):
     ) -> List[str]:
         """Add texts to the index.
 
-        Only support direct-access index.
+        .. note::
+
+            This method is only supported for a direct-access index.
 
         Args:
             texts: List of texts to add.
@@ -317,21 +264,22 @@ class DatabricksVectorSearch(VectorStore):
         Returns:
             List of ids from adding the texts into the index.
         """
-        self._op_require_direct_access_index("add_texts")
-        assert self.embeddings is not None, "embedding model is required."
+        if self._index_details.is_delta_sync_index():
+            raise NotImplementedError(_DIRECT_ACCESS_ONLY_MSG % "add_texts")
+
         # Wrap to list if input texts is a single string
         if isinstance(texts, str):
             texts = [texts]
         texts = list(texts)
-        vectors = self.embeddings.embed_documents(texts)
+        vectors = self._embeddings.embed_documents(texts)  # type: ignore[union-attr]
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         metadatas = metadatas or [{} for _ in texts]
 
         updates = [
             {
-                self.primary_key: id_,
-                self.text_column: text,
-                self._embedding_vector_column_name(): vector,
+                self._primary_key: id_,
+                self._text_column: text,
+                self._index_details.embedding_vector_column["name"]: vector,
                 **metadata,
             }
             for text, vector, id_, metadata in zip(texts, vectors, ids, metadatas)
@@ -363,7 +311,9 @@ class DatabricksVectorSearch(VectorStore):
     def delete(self, ids: Optional[List[Any]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete documents from the index.
 
-        Only support direct-access index.
+        .. note::
+
+            This method is only supported for a direct-access index.
 
         Args:
             ids: List of ids of documents to delete.
@@ -371,7 +321,9 @@ class DatabricksVectorSearch(VectorStore):
         Returns:
             True if successful.
         """
-        self._op_require_direct_access_index("delete")
+        if self._index_details.is_delta_sync_index():
+            raise NotImplementedError(_DIRECT_ACCESS_ONLY_MSG % "delete")
+
         if ids is None:
             raise ValueError("ids must be provided.")
         self.index.delete(ids)
@@ -435,15 +387,15 @@ class DatabricksVectorSearch(VectorStore):
         Returns:
             List of Documents most similar to the embedding and score for each.
         """
-        if self._is_databricks_managed_embeddings():
+        if self._index_details.is_databricks_managed_embeddings():
             query_text = query
             query_vector = None
         else:
-            assert self.embeddings is not None, "embedding model is required."
             query_text = None
-            query_vector = self.embeddings.embed_query(query)
+            query_vector = self._embeddings.embed_query(query)  # type: ignore[union-attr]
+
         search_resp = self.index.similarity_search(
-            columns=self.columns,
+            columns=self._columns,
             query_text=query_text,
             query_vector=query_vector,
             filters=filter or _alias_filters(kwargs),
@@ -488,6 +440,11 @@ class DatabricksVectorSearch(VectorStore):
         Returns:
             List of Documents most similar to the embedding.
         """
+        if self._index_details.is_databricks_managed_embeddings():
+            raise NotImplementedError(
+                _NON_MANAGED_EMB_ONLY_MSG % "similarity_search_by_vector"
+            )
+
         docs_with_score = self.similarity_search_by_vector_with_score(
             embedding=embedding,
             k=k,
@@ -517,6 +474,10 @@ class DatabricksVectorSearch(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector, along with scores.
 
+        .. note::
+
+            This method is not supported for index with Databricks-managed embeddings.
+
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
@@ -526,13 +487,13 @@ class DatabricksVectorSearch(VectorStore):
         Returns:
             List of Documents most similar to the embedding and score for each.
         """
-        if self._is_databricks_managed_embeddings():
-            raise ValueError(
-                "`similarity_search_by_vector` is not supported for index with "
-                "Databricks-managed embeddings."
+        if self._index_details.is_databricks_managed_embeddings():
+            raise NotImplementedError(
+                _NON_MANAGED_EMB_ONLY_MSG % "similarity_search_by_vector_with_score"
             )
+
         search_resp = self.index.similarity_search(
-            columns=self.columns,
+            columns=self._columns,
             query_vector=embedding,
             filters=filter or _alias_filters(kwargs),
             num_results=k,
@@ -556,6 +517,10 @@ class DatabricksVectorSearch(VectorStore):
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
 
+        .. note::
+
+            This method is not supported for index with Databricks-managed embeddings.
+
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
@@ -569,15 +534,12 @@ class DatabricksVectorSearch(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        if not self._is_databricks_managed_embeddings():
-            assert self.embeddings is not None, "embedding model is required."
-            query_vector = self.embeddings.embed_query(query)
-        else:
-            raise ValueError(
-                "`max_marginal_relevance_search` is not supported for index with "
-                "Databricks-managed embeddings."
+        if self._index_details.is_databricks_managed_embeddings():
+            raise NotImplementedError(
+                _NON_MANAGED_EMB_ONLY_MSG % "max_marginal_relevance_search"
             )
 
+        query_vector = self._embeddings.embed_query(query)  # type: ignore[union-attr]
         docs = self.max_marginal_relevance_search_by_vector(
             query_vector,
             k,
@@ -625,6 +587,10 @@ class DatabricksVectorSearch(VectorStore):
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
 
+        .. note::
+
+            This method is not supported for index with Databricks-managed embeddings.
+
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
@@ -638,15 +604,14 @@ class DatabricksVectorSearch(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        if not self._is_databricks_managed_embeddings():
-            embedding_column = self._embedding_vector_column_name()
-        else:
-            raise ValueError(
-                "`max_marginal_relevance_search` is not supported for index with "
-                "Databricks-managed embeddings."
+        if self._index_details.is_databricks_managed_embeddings():
+            raise NotImplementedError(
+                _NON_MANAGED_EMB_ONLY_MSG % "max_marginal_relevance_search_by_vector"
             )
+
+        embedding_column = self._index_details.embedding_vector_column["name"]
         search_resp = self.index.similarity_search(
-            columns=list(set(self.columns + [embedding_column])),
+            columns=list(set(self._columns + [embedding_column])),
             query_text=None,
             query_vector=embedding,
             filters=filter or _alias_filters(kwargs),
@@ -670,7 +635,7 @@ class DatabricksVectorSearch(VectorStore):
         )
 
         ignore_cols: List = (
-            [embedding_column] if embedding_column not in self.columns else []
+            [embedding_column] if embedding_column not in self._columns else []
         )
         candidates = self._parse_search_response(search_resp, ignore_cols=ignore_cols)
         selected_results = [r[0] for i, r in enumerate(candidates) if i in mmr_selected]
@@ -699,96 +664,19 @@ class DatabricksVectorSearch(VectorStore):
         ]
         docs_with_score = []
         for result in search_resp.get("result", dict()).get("data_array", []):
-            doc_id = result[columns.index(self.primary_key)]
-            text_content = result[columns.index(self.text_column)]
+            doc_id = result[columns.index(self._primary_key)]
+            text_content = result[columns.index(self._text_column)]
+            ignore_cols = [self._primary_key, self._text_column] + ignore_cols
             metadata = {
                 col: value
                 for col, value in zip(columns[:-1], result[:-1])
-                if col not in ([self.primary_key, self.text_column] + ignore_cols)
+                if col not in ignore_cols
             }
-            metadata[self.primary_key] = doc_id
+            metadata[self._primary_key] = doc_id
             score = result[-1]
             doc = Document(page_content=text_content, metadata=metadata)
             docs_with_score.append((doc, score))
         return docs_with_score
-
-    def _index_schema(self) -> Optional[Dict]:
-        """Return the index schema as a dictionary.
-        Return None if no schema found.
-        """
-        if self._is_direct_access_index():
-            schema_json = self._direct_access_index_spec.get("schema_json")
-            if schema_json is not None:
-                return json.loads(schema_json)
-        return None
-
-    def _embedding_vector_column_name(self) -> Optional[str]:
-        """Return the name of the embedding vector column.
-        None if the index is not a self-managed embedding index.
-        """
-        return self._embedding_vector_column().get("name")
-
-    def _embedding_vector_column_dimension(self) -> Optional[int]:
-        """Return the dimension of the embedding vector column.
-        None if the index is not a self-managed embedding index.
-        """
-        return self._embedding_vector_column().get("embedding_dimension")
-
-    def _embedding_vector_column(self) -> Dict:
-        """Return the embedding vector column configs as a dictionary.
-        Empty if the index is not a self-managed embedding index.
-        """
-        index_spec = (
-            self._delta_sync_index_spec
-            if self._is_delta_sync_index()
-            else self._direct_access_index_spec
-        )
-        return next(iter(index_spec.get("embedding_vector_columns") or list()), dict())
-
-    def _embedding_source_column_name(self) -> Optional[str]:
-        """Return the name of the embedding source column.
-        None if the index is not a Databricks-managed embedding index.
-        """
-        return self._embedding_source_column().get("name")
-
-    def _embedding_source_column(self) -> Dict:
-        """Return the embedding source column configs as a dictionary.
-        Empty if the index is not a Databricks-managed embedding index.
-        """
-        index_spec = self._delta_sync_index_spec
-        return next(iter(index_spec.get("embedding_source_columns") or list()), dict())
-
-    def _is_delta_sync_index(self) -> bool:
-        """Return True if the index is a delta-sync index."""
-        return self.index_type == "DELTA_SYNC"
-
-    def _is_direct_access_index(self) -> bool:
-        """Return True if the index is a direct-access index."""
-        return self.index_type == "DIRECT_ACCESS"
-
-    def _is_databricks_managed_embeddings(self) -> bool:
-        """Return True if the embeddings are managed by Databricks Vector Search."""
-        return (
-            self._is_delta_sync_index()
-            and self._embedding_source_column_name() is not None
-        )
-
-    def _infer_embedding_dimension(self) -> int:
-        """Infer the embedding dimension from the embedding function."""
-        assert self.embeddings is not None, "embedding model is required."
-        return len(self.embeddings.embed_query("test"))
-
-    def _op_require_direct_access_index(self, op_name: str) -> None:
-        """
-        Raise ValueError if the operation is not supported for direct-access index."""
-        if not self._is_direct_access_index():
-            raise ValueError(f"`{op_name}` is only supported for direct-access index.")
-
-    @staticmethod
-    def _require_arg(arg: Any, arg_name: str) -> None:
-        """Raise ValueError if the required arg with name `arg_name` is None."""
-        if not arg:
-            raise ValueError(f"`{arg_name}` is required for this index.")
 
 
 def _alias_filters(kwargs: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -806,3 +694,136 @@ def _alias_filters(kwargs: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             "be removed in 0.3. Please use `filter` instead.",
         )
     return kwargs.pop("filters", None)
+
+
+def _validate_and_get_text_column(
+    text_column: Optional[str], index_details: IndexDetails
+) -> str:
+    if index_details.is_databricks_managed_embeddings():
+        index_source_column: str = index_details.embedding_source_column["name"]
+        # check if input text column matches the source column of the index
+        if text_column is not None:
+            raise ValueError(
+                f"The index '{index_details.name}' has the source column configured as "
+                f"'{index_source_column}'. Do not pass the `text_column` parameter."
+            )
+        return index_source_column
+    else:
+        if text_column is None:
+            raise ValueError("The `text_column` parameter is required for this index.")
+        return text_column
+
+
+def _validate_and_get_return_columns(
+    columns: List[str], text_column: str, index_details: IndexDetails
+) -> List[str]:
+    """
+    Get a list of columns to retrieve from the index.
+
+    If the index is direct-access index, validate the given columns against the schema.
+    """
+    # add primary key column and source column if not in columns
+    if index_details.primary_key not in columns:
+        columns.append(index_details.primary_key)
+    if text_column and text_column not in columns:
+        columns.append(text_column)
+
+    # Validate specified columns are in the index
+    if index_details.is_direct_access_index() and (
+        index_schema := index_details.schema
+    ):
+        if missing_columns := [c for c in columns if c not in index_schema]:
+            raise ValueError(
+                "Some columns specified in `columns` are not "
+                f"in the index schema: {missing_columns}"
+            )
+    return columns
+
+
+def _validate_embedding(
+    embedding: Optional[Embeddings], index_details: IndexDetails
+) -> None:
+    if index_details.is_databricks_managed_embeddings():
+        if embedding is not None:
+            raise ValueError(
+                f"The index '{index_details.name}' uses Databricks-managed embeddings. "
+                "Do not pass the `embedding` parameter when initializing vector store."
+            )
+    else:
+        if not embedding:
+            raise ValueError(
+                "The `embedding` parameter is required for a direct-access index "
+                "or delta-sync index with self-managed embedding."
+            )
+        _validate_embedding_dimension(embedding, index_details)
+
+
+def _validate_embedding_dimension(
+    embeddings: Embeddings, index_details: IndexDetails
+) -> None:
+    """validate if the embedding dimension matches with the index's configuration."""
+    if index_embedding_dimension := index_details.embedding_vector_column.get(
+        "embedding_dimension"
+    ):
+        # Infer the embedding dimension from the embedding function."""
+        actual_dimension = len(embeddings.embed_query("test"))
+        if actual_dimension != index_embedding_dimension:
+            raise ValueError(
+                f"The specified embedding model's dimension '{actual_dimension}' does "
+                f"not match with the index configuration '{index_embedding_dimension}'."
+            )
+
+
+class IndexDetails:
+    """An utility class to store the configuration details of an index."""
+
+    def __init__(self, index: Any):
+        self._index_details = index.describe()
+
+    @property
+    def name(self) -> str:
+        return self._index_details["name"]
+
+    @property
+    def schema(self) -> Optional[Dict]:
+        if self.is_direct_access_index():
+            schema_json = self.index_spec.get("schema_json")
+            if schema_json is not None:
+                return json.loads(schema_json)
+        return None
+
+    @property
+    def primary_key(self) -> str:
+        return self._index_details["primary_key"]
+
+    @property
+    def index_spec(self) -> Dict:
+        return (
+            self._index_details.get("delta_sync_index_spec", {})
+            if self.is_delta_sync_index()
+            else self._index_details.get("direct_access_index_spec", {})
+        )
+
+    @property
+    def embedding_vector_column(self) -> Dict:
+        if vector_columns := self.index_spec.get("embedding_vector_columns"):
+            return vector_columns[0]
+        return {}
+
+    @property
+    def embedding_source_column(self) -> Dict:
+        if source_columns := self.index_spec.get("embedding_source_columns"):
+            return source_columns[0]
+        return {}
+
+    def is_delta_sync_index(self) -> bool:
+        return self._index_details["index_type"] == IndexType.DELTA_SYNC.value
+
+    def is_direct_access_index(self) -> bool:
+        return self._index_details["index_type"] == IndexType.DIRECT_ACCESS.value
+
+    def is_databricks_managed_embeddings(self) -> bool:
+        return (
+            self.is_delta_sync_index()
+            and self.embedding_source_column.get("name") is not None
+        )
