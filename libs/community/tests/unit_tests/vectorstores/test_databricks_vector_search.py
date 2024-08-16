@@ -167,10 +167,7 @@ EXAMPLE_SEARCH_RESPONSE_WITH_EMBEDDING = {
     "next_page_token": "",
 }
 
-ANN_QUERY_TYPES = [
-    None,
-    "ANN"
-]
+ANN_QUERY_TYPES = [None, "ANN"]
 
 
 def mock_index(index_details: dict) -> MagicMock:
@@ -480,9 +477,7 @@ def test_delete_fail_no_ids() -> None:
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
-@pytest.mark.parametrize(
-    "index_details", ALL_INDEXES
-)
+@pytest.mark.parametrize("index_details", ALL_INDEXES)
 def test_similarity_search_hybrid(index_details: dict) -> None:
     query_type = "HYBRID"
     index = mock_index(index_details)
