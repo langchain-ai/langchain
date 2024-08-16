@@ -16,9 +16,7 @@ def test_initialize_azure_openai() -> None:
 
 
 def test_intialize_azure_openai_with_base_set() -> None:
-    with mock.patch.dict(
-            os.environ, {"OPENAI_API_BASE": "https://api.openai.com"}
-    ):
+    with mock.patch.dict(os.environ, {"OPENAI_API_BASE": "https://api.openai.com"}):
         embeddings = AzureOpenAIEmbeddings(  # type: ignore[call-arg, call-arg]
             model="text-embedding-large",
             api_key="xyz",  # type: ignore[arg-type]
