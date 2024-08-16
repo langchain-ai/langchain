@@ -176,7 +176,7 @@ def test_init(index_name: str) -> None:
 
 
 def test_init_fail_text_column_mismatch() -> None:
-    with pytest.raises(ValueError, match="text_column 'some_other_column' does not"):
+    with pytest.raises(ValueError, match=f"The index {DELTA_SYNC_INDEX} has"):
         DatabricksVectorSearch(
             endpoint=ENDPOINT_NAME,
             index_name=DELTA_SYNC_INDEX,
@@ -187,7 +187,7 @@ def test_init_fail_text_column_mismatch() -> None:
 
 @pytest.mark.parametrize("index_name", ALL_INDEX_NAMES - {DELTA_SYNC_INDEX})
 def test_init_fail_no_text_column(index_name: str) -> None:
-    with pytest.raises(ValueError, match="`text_column` is required for this index."):
+    with pytest.raises(ValueError, match="The `text_column` parameter is required"):
         DatabricksVectorSearch(
             endpoint=ENDPOINT_NAME,
             index_name=index_name,
@@ -196,17 +196,27 @@ def test_init_fail_no_text_column(index_name: str) -> None:
 
 
 def test_init_fail_columns_not_in_schema() -> None:
-    with pytest.raises(ValueError, match="column 'some_random_column' is not"):
-        init_vector_search(DIRECT_ACCESS_INDEX, columns=["some_random_column"])
+    columns = ["some_random_column"]
+    with pytest.raises(ValueError, match="Some columns specified in `columns`"):
+        init_vector_search(DIRECT_ACCESS_INDEX, columns=columns)
 
 
 @pytest.mark.parametrize("index_name", ALL_INDEX_NAMES - {DELTA_SYNC_INDEX})
 def test_init_fail_no_embedding(index_name: str) -> None:
-    with pytest.raises(ValueError, match="`embedding` is required for this index"):
+    with pytest.raises(ValueError, match="The `embedding` parameter is required"):
         DatabricksVectorSearch(
             endpoint=ENDPOINT_NAME,
             index_name=index_name,
             text_column="text",
+        )
+
+
+def test_init_fail_embedding_already_specified_in_source() -> None:
+    with pytest.raises(ValueError, match=f"The index '{DELTA_SYNC_INDEX}' uses"):
+        DatabricksVectorSearch(
+            endpoint=ENDPOINT_NAME,
+            index_name=DELTA_SYNC_INDEX,
+            embedding=EMBEDDING_MODEL,
         )
 
 

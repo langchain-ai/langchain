@@ -213,15 +213,21 @@ class DatabricksVectorSearch(VectorStore):
         # text_column
         if self._is_databricks_managed_embeddings():
             index_source_column = self._embedding_source_column_name()
-            # check if input text column matches the source column of the index
-            if text_column is not None and text_column != index_source_column:
+            # text_column should not be specified if it is already defined in the index
+            if text_column is not None:
                 raise ValueError(
-                    f"text_column '{text_column}' does not match with the "
-                    f"source column of the index: '{index_source_column}'."
+                    f"The index {index_name} has a source column "
+                    f"'{index_source_column}' that will be used as the text column. "
+                    "Please do not pass the `text_column` parameter when initializing "
+                    "vector store."
                 )
             self.text_column = index_source_column
         else:
-            self._require_arg(text_column, "text_column")
+            if text_column is None:
+                raise ValueError(
+                    "The `text_column` parameter is required for a direct-access index "
+                    "or delta-sync index with self-managed embedding."
+                )
             self.text_column = text_column
 
         # columns
@@ -233,20 +239,34 @@ class DatabricksVectorSearch(VectorStore):
             self.columns.append(self.text_column)
 
         # Validate specified columns are in the index
-        if self._is_direct_access_index():
-            index_schema = self._index_schema()
-            if index_schema:
-                for col in self.columns:
-                    if col not in index_schema:
-                        raise ValueError(
-                            f"column '{col}' is not in the index's schema."
-                        )
+        if self._is_direct_access_index() and (index_schema := self._index_schema()):
+            if missing_columns := [c for c in self.columns if c not in index_schema]:
+                raise ValueError(
+                    "Some columns specified in `columns` are not "
+                    f"in the index schema: {missing_columns}"
+                )
 
         # embedding model
-        if not self._is_databricks_managed_embeddings():
+        if self._is_databricks_managed_embeddings():
+            if embedding is not None:
+                managed_embedding = self._embedding_source_column()[
+                    "embedding_model_endpoint_name"
+                ]
+                raise ValueError(
+                    f"The index '{index_name}' uses Databricks-managed "
+                    f"embeddings '{managed_embedding}'. Please do not pass "
+                    "the `embedding` parameter when initializing vector store."
+                )
+            self._embedding = None
+        else:
             # embedding model is required for direct-access index
             # or delta-sync index with self-managed embedding
-            self._require_arg(embedding, "embedding")
+            if not embedding:
+                raise ValueError(
+                    "The `embedding` parameter is required for a direct-access index "
+                    "or delta-sync index with self-managed embedding."
+                )
+
             self._embedding = embedding
             # validate dimension matches
             index_embedding_dimension = self._embedding_vector_column_dimension()
@@ -258,13 +278,6 @@ class DatabricksVectorSearch(VectorStore):
                         f"does not match with the index's dimension "
                         f"'{index_embedding_dimension}'."
                     )
-        else:
-            if embedding is not None:
-                logger.warning(
-                    "embedding model is not used in delta-sync index with "
-                    "Databricks-managed embeddings."
-                )
-            self._embedding = None
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
