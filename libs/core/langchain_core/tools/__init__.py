@@ -45,12 +45,14 @@ from langchain_core.tools.convert import (
     convert_runnable_to_tool as convert_runnable_to_tool,
 )
 from langchain_core.tools.convert import tool as tool
+from langchain_core.tools.render import ToolsRenderer as ToolsRenderer
 from langchain_core.tools.render import (
     render_text_description as render_text_description,
 )
 from langchain_core.tools.render import (
     render_text_description_and_args as render_text_description_and_args,
 )
+from langchain_core.tools.retriever import RetrieverInput as RetrieverInput
 from langchain_core.tools.retriever import (
     create_retriever_tool as create_retriever_tool,
 )

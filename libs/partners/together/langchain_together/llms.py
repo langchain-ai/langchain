@@ -11,8 +11,10 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import (
+    secret_from_env,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +38,14 @@ class Together(LLM):
 
     base_url: str = "https://api.together.ai/v1/completions"
     """Base completions API URL."""
-    together_api_key: SecretStr
-    """Together AI API key. Get it here: https://api.together.ai/settings/api-keys"""
+    together_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env("TOGETHER_API_KEY"),
+    )
+    """Together AI API key.
+    
+    Automatically read from env variable `TOGETHER_API_KEY` if not provided.
+    """
     model: str
     """Model name. Available models listed here:
         Base Models: https://docs.together.ai/docs/inference-models#language-models
@@ -74,21 +82,11 @@ class Together(LLM):
         """Configuration for this pydantic object."""
 
         extra = "forbid"
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["together_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "together_api_key", "TOGETHER_API_KEY")
-        )
-        return values
-
-    @root_validator()
-    def validate_max_tokens(cls, values: Dict) -> Dict:
-        """The v1 completions endpoint, has max_tokens as required parameter.
-
-        Set a default value and warn if the parameter is missing.
-        """
         if values.get("max_tokens") is None:
             warnings.warn(
                 "The completions endpoint, has 'max_tokens' as required argument. "

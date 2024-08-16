@@ -1,6 +1,5 @@
 """Wrapper around Together AI's Chat Completions API."""
 
-import os
 from typing import (
     Any,
     Dict,
@@ -12,8 +11,8 @@ import openai
 from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
+    from_env,
+    secret_from_env,
 )
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
@@ -311,26 +310,33 @@ class ChatTogether(BaseChatOpenAI):
 
     model_name: str = Field(default="meta-llama/Llama-3-8b-chat-hf", alias="model")
     """Model name to use."""
-    together_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env are `TOGETHER_API_KEY` if not provided."""
-    together_api_base: Optional[str] = Field(
-        default="https://api.together.ai/v1/", alias="base_url"
+    together_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env("TOGETHER_API_KEY", default=None),
+    )
+    """Together AI API key.
+    
+    Automatically read from env variable `TOGETHER_API_KEY` if not provided.
+    """
+    together_api_base: str = Field(
+        default_factory=from_env(
+            "TOGETHER_API_BASE", default="https://api.together.ai/v1/"
+        ),
+        alias="base_url",
     )
 
-    @root_validator()
+    class Config:
+        """Pydantic config."""
+
+        allow_population_by_field_name = True
+
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
-
-        values["together_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "together_api_key", "TOGETHER_API_KEY")
-        )
-        values["together_api_base"] = values["together_api_base"] or os.getenv(
-            "TOGETHER_API_BASE"
-        )
 
         client_params = {
             "api_key": (
