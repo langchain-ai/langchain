@@ -440,6 +440,266 @@ const FEATURE_TABLES = {
         columns: [],
         items: [],
     },
+    cloud_provider_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "Description", formatter: (item) => item.source},
+            {title: "Partner Package", formatter: (item) => item.partnerPackage ? "✅" : "❌"},
+            {title: "API reference", formatter: (item) => <a href={
+                item.apiLink
+            }>{item.loaderName}</a>},
+        ],
+        items: [
+            {
+                name: "AWS S3 Directory",
+                link: "aws_s3_directory",
+                source: "Load documents from an AWS S3 directory",
+                partnerPackage: false,
+                loaderName: "S3DirectoryLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.s3_directory.S3DirectoryLoader.html"
+            },
+            {
+                name: "AWS S3 File",
+                link: "aws_s3_file",
+                source: "Load documents from an AWS S3 file",
+                partnerPackage: false,
+                loaderName: "S3FileLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.s3_file.S3FileLoader.html"
+            },
+            {
+                name: "Azure AI Data",
+                link: "azure_ai_data",
+                source: "Load documents from Azure AI services",
+                partnerPackage: false,
+                loaderName: "AzureAIDataLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.azure_ai_data.AzureAIDataLoader.html"
+            },
+            {
+                name: "Azure Blob Storage Container",
+                link: "azure_blob_storage_container",
+                source: "Load documents from an Azure Blob Storage container",
+                partnerPackage: false,
+                loaderName: "AzureBlobStorageContainerLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.azure_blob_storage_container.AzureBlobStorageContainerLoader.html"
+            },
+            {
+                name: "Azure Blob Storage File",
+                link: "azure_blob_storage_file",
+                source: "Load documents from an Azure Blob Storage file",
+                partnerPackage: false,
+                loaderName: "AzureBlobStorageFileLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.azure_blob_storage_file.AzureBlobStorageFileLoader.html"
+            },
+            {
+                name: "Dropbox",
+                link: "dropbox",
+                source: "Load documents from Dropbox",
+                partnerPackage: false,
+                loaderName: "DropboxLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.dropbox.DropboxLoader.html"
+            },
+            {
+                name: "Google Cloud Storage Directory",
+                link: "google_cloud_storage_directory",
+                source: "Load documents from GCS bucket",
+                partnerPackage: true,
+                loaderName: "GCSDirectoryLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/gcs_directory/langchain_google_community.gcs_directory.GCSDirectoryLoader.html"
+            },
+            {
+                name: "Google Cloud Storage File",
+                link: "google_cloud_storage_file",
+                source: "Load documents from GCS file object",
+                partnerPackage: true,
+                loaderName: "GCSFileLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/gcs_file/langchain_google_community.gcs_file.GCSFileLoader.html"
+            },
+            {
+                name: "Google Drive",
+                link: "google_drive",
+                source: "Load documents from Google Drive (Google Docs only)",
+                partnerPackage: true,
+                loaderName: "GoogleDriveLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/drive/langchain_google_community.drive.GoogleDriveLoader.html"
+            },
+            {
+                name: "Huawei OBS Directory",
+                link: "huawei_obs_directory",
+                source: "Load documents from Huawei Object Storage Service Directory",
+                partnerPackage: false,
+                loaderName: "OBSDirectoryLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.obs_directory.OBSDirectoryLoader.html"
+            },
+            {
+                name: "Huawei OBS File",
+                link: "huawei_obs_file",
+                source: "Load documents from Huawei Object Storage Service File",
+                partnerPackage: false,
+                loaderName: "OBSFileLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.obs_file.OBSFileLoader.html"
+            },
+            {
+                name: "Microsoft OneDrive",
+                link: "microsoft_onedrive",
+                source: "Load documents from Microsoft OneDrive",
+                partnerPackage: false,
+                loaderName: "OneDriveLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.onedrive.OneDriveLoader.html"
+            },
+            {
+                name: "Microsoft SharePoint",
+                link: "microsoft_sharepoint",
+                source: "Load documents from Microsoft SharePoint",
+                partnerPackage: false,
+                loaderName: "SharePointLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.sharepoint.SharePointLoader.html"
+                
+            },
+            {
+                name: "Tencent COS Directory",
+                link: "tencent_cos_directory",
+                source: "Load documents from Tencent Cloud Object Storage Directory",
+                partnerPackage: false,
+                loaderName: "TencentCOSDirectoryLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.tencent_cos_directory.TencentCOSDirectoryLoader.html"
+            },
+            {
+                name: "Tencent COS File",
+                link: "tencent_cos_file",
+                source: "Load documents from Tencent Cloud Object Storage File",
+                partnerPackage: false,
+                loaderName: "TencentCOSFileLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.tencent_cos_file.TencentCOSFileLoader.html"
+            },
+        ]
+    },
+    messaging_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "API reference", formatter: (item) => <a href={
+                item.apiLink
+            }>{item.loaderName}</a>},
+        ],
+        items: [
+            {
+                name: "Telegram",
+                link: "telegram",
+                loaderName: "TelegramChatFileLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.telegram.TelegramChatFileLoader.html"
+            },
+            {
+                name: "WhatsApp",
+                link: "whatsapp_chat",
+                loaderName: "WhatsAppChatLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/chat_loaders/langchain_community.chat_loaders.whatsapp.WhatsAppChatLoader.html"
+            },
+            {
+                name: "Discord",
+                link: "discord",
+                loaderName: "DiscordChatLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.discord.DiscordChatLoader.html"
+            },
+            {
+                name: "Facebook Chat",
+                link: "facebook_chat",
+                loaderName: "FacebookChatLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.facebook_chat.FacebookChatLoader.html"
+            },
+            {
+                name: "Mastodon",
+                link: "mastodon",
+                loaderName: "MastodonTootsLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.mastodon.MastodonTootsLoader.html"
+            }
+        ]
+    },
+    productivity_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "API reference", formatter: (item) => <a href={
+                item.apiLink
+            }>{item.loaderName}</a>},
+        ],
+        items: [
+            {
+                name: "Figma",
+                link: "figma",
+                loaderName: "FigmaFileLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.figma.FigmaFileLoader.html"
+            },
+            {
+                name: "Notion",
+                link: "notion",
+                loaderName: "NotionDirectoryLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.notion.NotionDirectoryLoader.html"
+            },
+            {
+                name: "Slack",
+                link: "slack",
+                loaderName: "SlackDirectoryLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.slack_directory.SlackDirectoryLoader.html"
+            },
+            {
+                name: "Quip",
+                link: "quip",
+                loaderName: "QuipLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.quip.QuipLoader.html"
+            },
+            {
+                name: "Trello",
+                link: "trello",
+                loaderName: "TrelloLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.trello.TrelloLoader.html"
+            },
+            {
+                name: "Roam",
+                link: "roam",
+                loaderName: "RoamLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.roam.RoamLoader.html"
+            },
+            {
+                name: "GitHub",
+                link: "github",
+                loaderName: "GithubFileLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.github.GithubFileLoader.html"
+            }
+        ]
+    },
+    social_loaders: {
+        link: 'docs/integrations/loaders',
+        columns: [
+            {title: "Document Loader", formatter: (item) => <a href={
+                item.link
+            }>{item.name}</a>},
+            {title: "API reference", formatter: (item) => <a href={
+                item.apiLink
+            }>{item.loaderName}</a>},
+        ],
+        items: [
+            {
+                name: "Twitter",
+                link: "twitter",
+                loaderName: "TwitterTweetLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.twitter.TwitterTweetLoader.html"
+                
+            },
+            {
+                name: "Reddit",
+                link: "RedditPostsLoader",
+                loaderName: "RedditPostsLoader",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.reddit.RedditPostsLoader.html"
+            },
+        ]
+    },
     webpage_loaders: {
         link: 'docs/integrations/loaders',
         columns: [
@@ -606,6 +866,12 @@ const FEATURE_TABLES = {
                 link: "bshtml",
                 source: "HTML files",
                 apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.html_bs.BSHTMLLoader.html"
+            },
+            {
+                name: "UnstrucutredXMLLoader",
+                link: "xml",
+                source: "XML files",
+                apiLink: "https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.xml.UnstructuredXMLLoader.html"
             }
         ]
     },

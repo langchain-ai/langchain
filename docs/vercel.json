@@ -101,6 +101,10 @@
     {
       "source": "/v0.2/docs/integrations/toolkits/xorbits/",
       "destination": "/v0.2/docs/integrations/tools#search"
+    },
+    {
+      "source": "/v0.2/docs/integrations/document_loaders/notiondb/",
+      "destination": "/v0.2/docs/integrations/document_loaders/notion/"
     }
   ]
 }
