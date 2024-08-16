@@ -625,8 +625,12 @@ class BaseChatOpenAI(BaseChatModel):
                     "Cannot currently include response headers when response_format is "
                     "specified."
                 )
-            payload.pop("stream")
-            response = self.root_client.beta.chat.completions.parse(**payload)
+            if self.root_client:
+                payload.pop("stream")
+                response = self.root_client.beta.chat.completions.parse(**payload)
+            else:
+                raw_response = self.client.with_raw_response.create(**payload)
+                response = raw_response.parse()
         elif self.include_response_headers:
             raw_response = self.client.with_raw_response.create(**payload)
             response = raw_response.parse()
@@ -813,10 +817,16 @@ class BaseChatOpenAI(BaseChatModel):
                     "Cannot currently include response headers when response_format is "
                     "specified."
                 )
-            payload.pop("stream")
-            response = await self.root_async_client.beta.chat.completions.parse(
-                **payload
-            )
+            if self.root_client:
+                payload.pop("stream")
+                response = await self.root_async_client.beta.chat.completions.parse(
+                    **payload
+                )
+            else:
+                raw_response = await self.async_client.with_raw_response.create(
+                    **payload
+                )
+                response = raw_response.parse()
         elif self.include_response_headers:
             raw_response = await self.async_client.with_raw_response.create(**payload)
             response = raw_response.parse()
