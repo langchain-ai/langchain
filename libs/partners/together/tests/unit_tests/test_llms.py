@@ -9,7 +9,7 @@ from langchain_together import Together
 def test_together_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
     llm = Together(
-        together_api_key="secret-api-key",  # type: ignore[arg-type]
+        together_api_key="secret-api-key",  # type: ignore[call-arg]
         model="togethercomputer/RedPajama-INCITE-7B-Base",
         temperature=0.2,
         max_tokens=250,
@@ -38,7 +38,7 @@ def test_together_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
     llm = Together(
-        together_api_key="secret-api-key",  # type: ignore[arg-type]
+        together_api_key="secret-api-key",  # type: ignore[call-arg]
         model="togethercomputer/RedPajama-INCITE-7B-Base",
         temperature=0.2,
         max_tokens=250,
@@ -52,7 +52,18 @@ def test_together_api_key_masked_when_passed_via_constructor(
 def test_together_uses_actual_secret_value_from_secretstr() -> None:
     """Test that the actual secret value is correctly retrieved."""
     llm = Together(
-        together_api_key="secret-api-key",  # type: ignore[arg-type]
+        together_api_key="secret-api-key",  # type: ignore[call-arg]
+        model="togethercomputer/RedPajama-INCITE-7B-Base",
+        temperature=0.2,
+        max_tokens=250,
+    )
+    assert cast(SecretStr, llm.together_api_key).get_secret_value() == "secret-api-key"
+
+
+def test_together_uses_actual_secret_value_from_secretstr_api_key() -> None:
+    """Test that the actual secret value is correctly retrieved."""
+    llm = Together(
+        api_key="secret-api-key",  # type: ignore[arg-type]
         model="togethercomputer/RedPajama-INCITE-7B-Base",
         temperature=0.2,
         max_tokens=250,

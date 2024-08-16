@@ -242,7 +242,7 @@ class BaseConversationalRetrievalChain(Chain):
         "create_history_aware_retriever together with create_retrieval_chain "
         "(see example in docstring)"
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     """Chain for having a conversation based on retrieved documents.
