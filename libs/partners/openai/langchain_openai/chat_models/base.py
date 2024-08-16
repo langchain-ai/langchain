@@ -76,11 +76,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough, chain
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -91,14 +87,8 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
 from langchain_core.utils.utils import build_extra_kwargs
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-    root_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -397,56 +387,50 @@ class BaseChatOpenAI(BaseChatModel):
         )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True, allow_reuse=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
+        if self.n > 1 and self.streaming:
             raise ValueError("n must be 1 when streaming.")
 
-        values["openai_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
-        )
+        if not self.openai_api_key:
+            self.openai_api_key = SecretStr(os.getenv("OPENAI_API_KEY", ""))
+
         # Check OPENAI_ORGANIZATION for backwards compatibility.
-        values["openai_organization"] = (
-            values["openai_organization"]
+        self.openai_organization = (
+            self.openai_organization
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
-        )
+        self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+
+        if not self.openai_proxy:
+            self.openai_proxy = os.getenv("OPENAI_PROXY")
 
         client_params = {
             "api_key": (
-                values["openai_api_key"].get_secret_value()
-                if values["openai_api_key"]
-                else None
+                self.openai_api_key.get_secret_value() if self.openai_api_key else None
             ),
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "default_query": self.default_query,
         }
-        if values["openai_proxy"] and (
-            values["http_client"] or values["http_async_client"]
-        ):
-            openai_proxy = values["openai_proxy"]
-            http_client = values["http_client"]
-            http_async_client = values["http_async_client"]
+        if self.openai_proxy and (self.http_client or self.http_async_client):
+            openai_proxy = self.openai_proxy
+            http_client = self.http_client
+            http_async_client = self.http_async_client
             raise ValueError(
                 "Cannot specify 'openai_proxy' if one of "
                 "'http_client'/'http_async_client' is already specified. Received:\n"
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
-        if not values.get("client"):
-            if values["openai_proxy"] and not values["http_client"]:
+        if not (self.client or None):
+            if self.openai_proxy and not self.http_client:
                 try:
                     import httpx
                 except ImportError as e:
@@ -454,12 +438,12 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_client"] = httpx.Client(proxy=values["openai_proxy"])
-            sync_specific = {"http_client": values["http_client"]}
-            values["root_client"] = openai.OpenAI(**client_params, **sync_specific)
-            values["client"] = values["root_client"].chat.completions
-        if not values.get("async_client"):
-            if values["openai_proxy"] and not values["http_async_client"]:
+                self.http_client = httpx.Client(proxy=self.openai_proxy)
+            sync_specific = {"http_client": self.http_client}
+            self.root_client = openai.OpenAI(**client_params, **sync_specific)
+            self.client = self.root_client.chat.completions
+        if not (self.async_client or None):
+            if self.openai_proxy and not self.http_async_client:
                 try:
                     import httpx
                 except ImportError as e:
@@ -467,15 +451,13 @@ class BaseChatOpenAI(BaseChatModel):
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
                     ) from e
-                values["http_async_client"] = httpx.AsyncClient(
-                    proxy=values["openai_proxy"]
-                )
-            async_specific = {"http_client": values["http_async_client"]}
-            values["root_async_client"] = openai.AsyncOpenAI(
+                self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
+            async_specific = {"http_client": self.http_async_client}
+            self.root_async_client = openai.AsyncOpenAI(
                 **client_params, **async_specific
             )
-            values["async_client"] = values["root_async_client"].chat.completions
-        return values
+            self.async_client = self.root_async_client.chat.completions
+        return self
 
     @property
     def _default_params(self) -> Dict[str, Any]:
