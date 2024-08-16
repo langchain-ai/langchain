@@ -30,6 +30,7 @@
         {
             "sender_name": "User 2",
             "timestamp_ms": 1675595060730,
+            "content": "",
             "photos": [
                 {"uri": "url_of_some_picture.jpg", "creation_timestamp": 1675595059}
             ]

@@ -41,7 +41,7 @@ class __ModuleName__Toolkit(BaseToolKit):
 
             toolkit.get_tools()
 
-        .. code-block:: python
+        .. code-block:: none
 
             # TODO: Example output.
 
@@ -61,7 +61,7 @@ class __ModuleName__Toolkit(BaseToolKit):
             for event in events:
                 event["messages"][-1].pretty_print()
 
-        .. code-block:: python
+        .. code-block:: none
 
              # TODO: Example output.
 

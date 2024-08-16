@@ -6,14 +6,14 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 
 
 @deprecated(
-    since="0.0.30", removal="0.3.0", alternative_import="langchain_cohere.CohereRerank"
+    since="0.0.30", removal="1.0", alternative_import="langchain_cohere.CohereRerank"
 )
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
@@ -31,10 +31,8 @@ class CohereRerank(BaseDocumentCompressor):
     """Identifier for the application making the request."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

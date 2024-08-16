@@ -40,6 +40,7 @@ from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
 )
+from langchain_core.utils.pydantic import get_fields
 
 logger = logging.getLogger(__name__)
 
@@ -125,9 +126,9 @@ class ChatSparkLLM(BaseChatModel):
 
             from langchain_community.chat_models import ChatSparkLLM
 
-            chat = MiniMaxChat(
-                api_key=api_key,
-                api_secret=ak,
+            chat = ChatSparkLLM(
+                api_key="your-api-key",
+                api_secret="your-api-secret",
                 model='Spark4.0 Ultra',
                 # temperature=...,
                 # other params...
@@ -246,8 +247,6 @@ class ChatSparkLLM(BaseChatModel):
     """Holds any model parameters valid for API call not explicitly specified."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -310,7 +309,7 @@ class ChatSparkLLM(BaseChatModel):
         # put extra params into model_kwargs
         default_values = {
             name: field.default
-            for name, field in cls.__fields__.items()
+            for name, field in get_fields(cls).items()
             if field.default is not None
         }
         values["model_kwargs"]["temperature"] = default_values.get("temperature")

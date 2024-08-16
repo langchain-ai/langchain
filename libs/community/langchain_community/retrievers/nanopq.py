@@ -46,8 +46,6 @@ class NanoPQRetriever(BaseRetriever):
     """No of clusters to be created"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @classmethod

@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pandas as pd
 from langchain.agents import AgentExecutor, OpenAIFunctionsAgent
-from langchain.tools.retriever import create_retriever_tool
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools.retriever import create_retriever_tool
 from langchain_experimental.tools import PythonAstREPLTool
 
 MAIN_DIR = Path(__file__).parents[1]

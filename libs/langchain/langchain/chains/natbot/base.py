@@ -5,15 +5,27 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.pydantic_v1 import root_validator
+from langchain_core.runnables import Runnable
 
 from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "Importing NatBotChain from langchain is deprecated and will be removed in "
+        "langchain 1.0. Please import from langchain_community instead: "
+        "from langchain_community.chains.natbot import NatBotChain. "
+        "You may need to pip install -U langchain-community."
+    ),
+    removal="1.0",
+)
 class NatBotChain(Chain):
     """Implement an LLM driven browser.
 
@@ -37,7 +49,7 @@ class NatBotChain(Chain):
             natbot = NatBotChain.from_default("Buy me a new hat.")
     """
 
-    llm_chain: LLMChain
+    llm_chain: Runnable
     objective: str
     """Objective that NatBot is tasked with completing."""
     llm: Optional[BaseLanguageModel] = None
@@ -48,10 +60,8 @@ class NatBotChain(Chain):
     output_key: str = "command"  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -62,7 +72,7 @@ class NatBotChain(Chain):
                 "class method."
             )
             if "llm_chain" not in values and values["llm"] is not None:
-                values["llm_chain"] = LLMChain(llm=values["llm"], prompt=PROMPT)
+                values["llm_chain"] = PROMPT | values["llm"] | StrOutputParser()
         return values
 
     @classmethod
@@ -79,7 +89,7 @@ class NatBotChain(Chain):
         cls, llm: BaseLanguageModel, objective: str, **kwargs: Any
     ) -> NatBotChain:
         """Load from LLM."""
-        llm_chain = LLMChain(llm=llm, prompt=PROMPT)
+        llm_chain = PROMPT | llm | StrOutputParser()
         return cls(llm_chain=llm_chain, objective=objective, **kwargs)
 
     @property
@@ -106,12 +116,14 @@ class NatBotChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         url = inputs[self.input_url_key]
         browser_content = inputs[self.input_browser_content_key]
-        llm_cmd = self.llm_chain.predict(
-            objective=self.objective,
-            url=url[:100],
-            previous_command=self.previous_command,
-            browser_content=browser_content[:4500],
-            callbacks=_run_manager.get_child(),
+        llm_cmd = self.llm_chain.invoke(
+            {
+                "objective": self.objective,
+                "url": url[:100],
+                "previous_command": self.previous_command,
+                "browser_content": browser_content[:4500],
+            },
+            config={"callbacks": _run_manager.get_child()},
         )
         llm_cmd = llm_cmd.strip()
         self.previous_command = llm_cmd
