@@ -66,6 +66,26 @@ def test_opensearch_with_custom_field_name() -> None:
     assert output == [Document(page_content="foo")]
 
 
+## Integration tests for Hybrid Search ##
+
+
+def test_configure_search_pipeline() -> None:
+    """Test configuration of search pipeline functionality and checks if pipeline configured or not."""
+    test_search_pipeline_name = "test_search_pipeline"
+    keyword_weight = 0.7
+    vector_weight = 0.3
+
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL
+    )
+    docsearch.configure_search_pipelines(
+        pipeline_name=test_search_pipeline_name,
+        keyword_weight=keyword_weight,
+        vector_weight=vector_weight,
+    )
+    assert docsearch.search_pipeline_exists(test_search_pipeline_name)
+
+
 def test_opensearch_with_metadatas() -> None:
     """Test end to end indexing and search with metadata."""
     metadatas = [{"page": i} for i in range(len(texts))]
