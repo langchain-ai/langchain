@@ -6,10 +6,7 @@ from typing import Callable, Dict, Optional, Union
 
 import openai
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import (
-    from_env,
-    secret_from_env,
-)
+from langchain_core.utils import from_env, secret_from_env
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
