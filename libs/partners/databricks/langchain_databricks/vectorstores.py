@@ -87,7 +87,6 @@ class DatabricksVectorSearch(VectorStore):
         .. code-block:: python
 
             from langchain_databricks.vectorstores import DatabricksVectorSearch
-            from langchain_openai import OpenAIEmbeddings
 
             vector_store = DatabricksVectorSearch(
                 endpoint="<your-endpoint-name>",
@@ -99,6 +98,8 @@ class DatabricksVectorSearch(VectorStore):
         use for the embeddings:
 
         .. code-block:: python
+
+            from langchain_openai import OpenAIEmbeddings
 
             vector_store = DatabricksVectorSearch(
                 endpoint="<your-endpoint-name>",
