@@ -149,50 +149,28 @@ The `BoxLoader` class helps you get your unstructured content from Box
 in Langchain's `Document` format. You can do this with either a `List[str]`
 containing Box file IDs, or with a `str` containing a Box folder ID. 
 
-You can provide a `Bool` that tells the loader whether to try to fetch a text
-representation of the file, and for these text representations, you can specify 
-a character limit to limit how much text is returned. **We highly recommend using 
-text representations whenever possible**. There is an additional
-`Bool` to decide to fetch images or ignore them. `BoxLoader` ignores any file
-that isn't in our list of supported document or image types.
-
 If getting files from a folder with folder ID, you can also set a `Bool` to
 tell the loader to get all sub-folders in that folder, as well. 
 
-> [!WARNING]
-> A Box instance can contain Petabytes of files, and folders can contain millions
-> of files. Be intentional when choosing what folders you choose to index. And we
-> recommend never getting all files from folder 0 recursively. Folder ID 0 is your
-> root folder.
-
-For files without a text representation, we rely on Unstructured's community
-loaders. These are part of the package and all dependencies will be loaded
-for you. 
-
-> [!IMPORTANT]
-> If you plan to include images, you will need Tesseract installed on the system
-> running the application and you will need the path to tesseract's `bin` directory
-> in the shell's `PATH` environment variable:
-> `PATH=$PATH;/opt/homebrew/Cellar/tesseract/5.4.1/bin`
-> For more information on Tesseract, visit their [website](https://tesseract-ocr.github.io/tessdoc/Installation.html).
+:::info
+A Box instance can contain Petabytes of files, and folders can contain millions
+of files. Be intentional when choosing what folders you choose to index. And we
+recommend never getting all files from folder 0 recursively. Folder ID 0 is your
+root folder.
+:::
 
 ### Load files
 
 ```python
-from langchain_box.document_loaders import BoxLoader
-from langchain_box.utilities import BoxAuth, BoxAuthType
+import os
 
-auth = BoxAuth(
-    auth_type=BoxAuthType.TOKEN,
-    box_developer_token=box_developer_token
-)
+from langchain_box.document_loaders import BoxLoader
+
+os.environ["BOX_DEVELOPER_TOKEN"] = "df21df2df21df2d1f21df2df1"
 
 loader = BoxLoader(
-    box_auth=auth,
     box_file_ids=["12345", "67890"],
-    character_limit=10000,  # Optional. Defaults to no limit
-    get_text_rep=True,  # Get text rep first when available, default True
-    get_images=False  # Download images, defaults to False
+    character_limit=10000  # Optional. Defaults to no limit
 )
 
 docs = loader.lazy_load()
@@ -201,21 +179,16 @@ docs = loader.lazy_load()
 ### Load from folder
 
 ```python
-from langchain_box.document_loaders import BoxLoader
-from langchain_box.utilities import BoxAuth, BoxAuthType
+import os
 
-auth = BoxAuth(
-    auth_type=BoxAuthType.TOKEN,
-    box_developer_token=box_developer_token
-)
+from langchain_box.document_loaders import BoxLoader
+
+os.environ["BOX_DEVELOPER_TOKEN"] = "df21df2df21df2d1f21df2df1"
 
 loader = BoxLoader(
-    box_auth=auth,
     box_folder_id="12345",
     recursive=False,  # Optional. return entire tree, defaults to False
-    character_limit=10000,  # Optional. Defaults to no limit
-    get_text_rep=True,  # Get text rep first when available, default True
-    get_images=False  # Download images, defaults to False
+    character_limit=10000  # Optional. Defaults to no limit
 )
 
 docs = loader.lazy_load()

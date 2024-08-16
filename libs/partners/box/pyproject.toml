@@ -14,13 +14,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.9.0,<3.13"
 langchain-core = "^0.2.0"
-langchain-community = "^0.2.0"
 box-sdk-gen = {extras = ["jwt"], version = "^1.1.0"}
-unstructured = {extras = ["all-docs"], version = "^0.15.1"}
-nltk = "3.8.1"
-pillow = "10.4.0"
-pillow-heif = "0.18.0"
-matplotlib = "3.9.2"
 
 [tool.poetry.group.test]
 optional = true
@@ -31,7 +25,6 @@ pytest_mock = "^3.14.0"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
 langchain-core = { path = "../../core", develop = true }
-langchain-community = { path = "../../community", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true

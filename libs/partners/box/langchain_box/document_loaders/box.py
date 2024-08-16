@@ -25,45 +25,100 @@ class BoxLoader(BaseLoader, BaseModel):
     * You must enable the `Manage AI` scope in your app in the developer console.
     * Your administratormust install and enable your application.
 
-    Example Implementation
+    Setup:
+        Install ``langchain-box`` and set environment variable ``BOX_DEVELOPER_TOKEN``.
 
-    ```python
-    from langchain_box.document_loaders import BoxLoader
-    from langchain_box.utilities import BoxAuth, BoxAuthType
+        .. code-block:: bash
 
-    auth = BoxAuth(
-        auth_type=BoxAuthType.TOKEN,
-        box_developer_token=box_developer_token
-    )
+            pip install -U langchain-box
+            export BOX_DEVELOPER_TOKEN="your-api-key"
 
-    loader = BoxLoader(
-        box_auth=auth,
-        box_file_ids=["12345", "67890"],
-        character_limit=10000,  # Optional. Defaults to no limit
-        get_text_rep=True,  # Get text rep first when available, default True
-        get_images=False  # Download images, defaults to False
-    )
+    This loader returns ``Document `` objects built from text representations of files
+    in Box. It will skip any document without a text representation available. You can
+    provide either a ``List[str]`` containing Box file IDS, or you can provide a
+    ``str`` contining a Box folder ID. If providing a folder ID, you can also enable
+    recursive mode to get the full tree under that folder.
 
-    docs = loader.lazy_load()
-    ```
+    :::info
+        A Box instance can contain Petabytes of files, and folders can contain millions
+        of files. Be intentional when choosing what folders you choose to index. And we
+        recommend never getting all files from folder 0 recursively. Folder ID 0 is your
+        root folder.
+    :::
 
-    Initialization variables
-    variable | description | type | required
-    ---+---+---
-    box_developer_token | token to use for auth. | string | no
-    box_auth | client id for you app. Used for CCG | string | no
-    box_file_ids | Array of Box file Ids to retrieve | array of strings | no
-    box_folder_id | Box folder id to retrieve | string | no
-    recursive | whether to return subfolders, default False | bool | no
-    get_text_rep | whether to attempt to get text, default True | bool | no
-    get_images | whether to download images, default False | bool | no
+    Instantiate:
 
-    Getting and parsing images relies on
-    `langchain_community.document_loaders.image import UnstructuredImageLoader`
+        Initialization variables
+            variable | description | type | required
+            ---+---+---
+            box_developer_token | token to use for auth. | string | no
+            box_auth | client id for you app. Used for CCG | string | no
+            box_file_ids | Array of Box file Ids to retrieve | array of strings | no
+            box_folder_id | Box folder id to retrieve | string | no
+            recursive | whether to return subfolders, default False | bool | no
 
-    All of the dependencies are installed when you install the langchain_box
-    package, but you must have tesseract installed locally and the bin
-    directory must be in the PATH variable in your OS environment.
+    Get files — this method requires you pass the ``box_file_ids`` parameter. This is a
+    ``List[str]`` containing the file IDs you wish to index.
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+
+            box_file_ids = ["1514555423624", "1514553902288"]
+
+            loader = BoxLoader(
+                box_file_ids=box_file_ids,
+                character_limit=10000  # Optional. Defaults to no limit
+            )
+
+    Get files in a folder — this method requires you pass the ``box_folder_id``
+    parameter. This is a ``str`` containing the folder ID you wish to index.
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+
+            box_folder_id = "260932470532"
+
+            loader = BoxLoader(
+                box_folder_id=box_folder_id,
+                recursive=False  # Optional. return entire tree, defaults to False
+            )
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            docs[0]
+
+        .. code-block:: python
+
+            Document(metadata={'source': 'https://dl.boxcloud.com/api/2.0/
+            internal_files/1514555423624/versions/1663171610024/representations
+            /extracted_text/content/', 'title': 'Invoice-A5555_txt'},
+            page_content='Vendor: AstroTech Solutions\nInvoice Number: A5555\n\nLine
+            Items:\n    - Gravitational Wave Detector Kit: $800\n    - Exoplanet
+            Terrarium: $120\nTotal: $920')
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Document(metadata={'source': 'https://dl.boxcloud.com/api/2.0/
+            internal_files/1514555423624/versions/1663171610024/representations
+            /extracted_text/content/', 'title': 'Invoice-A5555_txt'},
+            page_content='Vendor: AstroTech Solutions\nInvoice Number: A5555\n\nLine
+            Items:\n    - Gravitational Wave Detector Kit: $800\n    - Exoplanet
+            Terrarium: $120\nTotal: $920')
     """
 
     model_config = ConfigDict(use_enum_values=True)
@@ -82,12 +137,6 @@ class BoxLoader(BaseLoader, BaseModel):
     """character_limit is an int that caps the number of characters to
        return per document."""
     character_limit: Optional[int] = -1
-    """Bool that instructs langchain_box to attempt to get text representations
-       when available. Defaults to True"""
-    get_text_rep: Optional[bool] = True
-    """Bool that instructs langchain_box to download images. Default is False,
-       and images will be skipped"""
-    get_images: Optional[bool] = False
 
     box: Optional[BoxAPIWrapper]
 
@@ -119,8 +168,6 @@ class BoxLoader(BaseLoader, BaseModel):
         box = BoxAPIWrapper(  # type: ignore[call-arg]
             box_developer_token=values.get("box_developer_token"),
             box_auth=values.get("box_auth"),
-            get_text_rep=values.get("get_text_rep"),
-            get_images=values.get("get_images"),
             character_limit=values.get("character_limit"),
         )
 
@@ -132,26 +179,32 @@ class BoxLoader(BaseLoader, BaseModel):
         folder_content = self.box.get_folder_items(folder_id)
 
         for file in folder_content:
-            if file.type == FileBaseTypeField.FILE:
-                doc = self.box.get_document_by_file_id(file.id)
+            try:
+                if file.type == FileBaseTypeField.FILE:
+                    doc = self.box.get_document_by_file_id(file.id)
 
-                if doc is not None:
-                    yield doc
+                    if doc is not None:
+                        yield doc
 
-            elif file.type == "folder" and self.recursive:
-                try:
-                    yield from self._get_files_from_folder(file.id)
-                except TypeError:
-                    pass
+                elif file.type == "folder" and self.recursive:
+                    try:
+                        yield from self._get_files_from_folder(file.id)
+                    except TypeError:
+                        pass
+            except TypeError:
+                pass
 
     def lazy_load(self) -> Iterator[Document]:
         """Load documents. Accepts no arguments. Returns `Iterator[Document]`"""
         if self.box_file_ids:
             for file_id in self.box_file_ids:
-                file = self.box.get_document_by_file_id(file_id)  # type: ignore[union-attr]
+                try:
+                    file = self.box.get_document_by_file_id(file_id)  # type: ignore[union-attr]
 
-                if file is not None:
-                    yield file
+                    if file is not None:
+                        yield file
+                except TypeError:
+                    pass
         elif self.box_folder_id:
             try:
                 yield from self._get_files_from_folder(self.box_folder_id)

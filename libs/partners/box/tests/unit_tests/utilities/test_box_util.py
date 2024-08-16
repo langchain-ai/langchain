@@ -80,14 +80,10 @@ def test_failed_ccg_initialization() -> None:
 
 def test_direct_token_initialization() -> None:
     box = BoxAPIWrapper(  #  type: ignore[call-arg]
-        box_developer_token="box_developer_token",
-        get_text_rep=True,
-        get_images=False,
+        box_developer_token="box_developer_token"
     )
 
     assert box.box_developer_token == "box_developer_token"
-    assert box.get_text_rep is True
-    assert box.get_images is False
 
 
 def test_auth_initialization() -> None:
@@ -95,13 +91,11 @@ def test_auth_initialization() -> None:
         auth_type=BoxAuthType.TOKEN, box_developer_token="box_developer_token"
     )
 
-    box = BoxAPIWrapper(box_auth=auth, get_text_rep=True, get_images=False)  #  type: ignore[call-arg]
+    box = BoxAPIWrapper(box_auth=auth)  #  type: ignore[call-arg] # noqa: F841
 
     assert auth.box_developer_token == "box_developer_token"
-    assert box.get_text_rep is True
-    assert box.get_images is False
 
 
 def test_failed_initialization_no_auth() -> None:
     with pytest.raises(ValidationError):
-        box = BoxAPIWrapper(get_text_rep=True, get_images=False)  # type: ignore[call-arg] # noqa: F841
+        box = BoxAPIWrapper()  # type: ignore[call-arg] # noqa: F841
