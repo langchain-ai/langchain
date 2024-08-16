@@ -387,7 +387,7 @@ class MiniMaxChat(BaseChatModel):
     class Config:
         allow_population_by_field_name = True
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["minimax_api_key"] = convert_to_secret_str(

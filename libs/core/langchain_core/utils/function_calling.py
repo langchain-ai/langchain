@@ -81,7 +81,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_pydantic_to_openai_function(
     model: Type,
@@ -121,7 +121,7 @@ def convert_pydantic_to_openai_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_pydantic_to_openai_tool(
     model: Type[BaseModel],
@@ -155,7 +155,7 @@ def _get_python_function_name(function: Callable) -> str:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_python_function_to_openai_function(
     function: Callable,
@@ -172,10 +172,10 @@ def convert_python_function_to_openai_function(
     Returns:
         The OpenAI function description.
     """
-    from langchain_core import tools
+    from langchain_core.tools.base import create_schema_from_function
 
     func_name = _get_python_function_name(function)
-    model = tools.create_schema_from_function(
+    model = create_schema_from_function(
         func_name,
         function,
         filter_args=(),
@@ -273,7 +273,7 @@ def _convert_any_typed_dicts_to_pydantic(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API.
@@ -310,7 +310,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
     """Format tool into the OpenAI function API.
