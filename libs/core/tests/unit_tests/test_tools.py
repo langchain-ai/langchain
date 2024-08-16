@@ -22,6 +22,7 @@ from typing import (
 )
 
 import pytest
+from pydantic import BaseModel, Field, ValidationError
 from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 from typing_extensions import Annotated, TypedDict, TypeVar
 
@@ -31,7 +32,6 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -874,15 +874,13 @@ async def test_async_validation_error_handling_non_validation_error(
 
 def test_optional_subset_model_rewrite() -> None:
     class MyModel(BaseModel):
-        a: Optional[str]
+        a: Optional[str] = None
         b: str
-        c: Optional[List[Optional[str]]]
+        c: Optional[List[Optional[str]]] = None
 
     model2 = _create_subset_model("model2", MyModel, ["a", "b", "c"])
 
-    assert "a" not in _schema(model2)["required"]  # should be optional
-    assert "b" in _schema(model2)["required"]  # should be required
-    assert "c" not in _schema(model2)["required"]  # should be optional
+    assert set(_schema(model2)["required"]) == {"b"}
 
 
 @pytest.mark.parametrize(

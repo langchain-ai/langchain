@@ -6,6 +6,8 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from pydantic import BaseModel, model_validator
+
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
@@ -13,7 +15,6 @@ from langchain_core.prompts.string import (
     get_template_variables,
     mustache_schema,
 )
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables.config import RunnableConfig
 
 
@@ -73,8 +74,9 @@ class PromptTemplate(StringPromptTemplate):
     validate_template: bool = False
     """Whether or not to try validating the template."""
 
-    @root_validator(pre=True)
-    def pre_init_validation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def pre_init_validation(cls, values: Dict) -> Any:
         """Check that template and input variables are consistent."""
         if values.get("template") is None:
             # Will let pydantic fail with a ValidationError if template

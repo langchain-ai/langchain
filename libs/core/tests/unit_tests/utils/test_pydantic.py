@@ -3,6 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
+from pydantic import ConfigDict
 
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
@@ -15,7 +16,7 @@ from langchain_core.utils.pydantic import (
 
 
 def test_pre_init_decorator() -> None:
-    from langchain_core.pydantic_v1 import BaseModel
+    from pydantic import BaseModel
 
     class Foo(BaseModel):
         x: int = 5
@@ -34,7 +35,7 @@ def test_pre_init_decorator() -> None:
 
 
 def test_pre_init_decorator_with_more_defaults() -> None:
-    from langchain_core.pydantic_v1 import BaseModel, Field
+    from pydantic import BaseModel, Field
 
     class Foo(BaseModel):
         a: int = 1
@@ -56,14 +57,13 @@ def test_pre_init_decorator_with_more_defaults() -> None:
 
 
 def test_with_aliases() -> None:
-    from langchain_core.pydantic_v1 import BaseModel, Field
+    from pydantic import BaseModel, Field
 
     class Foo(BaseModel):
         x: int = Field(default=1, alias="y")
         z: int
 
-        class Config:
-            allow_population_by_field_name = True
+        model_config = ConfigDict(populate_by_name=True,)
 
         @pre_init
         def validator(cls, v: Dict[str, Any]) -> Dict[str, Any]:

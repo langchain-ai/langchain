@@ -8,8 +8,9 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
 
 import pydantic  # pydantic: ignore
-
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from pydantic import BaseModel, root_validator  # pydantic: ignore
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue  # pydantic: ignore
+from pydantic_core import core_schema  # pydantic: ignore
 
 
 def get_pydantic_major_version() -> int:
@@ -27,7 +28,6 @@ PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 if PYDANTIC_MAJOR_VERSION == 1:
     from pydantic.fields import FieldInfo as FieldInfoV1
-
     PydanticBaseModel = pydantic.BaseModel
     TypeBaseModel = Type[BaseModel]
 elif PYDANTIC_MAJOR_VERSION == 2:
@@ -146,7 +146,7 @@ def pre_init(func: Callable) -> Any:
             Dict[str, Any]: The values to initialize the model with.
         """
         # Insert default values
-        fields = cls.__fields__
+        fields = cls.model_fields
         for name, field_info in fields.items():
             # Check if allow_population_by_field_name is enabled
             # If yes, then set the field name to the alias
@@ -155,9 +155,13 @@ def pre_init(func: Callable) -> Any:
                     if cls.Config.allow_population_by_field_name:
                         if field_info.alias in values:
                             values[name] = values.pop(field_info.alias)
+            if hasattr(cls, "model_config"):
+                if cls.model_config.get("populate_by_name"):
+                    if field_info.alias in values:
+                        values[name] = values.pop(field_info.alias)
 
             if name not in values or values[name] is None:
-                if not field_info.required:
+                if not field_info.is_required():
                     if field_info.default_factory is not None:
                         values[name] = field_info.default_factory()
                     else:
@@ -169,6 +173,44 @@ def pre_init(func: Callable) -> Any:
     return wrapper
 
 
+class _IgnoreUnserializable(GenerateJsonSchema):
+    """A JSON schema generator that ignores unknown types.
+
+    https://docs.pydantic.dev/latest/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """
+
+    def handle_invalid_for_json_schema(
+        self, schema: core_schema.CoreSchema, error_info: str
+    ) -> JsonSchemaValue:
+        return {}
+
+
+def v1_repr(obj: BaseModel) -> str:
+    """Return the schema of the object as a string.
+
+    Get a repr for the pydantic object which is consistent with pydantic.v1.
+    """
+    if not is_basemodel_instance(obj):
+        raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
+    repr_ = []
+    for name, field in get_fields(obj).items():
+        value = getattr(obj, name)
+
+        if isinstance(value, BaseModel):
+            repr_.append(f"{name}={v1_repr(value)}")
+        else:
+            if not field.is_required():
+                if not value:
+                    continue
+                if field.default == value:
+                    continue
+
+            repr_.append(f"{name}={repr(value)}")
+
+    args = ", ".join(repr_)
+    return f"{obj.__class__.__name__}({args})"
+
+
 def _create_subset_model_v1(
     name: str,
     model: Type[BaseModel],
@@ -178,12 +220,20 @@ def _create_subset_model_v1(
     fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
-    from langchain_core.pydantic_v1 import create_model
+    if PYDANTIC_MAJOR_VERSION == 1:
+        from pydantic import create_model  # pydantic: ignore
+    elif PYDANTIC_MAJOR_VERSION == 2:
+        from pydantic.v1 import create_model  # type: ignore # pydantic: ignore
+    else:
+        raise NotImplementedError(
+            f"Unsupported pydantic version: {PYDANTIC_MAJOR_VERSION}"
+        )
 
     fields = {}
 
     for field_name in field_names:
-        field = model.__fields__[field_name]
+        # Using pydantic v1 so can access __fields__ as a dict.
+        field = model.__fields__[field_name]  # type: ignore
         t = (
             # this isn't perfect but should work for most functions
             field.outer_type_

@@ -5,9 +5,9 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type, Union
 from unittest.mock import patch
 
 import pytest
+from pydantic import SecretStr
 
 from langchain_core import utils
-from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.utils import (
     check_package_version,
     from_env,
@@ -328,7 +328,7 @@ def test_secret_from_env_with_custom_error_message(
 def test_using_secret_from_env_as_default_factory(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from langchain_core.pydantic_v1 import BaseModel, Field
+    from pydantic import BaseModel, Field
 
     class Foo(BaseModel):
         secret: SecretStr = Field(default_factory=secret_from_env("TEST_KEY"))

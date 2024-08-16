@@ -27,6 +27,7 @@ from typing import (
 )
 
 import yaml
+from pydantic import ConfigDict, Field, model_validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -58,7 +59,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
 from langchain_core.runnables.config import run_in_executor
 
@@ -297,11 +297,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED]"""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True,)
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: Dict) -> Any:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
             warnings.warn(

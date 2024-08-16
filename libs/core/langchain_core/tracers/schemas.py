@@ -11,7 +11,6 @@ from langsmith.schemas import RunBase as BaseRunV2
 from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
 
 from langchain_core._api import deprecated
-from langchain_core.outputs import LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 
@@ -82,7 +81,8 @@ class LLMRun(BaseRun):
     """Class for LLMRun."""
 
     prompts: List[str]
-    response: Optional[LLMResult] = None
+    # Temporarily, remove but we will completely remove LLMRun
+    # response: Optional[LLMResult] = None
 
 
 @deprecated("0.1.0", alternative="Run", removal="1.0")

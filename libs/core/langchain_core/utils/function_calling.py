@@ -22,11 +22,11 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel
 from typing_extensions import Annotated, TypedDict, get_args, get_origin, is_typeddict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
@@ -84,7 +84,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     removal="1.0",
 )
 def convert_pydantic_to_openai_function(
-    model: Type[BaseModel],
+    model: Type,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -192,11 +192,13 @@ def convert_python_function_to_openai_function(
 
 def _convert_typed_dict_to_openai_function(typed_dict: Type) -> FunctionDescription:
     visited: Dict = {}
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
     model = cast(
         Type[BaseModel],
         _convert_any_typed_dicts_to_pydantic(typed_dict, visited=visited),
     )
-    return convert_pydantic_to_openai_function(model)
+    return convert_pydantic_to_openai_function(model)  # type: ignore
 
 
 _MAX_TYPED_DICT_RECURSION = 25
@@ -208,6 +210,9 @@ def _convert_any_typed_dicts_to_pydantic(
     visited: Dict,
     depth: int = 0,
 ) -> Type:
+    from pydantic.v1 import Field as Field_v1  # pydantic: ignore
+    from pydantic.v1 import create_model as create_model_v1  # pydantic: ignore
+
     if type_ in visited:
         return visited[type_]
     elif depth >= _MAX_TYPED_DICT_RECURSION:
@@ -241,7 +246,7 @@ def _convert_any_typed_dicts_to_pydantic(
                     field_kwargs["description"] = arg_desc
                 else:
                     pass
-                fields[arg] = (new_arg_type, Field(**field_kwargs))
+                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
             else:
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     arg_type, depth=depth + 1, visited=visited
@@ -249,8 +254,8 @@ def _convert_any_typed_dicts_to_pydantic(
                 field_kwargs = {"default": ...}
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                fields[arg] = (new_arg_type, Field(**field_kwargs))
-        model = create_model(typed_dict.__name__, **fields)
+                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
+        model = create_model_v1(typed_dict.__name__, **fields)
         model.__doc__ = description
         visited[typed_dict] = model
         return model

@@ -4,9 +4,12 @@ from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
+from pydantic import ValidationError
 from syrupy import SnapshotAssertion
 
-from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
+from langchain_core._api.deprecation import (
+    LangChainPendingDeprecationWarning,
+)
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
@@ -28,7 +31,6 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
-from langchain_core.pydantic_v1 import ValidationError
 from tests.unit_tests.pydantic_utils import _schema
 
 
@@ -810,7 +812,7 @@ def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> 
     prompt = ChatPromptTemplate.from_messages(
         [("system", "foo"), MessagesPlaceholder("bar"), ("human", "baz")]
     )
-    assert dumpd(MessagesPlaceholder("bar")) == snapshot(name="placholder")
+    assert dumpd(MessagesPlaceholder("bar")) == snapshot(name="placeholder")
     assert load(dumpd(MessagesPlaceholder("bar"))) == MessagesPlaceholder("bar")
     assert dumpd(prompt) == snapshot(name="chat_prompt")
     assert load(dumpd(prompt)) == prompt

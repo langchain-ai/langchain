@@ -1,12 +1,14 @@
 from functools import partial
 from inspect import isclass
 from typing import Any, Dict, Type, Union, cast
+from typing import Optional as Optional
+
+from pydantic import BaseModel
 
 from langchain_core.language_models import FakeListChatModel
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts.structured import StructuredPrompt
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
@@ -32,6 +34,9 @@ class FakeStructuredChatModel(FakeListChatModel):
     @property
     def _llm_type(self) -> str:
         return "fake-messages-list-chat-model"
+
+
+FakeStructuredChatModel.model_rebuild()
 
 
 def test_structured_prompt_pydantic() -> None:
