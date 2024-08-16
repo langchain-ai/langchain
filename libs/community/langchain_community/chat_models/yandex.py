@@ -116,10 +116,10 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         Raises:
             ValueError: if the last message in the list is not from human.
         """
-        async for text in acompletion_with_retry(self, messages=messages):
-            text = text if stop is None else enforce_stop_tokens(text, stop)
-            message = AIMessage(content=text)
-            return ChatResult(generations=[ChatGeneration(message=message)])
+        text = await acompletion_with_retry(self, messages=messages)
+        text = text if stop is None else enforce_stop_tokens(text, stop)
+        message = AIMessage(content=text)
+        return ChatResult(generations=[ChatGeneration(message=message)])
 
     def _stream(
         self,
@@ -129,8 +129,10 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         stream_resp = completion_with_retry(self, messages=messages, stream=True)
+        current_text = ""
         for data in stream_resp:
-            delta = data
+            delta = data[len(current_text) :]
+            current_text = data
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
                 run_manager.on_llm_new_token(delta, chunk=chunk)
@@ -143,10 +145,15 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        async for delta in acompletion_with_retry(self, messages=messages, stream=True):
+        current_text = ""
+        async for data in await acompletion_with_retry(
+            self, messages=messages, stream=True
+        ):
+            delta = data[len(current_text) :]
+            current_text = data
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
-                await run_manager.on_llm_new_token(delta, chunk=chunk)
+                run_manager.on_llm_new_token(delta, chunk=chunk)
             yield chunk
 
 
@@ -279,23 +286,32 @@ async def _agenerate_completion(self, messages, stream=False):
             return completion_response
 
 
-def _make_request(
+def _make_request_invoke(
     self: ChatYandexGPT,
     messages: List[BaseMessage],
-    stream: bool = None,
 ):
-    res = _generate_completion(self, messages, stream)
-    for chunk in res:
+    result = _generate_completion(self, messages, None)
+    return list(result)[0].alternatives[0].message.text
+
+
+def _make_request_stream(
+    self: ChatYandexGPT,
+    messages: List[BaseMessage],
+):
+    result = _generate_completion(self, messages, True)
+    for chunk in result:
         yield chunk.alternatives[0].message.text
 
 
-async def _amake_request(llm: ChatYandexGPT, stream: bool = None, **kwargs: Any) -> Any:
-    result = await _agenerate_completion(llm, stream=stream, **kwargs)
-    if not stream:
-        yield result.alternatives[0].message.text
-    else:
-        for alternative in result.alternatives:
-            yield alternative.message.text
+async def _amake_request_invoke(llm: ChatYandexGPT, **kwargs: Any) -> Any:
+    result = await _agenerate_completion(llm, stream=None, **kwargs)
+    return result.alternatives[0].message.text
+
+
+async def _amake_request_stream(llm: ChatYandexGPT, **kwargs: Any) -> Any:
+    result = await _agenerate_completion(llm, stream=True, **kwargs)
+    for alternative in result.alternatives:
+        yield alternative.message.text
 
 
 def _create_retry_decorator(llm: ChatYandexGPT) -> Callable[[Any], Any]:
@@ -312,25 +328,31 @@ def _create_retry_decorator(llm: ChatYandexGPT) -> Callable[[Any], Any]:
     )
 
 
-def completion_with_retry(llm: ChatYandexGPT, **kwargs: Any) -> Any:
+def completion_with_retry(
+    llm: ChatYandexGPT, stream: bool = False, **kwargs: Any
+) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(llm)
 
     @retry_decorator
     def _completion_with_retry(**_kwargs: Any) -> Any:
-        return _make_request(llm, **_kwargs)
+        if stream:
+            return _make_request_stream(llm, **_kwargs)
+        return _make_request_invoke(llm, **_kwargs)
 
     return _completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry(llm: ChatYandexGPT, **kwargs: Any) -> Any:
+async def acompletion_with_retry(
+    llm: ChatYandexGPT, stream: bool = False, **kwargs: Any
+) -> Any:
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator(llm)
 
     @retry_decorator
     async def _completion_with_retry(**_kwargs: Any) -> Any:
-        async for result in _amake_request(llm, **_kwargs):
-            yield result
+        if stream:
+            return _amake_request_stream(llm, **_kwargs)
+        return await _amake_request_invoke(llm, **_kwargs)
 
-    async for result in _completion_with_retry(**kwargs):
-        yield result
+    return await _completion_with_retry(**kwargs)
