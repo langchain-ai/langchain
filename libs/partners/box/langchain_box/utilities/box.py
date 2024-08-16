@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Dict, Optional
 
 import box_sdk_gen  # type: ignore
-import requests  # type: ignore[import-untyped]
+import requests
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
