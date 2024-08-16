@@ -85,6 +85,20 @@ def test_configure_search_pipeline() -> None:
     )
     assert docsearch.search_pipeline_exists(test_search_pipeline_name)
 
+def test_get_search_pipeline_info() -> None:
+    """
+    This test verifies that the `get_search_pipeline_info` method returns the correct search pipeline information
+    for a given search pipeline name.
+    Testing for previously configured search pipeline (test_search_pipeline).
+    """
+    test_search_pipeline_name = "test_search_pipeline"
+    
+    docsearch = OpenSearchVectorSearch.from_texts(
+        texts, FakeEmbeddings(), opensearch_url=DEFAULT_OPENSEARCH_URL
+    )
+    test_pipeline_info = docsearch.get_search_pipeline_info(test_search_pipeline_name)
+    assert test_pipeline_info == {'test_search_pipeline': {'description': 'Post processor for hybrid search', 'phase_results_processors': [{'normalization-processor': {'normalization': {'technique': 'min_max'}, 'combination': {'technique': 'arithmetic_mean', 'parameters': {'weights': [0.7, 0.3]}}}}]}}
+
 
 def test_opensearch_with_metadatas() -> None:
     """Test end to end indexing and search with metadata."""
