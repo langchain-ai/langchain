@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Union
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
-from langchain.tools.base import BaseTool
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
@@ -13,6 +12,7 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain_core.tools import BaseTool
 
 from langchain_experimental.pydantic_v1 import BaseModel
 

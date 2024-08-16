@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.10",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_openai.AzureChatOpenAI",
 )
 class AzureChatOpenAI(ChatOpenAI):
