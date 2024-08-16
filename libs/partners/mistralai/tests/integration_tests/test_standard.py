@@ -18,3 +18,7 @@ class TestMistralStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {"model": "mistral-large-latest", "temperature": 0}
+
+    @property
+    def supports_json_mode(self) -> bool:
+        return True

@@ -20,3 +20,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     @property
     def supports_image_inputs(self) -> bool:
         return True
+
+    @property
+    def supports_json_mode(self) -> bool:
+        return True

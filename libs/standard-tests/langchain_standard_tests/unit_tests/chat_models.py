@@ -119,6 +119,10 @@ class ChatModelTests(BaseStandardTests):
     def supports_anthropic_inputs(self) -> bool:
         return False
 
+    @property
+    def supports_json_mode(self) -> bool:
+        return False
+
 
 class ChatModelUnitTests(ChatModelTests):
     @property

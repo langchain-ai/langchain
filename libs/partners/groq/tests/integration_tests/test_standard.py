@@ -23,6 +23,10 @@ class BaseTestGroq(ChatModelIntegrationTests):
     def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
         super().test_tool_message_histories_list_content(model)
 
+    @property
+    def supports_json_mode(self) -> bool:
+        return True
+
 
 class TestGroqLlama(BaseTestGroq):
     @property
