@@ -843,6 +843,36 @@ class OpenSearchVectorSearch(VectorStore):
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
+        
+    def search_pipeline_exists(self, pipeline_name: str) -> bool:
+        """
+        Checks if a search pipeline exists.
+        
+        Args:
+            pipeline_name: Name of the pipeline
+        
+        Returns:
+            bool: True if the pipeline exists, False otherwise
+        
+        Raises:
+            Exception: If an error occurs
+
+        Example:
+            >>> search_pipeline_exists("my_pipeline_1")
+            True
+            >>> search_pipeline_exists("my_pipeline_2")
+            False
+        """
+        try: 
+           existed_pipelines = self.client.transport.perform_request(
+            method="GET", url=f"/_search/pipeline/"
+            )
+        except Exception as e:
+            response = None
+            print(f"An error occurred: {e}")
+
+        return pipeline_name in existed_pipelines
+        
 
     def similarity_search(
         self,
