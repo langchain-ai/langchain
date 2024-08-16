@@ -6,22 +6,17 @@ import pytest
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
+from langchain_standard_tests.integration_tests import EmbeddingsIntegrationTests
+from typing import Type
 
-def test_langchain_openai_embedding_documents() -> None:
-    """Test openai embeddings."""
-    documents = ["foo bar"]
-    embedding = OpenAIEmbeddings()
-    output = embedding.embed_documents(documents)
-    assert len(output) == 1
-    assert len(output[0]) > 0
+class TestOpenAIEmbeddings(EmbeddingsIntegrationTests):
+    @property
+    def embeddings_class(self) -> Type[OpenAIEmbeddings]:
+        return OpenAIEmbeddings
 
-
-def test_langchain_openai_embedding_query() -> None:
-    """Test openai embeddings."""
-    document = "foo bar"
-    embedding = OpenAIEmbeddings()
-    output = embedding.embed_query(document)
-    assert len(output) > 0
+    @property
+    def embedding_model_params(self) -> dict:
+        return {"model": "text-embedding-3-small"}
 
 
 def test_langchain_openai_embeddings_dimensions() -> None:

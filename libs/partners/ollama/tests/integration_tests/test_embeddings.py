@@ -1,11 +1,9 @@
 """Test Ollama embeddings."""
 
-from typing import Type
-
-from langchain_standard_tests.integration_tests import EmbeddingsIntegrationTests
-
 from langchain_ollama.embeddings import OllamaEmbeddings
 
+from langchain_standard_tests.integration_tests import EmbeddingsIntegrationTests
+from typing import Type
 
 class TestOllamaEmbeddings(EmbeddingsIntegrationTests):
     @property

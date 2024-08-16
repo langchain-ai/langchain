@@ -2,19 +2,14 @@
 
 from langchain_fireworks.embeddings import FireworksEmbeddings
 
+from langchain_standard_tests.integration_tests import EmbeddingsIntegrationTests
+from typing import Type
 
-def test_langchain_fireworks_embedding_documents() -> None:
-    """Test Fireworks hosted embeddings."""
-    documents = ["foo bar"]
-    embedding = FireworksEmbeddings(model="nomic-ai/nomic-embed-text-v1.5")
-    output = embedding.embed_documents(documents)
-    assert len(output) == 1
-    assert len(output[0]) > 0
+class TestFireworksEmbeddings(EmbeddingsIntegrationTests):
+    @property
+    def embeddings_class(self) -> Type[FireworksEmbeddings]:
+        return FireworksEmbeddings
 
-
-def test_langchain_fireworks_embedding_query() -> None:
-    """Test Fireworks hosted embeddings."""
-    document = "foo bar"
-    embedding = FireworksEmbeddings(model="nomic-ai/nomic-embed-text-v1.5")
-    output = embedding.embed_query(document)
-    assert len(output) > 0
+    @property
+    def embedding_model_params(self) -> dict:
+        return {"model": "nomic-ai/nomic-embed-text-v1.5"}

@@ -13,5 +13,6 @@ for module in modules:
     pytest.register_assert_rewrite(f"langchain_standard_tests.unit_tests.{module}")
 
 from langchain_standard_tests.unit_tests.chat_models import ChatModelUnitTests
+from langchain_standard_tests.unit_tests.embeddings import EmbeddingsUnitTests
 
 __all__ = ["ChatModelUnitTests", "EmbeddingsUnitTests"]

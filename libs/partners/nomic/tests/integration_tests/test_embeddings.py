@@ -3,21 +3,17 @@
 from langchain_nomic.embeddings import NomicEmbeddings
 
 
-def test_langchain_nomic_embedding_documents() -> None:
-    """Test nomic embeddings."""
-    documents = ["foo bar"]
-    embedding = NomicEmbeddings(model="nomic-embed-text-v1")
-    output = embedding.embed_documents(documents)
-    assert len(output) == 1
-    assert len(output[0]) > 0
+from langchain_standard_tests.integration_tests import EmbeddingsIntegrationTests
+from typing import Type
 
+class TestNomicEmbeddings(EmbeddingsIntegrationTests):
+    @property
+    def embeddings_class(self) -> Type[NomicEmbeddings]:
+        return NomicEmbeddings
 
-def test_langchain_nomic_embedding_query() -> None:
-    """Test nomic embeddings."""
-    document = "foo bar"
-    embedding = NomicEmbeddings(model="nomic-embed-text-v1")
-    output = embedding.embed_query(document)
-    assert len(output) > 0
+    @property
+    def embedding_model_params(self) -> dict:
+        return {"model": "llama3:latest"}
 
 
 def test_langchain_nomic_embedding_dimensionality() -> None:
