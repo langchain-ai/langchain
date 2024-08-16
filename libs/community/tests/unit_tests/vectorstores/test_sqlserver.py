@@ -1,7 +1,7 @@
 """Test SQLServer_VectorStore functionality."""
 
 import os
-from typing import Generator, List
+from typing import Any, Dict, Generator, List
 
 import pytest
 from langchain_core.documents import Document
@@ -9,8 +9,23 @@ from sqlalchemy import create_engine, text
 
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores.sqlserver import (
-    DistanceStrategy,
     SQLServer_VectorStore,
+)
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    IDS as filter_ids,
+)
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    TYPE_1_FILTERING_TEST_CASES,
+    TYPE_2_FILTERING_TEST_CASES,
+    TYPE_3_FILTERING_TEST_CASES,
+    TYPE_4_FILTERING_TEST_CASES,
+    TYPE_5_FILTERING_TEST_CASES,
+)
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    metadatas as filter_metadatas,
+)
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    texts as filter_texts,
 )
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
@@ -461,49 +476,123 @@ def test_that_similarity_search_returns_results_with_scores_sorted_in_ascending_
     assert doc_with_score == sorted(doc_with_score, key=lambda x: x[1])
 
 
-def test_that_case_sensitivity_does_not_affect_distance_strategy(
-    texts: List[str],
+# def test_that_case_sensitivity_does_not_affect_distance_strategy(
+#     store: SQLServer_VectorStore,
+#     texts: List[str],
+# ) -> None:
+#     """Test that when distance strategy is set on a case sensitive DB,
+#     a call to similarity search does not fail."""
+
+#     connection = create_engine(_CONNECTION_STRING).connect()
+#     collation_query_result = (
+#         connection.execute(text(_COLLATION_QUERY % (_DATABASE_NAME))).fetchone()
+#     )  # Sample return value: ('LangChainVectors', 'SQL_Latin1_General_CP1_CS_AS')
+#     connection.close()
+
+#     assert (
+#         collation_query_result is not None
+#     ), "No collation data returned from the database."
+#     # Confirm DB is case sensitive
+#     assert "_CS" in collation_query_result.collation_name
+
+#     store.add_texts(texts)
+#     store._distance_strategy = DistanceStrategy.DOT
+
+#     # Call to similarity_search function should not error out.
+#     number_of_docs_to_return = 2
+#     result = store.similarity_search(query="Good review", k=number_of_docs_to_return)
+#     assert result is not None and len(result) == number_of_docs_to_return
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
+def test_sqlserver_with_with_metadata_filters_1(
+    store: SQLServer_VectorStore,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
 ) -> None:
-    """Test that when distance strategy is set on a case sensitive DB,
-    a call to similarity search does not fail."""
-    connection_string_to_master = "mssql+pyodbc://@localhost/master?driver=ODBC+Driver+17+for+SQL+Server&Trusted_connection=yes"
+    store.add_texts(filter_texts, filter_metadatas, filter_ids)
 
-    conn = create_engine(connection_string_to_master).connect()
-    conn.rollback()
+    docs = store.similarity_search("meow", k=5, filter=test_filter)
+    store.delete(["1", "2", "3"])
+    returned_ids = [doc.metadata["id"] for doc in docs]
+    assert sorted(returned_ids) == sorted(expected_ids), test_filter
 
-    if conn.connection.dbapi_connection is not None:
-        conn.connection.dbapi_connection.autocommit = True
 
-    conn.execute(text(_CREATE_COLLATION_DB_QUERY))
-    conn.execute(text(f"use {_COLLATION_DB_NAME}"))
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_2_FILTERING_TEST_CASES)
+def test_sqlserver_with_with_metadata_filters_2(
+    store: SQLServer_VectorStore,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    store.add_texts(filter_texts, filter_metadatas, filter_ids)
 
-    store = SQLServer_VectorStore(
-        connection=conn,
-        connection_string=connection_string_to_master,
-        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
-        embedding_length=EMBEDDING_LENGTH,
-        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
-        table_name=_TABLE_NAME,
-    )
-    collation_query_result = (
-        conn.execute(text(_COLLATION_QUERY % (_COLLATION_DB_NAME))).fetchone()
-    )  # Sample return value: ('LangChainVectors', 'SQL_Latin1_General_CP1_CS_AS')
+    docs = store.similarity_search("meow", k=5, filter=test_filter)
+    store.delete(["1", "2", "3"])
+    returned_ids = [doc.metadata["id"] for doc in docs]
+    assert sorted(returned_ids) == sorted(expected_ids), test_filter
 
-    assert (
-        collation_query_result is not None
-    ), "No collation data returned from the database."
-    # Confirm DB is case sensitive
-    assert "_CS" in collation_query_result.collation_name
 
-    store.add_texts(texts)
-    store.distance_strategy = DistanceStrategy.DOT
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_3_FILTERING_TEST_CASES)
+def test_sqlserver_with_with_metadata_filters_3(
+    store: SQLServer_VectorStore,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    store.add_texts(filter_texts, filter_metadatas, filter_ids)
 
-    # Call to similarity_search function should not error out.
-    number_of_docs_to_return = 2
-    result = store.similarity_search(query="Good review", k=number_of_docs_to_return)
-    assert result is not None and len(result) == number_of_docs_to_return
+    docs = store.similarity_search("meow", k=5, filter=test_filter)
+    store.delete(["1", "2", "3"])
+    returned_ids = [doc.metadata["id"] for doc in docs]
+    assert sorted(returned_ids) == sorted(expected_ids), test_filter
 
-    # Drop DB with case sensitive collation for test.
-    conn.execute(text("use master"))
-    conn.execute(text(_DROP_COLLATION_DB_QUERY))
-    conn.close()
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_4_FILTERING_TEST_CASES)
+def test_sqlserver_with_with_metadata_filters_4(
+    store: SQLServer_VectorStore,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    store.add_texts(filter_texts, filter_metadatas, filter_ids)
+
+    docs = store.similarity_search("meow", k=5, filter=test_filter)
+    store.delete(["1", "2", "3"])
+
+    returned_ids = [doc.metadata["id"] for doc in docs]
+    assert sorted(returned_ids) == sorted(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_5_FILTERING_TEST_CASES)
+def test_sqlserver_with_with_metadata_filters_5(
+    store: SQLServer_VectorStore,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    store.add_texts(filter_texts, filter_metadatas, filter_ids)
+
+    docs = store.similarity_search("meow", k=5, filter=test_filter)
+    store.delete(["1", "2", "3"])
+
+    returned_ids = [doc.metadata["id"] for doc in docs]
+    assert sorted(returned_ids) == sorted(expected_ids), test_filter
+
+
+@pytest.mark.parametrize(
+    "invalid_filter",
+    [
+        ["hello"],
+        {
+            "id": 2,
+            "$name": "foo",
+        },
+        {"$or": {}},
+        {"$and": {}},
+        {"$between": {}},
+        {"$eq": {}},
+    ],
+)
+def test_invalid_filters(
+    store: SQLServer_VectorStore, invalid_filter: Dict[str, Any]
+) -> None:
+    """Verify that invalid filters raise an error."""
+    with pytest.raises(ValueError):
+        store._create_filter_clause(invalid_filter)

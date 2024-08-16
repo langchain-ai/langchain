@@ -41,7 +41,7 @@ metadatas = [
     },
 ]
 texts = ["id {id}".format(id=metadata["id"]) for metadata in metadatas]
-
+IDS = [str(metadata["id"]) for metadata in metadatas]
 DOCUMENTS = [
     Document(page_content=text, metadata=metadata)
     for text, metadata in zip(texts, metadatas)

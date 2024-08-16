@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -7,10 +7,15 @@ from langchain_core.vectorstores import VST, VectorStore
 from sqlalchemy import (
     CheckConstraint,
     Column,
+    ColumnElement,
+    Numeric,
+    SQLColumnExpression,
     Uuid,
     asc,
     bindparam,
+    cast,
     create_engine,
+    func,
     label,
     text,
 )
@@ -18,6 +23,7 @@ from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import operators
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -27,6 +33,45 @@ except ImportError:
 import json
 import logging
 import uuid
+
+import sqlalchemy
+
+_embedding_store: Any = None  # One vector store used for the entirety of the program.
+
+Base = declarative_base()  # type: Any
+
+COMPARISONS_TO_NATIVE: Dict[str, Callable[[ColumnElement, object], ColumnElement]] = {
+    "$eq": operators.eq,
+    "$ne": operators.ne,
+}
+
+NUMERIC_OPERATORS: Dict[str, Callable[[ColumnElement, object], ColumnElement]] = {
+    "$lt": operators.lt,
+    "$lte": operators.le,
+    "$gt": operators.gt,
+    "$gte": operators.ge,
+}
+
+SPECIAL_CASED_OPERATORS = {
+    "$in",
+    "$nin",
+    "$between",
+}
+
+TEXT_OPERATORS = {
+    "$like",
+    "$ilike",
+}
+
+LOGICAL_OPERATORS = {"$and", "$or"}
+
+SUPPORTED_OPERATORS = (
+    set(COMPARISONS_TO_NATIVE)
+    .union(NUMERIC_OPERATORS)
+    .union(SPECIAL_CASED_OPERATORS)
+    .union(TEXT_OPERATORS)
+    .union(LOGICAL_OPERATORS)
+)
 
 
 class DistanceStrategy(str, Enum):
@@ -308,6 +353,11 @@ class SQLServer_VectorStore(VectorStore):
     ) -> List[Any]:
         try:
             with Session(self._bind) as session:
+                filter_by = []
+                filter_clauses = self._create_filter_clause(filter)
+                if filter_clauses is not None:
+                    filter_by.append(filter_clauses)
+
                 results = (
                     session.query(
                         self._embedding_store,
@@ -327,7 +377,7 @@ class SQLServer_VectorStore(VectorStore):
                             ),
                         ),
                     )
-                    .filter()
+                    .filter(*filter_by)
                     .order_by(asc(text(DISTANCE)))
                     .limit(k)
                     .all()
@@ -338,12 +388,230 @@ class SQLServer_VectorStore(VectorStore):
 
         return results
 
-    def _create_filter_clause(self, filter: dict) -> None:
-        """TODO: parse filter and create a sql clause."""
+    def _create_filter_clause(self, filters: Any) -> Any:
+        """Convert LangChain IR filter representation to matching SQLAlchemy clauses.
 
-    def _docs_from_result(
-        self, results: List[Tuple[Document, float]]
-    ) -> List[Document]:
+        At the top level,we still don't know if we're working with a field
+        or an operator for the keys. After we've determined that we can
+        call the appropriate logic to handle filter creation.
+
+        Args:
+            filters: Dictionary of filters to apply to the query.
+
+        Returns:
+            SQLAlchemy clause to apply to the query.
+        """
+        if filters is not None:
+            # Here we want a list of filters instead of dict
+            if not isinstance(filters, dict):
+                raise ValueError(
+                    f"Expected a dict, but got {type(filters)} for value: {filter}"
+                )
+            if len(filters) == 1:
+                # The only operators allowed at the top level are $AND and $OR
+                # First check if an operator or a field
+                key, value = list(filters.items())[0]
+                if key.startswith("$"):
+                    # Then it's an operator
+                    if key.lower() not in ["$and", "$or"]:
+                        raise ValueError(
+                            f"Invalid filter condition. Expected $and or $or "
+                            f"but got: {key}"
+                        )
+                else:
+                    # Then it's a field
+                    return self._handle_field_filter(key, filters[key])
+
+                # Here we handle the $and and $or operators
+                if not isinstance(value, list):
+                    raise ValueError(
+                        f"Expected a list, but got {type(value)} for value: {value}"
+                    )
+                if key.lower() == "$and":
+                    and_ = [self._create_filter_clause(el) for el in value]
+                    if len(and_) > 1:
+                        return sqlalchemy.and_(*and_)
+                    elif len(and_) == 1:
+                        return and_[0]
+                    else:
+                        raise ValueError(
+                            "Invalid filter condition. Expected a dictionary "
+                            "but got an empty dictionary"
+                        )
+                elif key.lower() == "$or":
+                    or_ = [self._create_filter_clause(el) for el in value]
+                    if len(or_) > 1:
+                        return sqlalchemy.or_(*or_)
+                    elif len(or_) == 1:
+                        return or_[0]
+                    else:
+                        raise ValueError(
+                            "Invalid filter condition. Expected a dictionary "
+                            "but got an empty dictionary"
+                        )
+
+                else:
+                    raise ValueError(
+                        f"Invalid filter condition. Expected $and or $or "
+                        f"but got: {key}"
+                    )
+
+            elif len(filters) > 1:
+                # Then all keys have to be fields (they cannot be operators)
+                for key in filters.keys():
+                    if key.startswith("$"):
+                        raise ValueError(
+                            f"Invalid filter condition. Expected a field but got: {key}"
+                        )
+                # These should all be fields and combined using an $and operator
+                and_ = [self._handle_field_filter(k, v) for k, v in filters.items()]
+                if len(and_) > 1:
+                    return sqlalchemy.and_(*and_)
+                elif len(and_) == 1:
+                    return and_[0]
+                else:
+                    raise ValueError(
+                        "Invalid filter condition. Expected a dictionary "
+                        "but got an empty dictionary"
+                    )
+            else:
+                raise ValueError("Got an empty dictionary for filters.")
+        else:
+            logging.info("No filters are passed, returning")
+            return None
+
+    def _handle_field_filter(
+        self,
+        field: str,
+        value: Any,
+    ) -> SQLColumnExpression:
+        """Create a filter for a specific field.
+
+        Args:
+            field: name of field
+            value: value to filter
+                If provided as is then this will be an equality filter
+                If provided as a dictionary then this will be a filter, the key
+                will be the operator and the value will be the value to filter by
+
+        Returns:
+            sqlalchemy expression
+        """
+
+        if not isinstance(field, str):
+            raise ValueError(
+                f"field should be a string but got: {type(field)} with value: {field}"
+            )
+
+        if field.startswith("$"):
+            raise ValueError(
+                f"Invalid filter condition. Expected a field but got an operator: "
+                f"{field}"
+            )
+
+        # Allow [a-zA-Z0-9_], disallow $ for now until we support escape characters
+        if not field.isidentifier():
+            raise ValueError(
+                f"Invalid field name: {field}. Expected a valid identifier."
+            )
+
+        if isinstance(value, dict):
+            # This is a filter specification that only 1 filter will be for a given
+            # field, if multiple filters they are mentioned separately and used with
+            # an AND on the top if nothing is specified
+            if len(value) != 1:
+                raise ValueError(
+                    "Invalid filter condition. Expected a value which "
+                    "is a dictionary with a single key that corresponds to an operator "
+                    f"but got a dictionary with {len(value)} keys. The first few "
+                    f"keys are: {list(value.keys())[:3]}"
+                )
+            operator, filter_value = list(value.items())[0]
+            # Verify that operator is an operator
+            if operator not in SUPPORTED_OPERATORS:
+                raise ValueError(
+                    f"Invalid operator: {operator}. "
+                    f"Expected one of {SUPPORTED_OPERATORS}"
+                )
+        else:  # Then we assume an equality operator
+            operator = "$eq"
+            filter_value = value
+
+        if operator in COMPARISONS_TO_NATIVE:
+            operation = COMPARISONS_TO_NATIVE[operator]
+            native_result = func.JSON_VALUE(
+                self._embedding_store.content_metadata, f"$.{field}"
+            )
+            native_operation_result = operation(native_result, str(filter_value))
+            return native_operation_result
+
+        elif operator in NUMERIC_OPERATORS:
+            operation = NUMERIC_OPERATORS[str(operator)]
+            numeric_result = func.JSON_VALUE(
+                self._embedding_store.content_metadata, f"$.{field}"
+            )
+            numeric_operation_result = operation(numeric_result, filter_value)
+
+            if not isinstance(filter_value, str):
+                numeric_operation_result = operation(
+                    cast(numeric_result, Numeric(10, 2)), filter_value
+                )
+
+            return numeric_operation_result
+
+        elif operator == "$between":
+            # Use AND with two comparisons
+            low, high = filter_value
+
+            # Assuming lower_bound_value is a ColumnElement
+            lower_bound_value = func.JSON_VALUE(
+                self._embedding_store.content_metadata, f"$.{field}"
+            )
+
+            greater_operation = NUMERIC_OPERATORS["$gte"]
+            lesser_operation = NUMERIC_OPERATORS["$lte"]
+
+            lower_bound = greater_operation(lower_bound_value, low)
+            upper_bound = lesser_operation(lower_bound_value, high)
+
+            # Conditionally cast if filter_value is not a string
+            if not isinstance(filter_value, str):
+                lower_bound = greater_operation(
+                    cast(lower_bound_value, Numeric(10, 2)), low
+                )
+                upper_bound = lesser_operation(
+                    cast(lower_bound_value, Numeric(10, 2)), high
+                )
+
+            return sqlalchemy.and_(lower_bound, upper_bound)
+
+        elif operator in {"$in", "$nin", "$like", "$ilike"}:
+            # We'll do force coercion to text
+            if operator in {"$in", "$nin"}:
+                for val in filter_value:
+                    if not isinstance(val, (str, int, float)):
+                        raise NotImplementedError(
+                            f"Unsupported type: {type(val)} for value: {val}"
+                        )
+
+            queried_field = func.JSON_VALUE(
+                self._embedding_store.content_metadata, f"$.{field}"
+            )
+
+            if operator in {"$in"}:
+                return queried_field.in_([str(val) for val in filter_value])
+            elif operator in {"$nin"}:
+                return queried_field.nin_([str(val) for val in filter_value])
+            elif operator in {"$like"}:
+                return queried_field.like(str(filter_value))
+            elif operator in {"$ilike"}:
+                return queried_field.ilike(filter_value)
+            else:
+                raise NotImplementedError()
+        else:
+            raise NotImplementedError()
+
+    def _docs_from_result(self, results: Any) -> List[Document]:
         """Formats the input into a result of type List[Document]."""
         docs = [doc for doc, _ in results if doc is not None]
         return docs
