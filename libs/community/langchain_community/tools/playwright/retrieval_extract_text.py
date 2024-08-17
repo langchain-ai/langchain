@@ -8,6 +8,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain_core.messages import HumanMessage
+from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 from langchain_community.tools.playwright.utils import (
@@ -23,6 +25,7 @@ class RetrievalExtractTextTool(BaseBrowserTool):
     name: str = "retrieval_extract_text"
     description: str = "Extract relevant text on the current webpage"
     args_schema: Type[BaseModel] = BaseModel
+    prompt: PromptValue = None
 
     @root_validator(pre=True)
     def check_acheck_bs_importrgs_for_ragextract(cls, values: dict) -> dict:
@@ -38,7 +41,7 @@ class RetrievalExtractTextTool(BaseBrowserTool):
 
     def _run(self, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         if hasattr(self, "prompt"):
-            retriever_query = self.prompt
+            retriever_query = next((msg for msg in self.prompt.messages if isinstance(msg, HumanMessage)), None).content
             """Use the tool."""
             # Use Beautiful Soup since it's faster than looping through the elements
             from bs4 import BeautifulSoup
@@ -72,7 +75,7 @@ class RetrievalExtractTextTool(BaseBrowserTool):
     ) -> str:
         """Use the tool."""
         if hasattr(self, "prompt"):
-            retriever_query = self.prompt
+            retriever_query = next((msg for msg in self.prompt.messages if isinstance(msg, HumanMessage)), None).content
             if self.async_browser is None:
                 raise ValueError(f"Asynchronous browser not provided to {self.name}")
             # Use Beautiful Soup since it's faster than looping through the elements
