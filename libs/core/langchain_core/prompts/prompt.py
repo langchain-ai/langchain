@@ -235,7 +235,9 @@ class PromptTemplate(StringPromptTemplate):
             template = f.read()
         if input_variables:
             warnings.warn(
-                "`input_variables' is deprecated and ignored.", DeprecationWarning
+                "`input_variables' is deprecated and ignored.",
+                DeprecationWarning,
+                stacklevel=2,
             )
         return cls.from_template(template=template, **kwargs)
 

@@ -80,12 +80,12 @@ def _texts_to_nodes(
     for text in texts:
         try:
             _metadata = next(metadatas_it).copy() if metadatas_it else {}
-        except StopIteration:
-            raise ValueError("texts iterable longer than metadatas")
+        except StopIteration as e:
+            raise ValueError("texts iterable longer than metadatas") from e
         try:
             _id = next(ids_it) if ids_it else None
-        except StopIteration:
-            raise ValueError("texts iterable longer than ids")
+        except StopIteration as e:
+            raise ValueError("texts iterable longer than ids") from e
 
         links = _metadata.pop(METADATA_LINKS_KEY, [])
         if not isinstance(links, list):

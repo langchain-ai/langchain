@@ -32,12 +32,12 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                             {self.pydantic_object.__class__}"
                     )
             except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
-                raise self._parser_exception(e, obj)
+                raise self._parser_exception(e, obj) from e
         else:  # pydantic v1
             try:
                 return self.pydantic_object.parse_obj(obj)
             except pydantic.ValidationError as e:
-                raise self._parser_exception(e, obj)
+                raise self._parser_exception(e, obj) from e
 
     def _parser_exception(
         self, e: Exception, json_object: dict

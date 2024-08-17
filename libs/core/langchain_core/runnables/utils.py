@@ -748,7 +748,7 @@ def is_async_generator(
     """
     return (
         inspect.isasyncgenfunction(func)
-        or hasattr(func, "__call__")
+        or callable(func)
         and inspect.isasyncgenfunction(func.__call__)
     )
 
@@ -767,6 +767,6 @@ def is_async_callable(
     """
     return (
         asyncio.iscoroutinefunction(func)
-        or hasattr(func, "__call__")
+        or callable(func)
         and asyncio.iscoroutinefunction(func.__call__)
     )
