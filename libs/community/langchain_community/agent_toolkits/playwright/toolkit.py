@@ -103,9 +103,9 @@ class PlayWrightBrowserToolkit(BaseToolkit):
 
     @classmethod
     def from_browser(
-            cls,
-            sync_browser: Optional[SyncBrowser] = None,
-            async_browser: Optional[AsyncBrowser] = None,
+        cls,
+        sync_browser: Optional[SyncBrowser] = None,
+        async_browser: Optional[AsyncBrowser] = None,
     ) -> PlayWrightBrowserToolkit:
         """Instantiate the toolkit.
 
