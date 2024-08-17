@@ -35,9 +35,10 @@ from langchain_core.messages import (
 from langchain_core.messages.base import get_msg_title_repr
 from langchain_core.prompt_values import ChatPromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.content_block import ContentBlockPromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
+from langchain_core.prompts.string import StringPromptTemplate
 from langchain_core.pydantic_v1 import Field, PositiveInt, root_validator
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -456,15 +457,18 @@ class _ImageTemplateParam(TypedDict, total=False):
     image_url: Union[str, Dict]
 
 
+
 class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
     prompt: Union[
-        StringPromptTemplate, List[Union[StringPromptTemplate, ImagePromptTemplate]]
+        StringPromptTemplate, List[Union[StringPromptTemplate, ContentBlockPromptTemplate]]
     ]
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
+    name: Optional[str] = None
+    """Name of message"""
 
     _msg_class: Type[BaseMessage]
 
@@ -511,48 +515,16 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 )
             prompt = []
             for tmpl in template:
-                if isinstance(tmpl, str) or isinstance(tmpl, dict) and "text" in tmpl:
-                    if isinstance(tmpl, str):
-                        text: str = tmpl
-                    else:
-                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]
+                if isinstance(tmpl, str):
                     prompt.append(
                         PromptTemplate.from_template(
-                            text, template_format=template_format
+                            tmpl, template_format=template_format
                         )
                     )
+                elif isinstance(tmpl, dict) and "text" in tmpl:
+                    prompt.append(ContentBlockPromptTemplate(tmpl, template_format=template_format))
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
-                    img_template = cast(_ImageTemplateParam, tmpl)["image_url"]
-                    input_variables = []
-                    if isinstance(img_template, str):
-                        vars = get_template_variables(img_template, "f-string")
-                        if vars:
-                            if len(vars) > 1:
-                                raise ValueError(
-                                    "Only one format variable allowed per image"
-                                    f" template.\nGot: {vars}"
-                                    f"\nFrom: {tmpl}"
-                                )
-                            input_variables = [vars[0]]
-                        img_template = {"url": img_template}
-                        img_template_obj = ImagePromptTemplate(
-                            input_variables=input_variables, template=img_template
-                        )
-                    elif isinstance(img_template, dict):
-                        img_template = dict(img_template)
-                        for key in ["url", "path", "detail"]:
-                            if key in img_template:
-                                input_variables.extend(
-                                    get_template_variables(
-                                        img_template[key], "f-string"
-                                    )
-                                )
-                        img_template_obj = ImagePromptTemplate(
-                            input_variables=input_variables, template=img_template
-                        )
-                    else:
-                        raise ValueError()
-                    prompt.append(img_template_obj)
+                    prompt.append(ImagePromptTemplate(tmpl, template_format=template_format))
                 else:
                     raise ValueError()
             return cls(prompt=prompt, **kwargs)
@@ -626,7 +598,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         if isinstance(self.prompt, StringPromptTemplate):
             text = self.prompt.format(**kwargs)
             return self._msg_class(
-                content=text, additional_kwargs=self.additional_kwargs
+                content=text, additional_kwargs=self.additional_kwargs, name=self.name
             )
         else:
             content: List = []
@@ -638,8 +610,17 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 elif isinstance(prompt, ImagePromptTemplate):
                     formatted = prompt.format(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
+                elif isinstance(prompt, ContentBlockPromptTemplate):
+                    formatted = prompt.format(**inputs)
+                    content.append(formatted)
+                else:
+                    raise ValueError(
+                        f"Unknown prompt type: {type(prompt)}. Expected "
+                        f"StringPromptTemplate, ImagePromptTemplate, or "
+                        f"ContentBlockPromptTemplate."
+                    )
             return self._msg_class(
-                content=content, additional_kwargs=self.additional_kwargs
+                content=content, additional_kwargs=self.additional_kwargs, name=self.name
             )
 
     async def aformat(self, **kwargs: Any) -> BaseMessage:
@@ -654,7 +635,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         if isinstance(self.prompt, StringPromptTemplate):
             text = await self.prompt.aformat(**kwargs)
             return self._msg_class(
-                content=text, additional_kwargs=self.additional_kwargs
+                content=text, additional_kwargs=self.additional_kwargs, name=self.name
             )
         else:
             content: List = []
@@ -667,7 +648,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     formatted = await prompt.aformat(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
             return self._msg_class(
-                content=content, additional_kwargs=self.additional_kwargs
+                content=content, additional_kwargs=self.additional_kwargs, name=self.name
             )
 
     def pretty_repr(self, html: bool = False) -> str:
@@ -697,6 +678,7 @@ class AIMessagePromptTemplate(_StringImageMessagePromptTemplate):
     """AI message prompt template. This is a message sent from the AI."""
 
     _msg_class: Type[BaseMessage] = AIMessage
+    # TODO: Add support for tool_calls?
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -1457,3 +1439,5 @@ def _convert_to_message(
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 
     return _message
+
+

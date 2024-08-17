@@ -1,6 +1,7 @@
 from typing import Any, List
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
+from langchain_core.prompts.string import get_template_variables
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import run_in_executor
@@ -13,18 +14,38 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""
 
-    def __init__(self, **kwargs: Any) -> None:
-        if "input_variables" not in kwargs:
-            kwargs["input_variables"] = []
-
-        overlap = set(kwargs["input_variables"]) & set(("url", "path", "detail"))
+    def __init__(self, template: dict, *, template_format: str = "f-string", **kwargs: Any) -> None:
+        if "image_url" in template:
+            image_url = template["image_url"]
+        else:
+            image_url = template
+        input_variables = kwargs.get("input_variables", [])
+        if isinstance(image_url, str):
+            vars = get_template_variables(image_url, template_format)
+            if vars:
+                if len(vars) > 1:
+                    raise ValueError(
+                        "Only one format variable allowed per image"
+                        f" template.\nGot: {vars}"
+                        f"\nFrom: {template}"
+                    )
+                input_variables = [vars[0]]
+            image_url = {"url": image_url}
+        elif isinstance(image_url, dict):
+            image_url = dict(image_url)
+            for key in ["url", "path", "detail"]:
+                if key in image_url:
+                    input_variables.extend(
+                        get_template_variables( image_url[key], template_format )
+                    )
+        overlap = set(input_variables) & set(("url", "path", "detail"))
         if overlap:
             raise ValueError(
                 "input_variables for the image template cannot contain"
                 " any of 'url', 'path', or 'detail'."
                 f" Found: {overlap}"
             )
-        super().__init__(**kwargs)
+        super().__init__(template=image_url, input_variables=input_variables, **kwargs)
 
     @property
     def _prompt_type(self) -> str:
