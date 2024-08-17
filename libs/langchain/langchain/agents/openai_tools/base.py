@@ -2,6 +2,7 @@ from typing import Sequence
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
+from langchain_core.prompts.injector import PromptInjector
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -12,8 +13,33 @@ from langchain.agents.format_scratchpad.openai_tools import (
 from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 
 
+def create_openai_retrieval_tools_agent(
+        llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+) -> Runnable:
+    missing_vars = {"agent_scratchpad"}.difference(
+        prompt.input_variables + list(prompt.partial_variables)
+    )
+    if missing_vars:
+        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+
+    llm_with_tools = llm.bind(tools=[convert_to_openai_tool(tool) for tool in tools])
+
+    agent = (
+            RunnablePassthrough.assign(
+                agent_scratchpad=lambda x: format_to_openai_tool_messages(
+                    x["intermediate_steps"]
+                )
+            )
+            | prompt
+            | PromptInjector(inject_objects=tools, pass_on_injection_fail=True)
+            | llm_with_tools
+            | OpenAIToolsAgentOutputParser()
+    )
+    return agent
+
+
 def create_openai_tools_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+        llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ) -> Runnable:
     """Create an agent that uses OpenAI tools.
 
@@ -90,13 +116,13 @@ def create_openai_tools_agent(
     llm_with_tools = llm.bind(tools=[convert_to_openai_tool(tool) for tool in tools])
 
     agent = (
-        RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: format_to_openai_tool_messages(
-                x["intermediate_steps"]
+            RunnablePassthrough.assign(
+                agent_scratchpad=lambda x: format_to_openai_tool_messages(
+                    x["intermediate_steps"]
+                )
             )
-        )
-        | prompt
-        | llm_with_tools
-        | OpenAIToolsAgentOutputParser()
+            | prompt
+            | llm_with_tools
+            | OpenAIToolsAgentOutputParser()
     )
     return agent
