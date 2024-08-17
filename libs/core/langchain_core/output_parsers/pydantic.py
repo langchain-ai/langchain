@@ -74,7 +74,14 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         Returns:
             The parsed pydantic object.
         """
-        return super().parse(text)
+        from langchain_core.messages import AIMessage
+
+        if isinstance(text, AIMessage):
+            text_content = text.content
+        else:
+            text_content = text
+
+        return super().parse(text_content)
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the JSON output.
