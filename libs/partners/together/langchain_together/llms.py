@@ -36,14 +36,14 @@ class Together(LLM):
             model = Together(model_name="mistralai/Mixtral-8x7B-Instruct-v0.1")
     """
 
-    base_url: str = "https://api.together.ai/v1/completions"
+    base_url: str = "https://api.together.xyz/v1/completions"
     """Base completions API URL."""
     together_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("TOGETHER_API_KEY"),
     )
     """Together AI API key.
-    
+
     Automatically read from env variable `TOGETHER_API_KEY` if not provided.
     """
     model: str
