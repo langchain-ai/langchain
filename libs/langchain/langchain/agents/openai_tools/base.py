@@ -116,13 +116,13 @@ def create_openai_tools_agent(
     llm_with_tools = llm.bind(tools=[convert_to_openai_tool(tool) for tool in tools])
 
     agent = (
-            RunnablePassthrough.assign(
-                agent_scratchpad=lambda x: format_to_openai_tool_messages(
-                    x["intermediate_steps"]
-                )
+        RunnablePassthrough.assign(
+            agent_scratchpad=lambda x: format_to_openai_tool_messages(
+                x["intermediate_steps"]
             )
-            | prompt
-            | llm_with_tools
-            | OpenAIToolsAgentOutputParser()
+        )
+        | prompt
+        | llm_with_tools
+        | OpenAIToolsAgentOutputParser()
     )
     return agent
