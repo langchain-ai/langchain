@@ -17,6 +17,7 @@ from langchain_community.tools.playwright.extract_hyperlinks import (
     ExtractHyperlinksTool,
 )
 from langchain_community.tools.playwright.extract_text import ExtractTextTool
+from langchain_community.tools.playwright.retrieval_extract_text import RetrievalExtractTextTool
 from langchain_community.tools.playwright.get_elements import GetElementsTool
 from langchain_community.tools.playwright.navigate import NavigateTool
 from langchain_community.tools.playwright.navigate_back import NavigateBackTool
@@ -102,9 +103,9 @@ class PlayWrightBrowserToolkit(BaseToolkit):
 
     @classmethod
     def from_browser(
-        cls,
-        sync_browser: Optional[SyncBrowser] = None,
-        async_browser: Optional[AsyncBrowser] = None,
+            cls,
+            sync_browser: Optional[SyncBrowser] = None,
+            async_browser: Optional[AsyncBrowser] = None,
     ) -> PlayWrightBrowserToolkit:
         """Instantiate the toolkit.
 
@@ -118,3 +119,25 @@ class PlayWrightBrowserToolkit(BaseToolkit):
         # This is to raise a better error than the forward ref ones Pydantic would have
         lazy_import_playwright_browsers()
         return cls(sync_browser=sync_browser, async_browser=async_browser)
+
+
+class RetrievalPlayWrightBrowserToolkit(PlayWrightBrowserToolkit):
+    def get_tools(self) -> List[BaseTool]:
+        """Get the tools in the toolkit."""
+        tool_classes: List[Type[BaseBrowserTool]] = [
+            ClickTool,
+            NavigateTool,
+            NavigateBackTool,
+            RetrievalExtractTextTool,
+            ExtractHyperlinksTool,
+            GetElementsTool,
+            CurrentWebPageTool,
+        ]
+
+        tools = [
+            tool_cls.from_browser(
+                sync_browser=self.sync_browser, async_browser=self.async_browser
+            )
+            for tool_cls in tool_classes
+        ]
+        return cast(List[BaseTool], tools)

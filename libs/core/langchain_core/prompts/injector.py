@@ -56,4 +56,4 @@ class PromptInjector(BaseInjector[PromptValue]):
         self,
         inject_objects: Sequence[Any],
     ) -> None:
-        super().__init__(inject_objects=inject_objects)
+        super().__init__(inject_objects=inject_objects, attr_name="prompt")
