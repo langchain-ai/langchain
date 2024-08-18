@@ -11,8 +11,13 @@ class BaseInjector(
     RunnableSerializable[InputOutputType, InputOutputType], Generic[InputOutputType]
 ):
     inject_objects: List[Any]
+    """Objects which will be injected with an additional 
+    attribute of 'attr_name'"""
     attr_name: str
+    """Attribute name which will be injected to the objects"""
     pass_on_injection_fail: bool = False
+    """Whether the injection will be skipped in the injection 
+    failed or raise exceptions on injection failure"""
 
     @root_validator(pre=False, skip_on_failure=True)
     def validate_attr_name(cls, values: Dict) -> Dict:
@@ -54,6 +59,7 @@ class BaseInjector(
         )
 
     def _pass_and_inject(self, input: InputOutputType) -> InputOutputType:
+        """Return the output type of the injector."""
         for obj in self.inject_objects:
             if isinstance(obj, BaseModel):
                 try:
@@ -85,5 +91,65 @@ class BaseInjector(
 
 
 class PromptInjector(BaseInjector[PromptValue]):
+    """Inject PromptValue into given objects. 
+       After injection, the attribute 'prompt'
+        of the given objects will be filled. 
+
+        Key init args:
+            inject_objects: List[Any]
+                List of the objects whose 'prompt' attribute will be injected. 
+            pass_on_injection_fail: bool
+                Whether the injections of the given objects will be skipped, 
+                if the injections are failed. The injection will be failed once
+                the given object does not have the 'prompt' attribute, or it is
+                final. If the injection is not aloud to be skipped by defining 
+                the 'pass_on_injection_fail' as False, exceptions will be 
+                thrown on injection failures. Default value is False
+
+        Examples:
+            
+            .. code-block:: python
+
+                from langchain_core.prompts.injector import PromptInjector
+                from some_random_package import RandomClassOne, RandomClassTwo
+                objects_of_random_classes = [RandomClassOne(), RandomClassTwo()]
+                
+                injector = PromptInjector(
+                    inject_objects = objects_of_random_classes
+                    pass_on_injection_fail=True
+                )
+                
+                prompt_value = ... # Create PromptValue object here
+                injector.invoke(prompt)
+                
+                # Will throw AttributeError here, if 'prompt' was 
+                #not defined in RandomClassOne or RandomClassTwo, 
+                #since the injection is skipped on failure. 
+                print(objects_of_random_classes[0].prompt)
+                print(objects_of_random_classes[1].prompt)
+                
+        Typically, the injectors are being used in chains to
+        inject prompts into tools:
+                
+            .. code-block:: python
+
+                from langchain_core.prompts.injector import PromptInjector
+                
+                prompt = ChatPromptTemplate.from_messages([
+                    ...
+                ])
+                
+                toolkit = ... # Get toolkit from langchain_community.agent_toolkits ...
+                tools = toolkit.get_tools()
+                llm_with_tools = ... # Bind tools to llm
+                
+                agent = (
+                    | prompt
+                    | PromptInjector(inject_objects=tools, pass_on_injection_fail=True)
+                    | llm_with_tools
+                    | OpenAIToolsAgentOutputParser()
+                )
+        """  # noqa: E501
+
     def __init__(self, inject_objects: Sequence[Any], **kwargs: Any) -> None:
         super().__init__(inject_objects=inject_objects, attr_name="prompt", **kwargs)
