@@ -202,7 +202,7 @@ _message_type_lookups = {
 
 
 @deprecated(
-    since="0.0.34", removal="0.3", alternative_import="langchain_aws.ChatBedrock"
+    since="0.0.34", removal="1.0", alternative_import="langchain_aws.ChatBedrock"
 )
 class BedrockChat(BaseChatModel, BedrockBase):
     """Chat model that uses the Bedrock API."""
