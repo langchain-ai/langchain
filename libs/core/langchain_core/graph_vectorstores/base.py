@@ -662,32 +662,40 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
     )
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
+        search_kwargs = (
+            {**self.search_kwargs, **kwargs} if kwargs else self.search_kwargs
+        )
         if self.search_type == "traversal":
-            return list(self.vectorstore.traversal_search(query, **self.search_kwargs))
+            return list(self.vectorstore.traversal_search(query, **search_kwargs))
         elif self.search_type == "mmr_traversal":
-            return list(
-                self.vectorstore.mmr_traversal_search(query, **self.search_kwargs)
-            )
+            return list(self.vectorstore.mmr_traversal_search(query, **search_kwargs))
         else:
             return super()._get_relevant_documents(query, run_manager=run_manager)
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
+        search_kwargs = (
+            {**self.search_kwargs, **kwargs} if kwargs else self.search_kwargs
+        )
         if self.search_type == "traversal":
             return [
                 doc
                 async for doc in self.vectorstore.atraversal_search(
-                    query, **self.search_kwargs
+                    query, **search_kwargs
                 )
             ]
         elif self.search_type == "mmr_traversal":
             return [
                 doc
                 async for doc in self.vectorstore.ammr_traversal_search(
-                    query, **self.search_kwargs
+                    query, **search_kwargs
                 )
             ]
         else:
