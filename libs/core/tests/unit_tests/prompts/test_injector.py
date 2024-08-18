@@ -3,11 +3,11 @@
 from typing import Any
 
 import pytest
-from pydantic.v1 import ValidationError
+from pydantic.v1 import ValidationError  #  pydantic: ignore
 
 from langchain_core.prompt_values import StringPromptValue
 from langchain_core.prompts.injector import PromptInjector
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel  #  pydantic: ignore
 
 
 class PydanticWithPrompt(BaseModel):
@@ -46,6 +46,8 @@ def test_prompt_inject_to_object_without_attribute_skip() -> None:
     output_of_injector = injector.invoke(prompt)
     assert output_of_injector is prompt
     assert inject_objects[0].prompt is prompt
-    with pytest.raises(AttributeError, match="'PydanticWithoutPrompt' object has no attribute 'prompt'"):
-        temp = inject_objects[1].prompt
-
+    with pytest.raises(
+        AttributeError,
+        match="'PydanticWithoutPrompt' " "object has no attribute 'prompt'",
+    ):
+        assert inject_objects[1].prompt is None
