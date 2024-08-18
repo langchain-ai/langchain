@@ -30,12 +30,12 @@ from langchain_text_splitters.character import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
 )
-from langchain_text_splitters.html import (
+from langchain_text_splitters.html_lang import (
     ElementType,
     HTMLHeaderTextSplitter,
     HTMLSectionSplitter,
 )
-from langchain_text_splitters.json import RecursiveJsonSplitter
+from langchain_text_splitters.json_lang import RecursiveJsonSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
 from langchain_text_splitters.latex import LatexTextSplitter
 from langchain_text_splitters.markdown import (

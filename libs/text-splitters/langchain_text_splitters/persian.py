@@ -13,9 +13,10 @@ class NLTKTextSplitter(TextSplitter):
         """Initialize the NLTK splitter."""
         super().__init__(**kwargs)
         try:
-            from nltk.tokenize import sent_tokenize
+            import nltk
+            from nltk.tokenize import sent_tokenizer
 
-            self._tokenizer = sent_tokenize
+            self._tokenizer = sent_tokenizer
         except ImportError:
             raise ImportError(
                 "NLTK is not installed, please install it with `pip install nltk`."
@@ -28,3 +29,6 @@ class NLTKTextSplitter(TextSplitter):
         # First we naively split the large input into a bunch of smaller ones.
         splits = self._tokenizer(text, language=self._language)
         return self._merge_splits(splits, self._separator)
+
+a = NLTKTextSplitter()
+print(a.split_text('hello, how are you?!'))

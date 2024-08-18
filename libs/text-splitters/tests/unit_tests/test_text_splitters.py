@@ -17,8 +17,8 @@ from langchain_text_splitters import (
 )
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
-from langchain_text_splitters.html import HTMLHeaderTextSplitter, HTMLSectionSplitter
-from langchain_text_splitters.json import RecursiveJsonSplitter
+from langchain_text_splitters.html_lang import HTMLHeaderTextSplitter, HTMLSectionSplitter
+from langchain_text_splitters.json_lang import RecursiveJsonSplitter
 from langchain_text_splitters.markdown import (
     ExperimentalMarkdownSyntaxTextSplitter,
     MarkdownHeaderTextSplitter,
