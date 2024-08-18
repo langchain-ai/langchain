@@ -640,14 +640,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
         }
         if not values.get("client"):
             sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.AzureOpenAI(
-                **client_params, **sync_specific
-            ).chat.completions
+            values["root_client"] = openai.AzureOpenAI(**client_params, **sync_specific)
+            values["client"] = values["root_client"].chat.completions
         if not values.get("async_client"):
             async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncAzureOpenAI(
+            values["root_async_client"] = openai.AsyncAzureOpenAI(
                 **client_params, **async_specific
-            ).chat.completions
+            )
+            values["async_client"] = values["root_async_client"].chat.completions
         return values
 
     def bind_tools(
