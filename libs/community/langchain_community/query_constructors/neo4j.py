@@ -25,7 +25,7 @@ class Neo4jTranslator(Visitor):
         Comparator.GT,
         Comparator.IN,
         Comparator.NIN,
-        Comparator.LIKE
+        Comparator.LIKE,
     ]
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
@@ -52,7 +52,6 @@ class Neo4jTranslator(Visitor):
                 self._format_func(comparison.comparator): comparison.value
             }
         }
-
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
