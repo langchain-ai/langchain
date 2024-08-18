@@ -85,5 +85,5 @@ class BaseInjector(
 
 
 class PromptInjector(BaseInjector[PromptValue]):
-    def __init__(self, inject_objects: Sequence[Any], **kwargs: Dict) -> None:
+    def __init__(self, inject_objects: Sequence[Any], **kwargs: Any) -> None:
         super().__init__(inject_objects=inject_objects, attr_name="prompt", **kwargs)

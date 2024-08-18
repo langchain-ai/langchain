@@ -122,6 +122,39 @@ class PlayWrightBrowserToolkit(BaseToolkit):
 
 
 class RetrievalPlayWrightBrowserToolkit(PlayWrightBrowserToolkit):
+    """Toolkit for PlayWright browser tools. This toolkit inherits
+    the 'PlayWrightBrowserToolkit' and will split the text on tool
+    'extract_text' and retrieve relevant text automatically.
+
+        **Security Note**: This toolkit provides code to control a web-browser.
+
+            Careful if exposing this toolkit to end-users. The tools in the toolkit
+            are capable of navigating to arbitrary webpages, clicking on arbitrary
+            elements, and extracting arbitrary text and hyperlinks from webpages.
+
+            Specifically, by default this toolkit allows navigating to:
+
+            - Any URL (including any internal network URLs)
+            - And local files
+
+            If exposing to end-users, consider limiting network access to the
+            server that hosts the agent; in addition, consider it is advised
+            to create a custom NavigationTool wht an args_schema that limits the URLs
+            that can be navigated to (e.g., only allow navigating to URLs that
+            start with a particular prefix).
+
+            Remember to scope permissions to the minimal permissions necessary for
+            the application. If the default tool selection is not appropriate for
+            the application, consider creating a custom toolkit with the appropriate
+            tools.
+
+            See https://python.langchain.com/docs/security for more information.
+
+        Parameters:
+            sync_browser: Optional. The sync browser. Default is None.
+            async_browser: Optional. The async browser. Default is None.
+        """
+
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         tool_classes: List[Type[BaseBrowserTool]] = [

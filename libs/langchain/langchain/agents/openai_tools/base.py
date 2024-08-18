@@ -13,9 +13,22 @@ from langchain.agents.format_scratchpad.openai_tools import (
 from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 
 
-def create_openai_retrieval_tools_agent(
+def create_openai_tools_agent_and_inject_prompts(
         llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ) -> Runnable:
+    """Create an agent that uses OpenAI tools.
+    The prompts will be injected to the tools
+    automatically.
+    Check the documentation of 'create_openai_tools_agent'
+    for detailed instructions.
+
+    Args:
+        llm: LLM to use as the agent.
+        tools: Tools this agent has access to. Prompts will be injected as 'prompt'
+            attribute automatically.
+        prompt: The prompt to use. See Prompt section below for more on the expected
+            input variables.
+    """
     missing_vars = {"agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables)
     )
