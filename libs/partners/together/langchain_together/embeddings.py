@@ -106,7 +106,7 @@ class TogetherEmbeddings(BaseModel, Embeddings):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "togethercomputer/m2-bert-80M-8k-retrieval"
-    """Embeddings model name to use. 
+    """Embeddings model name to use.
     Instead, use 'togethercomputer/m2-bert-80M-8k-retrieval' for example.
     """
     dimensions: Optional[int] = None
@@ -119,12 +119,12 @@ class TogetherEmbeddings(BaseModel, Embeddings):
         default_factory=secret_from_env("TOGETHER_API_KEY", default=None),
     )
     """Together AI API key.
-    
+
     Automatically read from env variable `TOGETHER_API_KEY` if not provided.
     """
     together_api_base: str = Field(
         default_factory=from_env(
-            "TOGETHER_API_BASE", default="https://api.together.ai/v1/"
+            "TOGETHER_API_BASE", default="https://api.together.xyz/v1/"
         ),
         alias="base_url",
     )
