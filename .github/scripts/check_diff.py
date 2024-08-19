@@ -76,6 +76,11 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
     for dir_ in dirs_to_eval:
         # handle core manually because it has so many dependents
         if "core" in dir_:
+            # ignore huggingface because of CI instability
+            # specifically in huggingface jobs
+            # https://github.com/langchain-ai/langchain/issues/25558
+            if "huggingface" in dir_:
+                continue
             updated.add(dir_)
             continue
         pkg = "langchain-" + dir_.split("/")[-1]
