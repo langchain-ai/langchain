@@ -28,7 +28,7 @@ class TestGroqLlama(BaseTestGroq):
     @property
     def chat_model_params(self) -> dict:
         return {
-            "model": "llama-3.1-8b-instant",
+            "model": "llama-3.1-70b-versatile",
             "temperature": 0,
             "rate_limiter": rate_limiter,
         }
