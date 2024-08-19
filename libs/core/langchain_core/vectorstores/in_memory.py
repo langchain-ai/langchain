@@ -154,7 +154,7 @@ class InMemoryVectorStore(VectorStore):
             "It'll be removed in 0.3.0."
         ),
         since="0.2.29",
-        removal="0.3.0",
+        removal="1.0",
     )
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         vectors = self.embedding.embed_documents([item.page_content for item in items])
@@ -180,7 +180,7 @@ class InMemoryVectorStore(VectorStore):
             "It'll be removed in 0.3.0."
         ),
         since="0.2.29",
-        removal="0.3.0",
+        removal="1.0",
     )
     async def aupsert(
         self, items: Sequence[Document], /, **kwargs: Any

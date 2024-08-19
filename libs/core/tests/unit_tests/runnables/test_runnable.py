@@ -2180,7 +2180,7 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {},
+                    "metadata": {"ls_model_type": "llm", "ls_provider": "fakelist"},
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
@@ -2384,7 +2384,10 @@ async def test_prompt_with_llm_parser(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {},
+                    "metadata": {
+                        "ls_model_type": "llm",
+                        "ls_provider": "fakestreaminglist",
+                    },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],

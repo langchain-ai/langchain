@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, List, Optional
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.amadeus.closest_airport import AmadeusClosestAirport
 from langchain_community.tools.amadeus.flight_search import AmadeusFlightSearch
 from langchain_community.tools.amadeus.utils import authenticate
