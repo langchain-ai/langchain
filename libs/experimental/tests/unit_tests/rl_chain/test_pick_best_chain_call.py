@@ -6,6 +6,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 from test_utils import MockEncoder, MockEncoderReturnsList
 
 import langchain_experimental.rl_chain.base as rl_chain
+import langchain_experimental.rl_chain.helpers
 import langchain_experimental.rl_chain.pick_best_chain as pick_best_chain
 
 encoded_keyword = "[encoded]"
@@ -197,13 +198,21 @@ def test_everything_embedded() -> None:
     str1 = "0"
     str2 = "1"
     str3 = "2"
-    encoded_str1 = rl_chain.stringify_embedding(list(encoded_keyword + str1))
-    encoded_str2 = rl_chain.stringify_embedding(list(encoded_keyword + str2))
-    encoded_str3 = rl_chain.stringify_embedding(list(encoded_keyword + str3))
+    encoded_str1 = langchain_experimental.rl_chain.helpers.stringify_embedding(
+        list(encoded_keyword + str1)
+    )
+    encoded_str2 = langchain_experimental.rl_chain.helpers.stringify_embedding(
+        list(encoded_keyword + str2)
+    )
+    encoded_str3 = langchain_experimental.rl_chain.helpers.stringify_embedding(
+        list(encoded_keyword + str3)
+    )
 
     ctx_str_1 = "context1"
 
-    encoded_ctx_str_1 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_1))
+    encoded_ctx_str_1 = langchain_experimental.rl_chain.helpers.stringify_embedding(
+        list(encoded_keyword + ctx_str_1)
+    )
 
     expected = f"""shared |User {ctx_str_1 + " " + encoded_ctx_str_1} \n|action {str1 + " " + encoded_str1} \n|action {str2 + " " + encoded_str2} \n|action {str3 + " " + encoded_str3} """  # noqa
 
@@ -314,10 +323,14 @@ def test_default_embeddings_mixed_w_explicit_user_embeddings() -> None:
 
     str1 = "0"
     str2 = "1"
-    encoded_str2 = rl_chain.stringify_embedding([1.0, 2.0])
+    encoded_str2 = langchain_experimental.rl_chain.helpers.stringify_embedding(
+        [1.0, 2.0]
+    )
     ctx_str_1 = "context1"
     ctx_str_2 = "context2"
-    encoded_ctx_str_1 = rl_chain.stringify_embedding([1.0, 2.0])
+    encoded_ctx_str_1 = langchain_experimental.rl_chain.helpers.stringify_embedding(
+        [1.0, 2.0]
+    )
     dot_prod = "dotprod 0:5.0 1:5.0"  # dot prod of [1.0, 2.0] and [1.0, 2.0]
 
     expected = f"""shared |User {encoded_ctx_str_1} |@ User={encoded_ctx_str_1} |User2 {ctx_str_2} |@ User2={ctx_str_2}\n|action {str1} |# action={str1} |{dot_prod}\n|action {encoded_str2} |# action={encoded_str2} |{dot_prod}"""  # noqa

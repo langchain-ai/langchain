@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core._api import deprecated, warn_deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -21,7 +21,7 @@ DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索�
 
 @deprecated(
     since="0.2.2",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_huggingface.HuggingFaceEmbeddings",
 )
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
@@ -81,9 +81,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         )
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -173,7 +171,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         if "show_progress_bar" in self.encode_kwargs:
             warn_deprecated(
                 since="0.2.5",
-                removal="0.4.0",
+                removal="1.0",
                 name="encode_kwargs['show_progress_bar']",
                 alternative=f"the show_progress method on {self.__class__.__name__}",
             )
@@ -185,9 +183,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             self.show_progress = self.encode_kwargs.pop("show_progress_bar")
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
@@ -302,7 +298,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         if "show_progress_bar" in self.encode_kwargs:
             warn_deprecated(
                 since="0.2.5",
-                removal="0.4.0",
+                removal="1.0",
                 name="encode_kwargs['show_progress_bar']",
                 alternative=f"the show_progress method on {self.__class__.__name__}",
             )
@@ -314,9 +310,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             self.show_progress = self.encode_kwargs.pop("show_progress_bar")
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.

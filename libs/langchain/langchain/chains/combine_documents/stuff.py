@@ -2,12 +2,13 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.chains.combine_documents.base import (
@@ -95,6 +96,15 @@ def create_stuff_documents_chain(
     ).with_config(run_name="stuff_documents_chain")
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
+    ),
+)
 class StuffDocumentsChain(BaseCombineDocumentsChain):
     """Chain that combines documents by stuffing into context.
 
@@ -147,10 +157,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
     """The string with which to join the formatted documents"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:

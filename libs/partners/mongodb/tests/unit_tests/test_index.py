@@ -10,6 +10,9 @@ from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
 
 from langchain_mongodb import index
 
+DIMENSION = 10
+TIMEOUT = 10
+
 
 @pytest.fixture
 def collection() -> Collection:
@@ -25,19 +28,33 @@ def collection() -> Collection:
 def test_create_vector_search_index(collection: Collection) -> None:
     with pytest.raises((OperationFailure, ServerSelectionTimeoutError)):
         index.create_vector_search_index(
-            collection, "index_name", 1536, "embedding", "cosine", []
+            collection,
+            "index_name",
+            DIMENSION,
+            "embedding",
+            "cosine",
+            [],
+            wait_until_complete=TIMEOUT,
         )
 
 
 def test_drop_vector_search_index(collection: Collection) -> None:
     with pytest.raises((OperationFailure, ServerSelectionTimeoutError)):
-        index.drop_vector_search_index(collection, "index_name")
+        index.drop_vector_search_index(
+            collection, "index_name", wait_until_complete=TIMEOUT
+        )
 
 
 def test_update_vector_search_index(collection: Collection) -> None:
     with pytest.raises((OperationFailure, ServerSelectionTimeoutError)):
         index.update_vector_search_index(
-            collection, "index_name", 1536, "embedding", "cosine", []
+            collection,
+            "index_name",
+            DIMENSION,
+            "embedding",
+            "cosine",
+            [],
+            wait_until_complete=TIMEOUT,
         )
 
 

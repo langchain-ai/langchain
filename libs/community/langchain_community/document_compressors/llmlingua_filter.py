@@ -72,10 +72,8 @@ class LLMLinguaCompressor(BaseDocumentCompressor):
         return values
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = "forbid"
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @staticmethod
     def _format_context(docs: Sequence[Document]) -> List[str]:

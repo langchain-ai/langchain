@@ -9,9 +9,10 @@ from langchain_core.prompts import (
     MessagesPlaceholder,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
-tools = [IonicTool().tool()]
+tools = [tool(IonicTool())]
 
 llm = ChatOpenAI(temperature=0.5, model_name="gpt-3.5-turbo-1106", streaming=True)
 

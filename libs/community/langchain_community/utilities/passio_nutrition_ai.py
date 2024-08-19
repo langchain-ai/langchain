@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Optional, final
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -121,10 +121,8 @@ class NutritionAIAPI(BaseModel):
     auth_: ManagedPassioLifeAuth
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @retry(
         retry=retry_if_result(is_http_retryable),

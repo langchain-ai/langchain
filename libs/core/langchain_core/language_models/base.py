@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -17,7 +18,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.messages import (
@@ -35,6 +36,23 @@ if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
     from langchain_core.callbacks import Callbacks
     from langchain_core.outputs import LLMResult
+
+
+class LangSmithParams(TypedDict, total=False):
+    """LangSmith parameters for tracing."""
+
+    ls_provider: str
+    """Provider of the model."""
+    ls_model_name: str
+    """Name of the model."""
+    ls_model_type: Literal["chat", "llm"]
+    """Type of the model. Should be 'chat' or 'llm'."""
+    ls_temperature: Optional[float]
+    """Temperature for generation."""
+    ls_max_tokens: Optional[int]
+    """Max tokens for generation."""
+    ls_stop: Optional[List[str]]
+    """Stop words for generation."""
 
 
 @lru_cache(maxsize=None)  # Cache the tokenizer
@@ -220,7 +238,7 @@ class BaseLanguageModel(
         # generate responses that match a given schema.
         raise NotImplementedError()
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @abstractmethod
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
@@ -241,7 +259,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     @abstractmethod
     def predict_messages(
         self,
@@ -266,7 +284,7 @@ class BaseLanguageModel(
             Top model prediction as a message.
         """
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @abstractmethod
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
@@ -287,7 +305,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     @abstractmethod
     async def apredict_messages(
         self,

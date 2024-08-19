@@ -1,3 +1,5 @@
+"""Search Index Commands"""
+
 import logging
 from time import monotonic, sleep
 from typing import Any, Callable, Dict, List, Optional
@@ -7,8 +9,6 @@ from pymongo.errors import OperationFailure
 from pymongo.operations import SearchIndexModel
 
 logger = logging.getLogger(__file__)
-
-_DELAY = 0.5  # Interval between checks for index operations
 
 
 def _search_index_error_message() -> str:
@@ -25,19 +25,24 @@ def _vector_search_index_definition(
     dimensions: int,
     path: str,
     similarity: str,
-    filters: Optional[List[Dict[str, str]]],
+    filters: Optional[List[str]] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
-    return {
-        "fields": [
-            {
-                "numDimensions": dimensions,
-                "path": path,
-                "similarity": similarity,
-                "type": "vector",
-            },
-            *(filters or []),
-        ]
-    }
+    # https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-type/
+    fields = [
+        {
+            "numDimensions": dimensions,
+            "path": path,
+            "similarity": similarity,
+            "type": "vector",
+        },
+    ]
+    if filters:
+        for field in filters:
+            fields.append({"type": "filter", "path": field})
+    definition = {"fields": fields}
+    definition.update(kwargs)
+    return definition
 
 
 def create_vector_search_index(
@@ -46,9 +51,10 @@ def create_vector_search_index(
     dimensions: int,
     path: str,
     similarity: str,
-    filters: Optional[List[Dict[str, str]]] = None,
+    filters: Optional[List[str]] = None,
     *,
     wait_until_complete: Optional[float] = None,
+    **kwargs: Any,
 ) -> None:
     """Experimental Utility function to create a vector search index
 
@@ -58,9 +64,10 @@ def create_vector_search_index(
         dimensions (int): Number of dimensions in embedding
         path (str): field with vector embedding
         similarity (str): The similarity score used for the index
-        filters (List[Dict[str, str]]): additional filters for index definition.
+        filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
             until search index is ready.
+        kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
     """
     logger.info("Creating Search Index %s on %s", index_name, collection.name)
 
@@ -72,6 +79,7 @@ def create_vector_search_index(
                     path=path,
                     similarity=similarity,
                     filters=filters,
+                    **kwargs,
                 ),
                 name=index_name,
                 type="vectorSearch",
@@ -83,7 +91,7 @@ def create_vector_search_index(
     if wait_until_complete:
         _wait_for_predicate(
             predicate=lambda: _is_index_ready(collection, index_name),
-            err=f"Index {index_name} creation did not finish in {wait_until_complete}!",
+            err=f"{index_name=} did not complete in {wait_until_complete}!",
             timeout=wait_until_complete,
         )
     logger.info(result)
@@ -127,9 +135,10 @@ def update_vector_search_index(
     dimensions: int,
     path: str,
     similarity: str,
-    filters: List[Dict[str, str]],
+    filters: Optional[List[str]] = None,
     *,
     wait_until_complete: Optional[float] = None,
+    **kwargs: Any,
 ) -> None:
     """Update a search index.
 
@@ -138,12 +147,13 @@ def update_vector_search_index(
     Args:
         collection (Collection): MongoDB Collection
         index_name (str): Name of Index
-        dimensions (int): Number of dimensions in embedding.
-        path (str): field with vector embedding.
+        dimensions (int): Number of dimensions in embedding
+        path (str): field with vector embedding
         similarity (str): The similarity score used for the index.
-        filters (List[Dict[str, str]]): additional filters for index definition.
+        filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
             until search index is ready.
+        kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
     """
 
     logger.info(
@@ -157,6 +167,7 @@ def update_vector_search_index(
                 path=path,
                 similarity=similarity,
                 filters=filters,
+                **kwargs,
             ),
         )
     except OperationFailure as e:
@@ -201,7 +212,7 @@ def _wait_for_predicate(
     Args:
         predicate (Callable[, bool]): A function that returns a boolean value
         err (str): Error message to raise if nothing occurs
-        timeout (float, optional):  wait time for predicate. Defaults to TIMEOUT.
+        timeout (float, optional): Wait time for predicate. Defaults to TIMEOUT.
         interval (float, optional): Interval to check predicate. Defaults to DELAY.
 
     Raises:
@@ -212,3 +223,48 @@ def _wait_for_predicate(
         if monotonic() - start > timeout:
             raise TimeoutError(err)
         sleep(interval)
+
+
+def create_fulltext_search_index(
+    collection: Collection,
+    index_name: str,
+    field: str,
+    *,
+    wait_until_complete: Optional[float] = None,
+    **kwargs: Any,
+) -> None:
+    """Experimental Utility function to create an Atlas Search index
+
+    Args:
+        collection (Collection): MongoDB Collection
+        index_name (str): Name of Index
+        field (str): Field to index
+        wait_until_complete (Optional[float]): If provided, number of seconds to wait
+            until search index is ready
+        kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+    """
+    logger.info("Creating Search Index %s on %s", index_name, collection.name)
+
+    definition = {
+        "mappings": {"dynamic": False, "fields": {field: [{"type": "string"}]}}
+    }
+
+    try:
+        result = collection.create_search_index(
+            SearchIndexModel(
+                definition=definition,
+                name=index_name,
+                type="search",
+                **kwargs,
+            )
+        )
+    except OperationFailure as e:
+        raise OperationFailure(_search_index_error_message()) from e
+
+    if wait_until_complete:
+        _wait_for_predicate(
+            predicate=lambda: _is_index_ready(collection, index_name),
+            err=f"{index_name=} did not complete in {wait_until_complete}!",
+            timeout=wait_until_complete,
+        )
+    logger.info(result)

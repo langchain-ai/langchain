@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import pre_init
 
@@ -115,10 +114,8 @@ class PineconeHybridSearchRetriever(BaseRetriever):
     """Namespace value for index partition."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     def add_texts(
         self,

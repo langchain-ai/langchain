@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
     _create_subset_model_v2,
+    get_fields,
     is_basemodel_instance,
     is_basemodel_subclass,
     pre_init,
@@ -15,6 +15,8 @@ from langchain_core.utils.pydantic import (
 
 
 def test_pre_init_decorator() -> None:
+    from langchain_core.pydantic_v1 import BaseModel
+
     class Foo(BaseModel):
         x: int = 5
         y: int
@@ -32,6 +34,8 @@ def test_pre_init_decorator() -> None:
 
 
 def test_pre_init_decorator_with_more_defaults() -> None:
+    from langchain_core.pydantic_v1 import BaseModel, Field
+
     class Foo(BaseModel):
         a: int = 1
         b: Optional[int] = None
@@ -52,6 +56,8 @@ def test_pre_init_decorator_with_more_defaults() -> None:
 
 
 def test_with_aliases() -> None:
+    from langchain_core.pydantic_v1 import BaseModel, Field
+
     class Foo(BaseModel):
         x: int = Field(default=1, alias="y")
         z: int
@@ -153,3 +159,36 @@ def test_with_field_metadata() -> None:
         "title": "Foo",
         "type": "object",
     }
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Only tests Pydantic v1")
+def test_fields_pydantic_v1() -> None:
+    from pydantic import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        x: int
+
+    fields = get_fields(Foo)
+    assert fields == {"x": Foo.__fields__["x"]}  # type: ignore[index]
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
+def test_fields_pydantic_v2_proper() -> None:
+    from pydantic import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        x: int
+
+    fields = get_fields(Foo)
+    assert fields == {"x": Foo.model_fields["x"]}
+
+
+@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
+def test_fields_pydantic_v1_from_2() -> None:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
+    class Foo(BaseModel):
+        x: int
+
+    fields = get_fields(Foo)
+    assert fields == {"x": Foo.__fields__["x"]}
