@@ -912,12 +912,32 @@ class HuridocsPDFLoader(BasePDFLoader):
         server_url: str
             The path to pdf-document-layout-analysis self-hosted API server.
 
+        Types of the Segments:
+        ---------
+        1: "Caption"
+        2: "Footnote"
+        3: "Formula"
+        4: "List item"
+        5: "Page footer"
+        6: "Page header"
+        7: "Picture"
+        8: "Section header"
+        9: "Table"
+        10: "Text"
+        11: "Title"
+
+
         Examples:
         ---------
-        >>> obj = HuridocsPDFLoader(
+        >>> pdf_loader = HuridocsPDFLoader(
         ...     file_path="path/to/file",
         ...     server_url="path/to/sef-hosted/api"
         ... )
+
+        pdf_analysis = pdf_loader.analyze_pdf()
+        table_of_contents = pdf_loader.get_table_of_contents()
+        pdf_loader.get_visualization(/path/to/output/pdf)
+        pdf_content = pdf_loader.get_text()
         """
         self.server_url = server_url
         self.fast = fast
@@ -930,7 +950,7 @@ class HuridocsPDFLoader(BasePDFLoader):
         
         super().__init__(file_path)
 
-    def send_pdf(self) -> str:
+    def analyze_pdf(self) -> str:
         with open(self.file_path, "rb") as f:
             files = {"file": f}
             try:   
@@ -946,7 +966,59 @@ class HuridocsPDFLoader(BasePDFLoader):
         response_data = response.json()
 
         return response_data
-    
+
+    def get_table_of_contents(self) -> str:
+        with open(self.file_path, "rb") as f:
+            files = {"file": f}
+            try:
+                data = {"fast": self.fast}
+                response = requests.post(f"{self.server_url}/toc",
+                                         files=files,
+                                         data=data
+                                         )
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as err:
+                raise err
+
+        response_data = response.json()
+
+        return response_data
+
+    def get_visualization(self, output_destination_path: str):
+        with open(self.file_path, "rb") as f:
+            files = {"file": f}
+            try:
+                data = {"fast": self.fast}
+                response = requests.post(f"{self.server_url}/visualize",
+                                         files=files,
+                                         data=data
+                                         )
+                response.raise_for_status()
+                with open(output_destination_path, 'wb') as file:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        file.write(chunk)
+
+            except requests.exceptions.HTTPError as err:
+                raise err
+
+    def get_text(self, types: str = "all") -> str:
+        with open(self.file_path, "rb") as f:
+            files = {"file": f}
+            try:
+                data = {"fast": self.fast, "types": types}
+                response = requests.post(f"{self.server_url}/text",
+                                         files=files,
+                                         data=data
+                                         )
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as err:
+                raise err
+
+        response_data = response.json()
+
+        return response_data
+
+
     def load(self) -> List[Document]:
         """Load data into Document objects."""
         return list(self.lazy_load())
@@ -955,7 +1027,7 @@ class HuridocsPDFLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        elements = self.send_pdf()
+        elements = self.analyze_pdf()
 
         for el in elements:
             yield Document(page_content=el["text"], 
