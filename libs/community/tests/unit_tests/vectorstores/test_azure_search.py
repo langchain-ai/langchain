@@ -32,7 +32,7 @@ class FakeEmbeddingsWithDimension(FakeEmbeddings):
 DEFAULT_INDEX_NAME = "langchain-index"
 DEFAULT_ENDPOINT = "https://my-search-service.search.windows.net"
 DEFAULT_KEY = "mykey"
-DEFAULT_ACCESS_TOKEN = "myaccesstoken"
+DEFAULT_ACCESS_TOKEN = "myaccesstoken1"
 DEFAULT_EMBEDDING_MODEL = FakeEmbeddingsWithDimension()
 
 
