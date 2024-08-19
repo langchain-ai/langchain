@@ -5,129 +5,52 @@ body:
   - type: markdown
     attributes:
       value: >
-
         Перед тем как сообщить об ошибке, пожалуйста, убедитесь, что вашей проблемы нет среди открытых issue.
-
-  - type: textarea
-    id: system-info
-    attributes:
-      label: Информация об окружении
-      description: Расскажите об окружении, в котором возникла ошибка.
-      placeholder: Версия GigaChain, версия python, операционная система, ...
-    validations:
-      required: true
-    attributes:
-      label: К кому обратиться?
-      description: |
-        Разработчики стараются своевременно обрабатывать все открытые issue. Тем не менее, если вы считаете, что обнаруженную ошибку нужно рассмотреть с повышенным приоритетом, вы можете уведомить об этом руководителя проекта — @Rai220.
-
-      placeholder: |
-        The following code: 
-        
-        ```python
-        from langchain_core.runnables import RunnableLambda
-
-        def bad_code(inputs) -> int:
-          raise NotImplementedError('For demo purpose')
-          
-          chain = RunnableLambda(bad_code)
-          chain.invoke('Hello!')
-        ```
-  - type: textarea
-    id: error
-    validations:
-      required: false
-    attributes:
-      label: Error Message and Stack Trace (if applicable)
-      description: |
-        If you are reporting an error, please include the full error message and stack trace.
-      placeholder: |
-        Exception + full stack trace
-  - type: textarea
-    id: description
-    attributes:
-      label: Дополнительная информация
-      description: "Ошибка обнаружена при использовании:"
-      options:
-        - label: "Официальных примеров (*notebooks*)/скриптов"
-        - label: "Собственных или доработанных скриптов"
-
-        Напишите короткое описание того, что вы делаете, какое поведение наблюдаете и какого поведения ожидали.
-      placeholder: |
-        * Я пытаюсь использовать `gigachain` чтобы сделать X.
-        * Я ожидаю получить Y.
-        * Вместо этого происходит Z.
-    validations:
-      required: true
-  - type: textarea
-    id: system-info
-    attributes:
-      label: Системная информация
-      description: |
-        Пожалуйста, поделитесь данными о вашем окружении
-        
-        "pip freeze | grep gigachain" 
-        ОС (windows / linux / mac)
-        python version
-        
-        Если вы используете последние версии gigachain-core, приведите резултат вызова команды:
-        
-        python -m gigachain_core.sys_info
-      placeholder: |
-        "pip freeze | grep langchain"
-        OC
-        python version
-        
-        Если вы используете последние версии gigachain-core, приведите резултат вызова команды:
-        
-        python -m langchain_core.sys_info
-        
-        Команда возвращает пакеты, которые использует GigaChain. При необходимости укажите другие релевантные пакеты.
-        Если вы не уверены в том, какие пакеты стоит указывать, можете приложить весь результат команды `pip freeze`.
-    validations:
-      required: true
-  - type: checkboxes
-    id: related-components
-    attributes:
-      label: Компоненты
-      description: "По возможности, укажите компоненты библиотеки, к которым относится ошибка:"
-      options:
-        - label: "LLMs/Chat Models"
-        - label: "Embedding Models"
-        - label: "Prompts / Prompt Templates / Prompt Selectors"
-        - label: "Output Parsers"
-        - label: "Document Loaders"
-        - label: "Vector Stores / Retrievers"
-        - label: "Memory"
-        - label: "Agents / Agent Executors"
-        - label: "Tools / Toolkits"
-        - label: "Chains"
-        - label: "Callbacks/Tracing"
-        - label: "Async"
-
+        Затем подробно опишите суть проблему и информацию о том, в каком окружении и с какими версиями библиотек возникает ошибка.
   - type: textarea
     id: reproduction
     validations:
       required: true
     attributes:
-      label: Воспроизведение ошибки
+      label: Описание ошибки
       description: |
-        Предоставьте [образец кода](https://stackoverflow.com/help/minimal-reproducible-example), при выполнении которого возникает ошибка. Подойдет как ссылка на Colab, так и отдельный фрагмент кода.
-        По возможности, приложите другие примеры кода, сообщения об ошибках и стек трейсы, которые помогут воспроизвести проблему.
-        Обратите внимание на корректное [выделение блоков кода с помощью тегов](https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks#syntax-highlighting).
-        Не нужно присылать скриншоты кода. Такие примеры неудобно читать и их нельзя скопировать.
-
+        Напишите короткое описание того, что вы делаете, какое поведение наблюдаете и какого поведения ожидали.
+        Пожалуйста приложите код, выполнение которого вызывает ошибку
       placeholder: |
-        Опишите шаги для воспроизведения ошибки:
-
-          1.
-          2.
-          3.
-
+        * Я пытаюсь использовать `gigachain` чтобы сделать X.
+        * Я ожидаю получить Y.
+        * Вместо этого происходит Z.
   - type: textarea
-    id: expected-behavior
+    id: enviroment
     validations:
       required: true
     attributes:
-      label: Ожидаемое поведение
-      description: "Краткое и понятное описание поведения GigaChain, которого вы ожидали при выполнении кода."
+      label: Окружение и версии библиотек
+      description: |
+        Пожалуйста приложите информацию об окружении и установленных библиотеках.
+        Для этого установите gigachain-cli с помощью команды `pip install gigachain-cli` 
+        и выполните команду `gigachain info`.
+      placeholder: |
+        System Information
+        ------------------
+        > OS:  Darwin
+        > OS Version:  Darwin Kernel Version 23.5.0: Wed May  1 20:09:52 PDT 2024; root:xnu-10063.121.3~5/RELEASE_X86_64
+        > Python Version:  3.9.19 (main, Mar 19 2024, 16:08:27) 
+        [Clang 15.0.0 (clang-1500.3.9.4)]
+
+        Package Information
+        -------------------
+        > langchain_core: Installed. No version info available.
+        > langchain_community: Installed. No version info available.
+        > langsmith: 0.1.84
+        > langchain_cli: Installed. No version info available.
+        > langchain_experimental: Installed. No version info available.
+        > langchain_text_splitters: Installed. No version info available.
+        > langchainhub: 0.1.15
+        > langserve: Installed. No version info available.
+
+        Packages not installed (Not Necessarily a Problem)
+        --------------------------------------------------
+        The following packages were not found:
+
+        > langgraph
