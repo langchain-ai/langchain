@@ -13,9 +13,9 @@ from langchain_core.retrievers import Document
 class ArceeRoute(str, Enum):
     """Routes available for the Arcee API as enumerator."""
 
-    generate = "models/generate"
-    retrieve = "models/retrieve"
-    model_training_status = "models/status/{id_or_name}"
+    generate = "deployment/generate"
+    retrieve = "deployment/retrieve"
+    model_training_status = "deployment/status"
 
 
 class DALMFilterType(str, Enum):
@@ -105,7 +105,9 @@ class ArceeWrapper:
         self,
         arcee_api_key: Union[str, SecretStr],
         arcee_api_url: str,
+        arcee_org: str,
         arcee_api_version: str,
+        deployment_name: str,
         model_kwargs: Optional[Dict[str, Any]],
         model_name: str,
     ):
@@ -125,17 +127,11 @@ class ArceeWrapper:
         self.arcee_api_key: SecretStr = arcee_api_key_
         self.model_kwargs = model_kwargs
         self.arcee_api_url = arcee_api_url
+        self.arcee_org = arcee_org
         self.arcee_api_version = arcee_api_version
+        self.deployment_name = deployment_name
 
-        try:
-            route = ArceeRoute.model_training_status.value.format(id_or_name=model_name)
-            response = self._make_request("get", route)
-            self.model_id = response.get("model_id")
-            self.model_training_status = response.get("status")
-        except Exception as e:
-            raise ValueError(
-                f"Error while validating model training status for '{model_name}': {e}"
-            ) from e
+        print(arcee_api_url)
 
     def validate_model_training_status(self) -> None:
         if self.model_training_status != "training_complete":
@@ -185,6 +181,7 @@ class ArceeWrapper:
         return headers
 
     def _make_request_url(self, route: Union[ArceeRoute, str]) -> str:
+        print(f"{self.arcee_api_url}/{self.arcee_api_version}/{route}")
         return f"{self.arcee_api_url}/{self.arcee_api_version}/{route}"
 
     def _make_request_body_for_models(
@@ -217,15 +214,27 @@ class ArceeWrapper:
             filters: Filters to apply to the context dataset.
         """
 
-        response = self._make_request(
-            method="post",
-            route=ArceeRoute.generate.value,
-            body=self._make_request_body_for_models(
-                prompt=prompt,
-                **kwargs,
-            ),
-        )
-        return response["text"]
+        headers = {
+            "accept": "application/json",
+            "x-arcee-org": self.arcee_org,
+            "x-token": self.arcee_api_key.get_secret_value(),  # Extract the secret value here
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "query": prompt,
+            "deployment_name": self.deployment_name,
+            "stream": False
+        }
+
+        print(prompt)
+
+        response = requests.post(f"{self.arcee_api_url}/v2/{ArceeRoute.generate.value}", headers=headers, json=payload)
+
+        if response.status_code not in (200, 201):
+            raise Exception(f"Failed to generate text. Response: {response.text}")
+
+        return response.json().get("text", "")
 
     def retrieve(
         self,
