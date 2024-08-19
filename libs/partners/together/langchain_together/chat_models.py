@@ -393,8 +393,7 @@ class ChatTogether(BaseChatOpenAI):
                 Options are:
                 name of the tool (str): calls corresponding tool;
                 "auto": automatically selects a tool (including no tool);
-                "none": does not call a tool;
-                "any" or "required": force at least one tool to be called;
+                "any": force at least one tool to be called;
                 True: forces tool call (requires `tools` be length 1);
                 False: no effect;
 
