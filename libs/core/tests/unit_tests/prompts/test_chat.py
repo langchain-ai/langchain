@@ -821,7 +821,7 @@ def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> 
     assert load(dumpd(prompt)) == prompt
 
 
-async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
+def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
     """Test chat prompt template ser/des."""
     template = ChatPromptTemplate(
         [
@@ -861,6 +861,11 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
                             "image_url": {"url": "data:image/jpeg;base64,foobar"},
                         },
                         {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
+                        {
+                            "type": "text",
+                            "text": "foobar",
+                            "cache_control": {"type": "ephemeral"},
+                        },
                     ],
                 ),
             ),
@@ -870,3 +875,32 @@ async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
     )
     assert dumpd(template) == snapshot()
     assert load(dumpd(template)) == template
+
+
+def test_chat_content_block() -> None:
+    template = ChatPromptTemplate(
+        [
+            (
+                "human",
+                [
+                    {
+                        "type": "text",
+                        "text": "foobar",
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
+            ),
+            (
+                "ai",
+                [{"text": "how are {name}", "cache_control": {"type": "ephemeral"}}],
+            ),
+        ]
+    )
+    expected = [
+        HumanMessage(
+            [{"type": "text", "text": "foobar", "cache_control": {"type": "ephemeral"}}]
+        ),
+        AIMessage([{"text": "how are you", "cache_control": {"type": "ephemeral"}}]),
+    ]
+    actual = template.invoke({"name": "you"}).to_messages()
+    assert actual == expected

@@ -2269,6 +2269,118 @@
                 'name': 'ImagePromptTemplate',
                 'type': 'constructor',
               }),
+              dict({
+                'graph': dict({
+                  'edges': list([
+                    dict({
+                      'source': 0,
+                      'target': 1,
+                    }),
+                    dict({
+                      'source': 1,
+                      'target': 2,
+                    }),
+                  ]),
+                  'nodes': list([
+                    dict({
+                      'data': 'PromptInput',
+                      'id': 0,
+                      'type': 'schema',
+                    }),
+                    dict({
+                      'data': dict({
+                        'id': list([
+                          'langchain_core',
+                          'prompts',
+                          'content_block',
+                          'ContentBlockPromptTemplate',
+                        ]),
+                        'name': 'ContentBlockPromptTemplate',
+                      }),
+                      'id': 1,
+                      'type': 'runnable',
+                    }),
+                    dict({
+                      'data': 'ContentBlockPromptTemplateOutput',
+                      'id': 2,
+                      'type': 'schema',
+                    }),
+                  ]),
+                }),
+                'id': list([
+                  'langchain_core',
+                  'prompts',
+                  'content_block',
+                  'ContentBlockPromptTemplate',
+                ]),
+                'kwargs': dict({
+                  'input_variables': list([
+                  ]),
+                  'template': dict({
+                    'cache_control': dict({
+                      'type': 'ephemeral',
+                    }),
+                    'text': dict({
+                      'graph': dict({
+                        'edges': list([
+                          dict({
+                            'source': 0,
+                            'target': 1,
+                          }),
+                          dict({
+                            'source': 1,
+                            'target': 2,
+                          }),
+                        ]),
+                        'nodes': list([
+                          dict({
+                            'data': 'PromptInput',
+                            'id': 0,
+                            'type': 'schema',
+                          }),
+                          dict({
+                            'data': dict({
+                              'id': list([
+                                'langchain',
+                                'prompts',
+                                'prompt',
+                                'PromptTemplate',
+                              ]),
+                              'name': 'PromptTemplate',
+                            }),
+                            'id': 1,
+                            'type': 'runnable',
+                          }),
+                          dict({
+                            'data': 'PromptTemplateOutput',
+                            'id': 2,
+                            'type': 'schema',
+                          }),
+                        ]),
+                      }),
+                      'id': list([
+                        'langchain',
+                        'prompts',
+                        'prompt',
+                        'PromptTemplate',
+                      ]),
+                      'kwargs': dict({
+                        'input_variables': list([
+                        ]),
+                        'template': 'foobar',
+                        'template_format': 'f-string',
+                      }),
+                      'lc': 1,
+                      'name': 'PromptTemplate',
+                      'type': 'constructor',
+                    }),
+                    'type': 'text',
+                  }),
+                }),
+                'lc': 1,
+                'name': 'ContentBlockPromptTemplate',
+                'type': 'constructor',
+              }),
             ]),
           }),
           'lc': 1,

@@ -460,12 +460,7 @@ class _ImageTemplateParam(TypedDict, total=False):
 class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
-    prompt: Union[
-        StringPromptTemplate,
-        List[
-            Union[StringPromptTemplate, ImagePromptTemplate, ContentBlockPromptTemplate]
-        ],
-    ]
+    prompt: Union[StringPromptTemplate, List[BasePromptTemplate]]
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
