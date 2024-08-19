@@ -312,7 +312,7 @@ class SQLServer_VectorStore(VectorStore):
             with Session(self._bind) as session:
                 results = (
                     session.query(
-                        _embedding_store,
+                        self._embedding_store,
                         text(VECTOR_DISTANCE_QUERY).bindparams(
                             bindparam(
                                 DISTANCE_STRATEGY,
