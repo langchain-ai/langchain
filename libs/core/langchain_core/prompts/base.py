@@ -29,6 +29,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
 from langchain_core.runnables.utils import create_model
+from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -351,6 +352,21 @@ class BasePromptTemplate(
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
+
+    def pretty_repr(self, html: bool = False) -> str:
+        """Get a pretty representation of the prompt.
+
+        Args:
+            html: Whether to return an HTML-formatted string.
+
+        Returns:
+            A pretty representation of the prompt.
+        """
+        raise NotImplementedError()
+
+    def pretty_print(self) -> None:
+        """Print a pretty representation of the prompt."""
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
 def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> Dict:
