@@ -651,11 +651,20 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             for prompt in self.prompt:
                 inputs = {var: kwargs[var] for var in prompt.input_variables}
                 if isinstance(prompt, StringPromptTemplate):
-                    formatted: Union[str, ImageURL] = await prompt.aformat(**inputs)
+                    formatted: Union[str, dict] = await prompt.aformat(**inputs)
                     content.append({"type": "text", "text": formatted})
                 elif isinstance(prompt, ImagePromptTemplate):
                     formatted = await prompt.aformat(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
+                elif isinstance(prompt, ContentBlockPromptTemplate):
+                    formatted = await prompt.aformat(**inputs)
+                    content.append(formatted)
+                else:
+                    raise ValueError(
+                        f"Unknown prompt type: {type(prompt)}. Expected "
+                        f"StringPromptTemplate, ImagePromptTemplate, or "
+                        f"ContentBlockPromptTemplate."
+                    )
             return self._msg_class(
                 content=content,
                 additional_kwargs=self.additional_kwargs,

@@ -21,17 +21,11 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         template_format: str = "f-string",
         **kwargs: Any,
     ) -> None:
-        if isinstance(template, dict):
-            if "image_url" in template:
-                image_url = template["image_url"]
-            else:
-                raise ValueError(
-                    f"Image url template must be a string or a dict with an "
-                    f"'image_url' key. Received {template=}"
-                )
+        if isinstance(template, dict) and "image_url" in template:
+            image_url = template["image_url"]
         else:
             image_url = template
-        input_variables = kwargs.get("input_variables", [])
+        input_variables = kwargs.pop("input_variables", [])
         if isinstance(image_url, str):
             vars = get_template_variables(image_url, template_format)
             if vars:
@@ -57,7 +51,9 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
                 " any of 'url', 'path', or 'detail'."
                 f" Found: {overlap}"
             )
-        super().__init__(template=image_url, input_variables=input_variables, **kwargs)  # type: ignore[call-arg]
+        super().__init__(
+            template=image_url, input_variables=list(set(input_variables)), **kwargs
+        )  # type: ignore[call-arg]
 
     @property
     def _prompt_type(self) -> str:

@@ -16,12 +16,13 @@ class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
     def __init__(
         self, template: dict, *, template_format: str = "f-string", **kwargs: Any
     ) -> None:
-        input_variables = []
+        input_variables = kwargs.pop("input_variables", [])
         if "image_url" in template:
             if not isinstance(template["image_url"], BasePromptTemplate):
                 template["image_url"] = ImagePromptTemplate(
                     template["image_url"], template_format=template_format
                 )
+
             input_variables += template["image_url"].input_variables
         if "text" in template:
             if not isinstance(template["text"], PromptTemplate):
@@ -29,7 +30,9 @@ class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
                     template["text"], template_format=template_format
                 )
             input_variables += template["text"].input_variables
-        super().__init__(template=template, input_variables=input_variables, **kwargs)  # type: ignore[call-arg]
+        super().__init__(
+            template=template, input_variables=list(set(input_variables)), **kwargs
+        )  # type: ignore[call-arg]
 
     @property
     def _prompt_type(self) -> str:
@@ -39,7 +42,7 @@ class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ["langchain", "prompts", "chat"]
+        return ["langchain", "prompts", "content_block"]
 
     def format(self, **kwargs: Any) -> Dict[str, Any]:
         """Format the prompt with the inputs.
