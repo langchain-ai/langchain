@@ -2,18 +2,28 @@
 
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
+    Literal,
     Optional,
+    Sequence,
+    Type,
+    Union,
 )
 
 import openai
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     from_env,
     secret_from_env,
 )
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
 
@@ -362,3 +372,44 @@ class ChatTogether(BaseChatOpenAI):
                 **client_params, **async_specific
             ).chat.completions
         return values
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with Together tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Options are:
+                name of the tool (str): calls corresponding tool;
+                "auto": automatically selects a tool (including no tool);
+                "none": does not call a tool;
+                "any" or "required": force at least one tool to be called;
+                True: forces tool call (requires `tools` be length 1);
+                False: no effect;
+
+                or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        if tool_choice == "any" and len(tools) == 1:
+            # Together specifies tool_choice via "auto" or a dict.
+            # https://docs.together.ai/docs/tool-call-with-other-models#tool_choice
+            formatted_tool = convert_to_openai_tool(tools[0])
+            tool_name = formatted_tool["function"]["name"]
+            tool_choice = {"type": "function", "function": {"name": tool_name}}
+        else:
+            pass
+
+        return super().bind_tools(tools=tools, tool_choice=tool_choice, **kwargs)
