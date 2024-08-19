@@ -19,6 +19,10 @@ class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
         input_variables = kwargs.pop("input_variables", [])
         if "image_url" in template:
             if not isinstance(template["image_url"], BasePromptTemplate):
+                # For backwards compatibility.
+                if "type" not in template:
+                    template["type"] = "image_url"
+
                 template["image_url"] = ImagePromptTemplate(
                     template["image_url"], template_format=template_format
                 )

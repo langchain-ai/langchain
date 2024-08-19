@@ -594,6 +594,7 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
                         "type": "image_url",
                         "image_url": {"url": "data:image/jpeg;base64,foobar"},
                     },
+                    {"image_url": "data:image/jpeg;base64,{my_other_image}"},
                 ],
             ),
         ]
@@ -631,6 +632,12 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
                 {
                     "type": "image_url",
                     "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{other_base64_image}"
+                    },
                 },
             ]
         ),
