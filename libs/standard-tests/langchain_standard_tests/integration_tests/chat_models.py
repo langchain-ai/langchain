@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import httpx
 import pytest
@@ -170,11 +170,8 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_calling(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        if self.tool_choice_value == "dict":
-            tool_choice: Union[dict, str, None] = {
-                "type": "function",
-                "function": {"name": "magic_function"},
-            }
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function"
         else:
             tool_choice = self.tool_choice_value
         model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
@@ -195,11 +192,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        if self.tool_choice_value == "dict":
-            tool_choice: Union[dict, str, None] = {
-                "type": "function",
-                "function": {"name": "magic_function_no_args"},
-            }
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function_no_args"
         else:
             tool_choice = self.tool_choice_value
         model_with_tools = model.bind_tools(
@@ -228,11 +222,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
         )
-        if self.tool_choice_value == "dict":
-            tool_choice: Union[dict, str, None] = {
-                "type": "function",
-                "function": {"name": "greeting_generator"},
-            }
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "greeting_generator"
         else:
             tool_choice = self.tool_choice_value
         model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
