@@ -5,13 +5,19 @@ from typing import Generator, List
 
 import pytest
 from langchain_core.documents import Document
-from sqlalchemy import create_engine, text
+from sqlalchemy import Connection, create_engine, text
 from sqlalchemy.exc import DBAPIError
 
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
+_SCHEMA = "lc_test"
+_SYS_TABLE_QUERY = """
+select object_id from sys.tables where name = '%s'
+and schema_name(schema_id) = '%s'"""
+_TABLE_NAME = "langchain_vector_store_tests"
+_TABLE_DOES_NOT_EXIST = "Table %s.%s does not exist."
 
 
 @pytest.fixture
@@ -323,30 +329,69 @@ def test_that_multiple_vector_stores_can_be_created(
 def test_that_schema_input_is_used() -> None:
     """Tests that when a schema is given as input to the SQLServer_VectorStore object,
     a vector store is created within the schema."""
-
-    schema = "lc_test"
-    table_name = "langchain_vector_store_tests"
-    sys_table_query = f"""
-    select object_id from sys.tables where name = '{table_name}'
-    and schema_name(schema_id) = '{schema}'"""
-
-    # Connect to the DB
-    engine = create_engine(url=_CONNECTION_STRING)
-    connection = engine.connect()
-
-    # Create a schema in the DB
-    connection.execute(text(f"create schema {schema}"))
+    connection = create_schema()
 
     # Create a vector store in the DB with the schema just created
     sqlserver_vectorstore = SQLServer_VectorStore(
         connection=connection,
         connection_string=_CONNECTION_STRING,
-        db_schema=schema,
+        db_schema=_SCHEMA,
         embedding_function=FakeEmbeddings(size=1536),
-        table_name=table_name,
+        table_name=_TABLE_NAME,
     )
     sqlserver_vectorstore.add_texts(["cats"])
 
     # Confirm table in that schema exists.
-    result = connection.execute(text(sys_table_query))
-    assert result.fetchone() is not None, f"Table {schema}.{table_name} does not exist."
+    result = connection.execute(text(_SYS_TABLE_QUERY % (_TABLE_NAME, _SCHEMA)))
+    assert result.fetchone() is not None, _TABLE_DOES_NOT_EXIST % (_SCHEMA, _TABLE_NAME)
+    connection.close()
+
+
+def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> None:
+    """Tests that vector stores can be created with same name in different
+    schemas even with the same connection."""
+    connection = create_schema()
+
+    # Create a vector store in the DB with the schema just created
+    sqlserver_vectorstore = SQLServer_VectorStore(
+        connection=connection,
+        connection_string=_CONNECTION_STRING,
+        db_schema=_SCHEMA,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name=_TABLE_NAME,
+    )
+
+    # Create a vector store in the DB with the default schema
+    sqlserver_vectorstore_default_schema = SQLServer_VectorStore(
+        connection=connection,
+        connection_string=_CONNECTION_STRING,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name=_TABLE_NAME,
+    )
+
+    sqlserver_vectorstore.add_texts(["cats"])
+    result_with_schema = connection.execute(
+        text(_SYS_TABLE_QUERY % (_TABLE_NAME, _SCHEMA))
+    )
+    assert result_with_schema.fetchone() is not None, _TABLE_DOES_NOT_EXIST % (
+        _SCHEMA,
+        _TABLE_NAME,
+    )
+
+    sqlserver_vectorstore_default_schema.add_texts(["cats"])
+    result_with_default = connection.execute(
+        text(_SYS_TABLE_QUERY % (_TABLE_NAME, "dbo"))
+    )
+    assert result_with_default.fetchone() is not None, _TABLE_DOES_NOT_EXIST % (
+        "dbo",
+        _TABLE_NAME,
+    )
+    connection.close()
+
+
+def create_schema() -> Connection:
+    engine = create_engine(url=_CONNECTION_STRING)
+    connection = engine.connect()
+    # Create a schema in the DB
+    connection.execute(text(f"create schema {_SCHEMA}"))
+    return connection
