@@ -25,7 +25,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.chains.llm import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="0.3.0")
+@deprecated("0.1.0", alternative="create_react_agent", removal="1.0")
 class ChatAgent(Agent):
     """Chat Agent."""
 

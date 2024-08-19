@@ -5,7 +5,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools import BaseTool
+from langchain_core.tools import BaseTool
 
 response = (
     "Create a final answer that says if they "
