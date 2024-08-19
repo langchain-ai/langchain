@@ -1,31 +1,29 @@
 """Test SQLServer_VectorStore functionality."""
 
 import os
-from typing import List
+from typing import Generator, List
 
 import pytest
 from langchain_core.documents import Document
+from sqlalchemy import Connection, create_engine, text
 
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores import sqlserver
 from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
+_SCHEMA = "lc_test"
+_SYS_TABLE_QUERY = """
+select object_id from sys.tables where name = '%s'
+and schema_name(schema_id) = '%s'"""
+_TABLE_NAME = "langchain_vector_store_tests"
+_TABLE_DOES_NOT_EXIST = "Table %s.%s does not exist."
 EMBEDDING_LENGTH = 1536
 VECTOR_STORE_TABLE_NAME = "langchain_vector_store_test"
 
 
-@pytest.fixture(autouse=True)
-def setup() -> None:
-    """This is called before a testcase is run. Ensuring there are no interference
-    across testcases."""
-    sqlserver._embedding_store = None
-    sqlserver.Base.metadata.clear()
-    return
-
-
 @pytest.fixture
-def store() -> SQLServer_VectorStore:
+def store() -> Generator[SQLServer_VectorStore, None, None]:
     """Setup resources that are needed for the duration of the test."""
     store = SQLServer_VectorStore(
         connection_string=_CONNECTION_STRING,
@@ -34,8 +32,10 @@ def store() -> SQLServer_VectorStore:
         embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
         table_name=VECTOR_STORE_TABLE_NAME,
     )
+    yield store  # provide this data to the test
 
-    return store  # provide this data to the test
+    # Drop store after it's done being used in the test case.
+    store.drop()
 
 
 @pytest.fixture
@@ -310,6 +310,99 @@ def test_sqlserver_delete_text_by_id_no_ids_provided(
     # Should return False, since empty list of ids given
     if not result:
         pass
+
+
+def test_that_multiple_vector_stores_can_be_created(
+    store: SQLServer_VectorStore,
+) -> None:
+    """Tests that when multiple SQLServer_VectorStore objects are
+    created, the first created vector store is not reused, but
+    multiple vector stores are created."""
+
+    # Create another vector store with a different table name.
+    new_store = SQLServer_VectorStore(
+        connection_string=_CONNECTION_STRING,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name="langchain_vector_store_tests_2",
+    )
+
+    # Check that the name of the table being created for the embeddingstore
+    # is what is expected.
+    assert new_store._embedding_store.__table__.name == "langchain_vector_store_tests_2"
+
+    # Drop the new_store table to clean up this test run.
+    new_store.drop()
+
+
+def test_that_schema_input_is_used() -> None:
+    """Tests that when a schema is given as input to the SQLServer_VectorStore object,
+    a vector store is created within the schema."""
+    connection = create_schema()
+
+    # Create a vector store in the DB with the schema just created
+    sqlserver_vectorstore = SQLServer_VectorStore(
+        connection=connection,
+        connection_string=_CONNECTION_STRING,
+        db_schema=_SCHEMA,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name=_TABLE_NAME,
+    )
+    sqlserver_vectorstore.add_texts(["cats"])
+
+    # Confirm table in that schema exists.
+    result = connection.execute(text(_SYS_TABLE_QUERY % (_TABLE_NAME, _SCHEMA)))
+    assert result.fetchone() is not None, _TABLE_DOES_NOT_EXIST % (_SCHEMA, _TABLE_NAME)
+    connection.close()
+
+
+def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> None:
+    """Tests that vector stores can be created with same name in different
+    schemas even with the same connection."""
+    connection = create_schema()
+
+    # Create a vector store in the DB with the schema just created
+    sqlserver_vectorstore = SQLServer_VectorStore(
+        connection=connection,
+        connection_string=_CONNECTION_STRING,
+        db_schema=_SCHEMA,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name=_TABLE_NAME,
+    )
+
+    # Create a vector store in the DB with the default schema
+    sqlserver_vectorstore_default_schema = SQLServer_VectorStore(
+        connection=connection,
+        connection_string=_CONNECTION_STRING,
+        embedding_function=FakeEmbeddings(size=1536),
+        table_name=_TABLE_NAME,
+    )
+
+    sqlserver_vectorstore.add_texts(["cats"])
+    result_with_schema = connection.execute(
+        text(_SYS_TABLE_QUERY % (_TABLE_NAME, _SCHEMA))
+    )
+    assert result_with_schema.fetchone() is not None, _TABLE_DOES_NOT_EXIST % (
+        _SCHEMA,
+        _TABLE_NAME,
+    )
+
+    sqlserver_vectorstore_default_schema.add_texts(["cats"])
+    result_with_default = connection.execute(
+        text(_SYS_TABLE_QUERY % (_TABLE_NAME, "dbo"))
+    )
+    assert result_with_default.fetchone() is not None, _TABLE_DOES_NOT_EXIST % (
+        "dbo",
+        _TABLE_NAME,
+    )
+    connection.close()
+
+
+def create_schema() -> Connection:
+    engine = create_engine(url=_CONNECTION_STRING)
+    connection = engine.connect()
+    # Create a schema in the DB
+    connection.execute(text(f"create schema {_SCHEMA}"))
+    return connection
 
 
 def test_that_any_size_of_embeddings_can_be_added_when_embedding_length_is_not_defined(

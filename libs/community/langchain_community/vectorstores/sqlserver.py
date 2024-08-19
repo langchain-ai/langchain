@@ -27,10 +27,6 @@ import json
 import logging
 import uuid
 
-_embedding_store: Any = None  # One vector store used for the entirety of the program.
-
-Base = declarative_base()  # type: Any
-
 
 class DistanceStrategy(str, Enum):
     """Enumerator of the distance strategies for calculating distances
@@ -76,6 +72,7 @@ class SQLServer_VectorStore(VectorStore):
         *,
         connection: Optional[Connection] = None,
         connection_string: str,
+        db_schema: Optional[str] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         embedding_function: Embeddings,
         embedding_length: Optional[int] = None,
@@ -86,6 +83,8 @@ class SQLServer_VectorStore(VectorStore):
         Args:
             connection: Optional SQLServer connection.
             connection_string: SQLServer connection string.
+            db_schema: The schema in which the vector store will be created.
+                This schema must exist and the user must have permissions to the schema.
             distance_strategy: The distance strategy to use for comparing embeddings.
                 Default value is COSINE. Available options are:
                 - COSINE
@@ -107,11 +106,12 @@ class SQLServer_VectorStore(VectorStore):
         self._distance_strategy = distance_strategy
         self.embedding_function = embedding_function
         self._embedding_length = embedding_length
+        self.schema = db_schema
         self.table_name = table_name
         self._bind: Union[Connection, Engine] = (
             connection if connection else self._create_engine()
         )
-        self.EmbeddingStore = self._get_embedding_store(table_name)
+        self._embedding_store = self._get_embedding_store(table_name, db_schema)
         self._create_table_if_not_exists()
 
     def _create_engine(self) -> Engine:
@@ -119,18 +119,24 @@ class SQLServer_VectorStore(VectorStore):
 
     def _create_table_if_not_exists(self) -> None:
         logging.info(f"Creating table {self.table_name}.")
-        with Session(self._bind) as session:
-            Base.metadata.create_all(session.get_bind())
+        try:
+            with Session(self._bind) as session:
+                self._embedding_store.__table__.create(
+                    session.get_bind(), checkfirst=True
+                )
+                session.commit()
+        except ProgrammingError as e:
+            logging.error(f"Create table {self.table_name} failed.")
+            raise Exception(e.__cause__) from None
 
-    def _get_embedding_store(self, name: str) -> Any:
-        global _embedding_store
-        if _embedding_store is not None:
-            return _embedding_store
+    def _get_embedding_store(self, name: str, schema: Optional[str]) -> Any:
+        DynamicBase = declarative_base(class_registry=dict())  # type: Any
 
-        class EmbeddingStore(Base):
+        class EmbeddingStore(DynamicBase):
             """This is the base model for SQL vector store."""
 
             __tablename__ = name
+            __table_args__ = {"schema": schema}
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
             custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
             content_metadata = Column(JSON, nullable=True)
@@ -152,8 +158,7 @@ class SQLServer_VectorStore(VectorStore):
             else:
                 embeddings = Column(VARBINARY(8000), nullable=False)
 
-        _embedding_store = EmbeddingStore
-        return _embedding_store
+        return EmbeddingStore
 
     @property
     def embeddings(self) -> Embeddings:
@@ -292,8 +297,10 @@ class SQLServer_VectorStore(VectorStore):
         logging.info(f"Dropping vector store: {self.table_name}")
         try:
             with Session(bind=self._bind) as session:
-                # Drop all the tables associated with the session bind.
-                Base.metadata.drop_all(session.get_bind())
+                # Drop the table associated with the session bind.
+                self._embedding_store.__table__.drop(session.get_bind())
+                session.commit()
+
             logging.info(f"Vector store `{self.table_name}` dropped successfully.")
         except ProgrammingError as e:
             logging.error(f"Unable to drop vector store.\n {e.__cause__}.")
@@ -391,7 +398,8 @@ class SQLServer_VectorStore(VectorStore):
 
         try:
             if ids is None:
-                ids = [metadata.pop("id", uuid.uuid4()) for metadata in metadatas]
+                # Get IDs from metadata if available.
+                ids = [metadata.get("id", uuid.uuid4()) for metadata in metadatas]
 
             with Session(self._bind) as session:
                 documents = []
@@ -418,7 +426,7 @@ class SQLServer_VectorStore(VectorStore):
                         )
                     )
                     result = session.scalar(sqlquery)
-                    embedding_store = self.EmbeddingStore(
+                    embedding_store = self._embedding_store(
                         custom_id=id,
                         content_metadata=metadata,
                         content=query,
@@ -462,8 +470,8 @@ class SQLServer_VectorStore(VectorStore):
         try:
             with Session(bind=self._bind) as session:
                 result = (
-                    session.query(_embedding_store)
-                    .filter(_embedding_store.custom_id.in_(ids))
+                    session.query(self._embedding_store)
+                    .filter(self._embedding_store.custom_id.in_(ids))
                     .delete()
                 )
                 session.commit()
