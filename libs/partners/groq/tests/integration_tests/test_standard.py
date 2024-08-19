@@ -1,6 +1,6 @@
 """Standard LangChain interface tests"""
 
-from typing import Type
+from typing import Optional, Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -32,6 +32,11 @@ class TestGroqLlama(BaseTestGroq):
             "temperature": 0,
             "rate_limiter": rate_limiter,
         }
+
+    @property
+    def tool_choice_value(self) -> Optional[str]:
+        """Value to use for tool choice when used in tests."""
+        return "any"
 
     @pytest.mark.xfail(
         reason=("Fails with 'Failed to call a function. Please adjust your prompt.'")
