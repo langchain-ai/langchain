@@ -75,8 +75,6 @@ def dependents_graph() -> dict:
     for k in dependents:
         if "libs/partners/huggingface" in dependents[k]:
             dependents[k].remove("libs/partners/huggingface")
-    print("deps", dependents)
-    print()
     return dependents
 
 
