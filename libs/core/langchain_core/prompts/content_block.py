@@ -1,27 +1,35 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Field
 
 
 class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
     """Template for a single content block."""
 
-    template: dict = Field(default_factory=dict)
-    """Template for the block."""
+    template: Dict[str, Any] = Field(default_factory=dict)
+    """Template for the content block. Expected to be a dictionary of """
 
-    def __init__(self, template: dict, *, template_format: str = "f-string", **kwargs: Any) -> None:
+    def __init__(
+        self, template: dict, *, template_format: str = "f-string", **kwargs: Any
+    ) -> None:
         input_variables = []
         if "image_url" in template:
-            template["image_url"] = ImagePromptTemplate(template["image_url"], template_format=template_format)
+            if not isinstance(template["image_url"], BasePromptTemplate):
+                template["image_url"] = ImagePromptTemplate(
+                    template["image_url"], template_format=template_format
+                )
             input_variables += template["image_url"].input_variables
         if "text" in template:
-            template["text"] = PromptTemplate.from_template(template["text"], template_format=template_format)
+            if not isinstance(template["text"], PromptTemplate):
+                template["text"] = PromptTemplate.from_template(
+                    template["text"], template_format=template_format
+                )
             input_variables += template["text"].input_variables
-        super().__init__(template=template, input_variables=input_variables, **kwargs)
+        super().__init__(template=template, input_variables=input_variables, **kwargs)  # type: ignore[call-arg]
 
     @property
     def _prompt_type(self) -> str:
@@ -33,7 +41,7 @@ class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "chat"]
 
-    def format(self, **kwargs: Any ) -> Dict[str, Any]:
+    def format(self, **kwargs: Any) -> Dict[str, Any]:
         """Format the prompt with the inputs.
 
         Args:
@@ -59,7 +67,10 @@ class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
         Returns:
             A formatted string.
         """
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"{self.__class__} does not support being directly formatted to a "
+            f"PromptValue. Can only be formatted as part of a ChatPromptTemplate."
+        )
 
     def pretty_repr(self, html: bool = False) -> str:
         """Return a pretty representation of the prompt.
@@ -70,4 +81,4 @@ class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
         Returns:
             A pretty representation of the prompt.
         """
-        raise NotImplementedError()
+        raise NotImplementedError("Not implemented yet.")

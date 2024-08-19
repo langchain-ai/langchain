@@ -457,12 +457,12 @@ class _ImageTemplateParam(TypedDict, total=False):
     image_url: Union[str, Dict]
 
 
-
 class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
     prompt: Union[
-        StringPromptTemplate, List[Union[StringPromptTemplate, ContentBlockPromptTemplate]]
+        StringPromptTemplate,
+        List[Union[StringPromptTemplate, ContentBlockPromptTemplate]],
     ]
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
@@ -507,29 +507,36 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 template_format=template_format,
                 partial_variables=partial_variables,
             )
-            return cls(prompt=prompt, **kwargs)
         elif isinstance(template, list):
             if (partial_variables is not None) and len(partial_variables) > 0:
                 raise ValueError(
                     "Partial variables are not supported for list of templates."
                 )
             prompt = []
-            for tmpl in template:
+            for i, tmpl in enumerate(template):
                 if isinstance(tmpl, str):
                     prompt.append(
                         PromptTemplate.from_template(
                             tmpl, template_format=template_format
                         )
                     )
-                elif isinstance(tmpl, dict) and "text" in tmpl:
-                    prompt.append(ContentBlockPromptTemplate(tmpl, template_format=template_format))
-                elif isinstance(tmpl, dict) and "image_url" in tmpl:
-                    prompt.append(ImagePromptTemplate(tmpl, template_format=template_format))
+                elif isinstance(tmpl, dict):
+                    prompt.append(
+                        ContentBlockPromptTemplate(
+                            cast(dict, tmpl), template_format=template_format
+                        )
+                    )
                 else:
-                    raise ValueError()
-            return cls(prompt=prompt, **kwargs)
+                    raise ValueError(
+                        f"Unsupported template type {type(tmpl)} at index {i}. "
+                        f"Expected a list of strings or dicts."
+                    )
         else:
-            raise ValueError()
+            raise ValueError(
+                f"Unsupported template type {type(template)}. Expected either a string "
+                f"or a list (of strings or dicts)."
+            )
+        return cls(prompt=prompt, **kwargs)
 
     @classmethod
     def from_template_file(
@@ -605,7 +612,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             for prompt in self.prompt:
                 inputs = {var: kwargs[var] for var in prompt.input_variables}
                 if isinstance(prompt, StringPromptTemplate):
-                    formatted: Union[str, ImageURL] = prompt.format(**inputs)
+                    formatted: Union[str, dict] = prompt.format(**inputs)
                     content.append({"type": "text", "text": formatted})
                 elif isinstance(prompt, ImagePromptTemplate):
                     formatted = prompt.format(**inputs)
@@ -620,7 +627,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         f"ContentBlockPromptTemplate."
                     )
             return self._msg_class(
-                content=content, additional_kwargs=self.additional_kwargs, name=self.name
+                content=content,
+                additional_kwargs=self.additional_kwargs,
+                name=self.name,
             )
 
     async def aformat(self, **kwargs: Any) -> BaseMessage:
@@ -648,7 +657,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     formatted = await prompt.aformat(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
             return self._msg_class(
-                content=content, additional_kwargs=self.additional_kwargs, name=self.name
+                content=content,
+                additional_kwargs=self.additional_kwargs,
+                name=self.name,
             )
 
     def pretty_repr(self, html: bool = False) -> str:
@@ -1439,5 +1450,3 @@ def _convert_to_message(
         raise NotImplementedError(f"Unsupported message type: {type(message)}")
 
     return _message
-
-
