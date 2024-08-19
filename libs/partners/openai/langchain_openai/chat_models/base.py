@@ -1144,7 +1144,7 @@ class BaseChatOpenAI(BaseChatModel):
                         API: https://platform.openai.com/docs/guides/function-calling
                     - "json_schema":
                         Uses OpenAI's Structured Output API:
-                        https://platform.openai.com/docs/guides/structured-outputs.
+                        https://platform.openai.com/docs/guides/structured-outputs
                         Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
                         models.
                     - "json_mode":
@@ -1178,7 +1178,7 @@ class BaseChatOpenAI(BaseChatModel):
                 - True:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to
-                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
+                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
                 - False:
                     Input schema will not be validated and model output will not be
                     validated.
