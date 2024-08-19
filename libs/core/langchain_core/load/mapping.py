@@ -147,7 +147,7 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "image",
         "ImagePromptTemplate",
     ),
-    ("langchain", "prompts", "content_block", "ContentBlockPromptTemplate"): (
+    ("langchain_core", "prompts", "content_block", "ContentBlockPromptTemplate"): (
         "langchain_core",
         "prompts",
         "content_block",

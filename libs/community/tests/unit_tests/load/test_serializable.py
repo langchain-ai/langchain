@@ -102,6 +102,13 @@ def test_serializable_mapping() -> None:
             "modifier",
             "RemoveMessage",
         ),
+        # This is not exported from langchain, only langchain_core
+        ("langchain_core", "prompts", "content_block", "ContentBlockPromptTemplate"): (
+            "langchain_core",
+            "prompts",
+            "content_block",
+            "ContentBlockPromptTemplate",
+        ),
     }
     serializable_modules = import_all_modules("langchain")
 

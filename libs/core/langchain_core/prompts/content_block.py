@@ -46,7 +46,7 @@ class ContentBlockPromptTemplate(BasePromptTemplate[Dict[str, Any]]):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ["langchain", "prompts", "content_block"]
+        return ["langchain_core", "prompts", "content_block"]
 
     def format(self, **kwargs: Any) -> Dict[str, Any]:
         """Format the prompt with the inputs.
