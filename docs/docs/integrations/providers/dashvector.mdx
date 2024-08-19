@@ -6,12 +6,27 @@ This document demonstrates to leverage DashVector within the LangChain ecosystem
 It is broken into two parts: installation and setup, and then references to specific DashVector wrappers.
 
 ## Installation and Setup
+
+
 Install the Python SDK:
+
 ```bash
 pip install dashvector
 ```
 
-## VectorStore
+You must have an API key. Here are the [installation instructions](https://help.aliyun.com/document_detail/2510223.html).
+
+
+## Embedding models
+
+```python
+from langchain_community.embeddings import DashScopeEmbeddings
+```
+
+See the [use example](/docs/integrations/vectorstores/dashvector).
+
+
+## Vector Store
 
 A DashVector Collection is wrapped as a familiar VectorStore for native usage within LangChain, 
 which allows it to be readily used for various scenarios, such as semantic search or example selection.
