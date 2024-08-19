@@ -634,6 +634,28 @@ def test_similarity_score_threshold(index_details: dict, threshold: float) -> No
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
+def test_standard_params() -> None:
+    index = mock_index(DIRECT_ACCESS_INDEX)
+    vectorstore = default_databricks_vector_search(index)
+    retriever = vectorstore.as_retriever()
+    ls_params = retriever._get_ls_params()
+    assert ls_params == {
+        "ls_retriever_name": "vectorstore",
+        "ls_vector_store_provider": "DatabricksVectorSearch",
+        "ls_embedding_provider": "FakeEmbeddingsWithDimension",
+    }
+
+    index = mock_index(DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS)
+    vectorstore = default_databricks_vector_search(index)
+    retriever = vectorstore.as_retriever()
+    ls_params = retriever._get_ls_params()
+    assert ls_params == {
+        "ls_retriever_name": "vectorstore",
+        "ls_vector_store_provider": "DatabricksVectorSearch",
+    }
+
+
+@pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
     "index_details", [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX]
 )

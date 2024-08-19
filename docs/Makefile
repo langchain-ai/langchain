@@ -41,11 +41,7 @@ generate-files:
 	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 	mkdir -p $(INTERMEDIATE_DIR)/templates
 
-	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
-
 	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
-
-	$(PYTHON) scripts/document_loader_feat_table.py $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/kv_store_feat_table.py $(INTERMEDIATE_DIR)
 
@@ -86,7 +82,11 @@ vercel-build: install-vercel-deps build generate-references
 	rm -rf docs
 	mv $(OUTPUT_NEW_DOCS_DIR) docs
 	rm -rf build
-	yarn run docusaurus build
+	mkdir static/api_reference
+	git clone --depth=1 https://github.com/baskaryan/langchain-api-docs-build.git
+	mv langchain-api-docs-build/api_reference_build/html/* static/api_reference/
+	rm -rf langchain-api-docs-build
+	NODE_OPTIONS="--max-old-space-size=5000" yarn run docusaurus build
 	mv build v0.2
 	mkdir build
 	mv v0.2 build

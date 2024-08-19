@@ -43,7 +43,7 @@ def _get_docs(response: Any) -> List[Document]:
 
 @deprecated(
     since="0.0.30",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_cohere.CohereRagRetriever",
 )
 class CohereRagRetriever(BaseRetriever):

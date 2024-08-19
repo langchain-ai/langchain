@@ -21,7 +21,7 @@ VALID_TASKS_DICT = {
 
 @deprecated(
     "0.0.21",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_huggingface.HuggingFaceEndpoint",
 )
 class HuggingFaceHub(LLM):

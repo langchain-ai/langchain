@@ -23,8 +23,6 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypedDict
-
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
@@ -36,7 +34,11 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models.base import BaseLanguageModel, LanguageModelInput
+from langchain_core.language_models.base import (
+    BaseLanguageModel,
+    LangSmithParams,
+    LanguageModelInput,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -71,23 +73,6 @@ if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
-
-
-class LangSmithParams(TypedDict, total=False):
-    """LangSmith parameters for tracing."""
-
-    ls_provider: str
-    """Provider of the model."""
-    ls_model_name: str
-    """Name of the model."""
-    ls_model_type: Literal["chat"]
-    """Type of the model. Should be 'chat'."""
-    ls_temperature: Optional[float]
-    """Temperature for generation."""
-    ls_max_tokens: Optional[int]
-    """Max tokens for generation."""
-    ls_stop: Optional[List[str]]
-    """Stop words for generation."""
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -209,7 +194,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """  # noqa: E501
 
     callback_manager: Optional[BaseCallbackManager] = deprecated(
-        name="callback_manager", since="0.1.7", removal="0.3.0", alternative="callbacks"
+        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
     )(
         Field(
             default=None,
@@ -1019,7 +1004,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 break
             yield item  # type: ignore[misc]
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def __call__(
         self,
         messages: List[BaseMessage],
@@ -1051,13 +1036,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Unexpected generation type")
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def call_as_llm(
         self, message: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
         return self.predict(message, stop=stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1071,7 +1056,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -1085,7 +1070,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _stop = list(stop)
         return self(messages, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1101,7 +1086,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],
