@@ -45,7 +45,13 @@ class Arcee(LLM):
     arcee_app_url: str = "https://app.arcee.ai"
     """Arcee App URL"""
 
+    arcee_org: str
+    """Arcee Org name"""
+
     model_id: str = ""
+    """Arcee Model ID"""
+
+    deployment_name: str = ""
     """Arcee Model ID"""
 
     model_kwargs: Optional[Dict[str, Any]] = None
@@ -69,6 +75,8 @@ class Arcee(LLM):
             arcee_api_key=api_key,
             arcee_api_url=self.arcee_api_url,
             arcee_api_version=self.arcee_api_version,
+            arcee_org=self.arcee_org,
+            deployment_name = self.deployment_name,
             model_kwargs=self.model_kwargs,
             model_name=self.model,
         )
@@ -104,21 +112,21 @@ class Arcee(LLM):
             "ARCEE_API_VERSION",
         )
 
-        # validate model kwargs
-        if values.get("model_kwargs"):
-            kw = values["model_kwargs"]
+        # # validate model kwargs
+        # if values.get("model_kwargs"):
+        #     kw = values["model_kwargs"]
 
-            # validate size
-            if kw.get("size") is not None:
-                if not kw.get("size") >= 0:
-                    raise ValueError("`size` must be positive")
+        #     # validate size
+        #     if kw.get("size") is not None:
+        #         if not kw.get("size") >= 0:
+        #             raise ValueError("`size` must be positive")
 
-            # validate filters
-            if kw.get("filters") is not None:
-                if not isinstance(kw.get("filters"), List):
-                    raise ValueError("`filters` must be a list")
-                for f in kw.get("filters"):
-                    DALMFilter(**f)
+        #     # validate filters
+        #     if kw.get("filters") is not None:
+        #         if not isinstance(kw.get("filters"), List):
+        #             raise ValueError("`filters` must be a list")
+        #         for f in kw.get("filters"):
+        #             DALMFilter(**f)
         return values
 
     def _call(
@@ -137,9 +145,17 @@ class Arcee(LLM):
             filters: Filters to apply to the context dataset.
         """
 
-        try:
-            if not self._client:
-                raise ValueError("Client is not initialized.")
-            return self._client.generate(prompt=prompt, **kwargs)
-        except Exception as e:
-            raise Exception(f"Failed to generate text: {e}") from e
+        headers = {
+            "accept": "application/json",
+            "x-arcee-org": self.arcee_org,
+            "x-token": self.arcee_api_key.get_secret_value(),  # Extract the secret value here
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "query": prompt,
+            "deployment_name": self.deployment_name,
+            "stream": False
+        }
+
+        return self._client.generate(prompt=prompt, headers=headers, json=payload)
