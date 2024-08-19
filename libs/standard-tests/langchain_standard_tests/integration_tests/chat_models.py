@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import httpx
 import pytest
@@ -171,7 +171,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
         if self.tool_choice_value == "dict":
-            tool_choice = {"type": "function", "function": {"name": "magic_function"}}
+            tool_choice: Union[dict, str, None] = {
+                "type": "function",
+                "function": {"name": "magic_function"},
+            }
         else:
             tool_choice = self.tool_choice_value
         model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
@@ -193,7 +196,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool calling.")
 
         if self.tool_choice_value == "dict":
-            tool_choice = {
+            tool_choice: Union[dict, str, None] = {
                 "type": "function",
                 "function": {"name": "magic_function_no_args"},
             }
@@ -226,7 +229,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             description="Generate a greeting in a particular style of speaking.",
         )
         if self.tool_choice_value == "dict":
-            tool_choice = {
+            tool_choice: Union[dict, str, None] = {
                 "type": "function",
                 "function": {"name": "greeting_generator"},
             }
