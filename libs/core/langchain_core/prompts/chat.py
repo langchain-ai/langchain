@@ -1114,7 +1114,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return values
 
     @classmethod
-    def from_template(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:
+    def from_template(
+        cls, template: str, *, name: Optional[str] = None, **kwargs: Any
+    ) -> ChatPromptTemplate:
         """Create a chat prompt template from a template string.
 
         Creates a chat template consisting of a single message assumed to be from
@@ -1128,7 +1130,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             A new instance of this class.
         """
         prompt_template = PromptTemplate.from_template(template, **kwargs)
-        message = HumanMessagePromptTemplate(prompt=prompt_template)
+        message = HumanMessagePromptTemplate(prompt=prompt_template, name=name)
         return cls.from_messages([message])
 
     @classmethod
