@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "poetry-core>=1.0.0",]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -12,7 +12,7 @@ repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/chroma"
@@ -30,21 +30,21 @@ version = "^1.26.0"
 python = ">=3.12"
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201", "D",]
+select = ["E", "F", "I", "T201", "D"]
 
 [tool.coverage.run]
-omit = [ "tests/*",]
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 addopts = " --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "asyncio: mark tests as requiring asyncio",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 
 [tool.poetry.dependencies.chromadb]
-version = ">=0.4.0,<0.6.0"
-
-[tool.poetry.dependencies.fastapi]
-version = ">=0.95.2,<1"
-optional = true
+version = ">=0.4.0,<0.6.0,!=0.5.4,!=0.5.5"
 
 [tool.poetry.group.test]
 optional = true
@@ -54,6 +54,8 @@ optional = true
 
 [tool.poetry.group.test_integration]
 optional = true
+
+[tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.group.lint]
 optional = true
@@ -65,7 +67,7 @@ optional = true
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = [ "D",]
+"tests/**" = ["D"]
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
@@ -89,34 +91,10 @@ types-requests = "^2.31.0.20240406"
 path = "../../core"
 develop = true
 
-[tool.poetry.group.test.dependencies.langchain-community]
-path = "../../community"
-develop = true
-
-[tool.poetry.group.test_integration.dependencies.langchain-openai]
-path = "../openai"
-develop = true
-
 [tool.poetry.group.dev.dependencies.langchain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.dev.dependencies.langchain-community]
-path = "../../community"
-develop = true
-
 [tool.poetry.group.typing.dependencies.langchain-core]
 path = "../../core"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-community]
-path = "../../community"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-text-splitters]
-path = "../../text-splitters"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain]
-path = "../../langchain"
 develop = true
