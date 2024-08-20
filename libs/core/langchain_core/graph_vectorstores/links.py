@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from typing import Iterable, List, Literal, Union
 
-from langchain_core.documents import Document
-
 from langchain_core._api import beta
+from langchain_core.documents import Document
 
 
 @beta()
