@@ -342,7 +342,7 @@ class DatabricksVectorSearch(VectorStore):
         else:
             assert self.embeddings is not None, "embedding model is required."
             # The value for `query_text` needs to be specified only for hybrid search.
-            if query_type.upper() == "HYBRID":
+            if query_type is not None and query_type.upper() == "HYBRID":
                 query_text = query
             else:
                 query_text = None
