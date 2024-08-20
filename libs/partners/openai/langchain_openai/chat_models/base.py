@@ -376,6 +376,7 @@ class BaseChatOpenAI(BaseChatModel):
     making requests to OpenAI compatible APIs, such as vLLM."""
     include_response_headers: bool = False
     """Whether to include response headers in the output message response_metadata."""
+    disabled_params: List[str] = Field(default_factory=list)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -1400,12 +1401,15 @@ class BaseChatOpenAI(BaseChatModel):
                     "Received None."
                 )
             tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools(
-                [schema],
-                tool_choice=tool_name,
-                parallel_tool_calls=False,
-                strict=strict,
-            )
+            bind_kwargs = {
+                "tool_choice": tool_name,
+                "parallel_tool_calls": False,
+                "strict": strict,
+            }
+            bind_kwargs = {
+                k: v for k, v in bind_kwargs.items() if k not in self.disabled_params
+            }
+            llm = self.bind_tools([schema], **bind_kwargs)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
