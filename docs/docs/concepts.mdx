@@ -1106,7 +1106,7 @@ For a full list of model providers that support tool calling, [see this table](/
 
 ### Few-shot prompting
 
-One of the most effective ways to improve model performance is to give a model examples of what you want it to do. The technique of adding example inputs and expected outputs to a model prompt is known as "few-shot prompting". There's a few things to think about when doing few-shot prompting:
+One of the most effective ways to improve model performance is to give a model examples of what you want it to do. The technique of adding example inputs and expected outputs to a model prompt is known as "few-shot prompting". There are a few things to think about when doing few-shot prompting:
 
 1. How are examples generated,
 2. How many examples are in each prompt,
@@ -1157,7 +1157,7 @@ Assuming we are not adding our entire example dataset into each prompt, we need 
 
 LangChain has a number of [`ExampleSelectors`](/docs/concepts/#example-selectors) which make it easy to use any of these techniques.
 
-Generally selecting by semantic similarity leads to the best model performance. But how important this is is again model and task specific, and is something worth experimenting with.
+Generally, selecting by semantic similarity leads to the best model performance. But how important this is is again model and task specific, and is something worth experimenting with.
 
 #### 4. Formatting examples
 
@@ -1165,9 +1165,9 @@ Most state-of-the-art models these days are chat models, so we'll focus on forma
 - in the system prompt as a string,
 - as their own messages.
 
-If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begin and which parts are the input versus output. Different models respond better to different syntax's, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
+If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begins and which parts are the input versus output. Different models respond better to different syntaxes, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
 
-If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign [names](/docs/concepts/#messages) to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors then the latest input message.
+If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign [names](/docs/concepts/#messages) to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors than the latest input message.
 
 **Formatting tool call examples**
 
