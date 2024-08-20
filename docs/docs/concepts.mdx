@@ -1162,7 +1162,7 @@ Most state-of-the-art models these days are chat models, so we'll focus on forma
 - in the system prompt as a string,
 - as their own messages.
 
-If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begin and which parts are the input versus output. Different models respond better to different syntax's, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
+If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begins and which parts are the input versus output. Different models respond better to different syntaxes, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
 
 If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign names to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors then the latest input message.
 
