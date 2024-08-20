@@ -9,7 +9,7 @@ from langchain_core.documents import Document
 
 
 def test_init() -> None:
-    LangSmithLoader()
+    LangSmithLoader(api_key="secret")
 
 
 EXAMPLES = [
@@ -40,6 +40,7 @@ EXAMPLES = [
 @patch("langsmith.Client.list_examples", MagicMock(return_value=iter(EXAMPLES)))
 def test_lazy_load() -> None:
     loader = LangSmithLoader(
+        api_key="dummy",
         dataset_id="mock",
         content_key="first.second",
         format_content=(lambda x: x.upper()),
