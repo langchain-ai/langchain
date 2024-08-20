@@ -952,14 +952,14 @@ class HuridocsPDFLoader(BasePDFLoader):
         self,
         file_path: str,
         server_url: str,
-        fast : Optional[bool] = False,
+        fast: Optional[bool] = False,
     ) -> None:
         """
-        Initialize the object for PDF file processing with 
+        Initialize the object for PDF file processing with
         Huridocs pdf-document-layout-analysis.
 
         This constructor initializes a HuridocsPDFLoader object to be used
-        for parsing files using the pdf-document-layout-analysis API. 
+        for parsing files using the pdf-document-layout-analysis API.
         Loader uses VGT layout model.
         Parameters:
         -----------
@@ -1003,22 +1003,19 @@ class HuridocsPDFLoader(BasePDFLoader):
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             raise err
-        
+
         super().__init__(file_path)
 
     def analyze_pdf(self) -> str:
         with open(self.file_path, "rb") as f:
             files = {"file": f}
-            try:   
+            try:
                 data = {"fast": self.fast}
-                response = requests.post(f"{self.server_url}/", 
-                                         files=files, 
-                                         data=data
-                                         )
+                response = requests.post(f"{self.server_url}/", files=files, data=data)
                 response.raise_for_status()
             except requests.exceptions.HTTPError as err:
                 raise err
-            
+
         response_data = response.json()
 
         return response_data
@@ -1028,10 +1025,7 @@ class HuridocsPDFLoader(BasePDFLoader):
             files = {"file": f}
             try:
                 data = {"fast": self.fast}
-                response = requests.post(f"{self.server_url}/toc",
-                                         files=files,
-                                         data=data
-                                         )
+                response = requests.post(f"{self.server_url}/toc", files=files, data=data)
                 response.raise_for_status()
             except requests.exceptions.HTTPError as err:
                 raise err
@@ -1045,12 +1039,9 @@ class HuridocsPDFLoader(BasePDFLoader):
             files = {"file": f}
             try:
                 data = {"fast": self.fast}
-                response = requests.post(f"{self.server_url}/visualize",
-                                         files=files,
-                                         data=data
-                                         )
+                response = requests.post(f"{self.server_url}/visualize", files=files, data=data)
                 response.raise_for_status()
-                with open(output_destination_path, 'wb') as file:
+                with open(output_destination_path, "wb") as file:
                     for chunk in response.iter_content(chunk_size=8192):
                         file.write(chunk)
 
@@ -1062,10 +1053,7 @@ class HuridocsPDFLoader(BasePDFLoader):
             files = {"file": f}
             try:
                 data = {"fast": self.fast, "types": types}
-                response = requests.post(f"{self.server_url}/text",
-                                         files=files,
-                                         data=data
-                                         )
+                response = requests.post(f"{self.server_url}/text", files=files, data=data)
                 response.raise_for_status()
             except requests.exceptions.HTTPError as err:
                 raise err
@@ -1074,11 +1062,10 @@ class HuridocsPDFLoader(BasePDFLoader):
 
         return response_data
 
-
     def load(self) -> List[Document]:
         """Load data into Document objects."""
         return list(self.lazy_load())
-    
+
     def lazy_load(
         self,
     ) -> Iterator[Document]:
@@ -1086,19 +1073,16 @@ class HuridocsPDFLoader(BasePDFLoader):
         elements = self.analyze_pdf()
 
         for el in elements:
-            yield Document(page_content=el["text"], 
-                           metadata={"coordinates" : (el["left"], 
-                                                      el["top"], 
-                                                      el["width"],
-                                                      el["height"]),
-
-                                      "page_number" : el["page_number"],
-                                      "page_width" : el["page_width"],
-                                      "page_height" : el["page_height"],
-                                                              
-                                      "type" : el["type"]
-                                    })
-        
+            yield Document(
+                page_content=el["text"],
+                metadata={
+                    "coordinates": (el["left"], el["top"], el["width"], el["height"]),
+                    "page_number": el["page_number"],
+                    "page_width": el["page_width"],
+                    "page_height": el["page_height"],
+                    "type": el["type"],
+                },
+            )
 
 # Legacy: only for backwards compatibility. Use PyPDFLoader instead
 PagedPDFSplitter = PyPDFLoader
