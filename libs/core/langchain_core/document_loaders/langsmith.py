@@ -12,11 +12,19 @@ from langchain_core.documents import Document
 class LangSmithLoader(BaseLoader):
     """Load LangSmith Dataset examples as Documents.
 
+    Loads the example inputs as the Document page content and places the entire example
+    into the Document metadata. This allows you to easily create few-shot example
+    retrievers for the loaded documents.
+
     Args:
         dataset_id: The ID of the dataset to filter by. Defaults to None.
         dataset_name: The name of the dataset to filter by. Defaults to None.
-        content_key: ...
-        format_content: ...
+        content_key: The inputs key to set as Document page content. ``"."`` characters
+            are interpreted as nested keys. E.g. ``content_key="first.second"`` will
+            result in
+            ``Document(page_content=format_content(example.inputs["first"]["second"]))``
+        format_content: Function for converting the content extracted from the example
+            inputs into a string. Defaults to JSON-encoding the contents.
         example_ids: The IDs of the examples to filter by. Defaults to None.
         as_of: The dataset version tag OR
             timestamp to retrieve the examples as of.
@@ -43,7 +51,6 @@ class LangSmithLoader(BaseLoader):
             docs = []
             for doc in loader.lazy_load():
                 docs.append(doc)
-
     """
 
     def __init__(
@@ -100,7 +107,7 @@ class LangSmithLoader(BaseLoader):
             metadata = example.dict()
             # Stringify datetime and UUID types.
             for k in ("dataset_id", "created_at", "modified_at", "source_run_id", "id"):
-                metadata[k] = str(metadata[k])
+                metadata[k] = str(metadata[k]) if metadata[k] else metadata[k]
             yield Document(content_str, metadata=metadata)
 
 
