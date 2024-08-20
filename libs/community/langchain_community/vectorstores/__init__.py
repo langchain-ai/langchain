@@ -242,6 +242,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.surrealdb import (
         SurrealDBStore,
     )
+    from langchain_community.vectorstores.tablestore import (
+        TablestoreVectorStore,
+    )
     from langchain_community.vectorstores.tair import (
         Tair,
     )
@@ -387,6 +390,7 @@ __all__ = [
     "StarRocks",
     "SupabaseVectorStore",
     "SurrealDBStore",
+    "TablestoreVectorStore",
     "Tair",
     "TencentVectorDB",
     "TiDBVectorStore",
@@ -490,6 +494,7 @@ _module_lookup = {
     "StarRocks": "langchain_community.vectorstores.starrocks",
     "SupabaseVectorStore": "langchain_community.vectorstores.supabase",
     "SurrealDBStore": "langchain_community.vectorstores.surrealdb",
+    "TablestoreVectorStore": "langchain_community.vectorstores.tablestore",
     "Tair": "langchain_community.vectorstores.tair",
     "TencentVectorDB": "langchain_community.vectorstores.tencentvectordb",
     "TiDBVectorStore": "langchain_community.vectorstores.tidb_vector",

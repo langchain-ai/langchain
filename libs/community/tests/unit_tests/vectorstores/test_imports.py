@@ -83,6 +83,7 @@ EXPECTED_ALL = [
     "StarRocks",
     "SupabaseVectorStore",
     "SurrealDBStore",
+    "TablestoreVectorStore",
     "Tair",
     "TencentVectorDB",
     "TiDBVectorStore",
