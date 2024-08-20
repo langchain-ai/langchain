@@ -491,6 +491,7 @@ class DatabricksVectorSearch(VectorStore):
         filter: Optional[Any] = None,
         *,
         query_type: Optional[str] = None,
+        query: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -509,6 +510,7 @@ class DatabricksVectorSearch(VectorStore):
             k=k,
             filter=filter,
             query_type=query_type,
+            query=query,
             **kwargs,
         )
         return [doc for doc, _ in docs_with_score]
@@ -520,6 +522,7 @@ class DatabricksVectorSearch(VectorStore):
         filter: Optional[Any] = None,
         *,
         query_type: Optional[str] = None,
+        query: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector, along with scores.
@@ -538,9 +541,25 @@ class DatabricksVectorSearch(VectorStore):
                 "`similarity_search_by_vector` is not supported for index with "
                 "Databricks-managed embeddings."
             )
+        if query_type is not None and query_type.upper() == "HYBRID":
+            if query is None:
+                raise ValueError(
+                    "A value for `query` must be specified for hybrid search."
+                )
+            query_text = query
+        else:
+            if query is not None:
+                raise ValueError(
+                    (
+                        "Cannot specify both `embedding` and "
+                        '`query` unless `query_type="HYBRID"'
+                    )
+                )
+            query_text = None
         search_resp = self.index.similarity_search(
             columns=self.columns,
             query_vector=embedding,
+            query_text=query_text,
             filters=filter or _alias_filters(kwargs),
             num_results=k,
             query_type=query_type,
