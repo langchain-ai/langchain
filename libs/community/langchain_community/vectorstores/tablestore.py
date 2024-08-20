@@ -33,7 +33,22 @@ class TablestoreVectorStore(VectorStore):
                 instance_name=os.getenv("instance_name"),
                 access_key_id=os.getenv("access_key_id"),
                 access_key_secret=os.getenv("access_key_secret"),
-                vector_dimension=test_embedding_size,
+                vector_dimension=512,
+                # metadata mapping is used to filter non-vector fields.
+                metadata_mappings=[
+                    tablestore.FieldSchema(
+                        "type",
+                        tablestore.FieldType.KEYWORD,
+                        index=True,
+                        enable_sort_and_agg=True
+                    ),
+                    tablestore.FieldSchema(
+                        "time",
+                        tablestore.FieldType.LONG,
+                        index=True,
+                        enable_sort_and_agg=True
+                    ),
+                ]
             )
     """
 
