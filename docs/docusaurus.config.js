@@ -195,11 +195,6 @@ const config = {
                 label: "Contributing",
               },
               {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
-              },
-              {
                 label: "Cookbooks",
                 href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },

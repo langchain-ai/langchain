@@ -5,6 +5,10 @@ import shutil
 import sys
 from pathlib import Path
 
+deindexed_footer = """
+<span data-lc-docs-search-deindexed="true"></span>
+"""
+
 if __name__ == "__main__":
     intermediate_dir = Path(sys.argv[1])
 
@@ -23,7 +27,7 @@ if __name__ == "__main__":
         # remove images
         content = re.sub(r"\!\[.*?\]\((.*?)\)", "", content)
         with open(full_destination, "w") as f:
-            f.write(content)
+            f.write(content + deindexed_footer)
 
     sidebar_hidden = """---
 sidebar_class_name: hidden
@@ -43,4 +47,4 @@ custom_edit_url:
     content = re.sub(r"\]\(\.\.\/", "](/docs/templates/", content)
 
     with open(templates_index_intermediate, "w") as f:
-        f.write(sidebar_hidden + content)
+        f.write(sidebar_hidden + content + deindexed_footer)
