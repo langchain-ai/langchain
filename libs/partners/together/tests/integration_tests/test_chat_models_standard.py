@@ -1,6 +1,6 @@
 """Standard LangChain interface tests"""
 
-from typing import Type
+from typing import Optional, Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -28,9 +28,10 @@ class TestTogetherStandard(ChatModelIntegrationTests):
             "rate_limiter": rate_limiter,
         }
 
-    @pytest.mark.xfail(reason=("May not call a tool."))
-    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
-        super().test_tool_calling_with_no_arguments(model)
+    @property
+    def tool_choice_value(self) -> Optional[str]:
+        """Value to use for tool choice when used in tests."""
+        return "tool_name"
 
     @pytest.mark.xfail(reason="Not yet supported.")
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
