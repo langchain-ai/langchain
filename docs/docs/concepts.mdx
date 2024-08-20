@@ -209,7 +209,7 @@ Some language models take a list of messages as input and return a message.
 There are a few different types of messages.
 All messages have a `role`, `content`, and `response_metadata` property.
 
-The `role` describes WHO is saying the message.
+The `role` describes WHO is saying the message. The standard roles are "user"/"human", "assistant"/"ai", "system", and "tool".
 LangChain has different message classes for different roles.
 
 The `content` property describes the content of the message.
@@ -218,13 +218,16 @@ This can be a few different things:
 - A string (most models deal this type of content)
 - A List of dictionaries (this is used for multimodal input, where the dictionary contains information about that input type and that input location)
 
+Optionally, messages can have a `name` property which allows for differentiating between multiple speakers with the same role.
+For example, if there are two users in the chat history it can be useful to differentiate between them. Not all models support this.
+
 #### HumanMessage
 
-This represents a message from the user.
+This represents a message with role "user"/"human".
 
 #### AIMessage
 
-This represents a message from the model. In addition to the `content` property, these messages also have:
+This represents a message with role "assistant"/"ai". In addition to the `content` property, these messages also have:
 
 **`response_metadata`**
 
@@ -244,11 +247,11 @@ This property returns a list of `ToolCall`s. A `ToolCall` is a dictionary with t
 
 #### SystemMessage
 
-This represents a system message, which tells the model how to behave. Not every model provider supports this.
+This represents a message with role "system", which tells the model how to behave. Not every model provider supports this.
 
 #### ToolMessage
 
-This represents the result of a tool call. In addition to `role` and `content`, this message has:
+This represents a message with role "tool", which contains the result of calling a tool. In addition to `role` and `content`, this message has:
 
 - a `tool_call_id` field which conveys the id of the call to the tool that was called to produce this result.
 - an `artifact` field which can be used to pass along arbitrary artifacts of the tool execution which are useful to track but which should not be sent to the model.
@@ -1164,7 +1167,7 @@ Most state-of-the-art models these days are chat models, so we'll focus on forma
 
 If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begin and which parts are the input versus output. Different models respond better to different syntax's, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
 
-If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign names to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors then the latest input message.
+If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign [names](/docs/concepts/#messages) to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors then the latest input message.
 
 **Formatting tool call examples**
 
