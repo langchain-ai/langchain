@@ -12,6 +12,8 @@ from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
 _SCHEMA = "lc_test"
+_DATABASE_NAME = "LangChainVectors"
+_COLLATION_QUERY = "select name, collation_name from sys.databases where name = N'%s';"
 _SYS_TABLE_QUERY = """
 select object_id from sys.tables where name = '%s'
 and schema_name(schema_id) = '%s'"""
@@ -336,8 +338,7 @@ def test_that_multiple_vector_stores_can_be_created(
 def test_that_schema_input_is_used() -> None:
     """Tests that when a schema is given as input to the SQLServer_VectorStore object,
     a vector store is created within the schema."""
-    engine = create_engine(url=_CONNECTION_STRING)
-    connection = engine.connect()
+    connection = create_engine(_CONNECTION_STRING).connect()
     # Create a schema in the DB
     connection.execute(text(f"create schema {_SCHEMA}"))
 
@@ -360,8 +361,7 @@ def test_that_schema_input_is_used() -> None:
 def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> None:
     """Tests that vector stores can be created with same name in different
     schemas even with the same connection."""
-    engine = create_engine(url=_CONNECTION_STRING)
-    connection = engine.connect()
+    connection = create_engine(_CONNECTION_STRING).connect()
     # Create a schema in the DB
     connection.execute(text(f"create schema {_SCHEMA}"))
 
@@ -405,7 +405,8 @@ def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> No
 def test_that_any_size_of_embeddings_can_be_added_when_embedding_length_is_not_defined(
     texts: List[str],
 ) -> None:
-    """"""
+    """Tests that when embedding_length is not provided, the vector store can
+    take vectors of varying dimensions."""
     # Create a SQLServer_VectorStore without `embedding_length` defined.
     store_without_length = SQLServer_VectorStore(
         connection_string=_CONNECTION_STRING,
@@ -451,3 +452,31 @@ def test_that_similarity_search_returns_results_with_scores_sorted_in_ascending_
         "Good review", k=number_of_docs_to_return
     )
     assert doc_with_score == sorted(doc_with_score, key=lambda x: x[1])
+
+
+def test_that_case_sensitivity_does_not_affect_distance_strategy(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
+    """Test that when distance strategy with mixed case is set on a
+    case sensitive DB, a call to similarity search does not fail."""
+
+    connection = create_engine(_CONNECTION_STRING).connect()
+    collation_query_result = (
+        connection.execute(text(_COLLATION_QUERY % (_DATABASE_NAME))).fetchone()
+    )  # Sample return value: ('LangChainVectors', 'SQL_Latin1_General_CP1_CS_AS')
+    connection.close()
+
+    assert (
+        collation_query_result is not None
+    ), "No collation data returned from the database."
+    # Confirm DB is case sensitive
+    assert "_CS" in collation_query_result.collation_name
+
+    store.add_texts(texts)
+    store._distance_strategy = "Dot"
+
+    # Call to similarity_search function should not error out.
+    number_of_docs_to_return = 2
+    result = store.similarity_search(query="Good review", k=number_of_docs_to_return)
+    assert result is not None and len(result) == number_of_docs_to_return
