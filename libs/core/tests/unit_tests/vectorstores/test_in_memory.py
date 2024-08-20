@@ -10,7 +10,7 @@ from langchain_standard_tests.integration_tests.vectorstores import (
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding
 from langchain_core.vectorstores import InMemoryVectorStore
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.stubs import AnyStr, _AnyIdDocument
 
 
 class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
@@ -33,13 +33,13 @@ async def test_inmemory_similarity_search() -> None:
 
     # Check sync version
     output = store.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", id=AnyStr())]
+    assert output == [_AnyIdDocument(page_content="foo")]
 
     # Check async version
     output = await store.asimilarity_search("bar", k=2)
     assert output == [
-        Document(page_content="bar", id=AnyStr()),
-        Document(page_content="baz", id=AnyStr()),
+        _AnyIdDocument(page_content="bar"),
+        _AnyIdDocument(page_content="baz"),
     ]
 
 
@@ -80,16 +80,16 @@ async def test_inmemory_mmr() -> None:
     # make sure we can k > docstore size
     output = docsearch.max_marginal_relevance_search("foo", k=10, lambda_mult=0.1)
     assert len(output) == len(texts)
-    assert output[0] == Document(page_content="foo", id=AnyStr())
-    assert output[1] == Document(page_content="foy", id=AnyStr())
+    assert output[0] == _AnyIdDocument(page_content="foo")
+    assert output[1] == _AnyIdDocument(page_content="foy")
 
     # Check async version
     output = await docsearch.amax_marginal_relevance_search(
         "foo", k=10, lambda_mult=0.1
     )
     assert len(output) == len(texts)
-    assert output[0] == Document(page_content="foo", id=AnyStr())
-    assert output[1] == Document(page_content="foy", id=AnyStr())
+    assert output[0] == _AnyIdDocument(page_content="foo")
+    assert output[1] == _AnyIdDocument(page_content="foy")
 
 
 async def test_inmemory_dump_load(tmp_path: Path) -> None:

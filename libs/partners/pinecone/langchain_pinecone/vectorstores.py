@@ -33,24 +33,140 @@ VST = TypeVar("VST", bound=VectorStore)
 
 
 class PineconeVectorStore(VectorStore):
-    """`Pinecone` vector store.
+    """Pinecone vector store integration.
 
-    Setup: set the `PINECONE_API_KEY` environment variable to your Pinecone API key.
+    Setup:
+        Install ``langchain-pinecone`` and set the environment variable ``PINECONE_API_KEY``.
 
-    Example:
+        .. code-block:: bash
+
+            pip install -qU langchain-pinecone
+            export PINECONE_API_KEY = "your-pinecone-api-key"
+
+    Key init args — indexing params:
+        embedding: Embeddings
+            Embedding function to use.
+
+    Key init args — client params:
+        index: Optional[Index]
+            Index to use.
+
+
+    # TODO: Replace with relevant init params.
+    Instantiate:
         .. code-block:: python
 
-            from langchain_pinecone import PineconeVectorStore, PineconeEmbeddings
+            import time
+            import os
+            from pinecone import Pinecone, ServerlessSpec
+            from langchain_pinecone import PineconeVectorStore
+            from langchain_openai import OpenAIEmbeddings
 
-            embeddings = PineconeEmbeddings(model="multilingual-e5-large")
-            index_name = "my-index"
-            namespace = "my-namespace"
-            vectorstore = PineconeVectorStore(
-                index_name=index_name,
-                embedding=embedding,
-                namespace=namespace,
+            pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+
+            index_name = "langchain-test-index"  # change if desired
+
+            existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+
+            if index_name not in existing_indexes:
+                pc.create_index(
+                    name=index_name,
+                    dimension=1536,
+                    metric="cosine",
+                    spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+                )
+                while not pc.describe_index(index_name).status["ready"]:
+                    time.sleep(1)
+
+            index = pc.Index(index_name)
+            vector_store = PineconeVectorStore(index=index, embedding=OpenAIEmbeddings())
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'bar': 'baz'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'bar': 'baz'}]
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.832268] foo [{'baz': 'bar'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.832268] foo [{'baz': 'bar'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
             )
-    """
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            [Document(metadata={'bar': 'baz'}, page_content='thud')]
+
+    """  # noqa: E501
 
     def __init__(
         self,

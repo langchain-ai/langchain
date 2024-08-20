@@ -18,6 +18,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
+from pydantic import BaseModel as RawBaseModel
+from pydantic import Field as RawField
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
@@ -26,7 +28,11 @@ from langchain_standard_tests.unit_tests.chat_models import (
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-@tool
+class MagicFunctionSchema(RawBaseModel):
+    input: int = RawField(..., gt=-1000, lt=1000)
+
+
+@tool(args_schema=MagicFunctionSchema)
 def magic_function(input: int) -> int:
     """Applies a magic function to an input."""
     return input + 2
@@ -59,6 +65,10 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 
 class ChatModelIntegrationTests(ChatModelTests):
+    @property
+    def standard_chat_model_params(self) -> dict:
+        return {}
+
     def test_invoke(self, model: BaseChatModel) -> None:
         result = model.invoke("Hello")
         assert result is not None
@@ -160,7 +170,11 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_calling(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([magic_function])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
 
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
@@ -178,7 +192,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        model_with_tools = model.bind_tools([magic_function_no_args])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function_no_args"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools(
+            [magic_function_no_args], tool_choice=tool_choice
+        )
         query = "What is the value of magic_function()? Use the tool."
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
@@ -202,7 +222,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
         )
-        model_with_tools = model.bind_tools([tool_])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "greeting_generator"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
         query = "Using the tool, generate a Pirate greeting."
         result = model_with_tools.invoke(query)
         assert isinstance(result, AIMessage)
@@ -281,10 +305,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
-    def test_tool_message_histories_string_content(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with string tool contents
         (e.g. OpenAI).
@@ -474,3 +495,31 @@ class ChatModelIntegrationTests(ChatModelTests):
             ),
         ]
         model.bind_tools([color_picker]).invoke(messages)
+
+    def test_tool_message_error_status(self, model: BaseChatModel) -> None:
+        """Test that ToolMessage with status='error' can be handled."""
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([my_adder_tool])
+        messages = [
+            HumanMessage("What is 1 + 2"),
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": "my_adder_tool",
+                        "args": {"a": 1},
+                        "id": "abc123",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
+            ToolMessage(
+                "Error: Missing required argument 'b'.",
+                name="my_adder_tool",
+                tool_call_id="abc123",
+                status="error",
+            ),
+        ]
+        result = model_with_tools.invoke(messages)
+        assert isinstance(result, AIMessage)
