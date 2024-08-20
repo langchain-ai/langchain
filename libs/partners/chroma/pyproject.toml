@@ -39,17 +39,8 @@ omit = [ "tests/*",]
 addopts = " --strict-markers --strict-config --durations=5"
 markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
 
-[[tool.poetry.dependencies.chromadb]]
-version = ">=0.4.0,<0.6.0"
-markers = "platform_system != 'Windows'"
-
-[[tool.poetry.dependencies.chromadb]]
-version = ">=0.4.0,<0.5.3"
-markers = "platform_system == 'Windows'"
-
-[tool.poetry.dependencies.fastapi]
-version = ">=0.95.2,<1"
-optional = true
+[tool.poetry.dependencies.chromadb]
+version = ">=0.4.0,<0.6.0,!=0.5.4,!=0.5.5"
 
 [tool.poetry.group.test]
 optional = true
