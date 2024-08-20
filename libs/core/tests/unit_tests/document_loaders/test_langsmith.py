@@ -2,7 +2,6 @@ import datetime
 import uuid
 from unittest.mock import MagicMock, patch
 
-from langsmith import Client
 from langsmith.schemas import Example
 
 from langchain_core.document_loaders import LangSmithLoader
@@ -40,9 +39,7 @@ EXAMPLES = [
 
 @patch("langsmith.Client.list_examples", MagicMock(return_value=iter(EXAMPLES)))
 def test_lazy_load() -> None:
-    client = Client()
     loader = LangSmithLoader(
-        client=client,
         dataset_id="mock",
         content_key="first.second",
         format_content=(lambda x: x.upper()),
@@ -58,4 +55,3 @@ def test_lazy_load() -> None:
         )
     actual = [doc for doc in loader.lazy_load()]
     assert expected == actual
-    expected
