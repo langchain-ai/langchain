@@ -1108,18 +1108,16 @@ For a full list of model providers that support tool calling, [see this table](/
 
 One of the most effective ways to improve model performance is to give a model examples of what you want it to do. The technique of adding example inputs and expected outputs to a model prompt is known as "few-shot prompting". There are a few things to think about when doing few-shot prompting:
 
-1. How are examples generated,
-2. How many examples are in each prompt,
-3. How are examples selected at runtime,
-4. How are examples formatted in the prompt.
+1. How are examples generated?
+2. How many examples are in each prompt?
+3. How are examples selected at runtime?
+4. How are examples formatted in the prompt?
 
 Here are the considerations for each.
 
 #### 1. Generating examples
 
-The first and most important step of few-shot prompting is coming up with a good dataset of examples.
-The key to a good dataset is that the examples are relevant, clear and informative.
-The example inputs should be similar to the types of inputs you'll see at runtime, it should be clear what the correct answer was and why, and they should be examples that aren't obvious.
+The first and most important step of few-shot prompting is coming up with a good dataset of examples. Good examples should be relevant at runtime, clear, informative, and provide information that was not already known to the model.
 
 At a high-level, the basic ways to generate examples are:
 - Manual: a person/people generates examples they think are useful,
