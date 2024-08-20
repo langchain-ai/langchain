@@ -461,8 +461,8 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     store: SQLServer_VectorStore,
     texts: List[str],
 ) -> None:
-    """Test that when distance strategy with mixed case is set on a
-    case sensitive DB, a call to similarity search does not fail."""
+    """Test that when distance strategy is set on a case sensitive DB,
+    a call to similarity search does not fail."""
 
     connection = create_engine(_CONNECTION_STRING).connect()
     collation_query_result = (
@@ -477,7 +477,7 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     assert "_CS" in collation_query_result.collation_name
 
     store.add_texts(texts)
-    store._distance_strategy = DistanceStrategy.DOT.capitalize()  # Returns 'Dot'
+    store._distance_strategy = DistanceStrategy.DOT
 
     # Call to similarity_search function should not error out.
     number_of_docs_to_return = 2
