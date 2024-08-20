@@ -261,6 +261,7 @@ from langchain_community.document_loaders.onenote import OneNoteLoader
 
 [AI agent](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents) needs robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation.
 
+### Azure Cosmos DB
 AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode. 
 
 Below are two available Azure Cosmos DB APIs that can provide vector store functionalities.
@@ -327,6 +328,15 @@ See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
 from langchain_community.vectorstores import AzureCosmosDBNoSQLVectorSearch
 ```
 
+### Azure Database for PostgreSQL
+>[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
+
+See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
+
+See a [usage example](/docs/integrations/memory/postgres_chat_message_history/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal. 
+
+Since Azure Database for PostgreSQL is open-source Postgres, you can use the [LangChain's Postgres support](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL.
+
 ## Retrievers
 ### Azure AI Search
 
@@ -346,6 +356,17 @@ See a [usage example](/docs/integrations/retrievers/azure_ai_search).
 ```python
 from langchain.retrievers import AzureAISearchRetriever
 ```
+
+## Vector Store
+### Azure Database for PostgreSQL
+>[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
+
+See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
+
+You need to [enable pgvector extension](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-use-pgvector) in your database to use Postgres as a vector store. Once you have the extension enabled, you can use the [PGVector in LangChain](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL. 
+
+See a [usage example](/docs/integrations/vectorstores/pgvector/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal. 
+
 
 ## Tools
 
@@ -496,4 +517,3 @@ See [usage examples](https://python.langchain.com/v0.1/docs/guides/productioniza
 ```python
 from langchain_experimental.data_anonymizer import PresidioAnonymizer, PresidioReversibleAnonymizer
 ```
-
