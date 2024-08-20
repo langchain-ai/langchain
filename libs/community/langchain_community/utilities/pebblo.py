@@ -634,13 +634,11 @@ class PebbloAPIWrapper(BaseModel):
                 method=method, url=url, headers=headers, json=payload, timeout=timeout
             )
             logger.debug(
-                "Request: method %s, url %s, body %s len %s response status %s body %s",
+                "Request: method %s, url %s, len %s response status %s",
                 method,
                 response.request.url,
-                str(response.request.body),
                 str(len(response.request.body if response.request.body else [])),
                 str(response.status_code),
-                response.json(),
             )
 
             if response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
