@@ -465,7 +465,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
     name: Optional[str] = None
-    """Name of message"""
+    """An optional name for the participant. Provides the model information to 
+       differentiate between participants of the same role."""
 
     _msg_class: Type[BaseMessage]
 
