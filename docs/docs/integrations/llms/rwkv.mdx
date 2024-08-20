@@ -46,7 +46,8 @@ from langchain_community.llms import RWKV
 
 def generate_prompt(instruction, input=None):
     if input:
-        return f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+        return f"""Below is an instruction that describes a task, paired with an input that provides
+further context. Write a response that appropriately completes the request.
 
 # Instruction:
 {instruction}
@@ -57,7 +58,8 @@ def generate_prompt(instruction, input=None):
 # Response:
 """
     else:
-        return f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
+        return f"""Below is an instruction that describes a task. Write a response that 
+appropriately completes the request.
 
 # Instruction:
 {instruction}
@@ -65,7 +67,11 @@ def generate_prompt(instruction, input=None):
 # Response:
 """
 
-model = RWKV(model="./models/RWKV-4-Raven-3B-v7-Eng-20230404-ctx4096.pth", strategy="cpu fp32", tokens_path="./rwkv/20B_tokenizer.json")
+model = RWKV(
+    model="./models/RWKV-4-Raven-3B-v7-Eng-20230404-ctx4096.pth",
+    strategy="cpu fp32",
+    tokens_path="./rwkv/20B_tokenizer.json"
+)
 response = model.invoke(generate_prompt("Once upon a time, "))
 ```
 
