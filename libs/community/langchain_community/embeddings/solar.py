@@ -46,7 +46,7 @@ def embed_with_retry(embeddings: SolarEmbeddings, *args: Any, **kwargs: Any) -> 
 
 
 @deprecated(
-    since="0.0.34", removal="0.3.0", alternative_import="langchain_upstage.ChatUpstage"
+    since="0.0.34", removal="1.0", alternative_import="langchain_upstage.ChatUpstage"
 )
 class SolarEmbeddings(BaseModel, Embeddings):
     """Solar's embedding service.
