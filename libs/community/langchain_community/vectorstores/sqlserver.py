@@ -11,10 +11,11 @@ from sqlalchemy import (
     asc,
     bindparam,
     create_engine,
+    label,
     text,
 )
 from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
-from sqlalchemy.engine import Connection, Engine, Row
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.orm import Session
 
@@ -55,8 +56,7 @@ INVALID_INPUT_ERROR_MESSAGE = "Input is not valid."
 EMBEDDING_LENGTH_CONSTRAINT = f"ISVECTOR(embeddings, :{EMBEDDING_LENGTH}) = 1"
 JSON_TO_ARRAY_QUERY = f"select JSON_ARRAY_TO_VECTOR (:{EMBEDDING_VALUES})"
 VECTOR_DISTANCE_QUERY = f"""
-VECTOR_DISTANCE(:{DISTANCE_STRATEGY}, JSON_ARRAY_TO_VECTOR(:{EMBEDDING}), embeddings) 
-AS {DISTANCE}"""
+VECTOR_DISTANCE(:{DISTANCE_STRATEGY}, JSON_ARRAY_TO_VECTOR(:{EMBEDDING}), embeddings)"""
 
 
 class SQLServer_VectorStore(VectorStore):
@@ -313,14 +313,19 @@ class SQLServer_VectorStore(VectorStore):
                 results = (
                     session.query(
                         self._embedding_store,
-                        text(VECTOR_DISTANCE_QUERY).bindparams(
-                            bindparam(
-                                DISTANCE_STRATEGY,
-                                self.distance_strategy,
-                                literal_execute=True,
-                            ),
-                            bindparam(
-                                EMBEDDING, json.dumps(embedding), literal_execute=True
+                        label(
+                            DISTANCE,
+                            text(VECTOR_DISTANCE_QUERY).bindparams(
+                                bindparam(
+                                    DISTANCE_STRATEGY,
+                                    self.distance_strategy,
+                                    literal_execute=True,
+                                ),
+                                bindparam(
+                                    EMBEDDING,
+                                    json.dumps(embedding),
+                                    literal_execute=True,
+                                ),
                             ),
                         ),
                     )
@@ -342,7 +347,7 @@ class SQLServer_VectorStore(VectorStore):
         self, results: List[Tuple[Document, float]]
     ) -> List[Document]:
         """Formats the input into a result of type List[Document]."""
-        docs = [doc for doc, _ in results]
+        docs = [doc for doc, _ in results if doc is not None]
         return docs
 
     def _docs_and_scores_from_result(
@@ -355,16 +360,18 @@ class SQLServer_VectorStore(VectorStore):
         docs_and_scores = []
 
         for result in results:
-            # Check that the value to be formatted is a row from the vector store.
-            # result will be of the form (EmbeddingStoreObject, float).
-            if isinstance(result, Row):
+            if (
+                result is not None
+                and result.EmbeddingStore is not None
+                and result.distance is not None
+            ):
                 docs_and_scores.append(
                     (
                         Document(
                             page_content=result.EmbeddingStore.content,
                             metadata=result.EmbeddingStore.content_metadata,
                         ),
-                        result[1],
+                        result.distance,
                     )
                 )
             else:
@@ -412,7 +419,7 @@ class SQLServer_VectorStore(VectorStore):
                         ids.append(str(uuid.uuid4()))
                         id = ids[-1]
                     embedding = embeddings[idx]
-                    metadata = metadatas[idx] if idx < len(metadatas) else None
+                    metadata = metadatas[idx] if idx < len(metadatas) else {}
 
                     # Construct text, embedding, metadata as EmbeddingStore model
                     # to be inserted into the table.

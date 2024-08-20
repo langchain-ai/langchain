@@ -5,10 +5,9 @@ from typing import Generator, List
 
 import pytest
 from langchain_core.documents import Document
-from sqlalchemy import Connection, create_engine, text
+from sqlalchemy import create_engine, text
 
 from langchain_community.embeddings import FakeEmbeddings
-from langchain_community.vectorstores import sqlserver
 from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
@@ -337,7 +336,10 @@ def test_that_multiple_vector_stores_can_be_created(
 def test_that_schema_input_is_used() -> None:
     """Tests that when a schema is given as input to the SQLServer_VectorStore object,
     a vector store is created within the schema."""
-    connection = create_schema()
+    engine = create_engine(url=_CONNECTION_STRING)
+    connection = engine.connect()
+    # Create a schema in the DB
+    connection.execute(text(f"create schema {_SCHEMA}"))
 
     # Create a vector store in the DB with the schema just created
     sqlserver_vectorstore = SQLServer_VectorStore(
@@ -358,7 +360,10 @@ def test_that_schema_input_is_used() -> None:
 def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> None:
     """Tests that vector stores can be created with same name in different
     schemas even with the same connection."""
-    connection = create_schema()
+    engine = create_engine(url=_CONNECTION_STRING)
+    connection = engine.connect()
+    # Create a schema in the DB
+    connection.execute(text(f"create schema {_SCHEMA}"))
 
     # Create a vector store in the DB with the schema just created
     sqlserver_vectorstore = SQLServer_VectorStore(
@@ -397,14 +402,6 @@ def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> No
     connection.close()
 
 
-def create_schema() -> Connection:
-    engine = create_engine(url=_CONNECTION_STRING)
-    connection = engine.connect()
-    # Create a schema in the DB
-    connection.execute(text(f"create schema {_SCHEMA}"))
-    return connection
-
-
 def test_that_any_size_of_embeddings_can_be_added_when_embedding_length_is_not_defined(
     texts: List[str],
 ) -> None:
@@ -414,7 +411,7 @@ def test_that_any_size_of_embeddings_can_be_added_when_embedding_length_is_not_d
         connection_string=_CONNECTION_STRING,
         # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
         embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
-        table_name="VECTOR_STORE_TABLE_NAME_NEW",
+        table_name="langchain_test_table_no_embedding_length",
     )
     store_without_length.add_texts(texts)
 
@@ -423,6 +420,9 @@ def test_that_any_size_of_embeddings_can_be_added_when_embedding_length_is_not_d
     #
     store_without_length.embedding_function = FakeEmbeddings(size=420)
     store_without_length.add_texts(texts)
+
+    # Drop the vector store when done to cleanup this testcase resource.
+    store_without_length.drop()
 
 
 def test_that_similarity_search_returns_expected_no_of_documents(
