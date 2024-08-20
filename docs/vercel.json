@@ -103,6 +103,10 @@
       "destination": "/v0.2/docs/integrations/tools#search"
     },
     {
+      "source": "/v0.2/docs/integrations/document_loaders/notiondb/",
+      "destination": "/v0.2/docs/integrations/document_loaders/notion/"
+    },
+    {
       "source": "/v0.2/docs/integrations/chat/ollama_functions/",
       "destination": "https://python.langchain.com/v0.1/docs/integrations/chat/ollama_functions/"
     }
