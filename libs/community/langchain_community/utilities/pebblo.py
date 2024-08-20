@@ -63,8 +63,6 @@ LOADER_TYPE_MAPPING = {
     "cloud-folder": cloud_folder,
 }
 
-SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
-
 
 class Routes(str, Enum):
     """Routes available for the Pebblo API as enumerator."""
