@@ -170,7 +170,11 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_calling(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([magic_function])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([magic_function], tool_choice=tool_choice)
 
         # Test invoke
         query = "What is the value of magic_function(3)? Use the tool."
@@ -188,7 +192,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        model_with_tools = model.bind_tools([magic_function_no_args])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "magic_function_no_args"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools(
+            [magic_function_no_args], tool_choice=tool_choice
+        )
         query = "What is the value of magic_function()? Use the tool."
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
@@ -212,7 +222,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
         )
-        model_with_tools = model.bind_tools([tool_])
+        if self.tool_choice_value == "tool_name":
+            tool_choice: Optional[str] = "greeting_generator"
+        else:
+            tool_choice = self.tool_choice_value
+        model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
         query = "Using the tool, generate a Pirate greeting."
         result = model_with_tools.invoke(query)
         assert isinstance(result, AIMessage)

@@ -22,11 +22,11 @@ DOCUMENTS_KEY = "context"
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template("{page_content}")
 
 
-def _validate_prompt(prompt: BasePromptTemplate) -> None:
-    if DOCUMENTS_KEY not in prompt.input_variables:
+def _validate_prompt(prompt: BasePromptTemplate, document_variable_name: str) -> None:
+    if document_variable_name not in prompt.input_variables:
         raise ValueError(
-            f"Prompt must accept {DOCUMENTS_KEY} as an input variable. Received prompt "
-            f"with input variables: {prompt.input_variables}"
+            f"Prompt must accept {document_variable_name} as an input variable. "
+            f"Received prompt with input variables: {prompt.input_variables}"
         )
 
 
