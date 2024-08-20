@@ -1,7 +1,7 @@
 import base64
 import tempfile
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, List, Tuple, Union, cast
 
 import pytest
 from syrupy import SnapshotAssertion
@@ -565,7 +565,7 @@ async def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
 async def test_chat_tmpl_from_messages_multipart_image() -> None:
     """Test multipart image URL formatting."""
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
-    other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
+    other_base64_image = "other_iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     template = ChatPromptTemplate.from_messages(
         [
             ("system", "You are an AI assistant named {name}."),
@@ -609,9 +609,7 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
                 },
                 {
                     "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{other_base64_image}"
-                    },
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
                 },
                 {
                     "type": "image_url",
@@ -814,3 +812,54 @@ def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> 
     assert load(dumpd(MessagesPlaceholder("bar"))) == MessagesPlaceholder("bar")
     assert dumpd(prompt) == snapshot(name="chat_prompt")
     assert load(dumpd(prompt)) == prompt
+
+
+async def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
+    """Test chat prompt template ser/des."""
+    template = ChatPromptTemplate(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            ("system", [{"text": "You are an AI assistant named {name}."}]),
+            SystemMessagePromptTemplate.from_template("you are {foo}"),
+            cast(
+                Tuple,
+                (
+                    "human",
+                    [
+                        "hello",
+                        {"text": "What's in this image?"},
+                        {"type": "text", "text": "What's in this image?"},
+                        {
+                            "type": "image_url",
+                            "image_url": "data:image/jpeg;base64,{my_image}",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/jpeg;base64,{my_image}"},
+                        },
+                        {"type": "image_url", "image_url": "{my_other_image}"},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": "{my_other_image}",
+                                "detail": "medium",
+                            },
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://www.langchain.com/image.png"},
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                        },
+                        {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
+                    ],
+                ),
+            ),
+            ("placeholder", "{chat_history}"),
+            MessagesPlaceholder("more_history", optional=False),
+        ]
+    )
+    assert dumpd(template) == snapshot()
+    assert load(dumpd(template)) == template
