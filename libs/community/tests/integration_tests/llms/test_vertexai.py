@@ -2,9 +2,10 @@
 In order to run this test, you need to install VertexAI SDK:
 pip install google-cloud-aiplatform>=1.36.0
 
-Your end-user credentials would be used to make the calls (make sure you've run 
+Your end-user credentials would be used to make the calls (make sure you've run
 `gcloud auth login` first).
 """
+
 import os
 from typing import Optional
 
@@ -40,7 +41,7 @@ def test_vertex_call(model_name: str) -> None:
         if model_name
         else VertexAI(temperature=0.0)
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -116,7 +117,7 @@ def test_model_garden(
         result_arg=result_arg,
         location=location,
     )
-    output = llm("What is the meaning of life?")
+    output = llm.invoke("What is the meaning of life?")
     assert isinstance(output, str)
     assert llm._llm_type == "vertexai_model_garden"
 

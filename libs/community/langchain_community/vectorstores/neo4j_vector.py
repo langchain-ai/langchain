@@ -20,6 +20,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
+from langchain_community.graphs import Neo4jGraph
 from langchain_community.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
@@ -483,6 +484,7 @@ class Neo4jVector(VectorStore):
         retrieval_query: str = "",
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         index_type: IndexType = DEFAULT_INDEX_TYPE,
+        graph: Optional[Neo4jGraph] = None,
     ) -> None:
         try:
             import neo4j
@@ -501,40 +503,44 @@ class Neo4jVector(VectorStore):
                 "distance_strategy must be either 'EUCLIDEAN_DISTANCE' or 'COSINE'"
             )
 
-        # Handle if the credentials are environment variables
+        # Graph object takes precedent over env or input params
+        if graph:
+            self._driver = graph._driver
+            self._database = graph._database
+        else:
+            # Handle if the credentials are environment variables
+            # Support URL for backwards compatibility
+            if not url:
+                url = os.environ.get("NEO4J_URL")
 
-        # Support URL for backwards compatibility
-        if not url:
-            url = os.environ.get("NEO4J_URL")
+            url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+            username = get_from_dict_or_env(
+                {"username": username}, "username", "NEO4J_USERNAME"
+            )
+            password = get_from_dict_or_env(
+                {"password": password}, "password", "NEO4J_PASSWORD"
+            )
+            database = get_from_dict_or_env(
+                {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+            )
 
-        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
-        username = get_from_dict_or_env(
-            {"username": username}, "username", "NEO4J_USERNAME"
-        )
-        password = get_from_dict_or_env(
-            {"password": password}, "password", "NEO4J_PASSWORD"
-        )
-        database = get_from_dict_or_env(
-            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
-        )
+            self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+            self._database = database
+            # Verify connection
+            try:
+                self._driver.verify_connectivity()
+            except neo4j.exceptions.ServiceUnavailable:
+                raise ValueError(
+                    "Could not connect to Neo4j database. "
+                    "Please ensure that the url is correct"
+                )
+            except neo4j.exceptions.AuthError:
+                raise ValueError(
+                    "Could not connect to Neo4j database. "
+                    "Please ensure that the username and password are correct"
+                )
 
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
-        self._database = database
         self.schema = ""
-        # Verify connection
-        try:
-            self._driver.verify_connectivity()
-        except neo4j.exceptions.ServiceUnavailable:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the url is correct"
-            )
-        except neo4j.exceptions.AuthError:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the username and password are correct"
-            )
-
         # Verify if the version support vector index
         self._is_enterprise = False
         self.verify_version()
@@ -848,11 +854,11 @@ class Neo4jVector(VectorStore):
             "CALL { WITH row "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
-            f"CALL db.create.setVectorProperty(c, "
+            f"CALL db.create.setNodeVectorProperty(c, "
             f"'{self.embedding_node_property}', row.embedding) "
-            "YIELD node "
             f"SET c.`{self.text_node_property}` = row.text "
-            "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
+            "SET c += row.metadata "
+            "} IN TRANSACTIONS OF 1000 ROWS "
         )
 
         parameters = {
@@ -903,6 +909,11 @@ class Neo4jVector(VectorStore):
         Args:
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query.
@@ -930,6 +941,11 @@ class Neo4jVector(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -966,6 +982,11 @@ class Neo4jVector(VectorStore):
         Args:
             embedding (List[float]): The embedding vector to compare against.
             k (int, optional): The number of top similar documents to retrieve.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
 
         Returns:
             List[Tuple[Document, float]]: A list of tuples, each containing
@@ -1037,6 +1058,19 @@ class Neo4jVector(VectorStore):
 
         results = self.query(read_query, params=parameters)
 
+        if any(result["text"] is None for result in results):
+            if not self.retrieval_query:
+                raise ValueError(
+                    f"Make sure that none of the `{self.text_node_property}` "
+                    f"properties on nodes with label `{self.node_label}` "
+                    "are missing or empty"
+                )
+            else:
+                raise ValueError(
+                    "Inspect the `retrieval_query` and ensure it doesn't "
+                    "return None for the `text` column"
+                )
+
         docs = [
             (
                 Document(
@@ -1058,6 +1092,7 @@ class Neo4jVector(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
+        params: Dict[str, Any] = {},
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -1065,12 +1100,17 @@ class Neo4jVector(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
 
         Returns:
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter, **kwargs
+            embedding=embedding, k=k, filter=filter, params=params, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -1409,6 +1449,8 @@ class Neo4jVector(VectorStore):
                 "LIMIT 1000"
             )
             data = store.query(fetch_query, params={"props": text_node_properties})
+            if not data:
+                break
             text_embeddings = embedding.embed_documents([el["text"] for el in data])
 
             params = {
@@ -1422,9 +1464,9 @@ class Neo4jVector(VectorStore):
                 "UNWIND $data AS row "
                 f"MATCH (n:`{node_label}`) "
                 "WHERE elementId(n) = row.id "
-                f"CALL db.create.setVectorProperty(n, "
+                f"CALL db.create.setNodeVectorProperty(n, "
                 f"'{embedding_node_property}', row.embedding) "
-                "YIELD node RETURN count(*)",
+                "RETURN count(*)",
                 params=params,
             )
             # If embedding calculation should be stopped

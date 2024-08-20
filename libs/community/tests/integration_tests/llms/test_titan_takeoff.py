@@ -1,4 +1,5 @@
 """Test Titan Takeoff wrapper."""
+
 import json
 from typing import Any, Union
 
@@ -85,7 +86,7 @@ def test_titan_takeoff_bad_call(
 
     llm = takeoff_object(streaming=streaming)
     with pytest.raises(TakeoffException):
-        llm("What is 2 + 2?")
+        llm.invoke("What is 2 + 2?")
     assert len(httpx_mock.get_requests()) == 1
     assert httpx_mock.get_requests()[0].url == url
     assert json.loads(httpx_mock.get_requests()[0].content)["text"] == "What is 2 + 2?"
@@ -124,7 +125,7 @@ def test_titan_takeoff_model_initialisation(
     llm = takeoff_object(
         port=inf_port, mgmt_port=mgnt_port, models=[reader_1, reader_2]
     )
-    output = llm("What is 2 + 2?")
+    output = llm.invoke("What is 2 + 2?")
 
     assert isinstance(output, str)
     # Ensure the management api was called to create the reader

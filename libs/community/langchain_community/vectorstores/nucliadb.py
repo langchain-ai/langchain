@@ -36,7 +36,7 @@ class NucliaDB(VectorStore):
         try:
             from nuclia.sdk import NucliaAuth
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "nuclia python package not found. "
                 "Please install it with `pip install nuclia`."
             )

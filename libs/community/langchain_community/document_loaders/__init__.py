@@ -14,682 +14,520 @@
 
     Document, <name>TextSplitter
 """
+
 import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders.acreom import (
-        AcreomLoader,  # noqa: F401
+        AcreomLoader,
     )
     from langchain_community.document_loaders.airbyte import (
-        AirbyteCDKLoader,  # noqa: F401
-        AirbyteGongLoader,  # noqa: F401
-        AirbyteHubspotLoader,  # noqa: F401
-        AirbyteSalesforceLoader,  # noqa: F401
-        AirbyteShopifyLoader,  # noqa: F401
-        AirbyteStripeLoader,  # noqa: F401
-        AirbyteTypeformLoader,  # noqa: F401
-        AirbyteZendeskSupportLoader,  # noqa: F401
+        AirbyteCDKLoader,
+        AirbyteGongLoader,
+        AirbyteHubspotLoader,
+        AirbyteSalesforceLoader,
+        AirbyteShopifyLoader,
+        AirbyteStripeLoader,
+        AirbyteTypeformLoader,
+        AirbyteZendeskSupportLoader,
     )
     from langchain_community.document_loaders.airbyte_json import (
-        AirbyteJSONLoader,  # noqa: F401
+        AirbyteJSONLoader,
     )
     from langchain_community.document_loaders.airtable import (
-        AirtableLoader,  # noqa: F401
+        AirtableLoader,
     )
     from langchain_community.document_loaders.apify_dataset import (
-        ApifyDatasetLoader,  # noqa: F401
+        ApifyDatasetLoader,
     )
     from langchain_community.document_loaders.arcgis_loader import (
-        ArcGISLoader,  # noqa: F401
+        ArcGISLoader,
     )
     from langchain_community.document_loaders.arxiv import (
-        ArxivLoader,  # noqa: F401
+        ArxivLoader,
     )
     from langchain_community.document_loaders.assemblyai import (
-        AssemblyAIAudioLoaderById,  # noqa: F401
-        AssemblyAIAudioTranscriptLoader,  # noqa: F401
+        AssemblyAIAudioLoaderById,
+        AssemblyAIAudioTranscriptLoader,
     )
     from langchain_community.document_loaders.astradb import (
-        AstraDBLoader,  # noqa: F401
+        AstraDBLoader,
     )
     from langchain_community.document_loaders.async_html import (
-        AsyncHtmlLoader,  # noqa: F401
+        AsyncHtmlLoader,
     )
     from langchain_community.document_loaders.athena import (
-        AthenaLoader,  # noqa: F401
+        AthenaLoader,
     )
     from langchain_community.document_loaders.azlyrics import (
-        AZLyricsLoader,  # noqa: F401
+        AZLyricsLoader,
     )
     from langchain_community.document_loaders.azure_ai_data import (
-        AzureAIDataLoader,  # noqa: F401
+        AzureAIDataLoader,
     )
     from langchain_community.document_loaders.azure_blob_storage_container import (
-        AzureBlobStorageContainerLoader,  # noqa: F401
+        AzureBlobStorageContainerLoader,
     )
     from langchain_community.document_loaders.azure_blob_storage_file import (
-        AzureBlobStorageFileLoader,  # noqa: F401
+        AzureBlobStorageFileLoader,
     )
     from langchain_community.document_loaders.bibtex import (
-        BibtexLoader,  # noqa: F401
+        BibtexLoader,
     )
     from langchain_community.document_loaders.bigquery import (
-        BigQueryLoader,  # noqa: F401
+        BigQueryLoader,
     )
     from langchain_community.document_loaders.bilibili import (
-        BiliBiliLoader,  # noqa: F401
+        BiliBiliLoader,
     )
     from langchain_community.document_loaders.blackboard import (
-        BlackboardLoader,  # noqa: F401
+        BlackboardLoader,
     )
     from langchain_community.document_loaders.blob_loaders import (
-        Blob,  # noqa: F401
-        BlobLoader,  # noqa: F401
-        FileSystemBlobLoader,  # noqa: F401
-        YoutubeAudioLoader,  # noqa: F401
+        Blob,
+        BlobLoader,
+        FileSystemBlobLoader,
+        YoutubeAudioLoader,
     )
     from langchain_community.document_loaders.blockchain import (
-        BlockchainDocumentLoader,  # noqa: F401
+        BlockchainDocumentLoader,
     )
     from langchain_community.document_loaders.brave_search import (
-        BraveSearchLoader,  # noqa: F401
+        BraveSearchLoader,
+    )
+    from langchain_community.document_loaders.browserbase import (
+        BrowserbaseLoader,
     )
     from langchain_community.document_loaders.browserless import (
-        BrowserlessLoader,  # noqa: F401
+        BrowserlessLoader,
     )
     from langchain_community.document_loaders.cassandra import (
-        CassandraLoader,  # noqa: F401
+        CassandraLoader,
     )
     from langchain_community.document_loaders.chatgpt import (
-        ChatGPTLoader,  # noqa: F401
+        ChatGPTLoader,
     )
     from langchain_community.document_loaders.chm import (
-        UnstructuredCHMLoader,  # noqa: F401
+        UnstructuredCHMLoader,
     )
     from langchain_community.document_loaders.chromium import (
-        AsyncChromiumLoader,  # noqa: F401
+        AsyncChromiumLoader,
     )
     from langchain_community.document_loaders.college_confidential import (
-        CollegeConfidentialLoader,  # noqa: F401
+        CollegeConfidentialLoader,
     )
     from langchain_community.document_loaders.concurrent import (
-        ConcurrentLoader,  # noqa: F401
+        ConcurrentLoader,
     )
     from langchain_community.document_loaders.confluence import (
-        ConfluenceLoader,  # noqa: F401
+        ConfluenceLoader,
     )
     from langchain_community.document_loaders.conllu import (
-        CoNLLULoader,  # noqa: F401
+        CoNLLULoader,
     )
     from langchain_community.document_loaders.couchbase import (
-        CouchbaseLoader,  # noqa: F401
+        CouchbaseLoader,
     )
     from langchain_community.document_loaders.csv_loader import (
-        CSVLoader,  # noqa: F401
-        UnstructuredCSVLoader,  # noqa: F401
+        CSVLoader,
+        UnstructuredCSVLoader,
     )
     from langchain_community.document_loaders.cube_semantic import (
-        CubeSemanticLoader,  # noqa: F401
+        CubeSemanticLoader,
     )
     from langchain_community.document_loaders.datadog_logs import (
-        DatadogLogsLoader,  # noqa: F401
+        DatadogLogsLoader,
     )
     from langchain_community.document_loaders.dataframe import (
-        DataFrameLoader,  # noqa: F401
+        DataFrameLoader,
+    )
+    from langchain_community.document_loaders.dedoc import (
+        DedocAPIFileLoader,
+        DedocFileLoader,
     )
     from langchain_community.document_loaders.diffbot import (
-        DiffbotLoader,  # noqa: F401
+        DiffbotLoader,
     )
     from langchain_community.document_loaders.directory import (
-        DirectoryLoader,  # noqa: F401
+        DirectoryLoader,
     )
     from langchain_community.document_loaders.discord import (
-        DiscordChatLoader,  # noqa: F401
+        DiscordChatLoader,
     )
     from langchain_community.document_loaders.doc_intelligence import (
-        AzureAIDocumentIntelligenceLoader,  # noqa: F401
+        AzureAIDocumentIntelligenceLoader,
     )
     from langchain_community.document_loaders.docugami import (
-        DocugamiLoader,  # noqa: F401
+        DocugamiLoader,
     )
     from langchain_community.document_loaders.docusaurus import (
-        DocusaurusLoader,  # noqa: F401
+        DocusaurusLoader,
     )
     from langchain_community.document_loaders.dropbox import (
-        DropboxLoader,  # noqa: F401
+        DropboxLoader,
     )
     from langchain_community.document_loaders.duckdb_loader import (
-        DuckDBLoader,  # noqa: F401
+        DuckDBLoader,
     )
     from langchain_community.document_loaders.email import (
-        OutlookMessageLoader,  # noqa: F401
-        UnstructuredEmailLoader,  # noqa: F401
+        OutlookMessageLoader,
+        UnstructuredEmailLoader,
     )
     from langchain_community.document_loaders.epub import (
-        UnstructuredEPubLoader,  # noqa: F401
+        UnstructuredEPubLoader,
     )
     from langchain_community.document_loaders.etherscan import (
-        EtherscanLoader,  # noqa: F401
+        EtherscanLoader,
     )
     from langchain_community.document_loaders.evernote import (
-        EverNoteLoader,  # noqa: F401
+        EverNoteLoader,
     )
     from langchain_community.document_loaders.excel import (
-        UnstructuredExcelLoader,  # noqa: F401
+        UnstructuredExcelLoader,
     )
     from langchain_community.document_loaders.facebook_chat import (
-        FacebookChatLoader,  # noqa: F401
+        FacebookChatLoader,
     )
     from langchain_community.document_loaders.fauna import (
-        FaunaLoader,  # noqa: F401
+        FaunaLoader,
     )
     from langchain_community.document_loaders.figma import (
-        FigmaFileLoader,  # noqa: F401
+        FigmaFileLoader,
     )
     from langchain_community.document_loaders.firecrawl import (
-        FireCrawlLoader,  # noqa: F401
+        FireCrawlLoader,
     )
     from langchain_community.document_loaders.gcs_directory import (
-        GCSDirectoryLoader,  # noqa: F401
+        GCSDirectoryLoader,
     )
     from langchain_community.document_loaders.gcs_file import (
-        GCSFileLoader,  # noqa: F401
+        GCSFileLoader,
     )
     from langchain_community.document_loaders.geodataframe import (
-        GeoDataFrameLoader,  # noqa: F401
+        GeoDataFrameLoader,
     )
     from langchain_community.document_loaders.git import (
-        GitLoader,  # noqa: F401
+        GitLoader,
     )
     from langchain_community.document_loaders.gitbook import (
-        GitbookLoader,  # noqa: F401
+        GitbookLoader,
     )
     from langchain_community.document_loaders.github import (
-        GithubFileLoader,  # noqa: F401
-        GitHubIssuesLoader,  # noqa: F401
+        GithubFileLoader,
+        GitHubIssuesLoader,
     )
     from langchain_community.document_loaders.glue_catalog import (
-        GlueCatalogLoader,  # noqa: F401
+        GlueCatalogLoader,
     )
     from langchain_community.document_loaders.google_speech_to_text import (
-        GoogleSpeechToTextLoader,  # noqa: F401
+        GoogleSpeechToTextLoader,
     )
     from langchain_community.document_loaders.googledrive import (
-        GoogleDriveLoader,  # noqa: F401
+        GoogleDriveLoader,
     )
     from langchain_community.document_loaders.gutenberg import (
-        GutenbergLoader,  # noqa: F401
+        GutenbergLoader,
     )
     from langchain_community.document_loaders.hn import (
-        HNLoader,  # noqa: F401
+        HNLoader,
     )
     from langchain_community.document_loaders.html import (
-        UnstructuredHTMLLoader,  # noqa: F401
+        UnstructuredHTMLLoader,
     )
     from langchain_community.document_loaders.html_bs import (
-        BSHTMLLoader,  # noqa: F401
+        BSHTMLLoader,
     )
     from langchain_community.document_loaders.hugging_face_dataset import (
-        HuggingFaceDatasetLoader,  # noqa: F401
+        HuggingFaceDatasetLoader,
     )
     from langchain_community.document_loaders.hugging_face_model import (
-        HuggingFaceModelLoader,  # noqa: F401
+        HuggingFaceModelLoader,
     )
     from langchain_community.document_loaders.ifixit import (
-        IFixitLoader,  # noqa: F401
+        IFixitLoader,
     )
     from langchain_community.document_loaders.image import (
-        UnstructuredImageLoader,  # noqa: F401
+        UnstructuredImageLoader,
     )
     from langchain_community.document_loaders.image_captions import (
-        ImageCaptionLoader,  # noqa: F401
+        ImageCaptionLoader,
     )
     from langchain_community.document_loaders.imsdb import (
-        IMSDbLoader,  # noqa: F401
+        IMSDbLoader,
     )
     from langchain_community.document_loaders.iugu import (
-        IuguLoader,  # noqa: F401
+        IuguLoader,
     )
     from langchain_community.document_loaders.joplin import (
-        JoplinLoader,  # noqa: F401
+        JoplinLoader,
     )
     from langchain_community.document_loaders.json_loader import (
-        JSONLoader,  # noqa: F401
+        JSONLoader,
     )
+    from langchain_community.document_loaders.kinetica_loader import KineticaLoader
     from langchain_community.document_loaders.lakefs import (
-        LakeFSLoader,  # noqa: F401
+        LakeFSLoader,
     )
     from langchain_community.document_loaders.larksuite import (
-        LarkSuiteDocLoader,  # noqa: F401
+        LarkSuiteDocLoader,
     )
     from langchain_community.document_loaders.llmsherpa import (
-        LLMSherpaFileLoader,  # noqa: F401
+        LLMSherpaFileLoader,
     )
     from langchain_community.document_loaders.markdown import (
-        UnstructuredMarkdownLoader,  # noqa: F401
+        UnstructuredMarkdownLoader,
     )
     from langchain_community.document_loaders.mastodon import (
-        MastodonTootsLoader,  # noqa: F401
+        MastodonTootsLoader,
     )
     from langchain_community.document_loaders.max_compute import (
-        MaxComputeLoader,  # noqa: F401
+        MaxComputeLoader,
     )
     from langchain_community.document_loaders.mediawikidump import (
-        MWDumpLoader,  # noqa: F401
+        MWDumpLoader,
     )
     from langchain_community.document_loaders.merge import (
-        MergedDataLoader,  # noqa: F401
+        MergedDataLoader,
     )
     from langchain_community.document_loaders.mhtml import (
-        MHTMLLoader,  # noqa: F401
+        MHTMLLoader,
     )
     from langchain_community.document_loaders.modern_treasury import (
-        ModernTreasuryLoader,  # noqa: F401
+        ModernTreasuryLoader,
     )
     from langchain_community.document_loaders.mongodb import (
-        MongodbLoader,  # noqa: F401
+        MongodbLoader,
     )
     from langchain_community.document_loaders.news import (
-        NewsURLLoader,  # noqa: F401
+        NewsURLLoader,
     )
     from langchain_community.document_loaders.notebook import (
-        NotebookLoader,  # noqa: F401
+        NotebookLoader,
     )
     from langchain_community.document_loaders.notion import (
-        NotionDirectoryLoader,  # noqa: F401
+        NotionDirectoryLoader,
     )
     from langchain_community.document_loaders.notiondb import (
-        NotionDBLoader,  # noqa: F401
+        NotionDBLoader,
     )
     from langchain_community.document_loaders.obs_directory import (
-        OBSDirectoryLoader,  # noqa: F401
+        OBSDirectoryLoader,
     )
     from langchain_community.document_loaders.obs_file import (
-        OBSFileLoader,  # noqa: F401
+        OBSFileLoader,
     )
     from langchain_community.document_loaders.obsidian import (
-        ObsidianLoader,  # noqa: F401
+        ObsidianLoader,
     )
     from langchain_community.document_loaders.odt import (
-        UnstructuredODTLoader,  # noqa: F401
+        UnstructuredODTLoader,
     )
     from langchain_community.document_loaders.onedrive import (
-        OneDriveLoader,  # noqa: F401
+        OneDriveLoader,
     )
     from langchain_community.document_loaders.onedrive_file import (
-        OneDriveFileLoader,  # noqa: F401
+        OneDriveFileLoader,
     )
     from langchain_community.document_loaders.open_city_data import (
-        OpenCityDataLoader,  # noqa: F401
+        OpenCityDataLoader,
     )
     from langchain_community.document_loaders.oracleadb_loader import (
-        OracleAutonomousDatabaseLoader,  # noqa: F401
+        OracleAutonomousDatabaseLoader,
+    )
+    from langchain_community.document_loaders.oracleai import (
+        OracleDocLoader,
+        OracleTextSplitter,
     )
     from langchain_community.document_loaders.org_mode import (
-        UnstructuredOrgModeLoader,  # noqa: F401
+        UnstructuredOrgModeLoader,
     )
     from langchain_community.document_loaders.pdf import (
-        AmazonTextractPDFLoader,  # noqa: F401
-        MathpixPDFLoader,  # noqa: F401
-        OnlinePDFLoader,  # noqa: F401
-        PagedPDFSplitter,  # noqa: F401
-        PDFMinerLoader,  # noqa: F401
-        PDFMinerPDFasHTMLLoader,  # noqa: F401
-        PDFPlumberLoader,  # noqa: F401
-        PyMuPDFLoader,  # noqa: F401
-        PyPDFDirectoryLoader,  # noqa: F401
-        PyPDFium2Loader,  # noqa: F401
-        PyPDFLoader,  # noqa: F401
-        UnstructuredPDFLoader,  # noqa: F401
+        AmazonTextractPDFLoader,
+        DedocPDFLoader,
+        MathpixPDFLoader,
+        OnlinePDFLoader,
+        PagedPDFSplitter,
+        PDFMinerLoader,
+        PDFMinerPDFasHTMLLoader,
+        PDFPlumberLoader,
+        PyMuPDFLoader,
+        PyPDFDirectoryLoader,
+        PyPDFium2Loader,
+        PyPDFLoader,
+        UnstructuredPDFLoader,
     )
     from langchain_community.document_loaders.pebblo import (
-        PebbloSafeLoader,  # noqa: F401
+        PebbloSafeLoader,
     )
     from langchain_community.document_loaders.polars_dataframe import (
-        PolarsDataFrameLoader,  # noqa: F401
+        PolarsDataFrameLoader,
     )
     from langchain_community.document_loaders.powerpoint import (
-        UnstructuredPowerPointLoader,  # noqa: F401
+        UnstructuredPowerPointLoader,
     )
     from langchain_community.document_loaders.psychic import (
-        PsychicLoader,  # noqa: F401
+        PsychicLoader,
     )
     from langchain_community.document_loaders.pubmed import (
-        PubMedLoader,  # noqa: F401
+        PubMedLoader,
     )
     from langchain_community.document_loaders.pyspark_dataframe import (
-        PySparkDataFrameLoader,  # noqa: F401
+        PySparkDataFrameLoader,
     )
     from langchain_community.document_loaders.python import (
-        PythonLoader,  # noqa: F401
+        PythonLoader,
     )
     from langchain_community.document_loaders.readthedocs import (
-        ReadTheDocsLoader,  # noqa: F401
+        ReadTheDocsLoader,
     )
     from langchain_community.document_loaders.recursive_url_loader import (
-        RecursiveUrlLoader,  # noqa: F401
+        RecursiveUrlLoader,
     )
     from langchain_community.document_loaders.reddit import (
-        RedditPostsLoader,  # noqa: F401
+        RedditPostsLoader,
     )
     from langchain_community.document_loaders.roam import (
-        RoamLoader,  # noqa: F401
+        RoamLoader,
     )
     from langchain_community.document_loaders.rocksetdb import (
-        RocksetLoader,  # noqa: F401
+        RocksetLoader,
     )
     from langchain_community.document_loaders.rss import (
-        RSSFeedLoader,  # noqa: F401
+        RSSFeedLoader,
     )
     from langchain_community.document_loaders.rst import (
-        UnstructuredRSTLoader,  # noqa: F401
+        UnstructuredRSTLoader,
     )
     from langchain_community.document_loaders.rtf import (
-        UnstructuredRTFLoader,  # noqa: F401
+        UnstructuredRTFLoader,
     )
     from langchain_community.document_loaders.s3_directory import (
-        S3DirectoryLoader,  # noqa: F401
+        S3DirectoryLoader,
     )
     from langchain_community.document_loaders.s3_file import (
-        S3FileLoader,  # noqa: F401
+        S3FileLoader,
+    )
+    from langchain_community.document_loaders.scrapfly import (
+        ScrapflyLoader,
+    )
+    from langchain_community.document_loaders.scrapingant import (
+        ScrapingAntLoader,
     )
     from langchain_community.document_loaders.sharepoint import (
-        SharePointLoader,  # noqa: F401
+        SharePointLoader,
     )
     from langchain_community.document_loaders.sitemap import (
-        SitemapLoader,  # noqa: F401
+        SitemapLoader,
     )
     from langchain_community.document_loaders.slack_directory import (
-        SlackDirectoryLoader,  # noqa: F401
+        SlackDirectoryLoader,
     )
     from langchain_community.document_loaders.snowflake_loader import (
-        SnowflakeLoader,  # noqa: F401
+        SnowflakeLoader,
+    )
+    from langchain_community.document_loaders.spider import (
+        SpiderLoader,
     )
     from langchain_community.document_loaders.spreedly import (
-        SpreedlyLoader,  # noqa: F401
+        SpreedlyLoader,
     )
     from langchain_community.document_loaders.sql_database import (
-        SQLDatabaseLoader,  # noqa: F401
+        SQLDatabaseLoader,
     )
     from langchain_community.document_loaders.srt import (
-        SRTLoader,  # noqa: F401
+        SRTLoader,
     )
     from langchain_community.document_loaders.stripe import (
-        StripeLoader,  # noqa: F401
+        StripeLoader,
     )
     from langchain_community.document_loaders.surrealdb import (
-        SurrealDBLoader,  # noqa: F401
+        SurrealDBLoader,
     )
     from langchain_community.document_loaders.telegram import (
-        TelegramChatApiLoader,  # noqa: F401
-        TelegramChatFileLoader,  # noqa: F401
-        TelegramChatLoader,  # noqa: F401
+        TelegramChatApiLoader,
+        TelegramChatFileLoader,
+        TelegramChatLoader,
     )
     from langchain_community.document_loaders.tencent_cos_directory import (
-        TencentCOSDirectoryLoader,  # noqa: F401
+        TencentCOSDirectoryLoader,
     )
     from langchain_community.document_loaders.tencent_cos_file import (
-        TencentCOSFileLoader,  # noqa: F401
+        TencentCOSFileLoader,
     )
     from langchain_community.document_loaders.tensorflow_datasets import (
-        TensorflowDatasetLoader,  # noqa: F401
+        TensorflowDatasetLoader,
     )
     from langchain_community.document_loaders.text import (
-        TextLoader,  # noqa: F401
+        TextLoader,
     )
     from langchain_community.document_loaders.tidb import (
-        TiDBLoader,  # noqa: F401
+        TiDBLoader,
     )
     from langchain_community.document_loaders.tomarkdown import (
-        ToMarkdownLoader,  # noqa: F401
+        ToMarkdownLoader,
     )
     from langchain_community.document_loaders.toml import (
-        TomlLoader,  # noqa: F401
+        TomlLoader,
     )
     from langchain_community.document_loaders.trello import (
-        TrelloLoader,  # noqa: F401
+        TrelloLoader,
     )
     from langchain_community.document_loaders.tsv import (
-        UnstructuredTSVLoader,  # noqa: F401
+        UnstructuredTSVLoader,
     )
     from langchain_community.document_loaders.twitter import (
-        TwitterTweetLoader,  # noqa: F401
+        TwitterTweetLoader,
     )
     from langchain_community.document_loaders.unstructured import (
-        UnstructuredAPIFileIOLoader,  # noqa: F401
-        UnstructuredAPIFileLoader,  # noqa: F401
-        UnstructuredFileIOLoader,  # noqa: F401
-        UnstructuredFileLoader,  # noqa: F401
+        UnstructuredAPIFileIOLoader,
+        UnstructuredAPIFileLoader,
+        UnstructuredFileIOLoader,
+        UnstructuredFileLoader,
     )
     from langchain_community.document_loaders.url import (
-        UnstructuredURLLoader,  # noqa: F401
+        UnstructuredURLLoader,
     )
     from langchain_community.document_loaders.url_playwright import (
-        PlaywrightURLLoader,  # noqa: F401
+        PlaywrightURLLoader,
     )
     from langchain_community.document_loaders.url_selenium import (
-        SeleniumURLLoader,  # noqa: F401
+        SeleniumURLLoader,
     )
     from langchain_community.document_loaders.vsdx import (
-        VsdxLoader,  # noqa: F401
+        VsdxLoader,
     )
     from langchain_community.document_loaders.weather import (
-        WeatherDataLoader,  # noqa: F401
+        WeatherDataLoader,
     )
     from langchain_community.document_loaders.web_base import (
-        WebBaseLoader,  # noqa: F401
+        WebBaseLoader,
     )
     from langchain_community.document_loaders.whatsapp_chat import (
-        WhatsAppChatLoader,  # noqa: F401
+        WhatsAppChatLoader,
     )
     from langchain_community.document_loaders.wikipedia import (
-        WikipediaLoader,  # noqa: F401
+        WikipediaLoader,
     )
     from langchain_community.document_loaders.word_document import (
-        Docx2txtLoader,  # noqa: F401
-        UnstructuredWordDocumentLoader,  # noqa: F401
+        Docx2txtLoader,
+        UnstructuredWordDocumentLoader,
     )
     from langchain_community.document_loaders.xml import (
-        UnstructuredXMLLoader,  # noqa: F401
+        UnstructuredXMLLoader,
     )
     from langchain_community.document_loaders.xorbits import (
-        XorbitsLoader,  # noqa: F401
+        XorbitsLoader,
     )
     from langchain_community.document_loaders.youtube import (
-        GoogleApiClient,  # noqa: F401
-        GoogleApiYoutubeLoader,  # noqa: F401
-        YoutubeLoader,  # noqa: F401
+        GoogleApiClient,
+        GoogleApiYoutubeLoader,
+        YoutubeLoader,
     )
     from langchain_community.document_loaders.yuque import (
-        YuqueLoader,  # noqa: F401
+        YuqueLoader,
     )
 
-__all__ = [
-    "AZLyricsLoader",
-    "AcreomLoader",
-    "AirbyteCDKLoader",
-    "AirbyteGongLoader",
-    "AirbyteHubspotLoader",
-    "AirbyteJSONLoader",
-    "AirbyteSalesforceLoader",
-    "AirbyteShopifyLoader",
-    "AirbyteStripeLoader",
-    "AirbyteTypeformLoader",
-    "AirbyteZendeskSupportLoader",
-    "AirtableLoader",
-    "AmazonTextractPDFLoader",
-    "ApifyDatasetLoader",
-    "ArcGISLoader",
-    "ArxivLoader",
-    "AssemblyAIAudioLoaderById",
-    "AssemblyAIAudioTranscriptLoader",
-    "AstraDBLoader",
-    "AsyncChromiumLoader",
-    "AsyncHtmlLoader",
-    "AthenaLoader",
-    "AzureAIDataLoader",
-    "AzureAIDocumentIntelligenceLoader",
-    "AzureBlobStorageContainerLoader",
-    "AzureBlobStorageFileLoader",
-    "BSHTMLLoader",
-    "BibtexLoader",
-    "BigQueryLoader",
-    "BiliBiliLoader",
-    "BlackboardLoader",
-    "Blob",
-    "BlobLoader",
-    "BlockchainDocumentLoader",
-    "BraveSearchLoader",
-    "BrowserlessLoader",
-    "CSVLoader",
-    "CassandraLoader",
-    "ChatGPTLoader",
-    "CoNLLULoader",
-    "CollegeConfidentialLoader",
-    "ConcurrentLoader",
-    "ConfluenceLoader",
-    "CouchbaseLoader",
-    "CubeSemanticLoader",
-    "DataFrameLoader",
-    "DatadogLogsLoader",
-    "DiffbotLoader",
-    "DirectoryLoader",
-    "DiscordChatLoader",
-    "DocugamiLoader",
-    "DocusaurusLoader",
-    "Docx2txtLoader",
-    "DropboxLoader",
-    "DuckDBLoader",
-    "EtherscanLoader",
-    "EverNoteLoader",
-    "FacebookChatLoader",
-    "FaunaLoader",
-    "FigmaFileLoader",
-    "FireCrawlLoader",
-    "FileSystemBlobLoader",
-    "GCSDirectoryLoader",
-    "GCSFileLoader",
-    "GeoDataFrameLoader",
-    "GitHubIssuesLoader",
-    "GitLoader",
-    "GitbookLoader",
-    "GithubFileLoader",
-    "GoogleApiClient",
-    "GoogleApiYoutubeLoader",
-    "GoogleDriveLoader",
-    "GoogleSpeechToTextLoader",
-    "GutenbergLoader",
-    "HNLoader",
-    "HuggingFaceDatasetLoader",
-    "HuggingFaceModelLoader",
-    "IFixitLoader",
-    "IMSDbLoader",
-    "ImageCaptionLoader",
-    "IuguLoader",
-    "JSONLoader",
-    "JoplinLoader",
-    "LLMSherpaFileLoader",
-    "LakeFSLoader",
-    "LarkSuiteDocLoader",
-    "MHTMLLoader",
-    "MWDumpLoader",
-    "MastodonTootsLoader",
-    "MathpixPDFLoader",
-    "MaxComputeLoader",
-    "MergedDataLoader",
-    "ModernTreasuryLoader",
-    "MongodbLoader",
-    "NewsURLLoader",
-    "NotebookLoader",
-    "NotionDBLoader",
-    "NotionDirectoryLoader",
-    "OBSDirectoryLoader",
-    "OBSFileLoader",
-    "ObsidianLoader",
-    "OneDriveFileLoader",
-    "OneDriveLoader",
-    "OnlinePDFLoader",
-    "OpenCityDataLoader",
-    "OracleAutonomousDatabaseLoader",
-    "OutlookMessageLoader",
-    "PDFMinerLoader",
-    "PDFMinerPDFasHTMLLoader",
-    "PDFPlumberLoader",
-    "PagedPDFSplitter",
-    "PebbloSafeLoader",
-    "PlaywrightURLLoader",
-    "PolarsDataFrameLoader",
-    "PsychicLoader",
-    "PubMedLoader",
-    "PyMuPDFLoader",
-    "PyPDFDirectoryLoader",
-    "PyPDFLoader",
-    "PyPDFium2Loader",
-    "PySparkDataFrameLoader",
-    "PythonLoader",
-    "RSSFeedLoader",
-    "ReadTheDocsLoader",
-    "RecursiveUrlLoader",
-    "RedditPostsLoader",
-    "RoamLoader",
-    "RocksetLoader",
-    "S3DirectoryLoader",
-    "S3FileLoader",
-    "SQLDatabaseLoader",
-    "SRTLoader",
-    "SeleniumURLLoader",
-    "SharePointLoader",
-    "SitemapLoader",
-    "SlackDirectoryLoader",
-    "SnowflakeLoader",
-    "SpreedlyLoader",
-    "StripeLoader",
-    "SurrealDBLoader",
-    "TelegramChatApiLoader",
-    "TelegramChatFileLoader",
-    "TelegramChatLoader",
-    "TencentCOSDirectoryLoader",
-    "TencentCOSFileLoader",
-    "TensorflowDatasetLoader",
-    "TextLoader",
-    "TiDBLoader",
-    "ToMarkdownLoader",
-    "TomlLoader",
-    "TrelloLoader",
-    "TwitterTweetLoader",
-    "UnstructuredAPIFileIOLoader",
-    "UnstructuredAPIFileLoader",
-    "UnstructuredCHMLoader",
-    "UnstructuredCSVLoader",
-    "UnstructuredEPubLoader",
-    "UnstructuredEmailLoader",
-    "UnstructuredExcelLoader",
-    "UnstructuredFileIOLoader",
-    "UnstructuredFileLoader",
-    "UnstructuredHTMLLoader",
-    "UnstructuredImageLoader",
-    "UnstructuredMarkdownLoader",
-    "UnstructuredODTLoader",
-    "UnstructuredOrgModeLoader",
-    "UnstructuredPDFLoader",
-    "UnstructuredPowerPointLoader",
-    "UnstructuredRSTLoader",
-    "UnstructuredRTFLoader",
-    "UnstructuredTSVLoader",
-    "UnstructuredURLLoader",
-    "UnstructuredWordDocumentLoader",
-    "UnstructuredXMLLoader",
-    "VsdxLoader",
-    "WeatherDataLoader",
-    "WebBaseLoader",
-    "WhatsAppChatLoader",
-    "WikipediaLoader",
-    "XorbitsLoader",
-    "YoutubeAudioLoader",
-    "YoutubeLoader",
-    "YuqueLoader",
-]
 
 _module_lookup = {
     "AZLyricsLoader": "langchain_community.document_loaders.azlyrics",
@@ -727,6 +565,7 @@ _module_lookup = {
     "BlobLoader": "langchain_community.document_loaders.blob_loaders",
     "BlockchainDocumentLoader": "langchain_community.document_loaders.blockchain",
     "BraveSearchLoader": "langchain_community.document_loaders.brave_search",
+    "BrowserbaseLoader": "langchain_community.document_loaders.browserbase",
     "BrowserlessLoader": "langchain_community.document_loaders.browserless",
     "CSVLoader": "langchain_community.document_loaders.csv_loader",
     "CassandraLoader": "langchain_community.document_loaders.cassandra",
@@ -739,6 +578,9 @@ _module_lookup = {
     "CubeSemanticLoader": "langchain_community.document_loaders.cube_semantic",
     "DataFrameLoader": "langchain_community.document_loaders.dataframe",
     "DatadogLogsLoader": "langchain_community.document_loaders.datadog_logs",
+    "DedocAPIFileLoader": "langchain_community.document_loaders.dedoc",
+    "DedocFileLoader": "langchain_community.document_loaders.dedoc",
+    "DedocPDFLoader": "langchain_community.document_loaders.pdf",
     "DiffbotLoader": "langchain_community.document_loaders.diffbot",
     "DirectoryLoader": "langchain_community.document_loaders.directory",
     "DiscordChatLoader": "langchain_community.document_loaders.discord",
@@ -776,6 +618,7 @@ _module_lookup = {
     "IuguLoader": "langchain_community.document_loaders.iugu",
     "JSONLoader": "langchain_community.document_loaders.json_loader",
     "JoplinLoader": "langchain_community.document_loaders.joplin",
+    "KineticaLoader": "langchain_community.document_loaders.kinetica_loader",
     "LakeFSLoader": "langchain_community.document_loaders.lakefs",
     "LarkSuiteDocLoader": "langchain_community.document_loaders.larksuite",
     "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",
@@ -799,6 +642,8 @@ _module_lookup = {
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
     "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
+    "OracleDocLoader": "langchain_community.document_loaders.oracleai",
+    "OracleTextSplitter": "langchain_community.document_loaders.oracleai",
     "OutlookMessageLoader": "langchain_community.document_loaders.email",
     "PDFMinerLoader": "langchain_community.document_loaders.pdf",
     "PDFMinerPDFasHTMLLoader": "langchain_community.document_loaders.pdf",
@@ -823,6 +668,8 @@ _module_lookup = {
     "RocksetLoader": "langchain_community.document_loaders.rocksetdb",
     "S3DirectoryLoader": "langchain_community.document_loaders.s3_directory",
     "S3FileLoader": "langchain_community.document_loaders.s3_file",
+    "ScrapflyLoader": "langchain_community.document_loaders.scrapfly",
+    "ScrapingAntLoader": "langchain_community.document_loaders.scrapingant",
     "SQLDatabaseLoader": "langchain_community.document_loaders.sql_database",
     "SRTLoader": "langchain_community.document_loaders.srt",
     "SeleniumURLLoader": "langchain_community.document_loaders.url_selenium",
@@ -830,6 +677,7 @@ _module_lookup = {
     "SitemapLoader": "langchain_community.document_loaders.sitemap",
     "SlackDirectoryLoader": "langchain_community.document_loaders.slack_directory",
     "SnowflakeLoader": "langchain_community.document_loaders.snowflake_loader",
+    "SpiderLoader": "langchain_community.document_loaders.spider",
     "SpreedlyLoader": "langchain_community.document_loaders.spreedly",
     "StripeLoader": "langchain_community.document_loaders.stripe",
     "SurrealDBLoader": "langchain_community.document_loaders.surrealdb",
@@ -886,4 +734,199 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = list(_module_lookup.keys())
+__all__ = [
+    "AZLyricsLoader",
+    "AcreomLoader",
+    "AirbyteCDKLoader",
+    "AirbyteGongLoader",
+    "AirbyteHubspotLoader",
+    "AirbyteJSONLoader",
+    "AirbyteSalesforceLoader",
+    "AirbyteShopifyLoader",
+    "AirbyteStripeLoader",
+    "AirbyteTypeformLoader",
+    "AirbyteZendeskSupportLoader",
+    "AirtableLoader",
+    "AmazonTextractPDFLoader",
+    "ApifyDatasetLoader",
+    "ArcGISLoader",
+    "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
+    "AssemblyAIAudioTranscriptLoader",
+    "AstraDBLoader",
+    "AsyncChromiumLoader",
+    "AsyncHtmlLoader",
+    "AthenaLoader",
+    "AzureAIDataLoader",
+    "AzureAIDocumentIntelligenceLoader",
+    "AzureBlobStorageContainerLoader",
+    "AzureBlobStorageFileLoader",
+    "BSHTMLLoader",
+    "BibtexLoader",
+    "BigQueryLoader",
+    "BiliBiliLoader",
+    "BlackboardLoader",
+    "Blob",
+    "BlobLoader",
+    "BlockchainDocumentLoader",
+    "BraveSearchLoader",
+    "BrowserbaseLoader",
+    "BrowserlessLoader",
+    "CSVLoader",
+    "CassandraLoader",
+    "ChatGPTLoader",
+    "CoNLLULoader",
+    "CollegeConfidentialLoader",
+    "ConcurrentLoader",
+    "ConfluenceLoader",
+    "CouchbaseLoader",
+    "CubeSemanticLoader",
+    "DataFrameLoader",
+    "DatadogLogsLoader",
+    "DedocAPIFileLoader",
+    "DedocFileLoader",
+    "DedocPDFLoader",
+    "DiffbotLoader",
+    "DirectoryLoader",
+    "DiscordChatLoader",
+    "DocugamiLoader",
+    "DocusaurusLoader",
+    "Docx2txtLoader",
+    "DropboxLoader",
+    "DuckDBLoader",
+    "EtherscanLoader",
+    "EverNoteLoader",
+    "FacebookChatLoader",
+    "FaunaLoader",
+    "FigmaFileLoader",
+    "FireCrawlLoader",
+    "FileSystemBlobLoader",
+    "GCSDirectoryLoader",
+    "GlueCatalogLoader",
+    "GCSFileLoader",
+    "GeoDataFrameLoader",
+    "GitHubIssuesLoader",
+    "GitLoader",
+    "GitbookLoader",
+    "GithubFileLoader",
+    "GoogleApiClient",
+    "GoogleApiYoutubeLoader",
+    "GoogleDriveLoader",
+    "GoogleSpeechToTextLoader",
+    "GutenbergLoader",
+    "HNLoader",
+    "HuggingFaceDatasetLoader",
+    "HuggingFaceModelLoader",
+    "IFixitLoader",
+    "ImageCaptionLoader",
+    "IMSDbLoader",
+    "IuguLoader",
+    "JoplinLoader",
+    "JSONLoader",
+    "KineticaLoader",
+    "LakeFSLoader",
+    "LarkSuiteDocLoader",
+    "LLMSherpaFileLoader",
+    "MastodonTootsLoader",
+    "MHTMLLoader",
+    "MWDumpLoader",
+    "MathpixPDFLoader",
+    "MaxComputeLoader",
+    "MergedDataLoader",
+    "ModernTreasuryLoader",
+    "MongodbLoader",
+    "NewsURLLoader",
+    "NotebookLoader",
+    "NotionDBLoader",
+    "NotionDirectoryLoader",
+    "OBSDirectoryLoader",
+    "OBSFileLoader",
+    "ObsidianLoader",
+    "OneDriveFileLoader",
+    "OneDriveLoader",
+    "OnlinePDFLoader",
+    "OpenCityDataLoader",
+    "OracleAutonomousDatabaseLoader",
+    "OracleDocLoader",
+    "OracleTextSplitter",
+    "OutlookMessageLoader",
+    "PDFMinerLoader",
+    "PDFMinerPDFasHTMLLoader",
+    "PDFPlumberLoader",
+    "PagedPDFSplitter",
+    "PebbloSafeLoader",
+    "PlaywrightURLLoader",
+    "PolarsDataFrameLoader",
+    "PsychicLoader",
+    "PubMedLoader",
+    "PyMuPDFLoader",
+    "PyPDFDirectoryLoader",
+    "PyPDFLoader",
+    "PyPDFium2Loader",
+    "PySparkDataFrameLoader",
+    "PythonLoader",
+    "RSSFeedLoader",
+    "ReadTheDocsLoader",
+    "RecursiveUrlLoader",
+    "RedditPostsLoader",
+    "RoamLoader",
+    "RocksetLoader",
+    "S3DirectoryLoader",
+    "S3FileLoader",
+    "ScrapflyLoader",
+    "ScrapingAntLoader",
+    "SQLDatabaseLoader",
+    "SRTLoader",
+    "SeleniumURLLoader",
+    "SharePointLoader",
+    "SitemapLoader",
+    "SlackDirectoryLoader",
+    "SnowflakeLoader",
+    "SpiderLoader",
+    "SpreedlyLoader",
+    "StripeLoader",
+    "SurrealDBLoader",
+    "TelegramChatApiLoader",
+    "TelegramChatFileLoader",
+    "TelegramChatLoader",
+    "TencentCOSDirectoryLoader",
+    "TencentCOSFileLoader",
+    "TensorflowDatasetLoader",
+    "TextLoader",
+    "TiDBLoader",
+    "ToMarkdownLoader",
+    "TomlLoader",
+    "TrelloLoader",
+    "TwitterTweetLoader",
+    "UnstructuredAPIFileIOLoader",
+    "UnstructuredAPIFileLoader",
+    "UnstructuredCHMLoader",
+    "UnstructuredCSVLoader",
+    "UnstructuredEPubLoader",
+    "UnstructuredEmailLoader",
+    "UnstructuredExcelLoader",
+    "UnstructuredFileIOLoader",
+    "UnstructuredFileLoader",
+    "UnstructuredHTMLLoader",
+    "UnstructuredImageLoader",
+    "UnstructuredMarkdownLoader",
+    "UnstructuredODTLoader",
+    "UnstructuredOrgModeLoader",
+    "UnstructuredPDFLoader",
+    "UnstructuredPowerPointLoader",
+    "UnstructuredRSTLoader",
+    "UnstructuredRTFLoader",
+    "UnstructuredTSVLoader",
+    "UnstructuredURLLoader",
+    "UnstructuredWordDocumentLoader",
+    "UnstructuredXMLLoader",
+    "VsdxLoader",
+    "WeatherDataLoader",
+    "WebBaseLoader",
+    "WhatsAppChatLoader",
+    "WikipediaLoader",
+    "XorbitsLoader",
+    "YoutubeAudioLoader",
+    "YoutubeLoader",
+    "YuqueLoader",
+]

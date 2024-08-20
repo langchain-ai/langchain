@@ -23,9 +23,9 @@ class XataChatMessageHistory(BaseChatMessageHistory):
     ) -> None:
         """Initialize with Xata client."""
         try:
-            from xata.client import XataClient  # noqa: F401
+            from xata.client import XataClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import xata python package. "
                 "Please install it with `pip install xata`."
             )

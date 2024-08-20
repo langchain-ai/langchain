@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 
 class NeuralDBRetriever(BaseRetriever):
@@ -22,9 +22,7 @@ class NeuralDBRetriever(BaseRetriever):
     """NeuralDB instance"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     @staticmethod
@@ -36,7 +34,7 @@ class NeuralDBRetriever(BaseRetriever):
 
             licensing.activate(thirdai_key or os.getenv("THIRDAI_KEY"))
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import thirdai python package and neuraldb dependencies. "
                 "Please install it with `pip install thirdai[neural_db]`."
             )
@@ -73,7 +71,7 @@ class NeuralDBRetriever(BaseRetriever):
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB(**model_kwargs))
+        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB(**model_kwargs))  # type: ignore[arg-type]
 
     @classmethod
     def from_checkpoint(
@@ -108,9 +106,9 @@ class NeuralDBRetriever(BaseRetriever):
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB.from_checkpoint(checkpoint))
+        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB.from_checkpoint(checkpoint))  # type: ignore[arg-type]
 
-    @root_validator()
+    @pre_init
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate ThirdAI environment variables."""
         values["thirdai_key"] = convert_to_secret_str(

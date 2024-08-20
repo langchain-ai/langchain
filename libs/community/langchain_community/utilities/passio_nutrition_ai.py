@@ -1,14 +1,16 @@
-"""Util that invokes the Passio Nutrition AI API.
-"""
+"""Util that invokes the Passio Nutrition AI API."""
+
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Optional, final
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
 class NoDiskStorage:
+    """Mixin to prevent storing on disk."""
+
     @final
     def __getstate__(self) -> None:
         raise AttributeError("Do not store on disk.")
@@ -46,11 +48,12 @@ except ImportError:
 
 
 def is_http_retryable(rsp: requests.Response) -> bool:
+    """Check if a HTTP response is retryable."""
     return bool(rsp) and rsp.status_code in [408, 425, 429, 500, 502, 503, 504]
 
 
 class ManagedPassioLifeAuth(NoDiskStorage):
-    """Manages the token for the NutritionAI API."""
+    """Manage the token for the NutritionAI API."""
 
     _access_token_expiry: Optional[datetime]
 
@@ -118,10 +121,8 @@ class NutritionAIAPI(BaseModel):
     auth_: ManagedPassioLifeAuth
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @retry(
         retry=retry_if_result(is_http_retryable),

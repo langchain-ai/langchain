@@ -22,144 +22,158 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.chat_models.anthropic import (
-        ChatAnthropic,  # noqa: F401
+        ChatAnthropic,
     )
     from langchain_community.chat_models.anyscale import (
-        ChatAnyscale,  # noqa: F401
+        ChatAnyscale,
     )
     from langchain_community.chat_models.azure_openai import (
-        AzureChatOpenAI,  # noqa: F401
+        AzureChatOpenAI,
     )
     from langchain_community.chat_models.baichuan import (
-        ChatBaichuan,  # noqa: F401
+        ChatBaichuan,
     )
     from langchain_community.chat_models.baidu_qianfan_endpoint import (
-        QianfanChatEndpoint,  # noqa: F401
+        QianfanChatEndpoint,
     )
     from langchain_community.chat_models.bedrock import (
-        BedrockChat,  # noqa: F401
+        BedrockChat,
     )
     from langchain_community.chat_models.cohere import (
-        ChatCohere,  # noqa: F401
+        ChatCohere,
+    )
+    from langchain_community.chat_models.coze import (
+        ChatCoze,
     )
     from langchain_community.chat_models.databricks import (
-        ChatDatabricks,  # noqa: F401
+        ChatDatabricks,
     )
     from langchain_community.chat_models.deepinfra import (
-        ChatDeepInfra,  # noqa: F401
+        ChatDeepInfra,
     )
+    from langchain_community.chat_models.edenai import ChatEdenAI
     from langchain_community.chat_models.ernie import (
-        ErnieBotChat,  # noqa: F401
+        ErnieBotChat,
     )
     from langchain_community.chat_models.everlyai import (
-        ChatEverlyAI,  # noqa: F401
+        ChatEverlyAI,
     )
     from langchain_community.chat_models.fake import (
-        FakeListChatModel,  # noqa: F401
+        FakeListChatModel,
     )
     from langchain_community.chat_models.fireworks import (
-        ChatFireworks,  # noqa: F401
+        ChatFireworks,
     )
     from langchain_community.chat_models.friendli import (
-        ChatFriendli,  # noqa: F401
+        ChatFriendli,
     )
     from langchain_community.chat_models.gigachat import (
-        GigaChat,  # noqa: F401
+        GigaChat,
     )
     from langchain_community.chat_models.google_palm import (
-        ChatGooglePalm,  # noqa: F401
+        ChatGooglePalm,
     )
     from langchain_community.chat_models.gpt_router import (
-        GPTRouter,  # noqa: F401
+        GPTRouter,
     )
     from langchain_community.chat_models.huggingface import (
-        ChatHuggingFace,  # noqa: F401
+        ChatHuggingFace,
     )
     from langchain_community.chat_models.human import (
-        HumanInputChatModel,  # noqa: F401
+        HumanInputChatModel,
     )
     from langchain_community.chat_models.hunyuan import (
-        ChatHunyuan,  # noqa: F401
+        ChatHunyuan,
     )
     from langchain_community.chat_models.javelin_ai_gateway import (
-        ChatJavelinAIGateway,  # noqa: F401
+        ChatJavelinAIGateway,
     )
     from langchain_community.chat_models.jinachat import (
-        JinaChat,  # noqa: F401
+        JinaChat,
     )
     from langchain_community.chat_models.kinetica import (
-        ChatKinetica,  # noqa: F401
+        ChatKinetica,
     )
     from langchain_community.chat_models.konko import (
-        ChatKonko,  # noqa: F401
+        ChatKonko,
     )
     from langchain_community.chat_models.litellm import (
-        ChatLiteLLM,  # noqa: F401
+        ChatLiteLLM,
     )
     from langchain_community.chat_models.litellm_router import (
-        ChatLiteLLMRouter,  # noqa: F401
+        ChatLiteLLMRouter,
     )
     from langchain_community.chat_models.llama_edge import (
-        LlamaEdgeChatService,  # noqa: F401
+        LlamaEdgeChatService,
     )
+    from langchain_community.chat_models.llamacpp import ChatLlamaCpp
     from langchain_community.chat_models.maritalk import (
-        ChatMaritalk,  # noqa: F401
+        ChatMaritalk,
     )
     from langchain_community.chat_models.minimax import (
-        MiniMaxChat,  # noqa: F401
+        MiniMaxChat,
     )
     from langchain_community.chat_models.mlflow import (
-        ChatMlflow,  # noqa: F401
+        ChatMlflow,
     )
     from langchain_community.chat_models.mlflow_ai_gateway import (
-        ChatMLflowAIGateway,  # noqa: F401
+        ChatMLflowAIGateway,
     )
     from langchain_community.chat_models.mlx import (
-        ChatMLX,  # noqa: F401
+        ChatMLX,
     )
+    from langchain_community.chat_models.oci_generative_ai import (
+        ChatOCIGenAI,  # noqa: F401
+    )
+    from langchain_community.chat_models.octoai import ChatOctoAI
     from langchain_community.chat_models.ollama import (
-        ChatOllama,  # noqa: F401
+        ChatOllama,
     )
     from langchain_community.chat_models.openai import (
-        ChatOpenAI,  # noqa: F401
+        ChatOpenAI,
     )
     from langchain_community.chat_models.pai_eas_endpoint import (
-        PaiEasChatEndpoint,  # noqa: F401
+        PaiEasChatEndpoint,
     )
     from langchain_community.chat_models.perplexity import (
-        ChatPerplexity,  # noqa: F401
+        ChatPerplexity,
     )
     from langchain_community.chat_models.premai import (
-        ChatPremAI,  # noqa: F401
+        ChatPremAI,
     )
     from langchain_community.chat_models.promptlayer_openai import (
-        PromptLayerChatOpenAI,  # noqa: F401
+        PromptLayerChatOpenAI,
+    )
+    from langchain_community.chat_models.snowflake import (
+        ChatSnowflakeCortex,
     )
     from langchain_community.chat_models.solar import (
-        SolarChat,  # noqa: F401
+        SolarChat,
     )
     from langchain_community.chat_models.sparkllm import (
-        ChatSparkLLM,  # noqa: F401
+        ChatSparkLLM,
     )
     from langchain_community.chat_models.tongyi import (
-        ChatTongyi,  # noqa: F401
+        ChatTongyi,
     )
     from langchain_community.chat_models.vertexai import (
-        ChatVertexAI,  # noqa: F401
+        ChatVertexAI,
     )
     from langchain_community.chat_models.volcengine_maas import (
-        VolcEngineMaasChat,  # noqa: F401
+        VolcEngineMaasChat,
     )
     from langchain_community.chat_models.yandex import (
-        ChatYandexGPT,  # noqa: F401
+        ChatYandexGPT,
+    )
+    from langchain_community.chat_models.yi import (
+        ChatYi,
     )
     from langchain_community.chat_models.yuan2 import (
-        ChatYuan2,  # noqa: F401
+        ChatYuan2,
     )
     from langchain_community.chat_models.zhipuai import (
-        ChatZhipuAI,  # noqa: F401
+        ChatZhipuAI,
     )
-
 __all__ = [
     "AzureChatOpenAI",
     "BedrockChat",
@@ -167,8 +181,11 @@ __all__ = [
     "ChatAnyscale",
     "ChatBaichuan",
     "ChatCohere",
+    "ChatCoze",
+    "ChatOctoAI",
     "ChatDatabricks",
     "ChatDeepInfra",
+    "ChatEdenAI",
     "ChatEverlyAI",
     "ChatFireworks",
     "ChatFriendli",
@@ -184,16 +201,19 @@ __all__ = [
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
+    "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
     "ChatPremAI",
     "ChatSparkLLM",
+    "ChatSnowflakeCortex",
     "ChatTongyi",
     "ChatVertexAI",
     "ChatYandexGPT",
     "ChatYuan2",
     "ChatZhipuAI",
+    "ChatLlamaCpp",
     "ErnieBotChat",
     "FakeListChatModel",
     "GPTRouter",
@@ -207,6 +227,7 @@ __all__ = [
     "QianfanChatEndpoint",
     "SolarChat",
     "VolcEngineMaasChat",
+    "ChatYi",
 ]
 
 
@@ -217,9 +238,11 @@ _module_lookup = {
     "ChatAnyscale": "langchain_community.chat_models.anyscale",
     "ChatBaichuan": "langchain_community.chat_models.baichuan",
     "ChatCohere": "langchain_community.chat_models.cohere",
+    "ChatCoze": "langchain_community.chat_models.coze",
     "ChatDatabricks": "langchain_community.chat_models.databricks",
     "ChatDeepInfra": "langchain_community.chat_models.deepinfra",
     "ChatEverlyAI": "langchain_community.chat_models.everlyai",
+    "ChatEdenAI": "langchain_community.chat_models.edenai",
     "ChatFireworks": "langchain_community.chat_models.fireworks",
     "ChatFriendli": "langchain_community.chat_models.friendli",
     "ChatGooglePalm": "langchain_community.chat_models.google_palm",
@@ -235,9 +258,11 @@ _module_lookup = {
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
+    "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
+    "ChatSnowflakeCortex": "langchain_community.chat_models.snowflake",
     "ChatSparkLLM": "langchain_community.chat_models.sparkllm",
     "ChatTongyi": "langchain_community.chat_models.tongyi",
     "ChatVertexAI": "langchain_community.chat_models.vertexai",
@@ -258,6 +283,8 @@ _module_lookup = {
     "QianfanChatEndpoint": "langchain_community.chat_models.baidu_qianfan_endpoint",
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
     "ChatPremAI": "langchain_community.chat_models.premai",
+    "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
+    "ChatYi": "langchain_community.chat_models.yi",
 }
 
 
@@ -266,6 +293,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())

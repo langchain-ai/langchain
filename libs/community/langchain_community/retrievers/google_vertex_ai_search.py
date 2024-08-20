@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_dict_or_env
 
@@ -190,7 +190,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
                 print(  # noqa: T201
                     "Make sure that your data store is using Advanced Website "
                     "Indexing.\n"
-                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501
+                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"
                 )
 
         return documents
@@ -198,7 +198,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
 
 @deprecated(
     since="0.0.33",
-    removal="0.2.0",
+    removal="1.0",
     alternative_import="langchain_google_community.VertexAISearchRetriever",
 )
 class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetriever):
@@ -246,10 +246,8 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     _serving_config: str
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
         arbitrary_types_allowed = True
+        extra = "ignore"
         underscore_attrs_are_private = True
 
     def __init__(self, **kwargs: Any) -> None:
@@ -398,7 +396,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 
 @deprecated(
     since="0.0.33",
-    removal="0.2.0",
+    removal="1.0",
     alternative_import="langchain_google_community.VertexAIMultiTurnSearchRetriever",
 )
 class GoogleVertexAIMultiTurnSearchRetriever(
@@ -413,10 +411,8 @@ class GoogleVertexAIMultiTurnSearchRetriever(
     _serving_config: str
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.ignore
         arbitrary_types_allowed = True
+        extra = "ignore"
         underscore_attrs_are_private = True
 
     def __init__(self, **kwargs: Any):

@@ -32,7 +32,7 @@ pip install langchain-elasticsearch
 See a [usage example](/docs/integrations/text_embedding/elasticsearch).
 
 ```python
-from langchain_elasticsearch.embeddings import ElasticsearchEmbeddings
+from langchain_elasticsearch import ElasticsearchEmbeddings
 ```
 
 ## Vector store
@@ -40,7 +40,7 @@ from langchain_elasticsearch.embeddings import ElasticsearchEmbeddings
 See a [usage example](/docs/integrations/vectorstores/elasticsearch).
 
 ```python
-from langchain_elasticsearch.vectorstores import ElasticsearchStore
+from langchain_elasticsearch import ElasticsearchStore
 ```
 
 
@@ -49,5 +49,21 @@ from langchain_elasticsearch.vectorstores import ElasticsearchStore
 See a [usage example](/docs/integrations/memory/elasticsearch_chat_message_history).
 
 ```python
-from langchain_elasticsearch.chat_history import ElasticsearchChatMessageHistory
+from langchain_elasticsearch import ElasticsearchChatMessageHistory
+```
+
+## LLM cache
+
+See a [usage example](/docs/integrations/llm_caching/#elasticsearch-cache).
+
+```python
+from langchain_elasticsearch import ElasticsearchCache
+```
+
+## Byte Store
+
+See a [usage example](/docs/integrations/stores/elasticsearch).
+
+```python
+from langchain_elasticsearch import ElasticsearchEmbeddingsCache
 ```

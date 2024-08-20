@@ -7,7 +7,7 @@ This template create a visual assistant for slide decks, which often contain vis
 
 It uses OpenCLIP embeddings to embed all of the slide images and stores them in Chroma.
  
-Given a question, relevat slides are retrieved and passed to GPT-4V for answer synthesis.
+Given a question, relevant slides are retrieved and passed to GPT-4V for answer synthesis.
 
 ![Diagram illustrating the workflow of a multi-modal LLM visual assistant using OpenCLIP embeddings and GPT-4V for question-answering based on slide deck images.](https://github.com/langchain-ai/langchain/assets/122662504/b3bc8406-48ae-4707-9edf-d0b3a511b200 "Workflow Diagram for Multi-modal LLM Visual Assistant")
 
@@ -15,7 +15,7 @@ Given a question, relevat slides are retrieved and passed to GPT-4V for answer s
 
 Supply a slide deck as pdf in the `/docs` directory. 
 
-By default, this template has a slide deck about Q3 earnings from DataDog, a public techologyy company.
+By default, this template has a slide deck about Q3 earnings from DataDog, a public technology company.
 
 Example questions to ask can be:
 ```
@@ -37,7 +37,7 @@ You can select different embedding model options (see results [here](https://git
 
 The first time you run the app, it will automatically download the multimodal embedding model.
 
-By default, LangChain will use an embedding model with moderate performance but lower memory requirments, `ViT-H-14`.
+By default, LangChain will use an embedding model with moderate performance but lower memory requirements, `ViT-H-14`.
 
 You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_multi_modal/ingest.py`:
 ```

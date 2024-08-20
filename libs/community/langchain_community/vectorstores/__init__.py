@@ -24,272 +24,301 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_core.vectorstores import (
-        VectorStore,  # noqa: F401
+        VectorStore,
     )
 
+    from langchain_community.vectorstores.aerospike import (
+        Aerospike,
+    )
     from langchain_community.vectorstores.alibabacloud_opensearch import (
-        AlibabaCloudOpenSearch,  # noqa: F401
-        AlibabaCloudOpenSearchSettings,  # noqa: F401
+        AlibabaCloudOpenSearch,
+        AlibabaCloudOpenSearchSettings,
     )
     from langchain_community.vectorstores.analyticdb import (
-        AnalyticDB,  # noqa: F401
+        AnalyticDB,
     )
     from langchain_community.vectorstores.annoy import (
-        Annoy,  # noqa: F401
+        Annoy,
     )
     from langchain_community.vectorstores.apache_doris import (
-        ApacheDoris,  # noqa: F401
+        ApacheDoris,
+    )
+    from langchain_community.vectorstores.aperturedb import (
+        ApertureDB,
     )
     from langchain_community.vectorstores.astradb import (
-        AstraDB,  # noqa: F401
+        AstraDB,
     )
     from langchain_community.vectorstores.atlas import (
-        AtlasDB,  # noqa: F401
+        AtlasDB,
     )
     from langchain_community.vectorstores.awadb import (
-        AwaDB,  # noqa: F401
+        AwaDB,
     )
     from langchain_community.vectorstores.azure_cosmos_db import (
-        AzureCosmosDBVectorSearch,  # noqa: F401
+        AzureCosmosDBVectorSearch,
+    )
+    from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
+        AzureCosmosDBNoSqlVectorSearch,
     )
     from langchain_community.vectorstores.azuresearch import (
-        AzureSearch,  # noqa: F401
+        AzureSearch,
     )
-    from langchain_community.vectorstores.bageldb import (
-        Bagel,  # noqa: F401
+    from langchain_community.vectorstores.bagel import (
+        Bagel,
     )
     from langchain_community.vectorstores.baiducloud_vector_search import (
-        BESVectorStore,  # noqa: F401
+        BESVectorStore,
     )
     from langchain_community.vectorstores.baiduvectordb import (
-        BaiduVectorDB,  # noqa: F401
+        BaiduVectorDB,
     )
     from langchain_community.vectorstores.bigquery_vector_search import (
-        BigQueryVectorSearch,  # noqa: F401
+        BigQueryVectorSearch,
     )
     from langchain_community.vectorstores.cassandra import (
-        Cassandra,  # noqa: F401
+        Cassandra,
     )
     from langchain_community.vectorstores.chroma import (
-        Chroma,  # noqa: F401
+        Chroma,
     )
     from langchain_community.vectorstores.clarifai import (
-        Clarifai,  # noqa: F401
+        Clarifai,
     )
     from langchain_community.vectorstores.clickhouse import (
-        Clickhouse,  # noqa: F401
-        ClickhouseSettings,  # noqa: F401
+        Clickhouse,
+        ClickhouseSettings,
     )
     from langchain_community.vectorstores.couchbase import (
-        CouchbaseVectorStore,  # noqa: F401
+        CouchbaseVectorStore,
     )
     from langchain_community.vectorstores.dashvector import (
-        DashVector,  # noqa: F401
+        DashVector,
     )
     from langchain_community.vectorstores.databricks_vector_search import (
-        DatabricksVectorSearch,  # noqa: F401
+        DatabricksVectorSearch,
     )
     from langchain_community.vectorstores.deeplake import (
-        DeepLake,  # noqa: F401
+        DeepLake,
     )
     from langchain_community.vectorstores.dingo import (
-        Dingo,  # noqa: F401
+        Dingo,
     )
     from langchain_community.vectorstores.docarray import (
-        DocArrayHnswSearch,  # noqa: F401
-        DocArrayInMemorySearch,  # noqa: F401
+        DocArrayHnswSearch,
+        DocArrayInMemorySearch,
     )
     from langchain_community.vectorstores.documentdb import (
-        DocumentDBVectorSearch,  # noqa: F401
+        DocumentDBVectorSearch,
     )
     from langchain_community.vectorstores.duckdb import (
-        DuckDB,  # noqa: F401
+        DuckDB,
     )
     from langchain_community.vectorstores.ecloud_vector_search import (
-        EcloudESVectorStore,  # noqa: F401
+        EcloudESVectorStore,
     )
     from langchain_community.vectorstores.elastic_vector_search import (
-        ElasticKnnSearch,  # noqa: F401
-        ElasticVectorSearch,  # noqa: F401
+        ElasticKnnSearch,
+        ElasticVectorSearch,
     )
     from langchain_community.vectorstores.elasticsearch import (
-        ElasticsearchStore,  # noqa: F401
+        ElasticsearchStore,
     )
     from langchain_community.vectorstores.epsilla import (
-        Epsilla,  # noqa: F401
+        Epsilla,
     )
     from langchain_community.vectorstores.faiss import (
-        FAISS,  # noqa: F401
+        FAISS,
     )
     from langchain_community.vectorstores.hanavector import (
-        HanaDB,  # noqa: F401
+        HanaDB,
     )
     from langchain_community.vectorstores.hologres import (
-        Hologres,  # noqa: F401
+        Hologres,
     )
     from langchain_community.vectorstores.infinispanvs import (
-        InfinispanVS,  # noqa: F401
+        InfinispanVS,
     )
     from langchain_community.vectorstores.inmemory import (
-        InMemoryVectorStore,  # noqa: F401
+        InMemoryVectorStore,
     )
     from langchain_community.vectorstores.kdbai import (
-        KDBAI,  # noqa: F401
+        KDBAI,
     )
     from langchain_community.vectorstores.kinetica import (
-        DistanceStrategy,  # noqa: F401
-        Kinetica,  # noqa: F401
-        KineticaSettings,  # noqa: F401
+        DistanceStrategy,
+        Kinetica,
+        KineticaSettings,
     )
     from langchain_community.vectorstores.lancedb import (
-        LanceDB,  # noqa: F401
+        LanceDB,
     )
     from langchain_community.vectorstores.lantern import (
-        Lantern,  # noqa: F401
+        Lantern,
     )
     from langchain_community.vectorstores.llm_rails import (
-        LLMRails,  # noqa: F401
+        LLMRails,
+    )
+    from langchain_community.vectorstores.manticore_search import (
+        ManticoreSearch,
+        ManticoreSearchSettings,
     )
     from langchain_community.vectorstores.marqo import (
-        Marqo,  # noqa: F401
+        Marqo,
     )
     from langchain_community.vectorstores.matching_engine import (
-        MatchingEngine,  # noqa: F401
+        MatchingEngine,
     )
     from langchain_community.vectorstores.meilisearch import (
-        Meilisearch,  # noqa: F401
+        Meilisearch,
     )
     from langchain_community.vectorstores.milvus import (
-        Milvus,  # noqa: F401
+        Milvus,
     )
     from langchain_community.vectorstores.momento_vector_index import (
-        MomentoVectorIndex,  # noqa: F401
+        MomentoVectorIndex,
     )
     from langchain_community.vectorstores.mongodb_atlas import (
-        MongoDBAtlasVectorSearch,  # noqa: F401
+        MongoDBAtlasVectorSearch,
     )
     from langchain_community.vectorstores.myscale import (
-        MyScale,  # noqa: F401
-        MyScaleSettings,  # noqa: F401
+        MyScale,
+        MyScaleSettings,
     )
     from langchain_community.vectorstores.neo4j_vector import (
-        Neo4jVector,  # noqa: F401
+        Neo4jVector,
     )
     from langchain_community.vectorstores.opensearch_vector_search import (
-        OpenSearchVectorSearch,  # noqa: F401
+        OpenSearchVectorSearch,
+    )
+    from langchain_community.vectorstores.oraclevs import (
+        OracleVS,
     )
     from langchain_community.vectorstores.pathway import (
-        PathwayVectorClient,  # noqa: F401
+        PathwayVectorClient,
     )
     from langchain_community.vectorstores.pgembedding import (
-        PGEmbedding,  # noqa: F401
+        PGEmbedding,
     )
     from langchain_community.vectorstores.pgvector import (
-        PGVector,  # noqa: F401
+        PGVector,
     )
     from langchain_community.vectorstores.pinecone import (
-        Pinecone,  # noqa: F401
+        Pinecone,
     )
     from langchain_community.vectorstores.qdrant import (
-        Qdrant,  # noqa: F401
+        Qdrant,
     )
     from langchain_community.vectorstores.redis import (
-        Redis,  # noqa: F401
+        Redis,
+    )
+    from langchain_community.vectorstores.relyt import (
+        Relyt,
     )
     from langchain_community.vectorstores.rocksetdb import (
-        Rockset,  # noqa: F401
+        Rockset,
     )
     from langchain_community.vectorstores.scann import (
-        ScaNN,  # noqa: F401
+        ScaNN,
     )
     from langchain_community.vectorstores.semadb import (
-        SemaDB,  # noqa: F401
+        SemaDB,
     )
     from langchain_community.vectorstores.singlestoredb import (
-        SingleStoreDB,  # noqa: F401
+        SingleStoreDB,
     )
     from langchain_community.vectorstores.sklearn import (
-        SKLearnVectorStore,  # noqa: F401
+        SKLearnVectorStore,
     )
     from langchain_community.vectorstores.sqlitevss import (
-        SQLiteVSS,  # noqa: F401
+        SQLiteVSS,
     )
     from langchain_community.vectorstores.starrocks import (
-        StarRocks,  # noqa: F401
+        StarRocks,
     )
     from langchain_community.vectorstores.supabase import (
-        SupabaseVectorStore,  # noqa: F401
+        SupabaseVectorStore,
     )
     from langchain_community.vectorstores.surrealdb import (
-        SurrealDBStore,  # noqa: F401
+        SurrealDBStore,
     )
     from langchain_community.vectorstores.tair import (
-        Tair,  # noqa: F401
+        Tair,
     )
     from langchain_community.vectorstores.tencentvectordb import (
-        TencentVectorDB,  # noqa: F401
+        TencentVectorDB,
     )
     from langchain_community.vectorstores.thirdai_neuraldb import (
-        NeuralDBVectorStore,  # noqa: F401
+        NeuralDBClientVectorStore,
+        NeuralDBVectorStore,
     )
     from langchain_community.vectorstores.tidb_vector import (
-        TiDBVectorStore,  # noqa: F401
+        TiDBVectorStore,
     )
     from langchain_community.vectorstores.tigris import (
-        Tigris,  # noqa: F401
+        Tigris,
     )
     from langchain_community.vectorstores.tiledb import (
-        TileDB,  # noqa: F401
+        TileDB,
     )
     from langchain_community.vectorstores.timescalevector import (
-        TimescaleVector,  # noqa: F401
+        TimescaleVector,
     )
     from langchain_community.vectorstores.typesense import (
-        Typesense,  # noqa: F401
+        Typesense,
+    )
+    from langchain_community.vectorstores.upstash import (
+        UpstashVectorStore,
     )
     from langchain_community.vectorstores.usearch import (
-        USearch,  # noqa: F401
+        USearch,
     )
     from langchain_community.vectorstores.vald import (
-        Vald,  # noqa: F401
+        Vald,
     )
     from langchain_community.vectorstores.vdms import (
-        VDMS,  # noqa: F401
+        VDMS,
     )
     from langchain_community.vectorstores.vearch import (
-        Vearch,  # noqa: F401
+        Vearch,
     )
     from langchain_community.vectorstores.vectara import (
-        Vectara,  # noqa: F401
+        Vectara,
     )
     from langchain_community.vectorstores.vespa import (
-        VespaStore,  # noqa: F401
+        VespaStore,
     )
     from langchain_community.vectorstores.vlite import (
-        VLite,  # noqa: F401
+        VLite,
     )
     from langchain_community.vectorstores.weaviate import (
-        Weaviate,  # noqa: F401
+        Weaviate,
     )
     from langchain_community.vectorstores.yellowbrick import (
-        Yellowbrick,  # noqa: F401
+        Yellowbrick,
     )
     from langchain_community.vectorstores.zep import (
-        ZepVectorStore,  # noqa: F401
+        ZepVectorStore,
+    )
+    from langchain_community.vectorstores.zep_cloud import (
+        ZepCloudVectorStore,
     )
     from langchain_community.vectorstores.zilliz import (
-        Zilliz,  # noqa: F401
+        Zilliz,
     )
 
 __all__ = [
+    "Aerospike",
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",
     "ApacheDoris",
+    "ApertureDB",
     "AstraDB",
     "AtlasDB",
     "AwaDB",
+    "AzureCosmosDBNoSqlVectorSearch",
     "AzureCosmosDBVectorSearch",
     "AzureSearch",
     "BESVectorStore",
@@ -327,6 +356,8 @@ __all__ = [
     "LLMRails",
     "LanceDB",
     "Lantern",
+    "ManticoreSearch",
+    "ManticoreSearchSettings",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
@@ -336,7 +367,9 @@ __all__ = [
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
+    "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
+    "OracleVS",
     "OpenSearchVectorSearch",
     "PGEmbedding",
     "PGVector",
@@ -344,6 +377,7 @@ __all__ = [
     "Pinecone",
     "Qdrant",
     "Redis",
+    "Relyt",
     "Rockset",
     "SKLearnVectorStore",
     "SQLiteVSS",
@@ -360,6 +394,7 @@ __all__ = [
     "TileDB",
     "TimescaleVector",
     "Typesense",
+    "UpstashVectorStore",
     "USearch",
     "VDMS",
     "Vald",
@@ -371,19 +406,23 @@ __all__ = [
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
+    "ZepCloudVectorStore",
     "Zilliz",
 ]
 
 _module_lookup = {
+    "Aerospike": "langchain_community.vectorstores.aerospike",
     "AlibabaCloudOpenSearch": "langchain_community.vectorstores.alibabacloud_opensearch",  # noqa: E501
     "AlibabaCloudOpenSearchSettings": "langchain_community.vectorstores.alibabacloud_opensearch",  # noqa: E501
     "AnalyticDB": "langchain_community.vectorstores.analyticdb",
     "Annoy": "langchain_community.vectorstores.annoy",
     "ApacheDoris": "langchain_community.vectorstores.apache_doris",
+    "ApertureDB": "langchain_community.vectorstores.aperturedb",
     "AstraDB": "langchain_community.vectorstores.astradb",
     "AtlasDB": "langchain_community.vectorstores.atlas",
     "AwaDB": "langchain_community.vectorstores.awadb",
-    "AzureCosmosDBVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",
+    "AzureCosmosDBNoSqlVectorSearch": "langchain_community.vectorstores.azure_cosmos_db_no_sql",  # noqa: E501
+    "AzureCosmosDBVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",  # noqa: E501
     "AzureSearch": "langchain_community.vectorstores.azuresearch",
     "BaiduVectorDB": "langchain_community.vectorstores.baiduvectordb",
     "BESVectorStore": "langchain_community.vectorstores.baiducloud_vector_search",
@@ -420,6 +459,8 @@ _module_lookup = {
     "LLMRails": "langchain_community.vectorstores.llm_rails",
     "LanceDB": "langchain_community.vectorstores.lancedb",
     "Lantern": "langchain_community.vectorstores.lantern",
+    "ManticoreSearch": "langchain_community.vectorstores.manticore_search",
+    "ManticoreSearchSettings": "langchain_community.vectorstores.manticore_search",
     "Marqo": "langchain_community.vectorstores.marqo",
     "MatchingEngine": "langchain_community.vectorstores.matching_engine",
     "Meilisearch": "langchain_community.vectorstores.meilisearch",
@@ -429,14 +470,17 @@ _module_lookup = {
     "MyScale": "langchain_community.vectorstores.myscale",
     "MyScaleSettings": "langchain_community.vectorstores.myscale",
     "Neo4jVector": "langchain_community.vectorstores.neo4j_vector",
+    "NeuralDBClientVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "NeuralDBVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "OpenSearchVectorSearch": "langchain_community.vectorstores.opensearch_vector_search",  # noqa: E501
+    "OracleVS": "langchain_community.vectorstores.oraclevs",
     "PathwayVectorClient": "langchain_community.vectorstores.pathway",
     "PGEmbedding": "langchain_community.vectorstores.pgembedding",
     "PGVector": "langchain_community.vectorstores.pgvector",
     "Pinecone": "langchain_community.vectorstores.pinecone",
     "Qdrant": "langchain_community.vectorstores.qdrant",
     "Redis": "langchain_community.vectorstores.redis",
+    "Relyt": "langchain_community.vectorstores.relyt",
     "Rockset": "langchain_community.vectorstores.rocksetdb",
     "SKLearnVectorStore": "langchain_community.vectorstores.sklearn",
     "SQLiteVSS": "langchain_community.vectorstores.sqlitevss",
@@ -453,6 +497,7 @@ _module_lookup = {
     "TileDB": "langchain_community.vectorstores.tiledb",
     "TimescaleVector": "langchain_community.vectorstores.timescalevector",
     "Typesense": "langchain_community.vectorstores.typesense",
+    "UpstashVectorStore": "langchain_community.vectorstores.upstash",
     "USearch": "langchain_community.vectorstores.usearch",
     "Vald": "langchain_community.vectorstores.vald",
     "VDMS": "langchain_community.vectorstores.vdms",
@@ -464,6 +509,7 @@ _module_lookup = {
     "Weaviate": "langchain_community.vectorstores.weaviate",
     "Yellowbrick": "langchain_community.vectorstores.yellowbrick",
     "ZepVectorStore": "langchain_community.vectorstores.zep",
+    "ZepCloudVectorStore": "langchain_community.vectorstores.zep_cloud",
     "Zilliz": "langchain_community.vectorstores.zilliz",
 }
 
@@ -473,6 +519,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())

@@ -1,4 +1,5 @@
 """Base class for Office 365 tools."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

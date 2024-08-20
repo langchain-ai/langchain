@@ -21,7 +21,7 @@ class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
     github_api_url: str = "https://api.github.com"
     """URL of GitHub API"""
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that access token exists in environment."""
         values["access_token"] = get_from_dict_or_env(

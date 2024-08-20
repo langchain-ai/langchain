@@ -40,7 +40,6 @@ from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
-    adapt_first_streaming_chunk,
     create_model,
 )
 from langchain_core.utils.aiter import atee, py_anext
@@ -54,25 +53,46 @@ if TYPE_CHECKING:
 
 
 def identity(x: Other) -> Other:
-    """Identity function"""
+    """Identity function.
+
+    Args:
+        x (Other): input.
+
+    Returns:
+        Other: output.
+    """
     return x
 
 
 async def aidentity(x: Other) -> Other:
-    """Async identity function"""
+    """Async identity function.
+
+    Args:
+        x (Other): input.
+
+    Returns:
+        Other: output.
+    """
     return x
 
 
 class RunnablePassthrough(RunnableSerializable[Other, Other]):
     """Runnable to passthrough inputs unchanged or with additional keys.
 
-    This runnable behaves almost like the identity function, except that it
+    This Runnable behaves almost like the identity function, except that it
     can be configured to add additional keys to the output, if the input is a
     dict.
 
     The examples below demonstrate this Runnable works using a few simple
     chains. The chains rely on simple lambdas to make the examples easy to execute
     and experiment with.
+
+    Parameters:
+        func (Callable[[Other], None], optional): Function to be called with the input.
+        afunc (Callable[[Other], Awaitable[None]], optional): Async function to
+            be called with the input.
+        input_type (Optional[Type[Other]], optional): Type of the input.
+        **kwargs (Any): Additional keyword arguments.
 
     Examples:
 
@@ -200,10 +220,11 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """Merge the Dict input with the output produced by the mapping argument.
 
         Args:
-            mapping: A mapping from keys to runnables or callables.
+            **kwargs: Runnable, Callable or a Mapping from keys to Runnables
+                or Callables.
 
         Returns:
-            A runnable that merges the Dict input with the output produced by the
+            A Runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
         return RunnableAssign(RunnableParallel(kwargs))
@@ -243,16 +264,22 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
         else:
-            final = None
+            final: Other
+            got_first_chunk = False
 
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
-                if final is None:
-                    final = adapt_first_streaming_chunk(chunk)
-                else:
-                    final = final + chunk
 
-            if final is not None:
+                if not got_first_chunk:
+                    final = chunk
+                    got_first_chunk = True
+                else:
+                    try:
+                        final = final + chunk  # type: ignore[operator]
+                    except TypeError:
+                        final = chunk
+
+            if got_first_chunk:
                 call_func_with_variable_args(
                     self.func, final, ensure_config(config), **kwargs
                 )
@@ -269,18 +296,28 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             ):
                 yield chunk
         else:
-            final = None
+            got_first_chunk = False
 
             async for chunk in self._atransform_stream_with_config(
                 input, identity, config
             ):
                 yield chunk
-                if final is None:
-                    final = adapt_first_streaming_chunk(chunk)
-                else:
-                    final = final + chunk
 
-            if final is not None:
+                # By definitions, a function will operate on the aggregated
+                # input. So we'll aggregate the input until we get to the last
+                # chunk.
+                # If the input is not addable, then we'll assume that we can
+                # only operate on the last chunk.
+                if not got_first_chunk:
+                    final = chunk
+                    got_first_chunk = True
+                else:
+                    try:
+                        final = final + chunk  # type: ignore[operator]
+                    except TypeError:
+                        final = chunk
+
+            if got_first_chunk:
                 config = ensure_config(config)
                 if self.afunc is not None:
                     await acall_func_with_variable_args(
@@ -314,13 +351,16 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
 class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
-    """
-    A runnable that assigns key-value pairs to Dict[str, Any] inputs.
+    """Runnable that assigns key-value pairs to Dict[str, Any] inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
     `RunnableParallel` instance, applies transformations, then combines
     these with the original data, introducing new key-value pairs based
     on the mapper's logic.
+
+    Parameters:
+        mapper (RunnableParallel[Dict[str, Any]]): A `RunnableParallel` instance
+            that will be used to transform the input dictionary.
 
     Examples:
         .. code-block:: python
@@ -613,10 +653,14 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """Runnable that picks keys from Dict[str, Any] inputs.
 
-    RunnablePick class represents a runnable that selectively picks keys from a
+    RunnablePick class represents a Runnable that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract
     from the input dictionary. It returns a new dictionary containing only
     the selected keys.
+
+    Parameters:
+        keys (Union[str, List[str]]): A single key or a list of keys to pick from
+            the input dictionary.
 
     Example :
         .. code-block:: python

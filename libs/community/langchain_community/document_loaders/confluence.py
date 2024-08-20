@@ -42,7 +42,7 @@ class ConfluenceLoader(BaseLoader):
 
     You can also specify a boolean `include_attachments` to include attachments, this
     is set to False by default, if set to True all attachments will be downloaded and
-    ConfluenceReader will extract the text from the attachments and add it to the
+    ConfluenceLoader will extract the text from the attachments and add it to the
     Document object. Currently supported attachment types are: PDF, PNG, JPEG/JPG,
     SVG, Word and Excel.
 
@@ -200,7 +200,7 @@ class ConfluenceLoader(BaseLoader):
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
         try:
-            from atlassian import Confluence  # noqa: F401
+            from atlassian import Confluence
         except ImportError:
             raise ImportError(
                 "`atlassian` package not found, please run "
@@ -256,22 +256,53 @@ class ConfluenceLoader(BaseLoader):
             x is not None for x in ((api_key or username), session, oauth2, token)
         )
         if sum(non_null_creds) > 1:
-            all_names = ("(api_key, username)", "session", "oath2", "token")
+            all_names = ("(api_key, username)", "session", "oauth2", "token")
             provided = tuple(n for x, n in zip(non_null_creds, all_names) if x)
             errors.append(
                 f"Cannot provide a value for more than one of: {all_names}. Received "
                 f"values for: {provided}"
             )
-        if oauth2 and set(oauth2.keys()) != {
-            "access_token",
-            "access_token_secret",
-            "consumer_key",
-            "key_cert",
-        }:
+
+        if (
+            oauth2
+            and set(oauth2.keys())
+            == {
+                "token",
+                "client_id",
+            }
+            and set(oauth2["token"].keys())
+            != {
+                "access_token",
+                "token_type",
+            }
+        ):
+            # OAuth2 token authentication
             errors.append(
                 "You have either omitted require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
-                "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
+                "`['client_id', 'token': ['access_token', 'token_type']]`"
+            )
+
+        if (
+            oauth2
+            and set(oauth2.keys())
+            != {
+                "access_token",
+                "access_token_secret",
+                "consumer_key",
+                "key_cert",
+            }
+            and set(oauth2.keys())
+            != {
+                "token",
+                "client_id",
+            }
+        ):
+            errors.append(
+                "You have either omitted required keys or added extra "
+                "keys to the oauth2 dictionary. key values should be "
+                "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']` "
+                "or `['client_id', 'token': ['access_token', 'token_type']]`"
             )
         return errors or None
 
@@ -613,8 +644,8 @@ class ConfluenceLoader(BaseLoader):
         ocr_languages: Optional[str] = None,
     ) -> str:
         try:
-            import pytesseract  # noqa: F401
-            from pdf2image import convert_from_bytes  # noqa: F401
+            import pytesseract
+            from pdf2image import convert_from_bytes
         except ImportError:
             raise ImportError(
                 "`pytesseract` or `pdf2image` package not found, "
@@ -647,8 +678,8 @@ class ConfluenceLoader(BaseLoader):
         ocr_languages: Optional[str] = None,
     ) -> str:
         try:
-            import pytesseract  # noqa: F401
-            from PIL import Image  # noqa: F401
+            import pytesseract
+            from PIL import Image
         except ImportError:
             raise ImportError(
                 "`pytesseract` or `Pillow` package not found, "
@@ -673,7 +704,7 @@ class ConfluenceLoader(BaseLoader):
 
     def process_doc(self, link: str) -> str:
         try:
-            import docx2txt  # noqa: F401
+            import docx2txt
         except ImportError:
             raise ImportError(
                 "`docx2txt` package not found, please run `pip install docx2txt`"
@@ -697,7 +728,7 @@ class ConfluenceLoader(BaseLoader):
         import os
 
         try:
-            import xlrd  # noqa: F401
+            import xlrd
 
         except ImportError:
             raise ImportError("`xlrd` package not found, please run `pip install xlrd`")
@@ -749,10 +780,10 @@ class ConfluenceLoader(BaseLoader):
         ocr_languages: Optional[str] = None,
     ) -> str:
         try:
-            import pytesseract  # noqa: F401
-            from PIL import Image  # noqa: F401
-            from reportlab.graphics import renderPM  # noqa: F401
-            from svglib.svglib import svg2rlg  # noqa: F401
+            import pytesseract
+            from PIL import Image
+            from reportlab.graphics import renderPM
+            from svglib.svglib import svg2rlg
         except ImportError:
             raise ImportError(
                 "`pytesseract`, `Pillow`, `reportlab` or `svglib` package not found, "

@@ -24,7 +24,7 @@ class MockLLM(LLM):
 
 def test_layerup_security_with_invalid_api_key() -> None:
     mock_llm = MockLLM()
-    layerup_security = LayerupSecurity(
+    layerup_security = LayerupSecurity(  # type: ignore[call-arg]
         llm=mock_llm,
         layerup_api_key="-- invalid API key --",
         layerup_api_base_url="https://api.uselayerup.com/v1",

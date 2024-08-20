@@ -1,12 +1,16 @@
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from __future__ import annotations
 
-from langchain_community.utilities.sql_database import SQLDatabase
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union
+
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
+
+if TYPE_CHECKING:
+    from langchain_community.utilities.sql_database import SQLDatabase
 
 
 def _strip(text: str) -> str:
@@ -112,7 +116,9 @@ def create_sql_query_chain(
         prompt_to_use = SQL_PROMPTS[db.dialect]
     else:
         prompt_to_use = PROMPT
-    if {"input", "top_k", "table_info"}.difference(prompt_to_use.input_variables):
+    if {"input", "top_k", "table_info"}.difference(
+        prompt_to_use.input_variables + list(prompt_to_use.partial_variables)
+    ):
         raise ValueError(
             f"Prompt must have input variables: 'input', 'top_k', "
             f"'table_info'. Received prompt with input variables: "
