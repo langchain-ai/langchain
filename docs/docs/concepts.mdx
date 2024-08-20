@@ -1101,6 +1101,83 @@ The following how-to guides are good practical resources for using function/tool
 
 For a full list of model providers that support tool calling, [see this table](/docs/integrations/chat/#advanced-features).
 
+### Few-shot prompting
+
+One of the most effective ways to improve model performance is to give a model examples of what you want it to do. The technique of adding example inputs and expected outputs to a model prompt is known as "few-shot prompting". There's a few things to think about when doing few-shot prompting:
+
+1. How are examples generated,
+2. How many examples are in each prompt,
+3. How are examples selected at runtime,
+4. How are examples formatted in the prompt.
+
+Here are the considerations for each.
+
+#### 1. Generating examples
+
+The first and most important step of few-shot prompting is coming up with a good dataset of examples.
+The key to a good dataset is that the examples are relevant, clear and informative.
+The example inputs should be similar to the types of inputs you'll see at runtime, it should be clear what the correct answer was and why, and they should be examples that aren't obvious.
+
+At a high-level, the basic ways to generate examples are:
+- Manual: a person/people generates examples they think are useful,
+- Better model: a better (presumably more expensive/slower) model's responses are used as examples for a worse (presumably cheaper/faster) model,
+- User feedback: users leave feedback on interactions with the application and positive feedback is automatically added to the dataset of examples,
+- LLM feedback: models evaluate interactions with the application and select which interactions they think are good future examples.
+
+Which approach is best depends on your task. For tasks where a small number core principles need to be understood really well, it can be valuable hand-craft a few really good examples.
+For tasks where the space of correct behaviors is broader and more nuanced, it can be useful to generate many examples in a more automated fashion so that there's a higher likelihood of there being some highly relevant examples for any runtime input.
+
+**Single-turn v.s. multi-turn examples**
+
+Another dimension to think about when generating examples is what the example is actually showing.
+
+The simplest types of examples just have a user input and an expected model output. These are single-turn examples.
+
+One more complex type if example is where the example is an entire conversation, usually in which a model initially responds incorrectly and a user then tells the model how to correct its answer.
+This is called a multi-turn example. Multi-turn examples can be useful for more nuanced tasks where its useful to show common errors and spell out exactly why they're wrong and what should be done instead.
+
+#### 2. Number of examples
+
+Once we have a dataset of examples, we need to think about how many examples should be in each prompt.
+The key tradeoff is that more examples generally improve performance, but larger prompts increase costs and latency.
+And beyond some threshold having too many examples can start to confuse the model.
+Finding the right number of examples is highly dependent on the model, the task, the quality of the examples, and your cost and latency constraints.
+Anecdotally, the better the model is the fewer examples it needs to perform well and the more quickly you hit steeply diminishing returns on adding more examples.
+But, the best/only way to reliably answer this question is to run some experiments with different numbers of examples.
+
+#### 3. Selecting examples
+
+Assuming we are not adding our entire example dataset into each prompt, we need to have a way of selecting examples from our dataset based on a given input. We can do this:
+- Randomly,
+- By semantic similarity of the inputs,
+- Based on some other constraints, like token size.
+
+LangChain has a number of [`ExampleSelectors`](/docs/concepts/#example-selectors) which make it easy to use any of these techniques.
+
+Generally selecting by semantic similarity leads to the best model performance. But how important this is is again model and task specific, and is something worth experimenting with.
+
+#### 4. Formatting examples
+
+Most state-of-the-art models these days are chat models, so we'll focus on formatting examples for those. Our basic options are to insert the examples:
+- in the system prompt as a string,
+- as their own messages.
+
+If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begin and which parts are the input versus output. Different models respond better to different syntax's, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
+
+If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign names to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors then the latest input message.
+
+**Formatting tool call examples**
+
+One area where formatting examples as messages can be tricky is when our example outputs have tool calls. This is because different models have different constraints on what types of message sequences are allowed when any tool calls are generated.
+- Some models require that any AIMessage with tool calls be immediately followed by ToolMessages for every tool call,
+- Some models additionally require that any ToolMessages be immediately followed by an AIMessage before the next HumanMessage,
+- Some models require that tools are passed in to the model if there are any tool calls / ToolMessages in the chat history.
+
+These requirements are model-specific and should be checked for the model you are using. If your model requires ToolMessages after tool calls and/or AIMessages after ToolMessages and your examples only include expected tool calls and not the actual tool outputs, you can try adding dummy ToolMessages / AIMessages to the end of each example with generic contents to satisfy the API constraints.
+In these cases it's especially worth experimenting with inserting your examples as strings versus messages, as having dummy messages can adversely affect certain models.
+
+You can see a case study of how Anthropic and OpenAI respond to different few-shot prompting techniques on two different tool calling benchmarks [here](https://blog.langchain.dev/few-shot-prompting-to-improve-tool-calling-performance/).
+
 ### Retrieval
 
 LLMs are trained on a large but fixed dataset, limiting their ability to reason over private or recent information. Fine-tuning an LLM with specific facts is one way to mitigate this, but is often [poorly suited for factual recall](https://www.anyscale.com/blog/fine-tuning-is-for-form-not-facts) and [can be costly](https://www.glean.com/blog/how-to-build-an-ai-assistant-for-the-enterprise). 
