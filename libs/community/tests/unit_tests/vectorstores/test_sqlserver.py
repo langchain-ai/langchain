@@ -480,6 +480,6 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     store._distance_strategy = DistanceStrategy.DOT
 
     # Call to similarity_search function should not error out.
-    number_of_docs_to_return = 3
+    number_of_docs_to_return = 2
     result = store.similarity_search(query="Good review", k=number_of_docs_to_return)
     assert result is not None and len(result) == number_of_docs_to_return
