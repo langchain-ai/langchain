@@ -8,7 +8,10 @@ from langchain_core.documents import Document
 from sqlalchemy import create_engine, text
 
 from langchain_community.embeddings import FakeEmbeddings
-from langchain_community.vectorstores.sqlserver import SQLServer_VectorStore
+from langchain_community.vectorstores.sqlserver import (
+    DistanceStrategy,
+    SQLServer_VectorStore,
+)
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
 _SCHEMA = "lc_test"
@@ -474,7 +477,7 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     assert "_CS" in collation_query_result.collation_name
 
     store.add_texts(texts)
-    store._distance_strategy = "Dot"
+    store._distance_strategy = DistanceStrategy.DOT.capitalize()  # Returns 'Dot'
 
     # Call to similarity_search function should not error out.
     number_of_docs_to_return = 2
