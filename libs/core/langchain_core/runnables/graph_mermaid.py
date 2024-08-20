@@ -78,21 +78,28 @@ def draw_mermaid(
             )
             mermaid_graph += f"\t{node_label}\n"
 
-    subgraph = ""
+    subgraph_stack: List[str] = []
     # Add edges to the graph
     for edge in edges:
-        src_prefix = edge.source.split(":")[0] if ":" in edge.source else None
-        tgt_prefix = edge.target.split(":")[0] if ":" in edge.target else None
-        # exit subgraph if source or target is not in the same subgraph
-        if subgraph and (subgraph != src_prefix or subgraph != tgt_prefix):
+        # Handle subgraph entry and exit
+        subgraph_prefix = ":".join(subgraph_stack)
+        while subgraph_stack and not (
+            edge.source.startswith(subgraph_prefix)
+            and edge.target.startswith(subgraph_prefix)
+        ):
             mermaid_graph += "\tend\n"
-            subgraph = ""
-        # enter subgraph if source and target are in the same subgraph
-        if not subgraph and src_prefix and src_prefix == tgt_prefix:
-            mermaid_graph += f"\tsubgraph {src_prefix}\n"
-            subgraph = src_prefix
+            subgraph_stack.pop()
 
-        source, target = edge.source, edge.target
+        common_prefix = []
+        for source, target in zip(edge.source.split(":"), edge.target.split(":")):
+            if source == target:
+                common_prefix.append(source)
+            else:
+                break
+
+        for i in range(len(subgraph_stack), len(common_prefix)):
+            mermaid_graph += f"\tsubgraph {common_prefix[i]}\n"
+            subgraph_stack.append(common_prefix[i])
 
         # Add BR every wrap_label_n_words words
         if edge.data is not None:
@@ -114,11 +121,11 @@ def draw_mermaid(
             else:
                 edge_label = " --> "
         mermaid_graph += (
-            f"\t{_escape_node_label(source)}{edge_label}"
-            f"{_escape_node_label(target)};\n"
+            f"\t{_escape_node_label(edge.source)}{edge_label}"
+            f"{_escape_node_label(edge.target)};\n"
         )
-    if subgraph:
-        mermaid_graph += "end\n"
+
+    mermaid_graph += "end\n" * len(subgraph_stack)
 
     # Add custom styles for nodes
     if with_styles:
