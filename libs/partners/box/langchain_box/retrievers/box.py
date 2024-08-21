@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 
-from langchain_box.utilities import BoxAPIWrapper, BoxAuth
+from langchain_box.utilities import _BoxAPIWrapper, BoxAuth
 
 
 class BoxRetriever(BaseRetriever):
@@ -64,7 +64,7 @@ class BoxRetriever(BaseRetriever):
                         'source': 'url',
                         'title': 'FIVE_FEET_AND_RISING_by_Peter_Sollett_pdf'
                 },
-                    page_content='\n3/20/23, 5:31 PM F...'
+                    page_content='\\n3/20/23, 5:31 PM F...'
                 )
             ]
 
@@ -90,7 +90,7 @@ class BoxRetriever(BaseRetriever):
             )
 
             def format_docs(docs):
-                return "\n\n".join(doc.page_content for doc in docs)
+                return "\\n\\n".join(doc.page_content for doc in docs)
 
             chain = (
                 {"context": retriever | format_docs, "question": RunnablePassthrough()}
@@ -121,7 +121,7 @@ class BoxRetriever(BaseRetriever):
        return per document."""
     character_limit: Optional[int] = -1
 
-    box: Optional[BoxAPIWrapper]
+    _box: Optional[_BoxAPIWrapper]
 
     class Config:
         arbitrary_types_allowed = True
@@ -129,7 +129,7 @@ class BoxRetriever(BaseRetriever):
 
     @root_validator(allow_reuse=True)
     def validate_box_loader_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        box = None
+        _box = None
 
         """Validate that we have either a box_developer_token or box_auth."""
         if not values.get("box_auth") and not values.get("box_developer_token"):
@@ -138,13 +138,13 @@ class BoxRetriever(BaseRetriever):
                 "generated with langchain_box.utilities.BoxAuth"
             )
 
-        box = BoxAPIWrapper(  # type: ignore[call-arg]
+        _box = _BoxAPIWrapper(  # type: ignore[call-arg]
             box_developer_token=values.get("box_developer_token"),
             box_auth=values.get("box_auth"),
             character_limit=values.get("character_limit"),
         )
 
-        values["box"] = box
+        values["_box"] = _box
 
         return values
 
@@ -152,6 +152,6 @@ class BoxRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         if self.box_file_ids:  # If using Box AI
-            return self.box.ask_box_ai(query=query, box_file_ids=self.box_file_ids)  #  type: ignore[union-attr]
+            return self._box.ask_box_ai(query=query, box_file_ids=self.box_file_ids)  #  type: ignore[union-attr]
         else:  # If using Search
-            return self.box.search_box(query=query)  #  type: ignore[union-attr]
+            return self._box.search_box(query=query)  #  type: ignore[union-attr]

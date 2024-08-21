@@ -38,7 +38,7 @@ def test_auth_initialization() -> None:
 # test search retrieval
 def test_search(mocker: MockerFixture) -> None:
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.search_box",
+        "langchain_box.utilities._BoxAPIWrapper.search_box",
         return_value=(
             [
                 Document(
@@ -65,7 +65,7 @@ def test_search(mocker: MockerFixture) -> None:
 # test ai retrieval
 def test_ai(mocker: MockerFixture) -> None:
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.ask_box_ai",
+        "langchain_box.utilities._BoxAPIWrapper.ask_box_ai",
         return_value=(
             [
                 Document(

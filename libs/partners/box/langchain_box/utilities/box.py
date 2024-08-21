@@ -369,7 +369,7 @@ class BoxAuth(BaseModel):
         return self.box_client
 
 
-class BoxAPIWrapper(BaseModel):
+class _BoxAPIWrapper(BaseModel):
     """Wrapper for Box API."""
 
     """String containing the Box Developer Token generated in the developer console"""

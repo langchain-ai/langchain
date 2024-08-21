@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, ConfigDict, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_box.utilities import BoxAPIWrapper, BoxAuth
+from langchain_box.utilities import _BoxAPIWrapper, BoxAuth
 
 
 class BoxLoader(BaseLoader, BaseModel):
@@ -33,6 +33,7 @@ class BoxLoader(BaseLoader, BaseModel):
 
             pip install -U langchain-box
             export BOX_DEVELOPER_TOKEN="your-api-key"
+
 
     This loader returns ``Document `` objects built from text representations of files
     in Box. It will skip any document without a text representation available. You can
@@ -139,7 +140,7 @@ class BoxLoader(BaseLoader, BaseModel):
        return per document."""
     character_limit: Optional[int] = -1
 
-    box: Optional[BoxAPIWrapper]
+    _box: Optional[_BoxAPIWrapper]
 
     class Config:
         arbitrary_types_allowed = True
@@ -147,7 +148,7 @@ class BoxLoader(BaseLoader, BaseModel):
 
     @root_validator(allow_reuse=True)
     def validate_box_loader_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        box = None
+        _box = None
 
         """Validate that has either box_file_ids or box_folder_id."""
         if not values.get("box_file_ids") and not values.get("box_folder_id"):
@@ -173,17 +174,17 @@ class BoxLoader(BaseLoader, BaseModel):
                     values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
                 )
 
-                box = BoxAPIWrapper(  # type: ignore[call-arg]
+                _box = _BoxAPIWrapper(  # type: ignore[call-arg]
                     box_developer_token=token,
                     character_limit=values.get("character_limit"),
                 )
         else:
-            box = BoxAPIWrapper(  # type: ignore[call-arg]
+            _box = _BoxAPIWrapper(  # type: ignore[call-arg]
                 box_auth=values.get("box_auth"),
                 character_limit=values.get("character_limit"),
             )
 
-        values["box"] = box
+        values["_box"] = _box
 
         return values
 
@@ -193,7 +194,7 @@ class BoxLoader(BaseLoader, BaseModel):
         for file in folder_content:
             try:
                 if file.type == FileBaseTypeField.FILE:
-                    doc = self.box.get_document_by_file_id(file.id)
+                    doc = self._box.get_document_by_file_id(file.id)
 
                     if doc is not None:
                         yield doc
@@ -211,7 +212,7 @@ class BoxLoader(BaseLoader, BaseModel):
         if self.box_file_ids:
             for file_id in self.box_file_ids:
                 try:
-                    file = self.box.get_document_by_file_id(file_id)  # type: ignore[union-attr]
+                    file = self._box.get_document_by_file_id(file_id)  # type: ignore[union-attr]
 
                     if file is not None:
                         yield file

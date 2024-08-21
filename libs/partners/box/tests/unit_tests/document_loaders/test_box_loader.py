@@ -63,7 +63,7 @@ def test_failed_initialization_files_and_folders() -> None:
 # test Document retrieval
 def test_file_load(mocker: MockerFixture) -> None:
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.get_document_by_file_id", return_value=[]
+        "langchain_box.utilities._BoxAPIWrapper.get_document_by_file_id", return_value=[]
     )
 
     loader = BoxLoader(  # type: ignore[call-arg]
@@ -75,7 +75,7 @@ def test_file_load(mocker: MockerFixture) -> None:
     assert documents
 
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.get_document_by_file_id",
+        "langchain_box.utilities._BoxAPIWrapper.get_document_by_file_id",
         return_value=(
             Document(
                 page_content="Test file mode\ndocument contents",

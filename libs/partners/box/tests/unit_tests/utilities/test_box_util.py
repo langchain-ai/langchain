@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from pydantic.v1.error_wrappers import ValidationError
 from pytest_mock import MockerFixture
 
-from langchain_box.utilities import BoxAPIWrapper, BoxAuth, BoxAuthType
+from langchain_box.utilities import _BoxAPIWrapper, BoxAuth, BoxAuthType
 
 
 @pytest.fixture()
@@ -13,7 +13,7 @@ def mock_worker(mocker: MockerFixture) -> None:
     mocker.patch("langchain_box.utilities.BoxAuth._authorize", return_value=Mock())
     mocker.patch("langchain_box.utilities.BoxAuth.get_client", return_value=Mock())
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper._get_text_representation",
+        "langchain_box.utilities._BoxAPIWrapper._get_text_representation",
         return_value=("filename", "content", "url"),
     )
 
@@ -93,7 +93,7 @@ def test_failed_ccg_initialization() -> None:
 
 
 def test_direct_token_initialization() -> None:
-    box = BoxAPIWrapper(  #  type: ignore[call-arg]
+    box = _BoxAPIWrapper(  #  type: ignore[call-arg]
         box_developer_token="box_developer_token"
     )
 
@@ -105,19 +105,19 @@ def test_auth_initialization() -> None:
         auth_type=BoxAuthType.TOKEN, box_developer_token="box_developer_token"
     )
 
-    box = BoxAPIWrapper(box_auth=auth)  #  type: ignore[call-arg] # noqa: F841
+    box = _BoxAPIWrapper(box_auth=auth)  #  type: ignore[call-arg] # noqa: F841
 
     assert auth.box_developer_token == "box_developer_token"
 
 
 def test_failed_initialization_no_auth() -> None:
     with pytest.raises(ValidationError):
-        box = BoxAPIWrapper()  # type: ignore[call-arg] # noqa: F841
+        box = _BoxAPIWrapper()  # type: ignore[call-arg] # noqa: F841
 
 
 def test_get_documents_by_file_ids(mock_worker, mocker: MockerFixture) -> None:  # type: ignore[no-untyped-def]
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.get_document_by_file_id",
+        "langchain_box.utilities._BoxAPIWrapper.get_document_by_file_id",
         return_value=(
             Document(
                 page_content="content", metadata={"source": "url", "title": "filename"}
@@ -125,7 +125,7 @@ def test_get_documents_by_file_ids(mock_worker, mocker: MockerFixture) -> None: 
         ),
     )
 
-    box = BoxAPIWrapper(box_developer_token="box_developer_token")  # type: ignore[call-arg]
+    box = _BoxAPIWrapper(box_developer_token="box_developer_token")  # type: ignore[call-arg]
 
     documents = box.get_document_by_file_id("box_file_id")
     assert documents == Document(
@@ -135,11 +135,11 @@ def test_get_documents_by_file_ids(mock_worker, mocker: MockerFixture) -> None: 
 
 def test_get_documents_by_folder_id(mock_worker, mocker: MockerFixture) -> None:  # type: ignore[no-untyped-def]
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.get_folder_items",
+        "langchain_box.utilities._BoxAPIWrapper.get_folder_items",
         return_value=([{"id": "file_id", "type": "file"}]),
     )
 
-    box = BoxAPIWrapper(box_developer_token="box_developer_token")  # type: ignore[call-arg]
+    box = _BoxAPIWrapper(box_developer_token="box_developer_token")  # type: ignore[call-arg]
 
     folder_contents = box.get_folder_items("box_folder_id")
     assert folder_contents == [{"id": "file_id", "type": "file"}]
@@ -147,7 +147,7 @@ def test_get_documents_by_folder_id(mock_worker, mocker: MockerFixture) -> None:
 
 def test_box_search(mock_worker, mocker: MockerFixture) -> None:  # type: ignore[no-untyped-def]
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.search_box",
+        "langchain_box.utilities._BoxAPIWrapper.search_box",
         return_value=(
             [
                 Document(
@@ -158,7 +158,7 @@ def test_box_search(mock_worker, mocker: MockerFixture) -> None:  # type: ignore
         ),
     )
 
-    box = BoxAPIWrapper(box_developer_token="box_developer_token")  # type: ignore[call-arg]
+    box = _BoxAPIWrapper(box_developer_token="box_developer_token")  # type: ignore[call-arg]
 
     documents = box.search_box("query")
     assert documents == [
@@ -171,7 +171,7 @@ def test_box_search(mock_worker, mocker: MockerFixture) -> None:  # type: ignore
 
 def test_ask_box_ai_single_file(mock_worker, mocker: MockerFixture) -> None:  # type: ignore[no-untyped-def]
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.ask_box_ai",
+        "langchain_box.utilities._BoxAPIWrapper.ask_box_ai",
         return_value=(
             [
                 Document(
@@ -182,7 +182,7 @@ def test_ask_box_ai_single_file(mock_worker, mocker: MockerFixture) -> None:  # 
         ),
     )
 
-    box = BoxAPIWrapper(  # type: ignore[call-arg]
+    box = _BoxAPIWrapper(  # type: ignore[call-arg]
         box_developer_token="box_developer_token", box_file_ids=["box_file_ids"]
     )
 
@@ -197,7 +197,7 @@ def test_ask_box_ai_single_file(mock_worker, mocker: MockerFixture) -> None:  # 
 
 def test_ask_box_ai_multiple_files(mock_worker, mocker: MockerFixture) -> None:  # type: ignore[no-untyped-def]
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.ask_box_ai",
+        "langchain_box.utilities._BoxAPIWrapper.ask_box_ai",
         return_value=(
             [
                 Document(
@@ -212,7 +212,7 @@ def test_ask_box_ai_multiple_files(mock_worker, mocker: MockerFixture) -> None: 
         ),
     )
 
-    box = BoxAPIWrapper(  # type: ignore[call-arg]
+    box = _BoxAPIWrapper(  # type: ignore[call-arg]
         box_developer_token="box_developer_token",
         box_file_ids=["box_file_id 1", "box_file_id 2"],
     )
