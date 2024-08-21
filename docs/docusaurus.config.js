@@ -165,9 +165,19 @@ const config = {
             label: "Integrations",
           },
           {
-            href: "https://api.python.langchain.com",
-            label: "API Reference",
+            type: "dropdown",
+            label: "API reference",
             position: "left",
+            items: [
+              {
+                label: "Latest",
+                to: "https://python.langchain.com/v0.2/api_reference/reference.html",
+              },
+              {
+                label: "Legacy",
+                href: "https://api.python.langchain.com/"
+              }
+            ]
           },
           {
             type: "dropdown",
@@ -275,10 +285,6 @@ const config = {
           {
             title: "Community",
             items: [
-              {
-                label: "Discord",
-                href: "https://discord.gg/cU2adEyC7w",
-              },
               {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",

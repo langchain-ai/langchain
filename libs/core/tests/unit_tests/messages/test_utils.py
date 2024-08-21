@@ -2,6 +2,7 @@ from typing import Dict, List, Type
 
 import pytest
 
+from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -35,12 +36,16 @@ def test_merge_message_runs_content() -> None:
                 {"text": "bar", "type": "text"},
                 {"image_url": "...", "type": "image_url"},
             ],
-            tool_calls=[ToolCall(name="foo_tool", args={"x": 1}, id="tool1")],
+            tool_calls=[
+                ToolCall(name="foo_tool", args={"x": 1}, id="tool1", type="tool_call")
+            ],
             id="2",
         ),
         AIMessage(
             "baz",
-            tool_calls=[ToolCall(name="foo_tool", args={"x": 5}, id="tool2")],
+            tool_calls=[
+                ToolCall(name="foo_tool", args={"x": 5}, id="tool2", type="tool_call")
+            ],
             id="3",
         ),
     ]
@@ -54,8 +59,8 @@ def test_merge_message_runs_content() -> None:
                 "baz",
             ],
             tool_calls=[
-                ToolCall(name="foo_tool", args={"x": 1}, id="tool1"),
-                ToolCall(name="foo_tool", args={"x": 5}, id="tool2"),
+                ToolCall(name="foo_tool", args={"x": 1}, id="tool1", type="tool_call"),
+                ToolCall(name="foo_tool", args={"x": 5}, id="tool2", type="tool_call"),
             ],
             id="1",
         ),
@@ -123,7 +128,6 @@ _MESSAGES_TO_TRIM = [
     HumanMessage("This is a 4 token text.", id="third"),
     AIMessage("This is a 4 token text.", id="fourth"),
 ]
-
 _MESSAGES_TO_TRIM_COPY = [m.copy(deep=True) for m in _MESSAGES_TO_TRIM]
 
 
@@ -313,6 +317,19 @@ def test_trim_messages_invoke() -> None:
     assert actual == expected
 
 
+def test_trim_messages_bound_model_token_counter() -> None:
+    trimmer = trim_messages(
+        max_tokens=10, token_counter=FakeTokenCountingModel().bind(foo="bar")
+    )
+    trimmer.invoke([HumanMessage("foobar")])
+
+
+def test_trim_messages_bad_token_counter() -> None:
+    trimmer = trim_messages(max_tokens=10, token_counter={})
+    with pytest.raises(ValueError):
+        trimmer.invoke([HumanMessage("foobar")])
+
+
 def dummy_token_counter(messages: List[BaseMessage]) -> int:
     # treat each message like it adds 3 default tokens at the beginning
     # of the message and at the end of the message. 3 + 4 + 3 = 10 tokens
@@ -335,3 +352,8 @@ def dummy_token_counter(messages: List[BaseMessage]) -> int:
                 + default_msg_suffix_len
             )
     return count
+
+
+class FakeTokenCountingModel(FakeChatModel):
+    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+        return dummy_token_counter(messages)

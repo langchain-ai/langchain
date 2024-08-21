@@ -58,7 +58,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
         pass
 
     # Initialize variables.
-    new_s = ""
+    new_chars = []
     stack = []
     is_inside_string = False
     escaped = False
@@ -90,29 +90,27 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
                     return None
 
         # Append the processed character to the new string.
-        new_s += char
+        new_chars.append(char)
 
     # If we're still inside a string at the end of processing,
     # we need to close the string.
     if is_inside_string:
-        new_s += '"'
+        new_chars.append('"')
+
+    # Reverse the stack to get the closing characters.
+    stack.reverse()
 
     # Try to parse mods of string until we succeed or run out of characters.
-    while new_s:
-        final_s = new_s
-
+    while new_chars:
         # Close any remaining open structures in the reverse
         # order that they were opened.
-        for closing_char in reversed(stack):
-            final_s += closing_char
-
         # Attempt to parse the modified string as JSON.
         try:
-            return json.loads(final_s, strict=strict)
+            return json.loads("".join(new_chars + stack), strict=strict)
         except json.JSONDecodeError:
             # If we still can't parse the string as JSON,
             # try removing the last character
-            new_s = new_s[:-1]
+            new_chars.pop()
 
     # If we got here, we ran out of characters to remove
     # and still couldn't parse the string as JSON, so return the parse error
@@ -120,11 +118,13 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     return json.loads(s, strict=strict)
 
 
+_json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
+
+
 def parse_json_markdown(
     json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
 ) -> dict:
-    """
-    Parse a JSON string from a Markdown string.
+    """Parse a JSON string from a Markdown string.
 
     Args:
         json_string: The Markdown string.
@@ -136,7 +136,7 @@ def parse_json_markdown(
         return _parse_json(json_string, parser=parser)
     except json.JSONDecodeError:
         # Try to find JSON string within triple backticks
-        match = re.search(r"```(json)?(.*)", json_string, re.DOTALL)
+        match = _json_markdown_re.search(json_string)
 
         # If no match found, assume the entire string is a JSON string
         if match is None:
@@ -147,11 +147,14 @@ def parse_json_markdown(
     return _parse_json(json_str, parser=parser)
 
 
+_json_strip_chars = " \n\r\t`"
+
+
 def _parse_json(
     json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
 ) -> dict:
-    # Strip whitespace and newlines from the start and end
-    json_str = json_str.strip().strip("`")
+    # Strip whitespace,newlines,backtick from the start and end
+    json_str = json_str.strip(_json_strip_chars)
 
     # handle newlines and other special characters inside the returned value
     json_str = _custom_parser(json_str)
@@ -171,6 +174,10 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
 
     Returns:
         The parsed JSON object as a Python dictionary.
+
+    Raises:
+        OutputParserException: If the JSON string is invalid or does not contain
+            the expected keys.
     """
     try:
         json_obj = parse_json_markdown(text)

@@ -10,7 +10,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.utilities.requests import Requests
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.0.12", removal="0.3", alternative_import="langchain_together.Together"
+    since="0.0.12", removal="1.0", alternative_import="langchain_together.Together"
 )
 class Together(LLM):
     """LLM models from `Together`.
@@ -67,9 +67,7 @@ class Together(LLM):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

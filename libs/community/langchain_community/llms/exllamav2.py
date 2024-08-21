@@ -3,7 +3,8 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import pre_init
 
 
 class ExLlamaV2(LLM):
@@ -58,7 +59,7 @@ class ExLlamaV2(LLM):
     disallowed_tokens: List[int] = Field(None)
     """List of tokens to disallow during generation."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         try:
             import torch

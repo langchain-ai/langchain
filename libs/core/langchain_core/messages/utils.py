@@ -16,6 +16,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
 
     from langchain_core.language_models import BaseLanguageModel
+    from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
 
 AnyMessage = Union[
@@ -221,7 +223,8 @@ def _create_message_from_message_type(
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
-        message = ToolMessage(content=content, **kwargs)
+        artifact = kwargs.get("additional_kwargs", {}).pop("artifact", None)
+        message = ToolMessage(content=content, artifact=artifact, **kwargs)
     elif message_type == "remove":
         message = RemoveMessage(**kwargs)
     else:
@@ -283,7 +286,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
 
 
 def convert_to_messages(
-    messages: Sequence[MessageLikeRepresentation],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
 ) -> List[BaseMessage]:
     """Convert a sequence of messages to a list of messages.
 
@@ -293,6 +296,11 @@ def convert_to_messages(
     Returns:
         List of messages (BaseMessages).
     """
+    # Import here to avoid circular imports
+    from langchain_core.prompt_values import PromptValue
+
+    if isinstance(messages, PromptValue):
+        return messages.to_messages()
     return [_convert_to_message(m) for m in messages]
 
 
@@ -328,7 +336,7 @@ def _runnable_support(func: Callable) -> Callable:
 
 @_runnable_support
 def filter_messages(
-    messages: Sequence[MessageLikeRepresentation],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
@@ -416,7 +424,7 @@ def filter_messages(
 
 @_runnable_support
 def merge_message_runs(
-    messages: Sequence[MessageLikeRepresentation],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
 ) -> List[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
@@ -450,12 +458,12 @@ def merge_message_runs(
                 HumanMessage("wait your favorite food", id="bar",),
                 AIMessage(
                     "my favorite colo",
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": 2}, id="123")],
+                    tool_calls=[ToolCall(name="blah_tool", args={"x": 2}, id="123", type="tool_call")],
                     id="baz",
                 ),
                 AIMessage(
                     [{"type": "text", "text": "my favorite dish is lasagna"}],
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": -10}, id="456")],
+                    tool_calls=[ToolCall(name="blah_tool", args={"x": -10}, id="456", type="tool_call")],
                     id="blur",
                 ),
             ]
@@ -473,8 +481,8 @@ def merge_message_runs(
                         {"type": "text", "text": "my favorite dish is lasagna"}
                     ],
                     tool_calls=[
-                        ToolCall({"name": "blah_tool", "args": {"x": 2}, "id": "123"),
-                        ToolCall({"name": "blah_tool", "args": {"x": -10}, "id": "456")
+                        ToolCall({"name": "blah_tool", "args": {"x": 2}, "id": "123", "type": "tool_call"}),
+                        ToolCall({"name": "blah_tool", "args": {"x": -10}, "id": "456", "type": "tool_call"})
                     ]
                     id="baz"
                 ),
@@ -495,17 +503,22 @@ def merge_message_runs(
         else:
             last_chunk = _msg_to_chunk(last)
             curr_chunk = _msg_to_chunk(curr)
-            if isinstance(last_chunk.content, str) and isinstance(
-                curr_chunk.content, str
+            if (
+                isinstance(last_chunk.content, str)
+                and isinstance(curr_chunk.content, str)
+                and last_chunk.content
+                and curr_chunk.content
             ):
                 last_chunk.content += "\n"
             merged.append(_chunk_to_msg(last_chunk + curr_chunk))
     return merged
 
 
+# TODO: Update so validation errors (for token_counter, for example) are raised on
+# init not at runtime.
 @_runnable_support
 def trim_messages(
-    messages: Sequence[MessageLikeRepresentation],
+    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
     *,
     max_tokens: int,
     token_counter: Union[
@@ -748,24 +761,30 @@ def trim_messages(
                     AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
                 ]
     """  # noqa: E501
-    from langchain_core.language_models import BaseLanguageModel
 
     if start_on and strategy == "first":
         raise ValueError
     if include_system and strategy == "first":
         raise ValueError
     messages = convert_to_messages(messages)
-    if isinstance(token_counter, BaseLanguageModel):
-        list_token_counter = token_counter.get_num_tokens_from_messages
-    elif (
-        list(inspect.signature(token_counter).parameters.values())[0].annotation
-        is BaseMessage
-    ):
+    if hasattr(token_counter, "get_num_tokens_from_messages"):
+        list_token_counter = getattr(token_counter, "get_num_tokens_from_messages")
+    elif callable(token_counter):
+        if (
+            list(inspect.signature(token_counter).parameters.values())[0].annotation
+            is BaseMessage
+        ):
 
-        def list_token_counter(messages: Sequence[BaseMessage]) -> int:
-            return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+            def list_token_counter(messages: Sequence[BaseMessage]) -> int:
+                return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+        else:
+            list_token_counter = token_counter  # type: ignore[assignment]
     else:
-        list_token_counter = token_counter  # type: ignore[assignment]
+        raise ValueError(
+            f"'token_counter' expected ot be a model that implements "
+            f"'get_num_tokens_from_messages()' or a function. Received object of type "
+            f"{type(token_counter)}."
+        )
 
     try:
         from langchain_text_splitters import TextSplitter

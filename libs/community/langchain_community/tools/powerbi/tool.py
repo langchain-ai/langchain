@@ -40,8 +40,6 @@ class QueryPowerBITool(BaseTool):
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @validator("llm_chain")
@@ -228,8 +226,6 @@ class InfoPowerBITool(BaseTool):
     powerbi: PowerBIDataset = Field(exclude=True)
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def _run(
@@ -256,8 +252,6 @@ class ListPowerBITool(BaseTool):
     powerbi: PowerBIDataset = Field(exclude=True)
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def _run(

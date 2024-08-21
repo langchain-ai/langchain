@@ -20,6 +20,7 @@ class GitbookLoader(WebBaseLoader):
         base_url: Optional[str] = None,
         content_selector: str = "main",
         continue_on_failure: bool = False,
+        show_progress: bool = True,
     ):
         """Initialize with web page and whether to load all paths.
 
@@ -36,6 +37,7 @@ class GitbookLoader(WebBaseLoader):
                 occurs loading a url, emitting a warning instead of raising an
                 exception. Setting this to True makes the loader more robust, but also
                 may result in missing data. Default: False
+            show_progress: whether to show a progress bar while loading. Default: True
         """
         self.base_url = base_url or web_page
         if self.base_url.endswith("/"):
@@ -43,7 +45,11 @@ class GitbookLoader(WebBaseLoader):
         if load_all_paths:
             # set web_path to the sitemap if we want to crawl all paths
             web_page = f"{self.base_url}/sitemap.xml"
-        super().__init__(web_paths=(web_page,), continue_on_failure=continue_on_failure)
+        super().__init__(
+            web_paths=(web_page,),
+            continue_on_failure=continue_on_failure,
+            show_progress=show_progress,
+        )
         self.load_all_paths = load_all_paths
         self.content_selector = content_selector
 

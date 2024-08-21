@@ -156,7 +156,7 @@ class BaseSingleActionAgent(BaseModel):
             llm: Language model to use.
             tools: Tools to use.
             callback_manager: Callback manager to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             BaseSingleActionAgent: Agent object.
@@ -420,8 +420,6 @@ class RunnableAgent(BaseSingleActionAgent):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property
@@ -530,8 +528,6 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property
@@ -633,11 +629,11 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 
 @deprecated(
     "0.1.0",
-    alternative=(
+    message=(
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
@@ -724,11 +720,11 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
 @deprecated(
     "0.1.0",
-    alternative=(
+    message=(
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.3.0",
+    removal="1.0",
 )
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
@@ -939,7 +935,7 @@ class Agent(BaseSingleActionAgent):
             tools: Tools to use.
             callback_manager: Callback manager to use.
             output_parser: Output parser to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             Agent: Agent object.
@@ -1110,7 +1106,7 @@ class AgentExecutor(Chain):
             agent: Agent to use.
             tools: Tools to use.
             callbacks: Callbacks to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             AgentExecutor: Agent executor object.
@@ -1144,30 +1140,6 @@ class AgentExecutor(Chain):
                     f"Allowed tools ({allowed_tools}) different than "
                     f"provided tools ({[tool.name for tool in tools]})"
                 )
-        return values
-
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_return_direct_tool(cls, values: Dict) -> Dict:
-        """Validate that tools are compatible with agent.
-
-        Args:
-            values: Values to validate.
-
-        Returns:
-            Dict: Validated values.
-
-        Raises:
-            ValueError: If tools that have `return_direct=True` are not allowed.
-        """
-        agent = values["agent"]
-        tools = values["tools"]
-        if isinstance(agent, BaseMultiActionAgent):
-            for tool in tools:
-                if tool.return_direct:
-                    raise ValueError(
-                        "Tools that have `return_direct=True` are not allowed "
-                        "in multi-action agents"
-                    )
         return values
 
     @root_validator(pre=True)
@@ -1765,7 +1737,7 @@ class AgentExecutor(Chain):
         Args:
             input: Input to the agent.
             config: Config to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Yields:
             AddableDict: Addable dictionary.
@@ -1796,7 +1768,7 @@ class AgentExecutor(Chain):
         Args:
             input: Input to the agent.
             config: Config to use.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Yields:
             AddableDict: Addable dictionary.

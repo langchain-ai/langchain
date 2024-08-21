@@ -9,10 +9,11 @@ import json
 import os
 import re
 import urllib
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from typing import Any, BinaryIO, Callable, List, Optional
+from typing import Any, BinaryIO, Callable, List, Literal, Optional, Tuple
 from uuid import uuid4
 
 import requests
@@ -91,18 +92,50 @@ class RemoteFileMetadata:
 
 
 class SessionsPythonREPLTool(BaseTool):
-    """A tool for running Python code.
+    r"""Azure Dynamic Sessions tool.
 
-     Run python code in an Azure Container Apps dynamic sessions code interpreter.
+    Setup:
+        Install ``langchain-azure-dynamic-sessions`` and create a session pool, which you can do by following the instructions [here](https://learn.microsoft.com/en-us/azure/container-apps/sessions-code-interpreter?tabs=azure-cli#create-a-session-pool-with-azure-cli).
 
-    Example:
+        .. code-block:: bash
+
+            pip install -U langchain-azure-dynamic-sessions
+
+        .. code-block:: python
+
+            import getpass
+
+            POOL_MANAGEMENT_ENDPOINT = getpass.getpass("Enter the management endpoint of the session pool: ")
+
+    Instantiation:
         .. code-block:: python
 
             from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
 
-            tool = SessionsPythonREPLTool(pool_management_endpoint="...")
-            result = tool.invoke("6 * 7")
-    """
+            tool = SessionsPythonREPLTool(
+                pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT
+            )
+
+
+    Invocation with args:
+        .. code-block:: python
+
+            tool.invoke("6 * 7")
+
+        .. code-block:: python
+
+            '{\\n  "result": 42,\\n  "stdout": "",\\n  "stderr": ""\\n}'
+
+    Invocation with ToolCall:
+
+        .. code-block:: python
+
+            tool.invoke({"args": {"input":"6 * 7"}, "id": "1", "name": tool.name, "type": "tool_call"})
+
+        .. code-block:: python
+
+            '{\\n  "result": 42,\\n  "stdout": "",\\n  "stderr": ""\\n}'
+    """  # noqa: E501
 
     name: str = "Python_REPL"
     description: str = (
@@ -125,6 +158,8 @@ class SessionsPythonREPLTool(BaseTool):
 
     session_id: str = str(uuid4())
     """The session ID to use for the code interpreter. Defaults to a random UUID."""
+
+    response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
     def _build_url(self, path: str) -> str:
         pool_management_endpoint = self.pool_management_endpoint
@@ -164,16 +199,16 @@ class SessionsPythonREPLTool(BaseTool):
         properties = response_json.get("properties", {})
         return properties
 
-    def _run(self, python_code: str) -> Any:
+    def _run(self, python_code: str, **kwargs: Any) -> Tuple[str, dict]:
         response = self.execute(python_code)
 
         # if the result is an image, remove the base64 data
-        result = response.get("result")
+        result = deepcopy(response.get("result"))
         if isinstance(result, dict):
             if result.get("type") == "image" and "base64_data" in result:
                 result.pop("base64_data")
 
-        return json.dumps(
+        content = json.dumps(
             {
                 "result": result,
                 "stdout": response.get("stdout"),
@@ -181,6 +216,7 @@ class SessionsPythonREPLTool(BaseTool):
             },
             indent=2,
         )
+        return content, response
 
     def upload_file(
         self,

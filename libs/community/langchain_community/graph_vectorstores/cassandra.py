@@ -9,6 +9,7 @@ from typing import (
     Type,
 )
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.graph_vectorstores.base import (
@@ -23,25 +24,21 @@ if TYPE_CHECKING:
     from cassandra.cluster import Session
 
 
+@beta()
 class CassandraGraphVectorStore(GraphVectorStore):
     def __init__(
         self,
         embedding: Embeddings,
         *,
         node_table: str = "graph_nodes",
-        targets_table: str = "graph_targets",
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
+        **kwargs: Any,
     ):
         """
         Create the hybrid graph store.
-        Parameters configure the ways that edges should be added between
-        documents. Many take `Union[bool, Set[str]]`, with `False` disabling
-        inference, `True` enabling it globally between all documents, and a set
-        of metadata fields defining a scope in which to enable it. Specifically,
-        passing a set of metadata fields such as `source` only links documents
-        with the same `source` metadata value.
+
         Args:
             embedding: The embeddings to use for the document content.
             setup_mode: Mode used to create the Cassandra table (SYNC,
@@ -51,8 +48,8 @@ class CassandraGraphVectorStore(GraphVectorStore):
             from ragstack_knowledge_store import EmbeddingModel, graph_store
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
-                "Could not import ragstack-knowledge-store python package. "
-                "Please install it with `pip install ragstack-knowledge-store`."
+                "Could not import ragstack_knowledge_store python package. "
+                "Please install it with `pip install ragstack-ai-knowledge-store`."
             )
 
         self._embedding = embedding
@@ -77,10 +74,10 @@ class CassandraGraphVectorStore(GraphVectorStore):
         self.store = graph_store.GraphStore(
             embedding=_EmbeddingModelAdapter(embedding),
             node_table=node_table,
-            targets_table=targets_table,
             session=session,
             keyspace=keyspace,
             setup_mode=_setup_mode,
+            **kwargs,
         )
 
     @property

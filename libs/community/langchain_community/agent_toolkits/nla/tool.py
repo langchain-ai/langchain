@@ -62,7 +62,7 @@ class NLATool(Tool):
             verbose: Whether to print verbose output. Default is False.
             return_intermediate_steps: Whether to return intermediate steps.
                 Default is False.
-            **kwargs: Additional arguments.
+            kwargs: Additional arguments.
 
         Returns:
             The tool.

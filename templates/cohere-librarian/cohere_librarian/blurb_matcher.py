@@ -1,8 +1,8 @@
 import csv
 
 from langchain.chains.question_answering import load_qa_chain
+from langchain_chroma import Chroma
 from langchain_community.embeddings import CohereEmbeddings
-from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import PromptTemplate
 
 from .chat import chat
@@ -23,7 +23,7 @@ parsed_data = [
 ]
 parsed_data[1]
 
-embeddings = CohereEmbeddings()
+embeddings = CohereEmbeddings(model="embed-english-v3.0")
 
 docsearch = Chroma.from_texts(
     [x["title"] for x in parsed_data], embeddings, metadatas=parsed_data
