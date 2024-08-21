@@ -15,15 +15,22 @@ from langchain_community.vectorstores.sqlserver import (
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
 _SCHEMA = "lc_test"
-_DATABASE_NAME = "LangChainVectors"
-_COLLATION_QUERY = "select name, collation_name from sys.databases where name = N'%s';"
-_SYS_TABLE_QUERY = """
-select object_id from sys.tables where name = '%s'
-and schema_name(schema_id) = '%s'"""
+_COLLATION_DB_NAME = "LangChainCollationTest"
 _TABLE_NAME = "langchain_vector_store_tests"
 _TABLE_DOES_NOT_EXIST = "Table %s.%s does not exist."
 EMBEDDING_LENGTH = 1536
 VECTOR_STORE_TABLE_NAME = "langchain_vector_store_test"
+
+# Query Strings
+#
+_CREATE_COLLATION_DB_QUERY = (
+    f"create database {_COLLATION_DB_NAME} collate SQL_Latin1_General_CP1_CS_AS;"
+)
+_COLLATION_QUERY = "select name, collation_name from sys.databases where name = N'%s';"
+_DROP_COLLATION_DB_QUERY = f"drop database {_COLLATION_DB_NAME}"
+_SYS_TABLE_QUERY = """
+select object_id from sys.tables where name = '%s'
+and schema_name(schema_id) = '%s'"""
 
 
 @pytest.fixture
@@ -458,17 +465,29 @@ def test_that_similarity_search_returns_results_with_scores_sorted_in_ascending_
 
 
 def test_that_case_sensitivity_does_not_affect_distance_strategy(
-    store: SQLServer_VectorStore,
     texts: List[str],
 ) -> None:
     """Test that when distance strategy is set on a case sensitive DB,
     a call to similarity search does not fail."""
+    connection_string_to_master = "mssql+pyodbc://@localhost/master?driver=ODBC+Driver+17+for+SQL+Server&Trusted_connection=yes"
 
-    connection = create_engine(_CONNECTION_STRING).connect()
+    connection = create_engine(connection_string_to_master).connect()
+    connection.rollback()
+    connection._dbapi_connection.dbapi_connection.autocommit = True
+    connection.execute(text(_CREATE_COLLATION_DB_QUERY))
+    connection.execute(text(f"use {_COLLATION_DB_NAME}"))
+
+    store = SQLServer_VectorStore(
+        connection=connection,
+        connection_string=connection_string_to_master,
+        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
+        embedding_length=EMBEDDING_LENGTH,
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        table_name=_TABLE_NAME,
+    )
     collation_query_result = (
-        connection.execute(text(_COLLATION_QUERY % (_DATABASE_NAME))).fetchone()
+        connection.execute(text(_COLLATION_QUERY % (_COLLATION_DB_NAME))).fetchone()
     )  # Sample return value: ('LangChainVectors', 'SQL_Latin1_General_CP1_CS_AS')
-    connection.close()
 
     assert (
         collation_query_result is not None
@@ -483,3 +502,8 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     number_of_docs_to_return = 2
     result = store.similarity_search(query="Good review", k=number_of_docs_to_return)
     assert result is not None and len(result) == number_of_docs_to_return
+
+    # Drop DB with case sensitive collation for test.
+    connection.execute(text("use master"))
+    connection.execute(text(_DROP_COLLATION_DB_QUERY))
+    connection.close()
