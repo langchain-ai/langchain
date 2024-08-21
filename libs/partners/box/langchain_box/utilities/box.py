@@ -276,7 +276,7 @@ class BoxAuth(BaseModel):
 
         return values
 
-    def authorize(self) -> None:
+    def _authorize(self) -> None:
         match self.auth_type:
             case "token":
                 try:
@@ -364,7 +364,7 @@ class BoxAuth(BaseModel):
     def get_client(self) -> box_sdk_gen.BoxClient:
         """Instantiate the Box SDK."""
         if self.box_client is None:
-            self.authorize()
+            self._authorize()
 
         return self.box_client
 
@@ -423,28 +423,7 @@ class BoxAPIWrapper(BaseModel):
         resp.raise_for_status()
         return resp.content
 
-    def get_folder_items(self, folder_id: str) -> box_sdk_gen.Items:
-        """Get all the items in a folder. Accepts folder_id as str.
-        returns box_sdk_gen.Items"""
-        if self.box is None:
-            self.get_box_client()
-
-        try:
-            folder_contents = self.box.folders.get_folder_items(  #  type: ignore[union-attr]
-                folder_id, fields=["id", "type", "name"]
-            )
-        except box_sdk_gen.BoxAPIError as bae:
-            raise RuntimeError(
-                f"BoxAPIError: Error getting folder content: {bae.message}"
-            )
-        except box_sdk_gen.BoxSDKError as bse:
-            raise RuntimeError(
-                f"BoxSDKError: Error getting folder content: {bse.message}"
-            )
-
-        return folder_contents.entries
-
-    def get_text_representation(self, file_id: str = "") -> tuple[str, str, str]:
+    def _get_text_representation(self, file_id: str = "") -> tuple[str, str, str]:
         try:
             from box_sdk_gen import BoxAPIError, BoxSDKError
         except ImportError:
@@ -511,7 +490,7 @@ class BoxAPIWrapper(BaseModel):
 
         if file.type == "file":
             if hasattr(DocumentFiles, file.extension.upper()):
-                file_name, content, url = self.get_text_representation(file_id=file_id)
+                file_name, content, url = self._get_text_representation(file_id=file_id)
 
                 if file_name is None or content is None or url is None:
                     return None
@@ -526,6 +505,27 @@ class BoxAPIWrapper(BaseModel):
             return None
 
         return None
+
+    def get_folder_items(self, folder_id: str) -> box_sdk_gen.Items:
+        """Get all the items in a folder. Accepts folder_id as str.
+        returns box_sdk_gen.Items"""
+        if self.box is None:
+            self.get_box_client()
+
+        try:
+            folder_contents = self.box.folders.get_folder_items(  #  type: ignore[union-attr]
+                folder_id, fields=["id", "type", "name"]
+            )
+        except box_sdk_gen.BoxAPIError as bae:
+            raise RuntimeError(
+                f"BoxAPIError: Error getting folder content: {bae.message}"
+            )
+        except box_sdk_gen.BoxSDKError as bse:
+            raise RuntimeError(
+                f"BoxSDKError: Error getting folder content: {bse.message}"
+            )
+
+        return folder_contents.entries
 
     def search_box(self, query: str) -> List[Document]:
 
