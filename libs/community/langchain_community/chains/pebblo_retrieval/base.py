@@ -33,7 +33,7 @@ from langchain_community.chains.pebblo_retrieval.models import (
 )
 from langchain_community.chains.pebblo_retrieval.utilities import (
     PLUGIN_VERSION,
-    PebbloAPIWrapper,
+    PebbloRetrievalAPIWrapper,
     get_runtime,
 )
 
@@ -75,8 +75,10 @@ class PebbloRetrievalQA(Chain):
     """Flag to check if discover payload has been sent."""
     enable_prompt_gov: bool = True  #: :meta private:
     """Flag to check if prompt governance is enabled or not"""
-    pb_client: PebbloAPIWrapper = Field(default_factory=PebbloAPIWrapper)
-    """Pebblo API client"""
+    pb_client: PebbloRetrievalAPIWrapper = Field(
+        default_factory=PebbloRetrievalAPIWrapper
+    )
+    """Pebblo Retrieval API client"""
 
     def _call(
         self,
@@ -232,7 +234,7 @@ class PebbloRetrievalQA(Chain):
             **kwargs,
         )
         # initialize Pebblo API client
-        pb_client = PebbloAPIWrapper(
+        pb_client = PebbloRetrievalAPIWrapper(
             api_key=api_key,
             classifier_location=classifier_location,
             classifier_url=classifier_url,

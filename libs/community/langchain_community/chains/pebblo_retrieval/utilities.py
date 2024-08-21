@@ -87,8 +87,8 @@ def get_ip() -> str:
     return public_ip
 
 
-class PebbloAPIWrapper(BaseModel):
-    """Wrapper for Pebblo API."""
+class PebbloRetrievalAPIWrapper(BaseModel):
+    """Wrapper for Pebblo Retrieval API."""
 
     api_key: Optional[str]  # Use SecretStr
     """API key for Pebblo Cloud"""
