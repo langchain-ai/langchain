@@ -118,8 +118,15 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from MongoDB"""
         try:
-            skip_count = max(0, self.collection.count_documents({}) - self.history_size) if self.history_size != None else 0
-            cursor = self.collection.find({self.session_id_key: self.session_id}, skip=skip_count)
+            if self.history_size is None:
+                cursor = self.collection.find({self.session_id_key: self.session_id})
+            else:
+                skip_count = max(
+                    0, self.collection.count_documents({}) - self.history_size
+                )
+                cursor = self.collection.find(
+                    {self.session_id_key: self.session_id}, skip=skip_count
+                )
         except errors.OperationFailure as error:
             logger.error(error)
 
