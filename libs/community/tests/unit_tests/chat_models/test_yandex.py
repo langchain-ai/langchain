@@ -49,7 +49,7 @@ def test_yandexgpt_invalid_model_params() -> None:
     [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
 )
 @mock.patch.dict(os.environ, {}, clear=True)
-def test_completion_call(api_key_or_token, disable_logging) -> None:
+def test_completion_call(api_key_or_token: dict, disable_logging: dict) -> None:
     with mock.patch(
         "yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc.TextGenerationServiceStub"
     ) as stub:

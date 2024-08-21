@@ -35,7 +35,7 @@ def test_init() -> None:
     [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
 )
 @mock.patch.dict(os.environ, {}, clear=True)
-def test_query_embedding_call(api_key_or_token, disable_logging) -> None:
+def test_query_embedding_call(api_key_or_token: dict, disable_logging: dict) -> None:
     with mock.patch(
         "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc.EmbeddingsServiceStub"
     ) as stub:
@@ -67,7 +67,7 @@ def test_query_embedding_call(api_key_or_token, disable_logging) -> None:
     [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
 )
 @mock.patch.dict(os.environ, {}, clear=True)
-def test_doc_embedding_call(api_key_or_token, disable_logging) -> None:
+def test_doc_embedding_call(api_key_or_token: dict, disable_logging: dict) -> None:
     with mock.patch(
         "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc.EmbeddingsServiceStub"
     ) as stub:

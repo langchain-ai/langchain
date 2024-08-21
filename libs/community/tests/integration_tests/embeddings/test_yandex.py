@@ -12,7 +12,7 @@ from langchain_community.embeddings.yandex import YandexGPTEmbeddings
 )
 # @pytest.mark.scheduled - idk what it means
 # requires YC_* env and active service
-def test_yandex_embedding(constructor_args) -> None:
+def test_yandex_embedding(constructor_args: dict) -> None:
     documents = ["exactly same", "exactly same", "different"]
     embedding = YandexGPTEmbeddings(**constructor_args)
     doc_outputs = embedding.embed_documents(documents)
