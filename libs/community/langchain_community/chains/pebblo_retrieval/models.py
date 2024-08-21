@@ -134,9 +134,9 @@ class Context(BaseModel):
 
 class Prompt(BaseModel):
     data: Optional[Union[list, str]]
-    entityCount: Optional[int]
-    entities: Optional[dict]
-    prompt_gov_enabled: Optional[bool]
+    entityCount: Optional[int] = None
+    entities: Optional[dict] = None
+    prompt_gov_enabled: Optional[bool] = None
 
 
 class Qa(BaseModel):

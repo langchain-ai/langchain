@@ -27,7 +27,9 @@ from langchain_community.chains.pebblo_retrieval.models import (
     App,
     AuthContext,
     ChainInfo,
+    Model,
     SemanticContext,
+    VectorDB,
 )
 from langchain_community.chains.pebblo_retrieval.utilities import (
     PLUGIN_VERSION,
@@ -318,7 +320,9 @@ class PebbloRetrievalQA(Chain):
         cls._discover_sent = True
 
     @classmethod
-    def get_chain_details(cls, llm: BaseLanguageModel, **kwargs) -> List[ChainInfo]:
+    def get_chain_details(
+        cls, llm: BaseLanguageModel, **kwargs: Any
+    ) -> List[ChainInfo]:
         """
         Get chain details.
 
@@ -327,20 +331,20 @@ class PebbloRetrievalQA(Chain):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List[Dict[str, Any]]: Chain details.
+            List[ChainInfo]: Chain details.
         """
         llm_dict = llm.__dict__
         chains = [
-            {
-                "name": cls.__name__,
-                "model": {
-                    "name": llm_dict.get("model_name", llm_dict.get("model")),
-                    "vendor": llm.__class__.__name__,
-                },
-                "vector_dbs": [
-                    {
-                        "name": kwargs["retriever"].vectorstore.__class__.__name__,
-                        "embedding_model": str(
+            ChainInfo(
+                name=cls.__name__,
+                model=Model(
+                    name=llm_dict.get("model_name", llm_dict.get("model")),
+                    vendor=llm.__class__.__name__,
+                ),
+                vector_dbs=[
+                    VectorDB(
+                        name=kwargs["retriever"].vectorstore.__class__.__name__,
+                        embedding_model=str(
                             kwargs["retriever"].vectorstore._embeddings.model
                         )
                         if hasattr(kwargs["retriever"].vectorstore, "_embeddings")
@@ -349,9 +353,8 @@ class PebbloRetrievalQA(Chain):
                             if hasattr(kwargs["retriever"].vectorstore, "_embedding")
                             else None
                         ),
-                    }
+                    )
                 ],
-            },
+            ),
         ]
-        chains = [ChainInfo(**chain) for chain in chains]
         return chains
