@@ -4,6 +4,7 @@ from box_sdk_gen import FileBaseTypeField  # type: ignore
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, ConfigDict, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
 from langchain_box.utilities import BoxAPIWrapper, BoxAuth
 
@@ -159,17 +160,30 @@ class BoxLoader(BaseLoader, BaseModel):
             )
 
         """Validate that we have either a box_developer_token or box_auth."""
-        if not values.get("box_auth") and not values.get("box_developer_token"):
-            raise ValueError(
-                "you must provide box_developer_token or a box_auth "
-                "generated with langchain_box.utilities.BoxAuth"
-            )
+        if not values.get("box_auth"):
+            if not get_from_dict_or_env(
+                values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
+            ):
+                raise ValueError(
+                    "you must provide box_developer_token or a box_auth "
+                    "generated with langchain_box.utilities.BoxAuth"
+                )
+            else:
 
-        box = BoxAPIWrapper(  # type: ignore[call-arg]
-            box_developer_token=values.get("box_developer_token"),
-            box_auth=values.get("box_auth"),
-            character_limit=values.get("character_limit"),
-        )
+                token =get_from_dict_or_env(
+                    values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
+                )
+
+                box = BoxAPIWrapper(  # type: ignore[call-arg]
+                    box_developer_token=token,
+                    character_limit=values.get("character_limit")
+                )
+        else:
+
+            box = BoxAPIWrapper(  # type: ignore[call-arg]
+                box_auth=values.get("box_auth"),
+                character_limit=values.get("character_limit")
+            )
 
         values["box"] = box
 

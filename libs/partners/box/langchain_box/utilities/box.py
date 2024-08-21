@@ -1,7 +1,7 @@
 """Util that calls Box APIs."""
 
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import box_sdk_gen  # type: ignore
 import requests
@@ -486,8 +486,11 @@ class BoxAPIWrapper(BaseModel):
                 except requests.exceptions.HTTPError:
                     return None, None, None  #   type: ignore[return-value]
 
-                if self.character_limit > 0:  #   type: ignore[operator]
-                    content = raw_content[0 : self.character_limit]
+                if(
+                    self.character_limit is not None 
+                    and self.character_limit > 0  #   type: ignore[operator]
+                ):
+                    content = raw_content[0 : (self.character_limit - 1)]
                 else:
                     content = raw_content
 
@@ -523,3 +526,77 @@ class BoxAPIWrapper(BaseModel):
             return None
 
         return None
+
+    def search_box(self, query: str) -> List[Document]:
+
+        if self.box is None:
+            self.get_box_client()
+
+        files = []
+
+        try:
+            results = self.box.search.search_for_content(
+                query=query, fields=["id", "type", "extension"]
+            )
+
+            if results.entries is None or len(results.entries) <= 0:
+                return None
+
+            for file in results.entries:
+
+                if (
+                    file is not None
+                    and file.type == "file"
+                    and hasattr(DocumentFiles, file.extension.upper())
+                ):
+                    doc = self.get_document_by_file_id(file.id)
+
+                    if doc is not None:
+                        files.append(doc)
+
+            return files
+        except box_sdk_gen.BoxAPIError as bae:
+            raise RuntimeError(
+                f"BoxAPIError: Error getting search results: {bae.message}"
+            )
+        except box_sdk_gen.BoxSDKError as bse:
+            raise RuntimeError(
+                f"BoxSDKError: Error getting search results: {bse.message}"
+            )
+
+    def ask_box_ai(self, query: str, box_file_ids: List[str]) -> List[Document]:
+        
+        if self.box is None:
+            self.get_box_client()
+
+        ai_mode = box_sdk_gen.CreateAiAskMode.SINGLE_ITEM_QA.value
+
+        if len(box_file_ids) > 1:
+            ai_mode = box_sdk_gen.CreateAiAskMode.MULTIPLE_ITEM_QA.value
+        elif len(box_file_ids) <= 0:
+            raise ValueError("BOX_AI_ASK requires at least one file ID")
+
+        items = []
+
+        for file_id in box_file_ids:
+            item = box_sdk_gen.CreateAiAskItems(
+                id=file_id, type=box_sdk_gen.CreateAiAskItemsTypeField.FILE.value
+            )
+            items.append(item)
+
+        try:
+            response = self.box.ai.create_ai_ask(ai_mode, query, items)
+        except box_sdk_gen.BoxAPIError as bae:
+            raise RuntimeError(
+                f"BoxAPIError: Error getting Box AI result: {bae.message}"
+            )
+        except box_sdk_gen.BoxSDKError as bse:
+            raise RuntimeError(
+                f"BoxSDKError: Error getting Box AI result: {bse.message}"
+            )
+
+        content = response.answer
+
+        metadata = {"source": f"Box AI", "title": f"Box AI {query}"}
+
+        return Document(page_content=content, metadata=metadata)
