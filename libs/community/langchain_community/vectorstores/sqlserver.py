@@ -136,7 +136,6 @@ class SQLServer_VectorStore(VectorStore):
         connection_string: str,
         db_schema: Optional[str] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
-        db_schema: Optional[str] = None,
         embedding_function: Embeddings,
         embedding_length: int,
         table_name: str,
