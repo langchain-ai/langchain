@@ -199,7 +199,7 @@ def test_that_add_text_fails_if_text_embedding_length_is_not_equal_to_embedding_
     store: SQLServer_VectorStore,
     texts: List[str],
 ) -> None:
-    """Test that a call to add_text will raise an exception if the embedding_length of
+    """Test that a call to add_texts will raise an exception if the embedding_length of
     the embedding function in use is not the same as the embedding_length used in
     creating the vector store."""
     store.add_texts(texts)
