@@ -419,7 +419,7 @@ def test_that_only_same_size_embeddings_can_be_added_to_store(
     store: SQLServer_VectorStore,
     texts: List[str],
 ) -> None:
-    """Tests that when embedding_length is provided, the vector store can
+    """Tests that the vector store can
     take only vectors of same dimensions."""
     # Create a SQLServer_VectorStore without `embedding_length` defined.
     store.add_texts(texts)
