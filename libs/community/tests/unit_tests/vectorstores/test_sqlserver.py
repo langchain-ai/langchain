@@ -495,7 +495,7 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     assert "_CS" in collation_query_result.collation_name
 
     store.add_texts(texts)
-    store._distance_strategy = DistanceStrategy.DOT
+    store.distance_strategy = DistanceStrategy.DOT
 
     # Call to similarity_search function should not error out.
     number_of_docs_to_return = 2
