@@ -3,14 +3,14 @@ from typing import Any, Dict, Iterator, List, Optional
 from box_sdk_gen import FileBaseTypeField  # type: ignore
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, ConfigDict, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
-from langchain_box.utilities import BoxAPIWrapper, BoxAuth
+from langchain_box.utilities import BoxAuth, _BoxAPIWrapper
 
 
 class BoxLoader(BaseLoader, BaseModel):
-    """
-    BoxLoader
+    """BoxLoader.
 
     This class will help you load files from your Box instance. You must have a
     Box account. If you need one, you can sign up for a free developer account.
@@ -33,18 +33,18 @@ class BoxLoader(BaseLoader, BaseModel):
             pip install -U langchain-box
             export BOX_DEVELOPER_TOKEN="your-api-key"
 
+
     This loader returns ``Document `` objects built from text representations of files
     in Box. It will skip any document without a text representation available. You can
     provide either a ``List[str]`` containing Box file IDS, or you can provide a
     ``str`` contining a Box folder ID. If providing a folder ID, you can also enable
     recursive mode to get the full tree under that folder.
 
-    :::info
+    .. note::
         A Box instance can contain Petabytes of files, and folders can contain millions
         of files. Be intentional when choosing what folders you choose to index. And we
         recommend never getting all files from folder 0 recursively. Folder ID 0 is your
         root folder.
-    :::
 
     Instantiate:
 
@@ -121,32 +121,36 @@ class BoxLoader(BaseLoader, BaseModel):
             Terrarium: $120\nTotal: $920')
     """
 
-    model_config = ConfigDict(use_enum_values=True)
-
-    """String containing the Box Developer Token generated in the developer console"""
     box_developer_token: Optional[str] = None
-    """Configured langchain_box.utilities.BoxAuth object"""
+    """String containing the Box Developer Token generated in the developer console"""
+
     box_auth: Optional[BoxAuth] = None
-    """List[str] containing Box file ids"""
+    """Configured langchain_box.utilities.BoxAuth object"""
+
     box_file_ids: Optional[List[str]] = None
-    """String containing box folder id to load files from"""
+    """List[str] containing Box file ids"""
+
     box_folder_id: Optional[str] = None
+    """String containing box folder id to load files from"""
+
+    recursive: Optional[bool] = False
     """If getting files by folder id, recursive is a bool to determine if you wish 
        to traverse subfolders to return child documents. Default is False"""
-    recursive: Optional[bool] = False
+
+    character_limit: Optional[int] = -1
     """character_limit is an int that caps the number of characters to
        return per document."""
-    character_limit: Optional[int] = -1
 
-    box: Optional[BoxAPIWrapper]
+    _box: Optional[_BoxAPIWrapper]
 
     class Config:
         arbitrary_types_allowed = True
         extra = "allow"
+        use_enum_values = True
 
     @root_validator(allow_reuse=True)
     def validate_box_loader_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        box = None
+        _box = None
 
         """Validate that has either box_file_ids or box_folder_id."""
         if not values.get("box_file_ids") and not values.get("box_folder_id"):
@@ -159,19 +163,30 @@ class BoxLoader(BaseLoader, BaseModel):
             )
 
         """Validate that we have either a box_developer_token or box_auth."""
-        if not values.get("box_auth") and not values.get("box_developer_token"):
-            raise ValueError(
-                "you must provide box_developer_token or a box_auth "
-                "generated with langchain_box.utilities.BoxAuth"
+        if not values.get("box_auth"):
+            if not get_from_dict_or_env(
+                values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
+            ):
+                raise ValueError(
+                    "you must provide box_developer_token or a box_auth "
+                    "generated with langchain_box.utilities.BoxAuth"
+                )
+            else:
+                token = get_from_dict_or_env(
+                    values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
+                )
+
+                _box = _BoxAPIWrapper(  # type: ignore[call-arg]
+                    box_developer_token=token,
+                    character_limit=values.get("character_limit"),
+                )
+        else:
+            _box = _BoxAPIWrapper(  # type: ignore[call-arg]
+                box_auth=values.get("box_auth"),
+                character_limit=values.get("character_limit"),
             )
 
-        box = BoxAPIWrapper(  # type: ignore[call-arg]
-            box_developer_token=values.get("box_developer_token"),
-            box_auth=values.get("box_auth"),
-            character_limit=values.get("character_limit"),
-        )
-
-        values["box"] = box
+        values["_box"] = _box
 
         return values
 
@@ -181,7 +196,7 @@ class BoxLoader(BaseLoader, BaseModel):
         for file in folder_content:
             try:
                 if file.type == FileBaseTypeField.FILE:
-                    doc = self.box.get_document_by_file_id(file.id)
+                    doc = self._box.get_document_by_file_id(file.id)
 
                     if doc is not None:
                         yield doc
@@ -199,7 +214,7 @@ class BoxLoader(BaseLoader, BaseModel):
         if self.box_file_ids:
             for file_id in self.box_file_ids:
                 try:
-                    file = self.box.get_document_by_file_id(file_id)  # type: ignore[union-attr]
+                    file = self._box.get_document_by_file_id(file_id)  # type: ignore[union-attr]
 
                     if file is not None:
                         yield file
