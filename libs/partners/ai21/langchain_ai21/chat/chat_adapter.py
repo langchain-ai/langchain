@@ -1,23 +1,28 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Literal, Union, cast, overload
+from typing import Any, Dict, Iterator, List, Literal, Union, cast, overload, Optional
 
+from ai21 import AI21Client
 from ai21.models import ChatMessage as J2ChatMessage
 from ai21.models import RoleType
-from ai21.models.chat import ChatCompletionChunk, ChatMessage
+from ai21.models.chat import ChatCompletionChunk, ToolCall as AI21ToolCall, ToolFunction as AI21ToolFunction
+from ai21.models.chat import (ToolMessage as AI21ToolMessage, AssistantMessage as AI21AssistantMessage,
+                              UserMessage as AI21UserMessage, SystemMessage as AI21SystemMessage, ChatMessage as AI21ChatMessage)
+from ai21.models.chat.chat_message import ChatMessageParam
 from ai21.stream.stream import Stream as AI21Stream
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
-    HumanMessage,
+    HumanMessage, SystemMessage, ToolMessage
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.output_parsers.openai_tools import parse_tool_call
 from langchain_core.outputs import ChatGenerationChunk
 
-_ChatMessageTypes = Union[ChatMessage, J2ChatMessage]
+_ChatMessageTypes = Union[AI21ChatMessage, J2ChatMessage]
 _SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."
 _ROLE_TYPE = Union[str, RoleType]
 
@@ -40,19 +45,24 @@ class ChatAdapter(ABC):
         self,
         message: BaseMessage,
     ) -> _ChatMessageTypes:
-        content = cast(str, message.content)
-        role = self._parse_role(message)
 
-        return self._chat_message(role=role, content=content)
+        role = self._parse_role(message)
+        return self._chat_message(role=role, message=message)
 
     def _parse_role(self, message: BaseMessage) -> _ROLE_TYPE:
         role = None
+
+        if isinstance(message, SystemMessage):
+            return RoleType.SYSTEM
 
         if isinstance(message, HumanMessage):
             return RoleType.USER
 
         if isinstance(message, AIMessage):
             return RoleType.ASSISTANT
+
+        if isinstance(message, ToolMessage):
+            return RoleType.TOOL
 
         if isinstance(self, J2ChatAdapter):
             if not role:
@@ -68,7 +78,7 @@ class ChatAdapter(ABC):
     def _chat_message(
         self,
         role: _ROLE_TYPE,
-        content: str,
+        message: BaseMessage,
     ) -> _ChatMessageTypes:
         pass
 
@@ -130,9 +140,9 @@ class J2ChatAdapter(ChatAdapter):
     def _chat_message(
         self,
         role: _ROLE_TYPE,
-        content: str,
+        message: BaseMessage,
     ) -> J2ChatMessage:
-        return J2ChatMessage(role=RoleType(role), text=content)
+        return J2ChatMessage(role=RoleType(role), text=cast(str, message.content))
 
     @overload
     def call(
@@ -174,15 +184,51 @@ class JambaChatCompletionsAdapter(ChatAdapter):
             ],
         }
 
+    def convert_tool_calls_dict_to_ai21_tool_call(
+            self, tool_calls: Optional[List[Dict[str, Any]]]) -> Optional[List[AI21ToolCall]]:
+        if tool_calls is None:
+            return None
+        ai21_tool_calls = []
+        for tool_call in tool_calls:
+            function_name = tool_call["name"]
+            tool_call_id = tool_call["id"]
+            func_args = tool_call["args"]
+            ai21_tool_calls.append(AI21ToolCall(
+                id=tool_call_id,
+                type="function",
+                function=AI21ToolFunction(name=function_name, arguments=str(func_args)),
+            ))
+
+        return ai21_tool_calls
+
     def _chat_message(
         self,
         role: _ROLE_TYPE,
-        content: str,
-    ) -> ChatMessage:
-        return ChatMessage(
+        message: BaseMessage,
+    ) -> ChatMessageParam:
+        if role == RoleType.ASSISTANT:
+            return AI21AssistantMessage(
+                tool_calls=self.convert_tool_calls_dict_to_ai21_tool_call(message.tool_calls),
+                content=None if message.content == "" else message.content,
+            )
+        if role == RoleType.TOOL:
+            return AI21ToolMessage(
+                tool_call_id=message.tool_call_id,
+                content=message.content,
+            )
+        if role == RoleType.USER:
+            return AI21UserMessage(
+                content=message.content,
+            )
+        if role == RoleType.SYSTEM:
+            return AI21SystemMessage(
+                content=message.content,
+            )
+        return AI21ChatMessage(
             role=role.value if isinstance(role, RoleType) else role,
-            content=content,
+            content=message.content,
         )
+
 
     @overload
     def call(
@@ -202,16 +248,24 @@ class JambaChatCompletionsAdapter(ChatAdapter):
 
     def call(
         self,
-        client: Any,
+        client: AI21Client,
         stream: Literal[True] | Literal[False],
         **params: Any,
     ) -> List[BaseMessage] | Iterator[ChatGenerationChunk]:
         response = client.chat.completions.create(stream=stream, **params)
-
         if stream:
             return self._stream_response(response)
 
-        return [AIMessage(choice.message.content) for choice in response.choices]
+        ai_messages = []
+        for message in response.choices:
+            if not message.message.tool_calls:
+                ai_messages.append(AIMessage(message.message.content))
+            else:
+                tool_calls = [parse_tool_call(tool_call.model_dump(), return_id=True)
+                              for tool_call in message.message.tool_calls]
+                ai_messages.append(AIMessage("", tool_calls=tool_calls))
+
+        return ai_messages
 
     def _stream_response(
         self,
