@@ -208,10 +208,8 @@ class JambaChatCompletionsAdapter(ChatAdapter):
     def _convert_lc_tool_calls_to_ai21_tool_calls(
         self, tool_calls: Optional[List[Dict[str, Any]]]
     ) -> Optional[List[AI21ToolCall]]:
-        """AI21 supports only function-type tool calls. We need to map Langchain ToolCalls to AI21 ToolCalls as follows:
-        Langchain ToolCall: {'args': Dict[str, Any], 'id': str, 'name': str, 'type': 'tool_call'}
-        to
-        AI21 ToolCall: {'function': {'name': str, 'arguments': str}, 'id': str, 'type': 'function'}
+        """
+        Convert Langchain ToolCalls to AI21 ToolCalls.
         """
 
         if tool_calls is None:
