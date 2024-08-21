@@ -254,4 +254,4 @@ class ChatAI21(BaseChatModel, AI21Base):
         tools: Sequence[Union[Dict[str, Any]]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        return self.bind(tools=tools)
+        return self.bind(tools=tools, **kwargs)
