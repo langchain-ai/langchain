@@ -206,6 +206,7 @@ class LangChainTracer(BaseTracer):
         """Update a run."""
         try:
             run_dict = _run_to_dict(run)
+            run_dict.pop("name", None)
             run_dict["tags"] = self._get_tags(run)
             self.client.update_run(run.id, **run_dict)
         except Exception as e:
