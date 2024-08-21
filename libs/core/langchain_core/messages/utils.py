@@ -514,6 +514,8 @@ def merge_message_runs(
     return merged
 
 
+# TODO: Update so validation errors (for token_counter, for example) are raised on
+# init not at runtime.
 @_runnable_support
 def trim_messages(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
@@ -759,24 +761,30 @@ def trim_messages(
                     AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
                 ]
     """  # noqa: E501
-    from langchain_core.language_models import BaseLanguageModel
 
     if start_on and strategy == "first":
         raise ValueError
     if include_system and strategy == "first":
         raise ValueError
     messages = convert_to_messages(messages)
-    if isinstance(token_counter, BaseLanguageModel):
-        list_token_counter = token_counter.get_num_tokens_from_messages
-    elif (
-        list(inspect.signature(token_counter).parameters.values())[0].annotation
-        is BaseMessage
-    ):
+    if hasattr(token_counter, "get_num_tokens_from_messages"):
+        list_token_counter = getattr(token_counter, "get_num_tokens_from_messages")
+    elif callable(token_counter):
+        if (
+            list(inspect.signature(token_counter).parameters.values())[0].annotation
+            is BaseMessage
+        ):
 
-        def list_token_counter(messages: Sequence[BaseMessage]) -> int:
-            return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+            def list_token_counter(messages: Sequence[BaseMessage]) -> int:
+                return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+        else:
+            list_token_counter = token_counter  # type: ignore[assignment]
     else:
-        list_token_counter = token_counter  # type: ignore[assignment]
+        raise ValueError(
+            f"'token_counter' expected ot be a model that implements "
+            f"'get_num_tokens_from_messages()' or a function. Received object of type "
+            f"{type(token_counter)}."
+        )
 
     try:
         from langchain_text_splitters import TextSplitter
