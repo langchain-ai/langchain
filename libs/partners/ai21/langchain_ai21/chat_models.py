@@ -17,11 +17,11 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.runnables import Runnable
 
 from langchain_ai21.ai21_base import AI21Base
 from langchain_ai21.chat.chat_adapter import ChatAdapter
 from langchain_ai21.chat.chat_factory import create_chat_adapter
-from langchain_core.runnables import Runnable
 
 
 class ChatAI21(BaseChatModel, AI21Base):
@@ -255,4 +255,3 @@ class ChatAI21(BaseChatModel, AI21Base):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools)
-

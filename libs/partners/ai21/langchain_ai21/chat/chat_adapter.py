@@ -1,14 +1,34 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Literal, Union, cast, overload, Optional
+from typing import Any, Dict, Iterator, List, Literal, Optional, Union, cast, overload
 
-from ai21.models import RoleType, ChatMessage as J2ChatMessage
-from ai21.models.chat import (ChatCompletionChunk, ToolCall as AI21ToolCall, ToolFunction as AI21ToolFunction,
-                              ToolMessage as AI21ToolMessage, AssistantMessage as AI21AssistantMessage,
-                              UserMessage as AI21UserMessage, SystemMessage as AI21SystemMessage,
-                              ChatMessage as AI21ChatMessage)
-
+from ai21.models import ChatMessage as J2ChatMessage
+from ai21.models import RoleType
+from ai21.models.chat import (
+    AssistantMessage as AI21AssistantMessage,
+)
+from ai21.models.chat import (
+    ChatCompletionChunk,
+)
+from ai21.models.chat import (
+    ChatMessage as AI21ChatMessage,
+)
+from ai21.models.chat import (
+    SystemMessage as AI21SystemMessage,
+)
+from ai21.models.chat import (
+    ToolCall as AI21ToolCall,
+)
+from ai21.models.chat import (
+    ToolFunction as AI21ToolFunction,
+)
+from ai21.models.chat import (
+    ToolMessage as AI21ToolMessage,
+)
+from ai21.models.chat import (
+    UserMessage as AI21UserMessage,
+)
 from ai21.models.chat.chat_message import ChatMessageParam
 from ai21.stream.stream import Stream as AI21Stream
 from langchain_core.messages import (
@@ -16,7 +36,9 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
-    HumanMessage, SystemMessage, ToolMessage
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.output_parsers.openai_tools import parse_tool_call
@@ -45,7 +67,6 @@ class ChatAdapter(ABC):
         self,
         message: BaseMessage,
     ) -> _ChatMessageTypes:
-
         role = self._parse_role(message)
         return self._chat_message(role=role, message=message)
 
@@ -185,7 +206,8 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         }
 
     def _convert_lc_tool_calls_to_ai21_tool_calls(
-            self, tool_calls: Optional[List[Dict[str, Any]]]) -> Optional[List[AI21ToolCall]]:
+        self, tool_calls: Optional[List[Dict[str, Any]]]
+    ) -> Optional[List[AI21ToolCall]]:
         """AI21 supports only function-type tool calls. We need to map Langchain ToolCalls to AI21 ToolCalls as follows:
         Langchain ToolCall: {'args': Dict[str, Any], 'id': str, 'name': str, 'type': 'tool_call'}
         to
@@ -195,11 +217,16 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         if tool_calls is None:
             return None
 
-        return [AI21ToolCall(
-            id=tool_call["id"],
-            type="function",
-            function=AI21ToolFunction(name=tool_call["name"], arguments=str(tool_call["args"])),
-        ) for tool_call in tool_calls]
+        return [
+            AI21ToolCall(
+                id=tool_call["id"],
+                type="function",
+                function=AI21ToolFunction(
+                    name=tool_call["name"], arguments=str(tool_call["args"])
+                ),
+            )
+            for tool_call in tool_calls
+        ]
 
     def _chat_message(
         self,
@@ -208,7 +235,9 @@ class JambaChatCompletionsAdapter(ChatAdapter):
     ) -> ChatMessageParam:
         if role == RoleType.ASSISTANT:
             return AI21AssistantMessage(
-                tool_calls=self._convert_lc_tool_calls_to_ai21_tool_calls(message.tool_calls),
+                tool_calls=self._convert_lc_tool_calls_to_ai21_tool_calls(
+                    message.tool_calls
+                ),
                 content=None if message.content == "" else message.content,
             )
         if role == RoleType.TOOL:
@@ -228,7 +257,6 @@ class JambaChatCompletionsAdapter(ChatAdapter):
             role=role.value if isinstance(role, RoleType) else role,
             content=message.content,
         )
-
 
     @overload
     def call(
@@ -259,8 +287,10 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         ai_messages = []
         for message in response.choices:
             if message.message.tool_calls:
-                tool_calls = [parse_tool_call(tool_call.model_dump(), return_id=True)
-                              for tool_call in message.message.tool_calls]
+                tool_calls = [
+                    parse_tool_call(tool_call.model_dump(), return_id=True)
+                    for tool_call in message.message.tool_calls
+                ]
                 ai_messages.append(AIMessage("", tool_calls=tool_calls))
             else:
                 ai_messages.append(AIMessage(message.message.content))
