@@ -20,6 +20,7 @@ from typing import (
 )
 
 import anthropic
+from anthropic.resources import AsyncMessages, Messages
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -286,6 +287,8 @@ class ChatAnthropic(BaseChatModel):
         base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
+        beta: bool
+            Use beta client to enable prompt caching
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -563,6 +566,9 @@ class ChatAnthropic(BaseChatModel):
 
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
+    beta: bool = False
+    """Use beta client to enable prompt caching"""
+
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
@@ -607,6 +613,7 @@ class ChatAnthropic(BaseChatModel):
             "streaming": self.streaming,
             "max_retries": self.max_retries,
             "default_request_timeout": self.default_request_timeout,
+            "beta": self.beta,
         }
 
     def _get_ls_params(
@@ -624,6 +631,7 @@ class ChatAnthropic(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
+        # TODO: add self.beta
         return ls_params
 
     @root_validator(pre=True)
@@ -657,6 +665,18 @@ class ChatAnthropic(BaseChatModel):
         values["_client"] = anthropic.Client(**client_params)
         values["_async_client"] = anthropic.AsyncClient(**client_params)
         return values
+
+    @property
+    def _messages_client(self) -> Messages:
+        if self.beta:
+            return self._client.beta.prompt_caching.messages  # type: ignore[attr-defined]
+        return self._client.messages
+
+    @property
+    def _async_messages_client(self) -> AsyncMessages:
+        if self.beta:
+            return self._async_client.beta.prompt_caching.messages  # type: ignore[attr-defined]
+        return self._async_client.messages
 
     def _get_request_payload(
         self,
@@ -694,7 +714,7 @@ class ChatAnthropic(BaseChatModel):
             stream_usage = self.stream_usage
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        stream = self._client.messages.create(**payload)
+        stream = self._messages_client.create(**payload)
         coerce_content_to_string = not _tools_in_params(payload)
         for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
@@ -721,7 +741,7 @@ class ChatAnthropic(BaseChatModel):
             stream_usage = self.stream_usage
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        stream = await self._async_client.messages.create(**payload)
+        stream = await self._async_messages_client.create(**payload)
         coerce_content_to_string = not _tools_in_params(payload)
         async for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
@@ -752,11 +772,20 @@ class ChatAnthropic(BaseChatModel):
         else:
             msg = AIMessage(content=content)
         # Collect token usage
-        msg.usage_metadata = {
-            "input_tokens": data.usage.input_tokens,
-            "output_tokens": data.usage.output_tokens,
-            "total_tokens": data.usage.input_tokens + data.usage.output_tokens,
-        }
+        usage_metadata = UsageMetadata(
+            input_tokens=data.usage.input_tokens,
+            output_tokens=data.usage.output_tokens,
+            total_tokens=data.usage.input_tokens + data.usage.output_tokens,
+        )  # type: ignore[typeddict-item]
+        if self.beta:
+            usage_metadata["cache_creation_input_tokens"] = (
+                data.usage.cache_creation_input_tokens
+            )
+            usage_metadata["cache_read_input_tokens"] = (
+                data.usage.cache_read_input_tokens
+            )
+        msg.usage_metadata = usage_metadata
+
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
             llm_output=llm_output,
@@ -775,7 +804,7 @@ class ChatAnthropic(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        data = self._client.messages.create(**payload)
+        data = self._messages_client.create(**payload)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -791,7 +820,7 @@ class ChatAnthropic(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        data = await self._async_client.messages.create(**payload)
+        data = await self._async_messages_client.create(**payload)
         return self._format_output(data, **kwargs)
 
     def bind_tools(
@@ -1175,7 +1204,7 @@ def _make_message_chunk_from_anthropic_event(
                 input_tokens=input_tokens,
                 output_tokens=0,
                 total_tokens=input_tokens,
-            ),
+            ),  # type: ignore[typeddict-item]
         )
     elif (
         event.type == "content_block_start"
@@ -1228,7 +1257,7 @@ def _make_message_chunk_from_anthropic_event(
                 input_tokens=0,
                 output_tokens=output_tokens,
                 total_tokens=output_tokens,
-            ),
+            ),  # type: ignore[typeddict-item]
             response_metadata={
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,

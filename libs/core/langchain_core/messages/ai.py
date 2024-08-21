@@ -51,6 +51,10 @@ class UsageMetadata(TypedDict):
     """Count of output (or completion) tokens."""
     total_tokens: int
     """Total token count."""
+    cache_creation_input_tokens: Optional[int]
+    """Count of cache creation input tokens."""
+    cache_read_input_tokens: Optional[int]
+    """Count of cache read input tokens."""
 
 
 class AIMessage(BaseMessage):
@@ -358,6 +362,16 @@ def add_ai_message_chunks(
                     "output_tokens"
                 ]
                 usage_metadata_["total_tokens"] += other.usage_metadata["total_tokens"]
+                if other.usage_metadata.get("cache_creation_input_tokens") is not None:
+                    usage_metadata_["cache_creation_input_tokens"] = (
+                        usage_metadata_.get("cache_creation_input_tokens", 0)
+                        + other.usage_metadata["cache_creation_input_tokens"]
+                    )
+                if other.usage_metadata.get("cache_read_input_tokens") is not None:
+                    usage_metadata_["cache_read_input_tokens"] = (
+                        usage_metadata_.get("cache_read_input_tokens", 0)
+                        + other.usage_metadata["cache_read_input_tokens"]
+                    )
         usage_metadata: Optional[UsageMetadata] = usage_metadata_
     else:
         usage_metadata = None
