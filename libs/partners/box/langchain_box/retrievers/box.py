@@ -2,10 +2,11 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.retrievers import BaseRetriever
 
 from langchain_box.utilities import BoxAPIWrapper, BoxAuth
+
 
 class BoxRetriever(BaseRetriever):
     """
@@ -14,11 +15,11 @@ class BoxRetriever(BaseRetriever):
     `BoxRetriever` provides the ability to retrieve content from
     your Box instance in a couple of ways.
 
-    1. You can use the Box full-text search to retrieve the 
-       complete document(s) that match your search query, as 
+    1. You can use the Box full-text search to retrieve the
+       complete document(s) that match your search query, as
        `List[Document]`
     2. You can use the Box AI Platform API to retrieve the results
-       from a Box AI prompt. This can be a `Document` containing 
+       from a Box AI prompt. This can be a `Document` containing
        the result of the prompt, or you can retrieve the citations
        used to generate the prompt to include in your vectorstore.
 
@@ -60,9 +61,9 @@ class BoxRetriever(BaseRetriever):
             [
                 Document(
                     metadata={
-                        'source': 'url', 
+                        'source': 'url',
                         'title': 'FIVE_FEET_AND_RISING_by_Peter_Sollett_pdf'
-                }, 
+                },
                     page_content='\n3/20/23, 5:31 PM F...'
                 )
             ]
@@ -103,10 +104,10 @@ class BoxRetriever(BaseRetriever):
 
         .. code-block:: none
 
-            'Victor is a skinny 12-year-old with sloppy hair who is seen 
-            sleeping on his fire escape in the sun. He is hesitant to go to 
-            the pool with his friend Carlos because he is afraid of getting 
-            in trouble for not letting his mother cut his hair. Ultimately, 
+            'Victor is a skinny 12-year-old with sloppy hair who is seen
+            sleeping on his fire escape in the sun. He is hesitant to go to
+            the pool with his friend Carlos because he is afraid of getting
+            in trouble for not letting his mother cut his hair. Ultimately,
             he decides to go to the pool with Carlos.'
     """  # noqa: E501
 
@@ -150,8 +151,7 @@ class BoxRetriever(BaseRetriever):
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        
-        if self.box_file_ids:   # If using Box AI
-            return self.box.ask_box_ai(query=query, box_file_ids=self.box_file_ids)
-        else:                   # If using Search
-            return self.box.search_box(query=query)
+        if self.box_file_ids:  # If using Box AI
+            return self.box.ask_box_ai(query=query, box_file_ids=self.box_file_ids)  #  type: ignore[union-attr]
+        else:  # If using Search
+            return self.box.search_box(query=query)  #  type: ignore[union-attr]

@@ -1,10 +1,9 @@
 import pytest
+from langchain_core.documents import Document
+from pytest_mock import MockerFixture
 
 from langchain_box.retrievers import BoxRetriever
 from langchain_box.utilities import BoxAuth, BoxAuthType
-
-from langchain_core.documents import Document
-from pytest_mock import MockerFixture
 
 
 # Test auth types
@@ -35,17 +34,19 @@ def test_auth_initialization() -> None:
 
     assert retriever.box_file_ids == ["box_file_ids"]
 
+
 # test search retrieval
 def test_search(mocker: MockerFixture) -> None:
-    
     mocker.patch(
         "langchain_box.utilities.BoxAPIWrapper.search_box",
-        return_value=([
-            Document(
-                page_content="Test file mode\ndocument contents",
-                metadata={"title": "Testing Files"},
-            )
-        ]),
+        return_value=(
+            [
+                Document(
+                    page_content="Test file mode\ndocument contents",
+                    metadata={"title": "Testing Files"},
+                )
+            ]
+        ),
     )
 
     retriever = BoxRetriever(  # type: ignore[call-arg]
@@ -60,22 +61,23 @@ def test_search(mocker: MockerFixture) -> None:
         )
     ]
 
+
 # test ai retrieval
 def test_ai(mocker: MockerFixture) -> None:
-    
     mocker.patch(
         "langchain_box.utilities.BoxAPIWrapper.ask_box_ai",
-        return_value=([
-            Document(
-                page_content="Test file mode\ndocument contents",
-                metadata={"title": "Testing Files"},
-            )
-        ]),
+        return_value=(
+            [
+                Document(
+                    page_content="Test file mode\ndocument contents",
+                    metadata={"title": "Testing Files"},
+                )
+            ]
+        ),
     )
 
     retriever = BoxRetriever(  # type: ignore[call-arg]
-        box_developer_token="box_developer_token",
-        box_file_ids=["box_file_ids"]
+        box_developer_token="box_developer_token", box_file_ids=["box_file_ids"]
     )
 
     documents = retriever.invoke("query")

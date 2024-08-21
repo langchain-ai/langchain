@@ -465,9 +465,8 @@ class BoxAPIWrapper(BaseModel):
                 except requests.exceptions.HTTPError:
                     return None, None, None  #   type: ignore[return-value]
 
-                if(
-                    self.character_limit is not None 
-                    and self.character_limit > 0  #   type: ignore[operator]
+                if (
+                    self.character_limit is not None and self.character_limit > 0  #   type: ignore[operator]
                 ):
                     content = raw_content[0 : (self.character_limit - 1)]
                 else:
@@ -528,22 +527,20 @@ class BoxAPIWrapper(BaseModel):
         return folder_contents.entries
 
     def search_box(self, query: str) -> List[Document]:
-
         if self.box is None:
             self.get_box_client()
 
         files = []
 
         try:
-            results = self.box.search.search_for_content(
+            results = self.box.search.search_for_content(  #  type: ignore[union-attr]
                 query=query, fields=["id", "type", "extension"]
             )
 
             if results.entries is None or len(results.entries) <= 0:
-                return None
+                return None  #  type: ignore[return-value]
 
             for file in results.entries:
-
                 if (
                     file is not None
                     and file.type == "file"
@@ -565,7 +562,6 @@ class BoxAPIWrapper(BaseModel):
             )
 
     def ask_box_ai(self, query: str, box_file_ids: List[str]) -> List[Document]:
-        
         if self.box is None:
             self.get_box_client()
 
@@ -585,7 +581,7 @@ class BoxAPIWrapper(BaseModel):
             items.append(item)
 
         try:
-            response = self.box.ai.create_ai_ask(ai_mode, query, items)
+            response = self.box.ai.create_ai_ask(ai_mode, query, items)  #  type: ignore[union-attr]
         except box_sdk_gen.BoxAPIError as bae:
             raise RuntimeError(
                 f"BoxAPIError: Error getting Box AI result: {bae.message}"
@@ -597,6 +593,6 @@ class BoxAPIWrapper(BaseModel):
 
         content = response.answer
 
-        metadata = {"source": f"Box AI", "title": f"Box AI {query}"}
+        metadata = {"source": "Box AI", "title": f"Box AI {query}"}
 
-        return Document(page_content=content, metadata=metadata)
+        return [Document(page_content=content, metadata=metadata)]

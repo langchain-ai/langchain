@@ -1,10 +1,9 @@
 import pytest
+from langchain_core.documents import Document
+from pytest_mock import MockerFixture
 
 from langchain_box.document_loaders import BoxLoader
 from langchain_box.utilities import BoxAuth, BoxAuthType
-
-from langchain_core.documents import Document
-from pytest_mock import MockerFixture
 
 
 # Test auth types
@@ -97,4 +96,3 @@ def test_file_load(mocker: MockerFixture) -> None:
             metadata={"title": "Testing Files"},
         )
     ]
-

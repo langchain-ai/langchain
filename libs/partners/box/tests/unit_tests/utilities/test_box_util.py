@@ -1,19 +1,19 @@
+from unittest.mock import Mock
+
 import pytest
-from pytest_mock import MockerFixture
+from langchain_core.documents import Document
 from pydantic.v1.error_wrappers import ValidationError
+from pytest_mock import MockerFixture
 
 from langchain_box.utilities import BoxAPIWrapper, BoxAuth, BoxAuthType
-from langchain_core.documents import Document
-
-from unittest.mock import Mock
 
 
 @pytest.fixture()
 def mock_worker(mocker: MockerFixture) -> None:
-    mocker.patch("langchain_box.utilities.BoxAuth.authorize", return_value=Mock())
+    mocker.patch("langchain_box.utilities.BoxAuth._authorize", return_value=Mock())
     mocker.patch("langchain_box.utilities.BoxAuth.get_client", return_value=Mock())
     mocker.patch(
-        "langchain_box.utilities.BoxAPIWrapper.get_text_representation",
+        "langchain_box.utilities.BoxAPIWrapper._get_text_representation",
         return_value=("filename", "content", "url"),
     )
 
@@ -144,15 +144,18 @@ def test_get_documents_by_folder_id(mock_worker, mocker: MockerFixture) -> None:
     folder_contents = box.get_folder_items("box_folder_id")
     assert folder_contents == [{"id": "file_id", "type": "file"}]
 
+
 def test_box_search(mock_worker, mocker: MockerFixture) -> None:  # type: ignore[no-untyped-def]
     mocker.patch(
         "langchain_box.utilities.BoxAPIWrapper.search_box",
-        return_value=([
-            Document(
-                page_content="Test file mode\ndocument contents",
-                metadata={"title": "Testing Files"},
-            )
-        ]),
+        return_value=(
+            [
+                Document(
+                    page_content="Test file mode\ndocument contents",
+                    metadata={"title": "Testing Files"},
+                )
+            ]
+        ),
     )
 
     box = BoxAPIWrapper(box_developer_token="box_developer_token")  # type: ignore[call-arg]
@@ -165,29 +168,32 @@ def test_box_search(mock_worker, mocker: MockerFixture) -> None:  # type: ignore
         )
     ]
 
+
 def test_ask_box_ai_single_file(mock_worker, mocker: MockerFixture) -> None:  # type: ignore[no-untyped-def]
     mocker.patch(
         "langchain_box.utilities.BoxAPIWrapper.ask_box_ai",
-        return_value=([
-            Document(
-                page_content="Test file mode\ndocument contents",
-                metadata={"title": "Testing Files"},
-            )
-        ]),
+        return_value=(
+            [
+                Document(
+                    page_content="Test file mode\ndocument contents",
+                    metadata={"title": "Testing Files"},
+                )
+            ]
+        ),
     )
 
     box = BoxAPIWrapper(  # type: ignore[call-arg]
-        box_developer_token="box_developer_token",
-        box_file_ids=["box_file_ids"]
+        box_developer_token="box_developer_token", box_file_ids=["box_file_ids"]
     )
 
-    documents = box.ask_box_ai("query")
+    documents = box.ask_box_ai("query")  #  type: ignore[call-arg]
     assert documents == [
         Document(
             page_content="Test file mode\ndocument contents",
             metadata={"title": "Testing Files"},
         )
     ]
+
 
 def test_ask_box_ai_multiple_files(mock_worker, mocker: MockerFixture) -> None:  # type: ignore[no-untyped-def]
     mocker.patch(
@@ -208,10 +214,10 @@ def test_ask_box_ai_multiple_files(mock_worker, mocker: MockerFixture) -> None: 
 
     box = BoxAPIWrapper(  # type: ignore[call-arg]
         box_developer_token="box_developer_token",
-        box_file_ids=["box_file_id 1", "box_file_id 2"]
+        box_file_ids=["box_file_id 1", "box_file_id 2"],
     )
 
-    documents = box.ask_box_ai("query")
+    documents = box.ask_box_ai("query")  #  type: ignore[call-arg]
     assert documents == [
         Document(
             page_content="Test file 1 mode\ndocument contents",

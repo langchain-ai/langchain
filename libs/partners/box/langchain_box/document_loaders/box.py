@@ -169,20 +169,18 @@ class BoxLoader(BaseLoader, BaseModel):
                     "generated with langchain_box.utilities.BoxAuth"
                 )
             else:
-
-                token =get_from_dict_or_env(
+                token = get_from_dict_or_env(
                     values, "box_developer_token", "BOX_DEVELOPER_TOKEN"
                 )
 
                 box = BoxAPIWrapper(  # type: ignore[call-arg]
                     box_developer_token=token,
-                    character_limit=values.get("character_limit")
+                    character_limit=values.get("character_limit"),
                 )
         else:
-
             box = BoxAPIWrapper(  # type: ignore[call-arg]
                 box_auth=values.get("box_auth"),
-                character_limit=values.get("character_limit")
+                character_limit=values.get("character_limit"),
             )
 
         values["box"] = box
