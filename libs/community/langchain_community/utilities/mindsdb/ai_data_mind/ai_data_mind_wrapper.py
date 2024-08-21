@@ -1,12 +1,11 @@
 from typing import Text, Dict, Any
 
+from langchain_community.utilities.mindsdb import BaseMindWrapper
+from langchain_community.utilities.mindsdb.ai_data_mind.database_models import get_supported_data_sources
 from langchain_core.pydantic_v1 import Field, root_validator
 
-from langchain_community.utilities.mindsdb import BaseMindWrapper
-from langchain_community.utilities.mindsdb.database_mind.database_models import get_supported_data_sources
 
-
-class DatabaseMindWrapper(BaseMindWrapper):
+class AIDataMindWrapper(BaseMindWrapper):
     data_source_description: Text
     data_source_type: Text
     data_source_connection_args: Dict

@@ -8,6 +8,9 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_community.utilities.mindsdb import (
+        AIDataMindWrapper
+    )
     from langchain_community.utilities.alpha_vantage import (
         AlphaVantageAPIWrapper,
     )
@@ -34,9 +37,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.utilities.brave_search import (
         BraveSearchWrapper,
-    )
-    from langchain_community.utilities.mindsdb import (
-        DatabaseMindWrapper
     )
     from langchain_community.utilities.dataherald import DataheraldAPIWrapper
     from langchain_community.utilities.dria_index import (
@@ -175,6 +175,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "AIDataMindWrapper",
     "AlphaVantageAPIWrapper",
     "ApifyWrapper",
     "ArceeWrapper",
@@ -184,7 +185,6 @@ __all__ = [
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
-    "DatabaseMindWrapper",
     "DataheraldAPIWrapper",
     "DriaAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",

@@ -1,9 +1,8 @@
 from typing import Text, Optional
 
-from langchain_core.tools import BaseTool
-from langchain_core.callbacks import CallbackManagerForToolRun
-
 from langchain_community.utilities.mindsdb import BaseMindWrapper
+from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.tools import BaseTool
 
 
 class AIMindTool(BaseTool):
