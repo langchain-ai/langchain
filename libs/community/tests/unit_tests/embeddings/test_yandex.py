@@ -37,10 +37,10 @@ def test_query_embedding_call(dict1, dict2):
         args = dict(folder_id="fldr")
         args.update(dict1)
         args.update(dict2)  
-        dead = YandexGPTEmbeddings(**args)
+        ygpt = YandexGPTEmbeddings(**args)
         grpc_call_mock = stub.return_value.TextEmbedding
         grpc_call_mock.return_value.embedding = [1,2,3]
-        act_emb = dead.embed_query("nomatter")
+        act_emb = ygpt.embed_query("nomatter")
         assert act_emb == [1,2,3]
         assert len(grpc_call_mock.call_args_list)==1
         once_called_args = grpc_call_mock.call_args_list[0]
@@ -48,6 +48,8 @@ def test_query_embedding_call(dict1, dict2):
         assert "query" in once_called_args.args[0].model_uri
         assert "doc" not in once_called_args.args[0].model_uri
         assert once_called_args.args[0].text == "nomatter"
+        assert once_called_args.kwargs["metadata"]
+        assert len(once_called_args.kwargs["metadata"])>0
         if "disable_request_logging" in dict2 and dict2["disable_request_logging"]:
             assert ("x-data-logging-enabled","false") in once_called_args.kwargs["metadata"]
             
@@ -64,14 +66,14 @@ def test_doc_embedding_call(dict1, dict2):
         args = dict(folder_id="fldr")
         args.update(dict1)
         args.update(dict2)  
-        dead = YandexGPTEmbeddings(**args)
+        ygpt = YandexGPTEmbeddings(**args)
         grpc_call_mock = stub.return_value.TextEmbedding
         foo_emb = mock.Mock()
         foo_emb.embedding=[1,2,3]
         bar_emb = mock.Mock()
         bar_emb.embedding=[4,5,6]
         grpc_call_mock.side_effect=[foo_emb,bar_emb]
-        act_emb = dead.embed_documents(["foo","bar"])
+        act_emb = ygpt.embed_documents(["foo","bar"])
         assert act_emb == [[1,2,3], [4,5,6]]
         assert len(grpc_call_mock.call_args_list)==2
         for i,txt in enumerate(["foo","bar"]):
@@ -80,5 +82,7 @@ def test_doc_embedding_call(dict1, dict2):
             assert "query" not in call_args.args[0].model_uri
             assert "doc" in call_args.args[0].model_uri
             assert call_args.args[0].text == txt
+            assert call_args.kwargs["metadata"]
+            assert len(call_args.kwargs["metadata"])>0
             if "disable_request_logging" in dict2 and dict2["disable_request_logging"]:
                 assert ("x-data-logging-enabled","false") in call_args.kwargs["metadata"]
