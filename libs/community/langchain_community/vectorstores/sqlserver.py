@@ -75,7 +75,7 @@ class SQLServer_VectorStore(VectorStore):
         db_schema: Optional[str] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         embedding_function: Embeddings,
-        embedding_length: Optional[int] = None,
+        embedding_length: int,
         table_name: str,
     ) -> None:
         """Initialize the SQL Server vector store.
@@ -93,11 +93,8 @@ class SQLServer_VectorStore(VectorStore):
             embedding_function: Any embedding function implementing
                 `langchain.embeddings.base.Embeddings` interface.
             embedding_length: The length (dimension) of the vectors to be stored in the
-                table. Default - None.
-                Note that if `embedding_length` is defined, only vectors of the same
-                size will be accepted. If not defined, vectors of different sizes can
-                be stored in the table, however, similarity search will not be possible
-                against the vector store.
+                table.
+                Note that only vectors of same size can be added to the vector store.
             table_name: The name of the table to use for storing embeddings.
 
         """
@@ -142,21 +139,18 @@ class SQLServer_VectorStore(VectorStore):
             content_metadata = Column(JSON, nullable=True)
             content = Column(NVARCHAR, nullable=False)  # defaults to NVARCHAR(MAX)
 
-            if self._embedding_length:
-                # Add check constraint to embeddings column
-                # this will ensure only vectors of the same size
-                # are allowed in the vector store.
-                embeddings = Column(
-                    VARBINARY(8000),
-                    CheckConstraint(
-                        text(EMBEDDING_LENGTH_CONSTRAINT).bindparams(
-                            bindparam(EMBEDDING_LENGTH, self._embedding_length)
-                        )
-                    ),
-                    nullable=False,
-                )
-            else:
-                embeddings = Column(VARBINARY(8000), nullable=False)
+            # Add check constraint to embeddings column
+            # this will ensure only vectors of the same size
+            # are allowed in the vector store.
+            embeddings = Column(
+                VARBINARY(8000),
+                CheckConstraint(
+                    text(EMBEDDING_LENGTH_CONSTRAINT).bindparams(
+                        bindparam(EMBEDDING_LENGTH, self._embedding_length)
+                    )
+                ),
+                nullable=False,
+            )
 
         return EmbeddingStore
 

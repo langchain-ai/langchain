@@ -19,7 +19,6 @@ _COLLATION_DB_NAME = "LangChainCollationTest"
 _TABLE_NAME = "langchain_vector_store_tests"
 _TABLE_DOES_NOT_EXIST = "Table %s.%s does not exist."
 EMBEDDING_LENGTH = 1536
-VECTOR_STORE_TABLE_NAME = "langchain_vector_store_test"
 
 # Query Strings
 #
@@ -41,7 +40,7 @@ def store() -> Generator[SQLServer_VectorStore, None, None]:
         embedding_length=EMBEDDING_LENGTH,
         # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
         embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
-        table_name=VECTOR_STORE_TABLE_NAME,
+        table_name=_TABLE_NAME,
     )
     yield store  # provide this data to the test
 
@@ -333,7 +332,8 @@ def test_that_multiple_vector_stores_can_be_created(
     # Create another vector store with a different table name.
     new_store = SQLServer_VectorStore(
         connection_string=_CONNECTION_STRING,
-        embedding_function=FakeEmbeddings(size=1536),
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        embedding_length=EMBEDDING_LENGTH,
         table_name="langchain_vector_store_tests_2",
     )
 
@@ -357,7 +357,8 @@ def test_that_schema_input_is_used() -> None:
         connection=connection,
         connection_string=_CONNECTION_STRING,
         db_schema=_SCHEMA,
-        embedding_function=FakeEmbeddings(size=1536),
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        embedding_length=EMBEDDING_LENGTH,
         table_name=_TABLE_NAME,
     )
     sqlserver_vectorstore.add_texts(["cats"])
@@ -380,7 +381,8 @@ def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> No
         connection=connection,
         connection_string=_CONNECTION_STRING,
         db_schema=_SCHEMA,
-        embedding_function=FakeEmbeddings(size=1536),
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        embedding_length=EMBEDDING_LENGTH,
         table_name=_TABLE_NAME,
     )
 
@@ -388,7 +390,8 @@ def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> No
     sqlserver_vectorstore_default_schema = SQLServer_VectorStore(
         connection=connection,
         connection_string=_CONNECTION_STRING,
-        embedding_function=FakeEmbeddings(size=1536),
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        embedding_length=EMBEDDING_LENGTH,
         table_name=_TABLE_NAME,
     )
 
@@ -412,28 +415,21 @@ def test_that_same_name_vector_store_can_be_created_in_different_schemas() -> No
     connection.close()
 
 
-def test_that_any_size_of_embeddings_can_be_added_when_embedding_length_is_not_defined(
+def test_that_only_same_size_embeddings_can_be_added_to_store(
+    store: SQLServer_VectorStore,
     texts: List[str],
 ) -> None:
-    """Tests that when embedding_length is not provided, the vector store can
-    take vectors of varying dimensions."""
+    """Tests that when embedding_length is provided, the vector store can
+    take only vectors of same dimensions."""
     # Create a SQLServer_VectorStore without `embedding_length` defined.
-    store_without_length = SQLServer_VectorStore(
-        connection_string=_CONNECTION_STRING,
-        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
-        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
-        table_name="langchain_test_table_no_embedding_length",
-    )
-    store_without_length.add_texts(texts)
+    store.add_texts(texts)
 
     # Add texts using an embedding function with a different length.
-    # This should not raise an exception.
+    # This should raise an exception.
     #
-    store_without_length.embedding_function = FakeEmbeddings(size=420)
-    store_without_length.add_texts(texts)
-
-    # Drop the vector store when done to cleanup this testcase resource.
-    store_without_length.drop()
+    store.embedding_function = FakeEmbeddings(size=420)
+    with pytest.raises(Exception):
+        store.add_texts(texts)
 
 
 def test_that_similarity_search_returns_expected_no_of_documents(
