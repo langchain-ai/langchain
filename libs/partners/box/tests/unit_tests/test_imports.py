@@ -5,7 +5,7 @@ EXPECTED_ALL = [
     "BoxRetriever",
     "BoxAuth",
     "BoxAuthType",
-    "BoxAPIWrapper",
+    "_BoxAPIWrapper",
     "__version__",
 ]
 

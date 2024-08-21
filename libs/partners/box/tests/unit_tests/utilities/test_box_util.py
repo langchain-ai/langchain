@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from pydantic.v1.error_wrappers import ValidationError
 from pytest_mock import MockerFixture
 
-from langchain_box.utilities import _BoxAPIWrapper, BoxAuth, BoxAuthType
+from langchain_box.utilities import BoxAuth, BoxAuthType, _BoxAPIWrapper
 
 
 @pytest.fixture()

@@ -2,7 +2,7 @@ from importlib import metadata
 
 from langchain_box.document_loaders import BoxLoader
 from langchain_box.retrievers import BoxRetriever
-from langchain_box.utilities import _BoxAPIWrapper, BoxAuth, BoxAuthType
+from langchain_box.utilities import BoxAuth, BoxAuthType, _BoxAPIWrapper
 
 try:
     __version__ = metadata.version(__package__)

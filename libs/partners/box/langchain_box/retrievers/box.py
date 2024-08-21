@@ -5,12 +5,11 @@ from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 
-from langchain_box.utilities import _BoxAPIWrapper, BoxAuth
+from langchain_box.utilities import BoxAuth, _BoxAPIWrapper
 
 
 class BoxRetriever(BaseRetriever):
-    """
-    Box retriever.
+    """Box retriever.
 
     `BoxRetriever` provides the ability to retrieve content from
     your Box instance in a couple of ways.
@@ -111,15 +110,17 @@ class BoxRetriever(BaseRetriever):
             he decides to go to the pool with Carlos.'
     """  # noqa: E501
 
-    """String containing the Box Developer Token generated in the developer console"""
     box_developer_token: Optional[str] = None
-    """Configured langchain_box.utilities.BoxAuth object"""
+    """String containing the Box Developer Token generated in the developer console"""
+
     box_auth: Optional[BoxAuth] = None
-    """List[str] containing Box file ids"""
+    """Configured langchain_box.utilities.BoxAuth object"""
+
     box_file_ids: Optional[List[str]] = None
+    """List[str] containing Box file ids"""
+    character_limit: Optional[int] = -1
     """character_limit is an int that caps the number of characters to
        return per document."""
-    character_limit: Optional[int] = -1
 
     _box: Optional[_BoxAPIWrapper]
 
