@@ -1,5 +1,6 @@
 import os
 from unittest import mock
+
 import pytest
 
 from langchain_community.llms.yandex import YandexGPT
@@ -40,32 +41,35 @@ def test_yandexgpt_invalid_model_params() -> None:
         )
 
 
-
-@pytest.mark.parametrize("dict1",[dict(api_key="bogus"),
-                                  dict(iam_token="bogus")])
-@pytest.mark.parametrize("dict2",[dict(),
-                                  dict(disable_request_logging=True),
-                                  dict(disable_request_logging=False)])    
-@mock.patch.dict(os.environ, {}, clear=True)    
+@pytest.mark.parametrize("dict1", [dict(api_key="bogus"), dict(iam_token="bogus")])
+@pytest.mark.parametrize(
+    "dict2",
+    [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
+)
+@mock.patch.dict(os.environ, {}, clear=True)
 def test_completion_call(dict1, dict2):
-    with mock.patch("yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc.TextGenerationServiceStub") as stub:
+    with mock.patch(
+        "yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc.TextGenerationServiceStub"
+    ) as stub:
         args = dict(folder_id="fldr")
         args.update(dict1)
-        args.update(dict2)  
+        args.update(dict2)
         ygpt = YandexGPT(**args)
         grpc_call_mock = stub.return_value.Completion
         msg_mock = mock.Mock()
-        msg_mock.message.text="cmpltn"
+        msg_mock.message.text = "cmpltn"
         res_mock = mock.Mock()
-        res_mock.alternatives=[msg_mock]
-        grpc_call_mock.return_value= [res_mock]
+        res_mock.alternatives = [msg_mock]
+        grpc_call_mock.return_value = [res_mock]
         act_emb = ygpt.invoke("nomatter")
         assert act_emb == "cmpltn"
-        assert len(grpc_call_mock.call_args_list)==1
+        assert len(grpc_call_mock.call_args_list) == 1
         once_called_args = grpc_call_mock.call_args_list[0]
         assert "fldr" in once_called_args.args[0].model_uri
         assert once_called_args.args[0].messages[0].text == "nomatter"
         assert once_called_args.kwargs["metadata"]
-        assert len(once_called_args.kwargs["metadata"])>0
+        assert len(once_called_args.kwargs["metadata"]) > 0
         if "disable_request_logging" in dict2 and dict2["disable_request_logging"]:
-            assert ("x-data-logging-enabled","false") in once_called_args.kwargs["metadata"]
+            assert ("x-data-logging-enabled", "false") in once_called_args.kwargs[
+                "metadata"
+            ]
