@@ -209,7 +209,7 @@ Some language models take a list of messages as input and return a message.
 There are a few different types of messages.
 All messages have a `role`, `content`, and `response_metadata` property.
 
-The `role` describes WHO is saying the message. The standard roles are "user"/"human", "assistant"/"ai", "system", and "tool".
+The `role` describes WHO is saying the message. The standard roles are "user", "assistant", "system", and "tool".
 LangChain has different message classes for different roles.
 
 The `content` property describes the content of the message.
@@ -223,11 +223,11 @@ For example, if there are two users in the chat history it can be useful to diff
 
 #### HumanMessage
 
-This represents a message with role "user"/"human".
+This represents a message with role "user".
 
 #### AIMessage
 
-This represents a message with role "assistant"/"ai". In addition to the `content` property, these messages also have:
+This represents a message with role "assistant". In addition to the `content` property, these messages also have:
 
 **`response_metadata`**
 
@@ -346,6 +346,7 @@ For specifics on how to use prompt templates, see the [relevant how-to guides he
 
 ### Example selectors
 One common prompting technique for achieving better performance is to include examples as part of the prompt.
+This is known as [few-shot prompting](/docs/concepts/#few-shot-prompting).
 This gives the language model concrete examples of how it should behave.
 Sometimes these examples are hardcoded into the prompt, but for more advanced situations it may be nice to dynamically select them.
 Example Selectors are classes responsible for selecting and then formatting examples into prompts.
@@ -1120,10 +1121,10 @@ Here are the considerations for each.
 The first and most important step of few-shot prompting is coming up with a good dataset of examples. Good examples should be relevant at runtime, clear, informative, and provide information that was not already known to the model.
 
 At a high-level, the basic ways to generate examples are:
-- Manual: a person/people generates examples they think are useful,
-- Better model: a better (presumably more expensive/slower) model's responses are used as examples for a worse (presumably cheaper/faster) model,
-- User feedback: users leave feedback on interactions with the application and positive feedback is automatically added to the dataset of examples,
-- LLM feedback: models evaluate interactions with the application and select which interactions they think are good future examples.
+- Manual: a person/people generates examples they think are useful.
+- Better model: a better (presumably more expensive/slower) model's responses are used as examples for a worse (presumably cheaper/faster) model.
+- User feedback: users (or labelers) leave feedback on interactions with the application and examples are generated based on that feedback (for example, all interactions with positive feedback could be turned into examples).
+- LLM feedback: same as user feedback but the process is automated by having models evaluate themselves.
 
 Which approach is best depends on your task. For tasks where a small number core principles need to be understood really well, it can be valuable hand-craft a few really good examples.
 For tasks where the space of correct behaviors is broader and more nuanced, it can be useful to generate many examples in a more automated fashion so that there's a higher likelihood of there being some highly relevant examples for any runtime input.
@@ -1149,9 +1150,9 @@ But, the best/only way to reliably answer this question is to run some experimen
 #### 3. Selecting examples
 
 Assuming we are not adding our entire example dataset into each prompt, we need to have a way of selecting examples from our dataset based on a given input. We can do this:
-- Randomly,
-- By semantic similarity of the inputs,
-- Based on some other constraints, like token size.
+- Randomly
+- By (semantic or keyword-based) similarity of the inputs
+- Based on some other constraints, like token size
 
 LangChain has a number of [`ExampleSelectors`](/docs/concepts/#example-selectors) which make it easy to use any of these techniques.
 
@@ -1160,8 +1161,8 @@ Generally, selecting by semantic similarity leads to the best model performance.
 #### 4. Formatting examples
 
 Most state-of-the-art models these days are chat models, so we'll focus on formatting examples for those. Our basic options are to insert the examples:
-- in the system prompt as a string,
-- as their own messages.
+- In the system prompt as a string
+- As their own messages
 
 If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begins and which parts are the input versus output. Different models respond better to different syntaxes, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
 
