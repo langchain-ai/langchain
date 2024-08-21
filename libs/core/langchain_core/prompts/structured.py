@@ -22,7 +22,7 @@ from langchain_core.prompts.chat import (
     MessagesPlaceholder,
     _convert_to_message,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -37,6 +37,7 @@ class StructuredPrompt(ChatPromptTemplate):
 
     schema_: Union[Dict, Type[BaseModel]]
     """Schema for the structured prompt."""
+    structured_output_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -52,6 +53,7 @@ class StructuredPrompt(ChatPromptTemplate):
         cls,
         messages: Sequence[MessageLikeRepresentation],
         schema: Union[Dict, Type[BaseModel]],
+        **kwargs: Any,
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -82,6 +84,8 @@ class StructuredPrompt(ChatPromptTemplate):
                   (4) 2-tuple of (message class, template), (5) a string which is
                   shorthand for ("human", template); e.g., "{user_input}"
             schema: a dictionary representation of function call, or a Pydantic model.
+            kwargs: Any additional kwargs to pass through to
+                ``ChatModel.with_structured_output(schema, **kwargs)``.
 
         Returns:
             a structured prompt template
@@ -104,6 +108,7 @@ class StructuredPrompt(ChatPromptTemplate):
             messages=_messages,
             partial_variables=partial_vars,
             schema_=schema,
+            structured_output_kwargs=kwargs,
         )
 
     def __or__(
@@ -120,7 +125,10 @@ class StructuredPrompt(ChatPromptTemplate):
         ):
             try:
                 return RunnableSequence(
-                    self, other.with_structured_output(self.schema_)
+                    self,
+                    other.with_structured_output(
+                        self.schema_, **self.structured_output_kwargs
+                    ),
                 )
             except NotImplementedError as e:
                 raise NotImplementedError(
@@ -158,7 +166,9 @@ class StructuredPrompt(ChatPromptTemplate):
         ):
             return RunnableSequence(
                 self,
-                others[0].with_structured_output(self.schema_),
+                others[0].with_structured_output(
+                    self.schema_, **self.structured_output_kwargs
+                ),
                 *others[1:],
                 name=name,
             )
