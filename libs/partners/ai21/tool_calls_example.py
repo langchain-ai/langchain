@@ -3,9 +3,6 @@ from langchain_core.tools import tool
 
 from langchain_ai21.chat_models import ChatAI21
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from libs.core.langchain_core.globals import set_verbose
-
-set_verbose(True)
 
 @tool
 def get_weather(place: str, date: str) -> str:
@@ -18,11 +15,7 @@ def get_weather(place: str, date: str) -> str:
         return "22 celsius"
     return "32 celsius"
 
-llm = ChatAI21(model="jamba-1.5-mini",
-               max_tokens=2000,
-               temperature=0,
-               api_host="https://api.ai21.com",
-               api_key="API_KEY")
+llm = ChatAI21(model="jamba-1.5-mini")
 
 llm_with_tools = llm.bind_tools([convert_to_openai_tool(get_weather)])
 

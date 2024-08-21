@@ -4,11 +4,11 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterator, List, Literal, Union, cast, overload, Optional
 
 from ai21 import AI21Client
-from ai21.models import ChatMessage as J2ChatMessage
-from ai21.models import RoleType
-from ai21.models.chat import ChatCompletionChunk, ToolCall as AI21ToolCall, ToolFunction as AI21ToolFunction
-from ai21.models.chat import (ToolMessage as AI21ToolMessage, AssistantMessage as AI21AssistantMessage,
-                              UserMessage as AI21UserMessage, SystemMessage as AI21SystemMessage, ChatMessage as AI21ChatMessage)
+from ai21.models import RoleType, ChatMessage as J2ChatMessage
+from ai21.models.chat import (ChatCompletionChunk, ToolCall as AI21ToolCall, ToolFunction as AI21ToolFunction,
+                              ToolMessage as AI21ToolMessage, AssistantMessage as AI21AssistantMessage,
+                              UserMessage as AI21UserMessage, SystemMessage as AI21SystemMessage,
+                              ChatMessage as AI21ChatMessage)
 
 from ai21.models.chat.chat_message import ChatMessageParam
 from ai21.stream.stream import Stream as AI21Stream
