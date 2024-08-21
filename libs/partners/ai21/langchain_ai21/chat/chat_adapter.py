@@ -23,6 +23,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
@@ -191,15 +192,11 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         }
 
     def _convert_lc_tool_calls_to_ai21_tool_calls(
-        self, tool_calls: Optional[List[Dict[str, Any]]]
+        self, tool_calls: List[ToolCall]
     ) -> Optional[List[AI21ToolCall]]:
         """
         Convert Langchain ToolCalls to AI21 ToolCalls.
         """
-
-        if tool_calls is None:
-            return None
-
         return [
             AI21ToolCall(
                 id=tool_call["id"],
@@ -211,34 +208,44 @@ class JambaChatCompletionsAdapter(ChatAdapter):
             for tool_call in tool_calls
         ]
 
+    def _get_content_as_string(self, base_message: BaseMessage) -> str:
+        if isinstance(base_message.content, str):
+            return base_message.content
+        elif isinstance(base_message.content, list):
+            return "\n".join(str(item) for item in base_message.content)
+        else:
+            raise ValueError("Unsupported content type")
+
     def _chat_message(
         self,
         role: _ROLE_TYPE,
         message: BaseMessage,
     ) -> ChatMessageParam:
-        if role == RoleType.ASSISTANT:
+        content = self._get_content_as_string(message)
+
+        if isinstance(message, AIMessage):
             return AI21AssistantMessage(
                 tool_calls=self._convert_lc_tool_calls_to_ai21_tool_calls(
                     message.tool_calls
                 ),
-                content=None if message.content == "" else message.content,
+                content=content or None,
             )
-        if role == RoleType.TOOL:
+        if isinstance(message, ToolMessage):
             return AI21ToolMessage(
                 tool_call_id=message.tool_call_id,
-                content=message.content,
+                content=content,
             )
-        if role == RoleType.USER:
+        if isinstance(message, HumanMessage):
             return AI21UserMessage(
-                content=message.content,
+                content=content,
             )
-        if role == RoleType.SYSTEM:
+        if isinstance(message, SystemMessage):
             return AI21SystemMessage(
-                content=message.content,
+                content=content,
             )
         return AI21ChatMessage(
             role=role.value if isinstance(role, RoleType) else role,
-            content=message.content,
+            content=content,
         )
 
     @overload
