@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Generic, Iterable, Set, TypeVar
 
+from langchain_core._api import beta
 from langchain_core.graph_vectorstores import Link
 
 InputT = TypeVar("InputT")
@@ -10,6 +11,7 @@ InputT = TypeVar("InputT")
 METADATA_LINKS_KEY = "links"
 
 
+@beta()
 class LinkExtractor(ABC, Generic[InputT]):
     """Interface for extracting links (incoming, outgoing, bidirectional)."""
 

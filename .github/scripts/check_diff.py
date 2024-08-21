@@ -68,6 +68,13 @@ def dependents_graph() -> dict:
 
                     if "langchain" in dep:
                         dependents[dep].add(pkg_dir)
+
+    # remove huggingface from dependents because of CI instability
+    # specifically in huggingface jobs
+    # https://github.com/langchain-ai/langchain/issues/25558
+    for k in dependents:
+        if "libs/partners/huggingface" in dependents[k]:
+            dependents[k].remove("libs/partners/huggingface")
     return dependents
 
 
