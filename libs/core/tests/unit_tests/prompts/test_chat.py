@@ -26,7 +26,7 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-    _convert_to_message,
+    _convert_to_message_template,
 )
 from langchain_core.pydantic_v1 import ValidationError
 from tests.unit_tests.pydantic_utils import _schema
@@ -432,7 +432,7 @@ def test_convert_to_message(
     args: Any, expected: Union[BaseMessage, BaseMessagePromptTemplate]
 ) -> None:
     """Test convert to message."""
-    assert _convert_to_message(args) == expected
+    assert _convert_to_message_template(args) == expected
 
 
 def test_chat_prompt_template_indexing() -> None:
@@ -477,7 +477,7 @@ def test_convert_to_message_is_strict() -> None:
         # meow does not correspond to a valid message type.
         # this test is here to ensure that functionality to interpret `meow`
         # as a role is NOT added.
-        _convert_to_message(("meow", "question"))
+        _convert_to_message_template(("meow", "question"))
 
 
 def test_chat_message_partial() -> None:

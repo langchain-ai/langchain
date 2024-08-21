@@ -20,7 +20,7 @@ from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     MessageLikeRepresentation,
     MessagesPlaceholder,
-    _convert_to_message,
+    _convert_to_message_template,
 )
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import (
@@ -86,7 +86,7 @@ class StructuredPrompt(ChatPromptTemplate):
         Returns:
             a structured prompt template
         """
-        _messages = [_convert_to_message(message) for message in messages]
+        _messages = [_convert_to_message_template(message) for message in messages]
 
         # Automatically infer input variables from messages
         input_vars: Set[str] = set()
