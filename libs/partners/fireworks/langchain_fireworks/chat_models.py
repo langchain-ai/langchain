@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from operator import itemgetter
 from typing import (
     Any,
@@ -78,8 +77,6 @@ from langchain_core.pydantic_v1 import (
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import (
@@ -87,7 +84,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import build_extra_kwargs
+from langchain_core.utils.utils import build_extra_kwargs, from_env, secret_from_env
 
 logger = logging.getLogger(__name__)
 
@@ -322,9 +319,25 @@ class ChatFireworks(BaseChatModel):
     """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    fireworks_api_key: SecretStr = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `FIREWORKS_API_KEY` if not provided."""
-    fireworks_api_base: Optional[str] = Field(default=None, alias="base_url")
+    fireworks_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            "FIREWORKS_API_KEY",
+            error_message=(
+                "You must specify an api key. "
+                "You can pass it an argument as `api_key=...` or "
+                "set the environment variable `FIREWORKS_API_KEY`."
+            ),
+        ),
+    )
+    """Fireworks API key.
+    
+    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+    """
+
+    fireworks_api_base: Optional[str] = Field(
+        alias="base_url", default_factory=from_env("FIREWORKS_API_BASE", default=None)
+    )
     """Base URL path for API requests, leave blank if not using a proxy or service 
         emulator."""
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
@@ -356,7 +369,7 @@ class ChatFireworks(BaseChatModel):
         )
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:
@@ -364,12 +377,6 @@ class ChatFireworks(BaseChatModel):
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
 
-        values["fireworks_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "fireworks_api_key", "FIREWORKS_API_KEY")
-        )
-        values["fireworks_api_base"] = values["fireworks_api_base"] or os.getenv(
-            "FIREWORKS_API_BASE"
-        )
         client_params = {
             "api_key": (
                 values["fireworks_api_key"].get_secret_value()

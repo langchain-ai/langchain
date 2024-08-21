@@ -1,6 +1,7 @@
 """Test ChatOpenAI chat model."""
 
 import base64
+import json
 from typing import Any, AsyncIterator, List, Literal, Optional, cast
 
 import httpx
@@ -907,3 +908,41 @@ def test_nested_structured_output_strict(
     assert isinstance(chunk, dict)  # for mypy
     assert set(chunk.keys()) == {"setup", "punchline", "self_evaluation"}
     assert set(chunk["self_evaluation"].keys()) == {"score", "text"}
+
+
+def test_json_mode() -> None:
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    response = llm.invoke(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    )
+    assert isinstance(response.content, str)
+    assert json.loads(response.content) == {"a": 1}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    ):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, str)
+    assert json.loads(full.content) == {"a": 1}
+
+
+async def test_json_mode_async() -> None:
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    response = await llm.ainvoke(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    )
+    assert isinstance(response.content, str)
+    assert json.loads(response.content) == {"a": 1}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    ):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, str)
+    assert json.loads(full.content) == {"a": 1}

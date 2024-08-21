@@ -2,7 +2,7 @@ import os
 from typing import cast
 
 import pytest
-from langchain_core.pydantic_v1 import SecretStr, ValidationError
+from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_community.embeddings import SparkLLMTextEmbeddings
 
@@ -43,5 +43,5 @@ def test_initialization_parameters_from_env() -> None:
 
     # Environment variable missing
     del os.environ["SPARK_APP_ID"]
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValueError):
         SparkLLMTextEmbeddings()

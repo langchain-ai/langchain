@@ -49,6 +49,7 @@ EXPECTED_ALL = [
     "VectorDBQA",
     "VectorDBQAWithSourcesChain",
     "create_citation_fuzzy_match_chain",
+    "create_citation_fuzzy_match_runnable",
     "create_extraction_chain",
     "create_extraction_chain_pydantic",
     "create_qa_with_sources_chain",
