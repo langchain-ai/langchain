@@ -8,7 +8,7 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
@@ -99,10 +99,8 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         return _output_keys
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def get_return_intermediate_steps(cls, values: Dict) -> Dict:

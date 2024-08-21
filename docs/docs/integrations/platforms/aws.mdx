@@ -308,7 +308,7 @@ See a [usage example](/docs/integrations/graphs/amazon_neptune_open_cypher).
 ```python
 from langchain_community.graphs import NeptuneGraph
 from langchain_community.graphs import NeptuneAnalyticsGraph
-from langchain.chains import NeptuneOpenCypherQAChain
+from langchain_community.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
 ```
 
 ### Amazon Neptune with SPARQL
@@ -317,7 +317,7 @@ See a [usage example](/docs/integrations/graphs/amazon_neptune_sparql).
 
 ```python
 from langchain_community.graphs import NeptuneRdfGraph
-from langchain.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
+from langchain_community.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
 ```
 
 

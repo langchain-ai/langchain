@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.utils import create_model
 
@@ -127,10 +127,8 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         return _output_keys
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def get_reduce_chain(cls, values: Dict) -> Dict:

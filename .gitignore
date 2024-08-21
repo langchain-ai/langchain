@@ -172,6 +172,8 @@ docs/api_reference/*/
 !docs/api_reference/_static/
 !docs/api_reference/templates/
 !docs/api_reference/themes/
+!docs/api_reference/_extensions/
+!docs/api_reference/scripts/
 docs/docs/build
 docs/docs/node_modules
 docs/docs/yarn.lock
