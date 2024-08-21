@@ -2,17 +2,17 @@
 
 [[package]]
 name = "ai21"
-version = "2.13.0rc2"
+version = "2.13.0"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "ai21-2.13.0rc2-py3-none-any.whl", hash = "sha256:8b908cd94cc514e3ffc767960f8e3d3a056ccd09a43afd47f62ef0086d36743f"},
-    {file = "ai21-2.13.0rc2.tar.gz", hash = "sha256:d1b879b0ad41a1f10c0aa1aadcc3f60f0e18cdc8fecd05d5806285c286e35f95"},
+    {file = "ai21-2.13.0-py3-none-any.whl", hash = "sha256:f71898b979c3c6044d7da80c6a6fe711b07d50c8b056530cfa87280bda4e7520"},
+    {file = "ai21-2.13.0.tar.gz", hash = "sha256:8196861eb4d71f24a42cdcced25d0c2654a087639ebb360c270dd65f2cefe252"},
 ]
 
 [package.dependencies]
-ai21-tokenizer = ">=0.11.0,<1.0.0"
+ai21-tokenizer = ">=0.12.0,<1.0.0"
 httpx = ">=0.27.0,<0.28.0"
 pydantic = ">=1.9.0,<3.0.0"
 tenacity = ">=8.3.0,<9.0.0"
@@ -23,13 +23,13 @@ aws = ["boto3 (>=1.28.82,<2.0.0)"]
 
 [[package]]
 name = "ai21-tokenizer"
-version = "0.11.2"
+version = "0.12.0"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "ai21_tokenizer-0.11.2-py3-none-any.whl", hash = "sha256:a9444ca44ef2bffec7cb9f0c3cfa5501dc973cdde0b740e43e137ce9a2f90eab"},
-    {file = "ai21_tokenizer-0.11.2.tar.gz", hash = "sha256:35579bca375f071ae6365456f02bd5c9445f408723f7b87646a2bdaa3f57925e"},
+    {file = "ai21_tokenizer-0.12.0-py3-none-any.whl", hash = "sha256:7fd37b9093894b30b0f200e5f44fc8fb8772e2b272ef71b6d73722b4696e63c4"},
+    {file = "ai21_tokenizer-0.12.0.tar.gz", hash = "sha256:d2a5b17789d21572504b7693148bf66e692bdb3ab563023dbcbee340bcbd11c6"},
 ]
 
 [package.dependencies]
@@ -1286,4 +1286,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2aeefd52e72d709afae7d1954b93cd58c10c87c3c89dfb462f7a210ae2c42bd6"
+content-hash = "cbe5e2604d911dd9a289698ef29ae12a5270fda3d3595c58644e139a8d0f404e"
