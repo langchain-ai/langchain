@@ -9,6 +9,7 @@ from ai21.models import RoleType
 from ai21.models.chat import ChatCompletionChunk, ToolCall as AI21ToolCall, ToolFunction as AI21ToolFunction
 from ai21.models.chat import (ToolMessage as AI21ToolMessage, AssistantMessage as AI21AssistantMessage,
                               UserMessage as AI21UserMessage, SystemMessage as AI21SystemMessage, ChatMessage as AI21ChatMessage)
+
 from ai21.models.chat.chat_message import ChatMessageParam
 from ai21.stream.stream import Stream as AI21Stream
 from langchain_core.messages import (
@@ -184,22 +185,16 @@ class JambaChatCompletionsAdapter(ChatAdapter):
             ],
         }
 
-    def convert_tool_calls_dict_to_ai21_tool_call(
+    def convert_lc_tool_calls_to_ai21_tool_call(
             self, tool_calls: Optional[List[Dict[str, Any]]]) -> Optional[List[AI21ToolCall]]:
-        if tool_calls is None:
-            return None
-        ai21_tool_calls = []
-        for tool_call in tool_calls:
-            function_name = tool_call["name"]
-            tool_call_id = tool_call["id"]
-            func_args = tool_call["args"]
-            ai21_tool_calls.append(AI21ToolCall(
-                id=tool_call_id,
-                type="function",
-                function=AI21ToolFunction(name=function_name, arguments=str(func_args)),
-            ))
-
-        return ai21_tool_calls
+        """ Currently, AI21 supports only function type tool calls. We need to Convert all the
+        Langchain ToolCall: {'args': Dict[str, Any], 'id': str, 'name': str, 'type': 'tool_call'} to
+        AI21 ToolCall: {'function': {'name': str, arguments: str}, 'id': str, 'type': 'function'} """
+        return [AI21ToolCall(
+            id=tool_call["id"],
+            type="function",
+            function=AI21ToolFunction(name=tool_call["name"], arguments=str(tool_call["args"])),
+        ) for tool_call in tool_calls] if tool_calls else None
 
     def _chat_message(
         self,
@@ -208,7 +203,7 @@ class JambaChatCompletionsAdapter(ChatAdapter):
     ) -> ChatMessageParam:
         if role == RoleType.ASSISTANT:
             return AI21AssistantMessage(
-                tool_calls=self.convert_tool_calls_dict_to_ai21_tool_call(message.tool_calls),
+                tool_calls=self.convert_lc_tool_calls_to_ai21_tool_call(message.tool_calls),
                 content=None if message.content == "" else message.content,
             )
         if role == RoleType.TOOL:

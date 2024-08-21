@@ -50,14 +50,14 @@ class ChatAI21(BaseChatModel, AI21Base):
     stop: Optional[List[str]] = None
     """Default stop sequences."""
 
-    max_tokens: int = 16
+    max_tokens: int = 512
     """The maximum number of tokens to generate for each response."""
 
     min_tokens: int = 0
     """The minimum number of tokens to generate for each response.
     _Not supported for all models._"""
 
-    temperature: float = 0.7
+    temperature: float = 0.4
     """A value controlling the "creativity" of the model's responses."""
 
     top_p: float = 1
