@@ -33,11 +33,27 @@ class _SendStream(Generic[T]):
         self._done = done
 
     async def send(self, item: T) -> None:
-        """Schedule the item to be written to the queue using the original loop."""
+        """Schedule the item to be written to the queue using the original loop.
+
+        This is a coroutine that can be awaited.
+
+        Args:
+            item: The item to write to the queue.
+        """
         return self.send_nowait(item)
 
     def send_nowait(self, item: T) -> None:
-        """Schedule the item to be written to the queue using the original loop."""
+        """Schedule the item to be written to the queue using the original loop.
+
+        This is a non-blocking call.
+
+        Args:
+            item: The item to write to the queue.
+
+        Raises:
+            RuntimeError: If the event loop is already closed when trying to write
+                            to the queue.
+        """
         try:
             self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, item)
         except RuntimeError:
@@ -45,11 +61,18 @@ class _SendStream(Generic[T]):
                 raise  # Raise the exception if the loop is not closed
 
     async def aclose(self) -> None:
-        """Schedule the done object write the queue using the original loop."""
+        """Async schedule the done object write the queue using the original loop."""
         return self.close()
 
     def close(self) -> None:
-        """Schedule the done object write the queue using the original loop."""
+        """Schedule the done object write the queue using the original loop.
+
+        This is a non-blocking call.
+
+        Raises:
+            RuntimeError: If the event loop is already closed when trying to write
+                            to the queue.
+        """
         try:
             self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, self._done)
         except RuntimeError:
@@ -87,7 +110,7 @@ class _MemoryStream(Generic[T]):
 
     This implementation is meant to be used with a single writer and a single reader.
 
-    This is an internal implementation to LangChain please do not use it directly.
+    This is an internal implementation to LangChain. Please do not use it directly.
     """
 
     def __init__(self, loop: AbstractEventLoop) -> None:
@@ -103,11 +126,19 @@ class _MemoryStream(Generic[T]):
         self._done = object()
 
     def get_send_stream(self) -> _SendStream[T]:
-        """Get a writer for the channel."""
+        """Get a writer for the channel.
+
+        Returns:
+            _SendStream: The writer for the channel.
+        """
         return _SendStream[T](
             reader_loop=self._loop, queue=self._queue, done=self._done
         )
 
     def get_receive_stream(self) -> _ReceiveStream[T]:
-        """Get a reader for the channel."""
+        """Get a reader for the channel.
+
+        Returns:
+            _ReceiveStream: The reader for the channel.
+        """
         return _ReceiveStream[T](queue=self._queue, done=self._done)

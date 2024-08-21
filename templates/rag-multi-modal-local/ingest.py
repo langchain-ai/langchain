@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_nomic import NomicMultimodalEmbeddings
 
 # Load images

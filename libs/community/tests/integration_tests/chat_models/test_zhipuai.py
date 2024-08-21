@@ -1,4 +1,4 @@
-"""Test Alibaba Tongyi Chat Model."""
+"""Test ZhipuAI Chat Model."""
 
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage

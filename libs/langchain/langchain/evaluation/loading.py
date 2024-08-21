@@ -146,7 +146,7 @@ def load_evaluator(
                     )
 
             llm = llm or ChatOpenAI(  # type: ignore[call-arg]
-                model="gpt-4", model_kwargs={"seed": 42}, temperature=0
+                model="gpt-4", seed=42, temperature=0
             )
         except Exception as e:
             raise ValueError(

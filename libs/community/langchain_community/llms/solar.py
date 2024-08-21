@@ -41,7 +41,7 @@ class SolarCommon(BaseModel):
     model_name: str = Field(default="solar-1-mini-chat", alias="model")
     """Model name. Available models listed here: https://console.upstage.ai/services/solar"""
     max_tokens: int = Field(default=1024)
-    temperature = 0.3
+    temperature: float = 0.3
 
     class Config:
         allow_population_by_field_name = True

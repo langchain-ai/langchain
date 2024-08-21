@@ -85,8 +85,6 @@ class TestClass(Serializable):
     my_other_secret: str = Field()
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)

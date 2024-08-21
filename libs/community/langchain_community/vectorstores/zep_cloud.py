@@ -442,7 +442,7 @@ class ZepCloudVectorStore(VectorStore):
                associated with the texts.
             collection_name (str): The name of the collection in the Zep store.
             api_key (str): The API key for the Zep API.
-            **kwargs: Additional parameters specific to the vectorstore.
+            kwargs: Additional parameters specific to the vectorstore.
 
         Returns:
             ZepVectorStore: An instance of ZepVectorStore.

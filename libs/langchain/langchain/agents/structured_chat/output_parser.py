@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Optional, Union
+from typing import Optional, Pattern, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -23,7 +23,7 @@ class StructuredChatOutputParser(AgentOutputParser):
     format_instructions: str = FORMAT_INSTRUCTIONS
     """Default formatting instructions"""
 
-    pattern = re.compile(r"```(?:json\s+)?(\W.*?)```", re.DOTALL)
+    pattern: Pattern = re.compile(r"```(?:json\s+)?(\W.*?)```", re.DOTALL)
     """Regex pattern to parse the output."""
 
     def get_format_instructions(self) -> str:

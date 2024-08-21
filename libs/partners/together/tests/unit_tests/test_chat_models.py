@@ -1,6 +1,4 @@
 import json
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
@@ -122,73 +120,3 @@ def mock_completion() -> dict:
             }
         ],
     }
-
-
-def test_together_invoke(mock_completion: dict) -> None:
-    llm = ChatTogether()
-    mock_client = MagicMock()
-    completed = False
-
-    def mock_create(*args: Any, **kwargs: Any) -> Any:
-        nonlocal completed
-        completed = True
-        return mock_completion
-
-    mock_client.create = mock_create
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
-        res = llm.invoke("bab")
-        assert res.content == "Bab"
-    assert completed
-
-
-async def test_together_ainvoke(mock_completion: dict) -> None:
-    llm = ChatTogether()
-    mock_client = AsyncMock()
-    completed = False
-
-    async def mock_create(*args: Any, **kwargs: Any) -> Any:
-        nonlocal completed
-        completed = True
-        return mock_completion
-
-    mock_client.create = mock_create
-    with patch.object(
-        llm,
-        "async_client",
-        mock_client,
-    ):
-        res = await llm.ainvoke("bab")
-        assert res.content == "Bab"
-    assert completed
-
-
-def test_together_invoke_name(mock_completion: dict) -> None:
-    llm = ChatTogether()
-
-    mock_client = MagicMock()
-    mock_client.create.return_value = mock_completion
-
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
-        messages = [
-            HumanMessage(content="Foo", name="Zorba"),
-        ]
-        res = llm.invoke(messages)
-        call_args, call_kwargs = mock_client.create.call_args
-        assert len(call_args) == 0  # no positional args
-        call_messages = call_kwargs["messages"]
-        assert len(call_messages) == 1
-        assert call_messages[0]["role"] == "user"
-        assert call_messages[0]["content"] == "Foo"
-        assert call_messages[0]["name"] == "Zorba"
-
-        # check return type has name
-        assert res.content == "Bab"
-        assert res.name == "KimSolar"

@@ -365,10 +365,7 @@ async def test_astreaming() -> None:
 
 
 def test_tool_use() -> None:
-    llm = ChatAnthropic(  # type: ignore[call-arg]
-        model=MODEL_NAME,
-    )
-
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools(
         [
             {
@@ -478,6 +475,7 @@ def test_anthropic_with_empty_text_block() -> None:
                     "name": "type_letter",
                     "args": {"letter": "d"},
                     "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "type": "tool_call",
                 },
             ],
         ),

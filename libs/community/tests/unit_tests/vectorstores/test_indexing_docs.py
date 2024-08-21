@@ -48,6 +48,7 @@ def test_compatible_vectorstore_documentation() -> None:
     documented = {
         "Aerospike",
         "AnalyticDB",
+        "ApertureDB",
         "AstraDB",
         "AzureCosmosDBVectorSearch",
         "AzureCosmosDBNoSqlVectorSearch",

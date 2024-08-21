@@ -9,7 +9,7 @@ import os
 import re
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Pattern, cast
 
 from langchain_core.utils import pre_init
 
@@ -164,7 +164,7 @@ class _KineticaLlmFileContextParser:
     """Parser for Kinetica LLM context datafiles."""
 
     # parse line into a dict containing role and content
-    PARSER = re.compile(r"^<\|(?P<role>\w+)\|>\W*(?P<content>.*)$", re.DOTALL)
+    PARSER: Pattern = re.compile(r"^<\|(?P<role>\w+)\|>\W*(?P<content>.*)$", re.DOTALL)
 
     @classmethod
     def _removesuffix(cls, text: str, suffix: str) -> str:
@@ -544,8 +544,6 @@ class KineticaSqlResponse(BaseModel):
     """The Pandas dataframe containing the fetched data."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
 
@@ -585,8 +583,6 @@ class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
     """ Kinetica DB connection. """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def parse(self, text: str) -> KineticaSqlResponse:
