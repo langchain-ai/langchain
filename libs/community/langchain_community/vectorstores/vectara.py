@@ -735,7 +735,7 @@ class VectaraRetriever(VectorStoreRetriever):
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         docs_and_scores = self.vectorstore.vectara_query(query, self.config)
         return [doc for doc, _ in docs_and_scores]
