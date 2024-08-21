@@ -49,15 +49,23 @@ class BoxRetriever(BaseRetriever):
 
 
     Usage:
-    # TODO: update with Box code
         .. code-block:: python
 
-            docs = retriever.invoke("TOKYO GHOUL")
+            retriever = BoxRetriever()
+            retriever.invoke("victor")
             print(docs[0].page_content[:100])
 
         .. code-block:: none
 
-            Tokyo Ghoul (Japanese: 東京喰種（トーキョーグール）, Hepburn: Tōkyō Gūru) is a Japanese dark fantasy
+            [
+                Document(
+                    metadata={
+                        'source': 'url', 
+                        'title': 'FIVE_FEET_AND_RISING_by_Peter_Sollett_pdf'
+                }, 
+                    page_content='\n3/20/23, 5:31 PM F...'
+                )
+            ]
 
     Use within a chain:
         .. code-block:: python
@@ -67,18 +75,21 @@ class BoxRetriever(BaseRetriever):
             from langchain_core.runnables import RunnablePassthrough
             from langchain_openai import ChatOpenAI
 
+            retriever = BoxRetriever(box_developer_token=box_developer_token, character_limit=10000)
+
+            context="You are an actor reading scripts to learn about your role in an upcoming movie."
+            question="describe the character Victor"
+
             prompt = ChatPromptTemplate.from_template(
-                \"\"\"Answer the question based only on the context provided.
+                \"""Answer the question based only on the context provided.
 
-            Context: {context}
+                Context: {context}
 
-            Question: {question}\"\"\"
+                Question: {question}\"""
             )
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
-
             def format_docs(docs):
-                return "\\n\\n".join(doc.page_content for doc in docs)
+                return "\n\n".join(doc.page_content for doc in docs)
 
             chain = (
                 {"context": retriever | format_docs, "question": RunnablePassthrough()}
@@ -87,13 +98,16 @@ class BoxRetriever(BaseRetriever):
                 | StrOutputParser()
             )
 
-            chain.invoke(
-                "Who is the main character in `Tokyo Ghoul` and does he transform into a ghoul?"
+            chain.invoke("Victor")  # search query to find files in Box
             )
 
         .. code-block:: none
 
-             'The main character in Tokyo Ghoul is Ken Kaneki, who transforms into a ghoul after receiving an organ transplant from a ghoul named Rize.'
+            'Victor is a skinny 12-year-old with sloppy hair who is seen 
+            sleeping on his fire escape in the sun. He is hesitant to go to 
+            the pool with his friend Carlos because he is afraid of getting 
+            in trouble for not letting his mother cut his hair. Ultimately, 
+            he decides to go to the pool with Carlos.'
     """  # noqa: E501
 
     """String containing the Box Developer Token generated in the developer console"""
@@ -102,6 +116,9 @@ class BoxRetriever(BaseRetriever):
     box_auth: Optional[BoxAuth] = None
     """List[str] containing Box file ids"""
     box_file_ids: Optional[List[str]] = None
+    """character_limit is an int that caps the number of characters to
+       return per document."""
+    character_limit: Optional[int] = -1
 
     box: Optional[BoxAPIWrapper]
 
