@@ -471,14 +471,14 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     a call to similarity search does not fail."""
     connection_string_to_master = "mssql+pyodbc://@localhost/master?driver=ODBC+Driver+17+for+SQL+Server&Trusted_connection=yes"
 
-    connection = create_engine(connection_string_to_master).connect()
-    connection.rollback()
-    connection._dbapi_connection.dbapi_connection.autocommit = True
-    connection.execute(text(_CREATE_COLLATION_DB_QUERY))
-    connection.execute(text(f"use {_COLLATION_DB_NAME}"))
+    conn = create_engine(connection_string_to_master).connect()
+    conn.rollback()
+    conn.connection.dbapi_connection.autocommit = True
+    conn.execute(text(_CREATE_COLLATION_DB_QUERY))
+    conn.execute(text(f"use {_COLLATION_DB_NAME}"))
 
     store = SQLServer_VectorStore(
-        connection=connection,
+        connection=conn,
         connection_string=connection_string_to_master,
         # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
         embedding_length=EMBEDDING_LENGTH,
@@ -486,7 +486,7 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
         table_name=_TABLE_NAME,
     )
     collation_query_result = (
-        connection.execute(text(_COLLATION_QUERY % (_COLLATION_DB_NAME))).fetchone()
+        conn.execute(text(_COLLATION_QUERY % (_COLLATION_DB_NAME))).fetchone()
     )  # Sample return value: ('LangChainVectors', 'SQL_Latin1_General_CP1_CS_AS')
 
     assert (
@@ -504,6 +504,6 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     assert result is not None and len(result) == number_of_docs_to_return
 
     # Drop DB with case sensitive collation for test.
-    connection.execute(text("use master"))
-    connection.execute(text(_DROP_COLLATION_DB_QUERY))
-    connection.close()
+    conn.execute(text("use master"))
+    conn.execute(text(_DROP_COLLATION_DB_QUERY))
+    conn.close()
