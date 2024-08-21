@@ -2,6 +2,7 @@ from langchain_box import __all__
 
 EXPECTED_ALL = [
     "BoxLoader",
+    "BoxRetriever",
     "BoxAuth",
     "BoxAuthType",
     "BoxAPIWrapper",
