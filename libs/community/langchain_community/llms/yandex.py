@@ -98,9 +98,9 @@ class _BaseYandexGPT(Serializable):
             if values["folder_id"]:
                 values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
         else:
-            values["_grpc_metadata"] = (
+            values["_grpc_metadata"] = [
                 ("authorization", f"Api-Key {values['api_key'].get_secret_value()}"),
-            )
+            ]
         if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
         if not values["model_uri"]:
