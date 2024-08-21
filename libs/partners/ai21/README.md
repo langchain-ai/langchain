@@ -156,7 +156,12 @@ response = splitter.split_text("Your text")
 
 ### Function calling
 
-Function calling summary...
+AI21 models incorporate the Function Calling feature to support custom user functions. The models generate structured 
+data that includes the function name and proposed arguments. This data empowers applications to call external APIs and 
+incorporate the resulting information into subsequent model prompts, enriching responses with real-time data and 
+context. Through function calling, users can access and utilize various services like transportation APIs and financial
+data providers to obtain more accurate and relevant answers. Here is an example of how to use function calling 
+with AI21 models in LangChain:
 
 ```python
 import os
