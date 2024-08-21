@@ -41,19 +41,17 @@ def test_yandexgpt_invalid_model_params() -> None:
         )
 
 
-@pytest.mark.parametrize("dict1", [dict(api_key="bogus"), dict(iam_token="bogus")])
+@pytest.mark.parametrize("api_key_or_token", [dict(api_key="bogus"), dict(iam_token="bogus")])
 @pytest.mark.parametrize(
-    "dict2",
+    "disable_logging",
     [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
 )
 @mock.patch.dict(os.environ, {}, clear=True)
-def test_completion_call(dict1, dict2):
+def test_completion_call(api_key_or_token, disable_logging) -> None:
     with mock.patch(
         "yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc.TextGenerationServiceStub"
     ) as stub:
-        args = dict(folder_id="fldr")
-        args.update(dict1)
-        args.update(dict2)
+        args = {"folder_id":"fldr", **api_key_or_token, **disable_logging}
         ygpt = YandexGPT(**args)
         grpc_call_mock = stub.return_value.Completion
         msg_mock = mock.Mock()
@@ -69,7 +67,7 @@ def test_completion_call(dict1, dict2):
         assert once_called_args.args[0].messages[0].text == "nomatter"
         assert once_called_args.kwargs["metadata"]
         assert len(once_called_args.kwargs["metadata"]) > 0
-        if "disable_request_logging" in dict2 and dict2["disable_request_logging"]:
+        if "disable_request_logging" in disable_logging and disable_logging["disable_request_logging"]:
             assert ("x-data-logging-enabled", "false") in once_called_args.kwargs[
                 "metadata"
             ]
