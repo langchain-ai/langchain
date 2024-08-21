@@ -41,8 +41,9 @@ def test_yandexgpt_invalid_model_params() -> None:
         )
 
 
-@pytest.mark.parametrize("api_key_or_token", [dict(api_key="bogus"), 
-                                              dict(iam_token="bogus")])
+@pytest.mark.parametrize(
+    "api_key_or_token", [dict(api_key="bogus"), dict(iam_token="bogus")]
+)
 @pytest.mark.parametrize(
     "disable_logging",
     [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
@@ -52,7 +53,7 @@ def test_completion_call(api_key_or_token, disable_logging) -> None:
     with mock.patch(
         "yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc.TextGenerationServiceStub"
     ) as stub:
-        args = {"folder_id":"fldr", **api_key_or_token, **disable_logging}
+        args = {"folder_id": "fldr", **api_key_or_token, **disable_logging}
         ygpt = ChatYandexGPT(**args)
         grpc_call_mock = stub.return_value.Completion
         msg_mock = mock.Mock()
@@ -68,7 +69,7 @@ def test_completion_call(api_key_or_token, disable_logging) -> None:
         assert once_called_args.args[0].messages[0].text == "nomatter"
         assert once_called_args.kwargs["metadata"]
         assert len(once_called_args.kwargs["metadata"]) > 0
-        if disable_logging.get("disable_request_logging") :
+        if disable_logging.get("disable_request_logging"):
             assert ("x-data-logging-enabled", "false") in once_called_args.kwargs[
                 "metadata"
             ]
