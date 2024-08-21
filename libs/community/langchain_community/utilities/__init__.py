@@ -239,6 +239,7 @@ __all__ = [
 ]
 
 _module_lookup = {
+    "AIDataMindWrapper": "langchain_community.utilities.mindsdb.ai_data_mind.ai_data_mind_wrapper",
     "AlphaVantageAPIWrapper": "langchain_community.utilities.alpha_vantage",
     "ApifyWrapper": "langchain_community.utilities.apify",
     "ArceeWrapper": "langchain_community.utilities.arcee",
@@ -248,7 +249,6 @@ _module_lookup = {
     "BibtexparserWrapper": "langchain_community.utilities.bibtex",
     "BingSearchAPIWrapper": "langchain_community.utilities.bing_search",
     "BraveSearchWrapper": "langchain_community.utilities.brave_search",
-    "DatabaseMindWrapper": "langchain_community.utilities.mindsdb.database_mind.database_mind_wrapper",
     "DataheraldAPIWrapper": "langchain_community.utilities.dataherald",
     "DriaAPIWrapper": "langchain_community.utilities.dria_index",
     "DuckDuckGoSearchAPIWrapper": "langchain_community.utilities.duckduckgo_search",
