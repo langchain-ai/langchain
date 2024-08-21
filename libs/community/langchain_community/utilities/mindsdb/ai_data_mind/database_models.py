@@ -2,8 +2,8 @@ import sys
 import json
 import inspect
 from typing import Text, Dict, Literal, Union
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
@@ -183,7 +183,7 @@ class SnowflakeModel(BaseModel):
     password: SecretStr = Field(default=None)
     warehouse: Text = Field(default=None)
     database: Text = Field(default=None)
-    schema: Text = Field(default=None)
+    database_schema: Text = Field(alias='schema', default=None)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -216,9 +216,10 @@ class SnowflakeModel(BaseModel):
         )
         values["schema"] = get_from_dict_or_env(
             values,
-            "schema",
+            "database_schema",
             "DATABASE_SCHEMA",
         )
+        del values["database_schema"]
 
         return values
     
