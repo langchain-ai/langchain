@@ -177,7 +177,7 @@ class SQLServer_VectorStore(VectorStore):
             raise ValueError(f"{self._distance_strategy} is not supported.")
 
     @distance_strategy.setter
-    def distance_strategy(self, value: DistanceStrategy):
+    def distance_strategy(self, value: DistanceStrategy) -> None:
         self._distance_strategy = value
 
     @classmethod
