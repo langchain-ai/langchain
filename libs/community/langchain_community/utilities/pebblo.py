@@ -414,8 +414,8 @@ def calculate_content_size(data: str) -> int:
     return size
 
 
-class PebbloAPIWrapper(BaseModel):
-    """Wrapper for Pebblo API."""
+class PebbloLoaderAPIWrapper(BaseModel):
+    """Wrapper for Pebblo Loader API."""
 
     api_key: Optional[str]  # Use SecretStr
     """API key for Pebblo Cloud"""

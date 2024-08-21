@@ -13,7 +13,7 @@ from langchain_community.utilities.pebblo import (
     PLUGIN_VERSION,
     App,
     IndexedDocument,
-    PebbloAPIWrapper,
+    PebbloLoaderAPIWrapper,
     generate_size_based_batches,
     get_full_path,
     get_loader_full_path,
@@ -71,8 +71,8 @@ class PebbloSafeLoader(BaseLoader):
         }
         # generate app
         self.app = self._get_app_details()
-        # initialize Pebblo API client
-        self.pb_client = PebbloAPIWrapper(
+        # initialize Pebblo Loader API client
+        self.pb_client = PebbloLoaderAPIWrapper(
             api_key=api_key,
             classifier_location=classifier_location,
             classifier_url=classifier_url,
