@@ -473,7 +473,10 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
 
     conn = create_engine(connection_string_to_master).connect()
     conn.rollback()
-    conn.connection.dbapi_connection.autocommit = True
+
+    if conn.connection.dbapi_connection is not None:
+        conn.connection.dbapi_connection.autocommit = True
+
     conn.execute(text(_CREATE_COLLATION_DB_QUERY))
     conn.execute(text(f"use {_COLLATION_DB_NAME}"))
 
