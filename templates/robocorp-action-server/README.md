@@ -1,4 +1,4 @@
-# Langchain - Robocorp Action Server
+# Robocorp Action Server - Agent
 
 This template enables using [Robocorp Action Server](https://github.com/robocorp/robocorp) served actions as tools for an Agent.
 

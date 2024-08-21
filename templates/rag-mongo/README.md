@@ -1,11 +1,10 @@
+# RAG - MongoDB
 
-# rag-mongo
-
-This template performs RAG using MongoDB and OpenAI.
+This template performs RAG using `MongoDB` and `OpenAI`.
 
 ## Environment Setup
 
-You should export two environment variables, one being your MongoDB URI, the other being your OpenAI API KEY.
+You should export two environment variables, one being your `MongoDB` URI, the other being your OpenAI API KEY.
 If you do not have a MongoDB URI, see the `Setup Mongo` section at the bottom for instructions on how to do so.
 
 ```shell

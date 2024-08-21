@@ -1,7 +1,7 @@
 
-# rag-gpt-crawler
+# RAG - GPT-crawler
 
-GPT-crawler will crawl websites to produce files for use in custom GPTs or other apps (RAG).
+`GPT-crawler` crawls websites to produce files for use in custom GPTs or other apps (RAG).
 
 This template uses [gpt-crawler](https://github.com/BuilderIO/gpt-crawler) to build a RAG app
 
@@ -11,7 +11,7 @@ Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Crawling
 
-Run GPT-crawler to extact content from a set of urls, using the config file in GPT-crawler repo.
+Run GPT-crawler to extract content from a set of urls, using the config file in GPT-crawler repo.
 
 Here is example config for LangChain use-case docs:
 

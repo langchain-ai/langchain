@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "rag-jaguardb"
 version = "0.1.0"
-description = "RAG w/ JaguarDB"
+description = "RAG with JaguarDB"
 authors = [
     "Daniel Ung <daniel.ung@sjsu.edu>",
 ]

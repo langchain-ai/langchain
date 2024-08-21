@@ -1,4 +1,4 @@
-# basic-critique-revise
+# Basic Critique revise
 
 Iteratively generate schema candidates and revise them based on errors.
 
