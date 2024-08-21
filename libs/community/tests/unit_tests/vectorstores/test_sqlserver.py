@@ -118,7 +118,7 @@ def test_sqlserver_add_texts(
     texts: List[str],
     metadatas: List[dict],
 ) -> None:
-    """Test that add text returns equivalent number of ids of input texts."""
+    """Test that `add_texts` returns equivalent number of ids of input texts."""
     result = store.add_texts(texts, metadatas)
     assert len(result) == len(texts)
 
