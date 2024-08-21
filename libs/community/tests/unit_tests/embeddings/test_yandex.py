@@ -27,7 +27,8 @@ def test_init() -> None:
         assert embeddings.doc_model_name == "text-search-doc"
 
 
-@pytest.mark.parametrize("api_key_or_token", [dict(api_key="bogus"), dict(iam_token="bogus")])
+@pytest.mark.parametrize("api_key_or_token", [dict(api_key="bogus"), 
+                                              dict(iam_token="bogus")])
 @pytest.mark.parametrize(
     "disable_logging",
     [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
@@ -51,13 +52,14 @@ def test_query_embedding_call(api_key_or_token, disable_logging) -> None:
         assert once_called_args.args[0].text == "nomatter"
         assert once_called_args.kwargs["metadata"]
         assert len(once_called_args.kwargs["metadata"]) > 0
-        if "disable_request_logging" in disable_logging and disable_logging["disable_request_logging"]:
+        if disable_logging.get("disable_request_logging") :
             assert ("x-data-logging-enabled", "false") in once_called_args.kwargs[
                 "metadata"
             ]
 
 
-@pytest.mark.parametrize("api_key_or_token", [dict(api_key="bogus"), dict(iam_token="bogus")])
+@pytest.mark.parametrize("api_key_or_token", [dict(api_key="bogus"), 
+                                              dict(iam_token="bogus")])
 @pytest.mark.parametrize(
     "disable_logging",
     [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
@@ -86,7 +88,7 @@ def test_doc_embedding_call(api_key_or_token, disable_logging) -> None:
             assert call_args.args[0].text == txt
             assert call_args.kwargs["metadata"]
             assert len(call_args.kwargs["metadata"]) > 0
-            if "disable_request_logging" in disable_logging and disable_logging["disable_request_logging"]:
+            if disable_logging.get("disable_request_logging") :
                 assert ("x-data-logging-enabled", "false") in call_args.kwargs[
                     "metadata"
                 ]
