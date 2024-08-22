@@ -199,7 +199,6 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         """
         ai21_tool_calls: List[AI21ToolCall] = []
         for lc_tool_call in tool_calls:
-
             if "id" not in lc_tool_call or not lc_tool_call["id"]:
                 raise ValueError("Tool call ID is missing or empty.")
 

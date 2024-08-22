@@ -1,6 +1,17 @@
 import asyncio
 from functools import partial
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -18,6 +29,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 
 from langchain_ai21.ai21_base import AI21Base
 from langchain_ai21.chat.chat_adapter import ChatAdapter
@@ -251,7 +263,7 @@ class ChatAI21(BaseChatModel, AI21Base):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any]]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools, **kwargs)
