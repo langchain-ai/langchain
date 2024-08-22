@@ -230,6 +230,11 @@ class _OllamaCommon(BaseLanguageModel):
             if key in kwargs:
                 params[key] = kwargs[key]
 
+        if "tools" in kwargs:
+            params["tools"] = kwargs["tools"]
+            params["stream"] = False
+            kwargs.pop("tools")
+
         if "options" in kwargs:
             params["options"] = kwargs["options"]
         else:

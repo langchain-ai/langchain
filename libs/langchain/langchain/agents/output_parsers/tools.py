@@ -77,6 +77,39 @@ def parse_ai_message_to_tool_action(
     return actions
 
 
+def parse_ollama_ai_message_to_tool_action(
+        message: BaseMessage,
+) -> Union[List[AgentAction], AgentFinish]:
+    """Parse an AI message potentially containing tool_calls."""
+    if not isinstance(message, AIMessage):
+        raise TypeError(f"Expected an AI message got {type(message)}")
+
+    actions: List = []
+    tool_calls = []
+
+    if "message" in message.response_metadata:
+        if "tool_calls" in message.response_metadata["message"]:
+            tool_calls = message.response_metadata["message"]["tool_calls"]
+
+    for tool_call in tool_calls:
+        if "function" in tool_call:
+            if "arguments" in tool_call["function"]:
+                function_name = tool_call["function"]["name"]
+                tool_input = tool_call["function"]["arguments"]
+                content_msg = f"responded: {message.content}\n" if message.content else "\n"
+                log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
+                actions.append(
+                    ToolAgentAction(
+                        tool=function_name,
+                        tool_input=tool_input,
+                        log=log,
+                        message_log=[message],
+                        tool_call_id="",
+                    )
+                )
+    return actions
+
+
 class ToolsAgentOutputParser(MultiActionAgentOutputParser):
     """Parses a message into agent actions/finish.
 
