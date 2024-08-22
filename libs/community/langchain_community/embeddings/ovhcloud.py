@@ -1,24 +1,21 @@
 import logging
 import time
-from typing import Any, List, Optional
+from typing import Any, List
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
 class OVHCloudEmbeddings(BaseModel, Embeddings):
     """
-    Usage:
-        OVH_AI_ENDPOINTS_ACCESS_TOKEN="your-token" python3 langchain_embedding.py
-    NB: Make sure you are using a valid token.
-    In the contrary, document indexing will be long due to rate-limiting.
+    OVHcloud AI Endpoints Embeddings.
     """
 
     """ OVHcloud AI Endpoints Access Token"""
-    access_token: Optional[str] = None
+    access_token: str = ""
 
     """ OVHcloud AI Endpoints model name for embeddings generation"""
     model_name: str = ""
@@ -27,16 +24,12 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
     region: str = "kepler"
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
-        if self.access_token is None:
-            logger.warning(
-                "No access token provided indexing will be slow due to rate limiting."
-            )
+        if self.access_token == "":
+            raise ValueError("Access token is required for OVHCloud embeddings.")
         if self.model_name == "":
             raise ValueError("Model name is required for OVHCloud embeddings.")
         if self.region == "":
@@ -72,7 +65,9 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
                     else:
                         """Rate limit reset time has passed, retry immediately"""
                         continue
-
+                if response.status_code == 401:
+                    """ Unauthorized, retry with new token """
+                    raise ValueError("Unauthorized, retry with new token")
                 """ Handle other non-200 status codes """
                 raise ValueError(
                     "Request failed with status code: {status_code}, {text}".format(

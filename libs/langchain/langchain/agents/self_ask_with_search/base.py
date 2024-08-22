@@ -1,4 +1,5 @@
 """Chain that does self-ask with search."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Sequence, Union
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.serpapi import SerpAPIWrapper
 
 
-@deprecated("0.1.0", alternative="create_self_ask_with_search", removal="0.3.0")
+@deprecated("0.1.0", alternative="create_self_ask_with_search", removal="1.0")
 class SelfAskWithSearchAgent(Agent):
     """Agent for the self-ask-with-search paper."""
 
@@ -66,7 +67,7 @@ class SelfAskWithSearchAgent(Agent):
         return ""
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class SelfAskWithSearchChain(AgentExecutor):
     """[Deprecated] Chain that does self-ask with search."""
 

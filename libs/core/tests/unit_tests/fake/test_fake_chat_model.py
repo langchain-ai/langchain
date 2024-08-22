@@ -18,9 +18,13 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
 )
-from langchain_core.messages.human import HumanMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.stubs import (
+    AnyStr,
+    _AnyIdAIMessage,
+    _AnyIdAIMessageChunk,
+    _AnyIdHumanMessage,
+)
 
 
 def test_generic_fake_chat_model_invoke() -> None:
@@ -28,11 +32,11 @@ def test_generic_fake_chat_model_invoke() -> None:
     infinite_cycle = cycle([AIMessage(content="hello"), AIMessage(content="goodbye")])
     model = GenericFakeChatModel(messages=infinite_cycle)
     response = model.invoke("meow")
-    assert response == AIMessage(content="hello", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="hello")
     response = model.invoke("kitty")
-    assert response == AIMessage(content="goodbye", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="goodbye")
     response = model.invoke("meow")
-    assert response == AIMessage(content="hello", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="hello")
 
 
 async def test_generic_fake_chat_model_ainvoke() -> None:
@@ -40,11 +44,11 @@ async def test_generic_fake_chat_model_ainvoke() -> None:
     infinite_cycle = cycle([AIMessage(content="hello"), AIMessage(content="goodbye")])
     model = GenericFakeChatModel(messages=infinite_cycle)
     response = await model.ainvoke("meow")
-    assert response == AIMessage(content="hello", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="hello")
     response = await model.ainvoke("kitty")
-    assert response == AIMessage(content="goodbye", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="goodbye")
     response = await model.ainvoke("meow")
-    assert response == AIMessage(content="hello", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="hello")
 
 
 async def test_generic_fake_chat_model_stream() -> None:
@@ -57,17 +61,17 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=infinite_cycle)
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        AIMessageChunk(content="hello", id=AnyStr()),
-        AIMessageChunk(content=" ", id=AnyStr()),
-        AIMessageChunk(content="goodbye", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="hello"),
+        _AnyIdAIMessageChunk(content=" "),
+        _AnyIdAIMessageChunk(content="goodbye"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
     chunks = [chunk for chunk in model.stream("meow")]
     assert chunks == [
-        AIMessageChunk(content="hello", id=AnyStr()),
-        AIMessageChunk(content=" ", id=AnyStr()),
-        AIMessageChunk(content="goodbye", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="hello"),
+        _AnyIdAIMessageChunk(content=" "),
+        _AnyIdAIMessageChunk(content="goodbye"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
@@ -152,9 +156,9 @@ async def test_generic_fake_chat_model_astream_log() -> None:
     ]
     final = log_patches[-1]
     assert final.state["streamed_output"] == [
-        AIMessageChunk(content="hello", id=AnyStr()),
-        AIMessageChunk(content=" ", id=AnyStr()),
-        AIMessageChunk(content="goodbye", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="hello"),
+        _AnyIdAIMessageChunk(content=" "),
+        _AnyIdAIMessageChunk(content="goodbye"),
     ]
     assert len({chunk.id for chunk in final.state["streamed_output"]}) == 1
 
@@ -203,9 +207,9 @@ async def test_callback_handlers() -> None:
     # New model
     results = list(model.stream("meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}))
     assert results == [
-        AIMessageChunk(content="hello", id=AnyStr()),
-        AIMessageChunk(content=" ", id=AnyStr()),
-        AIMessageChunk(content="goodbye", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="hello"),
+        _AnyIdAIMessageChunk(content=" "),
+        _AnyIdAIMessageChunk(content="goodbye"),
     ]
     assert tokens == ["hello", " ", "goodbye"]
     assert len({chunk.id for chunk in results}) == 1
@@ -214,11 +218,9 @@ async def test_callback_handlers() -> None:
 def test_chat_model_inputs() -> None:
     fake = ParrotFakeChatModel()
 
-    assert fake.invoke("hello") == HumanMessage(content="hello", id=AnyStr())
-    assert fake.invoke([("ai", "blah")]) == AIMessage(content="blah", id=AnyStr())
-    assert fake.invoke([AIMessage(content="blah")]) == AIMessage(
-        content="blah", id=AnyStr()
-    )
+    assert fake.invoke("hello") == _AnyIdHumanMessage(content="hello")
+    assert fake.invoke([("ai", "blah")]) == _AnyIdAIMessage(content="blah")
+    assert fake.invoke([AIMessage(content="blah")]) == _AnyIdAIMessage(content="blah")
 
 
 @pytest.mark.parametrize(

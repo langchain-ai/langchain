@@ -1,4 +1,5 @@
 """Test Nebula API wrapper."""
+
 from langchain_community.llms.symblai_nebula import Nebula
 
 

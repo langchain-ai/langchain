@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.deepinfra import (
         ChatDeepInfra,
     )
+    from langchain_community.chat_models.edenai import ChatEdenAI
     from langchain_community.chat_models.ernie import (
         ErnieBotChat,
     )
@@ -121,6 +122,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.mlx import (
         ChatMLX,
     )
+    from langchain_community.chat_models.oci_generative_ai import (
+        ChatOCIGenAI,  # noqa: F401
+    )
     from langchain_community.chat_models.octoai import ChatOctoAI
     from langchain_community.chat_models.ollama import (
         ChatOllama,
@@ -161,13 +165,15 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.yandex import (
         ChatYandexGPT,
     )
+    from langchain_community.chat_models.yi import (
+        ChatYi,
+    )
     from langchain_community.chat_models.yuan2 import (
         ChatYuan2,
     )
     from langchain_community.chat_models.zhipuai import (
         ChatZhipuAI,
     )
-
 __all__ = [
     "AzureChatOpenAI",
     "BedrockChat",
@@ -179,6 +185,7 @@ __all__ = [
     "ChatOctoAI",
     "ChatDatabricks",
     "ChatDeepInfra",
+    "ChatEdenAI",
     "ChatEverlyAI",
     "ChatFireworks",
     "ChatFriendli",
@@ -194,6 +201,7 @@ __all__ = [
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
+    "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
@@ -219,6 +227,7 @@ __all__ = [
     "QianfanChatEndpoint",
     "SolarChat",
     "VolcEngineMaasChat",
+    "ChatYi",
 ]
 
 
@@ -233,6 +242,7 @@ _module_lookup = {
     "ChatDatabricks": "langchain_community.chat_models.databricks",
     "ChatDeepInfra": "langchain_community.chat_models.deepinfra",
     "ChatEverlyAI": "langchain_community.chat_models.everlyai",
+    "ChatEdenAI": "langchain_community.chat_models.edenai",
     "ChatFireworks": "langchain_community.chat_models.fireworks",
     "ChatFriendli": "langchain_community.chat_models.friendli",
     "ChatGooglePalm": "langchain_community.chat_models.google_palm",
@@ -248,6 +258,7 @@ _module_lookup = {
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
+    "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
@@ -273,6 +284,7 @@ _module_lookup = {
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
     "ChatPremAI": "langchain_community.chat_models.premai",
     "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
+    "ChatYi": "langchain_community.chat_models.yi",
 }
 
 

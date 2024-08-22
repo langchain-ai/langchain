@@ -54,11 +54,14 @@ class ChatPerplexity(BaseChatModel):
 
             from langchain_community.chat_models import ChatPerplexity
 
-            chat = ChatPerplexity(model="pplx-70b-online", temperature=0.7)
+            chat = ChatPerplexity(
+                model="llama-3-sonar-small-32k-online",
+                temperature=0.7,
+            )
     """
 
     client: Any  #: :meta private:
-    model: str = "pplx-70b-online"
+    model: str = "llama-3-sonar-small-32k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -70,7 +73,7 @@ class ChatPerplexity(BaseChatModel):
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
     )
-    """Timeout for requests to PerplexityChat completion API. Default is 600 seconds."""
+    """Timeout for requests to PerplexityChat completion API. Default is None."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -79,15 +82,13 @@ class ChatPerplexity(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"pplx_api_key": "PPLX_API_KEY"}
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
@@ -113,7 +114,7 @@ class ChatPerplexity(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["pplx_api_key"] = get_from_dict_or_env(

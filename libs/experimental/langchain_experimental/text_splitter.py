@@ -1,4 +1,5 @@
 """Experimental **text splitter** based on semantic similarity."""
+
 import copy
 import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
@@ -179,7 +180,11 @@ class SemanticChunker(BaseDocumentTransformer):
         x = max(min(self.number_of_chunks, x1), x2)
 
         # Linear interpolation formula
-        y = y1 + ((y2 - y1) / (x2 - x1)) * (x - x1)
+        if x2 == x1:
+            y = y2
+        else:
+            y = y1 + ((y2 - y1) / (x2 - x1)) * (x - x1)
+
         y = min(max(y, 0), 100)
 
         return cast(float, np.percentile(distances, y))

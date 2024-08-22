@@ -1,39 +1,47 @@
 import base64
 import re
 from dataclasses import asdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from langchain_core.runnables.graph import (
     CurveStyle,
     Edge,
     MermaidDrawMethod,
-    NodeColors,
+    Node,
+    NodeStyles,
 )
 
 
 def draw_mermaid(
-    nodes: Dict[str, str],
+    nodes: Dict[str, Node],
     edges: List[Edge],
     *,
-    first_node_label: Optional[str] = None,
-    last_node_label: Optional[str] = None,
+    first_node: Optional[str] = None,
+    last_node: Optional[str] = None,
     with_styles: bool = True,
     curve_style: CurveStyle = CurveStyle.LINEAR,
-    node_colors: NodeColors = NodeColors(),
+    node_styles: NodeStyles = NodeStyles(),
     wrap_label_n_words: int = 9,
 ) -> str:
-    """Draws a Mermaid graph using the provided graph data
+    """Draws a Mermaid graph using the provided graph data.
 
     Args:
-        nodes (dict[str, str]): List of node ids
-        edges (List[Edge]): List of edges, object with source,
-        target and data.
+        nodes (dict[str, str]): List of node ids.
+        edges (List[Edge]): List of edges, object with a source,
+            target and data.
+        first_node (str, optional): Id of the first node. Defaults to None.
+        last_node (str, optional): Id of the last node. Defaults to None.
+        with_styles (bool, optional): Whether to include styles in the graph.
+            Defaults to True.
         curve_style (CurveStyle, optional): Curve style for the edges.
-        node_colors (NodeColors, optional): Node colors for different types.
+            Defaults to CurveStyle.LINEAR.
+        node_styles (NodeStyles, optional): Node colors for different types.
+            Defaults to NodeStyles().
         wrap_label_n_words (int, optional): Words to wrap the edge labels.
+            Defaults to 9.
 
     Returns:
-        str: Mermaid graph syntax
+        str: Mermaid graph syntax.
     """
     # Initialize Mermaid graph configuration
     mermaid_graph = (
@@ -48,18 +56,27 @@ def draw_mermaid(
     if with_styles:
         # Node formatting templates
         default_class_label = "default"
-        format_dict = {default_class_label: "{0}([{1}]):::otherclass"}
-        if first_node_label is not None:
-            format_dict[first_node_label] = "{0}[{0}]:::startclass"
-        if last_node_label is not None:
-            format_dict[last_node_label] = "{0}[{0}]:::endclass"
+        format_dict = {default_class_label: "{0}({1})"}
+        if first_node is not None:
+            format_dict[first_node] = "{0}([{0}]):::first"
+        if last_node is not None:
+            format_dict[last_node] = "{0}([{0}]):::last"
 
         # Add nodes to the graph
-        for node in nodes.values():
-            node_label = format_dict.get(node, format_dict[default_class_label]).format(
-                _escape_node_label(node), node.split(":", 1)[-1]
+        for key, node in nodes.items():
+            label = node.name.split(":")[-1]
+            if node.metadata:
+                label = (
+                    f"{label}<hr/><small><em>"
+                    + "\n".join(
+                        f"{key} = {value}" for key, value in node.metadata.items()
+                    )
+                    + "</em></small>"
+                )
+            node_label = format_dict.get(key, format_dict[default_class_label]).format(
+                _escape_node_label(key), label
             )
-            mermaid_graph += f"\t{node_label};\n"
+            mermaid_graph += f"\t{node_label}\n"
 
     subgraph = ""
     # Add edges to the graph
@@ -74,9 +91,8 @@ def draw_mermaid(
         if not subgraph and src_prefix and src_prefix == tgt_prefix:
             mermaid_graph += f"\tsubgraph {src_prefix}\n"
             subgraph = src_prefix
-        adjusted_edge = _adjust_mermaid_edge(edge=edge, nodes=nodes)
 
-        source, target = adjusted_edge
+        source, target = edge.source, edge.target
 
         # Add BR every wrap_label_n_words words
         if edge.data is not None:
@@ -84,16 +100,14 @@ def draw_mermaid(
             words = str(edge_data).split()  # Split the string into words
             # Group words into chunks of wrap_label_n_words size
             if len(words) > wrap_label_n_words:
-                edge_data = "<br>".join(
-                    [
-                        " ".join(words[i : i + wrap_label_n_words])
-                        for i in range(0, len(words), wrap_label_n_words)
-                    ]
+                edge_data = "&nbsp<br>&nbsp".join(
+                    " ".join(words[i : i + wrap_label_n_words])
+                    for i in range(0, len(words), wrap_label_n_words)
                 )
             if edge.conditional:
-                edge_label = f" -. {edge_data} .-> "
+                edge_label = f" -. &nbsp{edge_data}&nbsp .-> "
             else:
-                edge_label = f" -- {edge_data} --> "
+                edge_label = f" -- &nbsp{edge_data}&nbsp --> "
         else:
             if edge.conditional:
                 edge_label = " -.-> "
@@ -108,31 +122,20 @@ def draw_mermaid(
 
     # Add custom styles for nodes
     if with_styles:
-        mermaid_graph += _generate_mermaid_graph_styles(node_colors)
+        mermaid_graph += _generate_mermaid_graph_styles(node_styles)
     return mermaid_graph
 
 
 def _escape_node_label(node_label: str) -> str:
     """Escapes the node label for Mermaid syntax."""
-    return re.sub(r"[^a-zA-Z-_]", "_", node_label)
+    return re.sub(r"[^a-zA-Z-_0-9]", "_", node_label)
 
 
-def _adjust_mermaid_edge(
-    edge: Edge,
-    nodes: Dict[str, str],
-) -> Tuple[str, str]:
-    """Adjusts Mermaid edge to map conditional nodes to pure nodes."""
-    source_node_label = nodes.get(edge.source, edge.source)
-    target_node_label = nodes.get(edge.target, edge.target)
-
-    return source_node_label, target_node_label
-
-
-def _generate_mermaid_graph_styles(node_colors: NodeColors) -> str:
+def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
     """Generates Mermaid graph styles for different node types."""
     styles = ""
-    for class_name, color in asdict(node_colors).items():
-        styles += f"\tclassDef {class_name}class fill:{color};\n"
+    for class_name, style in asdict(node_colors).items():
+        styles += f"\tclassDef {class_name} {style}\n"
     return styles
 
 
@@ -143,7 +146,24 @@ def draw_mermaid_png(
     background_color: Optional[str] = "white",
     padding: int = 10,
 ) -> bytes:
-    """Draws a Mermaid graph as PNG using provided syntax."""
+    """Draws a Mermaid graph as PNG using provided syntax.
+
+    Args:
+        mermaid_syntax (str): Mermaid graph syntax.
+        output_file_path (str, optional): Path to save the PNG image.
+            Defaults to None.
+        draw_method (MermaidDrawMethod, optional): Method to draw the graph.
+            Defaults to MermaidDrawMethod.API.
+        background_color (str, optional): Background color of the image.
+            Defaults to "white".
+        padding (int, optional): Padding around the image. Defaults to 10.
+
+    Returns:
+        bytes: PNG image bytes.
+
+    Raises:
+        ValueError: If an invalid draw method is provided.
+    """
     if draw_method == MermaidDrawMethod.PYPPETEER:
         import asyncio
 

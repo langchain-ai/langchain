@@ -11,7 +11,8 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils import pre_init
+from langchain_core.utils.pydantic import get_fields
 
 if TYPE_CHECKING:
     import gigachat
@@ -113,7 +114,7 @@ class _BaseGigaChat(Serializable):
             verbose=self.verbose,
         )
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate authenticate data in environment and python package is installed."""
         try:
@@ -123,7 +124,7 @@ class _BaseGigaChat(Serializable):
                 "Could not import gigachat python package. "
                 "Please install it with `pip install gigachat`."
             )
-        fields = set(cls.__fields__.keys())
+        fields = set(get_fields(cls).keys())
         diff = set(values.keys()) - fields
         if diff:
             logger.warning(f"Extra fields {diff} in GigaChat class")
