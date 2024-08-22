@@ -1,4 +1,5 @@
 # mypy: disable-error-code="annotation-unchecked"
+import sys
 from typing import (
     Any,
     Callable,
@@ -702,3 +703,18 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: Type) -> None:
 
     with pytest.raises(TypeError):
         _convert_typed_dict_to_openai_function(Tool)
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="Requires python version >= 3.10 to run."
+)
+def test_convert_union_type_py_39() -> None:
+    @tool
+    def magic_function(input: int | float) -> str:
+        """Compute a magic function."""
+        pass
+
+    result = convert_to_openai_function(magic_function)
+    assert result["parameters"]["properties"]["input"] == {
+        "anyOf": [{"type": "integer"}, {"type": "number"}]
+    }
