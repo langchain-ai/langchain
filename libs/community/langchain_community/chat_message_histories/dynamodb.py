@@ -45,6 +45,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             [AWS DynamoDB documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-how-to.html)
         history_size: Maximum number of messages to store. If None then there is no
             limit. If not None then only the latest `history_size` messages are stored.
+        history_messages_key: Key for the chat history where the messages are stored and updated
     """
 
     def __init__(
