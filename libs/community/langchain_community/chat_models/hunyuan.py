@@ -14,6 +14,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    SystemMessage,
     HumanMessage,
     HumanMessageChunk,
 )
@@ -33,6 +34,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"Role": message.role, "Content": message.content}
+    elif isinstance(message, SystemMessage):
+        message_dict = {"Role": "system", "Content": message.content}
     elif isinstance(message, HumanMessage):
         message_dict = {"Role": "user", "Content": message.content}
     elif isinstance(message, AIMessage):
@@ -45,7 +48,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["Role"]
-    if role == "user":
+    if role == "system":
+        return SystemMessage(content=_dict.get("Content", "") or "")
+    elif role == "user":
         return HumanMessage(content=_dict["Content"])
     elif role == "assistant":
         return AIMessage(content=_dict.get("Content", "") or "")
@@ -112,10 +117,10 @@ class ChatHunyuan(BaseChatModel):
     """What sampling temperature to use."""
     top_p: float = 1.0
     """What probability mass to use."""
-    model: str = "hunyuan-lite"
+    model: str = "hunyuan-pro"
     """What Model to use.
      Optional model:
-    - hunyuan-lite、
+    - hunyuan-lite
     - hunyuan-standard
     - hunyuan-standard-256K
     - hunyuan-pro
@@ -186,8 +191,6 @@ class ChatHunyuan(BaseChatModel):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Hunyuan API."""
         normal_params = {
-            "Temperature": self.temperature,
-            "TopP": self.top_p,
             "Model": self.model,
             "Stream": self.streaming,
             "StreamModeration": self.stream_moderation,
