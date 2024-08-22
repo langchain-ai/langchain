@@ -42,31 +42,30 @@ class GaodeWeatherTool(BaseTool):
 
         try:
             city_url = f"{CITY_CODE_URL}?keywords={city}&subdistrict=0&key={api_key}"
-            city_resp = self._get_json_response(city_url)
-            if city_resp.get("info") != "OK":
-                return "Failed to get city code"
 
-            city_code = city_resp.get("districts")[0].get("adcode")
-            weather_url = f"{WEATHER_URL}?city={city_code}&extensions=all&key={api_key}"
-            weather_resp = self._get_json_response(weather_url)
-            if weather_resp.get("info") != "OK":
-                return "Failed to get weather info"
+            with requests.session():
+                session = requests.session()
+                city_resp = session.request(
+                    method="GET",
+                    url=city_url,
+                    headers={"Content-Type": "application/json; charset=utf-8"},
+                )
+                city_data = city_resp.json()
+                if city_data.get("info") != "OK":
+                    return "Failed to get city code"
 
-            return json.dumps(weather_resp)
+                city_code = city_data.get("districts")[0].get("adcode")
+                weather_url = f"{WEATHER_URL}?city={city_code}&extensions=all&key={api_key}"
+                weather_resp = session.request(
+                    method="GET",
+                    url=weather_url,
+                    headers={"Content-Type": "application/json; charset=utf-8"},
+                )
+                weather_data = weather_resp.json()
+                if weather_data.get("info") != "OK":
+                    return "Failed to get weather info"
+
+                return json.dumps(weather_data)
 
         except Exception as e:
             return f"Failed to get weather info of {city}! error: {str(e)}"
-
-    @staticmethod
-    def _get_json_response(url: str) -> Dict:
-        """Get for gaode json response"""
-
-        with requests.session():
-            session = requests.session()
-            resp = session.request(
-                method="GET",
-                url=url,
-                headers={"Content-Type": "application/json; charset=utf-8"},
-            )
-            resp.raise_for_status()
-            return resp.json()
