@@ -59,6 +59,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         ttl: Optional[int] = None,
         ttl_key_name: str = "expireAt",
         history_size: Optional[int] = None,
+        history_messages_key: Optional[str] = "History"
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -79,6 +80,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.ttl = ttl
         self.ttl_key_name = ttl_key_name
         self.history_size = history_size
+        self.history_messages_key = history_messages_key
 
         if kms_key_id:
             try:
@@ -96,7 +98,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
             actions = AttributeActions(
                 default_action=CryptoAction.DO_NOTHING,
-                attribute_actions={"History": CryptoAction.ENCRYPT_AND_SIGN},
+                attribute_actions={self.history_messages_key: CryptoAction.ENCRYPT_AND_SIGN},
             )
             aws_kms_cmp = AwsKmsCryptographicMaterialsProvider(key_id=kms_key_id)
             self.table = EncryptedTable(
@@ -126,7 +128,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                 logger.error(error)
 
         if response and "Item" in response:
-            items = response["Item"]["History"]
+            items = response["Item"][self.history_messages_key]
         else:
             items = []
 
@@ -162,10 +164,10 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
                 expireAt = int(time.time()) + self.ttl
                 self.table.put_item(
-                    Item={**self.key, "History": messages, self.ttl_key_name: expireAt}
+                    Item={**self.key, self.history_messages_key: messages, self.ttl_key_name: expireAt}
                 )
             else:
-                self.table.put_item(Item={**self.key, "History": messages})
+                self.table.put_item(Item={**self.key, self.history_messages_key: messages})
         except ClientError as err:
             logger.error(err)
 
