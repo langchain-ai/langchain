@@ -9,6 +9,7 @@ from typing import (
     Type,
 )
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.graph_vectorstores.base import (
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
     from cassandra.cluster import Session
 
 
+@beta()
 class CassandraGraphVectorStore(GraphVectorStore):
     def __init__(
         self,
