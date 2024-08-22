@@ -7,11 +7,12 @@ API keys:      https://console.amap.com/dev/index
 
 import json
 import os
+import requests
 from typing import Any, Type, Dict
 
-import requests
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+
 
 CITY_CODE_URL = "https://restapi.amap.com/v3/config/district"
 WEATHER_URL = "https://restapi.amap.com/v3/weather/weatherInfo"
