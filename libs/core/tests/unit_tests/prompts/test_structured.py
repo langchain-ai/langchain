@@ -12,13 +12,13 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 
 
 def _fake_runnable(
-    schema: Union[Dict, Type[BaseModel]], _: Any
+    input: Any, *, schema: Union[Dict, Type[BaseModel]], value: Any = 42, **_: Any
 ) -> Union[BaseModel, Dict]:
     if isclass(schema) and is_basemodel_subclass(schema):
-        return schema(name="yo", value=42)
+        return schema(name="yo", value=value)
     else:
         params = cast(Dict, schema)["parameters"]
-        return {k: 1 for k, v in params.items()}
+        return {k: 1 if k != "value" else value for k, v in params.items()}
 
 
 class FakeStructuredChatModel(FakeListChatModel):
@@ -27,7 +27,7 @@ class FakeStructuredChatModel(FakeListChatModel):
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable:
-        return RunnableLambda(partial(_fake_runnable, schema))
+        return RunnableLambda(partial(_fake_runnable, schema=schema, **kwargs))
 
     @property
     def _llm_type(self) -> str:
@@ -39,7 +39,7 @@ def test_structured_prompt_pydantic() -> None:
         name: str
         value: int
 
-    prompt = StructuredPrompt.from_messages_and_schema(
+    prompt = StructuredPrompt(
         [
             ("human", "I'm very structured, how about you?"),
         ],
@@ -54,7 +54,7 @@ def test_structured_prompt_pydantic() -> None:
 
 
 def test_structured_prompt_dict() -> None:
-    prompt = StructuredPrompt.from_messages_and_schema(
+    prompt = StructuredPrompt(
         [
             ("human", "I'm very structured, how about you?"),
         ],
@@ -72,10 +72,47 @@ def test_structured_prompt_dict() -> None:
 
     chain = prompt | model
 
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 1}
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
 
     assert loads(dumps(prompt)) == prompt
 
     chain = loads(dumps(prompt)) | model
 
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 1}
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
+
+
+def test_structured_prompt_kwargs() -> None:
+    prompt = StructuredPrompt(
+        [
+            ("human", "I'm very structured, how about you?"),
+        ],
+        {
+            "name": "yo",
+            "description": "a structured output",
+            "parameters": {
+                "name": {"type": "string"},
+                "value": {"type": "integer"},
+            },
+        },
+        value=7,
+    )
+    model = FakeStructuredChatModel(responses=[])
+    chain = prompt | model
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}
+    assert loads(dumps(prompt)) == prompt
+    chain = loads(dumps(prompt)) | model
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}
+
+    class OutputSchema(BaseModel):
+        name: str
+        value: int
+
+    prompt = StructuredPrompt(
+        [("human", "I'm very structured, how about you?")], OutputSchema, value=7
+    )
+
+    model = FakeStructuredChatModel(responses=[])
+
+    chain = prompt | model
+
+    assert chain.invoke({"hello": "there"}) == OutputSchema(name="yo", value=7)
