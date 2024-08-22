@@ -344,7 +344,7 @@ class PineconeVectorStore(VectorStore):
         )
         for res in results["matches"]:
             metadata = res["metadata"]
-            id = res["id"]
+            id = res.get("id")
             if self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 score = res["score"]
