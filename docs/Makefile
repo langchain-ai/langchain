@@ -18,7 +18,7 @@ for dir; do \
     if find "$$dir" -maxdepth 1 -type f \( -name "pyproject.toml" -o -name "setup.py" \) | grep -q .; then \
         echo "$$dir"; \
     fi \
-done' sh {} + | grep -vE "airbyte|ibm|couchbase" | tr '\n' ' ')
+done' sh {} + | grep -vE "airbyte|ibm|couchbase|databricks" | tr '\n' ' ')
 
 PORT ?= 3001
 
