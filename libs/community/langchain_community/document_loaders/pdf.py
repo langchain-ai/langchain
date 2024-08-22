@@ -1025,7 +1025,9 @@ class HuridocsPDFLoader(BasePDFLoader):
             files = {"file": f}
             try:
                 data = {"fast": self.fast}
-                response = requests.post(f"{self.server_url}/toc", files=files, data=data)
+                response = requests.post(
+                    f"{self.server_url}/toc", files=files, data=data
+                )
                 response.raise_for_status()
             except requests.exceptions.HTTPError as err:
                 raise err
@@ -1039,7 +1041,9 @@ class HuridocsPDFLoader(BasePDFLoader):
             files = {"file": f}
             try:
                 data = {"fast": self.fast}
-                response = requests.post(f"{self.server_url}/visualize", files=files, data=data)
+                response = requests.post(
+                    f"{self.server_url}/visualize", files=files, data=data
+                )
                 response.raise_for_status()
                 with open(output_destination_path, "wb") as file:
                     for chunk in response.iter_content(chunk_size=8192):
@@ -1053,7 +1057,9 @@ class HuridocsPDFLoader(BasePDFLoader):
             files = {"file": f}
             try:
                 data = {"fast": self.fast, "types": types}
-                response = requests.post(f"{self.server_url}/text", files=files, data=data)
+                response = requests.post(
+                    f"{self.server_url}/text", files=files, data=data
+                )
                 response.raise_for_status()
             except requests.exceptions.HTTPError as err:
                 raise err
