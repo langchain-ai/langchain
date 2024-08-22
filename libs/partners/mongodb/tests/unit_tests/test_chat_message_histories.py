@@ -16,6 +16,7 @@ class PatchedMongoDBChatMessageHistory(MongoDBChatMessageHistory):
         self.collection = MockCollection()
         self.session_id_key = "SessionId"
         self.history_key = "History"
+        self.history_size = None
 
 
 def test_memory_with_message_store() -> None:

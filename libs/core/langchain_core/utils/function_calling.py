@@ -5,6 +5,7 @@ from __future__ import annotations
 import collections
 import inspect
 import logging
+import types
 import typing
 import uuid
 from typing import (
@@ -575,6 +576,10 @@ def _parse_google_docstring(
 
 
 def _py_38_safe_origin(origin: Type) -> Type:
+    origin_union_type_map: Dict[Type, Any] = (
+        {types.UnionType: Union} if hasattr(types, "UnionType") else {}
+    )
+
     origin_map: Dict[Type, Any] = {
         dict: Dict,
         list: List,
@@ -584,5 +589,6 @@ def _py_38_safe_origin(origin: Type) -> Type:
         collections.abc.Mapping: typing.Mapping,
         collections.abc.Sequence: typing.Sequence,
         collections.abc.MutableMapping: typing.MutableMapping,
+        **origin_union_type_map,
     }
     return cast(Type, origin_map.get(origin, origin))
