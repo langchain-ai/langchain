@@ -10,8 +10,7 @@ It uses an open source multi-modal LLM of your choice to create image summaries 
  
 Given a question, relevant photos are retrieved and passed to the multi-modal LLM for answer synthesis.
 
-![Diagram illustrating the visual search process with food pictures, captioning, a database, a question input, and the synthesis of an answer using a multi-modal LLM.](https://github.com/langchain-ai/langchain/assets/122662504/cd9b3d82-9b06-4a39-8490-7482466baf43)
-"Visual Search Process Diagram"
+![Diagram illustrating the visual search process with food pictures, captioning, a database, a question input, and the synthesis of an answer using a multi-modal LLM.](https://github.com/langchain-ai/langchain/assets/122662504/cd9b3d82-9b06-4a39-8490-7482466baf43) "Visual Search Process Diagram"
 
 ## Input
 

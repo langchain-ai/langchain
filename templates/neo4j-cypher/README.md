@@ -7,8 +7,7 @@ It transforms a natural language question into a `Cypher` query
 (used to fetch data from `Neo4j` databases), executes the query, 
 and provides a natural language response based on the query results.
 
-![Diagram showing the workflow of a user asking a question, which is processed by a Cypher generating chain, resulting in a Cypher query to the Neo4j Knowledge Graph, and then an answer generating chain that provides a generated answer based on the information from the graph.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher/static/workflow.png)
-"Neo4j Cypher Workflow Diagram"
+![Diagram showing the workflow of a user asking a question, which is processed by a Cypher generating chain, resulting in a Cypher query to the Neo4j Knowledge Graph, and then an answer generating chain that provides a generated answer based on the information from the graph.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher/static/workflow.png) "Neo4j Cypher Workflow Diagram"
 
 ## Environment Setup
 

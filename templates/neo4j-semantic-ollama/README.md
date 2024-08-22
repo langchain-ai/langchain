@@ -8,8 +8,7 @@ allowing it to interact with the graph database based on the user's intent.
 Learn more about the semantic layer template in the 
 [corresponding blog post](https://medium.com/towards-data-science/enhancing-interaction-between-language-models-and-graph-databases-via-a-semantic-layer-0a78ad3eba49) and specifically about [Mixtral agents with `Ollama` package](https://blog.langchain.dev/json-based-agents-with-ollama-and-langchain/).
 
-![Diagram illustrating the workflow of the Neo4j semantic layer with an agent interacting with tools like Information, Recommendation, and Memory, connected to a knowledge graph.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-semantic-ollama/static/workflow.png)
-"Neo4j Semantic Layer Workflow Diagram"
+![Diagram illustrating the workflow of the Neo4j semantic layer with an agent interacting with tools like Information, Recommendation, and Memory, connected to a knowledge graph.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-semantic-ollama/static/workflow.png) "Neo4j Semantic Layer Workflow Diagram"
 
 ## Tools
 

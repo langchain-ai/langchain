@@ -6,8 +6,7 @@ Additionally, it features a `conversational memory` module that stores the dialo
 The conversation memory is uniquely maintained for each user session, ensuring personalized interactions.
 To facilitate this, please supply both the `user_id` and `session_id` when using the conversation chain.
 
-![Workflow diagram illustrating the process of a user asking a question, generating a Cypher query, retrieving conversational history, executing the query on a Neo4j database, generating an answer, and storing conversational memory.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-memory/static/workflow.png)
-"Neo4j Cypher Memory Workflow Diagram"
+![Workflow diagram illustrating the process of a user asking a question, generating a Cypher query, retrieving conversational history, executing the query on a Neo4j database, generating an answer, and storing conversational memory.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher-memory/static/workflow.png) "Neo4j Cypher Memory Workflow Diagram"
 
 ## Environment Setup
 

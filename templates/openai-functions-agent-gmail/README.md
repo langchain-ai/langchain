@@ -10,8 +10,7 @@ relevant information about any topics or people in the email
 thread before writing, ensuring the drafts include all 
 the relevant information needed to sound well-informed.
 
-![Animated GIF showing the interface of the Gmail Agent Playground with a cursor interacting with the input field.](./static/gmail-agent-playground.gif)
-"Gmail Agent Playground Interface"
+![Animated GIF showing the interface of the Gmail Agent Playground with a cursor interacting with the input field.](./static/gmail-agent-playground.gif) "Gmail Agent Playground Interface"
 
 ## Details
 
