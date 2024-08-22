@@ -346,12 +346,6 @@ const FEATURE_TABLES = {
                 package: "langchain-nomic",
                 apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_nomic.embeddings.NomicEmbeddings.html#langchain_nomic.embeddings.NomicEmbeddings"
             },
-            {
-                name: "ZhipuAI",
-                link: "zhipuai",
-                package: "langchain-community",
-                apiLink: "https://api.python.langchain.com/en/latest/embeddings/langchain_community.embeddings.zhipuai.ZhipuAIEmbeddings.html#langchain_community.embeddings.zhipuai.ZhipuAIEmbeddings"
-            },
         ]
     },
     document_retrievers: {
