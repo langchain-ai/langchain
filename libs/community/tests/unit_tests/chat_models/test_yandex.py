@@ -1,5 +1,6 @@
 import os
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -50,9 +51,24 @@ def test_yandexgpt_invalid_model_params() -> None:
 )
 @mock.patch.dict(os.environ, {}, clear=True)
 def test_completion_call(api_key_or_token: dict, disable_logging: dict) -> None:
-    with mock.patch(
-        "yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc.TextGenerationServiceStub"
-    ) as stub:
+    absent_yandex_module_stub = MagicMock()
+    grpc_mock = MagicMock()
+    with mock.patch.dict(
+            "sys.modules",
+            {
+                "yandex.cloud.ai.foundation_models.v1."
+                "text_common_pb2": absent_yandex_module_stub,
+                "yandex.cloud.ai.foundation_models.v1.text_generation."
+                "text_generation_service_pb2": absent_yandex_module_stub,
+                "yandex.cloud.ai.foundation_models.v1.text_generation."
+                "text_generation_service_pb2_grpc": absent_yandex_module_stub,
+                "grpc": grpc_mock,
+            },
+    ):
+        grpc_mock.RpcError = Exception
+        stub = absent_yandex_module_stub.TextGenerationServiceStub
+        request_stub = absent_yandex_module_stub.CompletionRequest
+        msg_constructor_stub = absent_yandex_module_stub.Message
         args = {"folder_id": "fldr", **api_key_or_token, **disable_logging}
         ygpt = ChatYandexGPT(**args)
         grpc_call_mock = stub.return_value.Completion
@@ -65,11 +81,12 @@ def test_completion_call(api_key_or_token: dict, disable_logging: dict) -> None:
         assert act_emb.content == "cmpltn"
         assert len(grpc_call_mock.call_args_list) == 1
         once_called_args = grpc_call_mock.call_args_list[0]
-        assert "fldr" in once_called_args.args[0].model_uri
-        assert once_called_args.args[0].messages[0].text == "nomatter"
-        assert once_called_args.kwargs["metadata"]
-        assert len(once_called_args.kwargs["metadata"]) > 0
+        act_model_uri = request_stub.call_args_list[0].kwargs["model_uri"]
+        act_text = msg_constructor_stub.call_args_list[0].kwargs["text"]
+        act_metadata = once_called_args.kwargs["metadata"]
+        assert "fldr" in act_model_uri
+        assert act_text == "nomatter"
+        assert act_metadata
+        assert len(act_metadata) > 0
         if disable_logging.get("disable_request_logging"):
-            assert ("x-data-logging-enabled", "false") in once_called_args.kwargs[
-                "metadata"
-            ]
+            assert ("x-data-logging-enabled", "false") in act_metadata
