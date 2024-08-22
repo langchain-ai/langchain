@@ -46,7 +46,9 @@ class BasePromptTemplate(
     """A list of the names of the variables whose values are required as inputs to the 
     prompt."""
     optional_variables: List[str] = Field(default=[])
-    """A list of the names of the variables that are optional in the prompt."""
+    """optional_variables: A list of the names of the variables for placeholder
+       or MessagePlaceholder that are optional. These variables are auto inferred 
+       from the prompt and user need not provide them."""
     input_types: Dict[str, Any] = Field(default_factory=dict, exclude=True)
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
@@ -98,8 +100,6 @@ class BasePromptTemplate(
         return True
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property

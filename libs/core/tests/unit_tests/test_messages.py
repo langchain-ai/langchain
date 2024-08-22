@@ -874,7 +874,9 @@ def test_merge_tool_calls() -> None:
 
 
 def test_tool_message_serdes() -> None:
-    message = ToolMessage("foo", artifact={"bar": {"baz": 123}}, tool_call_id="1")
+    message = ToolMessage(
+        "foo", artifact={"bar": {"baz": 123}}, tool_call_id="1", status="error"
+    )
     ser_message = {
         "lc": 1,
         "type": "constructor",
@@ -884,6 +886,7 @@ def test_tool_message_serdes() -> None:
             "type": "tool",
             "tool_call_id": "1",
             "artifact": {"bar": {"baz": 123}},
+            "status": "error",
         },
     }
     assert dumpd(message) == ser_message
@@ -911,6 +914,7 @@ def test_tool_message_ser_non_serializable() -> None:
                 "id": ["tests", "unit_tests", "test_messages", "BadObject"],
                 "repr": repr(bad_obj),
             },
+            "status": "success",
         },
     }
     assert dumpd(message) == ser_message
@@ -931,6 +935,7 @@ def test_tool_message_to_dict() -> None:
             "name": None,
             "id": None,
             "tool_call_id": "1",
+            "status": "success",
         },
     }
     actual = message_to_dict(message)
