@@ -36,11 +36,8 @@ from langchain_openai import AzureChatOpenAI
 
 ### Azure ML Chat Online Endpoint
 
-See a [usage example](/docs/integrations/chat/azureml_chat_endpoint).
-
-```python
-from langchain_community.chat_models.azureml_endpoint import AzureMLChatOnlineEndpoint
-```
+See the documentation [here](/docs/integrations/chat/azureml_chat_endpoint) for accessing chat
+models hosted with [Azure Machine Learning](https://azure.microsoft.com/en-us/products/machine-learning/).
 
 
 ## LLMs
@@ -350,7 +347,9 @@ Since Azure Database for PostgreSQL is open-source Postgres, you can use the [La
 
 ### Azure AI Search
 
-See a [usage example](/docs/integrations/vectorstores/azuresearch).
+[Azure AI Search](https://learn.microsoft.com/azure/search/search-what-is-azure-search) is a cloud search service
+that gives developers infrastructure, APIs, and tools for information retrieval of vector, keyword, and hybrid
+queries at scale. See [here](/docs/integrations/vectorstores/azuresearch) for usage examples.
 
 ```python
 from langchain_community.vectorstores.azuresearch import AzureSearch
@@ -375,14 +374,6 @@ See a [usage example](/docs/integrations/retrievers/azure_ai_search).
 
 ```python
 from langchain_community.retrievers import AzureAISearchRetriever
-```
-
-### Azure Cognitive Search Vector
-
-`Azure AI Search` formerly known as `Azure Cognitive Search`. 
-
-```python
-from langchain_community.vectorstores.azuresearch import AzureSearchVectorStoreRetriever
 ```
 
 ## Vector Store
@@ -445,84 +436,13 @@ See a [usage example](/docs/integrations/tools/azure_ai_services).
 from langchain_community.agent_toolkits import azure_ai_services
 ```
 
-`Azure AI Services` include:
+The `azure_ai_services` toolkit includes the following tools:
 
-#### Image Analysis Tool
-
-```python
-from langchain_community.tools.azure_ai_services import AzureAiServicesImageAnalysisTool
-```
-
-#### Document Intelligence Tool
-
-```python
-from langchain_community.tools.azure_ai_services import AzureAiServicesDocumentIntelligenceTool
-```
-
-#### Speech To Text Tool
-
-```python
-from langchain_community.tools.azure_ai_services import AzureAiServicesSpeechToTextTool
-```
-
-#### Text To Speech Tool
-
-```python
-from langchain_community.tools.azure_ai_services import AzureAiServicesTextToSpeechTool
-```
-
-#### Text Analytics For Health Tool
-
-```python
-from langchain_community.tools.azure_ai_services import AzureAiServicesTextAnalyticsForHealthTool
-```
-
-### Azure Cognitive Services
-
-First, you need to set up an Azure account and create a Cognitive Services resource. You can follow 
-[the instructions](https://docs.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account?tabs=multiservice%2Cwindows) 
-to create a resource.
-
-Then, you need to get the endpoint, key and region of your resource, and set them as 
-environment variables. You can find them in the "Keys and Endpoint" page of your resource.
-
-See a [usage example](/docs/integrations/tools/azure_cognitive_services).
-
-```python
-from langchain_community.agent_toolkits import AzureCognitiveServicesToolkit
-```
-
-`Azure Cognitive Services` include:
-
-#### Image Analysis Tool
-
-```python
-from langchain_community.tools.azure_cognitive_services import AzureCogsImageAnalysisTool
-```
-
-#### Form Recognizer Tool
-
-```python
-from langchain_community.tools.azure_cognitive_services import AzureCogsFormRecognizerTool
-```
-
-#### Speech To Text Tool
-
-```python
-from langchain_community.tools.azure_cognitive_services import AzureCogsSpeech2TextTool
-```
-
-#### Text To Speech Tool
-
-```python
-from langchain_community.tools.azure_cognitive_services import AzureCogsText2SpeechTool
-```
-
-#### Text Analytics Health Tool
-
-```python
-from langchain_community.tools.azure_cognitive_services import AzureCogsTextAnalyticsHealthTool
-```
+- Image Analysis: [AzureAiServicesImageAnalysisTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.image_analysis.AzureAiServicesImageAnalysisTool.html)
+- Document Intelligence: [AzureAiServicesDocumentIntelligenceTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.document_intelligence.AzureAiServicesDocumentIntelligenceTool.html)
+- Speech to Text: [AzureAiServicesSpeechToTextTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.speech_to_text.AzureAiServicesSpeechToTextTool.html)
+- Text to Speech: [AzureAiServicesTextToSpeechTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_to_speech.AzureAiServicesTextToSpeechTool.html)
+- Text Analytics for Health: [AzureAiServicesTextAnalyticsForHealthTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_analytics_for_health.AzureAiServicesTextAnalyticsForHealthTool.html)
 
 
 ### Microsoft Office 365 email and calendar
