@@ -46,6 +46,10 @@ markers = [
 [tool.poetry.dependencies.chromadb]
 version = ">=0.4.0,<0.6.0,!=0.5.4,!=0.5.5"
 
+[tool.poetry.dependencies.fastapi]
+version = ">=0.95.2,<1"
+optional = true
+
 [tool.poetry.group.test]
 optional = true
 
