@@ -869,13 +869,10 @@ def test_structured_output_strict(
 
 
 @pytest.mark.parametrize(
-    ("model", "method", "strict"),
-    [("gpt-4o-2024-08-06", "json_schema", None)],
+    ("model", "method", "strict"), [("gpt-4o-2024-08-06", "json_schema", None)]
 )
 def test_nested_structured_output_strict(
-    model: str,
-    method: Literal["json_schema"],
-    strict: Optional[bool],
+    model: str, method: Literal["json_schema"], strict: Optional[bool]
 ) -> None:
     """Test to verify structured output with strict=True for nested object."""
 
@@ -895,9 +892,7 @@ def test_nested_structured_output_strict(
         self_evaluation: SelfEvaluation
 
     # Schema
-    chat = llm.with_structured_output(
-        JokeWithEvaluation, method=method, strict=strict
-    )
+    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
     result = chat.invoke("Tell me a joke about cats.")
     assert isinstance(result, dict)
     assert set(result.keys()) == {"setup", "punchline", "self_evaluation"}

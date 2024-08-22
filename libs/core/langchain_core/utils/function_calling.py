@@ -324,15 +324,15 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
 def _add_additional_properties_key(schema: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(schema, dict):
         # Check if 'required' is a key at the current level
-        if 'required' in schema:
-            schema['additionalProperties'] = False
+        if "required" in schema:
+            schema["additionalProperties"] = False
         # Recursively check 'properties' and 'items' if they exist
-        if 'properties' in schema:
-            for _, value in schema['properties'].items():
+        if "properties" in schema:
+            for _, value in schema["properties"].items():
                 _add_additional_properties_key(value)
-        if 'items' in schema:
-            _add_additional_properties_key(schema['items'])
-    
+        if "items" in schema:
+            _add_additional_properties_key(schema["items"])
+
     return schema
 
 
@@ -407,7 +407,9 @@ def convert_to_openai_function(
         # As of 08/06/24, OpenAI requires that additionalProperties be supplied and set
         # to False if strict is True.
         # All properties layer needs 'additionalProperties=False'
-        oai_function['parameters'] = _add_additional_properties_key(oai_function['parameters'])
+        oai_function["parameters"] = _add_additional_properties_key(
+            oai_function["parameters"]
+        )
     return oai_function
 
 
