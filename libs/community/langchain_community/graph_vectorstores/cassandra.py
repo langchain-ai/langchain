@@ -211,7 +211,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             depth=depth,
             metadata_filter=metadata_filter,
         )
-        return list(nodes_to_documents(self._from_graph_store_nodes(nodes)))
+        return nodes_to_documents(self._from_graph_store_nodes(nodes))
 
     def mmr_traversal_search(
         self,
@@ -236,4 +236,4 @@ class CassandraGraphVectorStore(GraphVectorStore):
             score_threshold=score_threshold,
             metadata_filter=metadata_filter,
         )
-        return list(nodes_to_documents(self._from_graph_store_nodes(nodes)))
+        return nodes_to_documents(self._from_graph_store_nodes(nodes))
