@@ -7,7 +7,7 @@ API keys:      https://console.amap.com/dev/index
 
 import json
 import os
-from typing import Any, Type
+from typing import Any, Type, Dict
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -58,7 +58,7 @@ class GaodeWeatherTool(BaseTool):
             return f"Failed to get weather info of {city}! error: {str(e)}"
 
     @staticmethod
-    def _get_json_response(url: str) -> json:
+    def _get_json_response(url: str) -> Dict[str, Any]:
         """Get for gaode json response"""
 
         with requests.session():
