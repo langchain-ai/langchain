@@ -26,16 +26,64 @@ from langchain_community.tools.databricks._execution import (
 def test_execute_function(parameters, execute_params) -> None:
     workspace_client = mock.Mock()
 
-    def mock_execute_statement(*args, **kwargs):
+    def mock_execute_statement(
+        statement,
+        warehouse_id,
+        *,
+        byte_limit=None,
+        catalog=None,
+        disposition=None,
+        format=None,
+        on_wait_timeout=None,
+        parameters=None,
+        row_limit=None,
+        schema=None,
+        wait_timeout=None,
+    ):
         for key, value in execute_params.items():
-            assert kwargs[key] == value
+            assert locals()[key] == value
         return mock.Mock()
 
     workspace_client.statement_execution.execute_statement = mock_execute_statement
-
     function = mock.Mock()
     function.data_type = "TABLE_TYPE"
     function.input_params.parameters = []
     execute_function(
         workspace_client, warehouse_id="id", function=function, parameters=parameters
     )
+
+
+def test_execute_function_error() -> None:
+    workspace_client = mock.Mock()
+
+    def mock_execute_statement(
+        statement,
+        warehouse_id,
+        *,
+        byte_limit=None,
+        catalog=None,
+        disposition=None,
+        format=None,
+        on_wait_timeout=None,
+        parameters=None,
+        row_limit=None,
+        schema=None,
+        wait_timeout=None,
+    ):
+        return mock.Mock()
+
+    workspace_client.statement_execution.execute_statement = mock_execute_statement
+    function = mock.Mock()
+    function.data_type = "TABLE_TYPE"
+    function.input_params.parameters = []
+    parameters = {EXECUTE_FUNCTION_ARG_NAME: {"invalid_param": "123"}}
+    with pytest.raises(
+        ValueError,
+        match=r"Invalid parameters for executing functions: {'invalid_param'}. ",
+    ):
+        execute_function(
+            workspace_client,
+            warehouse_id="id",
+            function=function,
+            parameters=parameters,
+        )
