@@ -39,7 +39,7 @@ def get_non_abstract_subclasses(cls: Type[BaseTool]) -> List[Type[BaseTool]]:
 def test_all_subclasses_accept_run_manager(cls: Type[BaseTool]) -> None:
     """Test that tools defined in this repo accept a run manager argument."""
     # This wouldn't be necessary if the BaseTool had a strict API.
-    if cls._run is not BaseTool._arun:
+    if cls._run is not BaseTool._run:
         run_func = cls._run
         params = inspect.signature(run_func).parameters
         assert "run_manager" in params

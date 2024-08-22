@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.2.12"
+version = "0.2.34"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -13,10 +13,14 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic",]
+exclude = [ "notebooks", "examples", "example_data", "langchain_core/pydantic", "tests/unit_tests/utils/test_function_calling.py",]
 [[tool.mypy.overrides]]
 module = [ "numpy", "pytest",]
 ignore_missing_imports = true
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-core%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -25,6 +29,7 @@ tenacity = "^8.1.0,!=8.4.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
 packaging = ">=23.2,<25"
+typing-extensions = ">=4.7"
 [[tool.poetry.dependencies.pydantic]]
 version = ">=1,<3"
 python = "<3.12.4"
@@ -61,11 +66,16 @@ optional = true
 [tool.poetry.group.test_integration]
 optional = true
 
+[tool.ruff.lint.per-file-ignores]
+"tests/unit_tests/prompts/test_chat.py" = [ "E501",]
+"tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
+"tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
+mypy = ">=1.10,<1.11"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
@@ -85,12 +95,6 @@ pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
 pytest-profiling = "^1.7.0"
 responses = "^0.25.0"
-
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
-path = "../standard-tests"
-develop = true
-
-
 [[tool.poetry.group.test.dependencies.numpy]]
 version = "^1.24.0"
 python = "<3.12"
@@ -103,4 +107,8 @@ python = ">=3.12"
 
 [tool.poetry.group.typing.dependencies.langchain-text-splitters]
 path = "../text-splitters"
+develop = true
+
+[tool.poetry.group.test.dependencies.langchain-standard-tests]
+path = "../standard-tests"
 develop = true

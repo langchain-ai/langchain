@@ -14,6 +14,7 @@ from langchain_core.prompts.chat import (
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.tools.render import ToolsRenderer
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
@@ -23,12 +24,12 @@ from langchain.agents.structured_chat.output_parser import (
 )
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.chains.llm import LLMChain
-from langchain.tools.render import ToolsRenderer, render_text_description_and_args
+from langchain.tools.render import render_text_description_and_args
 
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
 
-@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="0.3.0")
+@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="1.0")
 class StructuredChatAgent(Agent):
     """Structured Chat Agent."""
 

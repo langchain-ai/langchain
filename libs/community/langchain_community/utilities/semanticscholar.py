@@ -80,7 +80,7 @@ class SemanticScholarAPIWrapper(BaseModel):
                 f"Published year: {getattr(item, 'year', None)}\n"
                 f"Title: {getattr(item, 'title', None)}\n"
                 f"Authors: {authors}\n"
-                f"Astract: {getattr(item, 'abstract', None)}\n"
+                f"Abstract: {getattr(item, 'abstract', None)}\n"
             )
 
         if documents:

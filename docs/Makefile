@@ -13,7 +13,12 @@ OUTPUT_NEW_DOCS_DIR = $(OUTPUT_NEW_DIR)/docs
 
 PYTHON = .venv/bin/python
 
-PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/pyproject.toml" \; -print | grep -vE "airbyte|ibm" | tr '\n' ' ')
+PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec sh -c ' \
+for dir; do \
+    if find "$$dir" -maxdepth 1 -type f \( -name "pyproject.toml" -o -name "setup.py" \) | grep -q .; then \
+        echo "$$dir"; \
+    fi \
+done' sh {} + | grep -vE "airbyte|ibm|couchbase|databricks" | tr '\n' ' ')
 
 PORT ?= 3001
 
@@ -36,9 +41,11 @@ generate-files:
 	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 	mkdir -p $(INTERMEDIATE_DIR)/templates
 
-	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
+	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
 
-	$(PYTHON) scripts/document_loader_feat_table.py $(INTERMEDIATE_DIR)
+	$(PYTHON) scripts/kv_store_feat_table.py $(INTERMEDIATE_DIR)
+
+	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
 
@@ -63,16 +70,23 @@ render:
 md-sync:
 	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --include="*/_category_.yml" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
+append-related:
+	$(PYTHON) scripts/append_related_links.py $(OUTPUT_NEW_DOCS_DIR)
+
 generate-references:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)
 
-build: install-py-deps generate-files copy-infra render md-sync
+build: install-py-deps generate-files copy-infra render md-sync append-related
 
 vercel-build: install-vercel-deps build generate-references
 	rm -rf docs
 	mv $(OUTPUT_NEW_DOCS_DIR) docs
 	rm -rf build
-	yarn run docusaurus build
+	mkdir static/api_reference
+	git clone --depth=1 https://github.com/baskaryan/langchain-api-docs-build.git
+	mv langchain-api-docs-build/api_reference_build/html/* static/api_reference/
+	rm -rf langchain-api-docs-build
+	NODE_OPTIONS="--max-old-space-size=5000" yarn run docusaurus build
 	mv build v0.2
 	mkdir build
 	mv v0.2 build

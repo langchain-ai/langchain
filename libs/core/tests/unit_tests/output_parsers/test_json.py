@@ -9,6 +9,7 @@ from langchain_core.output_parsers.json import (
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.json import parse_json_markdown, parse_partial_json
+from tests.unit_tests.pydantic_utils import _schema
 
 GOOD_JSON = """```json
 {
@@ -596,10 +597,10 @@ def test_base_model_schema_consistency() -> None:
         setup: str
         punchline: str
 
-    initial_joke_schema = {k: v for k, v in Joke.schema().items()}
+    initial_joke_schema = {k: v for k, v in _schema(Joke).items()}
     SimpleJsonOutputParser(pydantic_object=Joke)
     openai_func = convert_to_openai_function(Joke)
-    retrieved_joke_schema = {k: v for k, v in Joke.schema().items()}
+    retrieved_joke_schema = {k: v for k, v in _schema(Joke).items()}
 
     assert initial_joke_schema == retrieved_joke_schema
     assert openai_func.get("name", None) is not None

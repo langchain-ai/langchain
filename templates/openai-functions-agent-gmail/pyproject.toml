@@ -6,6 +6,9 @@ authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
 readme = "README.md"
+packages = [
+    { include = "openai-functions-agent" },
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

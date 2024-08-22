@@ -107,6 +107,11 @@ class Serializable(BaseModel, ABC):
         as part of the serialized representation.
     """
 
+    # Remove default BaseModel init docstring.
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """"""
+        super().__init__(*args, **kwargs)
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Is this class serializable?

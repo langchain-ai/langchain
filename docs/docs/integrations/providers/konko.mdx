@@ -41,7 +41,7 @@ See a usage [example](/docs/integrations/llms/konko).
 - **Completion with mistralai/Mistral-7B-v0.1:**
 
   ```python
-  from langchain.llms import Konko
+  from langchain_community.llms import Konko
   llm = Konko(max_tokens=800, model='mistralai/Mistral-7B-v0.1')
   prompt = "Generate a Product Description for Apple Iphone 15"
   response = llm.invoke(prompt)

@@ -1,4 +1,33 @@
+from typing import Tuple
+
+import pytest
+from langchain_standard_tests.integration_tests.base_store import (
+    BaseStoreAsyncTests,
+    BaseStoreSyncTests,
+)
+
 from langchain_core.stores import InMemoryStore
+
+
+# Check against standard tests
+class TestSyncInMemoryStore(BaseStoreSyncTests):
+    @pytest.fixture
+    def kv_store(self) -> InMemoryStore:
+        return InMemoryStore()
+
+    @pytest.fixture
+    def three_values(self) -> Tuple[str, str, str]:  # type: ignore
+        return "value1", "value2", "value3"
+
+
+class TestAsyncInMemoryStore(BaseStoreAsyncTests):
+    @pytest.fixture
+    async def kv_store(self) -> InMemoryStore:
+        return InMemoryStore()
+
+    @pytest.fixture
+    def three_values(self) -> Tuple[str, str, str]:  # type: ignore
+        return "value1", "value2", "value3"
 
 
 def test_mget() -> None:

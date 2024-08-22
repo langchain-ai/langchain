@@ -1,11 +1,13 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 import pytest
 from langchain_core.caches import BaseCache
 from langchain_core.outputs import Generation
 
+from langchain_standard_tests.base import BaseStandardTests
 
-class SyncCacheTestSuite(ABC):
+
+class SyncCacheTestSuite(BaseStandardTests):
     """Test suite for checking the BaseCache API of a caching layer for LLMs.
 
     This test suite verifies the basic caching API of a caching layer for LLMs.
@@ -95,7 +97,7 @@ class SyncCacheTestSuite(ABC):
         assert cache.lookup(prompt, llm_string) == generations
 
 
-class AsyncCacheTestSuite(ABC):
+class AsyncCacheTestSuite(BaseStandardTests):
     """Test suite for checking the BaseCache API of a caching layer for LLMs.
 
     This test suite verifies the basic caching API of a caching layer for LLMs.
