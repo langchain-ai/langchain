@@ -23,7 +23,15 @@ from pytest_mock import MockerFixture
 
 J2_CHAT_MODEL_NAME = "j2-ultra"
 JAMBA_CHAT_MODEL_NAME = "jamba-instruct-preview"
+JAMBA_1_5_MINI_CHAT_MODEL_NAME = "jamba-1.5-mini"
+JAMBA_1_5_LARGE_CHAT_MODEL_NAME = "jamba-1.5-large"
 DUMMY_API_KEY = "test_api_key"
+
+JAMBA_FAMILY_MODEL_NAMES = [
+    JAMBA_CHAT_MODEL_NAME,
+    JAMBA_1_5_MINI_CHAT_MODEL_NAME,
+    JAMBA_1_5_LARGE_CHAT_MODEL_NAME,
+]
 
 BASIC_EXAMPLE_LLM_PARAMETERS = {
     "num_results": 3,
