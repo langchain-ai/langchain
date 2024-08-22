@@ -1,8 +1,6 @@
 from importlib import metadata
 
-from langchain_box.document_loaders import BoxLoader
-from langchain_box.retrievers import BoxRetriever
-from langchain_box.utilities import BoxAuth, BoxAuthType, _BoxAPIWrapper
+from langchain_databricks.chat_models import ChatDatabricks
 
 try:
     __version__ = metadata.version(__package__)
@@ -12,10 +10,6 @@ except metadata.PackageNotFoundError:
 del metadata  # optional, avoids polluting the results of dir(__package__)
 
 __all__ = [
-    "BoxLoader",
-    "BoxRetriever",
-    "BoxAuth",
-    "BoxAuthType",
-    "_BoxAPIWrapper",
+    "ChatDatabricks",
     "__version__",
 ]
