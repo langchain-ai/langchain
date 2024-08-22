@@ -14,6 +14,7 @@ from langchain_core.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
@@ -121,7 +122,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
             role = ""
             if isinstance(message, HumanMessage):
                 role = "user"
-            elif isinstance(message, AIMessage):
+            elif isinstance(message, AIMessage) or isinstance(message, ToolMessage):
                 role = "assistant"
             elif isinstance(message, SystemMessage):
                 role = "system"

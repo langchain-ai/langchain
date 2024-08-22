@@ -1294,7 +1294,9 @@ class AgentExecutor(Chain):
     def _consume_next_step(
         self, values: NextStepOutput
     ) -> Union[AgentFinish, List[Tuple[AgentAction, str]]]:
-        if isinstance(values[-1], AgentFinish):
+        if len(values) == 0:
+            return AgentFinish(return_values={}, log="\nNo next agent action defined. Now terminating agent. ")
+        elif isinstance(values[-1], AgentFinish):
             assert len(values) == 1
             return values[-1]
         else:
