@@ -144,9 +144,11 @@ def mock_vs_client() -> Generator:
         index.similarity_search.return_value = EXAMPLE_SEARCH_RESPONSE
         return index
 
+    mock_client = MagicMock()
+    mock_client.get_index.side_effect = _get_index
     with mock.patch(
-        "databricks.vector_search.client.VectorSearchClient.get_index",
-        side_effect=_get_index,
+        "databricks.vector_search.client.VectorSearchClient",
+        return_value=mock_client,
     ):
         yield
 
