@@ -153,7 +153,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], s
     try:
         tag, template = template.split(r_del, 1)
     except ValueError:
-        raise ChevronError("unclosed tag " "at line {0}".format(_CURRENT_LINE))
+        raise ChevronError("unclosed tag " f"at line {_CURRENT_LINE}")
 
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
@@ -174,7 +174,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], s
         # Otherwise we should complain
         else:
             raise ChevronError(
-                "unclosed set delimiter tag\n" "at line {0}".format(_CURRENT_LINE)
+                "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
             )
 
     # If we might be a no html escape tag
@@ -281,16 +281,16 @@ def tokenize(
                 last_section = open_sections.pop()
             except IndexError:
                 raise ChevronError(
-                    'Trying to close tag "{0}"\n'
+                    f'Trying to close tag "{tag_key}"\n'
                     "Looks like it was not opened.\n"
-                    "line {1}".format(tag_key, _CURRENT_LINE + 1)
+                    f"line {_CURRENT_LINE + 1}"
                 )
             if tag_key != last_section:
                 # Otherwise we need to complain
                 raise ChevronError(
-                    'Trying to close tag "{0}"\n'
-                    'last open tag is "{1}"\n'
-                    "line {2}".format(tag_key, last_section, _CURRENT_LINE + 1)
+                    f'Trying to close tag "{tag_key}"\n'
+                    f'last open tag is "{last_section}"\n'
+                    f"line {_CURRENT_LINE + 1}"
                 )
 
         # Do the second check to see if we're a standalone
@@ -320,8 +320,8 @@ def tokenize(
         # Then we need to complain
         raise ChevronError(
             "Unexpected EOF\n"
-            'the tag "{0}" was never closed\n'
-            "was opened at line {1}".format(open_sections[-1], _LAST_TAG_LINE)
+            f'the tag "{open_sections[-1]}" was never closed\n'
+            f"was opened at line {_LAST_TAG_LINE}"
         )
 
 
@@ -403,10 +403,10 @@ def _get_key(
     # We couldn't find the key in any of the scopes
 
     if warn:
-        logger.warn("Could not find key '%s'" % (key))
+        logger.warn(f"Could not find key '{key}'")
 
     if keep:
-        return "%s %s %s" % (def_ldel, key, def_rdel)
+        return f"{def_ldel} {key} {def_rdel}"
 
     return ""
 
@@ -565,9 +565,9 @@ def render(
                     if tag_type == "literal":
                         text += tag_key
                     elif tag_type == "no escape":
-                        text += "%s& %s %s" % (def_ldel, tag_key, def_rdel)
+                        text += f"{def_ldel}& {tag_key} {def_rdel}"
                     else:
-                        text += "%s%s %s%s" % (
+                        text += "{}{} {}{}".format(
                             def_ldel,
                             {
                                 "comment": "!",

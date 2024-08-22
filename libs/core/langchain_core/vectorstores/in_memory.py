@@ -380,7 +380,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         store = cls(
             embedding=embedding,
         )
@@ -394,7 +394,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         store = cls(
             embedding=embedding,
         )
@@ -404,7 +404,7 @@ class InMemoryVectorStore(VectorStore):
     @classmethod
     def load(
         cls, path: str, embedding: Embeddings, **kwargs: Any
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         """Load a vector store from a file.
 
         Args:
