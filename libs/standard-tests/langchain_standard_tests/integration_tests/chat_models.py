@@ -523,3 +523,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
+
+    def test_message_with_name(self, model: BaseChatModel) -> None:
+        result = model.invoke([HumanMessage("hello", name="example_user")])
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.content, str)
+        assert len(result.content) > 0
