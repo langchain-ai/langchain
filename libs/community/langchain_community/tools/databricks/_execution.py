@@ -8,6 +8,13 @@ if TYPE_CHECKING:
     from databricks.sdk.service.catalog import FunctionInfo
     from databricks.sdk.service.sql import StatementParameterListItem
 
+EXECUTE_FUNCTION_ARG_NAME = "__execution_args__"
+DEFAULT_EXECUTE_FUNCTION_ARGS = {
+    "wait_timeout": "30s",
+    "row_limit": 100,
+    "byte_limit": 4096,
+}
+
 
 def is_scalar(function: "FunctionInfo") -> bool:
     from databricks.sdk.service.catalog import ColumnTypeName
@@ -122,16 +129,27 @@ def execute_function(
         ) from e
     from databricks.sdk.service.sql import StatementState
 
+    if any(
+        p.name == EXECUTE_FUNCTION_ARG_NAME for p in function.input_params.parameters
+    ):
+        raise ValueError(
+            "Parameter name conflicts with the reserved argument name for executing "
+            f"functions: {EXECUTE_FUNCTION_ARG_NAME}. "
+            f"Please rename the parameter {EXECUTE_FUNCTION_ARG_NAME}."
+        )
+
+    execute_statement_args = {
+        **DEFAULT_EXECUTE_FUNCTION_ARGS,
+        **parameters.pop(EXECUTE_FUNCTION_ARG_NAME, {}),
+    }
+
     # TODO: async so we can run functions in parallel
     parametrized_statement = get_execute_function_sql_stmt(function, parameters)
-    # TODO: configurable limits
     response = ws.statement_execution.execute_statement(
         statement=parametrized_statement.statement,
         warehouse_id=warehouse_id,
         parameters=parametrized_statement.parameters,
-        wait_timeout="30s",
-        row_limit=100,
-        byte_limit=4096,
+        **execute_statement_args,
     )
     status = response.status
     assert status is not None, f"Statement execution failed: {response}"
