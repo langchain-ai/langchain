@@ -6,8 +6,8 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Set,
     Type,
+    cast,
 )
 
 from langchain_core._api import beta
@@ -15,7 +15,6 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.graph_vectorstores.base import (
     GraphVectorStore,
-    Link,
     Node,
     nodes_to_documents,
 )
@@ -48,8 +47,6 @@ class CassandraGraphVectorStore(GraphVectorStore):
         """
         try:
             from ragstack_knowledge_store import EmbeddingModel, graph_store
-            from ragstack_knowledge_store.graph_store import Link as GraphStoreLink
-            from ragstack_knowledge_store.graph_store import Node as GraphStoreNode
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
                 "Could not import ragstack_knowledge_store python package. "
@@ -84,50 +81,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             **kwargs,
         )
 
-        def _to_graph_store_links(links: List[Link]) -> Set[GraphStoreLink]:
-            return {
-                GraphStoreLink(
-                    kind=link.kind,
-                    direction=link.direction,
-                    tag=link.tag,
-                )
-                for link in links
-            }
-
-        def _from_graph_store_links(links: Set[GraphStoreLink]) -> List[Link]:
-            return [
-                Link(
-                    kind=link.kind,
-                    direction=link.direction,
-                    tag=link.tag,
-                )
-                for link in links
-            ]
-
-        def _to_graph_store_nodes(nodes: Iterable[Node]) -> Iterable[GraphStoreNode]:
-            return (
-                GraphStoreNode(
-                    id=node.id,
-                    metadata=node.metadata,
-                    links=_to_graph_store_links(node.links),
-                    text=node.text,
-                )
-                for node in nodes
-            )
-
-        def _from_graph_store_nodes(nodes: Iterable[GraphStoreNode]) -> Iterable[Node]:
-            return (
-                Node(
-                    id=node.id,
-                    metadata=node.metadata,
-                    links=_from_graph_store_links(node.links),
-                    text=node.text,
-                )
-                for node in nodes
-            )
-
-        self._to_graph_store_nodes = _to_graph_store_nodes
-        self._from_graph_store_nodes = _from_graph_store_nodes
+        self._cast_nodes = lambda nodes: cast(Iterable[graph_store.Node], nodes)
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -138,7 +92,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         nodes: Iterable[Node],
         **kwargs: Any,
     ) -> Iterable[str]:
-        return self.store.add_nodes(self._to_graph_store_nodes(nodes))
+        return self.store.add_nodes(self._cast_nodes(nodes))
 
     @classmethod
     def from_texts(
@@ -194,7 +148,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             k=k,
             metadata_filter=metadata_filter,
         )
-        return list(nodes_to_documents(self._from_graph_store_nodes(nodes)))
+        return list(nodes_to_documents(cast(Iterable[Node], nodes)))
 
     def traversal_search(
         self,
@@ -211,7 +165,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             depth=depth,
             metadata_filter=metadata_filter,
         )
-        return nodes_to_documents(self._from_graph_store_nodes(nodes))
+        return nodes_to_documents(cast(Iterable[Node], nodes))
 
     def mmr_traversal_search(
         self,
@@ -236,4 +190,4 @@ class CassandraGraphVectorStore(GraphVectorStore):
             score_threshold=score_threshold,
             metadata_filter=metadata_filter,
         )
-        return nodes_to_documents(self._from_graph_store_nodes(nodes))
+        return nodes_to_documents(cast(Iterable[Node], nodes))
