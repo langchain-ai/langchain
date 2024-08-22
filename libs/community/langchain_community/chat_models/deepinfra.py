@@ -257,7 +257,6 @@ class ChatDeepInfra(BaseChatModel):
                 self._handle_status(response.status_code, response.text)
                 return response
             except Exception as e:
-                # import pdb; pdb.set_trace()
                 print("EX", e)  # noqa: T201
                 raise
 
