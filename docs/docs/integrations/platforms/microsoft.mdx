@@ -466,6 +466,22 @@ See a [usage example](/docs/integrations/tools/playwright).
 from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
 ```
 
+#### PlayWright Browser individual tools
+
+You can use individual tools from the PlayWright Browser Toolkit.
+
+```python
+from langchain_community.tools.playwright import ClickTool
+from langchain_community.tools.playwright import CurrentWebPageTool
+from langchain_community.tools.playwright import ExtractHyperlinksTool
+from langchain_community.tools.playwright import ExtractTextTool
+from langchain_community.tools.playwright import GetElementsTool
+from langchain_community.tools.playwright import NavigateTool
+from langchain_community.tools.playwright import NavigateBackTool
+```
+
+
+```python
 ## Graphs
 
 ### Azure Cosmos DB for Apache Gremlin
