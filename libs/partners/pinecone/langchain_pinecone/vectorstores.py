@@ -249,6 +249,7 @@ class PineconeVectorStore(VectorStore):
             namespace: Optional pinecone namespace to add the texts to.
             batch_size: Batch size to use when adding the texts to the vectorstore.
             embedding_chunk_size: Chunk size to use when embedding the texts.
+            async_req: Whether runs asynchronously.
             id_prefix: Optional string to use as an ID prefix when upserting vectors.
 
         Returns:
@@ -427,6 +428,9 @@ class PineconeVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Dictionary of argument(s) to filter on metadata
+            namespace: Namespace to search in. Default will search in '' namespace.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -475,6 +479,9 @@ class PineconeVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Dictionary of argument(s) to filter on metadata
+            namespace: Namespace to search in. Default will search in '' namespace.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -496,6 +503,7 @@ class PineconeVectorStore(VectorStore):
         Args:
             index_name: Name of the index to use.
             pool_threads: Number of threads to use for index upsert.
+            pinecone_api_key: The api_key of Pinecone.
         Returns:
             Pinecone Index instance."""
         _pinecone_api_key = pinecone_api_key or os.environ.get("PINECONE_API_KEY") or ""
@@ -541,7 +549,7 @@ class PineconeVectorStore(VectorStore):
     ) -> PineconeVectorStore:
         """Construct Pinecone wrapper from raw documents.
 
-        This is a user friendly interface that:
+        This is a user-friendly interface that:
             1. Embeds documents.
             2. Adds the documents to a provided Pinecone index
 
@@ -606,7 +614,9 @@ class PineconeVectorStore(VectorStore):
         """Delete by vector IDs or filter.
         Args:
             ids: List of ids to delete.
+            delete_all: Whether delete all vectors in the index.
             filter: Dictionary of conditions to filter vectors to delete.
+            namespace: Namespace to search in. Default will search in '' namespace.
         """
 
         if namespace is None:

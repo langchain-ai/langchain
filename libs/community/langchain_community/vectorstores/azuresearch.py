@@ -1735,7 +1735,11 @@ def _reorder_results_with_maximal_marginal_relevance(
 def _result_to_document(result: Dict) -> Document:
     return Document(
         page_content=result.pop(FIELDS_CONTENT),
-        metadata=json.loads(result[FIELDS_METADATA])
+        metadata=(
+            result[FIELDS_METADATA]
+            if isinstance(result[FIELDS_METADATA], dict)
+            else json.loads(result[FIELDS_METADATA])
+        )
         if FIELDS_METADATA in result
         else {
             key: value for key, value in result.items() if key != FIELDS_CONTENT_VECTOR

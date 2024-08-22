@@ -42,6 +42,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
@@ -150,6 +151,15 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
         if tool_calls is not None:
             additional_kwargs["tool_calls"] = tool_calls
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    if role == "tool":
+        additional_kwargs = {}
+        if "name" in dct:
+            additional_kwargs["name"] = dct["name"]
+        return ToolMessage(
+            content=content,
+            tool_call_id=dct.get("tool_call_id"),  # type: ignore[arg-type]
+            additional_kwargs=additional_kwargs,
+        )
     return ChatMessage(role=role, content=content)  # type: ignore[arg-type]
 
 
@@ -171,6 +181,13 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+            "name": message.name or message.additional_kwargs.get("name"),
+        }
     else:
         raise TypeError(f"Got unknown type '{message.__class__.__name__}'.")
     return message_dict
