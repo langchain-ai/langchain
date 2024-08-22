@@ -1,4 +1,4 @@
-# Llama.cpp function calling
+# Llama.cpp functions
 
 This template performs extraction of structured data from unstructured data using  [Llama.cpp package with the LLaMA2 model that supports a specified JSON output schema](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md). 
 
