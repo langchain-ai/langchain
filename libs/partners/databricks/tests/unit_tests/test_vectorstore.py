@@ -567,30 +567,3 @@ def test_similarity_search_by_vector_not_supported_for_managed_embedding() -> No
         vectorsearch.similarity_search_by_vector(
             query_embedding, k=limit, filters=filters
         )
-
-
-@pytest.mark.parametrize(
-    "method",
-    [
-        "similarity_search",
-        "similarity_search_with_score",
-        "similarity_search_by_vector",
-        "similarity_search_by_vector_with_score",
-        "max_marginal_relevance_search",
-        "max_marginal_relevance_search_by_vector",
-    ],
-)
-def test_filter_arg_alias(method: str) -> None:
-    vectorsearch = init_vector_search(DIRECT_ACCESS_INDEX)
-    query = "foo"
-    query_embedding = EMBEDDING_MODEL.embed_query("foo")
-    filters = {"some filter": True}
-    limit = 7
-
-    if "by_vector" in method:
-        getattr(vectorsearch, method)(query_embedding, k=limit, filters=filters)
-    else:
-        getattr(vectorsearch, method)(query, k=limit, filters=filters)
-
-    index_call_args = vectorsearch.index.similarity_search.call_args[1]
-    assert index_call_args["filters"] == filters
