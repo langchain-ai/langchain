@@ -1,10 +1,11 @@
 """Integration test for doc reordering."""
 
+from langchain_core.vectorstores import InMemoryVectorStore
+
 from langchain_community.document_transformers.long_context_reorder import (
     LongContextReorder,
 )
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 
 
 def test_long_context_reorder() -> None:
@@ -22,9 +23,9 @@ def test_long_context_reorder() -> None:
         "Larry Bird was an iconic NBA player.",
     ]
     embeddings = OpenAIEmbeddings()
-    retriever = Chroma.from_texts(texts, embedding=embeddings).as_retriever(
-        search_kwargs={"k": 10}
-    )
+    retriever = InMemoryVectorStore.from_texts(
+        texts, embedding=embeddings
+    ).as_retriever(search_kwargs={"k": 10})
     reordering = LongContextReorder()
     docs = retriever.invoke("Tell me about the Celtics")
     actual = reordering.transform_documents(docs)

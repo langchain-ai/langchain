@@ -116,7 +116,7 @@ class BaseChatMessageHistory(ABC):
         This method may be deprecated in a future release.
 
         Args:
-            message: The human message to add
+            message: The human message to add to the store.
         """
         if isinstance(message, HumanMessage):
             self.add_message(message)
@@ -200,22 +200,38 @@ class BaseChatMessageHistory(ABC):
 class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history.
 
-    Stores messages in an in memory list.
+    Stores messages in a memory list.
     """
 
     messages: List[BaseMessage] = Field(default_factory=list)
     """A list of messages stored in memory."""
 
     async def aget_messages(self) -> List[BaseMessage]:
-        """Async version of getting messages."""
+        """Async version of getting messages.
+
+        Can over-ride this method to provide an efficient async implementation.
+        In general, fetching messages may involve IO to the underlying
+        persistence layer.
+
+        Returns:
+            List of messages.
+        """
         return self.messages
 
     def add_message(self, message: BaseMessage) -> None:
-        """Add a self-created message to the store."""
+        """Add a self-created message to the store.
+
+        Args:
+            message: The message to add.
+        """
         self.messages.append(message)
 
     async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
-        """Async add messages to the store"""
+        """Async add messages to the store.
+
+        Args:
+            messages: The messages to add.
+        """
         self.add_messages(messages)
 
     def clear(self) -> None:

@@ -24,6 +24,7 @@ from langchain_core.output_parsers import (
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain_community.output_parsers.ernie_functions import (
     JsonOutputFunctionsParser,
@@ -94,7 +95,7 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
     for arg, arg_type in annotations.items():
         if arg == "return":
             continue
-        if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
+        if isinstance(arg_type, type) and is_basemodel_subclass(arg_type):
             # Mypy error:
             # "type" has no attribute "schema"
             properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
@@ -156,7 +157,7 @@ def convert_to_ernie_function(
     """
     if isinstance(function, dict):
         return function
-    elif isinstance(function, type) and issubclass(function, BaseModel):
+    elif isinstance(function, type) and is_basemodel_subclass(function):
         return cast(Dict, convert_pydantic_to_ernie_function(function))
     elif callable(function):
         return convert_python_function_to_ernie_function(function)
@@ -185,7 +186,7 @@ def get_ernie_output_parser(
             only the function arguments and not the function name.
     """
     function_names = [convert_to_ernie_function(f)["name"] for f in functions]
-    if isinstance(functions[0], type) and issubclass(functions[0], BaseModel):
+    if isinstance(functions[0], type) and is_basemodel_subclass(functions[0]):
         if len(functions) > 1:
             pydantic_schema: Union[Dict, Type[BaseModel]] = {
                 name: fn for name, fn in zip(function_names, functions)

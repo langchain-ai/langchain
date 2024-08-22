@@ -1,14 +1,17 @@
 import copy
 import json
 from json import JSONDecodeError
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
+from langchain_core.messages.tool import invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.pydantic_v1 import ValidationError
 from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.pydantic import TypeBaseModel
 
 
 def parse_tool_call(
@@ -59,6 +62,7 @@ def parse_tool_call(
     }
     if return_id:
         parsed["id"] = raw_tool_call.get("id")
+        parsed = create_tool_call(**parsed)  # type: ignore
     return parsed
 
 
@@ -75,7 +79,7 @@ def make_invalid_tool_call(
     Returns:
         An InvalidToolCall instance with the error message.
     """
-    return InvalidToolCall(
+    return invalid_tool_call(
         name=raw_tool_call["function"]["name"],
         args=raw_tool_call["function"]["arguments"],
         id=raw_tool_call.get("id"),
@@ -248,7 +252,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
-    tools: List[Type[BaseModel]]
+    tools: List[TypeBaseModel]
     """The tools to parse."""
 
     # TODO: Support more granular streaming of objects. Currently only streams once all

@@ -3,9 +3,12 @@
 import pytest
 from langchain_core.messages import AIMessageChunk, HumanMessage
 from langchain_core.outputs import ChatGeneration
+from langchain_core.rate_limiters import InMemoryRateLimiter
 
 from langchain_ai21.chat_models import ChatAI21
 from tests.unit_tests.conftest import J2_CHAT_MODEL_NAME, JAMBA_CHAT_MODEL_NAME
+
+rate_limiter = InMemoryRateLimiter(requests_per_second=0.5)
 
 
 @pytest.mark.parametrize(
@@ -21,7 +24,7 @@ from tests.unit_tests.conftest import J2_CHAT_MODEL_NAME, JAMBA_CHAT_MODEL_NAME
 )
 def test_invoke(model: str) -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model=model)  # type: ignore[call-arg]
+    llm = ChatAI21(model=model, rate_limiter=rate_limiter)  # type: ignore[call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -48,7 +51,7 @@ def test_generation(model: str, num_results: int) -> None:
     config_key = "n" if model == JAMBA_CHAT_MODEL_NAME else "num_results"
 
     # Create the model instance using the appropriate key for the result count
-    llm = ChatAI21(model=model, **{config_key: num_results})  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
+    llm = ChatAI21(model=model, rate_limiter=rate_limiter, **{config_key: num_results})  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
 
     message = HumanMessage(content="Hello, this is a test. Can you help me please?")
 
@@ -75,7 +78,7 @@ def test_generation(model: str, num_results: int) -> None:
 )
 async def test_ageneration(model: str) -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model=model)  # type: ignore[call-arg]
+    llm = ChatAI21(model=model, rate_limiter=rate_limiter)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
 
     result = await llm.agenerate([[message], [message]], config=dict(tags=["foo"]))

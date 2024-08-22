@@ -48,6 +48,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.tool import ToolCall
+from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -96,7 +97,7 @@ def _parse_tool_calling(tool_call: dict) -> ToolCall:
     name = tool_call["function"].get("name", "")
     args = json.loads(tool_call["function"]["arguments"])
     id = tool_call.get("id")
-    return ToolCall(name=name, args=args, id=id)
+    return create_tool_call(name=name, args=args, id=id)
 
 
 def _convert_to_tool_calling(tool_call: ToolCall) -> Dict[str, Any]:
@@ -206,7 +207,7 @@ class ChatDeepInfra(BaseChatModel):
     request_timeout: Optional[float] = Field(default=None, alias="timeout")
     temperature: Optional[float] = 1
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Run inference with this temperature. Must by in the closed
+    """Run inference with this temperature. Must be in the closed
        interval [0.0, 1.0]."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
@@ -256,7 +257,6 @@ class ChatDeepInfra(BaseChatModel):
                 self._handle_status(response.status_code, response.text)
                 return response
             except Exception as e:
-                # import pdb; pdb.set_trace()
                 print("EX", e)  # noqa: T201
                 raise
 
@@ -448,7 +448,9 @@ class ChatDeepInfra(BaseChatModel):
 
     def _handle_status(self, code: int, text: Any) -> None:
         if code >= 500:
-            raise ChatDeepInfraException(f"DeepInfra Server: Error {code}")
+            raise ChatDeepInfraException(
+                f"DeepInfra Server error status {code}: {text}"
+            )
         elif code >= 400:
             raise ValueError(f"DeepInfra received an invalid payload: {text}")
         elif code != 200:

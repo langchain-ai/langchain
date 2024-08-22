@@ -12,6 +12,7 @@ from typing import (
     Optional,
 )
 
+from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -31,6 +32,7 @@ def _has_next(iterator: Iterator) -> bool:
     return next(iterator, sentinel) is not sentinel
 
 
+@beta()
 class Node(Serializable):
     """Node in the GraphVectorStore.
 
@@ -114,6 +116,7 @@ def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
         )
 
 
+@beta()
 def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
     for node in nodes:
         metadata = node.metadata.copy()
@@ -130,11 +133,14 @@ def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
         )
 
 
+@beta(message="Added in version 0.2.14 of langchain_core. API subject to change.")
 class GraphVectorStore(VectorStore):
     """A hybrid vector-and-graph graph store.
 
     Document chunks support vector-similarity search as well as edges linking
     chunks based on structural and semantic properties.
+
+    .. versionadded:: 0.2.14
     """
 
     @abstractmethod

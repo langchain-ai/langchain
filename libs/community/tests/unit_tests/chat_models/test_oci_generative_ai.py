@@ -38,6 +38,11 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                                 {
                                     "text": response_text,
                                     "finish_reason": "completed",
+                                    "is_search_required": None,
+                                    "search_queries": None,
+                                    "citations": None,
+                                    "documents": None,
+                                    "tool_calls": None,
                                 }
                             ),
                             "model_id": "cohere.command-r-16k",

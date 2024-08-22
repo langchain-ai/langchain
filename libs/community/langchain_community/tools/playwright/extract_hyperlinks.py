@@ -35,7 +35,7 @@ class ExtractHyperlinksTool(BaseBrowserTool):
     description: str = "Extract all hyperlinks on the current webpage"
     args_schema: Type[BaseModel] = ExtractHyperlinksToolInput
 
-    @root_validator
+    @root_validator(pre=True)
     def check_bs_import(cls, values: dict) -> dict:
         """Check that the arguments are valid."""
         try:
