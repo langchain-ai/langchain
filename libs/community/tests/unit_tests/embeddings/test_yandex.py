@@ -6,6 +6,14 @@ import pytest
 
 from langchain_community.embeddings import YandexGPTEmbeddings
 
+YANDEX_MODULE_NAME2 = (
+    "yandex.cloud.ai.foundation_models.v1.embedding." "embedding_service_pb2_grpc"
+)
+YANDEX_MODULE_NAME = (
+    "yandex.cloud.ai.foundation_models.v1.embedding." "embedding_service_pb2"
+)
+
+
 @mock.patch.dict(os.environ, {"YC_API_KEY": "foo"}, clear=True)
 def test_init() -> None:
     models = [
@@ -28,21 +36,22 @@ def test_init() -> None:
 
 
 @pytest.mark.parametrize(
-    "api_key_or_token", [dict(api_key="bogus"), dict(iam_token="bogus")
-                         ]
+    "api_key_or_token", [dict(api_key="bogus"), dict(iam_token="bogus")]
 )
 @pytest.mark.parametrize(
     "disable_logging",
-    [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)
-     ],
+    [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
 )
 @mock.patch.dict(os.environ, {}, clear=True)
 def test_query_embedding_call(api_key_or_token: dict, disable_logging: dict) -> None:
     absent_yandex_module_stub = MagicMock()
-    with mock.patch.dict('sys.modules',
-                         {
-                             "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2": absent_yandex_module_stub,
-                             "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc": absent_yandex_module_stub}):
+    with mock.patch.dict(
+        "sys.modules",
+        {
+            YANDEX_MODULE_NAME: absent_yandex_module_stub,
+            YANDEX_MODULE_NAME2: absent_yandex_module_stub,
+        },
+    ):
         stub = absent_yandex_module_stub.EmbeddingsServiceStub
         request_stub = absent_yandex_module_stub.TextEmbeddingRequest
         args = {"folder_id": "fldr", **api_key_or_token, **disable_logging}
@@ -76,10 +85,13 @@ def test_query_embedding_call(api_key_or_token: dict, disable_logging: dict) -> 
 @mock.patch.dict(os.environ, {}, clear=True)
 def test_doc_embedding_call(api_key_or_token: dict, disable_logging: dict) -> None:
     absent_yandex_module_stub = MagicMock()
-    with mock.patch.dict('sys.modules',
-                         {
-                             "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2": absent_yandex_module_stub,
-                             "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc": absent_yandex_module_stub}):
+    with mock.patch.dict(
+        "sys.modules",
+        {
+            YANDEX_MODULE_NAME: absent_yandex_module_stub,
+            YANDEX_MODULE_NAME2: absent_yandex_module_stub,
+        },
+    ):
         stub = absent_yandex_module_stub.EmbeddingsServiceStub
         request_stub = absent_yandex_module_stub.TextEmbeddingRequest
         args = {"folder_id": "fldr", **api_key_or_token, **disable_logging}
