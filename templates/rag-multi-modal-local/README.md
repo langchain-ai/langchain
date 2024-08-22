@@ -1,17 +1,17 @@
 
 # rag-multi-modal-local
 
-Visual search is a famililar application to many with iPhones or Android devices. It allows user to serch photos using natural language. 
+Visual search is a famililar application to many with iPhones or Android devices. It allows user to search photos using natural language.
   
 With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself for your own private photo collection.
 
 This template demonstrates how to perform private visual search and question-answering over a collection of your photos.
 
-It uses OpenCLIP embeddings to embed all of the photos and stores them in Chroma.
+It uses [`nomic-embed-vision-v1`](https://huggingface.co/nomic-ai/nomic-embed-vision-v1) multi-modal embeddings to embed the images and `Ollama` for question-answering.
  
-Given a question, relevat photos are retrieved and passed to an open source multi-modal LLM of your choice for answer synthesis.
+Given a question, relevant photos are retrieved and passed to an open source multi-modal LLM of your choice for answer synthesis.
  
-![Diagram illustrating the visual search process with OpenCLIP embeddings and multi-modal LLM for question-answering, featuring example food pictures and a matcha soft serve answer trace.](https://github.com/langchain-ai/langchain/assets/122662504/da543b21-052c-4c43-939e-d4f882a45d75 "Visual Search Process Diagram")
+![Diagram illustrating the visual search process with nomic-embed-vision-v1 embeddings and multi-modal LLM for question-answering, featuring example food pictures and a matcha soft serve answer trace.](https://github.com/langchain-ai/langchain/assets/122662504/da543b21-052c-4c43-939e-d4f882a45d75 "Visual Search Process Diagram")
 
 ## Input
 
@@ -34,22 +34,23 @@ python ingest.py
 
 ## Storage
 
-This template will use [OpenCLIP](https://github.com/mlfoundations/open_clip) multi-modal embeddings to embed the images.
-
-You can select different embedding model options (see results [here](https://github.com/mlfoundations/open_clip/blob/main/docs/openclip_results.csv)).
+This template will use [nomic-embed-vision-v1](https://huggingface.co/nomic-ai/nomic-embed-vision-v1) multi-modal embeddings to embed the images.
 
 The first time you run the app, it will automatically download the multimodal embedding model.
 
-By default, LangChain will use an embedding model with moderate performance but lower memory requirments, `ViT-H-14`.
 
-You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_multi_modal/ingest.py`:
+You can choose alternative models in `rag_chroma_multi_modal/ingest.py`, such as `OpenCLIPEmbeddings`.
 ```
+langchain_experimental.open_clip import OpenCLIPEmbeddings
+
+embedding_function=OpenCLIPEmbeddings(
+        model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
+        )
+
 vectorstore_mmembd = Chroma(
     collection_name="multi-modal-rag",
     persist_directory=str(re_vectorstore_path),
-    embedding_function=OpenCLIPEmbeddings(
-        model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
-    ),
+    embedding_function=embedding_function
 )
 ```
 
@@ -96,7 +97,7 @@ add_routes(app, rag_chroma_multi_modal_chain, path="/rag-chroma-multi-modal")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

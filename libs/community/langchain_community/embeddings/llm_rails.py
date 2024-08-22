@@ -1,10 +1,11 @@
-""" This file is for LLMRails Embedding """
+"""This file is for LLMRails Embedding"""
+
 from typing import Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 
 class LLMRailsEmbeddings(BaseModel, Embeddings):
@@ -32,11 +33,9 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
     """LLMRails API key."""
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         api_key = convert_to_secret_str(
@@ -56,7 +55,7 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         """
         response = requests.post(
             "https://api.llmrails.com/v1/embeddings",
-            headers={"X-API-KEY": self.api_key.get_secret_value()},
+            headers={"X-API-KEY": self.api_key.get_secret_value()},  # type: ignore[union-attr]
             json={"input": texts, "model": self.model},
             timeout=60,
         )

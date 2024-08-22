@@ -1,9 +1,11 @@
+"""Generate **synthetic data** using LLM and few-shot template."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts import PromptTemplate
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
 
 from langchain_experimental.synthetic_data.prompts import SENTENCE_PROMPT
 
@@ -12,7 +14,7 @@ def create_data_generation_chain(
     llm: BaseLanguageModel,
     prompt: Optional[PromptTemplate] = None,
 ) -> Chain:
-    """Creates a chain that generates synthetic sentences with
+    """Create a chain that generates synthetic sentences with
      provided fields.
 
     Args:
@@ -28,7 +30,7 @@ def create_data_generation_chain(
 
 
 class DatasetGenerator:
-    """Generates synthetic dataset with a given language model."""
+    """Generate synthetic dataset with a given language model."""
 
     def __init__(
         self,

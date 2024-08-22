@@ -1,4 +1,5 @@
 """Vector Store in Google Cloud BigQuery."""
+
 from __future__ import annotations
 
 import asyncio
@@ -12,10 +13,12 @@ from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
+from langchain_community.utils.google import get_client_info
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
     maximal_marginal_relevance,
@@ -30,10 +33,14 @@ DEFAULT_TOP_K = 4  # default number of documents returned from similarity search
 
 _MIN_INDEX_ROWS = 5000  # minimal number of rows for creating an index
 _INDEX_CHECK_PERIOD_SECONDS = 60  # Do not check for index more often that this.
-
 _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
 
 
+@deprecated(
+    since="0.0.33",
+    removal="1.0",
+    alternative_import="langchain_google_community.BigQueryVectorSearch",
+)
 class BigQueryVectorSearch(VectorStore):
     """Google Cloud BigQuery vector store.
 
@@ -90,8 +97,12 @@ class BigQueryVectorSearch(VectorStore):
         try:
             from google.cloud import bigquery
 
+            client_info = get_client_info(module="bigquery-vector-search")
             self.bq_client = bigquery.Client(
-                project=project_id, location=location, credentials=credentials
+                project=project_id,
+                location=location,
+                credentials=credentials,
+                client_info=client_info,
             )
         except ModuleNotFoundError:
             raise ImportError(
@@ -222,7 +233,7 @@ class BigQueryVectorSearch(VectorStore):
                 self._logger.debug("Vector index already exists.")
                 self._have_index = True
 
-    def _create_index_in_background(self):
+    def _create_index_in_background(self):  # type: ignore[no-untyped-def]
         if self._have_index or self._creating_index:
             # Already have an index or in the process of creating one.
             return
@@ -231,7 +242,7 @@ class BigQueryVectorSearch(VectorStore):
         thread = Thread(target=self._create_index, daemon=True)
         thread.start()
 
-    def _create_index(self):
+    def _create_index(self):  # type: ignore[no-untyped-def]
         from google.api_core.exceptions import ClientError
 
         table = self.bq_client.get_table(self.vectors_table)
@@ -289,7 +300,7 @@ class BigQueryVectorSearch(VectorStore):
     def full_table_id(self) -> str:
         return self._full_table_id
 
-    def add_texts(
+    def add_texts(  # type: ignore[override]
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
@@ -400,7 +411,8 @@ class BigQueryVectorSearch(VectorStore):
             if self.metadata_field:
                 metadata = row[self.metadata_field]
             if metadata:
-                metadata = json.loads(metadata)
+                if not isinstance(metadata, dict):
+                    metadata = json.loads(metadata)
             else:
                 metadata = {}
             metadata["__id"] = row[self.doc_id_field]
@@ -540,7 +552,8 @@ class BigQueryVectorSearch(VectorStore):
         for row in job:
             metadata = row[self.metadata_field]
             if metadata:
-                metadata = json.loads(metadata)
+                if not isinstance(metadata, dict):
+                    metadata = json.loads(metadata)
             else:
                 metadata = {}
             metadata["__id"] = row[self.doc_id_field]

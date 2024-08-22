@@ -15,7 +15,7 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
 
         with self.assertRaises(TypeError) as e:
             OntotextGraphDBGraph._validate_user_query(
-                [
+                [  # type: ignore[arg-type]
                     "PREFIX starwars: <https://swapi.co/ontology/> "
                     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
                     "DESCRIBE starwars: ?term "

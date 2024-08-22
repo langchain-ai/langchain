@@ -199,7 +199,7 @@ class TextGen(LLM):
 
                 from langchain_community.llms import TextGen
                 llm = TextGen(model_url="http://localhost:5000")
-                llm("Write a story about llamas.")
+                llm.invoke("Write a story about llamas.")
         """
         if self.streaming:
             combined_text_output = ""
@@ -219,7 +219,7 @@ class TextGen(LLM):
             if response.status_code == 200:
                 result = response.json()["results"][0]["text"]
             else:
-                print(f"ERROR: response: {response}")
+                print(f"ERROR: response: {response}")  # noqa: T201
                 result = ""
 
         return result
@@ -245,7 +245,7 @@ class TextGen(LLM):
 
                 from langchain_community.llms import TextGen
                 llm = TextGen(model_url="http://localhost:5000")
-                llm("Write a story about llamas.")
+                llm.invoke("Write a story about llamas.")
         """
         if self.streaming:
             combined_text_output = ""
@@ -265,7 +265,7 @@ class TextGen(LLM):
             if response.status_code == 200:
                 result = response.json()["results"][0]["text"]
             else:
-                print(f"ERROR: response: {response}")
+                print(f"ERROR: response: {response}")  # noqa: T201
                 result = ""
 
         return result
@@ -303,7 +303,7 @@ class TextGen(LLM):
                 )
                 for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
                         stop=["'","\n"]):
-                    print(chunk, end='', flush=True)
+                    print(chunk, end='', flush=True)  # noqa: T201
 
         """
         try:
@@ -330,13 +330,13 @@ class TextGen(LLM):
             result = websocket_client.recv()
             result = json.loads(result)
 
-            if result["event"] == "text_stream":
+            if result["event"] == "text_stream":  # type: ignore[call-overload, index]
                 chunk = GenerationChunk(
-                    text=result["text"],
+                    text=result["text"],  # type: ignore[call-overload, index]
                     generation_info=None,
                 )
                 yield chunk
-            elif result["event"] == "stream_end":
+            elif result["event"] == "stream_end":  # type: ignore[call-overload, index]
                 websocket_client.close()
                 return
 
@@ -376,7 +376,7 @@ class TextGen(LLM):
                 )
                 for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
                         stop=["'","\n"]):
-                    print(chunk, end='', flush=True)
+                    print(chunk, end='', flush=True)  # noqa: T201
 
         """
         try:
@@ -403,13 +403,13 @@ class TextGen(LLM):
             result = websocket_client.recv()
             result = json.loads(result)
 
-            if result["event"] == "text_stream":
+            if result["event"] == "text_stream":  # type: ignore[call-overload, index]
                 chunk = GenerationChunk(
-                    text=result["text"],
+                    text=result["text"],  # type: ignore[call-overload, index]
                     generation_info=None,
                 )
                 yield chunk
-            elif result["event"] == "stream_end":
+            elif result["event"] == "stream_end":  # type: ignore[call-overload, index]
                 websocket_client.close()
                 return
 

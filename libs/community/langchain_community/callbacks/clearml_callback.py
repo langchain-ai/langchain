@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 from langchain_community.callbacks.utils import (
     BaseMetadataCallbackHandler,
@@ -25,14 +26,7 @@ if TYPE_CHECKING:
 
 def import_clearml() -> Any:
     """Import the clearml python package and raise an error if it is not installed."""
-    try:
-        import clearml  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use the clearml callback manager you need to have the `clearml` python "
-            "package installed. Please install it with `pip install clearml`"
-        )
-    return clearml
+    return guard_import("clearml")
 
 
 class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
@@ -83,7 +77,7 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if clearml.Task.current_task():
             self.task = clearml.Task.current_task()
         else:
-            self.task = clearml.Task.init(  # type: ignore
+            self.task = clearml.Task.init(
                 task_type=self.task_type,
                 project_name=self.project_name,
                 tags=self.tags,
@@ -243,8 +237,9 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if self.stream_logs:
             self.logger.report_text(resp)
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        output = str(output)
         self.step += 1
         self.tool_ends += 1
         self.ends += 1
@@ -361,17 +356,13 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if self.visualize and self.nlp and self.temp_dir.name is not None:
             doc = self.nlp(text)
 
-            dep_out = spacy.displacy.render(  # type: ignore
-                doc, style="dep", jupyter=False, page=True
-            )
+            dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
             dep_output_path = Path(
                 self.temp_dir.name, hash_string(f"dep-{text}") + ".html"
             )
             dep_output_path.open("w", encoding="utf-8").write(dep_out)
 
-            ent_out = spacy.displacy.render(  # type: ignore
-                doc, style="ent", jupyter=False, page=True
-            )
+            ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
             ent_output_path = Path(
                 self.temp_dir.name, hash_string(f"ent-{text}") + ".html"
             )
@@ -513,8 +504,8 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     target_filename=name,
                 )
             except NotImplementedError as e:
-                print("Could not save model.")
-                print(repr(e))
+                print("Could not save model.")  # noqa: T201
+                print(repr(e))  # noqa: T201
                 pass
 
         # Cleanup after adding everything to ClearML

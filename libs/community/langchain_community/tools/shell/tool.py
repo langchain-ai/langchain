@@ -21,7 +21,7 @@ class ShellInput(BaseModel):
     )
     """List of shell commands to run."""
 
-    @root_validator
+    @root_validator(pre=True)
     def _validate_commands(cls, values: dict) -> dict:
         """Validate commands."""
         # TODO: Add real validators
@@ -84,7 +84,7 @@ class ShellTool(BaseTool):
     ) -> str:
         """Run commands and return final output."""
 
-        print(f"Executing command:\n {commands}")
+        print(f"Executing command:\n {commands}")  # noqa: T201
 
         try:
             if self.ask_human_input:
@@ -93,10 +93,10 @@ class ShellTool(BaseTool):
                     return self.process.run(commands)
                 else:
                     logger.info("Invalid input. User aborted command execution.")
-                    return None
+                    return None  # type: ignore[return-value]
             else:
                 return self.process.run(commands)
 
         except Exception as e:
             logger.error(f"Error during command execution: {e}")
-            return None
+            return None  # type: ignore[return-value]

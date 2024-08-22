@@ -1,11 +1,26 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator, validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    root_validator,
+    validator,
+)
 from langchain_core.retrievers import BaseRetriever
+from typing_extensions import Annotated
 
 
 def clean_excerpt(excerpt: str) -> str:
@@ -52,7 +67,7 @@ Dates are also represented as str.
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class Highlight(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class Highlight(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Information that highlights the keywords in the excerpt."""
 
     BeginOffset: int
@@ -66,7 +81,7 @@ class Highlight(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class TextWithHighLights(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class TextWithHighLights(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Text with highlights."""
 
     Text: str
@@ -77,7 +92,7 @@ class TextWithHighLights(BaseModel, extra=Extra.allow):  # type: ignore[call-arg
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
 class AdditionalResultAttributeValue(  # type: ignore[call-arg]
-    BaseModel, extra=Extra.allow
+    BaseModel, extra="allow"
 ):
     """Value of an additional result attribute."""
 
@@ -86,7 +101,7 @@ class AdditionalResultAttributeValue(  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class AdditionalResultAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class AdditionalResultAttribute(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Additional result attribute."""
 
     Key: str
@@ -101,7 +116,7 @@ class AdditionalResultAttribute(BaseModel, extra=Extra.allow):  # type: ignore[c
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class DocumentAttributeValue(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class DocumentAttributeValue(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Value of a document attribute."""
 
     DateValue: Optional[str]
@@ -132,7 +147,7 @@ class DocumentAttributeValue(BaseModel, extra=Extra.allow):  # type: ignore[call
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class DocumentAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class DocumentAttribute(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """Document attribute."""
 
     Key: str
@@ -142,7 +157,7 @@ class DocumentAttribute(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
+class ResultItem(BaseModel, ABC, extra="allow"):  # type: ignore[call-arg]
     """Base class of a result item."""
 
     Id: Optional[str]
@@ -153,6 +168,8 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
     """The document URI."""
     DocumentAttributes: Optional[List[DocumentAttribute]] = []
     """The document attributes."""
+    ScoreAttributes: Optional[dict]
+    """The kendra score confidence"""
 
     @abstractmethod
     def get_title(self) -> str:
@@ -178,6 +195,13 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
         """Document attributes dict."""
         return {attr.Key: attr.Value.value for attr in (self.DocumentAttributes or [])}
 
+    def get_score_attribute(self) -> str:
+        """Document Score Confidence"""
+        if self.ScoreAttributes is not None:
+            return self.ScoreAttributes["ScoreConfidence"]
+        else:
+            return "NOT_AVAILABLE"
+
     def to_doc(
         self, page_content_formatter: Callable[["ResultItem"], str] = combined_text
     ) -> Document:
@@ -192,9 +216,9 @@ class ResultItem(BaseModel, ABC, extra=Extra.allow):  # type: ignore[call-arg]
                 "title": self.get_title(),
                 "excerpt": self.get_excerpt(),
                 "document_attributes": self.get_document_attributes_dict(),
+                "score": self.get_score_attribute(),
             }
         )
-
         return Document(page_content=page_content, metadata=metadata)
 
 
@@ -263,7 +287,7 @@ class RetrieveResultItem(ResultItem):
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class QueryResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class QueryResult(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """`Amazon Kendra Query API` search result.
 
     It is composed of:
@@ -277,7 +301,7 @@ class QueryResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
 
 
 # Unexpected keyword argument "extra" for "__init_subclass__" of "object"
-class RetrieveResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
+class RetrieveResult(BaseModel, extra="allow"):  # type: ignore[call-arg]
     """`Amazon Kendra Retrieve API` search result.
 
     It is composed of:
@@ -288,6 +312,15 @@ class RetrieveResult(BaseModel, extra=Extra.allow):  # type: ignore[call-arg]
     """The ID of the query."""
     ResultItems: List[RetrieveResultItem]
     """The result items."""
+
+
+KENDRA_CONFIDENCE_MAPPING = {
+    "NOT_AVAILABLE": 0.0,
+    "LOW": 0.25,
+    "MEDIUM": 0.50,
+    "HIGH": 0.75,
+    "VERY_HIGH": 1.0,
+}
 
 
 class AmazonKendraRetriever(BaseRetriever):
@@ -308,6 +341,10 @@ class AmazonKendraRetriever(BaseRetriever):
         top_k: No of results to return
 
         attribute_filter: Additional filtering of results based on metadata
+            See: https://docs.aws.amazon.com/kendra/latest/APIReference
+
+        document_relevance_override_configurations: Overrides relevance tuning
+            configurations of fields/attributes set at the index level
             See: https://docs.aws.amazon.com/kendra/latest/APIReference
 
         page_content_formatter: generates the Document page_content
@@ -333,9 +370,11 @@ class AmazonKendraRetriever(BaseRetriever):
     credentials_profile_name: Optional[str] = None
     top_k: int = 3
     attribute_filter: Optional[Dict] = None
+    document_relevance_override_configurations: Optional[List[Dict]] = None
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
     user_context: Optional[Dict] = None
+    min_score_confidence: Annotated[Optional[float], Field(ge=0.0, le=1.0)]
 
     @validator("top_k")
     def validate_top_k(cls, value: int) -> int:
@@ -365,7 +404,7 @@ class AmazonKendraRetriever(BaseRetriever):
 
             return values
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -386,6 +425,10 @@ class AmazonKendraRetriever(BaseRetriever):
         }
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
+        if self.document_relevance_override_configurations is not None:
+            kendra_kwargs["DocumentRelevanceOverrideConfigurations"] = (
+                self.document_relevance_override_configurations
+            )
         if self.user_context is not None:
             kendra_kwargs["UserContext"] = self.user_context
 
@@ -406,6 +449,25 @@ class AmazonKendraRetriever(BaseRetriever):
         ]
         return top_docs
 
+    def _filter_by_score_confidence(self, docs: List[Document]) -> List[Document]:
+        """
+        Filter out the records that have a score confidence
+        greater than the required threshold.
+        """
+        if not self.min_score_confidence:
+            return docs
+        filtered_docs = [
+            item
+            for item in docs
+            if (
+                item.metadata.get("score") is not None
+                and isinstance(item.metadata["score"], str)
+                and KENDRA_CONFIDENCE_MAPPING.get(item.metadata["score"], 0.0)
+                >= self.min_score_confidence
+            )
+        ]
+        return filtered_docs
+
     def _get_relevant_documents(
         self,
         query: str,
@@ -417,9 +479,9 @@ class AmazonKendraRetriever(BaseRetriever):
         Example:
         .. code-block:: python
 
-            docs = retriever.get_relevant_documents('This is my query')
+            docs = retriever.invoke('This is my query')
 
         """
         result_items = self._kendra_query(query)
         top_k_docs = self._get_top_k_docs(result_items)
-        return top_k_docs
+        return self._filter_by_score_confidence(top_k_docs)

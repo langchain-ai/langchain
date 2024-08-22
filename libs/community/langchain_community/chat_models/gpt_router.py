@@ -14,6 +14,7 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
@@ -27,7 +28,7 @@ from langchain_core.language_models.chat_models import (
     generate_from_stream,
 )
 from langchain_core.language_models.llms import create_base_retry_decorator
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -52,13 +53,15 @@ class GPTRouterException(Exception):
 
 
 class GPTRouterModel(BaseModel):
+    """GPTRouter model."""
+
     name: str
     provider_name: str
 
 
 def get_ordered_generation_requests(
-    models_priority_list: List[GPTRouterModel], **kwargs
-):
+    models_priority_list: List[GPTRouterModel], **kwargs: Any
+) -> List:
     """
     Return the body for the model router input.
     """
@@ -100,7 +103,7 @@ def completion_with_retry(
     models_priority_list: List[GPTRouterModel],
     run_manager: Optional[CallbackManagerForLLMRun] = None,
     **kwargs: Any,
-) -> Union[GenerationResponse, Generator[ChunkedGenerationResponse]]:
+) -> Union[GenerationResponse, Generator[ChunkedGenerationResponse, None, None]]:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
@@ -122,7 +125,7 @@ async def acompletion_with_retry(
     models_priority_list: List[GPTRouterModel],
     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     **kwargs: Any,
-) -> Union[GenerationResponse, AsyncGenerator[ChunkedGenerationResponse]]:
+) -> Union[GenerationResponse, AsyncGenerator[ChunkedGenerationResponse, None]]:
     """Use tenacity to retry the async completion call."""
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
@@ -164,7 +167,7 @@ class GPTRouter(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: int = 256
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["gpt_router_api_base"] = get_from_dict_or_env(
             values,
@@ -180,7 +183,10 @@ class GPTRouter(BaseChatModel):
                 "GPT_ROUTER_API_KEY",
             )
         )
+        return values
 
+    @root_validator(pre=True, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
         try:
             from gpt_router.client import GPTRouterClient
 
@@ -283,8 +289,8 @@ class GPTRouter(BaseChatModel):
         return self._create_chat_result(response)
 
     def _create_chat_generation_chunk(
-        self, data: Mapping[str, Any], default_chunk_class
-    ):
+        self, data: Mapping[str, Any], default_chunk_class: Type[BaseMessageChunk]
+    ) -> Tuple[ChatGenerationChunk, Type[BaseMessageChunk]]:
         chunk = _convert_delta_to_message_chunk(
             {"content": data.get("text", "")}, default_chunk_class
         )
@@ -293,8 +299,8 @@ class GPTRouter(BaseChatModel):
             dict(finish_reason=finish_reason) if finish_reason is not None else None
         )
         default_chunk_class = chunk.__class__
-        chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
-        return chunk, default_chunk_class
+        gen_chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
+        return gen_chunk, default_chunk_class
 
     def _stream(
         self,
@@ -306,7 +312,7 @@ class GPTRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         generator_response = completion_with_retry(
             self,
             messages=message_dicts,
@@ -322,12 +328,12 @@ class GPTRouter(BaseChatModel):
                 chunk.data, default_chunk_class
             )
 
-            yield chunk
-
             if run_manager:
                 run_manager.on_llm_new_token(
                     token=chunk.message.content, chunk=chunk.message
                 )
+
+            yield chunk
 
     async def _astream(
         self,
@@ -339,7 +345,7 @@ class GPTRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         generator_response = acompletion_with_retry(
             self,
             messages=message_dicts,
@@ -355,12 +361,12 @@ class GPTRouter(BaseChatModel):
                 chunk.data, default_chunk_class
             )
 
-            yield chunk
-
             if run_manager:
                 await run_manager.on_llm_new_token(
                     token=chunk.message.content, chunk=chunk.message
                 )
+
+            yield chunk
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]

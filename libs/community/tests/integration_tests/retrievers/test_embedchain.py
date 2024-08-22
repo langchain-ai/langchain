@@ -19,8 +19,10 @@ os.environ["OPENAI_API_KEY"] = "sk-xxxx"
 context_value = [
     {
         "context": "this document is about John",
-        "source": "source#1",
-        "document_id": 123,
+        "metadata": {
+            "source": "source#1",
+            "doc_id": 123,
+        },
     },
 ]
 
@@ -35,7 +37,7 @@ def test_embedchain_retriever(mock_add: Any, mock_search: Any) -> None:
     ]
     for text in texts:
         retriever.add_texts(text)
-    docs = retriever.get_relevant_documents("doc about john")
+    docs = retriever.invoke("doc about john")
     assert len(docs) == 1
     for doc in docs:
         assert isinstance(doc, Document)

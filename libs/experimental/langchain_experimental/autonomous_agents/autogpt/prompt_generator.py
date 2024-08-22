@@ -1,13 +1,13 @@
 import json
 from typing import List
 
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 
 FINISH_NAME = "finish"
 
 
 class PromptGenerator:
-    """A class for generating custom prompt strings.
+    """Generator of custom prompt strings.
 
     Does this based on constraints, commands, resources, and performance evaluations.
     """

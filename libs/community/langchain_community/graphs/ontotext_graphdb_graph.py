@@ -81,7 +81,7 @@ class OntotextGraphDBGraph:
             import rdflib
             from rdflib.plugins.stores import sparqlstore
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import rdflib python package. "
                 "Please install it with `pip install rdflib`."
             )
@@ -95,12 +95,13 @@ class OntotextGraphDBGraph:
 
         if local_file:
             ontology_schema_graph = self._load_ontology_schema_from_file(
-                local_file, local_file_format
+                local_file,
+                local_file_format,  # type: ignore[arg-type]
             )
         else:
-            self._validate_user_query(query_ontology)
+            self._validate_user_query(query_ontology)  # type: ignore[arg-type]
             ontology_schema_graph = self._load_ontology_schema_with_query(
-                query_ontology
+                query_ontology  # type: ignore[arg-type]
             )
         self.schema = ontology_schema_graph.serialize(format="turtle")
 
@@ -139,7 +140,7 @@ class OntotextGraphDBGraph:
             )
 
     @staticmethod
-    def _load_ontology_schema_from_file(local_file: str, local_file_format: str = None):
+    def _load_ontology_schema_from_file(local_file: str, local_file_format: str = None):  # type: ignore[no-untyped-def, assignment]
         """
         Parse the ontology schema statements from the provided file
         """
@@ -176,7 +177,7 @@ class OntotextGraphDBGraph:
                 "Invalid query type. Only CONSTRUCT queries are supported."
             )
 
-    def _load_ontology_schema_with_query(self, query: str):
+    def _load_ontology_schema_with_query(self, query: str):  # type: ignore[no-untyped-def]
         """
         Execute the query for collecting the ontology schema statements
         """
@@ -203,11 +204,7 @@ class OntotextGraphDBGraph:
         """
         Query the graph.
         """
-        from rdflib.exceptions import ParserError
         from rdflib.query import ResultRow
 
-        try:
-            res = self.graph.query(query)
-        except ParserError as e:
-            raise ValueError(f"Generated SPARQL statement is invalid\n{e}")
+        res = self.graph.query(query)
         return [r for r in res if isinstance(r, ResultRow)]

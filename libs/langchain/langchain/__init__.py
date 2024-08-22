@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 """Main entrypoint into package."""
+
 import warnings
 from importlib import metadata
 from typing import Any, Optional
@@ -16,7 +17,7 @@ del metadata  # optional, avoids polluting the results of dir(__package__)
 
 def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     """Warn on import of deprecated module."""
-    from langchain.utils.interactive_env import is_interactive_env
+    from langchain._api.interactive_env import is_interactive_env
 
     if is_interactive_env():
         # No warnings for interactive environments.
@@ -112,13 +113,13 @@ def __getattr__(name: str) -> Any:
 
         return VectorDBQAWithSourcesChain
     elif name == "InMemoryDocstore":
-        from langchain.docstore import InMemoryDocstore
+        from langchain_community.docstore import InMemoryDocstore
 
         _warn_on_import(name, replacement="langchain.docstore.InMemoryDocstore")
 
         return InMemoryDocstore
     elif name == "Wikipedia":
-        from langchain.docstore import Wikipedia
+        from langchain_community.docstore import Wikipedia
 
         _warn_on_import(name, replacement="langchain.docstore.Wikipedia")
 
@@ -233,27 +234,29 @@ def __getattr__(name: str) -> Any:
     elif name == "FewShotPromptTemplate":
         from langchain_core.prompts import FewShotPromptTemplate
 
-        _warn_on_import(name, replacement="langchain.prompts.FewShotPromptTemplate")
+        _warn_on_import(
+            name, replacement="langchain_core.prompts.FewShotPromptTemplate"
+        )
 
         return FewShotPromptTemplate
     elif name == "Prompt":
-        from langchain.prompts import Prompt
+        from langchain_core.prompts import PromptTemplate
 
-        _warn_on_import(name, replacement="langchain.prompts.Prompt")
+        _warn_on_import(name, replacement="langchain_core.prompts.PromptTemplate")
 
-        return Prompt
+        # it's renamed as prompt template anyways
+        # this is just for backwards compat
+        return PromptTemplate
     elif name == "PromptTemplate":
         from langchain_core.prompts import PromptTemplate
 
-        _warn_on_import(name, replacement="langchain.prompts.PromptTemplate")
+        _warn_on_import(name, replacement="langchain_core.prompts.PromptTemplate")
 
         return PromptTemplate
     elif name == "BasePromptTemplate":
         from langchain_core.prompts import BasePromptTemplate
 
-        _warn_on_import(
-            name, replacement="langchain.schema.prompt_template.BasePromptTemplate"
-        )
+        _warn_on_import(name, replacement="langchain_core.prompts.BasePromptTemplate")
 
         return BasePromptTemplate
     elif name == "ArxivAPIWrapper":

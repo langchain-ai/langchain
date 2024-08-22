@@ -2,9 +2,12 @@ from typing import Any, Dict, List
 
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils.pydantic import get_fields
 
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
+    """OpenCLIP Embeddings model."""
+
     model: Any
     preprocess: Any
     tokenizer: Any
@@ -19,8 +22,8 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
             import open_clip
 
             # Fall back to class defaults if not provided
-            model_name = values.get("model_name", cls.__fields__["model_name"].default)
-            checkpoint = values.get("checkpoint", cls.__fields__["checkpoint"].default)
+            model_name = values.get("model_name", get_fields(cls)["model_name"].default)
+            checkpoint = values.get("checkpoint", get_fields(cls)["checkpoint"].default)
 
             # Load model
             model, _, preprocess = open_clip.create_model_and_transforms(

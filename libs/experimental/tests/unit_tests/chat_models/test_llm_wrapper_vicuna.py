@@ -1,5 +1,5 @@
 import pytest
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from langchain_experimental.chat_models import Vicuna
 from tests.unit_tests.chat_models.test_llm_wrapper_llama2chat import FakeLLM
@@ -23,7 +23,7 @@ def test_prompt(model: Vicuna) -> None:
         HumanMessage(content="usr-msg-2"),
     ]
 
-    actual = model.predict_messages(messages).content  # type: ignore
+    actual = model.invoke(messages).content  # type: ignore
     expected = "sys-msg USER: usr-msg-1 ASSISTANT: ai-msg-1 </s>USER: usr-msg-2 "
 
     assert actual == expected

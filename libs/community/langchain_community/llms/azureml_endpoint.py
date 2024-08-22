@@ -11,12 +11,18 @@ from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator, validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
+DEFAULT_TIMEOUT = 50
+
 
 class AzureMLEndpointClient(object):
     """AzureML Managed Endpoint client."""
 
     def __init__(
-        self, endpoint_url: str, endpoint_api_key: str, deployment_name: str = ""
+        self,
+        endpoint_url: str,
+        endpoint_api_key: str,
+        deployment_name: str = "",
+        timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
         """Initialize the class."""
         if not endpoint_api_key or not endpoint_url:
@@ -27,6 +33,7 @@ class AzureMLEndpointClient(object):
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
         self.deployment_name = deployment_name
+        self.timeout = timeout
 
     def call(
         self,
@@ -47,18 +54,22 @@ class AzureMLEndpointClient(object):
             headers["azureml-model-deployment"] = self.deployment_name
 
         req = urllib.request.Request(self.endpoint_url, body, headers)
-        response = urllib.request.urlopen(req, timeout=kwargs.get("timeout", 50))
+        response = urllib.request.urlopen(
+            req, timeout=kwargs.get("timeout", self.timeout)
+        )
         result = response.read()
         return result
 
 
 class AzureMLEndpointApiType(str, Enum):
-    """Azure ML endpoints API types. Use `realtime` for models deployed in hosted
-    infrastructure, or `serverless` for models deployed as a service with a
+    """Azure ML endpoints API types. Use `dedicated` for models deployed in hosted
+    infrastructure (also known as Online Endpoints in Azure Machine Learning),
+    or `serverless` for models deployed as a service with a
     pay-as-you-go billing or PTU.
     """
 
-    realtime = "realtime"
+    dedicated = "dedicated"
+    realtime = "realtime"  #: Deprecated
     serverless = "serverless"
 
 
@@ -101,7 +112,7 @@ class ContentFormatterBase:
     accepts: Optional[str] = "application/json"
     """The MIME type of the response data returned from the endpoint"""
 
-    format_error_msg: Optional[str] = (
+    format_error_msg: str = (
         "Error while formatting response payload for chat model of type "
         " `{api_type}`. Are you using the right formatter for the deployed "
         " model and endpoint type?"
@@ -132,25 +143,25 @@ class ContentFormatterBase:
         deploying models using different hosting methods. Each method may have
         a different API structure."""
 
-        return [AzureMLEndpointApiType.realtime]
+        return [AzureMLEndpointApiType.dedicated]
 
-    @abstractmethod
     def format_request_payload(
         self,
         prompt: str,
         model_kwargs: Dict,
-        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime,
-    ) -> bytes:
+        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.dedicated,
+    ) -> Any:
         """Formats the request body according to the input schema of
         the model. Returns bytes or seekable file like object in the
         format specified in the content_type request header.
         """
+        raise NotImplementedError()
 
     @abstractmethod
     def format_response_payload(
         self,
         output: bytes,
-        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime,
+        api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.dedicated,
     ) -> Generation:
         """Formats the response body according to the output
         schema of the model. Returns the data type that is
@@ -163,9 +174,9 @@ class GPT2ContentFormatter(ContentFormatterBase):
 
     @property
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
-        return [AzureMLEndpointApiType.realtime]
+        return [AzureMLEndpointApiType.dedicated]
 
-    def format_request_payload(
+    def format_request_payload(  # type: ignore[override]
         self, prompt: str, model_kwargs: Dict, api_type: AzureMLEndpointApiType
     ) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
@@ -174,13 +185,13 @@ class GPT2ContentFormatter(ContentFormatterBase):
         )
         return str.encode(request_payload)
 
-    def format_response_payload(
+    def format_response_payload(  # type: ignore[override]
         self, output: bytes, api_type: AzureMLEndpointApiType
     ) -> Generation:
         try:
             choice = json.loads(output)[0]["0"]
         except (KeyError, IndexError, TypeError) as e:
-            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
         return Generation(text=choice)
 
 
@@ -205,9 +216,9 @@ class HFContentFormatter(ContentFormatterBase):
 
     @property
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
-        return [AzureMLEndpointApiType.realtime]
+        return [AzureMLEndpointApiType.dedicated]
 
-    def format_request_payload(
+    def format_request_payload(  # type: ignore[override]
         self, prompt: str, model_kwargs: Dict, api_type: AzureMLEndpointApiType
     ) -> bytes:
         ContentFormatterBase.escape_special_characters(prompt)
@@ -216,13 +227,13 @@ class HFContentFormatter(ContentFormatterBase):
         )
         return str.encode(request_payload)
 
-    def format_response_payload(
+    def format_response_payload(  # type: ignore[override]
         self, output: bytes, api_type: AzureMLEndpointApiType
     ) -> Generation:
         try:
             choice = json.loads(output)[0]["0"]["generated_text"]
         except (KeyError, IndexError, TypeError) as e:
-            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
         return Generation(text=choice)
 
 
@@ -231,9 +242,9 @@ class DollyContentFormatter(ContentFormatterBase):
 
     @property
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
-        return [AzureMLEndpointApiType.realtime]
+        return [AzureMLEndpointApiType.dedicated]
 
-    def format_request_payload(
+    def format_request_payload(  # type: ignore[override]
         self, prompt: str, model_kwargs: Dict, api_type: AzureMLEndpointApiType
     ) -> bytes:
         prompt = ContentFormatterBase.escape_special_characters(prompt)
@@ -245,29 +256,32 @@ class DollyContentFormatter(ContentFormatterBase):
         )
         return str.encode(request_payload)
 
-    def format_response_payload(
+    def format_response_payload(  # type: ignore[override]
         self, output: bytes, api_type: AzureMLEndpointApiType
     ) -> Generation:
         try:
             choice = json.loads(output)[0]
         except (KeyError, IndexError, TypeError) as e:
-            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+            raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
         return Generation(text=choice)
 
 
-class LlamaContentFormatter(ContentFormatterBase):
-    """Content formatter for LLaMa"""
+class CustomOpenAIContentFormatter(ContentFormatterBase):
+    """Content formatter for models that use the OpenAI like API scheme."""
 
     @property
     def supported_api_types(self) -> List[AzureMLEndpointApiType]:
-        return [AzureMLEndpointApiType.realtime, AzureMLEndpointApiType.serverless]
+        return [AzureMLEndpointApiType.dedicated, AzureMLEndpointApiType.serverless]
 
-    def format_request_payload(
+    def format_request_payload(  # type: ignore[override]
         self, prompt: str, model_kwargs: Dict, api_type: AzureMLEndpointApiType
     ) -> bytes:
         """Formats the request according to the chosen api"""
         prompt = ContentFormatterBase.escape_special_characters(prompt)
-        if api_type == AzureMLEndpointApiType.realtime:
+        if api_type in [
+            AzureMLEndpointApiType.dedicated,
+            AzureMLEndpointApiType.realtime,
+        ]:
             request_payload = json.dumps(
                 {
                     "input_data": {
@@ -284,15 +298,18 @@ class LlamaContentFormatter(ContentFormatterBase):
             )
         return str.encode(request_payload)
 
-    def format_response_payload(
+    def format_response_payload(  # type: ignore[override]
         self, output: bytes, api_type: AzureMLEndpointApiType
     ) -> Generation:
         """Formats response"""
-        if api_type == AzureMLEndpointApiType.realtime:
+        if api_type in [
+            AzureMLEndpointApiType.dedicated,
+            AzureMLEndpointApiType.realtime,
+        ]:
             try:
                 choice = json.loads(output)[0]["0"]
             except (KeyError, IndexError, TypeError) as e:
-                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
             return Generation(text=choice)
         if api_type == AzureMLEndpointApiType.serverless:
             try:
@@ -304,7 +321,7 @@ class LlamaContentFormatter(ContentFormatterBase):
                         "received."
                     )
             except (KeyError, IndexError, TypeError) as e:
-                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
+                raise ValueError(self.format_error_msg.format(api_type=api_type)) from e  # type: ignore[union-attr]
             return Generation(
                 text=choice["text"].strip(),
                 generation_info=dict(
@@ -315,6 +332,22 @@ class LlamaContentFormatter(ContentFormatterBase):
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
 
 
+class LlamaContentFormatter(CustomOpenAIContentFormatter):
+    """Deprecated: Kept for backwards compatibility
+
+    Content formatter for Llama."""
+
+    content_formatter: Any = None
+
+    def __init__(self) -> None:
+        super().__init__()
+        warnings.warn(
+            """`LlamaContentFormatter` will be deprecated in the future. 
+                Please use `CustomOpenAIContentFormatter` instead.  
+            """
+        )
+
+
 class AzureMLBaseEndpoint(BaseModel):
     """Azure ML Online Endpoint models."""
 
@@ -322,9 +355,9 @@ class AzureMLBaseEndpoint(BaseModel):
     """URL of pre-existing Endpoint. Should be passed to constructor or specified as 
         env var `AZUREML_ENDPOINT_URL`."""
 
-    endpoint_api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.realtime
+    endpoint_api_type: AzureMLEndpointApiType = AzureMLEndpointApiType.dedicated
     """Type of the endpoint being consumed. Possible values are `serverless` for 
-        pay-as-you-go and `realtime` for real-time endpoints. """
+        pay-as-you-go and `dedicated` for dedicated endpoints. """
 
     endpoint_api_key: SecretStr = convert_to_secret_str("")
     """Authentication Key for Endpoint. Should be passed to constructor or specified as
@@ -334,7 +367,12 @@ class AzureMLBaseEndpoint(BaseModel):
     """Deployment Name for Endpoint. NOT REQUIRED to call endpoint. Should be passed 
         to constructor or specified as env var `AZUREML_DEPLOYMENT_NAME`."""
 
+    timeout: int = DEFAULT_TIMEOUT
+    """Request timeout for calls to the endpoint"""
+
     http_client: Any = None  #: :meta private:
+
+    max_retries: int = 1
 
     content_formatter: Any = None
     """The content formatter that provides an input and output
@@ -359,7 +397,13 @@ class AzureMLBaseEndpoint(BaseModel):
             values,
             "endpoint_api_type",
             "AZUREML_ENDPOINT_API_TYPE",
-            AzureMLEndpointApiType.realtime,
+            AzureMLEndpointApiType.dedicated,
+        )
+        values["timeout"] = get_from_dict_or_env(
+            values,
+            "timeout",
+            "AZUREML_TIMEOUT",
+            str(DEFAULT_TIMEOUT),
         )
 
         return values
@@ -386,7 +430,7 @@ class AzureMLBaseEndpoint(BaseModel):
         if field_value.endswith("inference.ml.azure.com"):
             raise ValueError(
                 "`endpoint_url` should contain the full invocation URL including "
-                "`/score` for `endpoint_api_type='realtime'` or `/v1/completions` "
+                "`/score` for `endpoint_api_type='dedicated'` or `/v1/completions` "
                 "or `/v1/chat/completions` for `endpoint_api_type='serverless'`"
             )
         return field_value
@@ -397,18 +441,22 @@ class AzureMLBaseEndpoint(BaseModel):
     ) -> AzureMLEndpointApiType:
         """Validate that endpoint api type is compatible with the URL format."""
         endpoint_url = values.get("endpoint_url")
-        if field_value == AzureMLEndpointApiType.realtime and not endpoint_url.endswith(
-            "/score"
+        if (
+            (
+                field_value == AzureMLEndpointApiType.dedicated
+                or field_value == AzureMLEndpointApiType.realtime
+            )
+            and not endpoint_url.endswith("/score")  # type: ignore[union-attr]
         ):
             raise ValueError(
-                "Endpoints of type `realtime` should follow the format "
+                "Endpoints of type `dedicated` should follow the format "
                 "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/score`."
                 " If your endpoint URL ends with `/v1/completions` or"
                 "`/v1/chat/completions`, use `endpoint_api_type='serverless'` instead."
             )
         if field_value == AzureMLEndpointApiType.serverless and not (
-            endpoint_url.endswith("/v1/completions")
-            or endpoint_url.endswith("/v1/chat/completions")
+            endpoint_url.endswith("/v1/completions")  # type: ignore[union-attr]
+            or endpoint_url.endswith("/v1/chat/completions")  # type: ignore[union-attr]
         ):
             raise ValueError(
                 "Endpoints of type `serverless` should follow the format "
@@ -424,10 +472,15 @@ class AzureMLBaseEndpoint(BaseModel):
         endpoint_url = values.get("endpoint_url")
         endpoint_key = values.get("endpoint_api_key")
         deployment_name = values.get("deployment_name")
+        timeout = values.get("timeout", DEFAULT_TIMEOUT)
 
         http_client = AzureMLEndpointClient(
-            endpoint_url, endpoint_key.get_secret_value(), deployment_name
+            endpoint_url,  # type: ignore
+            endpoint_key.get_secret_value(),  # type: ignore
+            deployment_name,  # type: ignore
+            timeout,  # type: ignore
         )
+
         return http_client
 
 
@@ -438,11 +491,12 @@ class AzureMLOnlineEndpoint(BaseLLM, AzureMLBaseEndpoint):
         .. code-block:: python
             azure_llm = AzureMLOnlineEndpoint(
                 endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
-                endpoint_api_type=AzureMLApiType.realtime,
+                endpoint_api_type=AzureMLApiType.dedicated,
                 endpoint_api_key="my-api-key",
+                timeout=120,
                 content_formatter=content_formatter,
             )
-    """  # noqa: E501
+    """
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -474,7 +528,7 @@ class AzureMLOnlineEndpoint(BaseLLM, AzureMLBaseEndpoint):
             The string generated by the model.
         Example:
             .. code-block:: python
-                response = azureml_model("Tell me a joke.")
+                response = azureml_model.invoke("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
         _model_kwargs.update(kwargs)

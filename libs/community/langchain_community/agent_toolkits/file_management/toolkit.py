@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional, Type
 
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.tools import BaseTool, BaseToolkit
+from langchain_core.utils.pydantic import get_fields
 
-from langchain_community.agent_toolkits.base import BaseToolkit
-from langchain_community.tools import BaseTool
 from langchain_community.tools.file_management.copy import CopyFileTool
 from langchain_community.tools.file_management.delete import DeleteFileTool
 from langchain_community.tools.file_management.file_search import FileSearchTool
@@ -14,18 +14,17 @@ from langchain_community.tools.file_management.move import MoveFileTool
 from langchain_community.tools.file_management.read import ReadFileTool
 from langchain_community.tools.file_management.write import WriteFileTool
 
-_FILE_TOOLS = {
-    # "Type[Runnable[Any, Any]]" has no attribute "__fields__"  [attr-defined]
-    tool_cls.__fields__["name"].default: tool_cls  # type: ignore[attr-defined]
-    for tool_cls in [
-        CopyFileTool,
-        DeleteFileTool,
-        FileSearchTool,
-        MoveFileTool,
-        ReadFileTool,
-        WriteFileTool,
-        ListDirectoryTool,
-    ]
+_FILE_TOOLS: List[Type[BaseTool]] = [
+    CopyFileTool,
+    DeleteFileTool,
+    FileSearchTool,
+    MoveFileTool,
+    ReadFileTool,
+    WriteFileTool,
+    ListDirectoryTool,
+]
+_FILE_TOOLS_MAP: Dict[str, Type[BaseTool]] = {
+    get_fields(tool_cls)["name"].default: tool_cls for tool_cls in _FILE_TOOLS
 }
 
 
@@ -50,6 +49,13 @@ class FileManagementToolkit(BaseToolkit):
         - Sandbox the agent by running it in a container.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        root_dir: Optional. The root directory to perform file operations.
+            If not provided, file operations are performed relative to the current
+            working directory.
+        selected_tools: Optional. The tools to include in the toolkit. If not
+            provided, all tools are included.
     """
 
     root_dir: Optional[str] = None
@@ -57,24 +63,24 @@ class FileManagementToolkit(BaseToolkit):
     selected_tools: Optional[List[str]] = None
     """If provided, only provide the selected tools. Defaults to all."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_tools(cls, values: dict) -> dict:
         selected_tools = values.get("selected_tools") or []
         for tool_name in selected_tools:
-            if tool_name not in _FILE_TOOLS:
+            if tool_name not in _FILE_TOOLS_MAP:
                 raise ValueError(
                     f"File Tool of name {tool_name} not supported."
-                    f" Permitted tools: {list(_FILE_TOOLS)}"
+                    f" Permitted tools: {list(_FILE_TOOLS_MAP)}"
                 )
         return values
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        allowed_tools = self.selected_tools or _FILE_TOOLS.keys()
+        allowed_tools = self.selected_tools or _FILE_TOOLS_MAP
         tools: List[BaseTool] = []
         for tool in allowed_tools:
-            tool_cls = _FILE_TOOLS[tool]
-            tools.append(tool_cls(root_dir=self.root_dir))  # type: ignore
+            tool_cls = _FILE_TOOLS_MAP[tool]
+            tools.append(tool_cls(root_dir=self.root_dir))  # type: ignore[call-arg]
         return tools
 
 

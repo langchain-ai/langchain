@@ -10,7 +10,7 @@ cd libs/community/tests/integration_tests/graphs/docker-compose-ontotext-graphdb
 """
 
 
-def test_query() -> None:
+def test_query_method_with_valid_query() -> None:
     graph = OntotextGraphDBGraph(
         query_endpoint="http://localhost:7200/repositories/langchain",
         query_ontology="CONSTRUCT {?s ?p ?o}"
@@ -29,6 +29,36 @@ def test_query() -> None:
     assert len(query_results) == 1
     assert len(query_results[0]) == 1
     assert str(query_results[0][0]) == "yellow"
+
+
+def test_query_method_with_invalid_query() -> None:
+    graph = OntotextGraphDBGraph(
+        query_endpoint="http://localhost:7200/repositories/langchain",
+        query_ontology="CONSTRUCT {?s ?p ?o}"
+        "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
+    )
+
+    with pytest.raises(ValueError) as e:
+        graph.query(
+            "PREFIX : <https://swapi.co/vocabulary/> "
+            "PREFIX owl: <http://www.w3.org/2002/07/owl#> "
+            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
+            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> "
+            "SELECT ?character (MAX(?lifespan) AS ?maxLifespan) "
+            "WHERE {"
+            "  ?species a :Species ;"
+            "    :character ?character ;"
+            "    :averageLifespan ?lifespan ."
+            "  FILTER(xsd:integer(?lifespan))"
+            "} "
+            "ORDER BY DESC(?maxLifespan) "
+            "LIMIT 1"
+        )
+
+    assert (
+        str(e.value)
+        == "You did something wrong formulating either the URI or your SPARQL query"
+    )
 
 
 def test_get_schema_with_query() -> None:

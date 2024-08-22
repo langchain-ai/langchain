@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -9,8 +9,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
     retry,
@@ -25,10 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 class _BaseYandexGPT(Serializable):
-    iam_token: SecretStr = ""
+    iam_token: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud IAM token for service or user account
     with the `ai.languageModels.user` role"""
-    api_key: SecretStr = ""
+    api_key: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
     folder_id: str = ""
@@ -54,13 +54,17 @@ class _BaseYandexGPT(Serializable):
     """Maximum number of retries to make when generating."""
     sleep_interval: float = 1.0
     """Delay between API requests"""
+    disable_request_logging: bool = False
+    """YandexGPT API logs all request data by default. 
+    If you provide personal data, confidential information, disable logging."""
+    _grpc_metadata: Optional[Sequence] = None
 
     @property
     def _llm_type(self) -> str:
         return "yandex_gpt"
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model_uri": self.model_uri,
@@ -70,7 +74,7 @@ class _BaseYandexGPT(Serializable):
             "max_retries": self.max_retries,
         }
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
@@ -100,9 +104,16 @@ class _BaseYandexGPT(Serializable):
         if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
         if not values["model_uri"]:
-            values[
-                "model_uri"
-            ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            values["model_uri"] = (
+                f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            )
+        if values["disable_request_logging"]:
+            values["_grpc_metadata"].append(
+                (
+                    "x-data-logging-enabled",
+                    "false",
+                )
+            )
         return values
 
 
@@ -185,16 +196,29 @@ def _make_request(
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
-            CompletionOptions,
-            Message,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-            CompletionRequest,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-            TextGenerationServiceStub,
-        )
+
+        try:
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+                TextGenerationServiceStub,
+            )
+        except ModuleNotFoundError:
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+                TextGenerationServiceStub,
+            )
     except ImportError as e:
         raise ImportError(
             "Please install YandexCloud SDK  with `pip install yandexcloud` \
@@ -211,7 +235,7 @@ def _make_request(
         messages=[Message(role="user", text=prompt)],
     )
     stub = TextGenerationServiceStub(channel)
-    res = stub.Completion(request, metadata=self._grpc_metadata)
+    res = stub.Completion(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
     return list(res)[0].alternatives[0].message.text
 
 
@@ -221,17 +245,31 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
 
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
-            CompletionOptions,
-            Message,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-            CompletionRequest,
-            CompletionResponse,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-            TextGenerationAsyncServiceStub,
-        )
+
+        try:
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+                TextGenerationAsyncServiceStub,
+            )
+        except ModuleNotFoundError:
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+                TextGenerationAsyncServiceStub,
+            )
         from yandex.cloud.operation.operation_service_pb2 import GetOperationRequest
         from yandex.cloud.operation.operation_service_pb2_grpc import (
             OperationServiceStub,
@@ -253,7 +291,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
             messages=[Message(role="user", text=prompt)],
         )
         stub = TextGenerationAsyncServiceStub(channel)
-        operation = await stub.Completion(request, metadata=self._grpc_metadata)
+        operation = await stub.Completion(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
         async with grpc.aio.secure_channel(
             operation_api_url, channel_credentials
         ) as operation_channel:
@@ -262,7 +300,8 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
                 await asyncio.sleep(1)
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
-                    operation_request, metadata=self._grpc_metadata
+                    operation_request,
+                    metadata=self._grpc_metadata,  # type: ignore[attr-defined]
                 )
 
         completion_response = CompletionResponse()

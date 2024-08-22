@@ -11,6 +11,10 @@ on:
         required: false
         type: string
         description: "Relative path to the langchain library folder"
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
 
 env:
   POETRY_VERSION: "1.7.1"
@@ -21,21 +25,14 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
-    name: dependencies - Python ${{ matrix.python-version }}
+    name: dependency checks ${{ inputs.python-version }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: pydantic-cross-compat
@@ -63,6 +60,8 @@ jobs:
       - name: Install the opposite major version of pydantic
         # If normal tests use pydantic v1, here we'll use v2, and vice versa.
         shell: bash
+        # airbyte currently doesn't support pydantic v2
+        if: ${{ !startsWith(inputs.working-directory, 'libs/partners/airbyte') }}
         run: |
           # Determine the major part of pydantic version
           REGULAR_VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
@@ -97,6 +96,8 @@ jobs:
           fi
           echo "Found pydantic version ${CURRENT_VERSION}, as expected"
       - name: Run pydantic compatibility tests
+        # airbyte currently doesn't support pydantic v2
+        if: ${{ !startsWith(inputs.working-directory, 'libs/partners/airbyte') }}
         shell: bash
         run: make test
 

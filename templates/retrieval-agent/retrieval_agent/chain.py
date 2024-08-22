@@ -5,13 +5,14 @@ from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever, Document
-from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
+from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.tools.retriever import create_retriever_tool
 from langchain_openai import AzureChatOpenAI
 
 

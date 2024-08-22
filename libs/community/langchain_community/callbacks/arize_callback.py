@@ -49,7 +49,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
         if SPACE_KEY == "SPACE_KEY" or API_KEY == "API_KEY":
             raise ValueError("❌ CHANGE SPACE AND API KEYS")
         else:
-            print("✅ Arize client setup done! Now you can start using Arize!")
+            print("✅ Arize client setup done! Now you can start using Arize!")  # noqa: T201
 
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
@@ -82,9 +82,9 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                 "completion_tokens", 0
             )
         else:
-            self.prompt_tokens = (
-                self.total_tokens
-            ) = self.completion_tokens = 0  # assign default value
+            self.prompt_tokens = self.total_tokens = self.completion_tokens = (
+                0  # assign default value
+            )
 
         for generations in response.generations:
             for generation in generations:
@@ -161,9 +161,9 @@ class ArizeCallbackHandler(BaseCallbackHandler):
                     environment=Environments.PRODUCTION,
                 )
                 if response_from_arize.status_code == 200:
-                    print("✅ Successfully logged data to Arize!")
+                    print("✅ Successfully logged data to Arize!")  # noqa: T201
                 else:
-                    print(f'❌ Logging failed "{response_from_arize.text}"')
+                    print(f'❌ Logging failed "{response_from_arize.text}"')  # noqa: T201
 
     def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Do nothing."""
@@ -196,7 +196,7 @@ class ArizeCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,

@@ -1,12 +1,12 @@
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -69,15 +69,37 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         """Return whether this model can be serialized by Langchain."""
         return False
 
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="ollama",
+            ls_model_name=self.model,
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_max_tokens := params.get("num_predict", self.num_predict):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None) or self.stop:
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
+
     @deprecated("0.0.3", alternative="_convert_messages_to_ollama_messages")
     def _format_message_as_text(self, message: BaseMessage) -> str:
         if isinstance(message, ChatMessage):
             message_text = f"\n\n{message.role.capitalize()}: {message.content}"
         elif isinstance(message, HumanMessage):
-            if message.content[0].get("type") == "text":
-                message_text = f"[INST] {message.content[0]['text']} [/INST]"
-            elif message.content[0].get("type") == "image_url":
-                message_text = message.content[0]["image_url"]["url"]
+            if isinstance(message.content, List):
+                first_content = cast(List[Dict], message.content)[0]
+                content_type = first_content.get("type")
+                if content_type == "text":
+                    message_text = f"[INST] {first_content['text']} [/INST]"
+                elif content_type == "image_url":
+                    message_text = first_content["image_url"]["url"]
+            else:
+                message_text = f"[INST] {message.content} [/INST]"
         elif isinstance(message, AIMessage):
             message_text = f"{message.content}"
         elif isinstance(message, SystemMessage):
@@ -94,7 +116,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
     def _convert_messages_to_ollama_messages(
         self, messages: List[BaseMessage]
     ) -> List[Dict[str, Union[str, List[str]]]]:
-        ollama_messages = []
+        ollama_messages: List = []
         for message in messages:
             role = ""
             if isinstance(message, HumanMessage):
@@ -111,22 +133,32 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
             if isinstance(message.content, str):
                 content = message.content
             else:
-                for content_part in message.content:
+                for content_part in cast(List[Dict], message.content):
                     if content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "image_url":
-                        if isinstance(content_part.get("image_url"), str):
-                            image_url_components = content_part["image_url"].split(",")
-                            # Support data:image/jpeg;base64,<image> format
-                            # and base64 strings
-                            if len(image_url_components) > 1:
-                                images.append(image_url_components[1])
-                            else:
-                                images.append(image_url_components[0])
+                        image_url = None
+                        temp_image_url = content_part.get("image_url")
+                        if isinstance(temp_image_url, str):
+                            image_url = content_part["image_url"]
+                        elif (
+                            isinstance(temp_image_url, dict) and "url" in temp_image_url
+                        ):
+                            image_url = temp_image_url["url"]
                         else:
                             raise ValueError(
-                                "Only string image_url " "content parts are supported."
+                                "Only string image_url or dict with string 'url' "
+                                "inside content parts are supported."
                             )
+
+                        image_url_components = image_url.split(",")
+                        # Support data:image/jpeg;base64,<image> format
+                        # and base64 strings
+                        if len(image_url_components) > 1:
+                            images.append(image_url_components[1])
+                        else:
+                            images.append(image_url_components[0])
+
                     else:
                         raise ValueError(
                             "Unsupported message content type. "
@@ -151,10 +183,11 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         **kwargs: Any,
     ) -> Iterator[str]:
         payload = {
+            "model": self.model,
             "messages": self._convert_messages_to_ollama_messages(messages),
         }
         yield from self._create_stream(
-            payload=payload, stop=stop, api_url=f"{self.base_url}/api/chat/", **kwargs
+            payload=payload, stop=stop, api_url=f"{self.base_url}/api/chat", **kwargs
         )
 
     async def _acreate_chat_stream(
@@ -164,10 +197,11 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         payload = {
+            "model": self.model,
             "messages": self._convert_messages_to_ollama_messages(messages),
         }
         async for stream_resp in self._acreate_stream(
-            payload=payload, stop=stop, api_url=f"{self.base_url}/api/chat/", **kwargs
+            payload=payload, stop=stop, api_url=f"{self.base_url}/api/chat", **kwargs
         ):
             yield stream_resp
 
@@ -190,6 +224,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text,
+                        chunk=chunk,
                         verbose=verbose,
                     )
         if final_chunk is None:
@@ -216,6 +251,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         chunk.text,
+                        chunk=chunk,
                         verbose=verbose,
                     )
         if final_chunk is None:
@@ -308,12 +344,13 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
             for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
                 if stream_resp:
                     chunk = _chat_stream_response_to_chat_generation_chunk(stream_resp)
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(
                             chunk.text,
+                            chunk=chunk,
                             verbose=self.verbose,
                         )
+                    yield chunk
         except OllamaEndpointNotFoundError:
             yield from self._legacy_stream(messages, stop, **kwargs)
 
@@ -324,20 +361,15 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        try:
-            async for stream_resp in self._acreate_chat_stream(
-                messages, stop, **kwargs
-            ):
-                if stream_resp:
-                    chunk = _chat_stream_response_to_chat_generation_chunk(stream_resp)
-                    yield chunk
-                    if run_manager:
-                        await run_manager.on_llm_new_token(
-                            chunk.text,
-                            verbose=self.verbose,
-                        )
-        except OllamaEndpointNotFoundError:
-            async for chunk in self._legacy_astream(messages, stop, **kwargs):
+        async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
+            if stream_resp:
+                chunk = _chat_stream_response_to_chat_generation_chunk(stream_resp)
+                if run_manager:
+                    await run_manager.on_llm_new_token(
+                        chunk.text,
+                        chunk=chunk,
+                        verbose=self.verbose,
+                    )
                 yield chunk
 
     @deprecated("0.0.3", alternative="_stream")
@@ -352,9 +384,10 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_chat_generation_chunk(stream_resp)
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text,
+                        chunk=chunk,
                         verbose=self.verbose,
                     )
+                yield chunk

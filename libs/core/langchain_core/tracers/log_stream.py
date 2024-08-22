@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import copy
-import math
 import threading
 from collections import defaultdict
 from typing import (
     Any,
     AsyncIterator,
     Dict,
+    Iterator,
     List,
     Literal,
     Optional,
@@ -20,7 +20,6 @@ from typing import (
 from uuid import UUID
 
 import jsonpatch  # type: ignore[import]
-from anyio import BrokenResourceError, ClosedResourceError, create_memory_object_stream
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.load import dumps
@@ -28,7 +27,9 @@ from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import Input, Output
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.tracers.schemas import Run
 
 
@@ -88,7 +89,7 @@ class RunState(TypedDict):
 
 
 class RunLogPatch:
-    """A patch to the run log."""
+    """Patch to the run log."""
 
     ops: List[Dict[str, Any]]
     """List of jsonpatch operations, which describe how to create the run state
@@ -101,7 +102,7 @@ class RunLogPatch:
         self.ops = list(ops)
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        if type(other) == RunLogPatch:
+        if type(other) is RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(None, copy.deepcopy(ops))
             return RunLog(*ops, state=state)
@@ -121,7 +122,7 @@ class RunLogPatch:
 
 
 class RunLog(RunLogPatch):
-    """A run log."""
+    """Run log."""
 
     state: RunState
     """Current state of the log, obtained from applying all ops in sequence."""
@@ -131,7 +132,7 @@ class RunLog(RunLogPatch):
         self.state = state
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        if type(other) == RunLogPatch:
+        if type(other) is RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(self.state, other.ops)
             return RunLog(*ops, state=state)
@@ -158,8 +159,8 @@ class RunLog(RunLogPatch):
 T = TypeVar("T")
 
 
-class LogStreamCallbackHandler(BaseTracer):
-    """A tracer that streams run logs to a stream."""
+class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
+    """Tracer that streams run logs to a stream."""
 
     def __init__(
         self,
@@ -188,12 +189,15 @@ class LogStreamCallbackHandler(BaseTracer):
                 handled.
                 **For internal use only. This API will change.**
                 - 'original' is the format used by all current tracers.
-                   This format is slightly inconsistent with respect to inputs
-                   and outputs.
+                  This format is slightly inconsistent with respect to inputs
+                  and outputs.
                 - 'streaming_events' is used for supporting streaming events,
-                   for internal usage. It will likely change in the future, or
-                   be deprecated entirely in favor of a dedicated async tracer
-                   for streaming events.
+                  for internal usage. It will likely change in the future, or
+                  be deprecated entirely in favor of a dedicated async tracer
+                  for streaming events.
+
+        Raises:
+            ValueError: If an invalid schema format is provided (internal use only).
         """
         if _schema_format not in {"original", "streaming_events"}:
             raise ValueError(
@@ -210,12 +214,11 @@ class LogStreamCallbackHandler(BaseTracer):
         self.exclude_types = exclude_types
         self.exclude_tags = exclude_tags
 
-        send_stream: Any
-        receive_stream: Any
-        send_stream, receive_stream = create_memory_object_stream(math.inf)
+        loop = asyncio.get_event_loop()
+        memory_stream = _MemoryStream[RunLogPatch](loop)
         self.lock = threading.Lock()
-        self.send_stream = send_stream
-        self.receive_stream = receive_stream
+        self.send_stream = memory_stream.get_send_stream()
+        self.receive_stream = memory_stream.get_receive_stream()
         self._key_map_by_run_id: Dict[UUID, str] = {}
         self._counter_map_by_name: Dict[str, int] = defaultdict(int)
         self.root_id: Optional[UUID] = None
@@ -224,17 +227,34 @@ class LogStreamCallbackHandler(BaseTracer):
         return self.receive_stream.__aiter__()
 
     def send(self, *ops: Dict[str, Any]) -> bool:
-        """Send a patch to the stream, return False if the stream is closed."""
-        try:
-            self.send_stream.send_nowait(RunLogPatch(*ops))
-            return True
-        except (ClosedResourceError, BrokenResourceError):
-            return False
+        """Send a patch to the stream, return False if the stream is closed.
+
+        Args:
+            *ops: The operations to send to the stream.
+
+        Returns:
+            bool: True if the patch was sent successfully, False if the stream
+                is closed.
+        """
+        # We will likely want to wrap this in try / except at some point
+        # to handle exceptions that might arise at run time.
+        # For now we'll let the exception bubble up, and always return
+        # True on the happy path.
+        self.send_stream.send_nowait(RunLogPatch(*ops))
+        return True
 
     async def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
-        """Tap an output async iterator to stream its values to the log."""
+        """Tap an output async iterator to stream its values to the log.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output async iterator.
+
+        Yields:
+            T: The output value.
+        """
         async for chunk in output:
             # root run is handled in .astream_log()
             if run_id != self.root_id:
@@ -252,7 +272,42 @@ class LogStreamCallbackHandler(BaseTracer):
 
             yield chunk
 
+    def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
+        """Tap an output async iterator to stream its values to the log.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output iterator.
+
+        Yields:
+            T: The output value.
+        """
+        for chunk in output:
+            # root run is handled in .astream_log()
+            if run_id != self.root_id:
+                # if we can't find the run silently ignore
+                # eg. because this run wasn't included in the log
+                if key := self._key_map_by_run_id.get(run_id):
+                    if not self.send(
+                        {
+                            "op": "add",
+                            "path": f"/logs/{key}/streamed_output/-",
+                            "value": chunk,
+                        }
+                    ):
+                        break
+
+            yield chunk
+
     def include_run(self, run: Run) -> bool:
+        """Check if a Run should be included in the log.
+
+        Args:
+            run: The Run to check.
+
+        Returns:
+            bool: True if the run should be included, False otherwise.
+        """
         if run.id == self.root_id:
             return False
 
@@ -434,7 +489,7 @@ def _get_standardized_inputs(
     Returns:
         Valid inputs are only dict. By conventions, inputs always represented
         invocation using named arguments.
-        A None means that the input is not yet known!
+        None means that the input is not yet known!
     """
     if schema_format == "original":
         raise NotImplementedError(
@@ -462,7 +517,7 @@ def _get_standardized_inputs(
 
 
 def _get_standardized_outputs(
-    run: Run, schema_format: Literal["original", "streaming_events"]
+    run: Run, schema_format: Literal["original", "streaming_events", "original+chat"]
 ) -> Optional[Any]:
     """Extract standardized output from a run.
 
@@ -477,6 +532,10 @@ def _get_standardized_outputs(
     """
     outputs = load(run.outputs)
     if schema_format == "original":
+        if run.run_type == "prompt" and "output" in outputs:
+            # These were previously dumped before the tracer.
+            # Now we needn't do anything to them.
+            return outputs["output"]
         # Return the old schema, without standardizing anything
         return outputs
 
@@ -499,8 +558,7 @@ def _astream_log_implementation(
     diff: Literal[True] = True,
     with_streamed_output_list: bool = True,
     **kwargs: Any,
-) -> AsyncIterator[RunLogPatch]:
-    ...
+) -> AsyncIterator[RunLogPatch]: ...
 
 
 @overload
@@ -513,8 +571,7 @@ def _astream_log_implementation(
     diff: Literal[False],
     with_streamed_output_list: bool = True,
     **kwargs: Any,
-) -> AsyncIterator[RunLog]:
-    ...
+) -> AsyncIterator[RunLog]: ...
 
 
 async def _astream_log_implementation(
@@ -572,6 +629,7 @@ async def _astream_log_implementation(
                     try:
                         final_output = final_output + chunk  # type: ignore
                     except TypeError:
+                        prev_final_output = None
                         final_output = chunk
                 patches: List[Dict[str, Any]] = []
                 if with_streamed_output_list:

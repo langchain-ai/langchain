@@ -1,0 +1,87 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "langchain-qdrant"
+version = "0.1.3"
+description = "An integration package connecting Qdrant and LangChain"
+authors = []
+readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.ruff]
+select = [ "E", "F", "I",]
+
+[tool.mypy]
+disallow_untyped_defs = true
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/qdrant"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-qdrant%3D%3D0%22&expanded=true"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain-core = ">=0.1.52,<0.3"
+qdrant-client = "^1.10.1"
+pydantic = "^2.7.4"
+fastembed = { version = "^0.3.3", python = ">=3.8.1,<3.13", optional = true}
+
+[tool.poetry.extras]
+fastembed = [ "fastembed"]
+
+[tool.coverage.run]
+omit = [ "tests/*",]
+
+[tool.pytest.ini_options]
+addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+asyncio_mode = "auto"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.codespell]
+optional = true
+
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.0"
+freezegun = "^1.2.2"
+pytest-mock = "^3.10.0"
+syrupy = "^4.0.2"
+pytest-watcher = "^0.3.4"
+pytest-asyncio = "^0.21.1"
+requests = "^2.31.0"
+
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.0"
+
+[tool.poetry.group.test_integration.dependencies]
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.5"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^1.10"
+
+[tool.poetry.group.test.dependencies.langchain-core]
+path = "../../core"
+develop = true
+
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../../core"
+develop = true
+
+[tool.poetry.group.typing.dependencies.langchain-core]
+path = "../../core"
+develop = true

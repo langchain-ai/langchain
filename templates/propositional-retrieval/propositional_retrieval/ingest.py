@@ -65,10 +65,10 @@ def create_index(
 
 if __name__ == "__main__":
     # For our example, we'll load docs from the web
-    from langchain.text_splitter import RecursiveCharacterTextSplitter  # noqa
+    from langchain_text_splitters import RecursiveCharacterTextSplitter  # noqa
     from langchain_community.document_loaders.recursive_url_loader import (
         RecursiveUrlLoader,
-    )  # noqa
+    )
 
     # The attention is all you need paper
     # Could add more parsing here, as it's very raw.

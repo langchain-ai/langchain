@@ -84,10 +84,6 @@ class ReadTheDocsLoader(BaseLoader):
                     text = self._clean_data(f.read())
                 yield Document(page_content=text, metadata={"source": str(p)})
 
-    def load(self) -> List[Document]:
-        """Load documents."""
-        return list(self.lazy_load())
-
     def _clean_data(self, data: str) -> str:
         from bs4 import BeautifulSoup
 

@@ -31,7 +31,7 @@ class BlackboardLoader(WebBaseLoader):
             )
             documents = loader.load()
 
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -41,6 +41,7 @@ class BlackboardLoader(WebBaseLoader):
         basic_auth: Optional[Tuple[str, str]] = None,
         cookies: Optional[dict] = None,
         continue_on_failure: bool = False,
+        show_progress: bool = True,
     ):
         """Initialize with blackboard course url.
 
@@ -56,12 +57,15 @@ class BlackboardLoader(WebBaseLoader):
                 occurs loading a url, emitting a warning instead of raising an
                 exception. Setting this to True makes the loader more robust, but also
                 may result in missing data. Default: False
+            show_progress: whether to show a progress bar while loading. Default: True
 
         Raises:
             ValueError: If blackboard course url is invalid.
         """
         super().__init__(
-            web_paths=(blackboard_course_url), continue_on_failure=continue_on_failure
+            web_paths=(blackboard_course_url),
+            continue_on_failure=continue_on_failure,
+            show_progress=show_progress,
         )
         # Get base url
         try:
@@ -109,13 +113,13 @@ class BlackboardLoader(WebBaseLoader):
             documents = []
             for path in relative_paths:
                 url = self.base_url + path
-                print(f"Fetching documents from {url}")
+                print(f"Fetching documents from {url}")  # noqa: T201
                 soup_info = self._scrape(url)
                 with contextlib.suppress(ValueError):
                     documents.extend(self._get_documents(soup_info))
             return documents
         else:
-            print(f"Fetching documents from {self.web_path}")
+            print(f"Fetching documents from {self.web_path}")  # noqa: T201
             soup_info = self.scrape()
             self.folder_path = self._get_folder_path(soup_info)
             return self._get_documents(soup_info)
@@ -176,16 +180,16 @@ class BlackboardLoader(WebBaseLoader):
         from bs4 import BeautifulSoup, Tag
 
         # Get content list
+        content_list: BeautifulSoup
         content_list = soup.find("ul", {"class": "contentList"})
         if content_list is None:
             raise ValueError("No content list found.")
-        content_list: BeautifulSoup  # type: ignore
         # Get all attachments
         attachments = []
+        attachment: Tag
         for attachment in content_list.find_all("ul", {"class": "attachments"}):
-            attachment: Tag  # type: ignore
+            link: Tag
             for link in attachment.find_all("a"):
-                link: Tag  # type: ignore
                 href = link.get("href")
                 # Only add if href is not None and does not start with #
                 if href is not None and not href.startswith("#"):
@@ -295,4 +299,4 @@ if __name__ == "__main__":
         load_all_recursively=True,
     )
     documents = loader.load()
-    print(f"Loaded {len(documents)} pages of PDFs from {loader.web_path}")
+    print(f"Loaded {len(documents)} pages of PDFs from {loader.web_path}")  # noqa: T201

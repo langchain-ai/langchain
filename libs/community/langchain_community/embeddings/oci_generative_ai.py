@@ -1,13 +1,16 @@
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import pre_init
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 
 class OCIAuthType(Enum):
+    """OCI authentication types as enumerator."""
+
     API_KEY = 1
     SECURITY_TOKEN = 2
     INSTANCE_PRINCIPAL = 3
@@ -63,27 +66,29 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     If not specified , DEFAULT will be used 
     """
 
-    model_id: str = None
+    model_id: str = None  # type: ignore[assignment]
     """Id of the model to call, e.g., cohere.embed-english-light-v2.0"""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model"""
 
-    service_endpoint: str = None
+    service_endpoint: str = None  # type: ignore[assignment]
     """service endpoint url"""
 
-    compartment_id: str = None
+    compartment_id: str = None  # type: ignore[assignment]
     """OCID of compartment"""
 
     truncate: Optional[str] = "END"
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
+    batch_size: int = 96
+    """Batch size of OCI GenAI embedding requests. OCI GenAI may handle up to 96 texts
+     per request"""
+
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument
         """Validate that OCI config and python package exists in environment."""
 
@@ -109,7 +114,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
                 client_kwargs.pop("signer", None)
             elif values["auth_type"] == OCIAuthType(2).name:
 
-                def make_security_token_signer(oci_config):
+                def make_security_token_signer(oci_config):  # type: ignore[no-untyped-def]
                     pk = oci.signer.load_private_key_from_file(
                         oci_config.get("key_file"), None
                     )
@@ -126,13 +131,13 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
                     oci_config=client_kwargs["config"]
                 )
             elif values["auth_type"] == OCIAuthType(3).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                )
             elif values["auth_type"] == OCIAuthType(4).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.get_resource_principals_signer()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.get_resource_principals_signer()
+                )
             else:
                 raise ValueError("Please provide valid value to auth_type")
 
@@ -141,7 +146,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             )
 
         except ImportError as ex:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import oci python package. "
                 "Please make sure you have the oci package installed."
             ) from ex
@@ -180,16 +185,23 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
         else:
             serving_mode = models.OnDemandServingMode(model_id=self.model_id)
 
-        invocation_obj = models.EmbedTextDetails(
-            serving_mode=serving_mode,
-            compartment_id=self.compartment_id,
-            truncate=self.truncate,
-            inputs=texts,
-        )
+        embeddings = []
 
-        response = self.client.embed_text(invocation_obj)
+        def split_texts() -> Iterator[List[str]]:
+            for i in range(0, len(texts), self.batch_size):
+                yield texts[i : i + self.batch_size]
 
-        return response.data.embeddings
+        for chunk in split_texts():
+            invocation_obj = models.EmbedTextDetails(
+                serving_mode=serving_mode,
+                compartment_id=self.compartment_id,
+                truncate=self.truncate,
+                inputs=chunk,
+            )
+            response = self.client.embed_text(invocation_obj)
+            embeddings.extend(response.data.embeddings)
+
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OCIGenAI's embedding endpoint.

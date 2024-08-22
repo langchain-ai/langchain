@@ -5,8 +5,8 @@ from langchain_experimental.data_anonymizer.deanonymizer_mapping import MappingD
 
 
 def exact_matching_strategy(text: str, deanonymizer_mapping: MappingDataType) -> str:
-    """
-    Exact matching strategy for deanonymization.
+    """Exact matching strategy for deanonymization.
+
     It replaces all the anonymized entities with the original ones.
 
     Args:
@@ -23,8 +23,8 @@ def exact_matching_strategy(text: str, deanonymizer_mapping: MappingDataType) ->
 def case_insensitive_matching_strategy(
     text: str, deanonymizer_mapping: MappingDataType
 ) -> str:
-    """
-    Case insensitive matching strategy for deanonymization.
+    """Case insensitive matching strategy for deanonymization.
+
     It replaces all the anonymized entities with the original ones
         irrespective of their letter case.
 
@@ -48,8 +48,8 @@ def case_insensitive_matching_strategy(
 def fuzzy_matching_strategy(
     text: str, deanonymizer_mapping: MappingDataType, max_l_dist: int = 3
 ) -> str:
-    """
-    Fuzzy matching strategy for deanonymization.
+    """Fuzzy matching strategy for deanonymization.
+
     It uses fuzzy matching to find the position of the anonymized entity in the text.
     It replaces all the anonymized entities with the original ones.
 
@@ -93,9 +93,9 @@ def fuzzy_matching_strategy(
 def combined_exact_fuzzy_matching_strategy(
     text: str, deanonymizer_mapping: MappingDataType, max_l_dist: int = 3
 ) -> str:
-    """
-    RECOMMENDED STRATEGY.
-    Combined exact and fuzzy matching strategy for deanonymization.
+    """Combined exact and fuzzy matching strategy for deanonymization.
+
+    It is a RECOMMENDED STRATEGY.
 
     Args:
         text: text to deanonymize
@@ -118,8 +118,8 @@ def ngram_fuzzy_matching_strategy(
     fuzzy_threshold: int = 85,
     use_variable_length: bool = True,
 ) -> str:
-    """
-    N-gram fuzzy matching strategy for deanonymization.
+    """N-gram fuzzy matching strategy for deanonymization.
+
     It replaces all the anonymized entities with the original ones.
     It uses fuzzy matching to find the position of the anonymized entity in the text.
     It generates n-grams of the same length as the anonymized entity from the text and

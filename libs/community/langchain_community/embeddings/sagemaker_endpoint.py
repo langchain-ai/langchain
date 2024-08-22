@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.sagemaker_endpoint import ContentHandlerBase
 
@@ -110,12 +111,10 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Dont do anything if client provided externally"""
         if values.get("client") is not None:
@@ -142,7 +141,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
                 raise ValueError(
                     "Could not load credentials to authenticate with AWS client. "
                     "Please check that credentials in the specified "
-                    "profile name are valid."
+                    f"profile name are valid. {e}"
                 ) from e
 
         except ImportError:

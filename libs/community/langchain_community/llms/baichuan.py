@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class BaichuanLLM(LLM):
     # TODO: Adding streaming support.
-    """Wrapper around Baichuan large language models."""
+    """Baichuan large language models."""
 
     model: str = "Baichuan2-Turbo-192k"
     """
@@ -31,7 +31,7 @@ class BaichuanLLM(LLM):
     baichuan_api_host: Optional[str] = None
     baichuan_api_key: Optional[SecretStr] = None
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         values["baichuan_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "baichuan_api_key", "BAICHUAN_API_KEY")
@@ -56,11 +56,11 @@ class BaichuanLLM(LLM):
     def _post(self, request: Any) -> Any:
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.baichuan_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self.baichuan_api_key.get_secret_value()}",  # type: ignore[union-attr]
         }
         try:
             response = requests.post(
-                self.baichuan_api_host,
+                self.baichuan_api_host,  # type: ignore[arg-type]
                 headers=headers,
                 json=request,
                 timeout=self.timeout,

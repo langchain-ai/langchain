@@ -3,6 +3,7 @@ import logging
 from time import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@deprecated("0.0.27", alternative="Use langchain-elasticsearch package", pending=True)
 class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in Elasticsearch.
 
@@ -26,7 +28,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         es_password: Password to use when connecting to Elasticsearch.
         es_api_key: API key to use when connecting to Elasticsearch.
         es_connection: Optional pre-existing Elasticsearch connection.
-        esnsure_ascii: Used to escape ASCII symbols in json.dumps. Defaults to True.
+        ensure_ascii: Used to escape ASCII symbols in json.dumps. Defaults to True.
         index: Name of the index to use.
         session_id: Arbitrary key that is used to store the messages
             of a single chat session.
@@ -43,11 +45,11 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         es_user: Optional[str] = None,
         es_api_key: Optional[str] = None,
         es_password: Optional[str] = None,
-        esnsure_ascii: Optional[bool] = True,
+        ensure_ascii: Optional[bool] = True,
     ):
         self.index: str = index
         self.session_id: str = session_id
-        self.ensure_ascii: bool = esnsure_ascii
+        self.ensure_ascii = ensure_ascii
 
         # Initialize Elasticsearch client from passed client arg or connection info
         if es_connection is not None:
@@ -141,7 +143,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
         return es_client
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Elasticsearch"""
         try:
             from elasticsearch import ApiError
@@ -165,6 +167,13 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
 
         return messages_from_dict(items)
 
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError(
+            "Direct assignment to 'messages' is not allowed."
+            " Use the 'add_messages' instead."
+        )
+
     def add_message(self, message: BaseMessage) -> None:
         """Add a message to the chat session in Elasticsearch"""
         try:
@@ -177,7 +186,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                     "created_at": round(time() * 1000),
                     "history": json.dumps(
                         message_to_dict(message),
-                        ensure_ascii=self.ensure_ascii,
+                        ensure_ascii=bool(self.ensure_ascii),
                     ),
                 },
                 refresh=True,

@@ -22,6 +22,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
@@ -65,6 +66,7 @@ def sync_call_fallback(method: Callable) -> Callable:
     return wrapper
 
 
+@deprecated(since="0.0.37", removal="1.0", alternative_import="langchain_qdrant.Qdrant")
 class Qdrant(VectorStore):
     """`Qdrant` vector store.
 
@@ -81,8 +83,8 @@ class Qdrant(VectorStore):
             qdrant = Qdrant(client, collection_name, embedding_function)
     """
 
-    CONTENT_KEY = "page_content"
-    METADATA_KEY = "metadata"
+    CONTENT_KEY: str = "page_content"
+    METADATA_KEY: str = "metadata"
     VECTOR_NAME = None
 
     def __init__(
@@ -417,8 +419,9 @@ class Qdrant(VectorStore):
         Returns:
             List of documents most similar to the query text and distance for each.
         """
+        query_embedding = await self._aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
-            self._embed_query(query),
+            query_embedding,
             k,
             filter=filter,
             search_params=search_params,
@@ -620,7 +623,10 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    result, self.content_payload_key, self.metadata_payload_key
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
                 ),
                 result.score,
             )
@@ -713,7 +719,10 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    result, self.content_payload_key, self.metadata_payload_key
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
                 ),
                 result.score,
             )
@@ -835,7 +844,7 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        query_embedding = self._embed_query(query)
+        query_embedding = await self._aembed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
             query_embedding,
             k=k,
@@ -1051,7 +1060,10 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    results[i], self.content_payload_key, self.metadata_payload_key
+                    results[i],
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
                 ),
                 results[i].score,
             )
@@ -1123,7 +1135,10 @@ class Qdrant(VectorStore):
         return [
             (
                 self._document_from_scored_point(
-                    results[i], self.content_payload_key, self.metadata_payload_key
+                    results[i],
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
                 ),
                 results[i].score,
             )
@@ -1355,6 +1370,51 @@ class Qdrant(VectorStore):
         return qdrant
 
     @classmethod
+    def from_existing_collection(
+        cls: Type[Qdrant],
+        embedding: Embeddings,
+        path: str,
+        collection_name: str,
+        location: Optional[str] = None,
+        url: Optional[str] = None,
+        port: Optional[int] = 6333,
+        grpc_port: int = 6334,
+        prefer_grpc: bool = False,
+        https: Optional[bool] = None,
+        api_key: Optional[str] = None,
+        prefix: Optional[str] = None,
+        timeout: Optional[float] = None,
+        host: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Qdrant:
+        """
+        Get instance of an existing Qdrant collection.
+        This method will return the instance of the store without inserting any new
+        embeddings
+        """
+        client, async_client = cls._generate_clients(
+            location=location,
+            url=url,
+            port=port,
+            grpc_port=grpc_port,
+            prefer_grpc=prefer_grpc,
+            https=https,
+            api_key=api_key,
+            prefix=prefix,
+            timeout=timeout,
+            host=host,
+            path=path,
+            **kwargs,
+        )
+        return cls(
+            client=client,
+            async_client=async_client,
+            collection_name=collection_name,
+            embeddings=embedding,
+            **kwargs,
+        )
+
+    @classmethod
     @sync_call_fallback
     async def afrom_texts(
         cls: Type[Qdrant],
@@ -1567,7 +1627,7 @@ class Qdrant(VectorStore):
         try:
             import qdrant_client  # noqa
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import qdrant-client python package. "
                 "Please install it with `pip install qdrant-client`."
             )
@@ -1619,7 +1679,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
@@ -1732,7 +1792,7 @@ class Qdrant(VectorStore):
         try:
             import qdrant_client  # noqa
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import qdrant-client python package. "
                 "Please install it with `pip install qdrant-client`."
             )
@@ -1784,7 +1844,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
@@ -1938,12 +1998,13 @@ class Qdrant(VectorStore):
     def _document_from_scored_point(
         cls,
         scored_point: Any,
+        collection_name: str,
         content_payload_key: str,
         metadata_payload_key: str,
     ) -> Document:
         metadata = scored_point.payload.get(metadata_payload_key) or {}
         metadata["_id"] = scored_point.id
-        metadata["_collection_name"] = scored_point.collection_name
+        metadata["_collection_name"] = collection_name
         return Document(
             page_content=scored_point.payload.get(content_payload_key),
             metadata=metadata,
@@ -2002,6 +2063,26 @@ class Qdrant(VectorStore):
         """
         if self.embeddings is not None:
             embedding = self.embeddings.embed_query(query)
+        else:
+            if self._embeddings_function is not None:
+                embedding = self._embeddings_function(query)
+            else:
+                raise ValueError("Neither of embeddings or embedding_function is set")
+        return embedding.tolist() if hasattr(embedding, "tolist") else embedding
+
+    async def _aembed_query(self, query: str) -> List[float]:
+        """Embed query text asynchronously.
+
+        Used to provide backward compatibility with `embedding_function` argument.
+
+        Args:
+            query: Query text.
+
+        Returns:
+            List of floats representing the query embedding.
+        """
+        if self.embeddings is not None:
+            embedding = await self.embeddings.aembed_query(query)
         else:
             if self._embeddings_function is not None:
                 embedding = self._embeddings_function(query)

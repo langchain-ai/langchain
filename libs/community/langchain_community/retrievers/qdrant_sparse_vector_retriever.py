@@ -15,8 +15,8 @@ from typing import (
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.utils import pre_init
 
 from langchain_community.vectorstores.qdrant import Qdrant, QdrantException
 
@@ -44,12 +44,10 @@ class QdrantSparseVectorRetriever(BaseRetriever):
     """Additional search options to pass to qdrant_client.QdrantClient.search()."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that 'qdrant_client' python package exists in environment."""
         try:
@@ -120,7 +118,10 @@ class QdrantSparseVectorRetriever(BaseRetriever):
         )
         return [
             Qdrant._document_from_scored_point(
-                point, self.content_payload_key, self.metadata_payload_key
+                point,
+                self.collection_name,
+                self.content_payload_key,
+                self.metadata_payload_key,
             )
             for point in results
         ]

@@ -4,23 +4,16 @@ from typing import Any, Dict, List, Optional
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 
 def import_aim() -> Any:
     """Import the aim python package and raise an error if it is not installed."""
-    try:
-        import aim
-    except ImportError:
-        raise ImportError(
-            "To use the Aim callback manager you need to have the"
-            " `aim` python package installed."
-            "Please install it with `pip install aim`"
-        )
-    return aim
+    return guard_import("aim")
 
 
 class BaseMetadataCallbackHandler:
-    """This class handles the metadata and associated function states for callbacks.
+    """Callback handler for the metadata and associated function states for callbacks.
 
     Attributes:
         step (int): The current step.
@@ -314,8 +307,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self._run.track(aim.Text(input_str), name="on_tool_start", context=resp)
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        output = str(output)
         aim = import_aim()
         self.step += 1
         self.tool_ends += 1
@@ -416,15 +410,25 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             self._run.close()
             self.reset_callback_meta()
         if reset:
-            self.__init__(  # type: ignore
-                repo=repo if repo else self.repo,
-                experiment_name=experiment_name
-                if experiment_name
-                else self.experiment_name,
-                system_tracking_interval=system_tracking_interval
-                if system_tracking_interval
-                else self.system_tracking_interval,
-                log_system_params=log_system_params
-                if log_system_params
-                else self.log_system_params,
+            aim = import_aim()
+            self.repo = repo if repo else self.repo
+            self.experiment_name = (
+                experiment_name if experiment_name else self.experiment_name
             )
+            self.system_tracking_interval = (
+                system_tracking_interval
+                if system_tracking_interval
+                else self.system_tracking_interval
+            )
+            self.log_system_params = (
+                log_system_params if log_system_params else self.log_system_params
+            )
+
+            self._run = aim.Run(
+                repo=self.repo,
+                experiment=self.experiment_name,
+                system_tracking_interval=self.system_tracking_interval,
+                log_system_params=self.log_system_params,
+            )
+            self._run_hash = self._run.hash
+            self.action_records = []

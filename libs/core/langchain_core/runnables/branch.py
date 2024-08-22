@@ -38,15 +38,19 @@ from langchain_core.runnables.utils import (
 
 
 class RunnableBranch(RunnableSerializable[Input, Output]):
-    """A Runnable that selects which branch to run based on a condition.
+    """Runnable that selects which branch to run based on a condition.
 
-    The runnable is initialized with a list of (condition, runnable) pairs and
+    The Runnable is initialized with a list of (condition, Runnable) pairs and
     a default branch.
 
     When operating on an input, the first condition that evaluates to True is
-    selected, and the corresponding runnable is run on the input.
+    selected, and the corresponding Runnable is run on the input.
 
     If no condition evaluates to True, the default branch is run on the input.
+
+    Parameters:
+        branches: A list of (condition, Runnable) pairs.
+        default: A Runnable to run if no condition is met.
 
     Examples:
 
@@ -82,7 +86,18 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             RunnableLike,  # To accommodate the default branch
         ],
     ) -> None:
-        """A Runnable that runs one of two branches based on a condition."""
+        """A Runnable that runs one of two branches based on a condition.
+
+        Args:
+            *branches: A list of (condition, Runnable) pairs.
+                Defaults a Runnable to run if no condition is met.
+
+        Raises:
+            ValueError: If the number of branches is less than 2.
+            TypeError: If the default branch is not Runnable, Callable or Mapping.
+            TypeError: If a branch is not a tuple or list.
+            ValueError: If a branch is not of length 2.
+        """
         if len(branches) < 2:
             raise ValueError("RunnableBranch requires at least two branches")
 
@@ -93,7 +108,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             (Runnable, Callable, Mapping),  # type: ignore[arg-type]
         ):
             raise TypeError(
-                "RunnableBranch default must be runnable, callable or mapping."
+                "RunnableBranch default must be Runnable, callable or mapping."
             )
 
         default_ = cast(
@@ -119,7 +134,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             runnable = coerce_to_runnable(runnable)
             _branches.append((condition, runnable))
 
-        super().__init__(branches=_branches, default=default_)
+        super().__init__(branches=_branches, default=default_)  # type: ignore[call-arg]
 
     class Config:
         arbitrary_types_allowed = True
@@ -176,13 +191,26 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        """First evaluates the condition, then delegate to true or false branch."""
+        """First evaluates the condition, then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Returns:
+            The output of the branch that was run.
+
+        Raises:
+
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             input,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
         )
 
         try:
@@ -231,6 +259,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             dumpd(self),
             input,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
         )
         try:
             for idx, branch in enumerate(self.branches):
@@ -275,13 +304,26 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         """First evaluates the condition,
-        then delegate to true or false branch."""
+        then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Yields:
+            The output of the branch that was run.
+
+        Raises:
+            BaseException: If an error occurs during the execution of the Runnable.
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
             dumpd(self),
             input,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
         )
         final_output: Optional[Output] = None
         final_output_supported = True
@@ -349,13 +391,26 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         """First evaluates the condition,
-        then delegate to true or false branch."""
+        then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Yields:
+            The output of the branch that was run.
+
+        Raises:
+            BaseException: If an error occurs during the execution of the Runnable.
+        """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             input,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
         )
         final_output: Optional[Output] = None
         final_output_supported = True

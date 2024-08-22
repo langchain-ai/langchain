@@ -1,4 +1,5 @@
 """Test OCI Generative AI embedding service."""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -8,7 +9,7 @@ from langchain_community.embeddings import OCIGenAIEmbeddings
 
 
 class MockResponseDict(dict):
-    def __getattr__(self, val):
+    def __getattr__(self, val):  # type: ignore[no-untyped-def]
         return self[val]
 
 
@@ -19,13 +20,13 @@ class MockResponseDict(dict):
 def test_embedding_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     """Test valid call to OCI Generative AI embedding service."""
     oci_gen_ai_client = MagicMock()
-    embeddings = OCIGenAIEmbeddings(
+    embeddings = OCIGenAIEmbeddings(  # type: ignore[call-arg]
         model_id=test_model_id,
         service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
         client=oci_gen_ai_client,
     )
 
-    def mocked_response(invocation_obj):
+    def mocked_response(invocation_obj):  # type: ignore[no-untyped-def]
         docs = invocation_obj.inputs
 
         embeddings = []

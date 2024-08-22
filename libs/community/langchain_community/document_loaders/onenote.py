@@ -1,4 +1,5 @@
 """Loads data from OneNote Notebooks"""
+
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional
 
@@ -20,17 +21,15 @@ class _OneNoteGraphSettings(BaseSettings):
     client_secret: SecretStr = Field(..., env="MS_GRAPH_CLIENT_SECRET")
 
     class Config:
-        """Config for OneNoteGraphSettings."""
-
-        env_prefix = ""
         case_sentive = False
         env_file = ".env"
+        env_prefix = ""
 
 
 class OneNoteLoader(BaseLoader, BaseModel):
     """Load pages from OneNote notebooks."""
 
-    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)
+    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)  # type: ignore[arg-type]
     """Settings for the Microsoft Graph API client."""
     auth_with_token: bool = False
     """Whether to authenticate with a token or not. Defaults to False."""
@@ -38,7 +37,7 @@ class OneNoteLoader(BaseLoader, BaseModel):
     """Personal access token"""
     onenote_api_base_url: str = "https://graph.microsoft.com/v1.0/me/onenote"
     """URL of Microsoft Graph API for OneNote"""
-    authority_url = "https://login.microsoftonline.com/consumers/"
+    authority_url: str = "https://login.microsoftonline.com/consumers/"
     """A URL that identifies a token authority"""
     token_path: FilePath = Path.home() / ".credentials" / "onenote_graph_token.txt"
     """Path to the file where the access token is stored"""
@@ -108,18 +107,6 @@ class OneNoteLoader(BaseLoader, BaseModel):
                 else:
                     request_url = ""
 
-    def load(self) -> List[Document]:
-        """
-        Get pages from OneNote notebooks.
-
-        Returns:
-            A list of Documents with attributes:
-                - page_content
-                - metadata
-                    - title
-        """
-        return list(self.lazy_load())
-
     def _get_page_content(self, page_id: str) -> str:
         """Get page content from OneNote API"""
         request_url = self.onenote_api_base_url + f"/pages/{page_id}/content"
@@ -164,8 +151,8 @@ class OneNoteLoader(BaseLoader, BaseModel):
             authorization_request_url = client_instance.get_authorization_request_url(
                 self._scopes
             )
-            print("Visit the following url to give consent:")
-            print(authorization_request_url)
+            print("Visit the following url to give consent:")  # noqa: T201
+            print(authorization_request_url)  # noqa: T201
             authorization_url = input("Paste the authenticated url here:\n")
 
             authorization_code = authorization_url.split("code=")[1].split("&")[0]

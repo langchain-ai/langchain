@@ -1,4 +1,5 @@
 """Web base loader class."""
+
 import asyncio
 import logging
 import warnings
@@ -9,11 +10,12 @@ import requests
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.utils.user_agent import get_user_agent
 
 logger = logging.getLogger(__name__)
 
 default_header_template = {
-    "User-Agent": "",
+    "User-Agent": get_user_agent(),
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
     ";q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
@@ -37,7 +39,75 @@ def _build_metadata(soup: Any, url: str) -> dict:
 
 
 class WebBaseLoader(BaseLoader):
-    """Load HTML pages using `urllib` and parse them with `BeautifulSoup'."""
+    """
+    WebBaseLoader document loader integration
+
+    Setup:
+        Install ``langchain_community``.
+
+        .. code-block:: bash
+
+            pip install -U langchain_community
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import WebBaseLoader
+
+            loader = WebBaseLoader(
+                web_path = "https://www.espn.com/"
+                # header_template = None,
+                # verify_ssl = True,
+                # proxies = None,
+                # continue_on_failure = False,
+                # autoset_encoding = True,
+                # encoding = None,
+                # web_paths = (),
+                # requests_per_second = 2,
+                # default_parser = "html.parser",
+                # requests_kwargs = None,
+                # raise_for_status = False,
+                # bs_get_text_kwargs = None,
+                # bs_kwargs = None,
+                # session = None,
+                # show_progress = True,
+            )
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            ESPN - Serving Sports Fans. Anytime. Anywhere.
+
+            {'source': 'https://www.espn.com/', 'title': 'ESPN - Serving Sports Fans. Anytime. Anywhere.', 'description': 'Visit ESPN for live scores, highlights and sports news. Stream exclusive games on ESPN+ and play fantasy sports.', 'language': 'en'}
+
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            ESPN - Serving Sports Fans. Anytime. Anywhere.
+
+            {'source': 'https://www.espn.com/', 'title': 'ESPN - Serving Sports Fans. Anytime. Anywhere.', 'description': 'Visit ESPN for live scores, highlights and sports news. Stream exclusive games on ESPN+ and play fantasy sports.', 'language': 'en'}
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -56,6 +126,8 @@ class WebBaseLoader(BaseLoader):
         bs_get_text_kwargs: Optional[Dict[str, Any]] = None,
         bs_kwargs: Optional[Dict[str, Any]] = None,
         session: Any = None,
+        *,
+        show_progress: bool = True,
     ) -> None:
         """Initialize loader.
 
@@ -67,6 +139,7 @@ class WebBaseLoader(BaseLoader):
             raise_for_status: Raise an exception if http status code denotes an error.
             bs_get_text_kwargs: kwargs for beatifulsoup4 get_text
             bs_kwargs: kwargs for beatifulsoup4 web page parsing
+            show_progress: Show progress bar when loading pages.
         """
         # web_path kept for backwards-compatibility.
         if web_path and web_paths:
@@ -89,6 +162,7 @@ class WebBaseLoader(BaseLoader):
         self.default_parser = default_parser
         self.requests_kwargs = requests_kwargs or {}
         self.raise_for_status = raise_for_status
+        self.show_progress = show_progress
         self.bs_get_text_kwargs = bs_get_text_kwargs or {}
         self.bs_kwargs = bs_kwargs or {}
         if session:
@@ -128,12 +202,15 @@ class WebBaseLoader(BaseLoader):
         async with aiohttp.ClientSession() as session:
             for i in range(retries):
                 try:
-                    async with session.get(
-                        url,
+                    kwargs: Dict = dict(
                         headers=self.session.headers,
-                        ssl=None if self.session.verify else False,
                         cookies=self.session.cookies.get_dict(),
-                    ) as response:
+                    )
+                    if not self.session.verify:
+                        kwargs["ssl"] = False
+                    async with session.get(url, **kwargs) as response:
+                        if self.raise_for_status:
+                            response.raise_for_status()
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
                     if i == retries - 1:
@@ -173,11 +250,14 @@ class WebBaseLoader(BaseLoader):
             task = asyncio.ensure_future(self._fetch_with_rate_limit(url, semaphore))
             tasks.append(task)
         try:
-            from tqdm.asyncio import tqdm_asyncio
+            if self.show_progress:
+                from tqdm.asyncio import tqdm_asyncio
 
-            return await tqdm_asyncio.gather(
-                *tasks, desc="Fetching pages", ascii=True, mininterval=1
-            )
+                return await tqdm_asyncio.gather(
+                    *tasks, desc="Fetching pages", ascii=True, mininterval=1
+                )
+            else:
+                return await asyncio.gather(*tasks)
         except ImportError:
             warnings.warn("For better logging of progress, `pip install tqdm`")
             return await asyncio.gather(*tasks)
@@ -251,11 +331,7 @@ class WebBaseLoader(BaseLoader):
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)
 
-    def load(self) -> List[Document]:
-        """Load text from the url(s) in web_path."""
-        return list(self.lazy_load())
-
-    def aload(self) -> List[Document]:
+    def aload(self) -> List[Document]:  # type: ignore
         """Load text from the urls in web_path async into Documents."""
 
         results = self.scrape_all(self.web_paths)

@@ -1,4 +1,5 @@
 """ArthurAI's Callback Handler."""
+
 from __future__ import annotations
 
 import os
@@ -162,7 +163,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """On LLM end, send data to Arthur."""
         try:
-            import pytz  # type: ignore[import]
+            import pytz
         except ImportError as e:
             raise ImportError(
                 "Could not import pytz. Please install it with 'pip install pytz'."
@@ -279,7 +280,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,

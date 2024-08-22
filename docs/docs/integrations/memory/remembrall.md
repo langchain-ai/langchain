@@ -16,6 +16,12 @@ To get started, [sign in with Github on the Remembrall platform](https://remembr
 
 Any request that you send with the modified `openai_api_base` (see below) and Remembrall API key will automatically be tracked in the Remembrall dashboard. You **never** have to share your OpenAI key with our platform and this information is **never** stored by the Remembrall systems.
 
+To do this, we need to install the following dependencies:
+
+```bash
+pip install -U langchain-openai
+```
+
 ### Enable Long Term Memory
 
 In addition to setting the `openai_api_base` and Remembrall API key via `x-gp-api-key`, you should specify a UID to maintain memory for. This will usually be a unique user identifier (like email).

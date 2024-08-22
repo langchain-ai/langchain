@@ -1,4 +1,5 @@
 """KonkoAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -13,6 +14,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import requests
@@ -21,8 +23,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.adapters.openai import (
     convert_message_to_dict,
@@ -83,7 +85,7 @@ class ChatKonko(ChatOpenAI):
     max_tokens: int = 20
     """Maximum number of tokens to generate."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["konko_api_key"] = convert_to_secret_str(
@@ -93,7 +95,7 @@ class ChatKonko(ChatOpenAI):
             import konko
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import konko python package. "
                 "Please install it with `pip install konko`."
             )
@@ -169,7 +171,9 @@ class ChatKonko(ChatOpenAI):
         }
 
         if openai_api_key:
-            headers["X-OpenAI-Api-Key"] = openai_api_key.get_secret_value()
+            headers["X-OpenAI-Api-Key"] = cast(
+                SecretStr, openai_api_key
+            ).get_secret_value()
 
         models_response = requests.get(models_url, headers=headers)
 
@@ -214,10 +218,12 @@ class ChatKonko(ChatOpenAI):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
-            yield chunk
+            cg_chunk = ChatGenerationChunk(
+                message=chunk, generation_info=generation_info
+            )
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                run_manager.on_llm_new_token(cg_chunk.text, chunk=cg_chunk)
+            yield cg_chunk
 
     def _generate(
         self,

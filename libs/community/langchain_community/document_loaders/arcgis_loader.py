@@ -41,7 +41,7 @@ class ArcGISLoader(BaseLoader):
             ) from e
 
         try:
-            from bs4 import BeautifulSoup  # type: ignore
+            from bs4 import BeautifulSoup
 
             self.BEAUTIFULSOUP = BeautifulSoup
         except ImportError:
@@ -148,7 +148,3 @@ class ArcGISLoader(BaseLoader):
                     )
 
             yield Document(page_content=page_content, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        """Load all records from FeatureLayer."""
-        return list(self.lazy_load())

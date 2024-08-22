@@ -9,14 +9,14 @@ if TYPE_CHECKING:
 
 
 class ChildType(Enum):
-    """The enumerator of the child type."""
+    """Enumerator of the child type."""
 
     MARKDOWN = "MARKDOWN"
     EXCEPTION = "EXCEPTION"
 
 
 class ChildRecord(NamedTuple):
-    """The child record as a NamedTuple."""
+    """Child record as a NamedTuple."""
 
     type: ChildType
     kwargs: Dict[str, Any]
@@ -24,7 +24,7 @@ class ChildRecord(NamedTuple):
 
 
 class MutableExpander:
-    """A Streamlit expander that can be renamed and dynamically expanded/collapsed."""
+    """Streamlit expander that can be renamed and dynamically expanded/collapsed."""
 
     def __init__(self, parent_container: DeltaGenerator, label: str, expanded: bool):
         """Create a new MutableExpander.
@@ -51,7 +51,7 @@ class MutableExpander:
 
     @property
     def label(self) -> str:
-        """The expander's label string."""
+        """Expander's label string."""
         return self._label
 
     @property
@@ -108,7 +108,7 @@ class MutableExpander:
     ) -> int:
         """Add a Markdown element to the container and return its index."""
         kwargs = {"body": body, "unsafe_allow_html": unsafe_allow_html, "help": help}
-        new_dg = self._get_dg(index).markdown(**kwargs)  # type: ignore[arg-type]
+        new_dg = self._get_dg(index).markdown(**kwargs)
         record = ChildRecord(ChildType.MARKDOWN, kwargs, new_dg)
         return self._add_record(record, index)
 

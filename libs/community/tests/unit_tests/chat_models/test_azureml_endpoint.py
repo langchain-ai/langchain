@@ -27,7 +27,7 @@ def api_passed_via_constructor_fixture() -> AzureMLChatOnlineEndpoint:
     with API key passed from constructor"""
     azure_chat = AzureMLChatOnlineEndpoint(
         endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
-        endpoint_api_key="my-api-key",
+        endpoint_api_key="my-api-key",  # type: ignore[arg-type]
     )
     return azure_chat
 
@@ -49,7 +49,7 @@ class TestAzureMLChatOnlineEndpoint:
     ) -> None:
         """Test that the API key is masked"""
         azure_chat = request.getfixturevalue(fixture_name)
-        print(azure_chat.endpoint_api_key, end="")
+        print(azure_chat.endpoint_api_key, end="")  # noqa: T201
         captured = capsys.readouterr()
         assert (
             (str(azure_chat.endpoint_api_key) == "**********")

@@ -31,7 +31,7 @@ class TigerGraph(GraphStore):
     def schema(self) -> Dict[str, Any]:
         return self._schema
 
-    def get_schema(self) -> str:
+    def get_schema(self) -> str:  # type: ignore[override]
         if self._schema:
             return str(self._schema)
         else:
@@ -39,7 +39,13 @@ class TigerGraph(GraphStore):
             return str(self._schema)
 
     def set_connection(self, conn: Any) -> None:
-        from pyTigerGraph import TigerGraphConnection
+        try:
+            from pyTigerGraph import TigerGraphConnection
+        except ImportError:
+            raise ImportError(
+                "Could not import pyTigerGraph python package. "
+                "Please install it with `pip install pyTigerGraph`."
+            )
 
         if not isinstance(conn, TigerGraphConnection):
             msg = "**conn** parameter must inherit from TigerGraphConnection"
@@ -71,10 +77,10 @@ class TigerGraph(GraphStore):
         """
         return self._conn.getSchema(force=True)
 
-    def refresh_schema(self):
+    def refresh_schema(self):  # type: ignore[no-untyped-def]
         self.generate_schema()
 
-    def query(self, query: str) -> Dict[str, Any]:
+    def query(self, query: str) -> Dict[str, Any]:  # type: ignore[override]
         """Query the TigerGraph database."""
         answer = self._conn.ai.query(query)
         return answer

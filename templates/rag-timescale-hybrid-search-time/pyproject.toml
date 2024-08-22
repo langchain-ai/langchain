@@ -9,14 +9,15 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = "^0.1"
 openai = "<2"
-fastapi = "^0.104.0"
+fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 timescale-vector = "^0.0.3"
 lark = "^1.1.8"
 tiktoken = "^0.5.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_timescale_hybrid_search_time.chain"

@@ -1,3 +1,27 @@
+"""Schema definitions for representing agent actions, observations, and return values.
+
+**ATTENTION** The schema definitions are provided for backwards compatibility.
+
+    New agents should be built using the langgraph library
+    (https://github.com/langchain-ai/langgraph)), which provides a simpler
+    and more flexible way to define agents.
+
+    Please see the migration guide for information on how to migrate existing
+    agents to modern langgraph agents:
+    https://python.langchain.com/v0.2/docs/how_to/migrate_agent/
+
+Agents use language models to choose a sequence of actions to take.
+
+A basic agent works in the following manner:
+
+1. Given a prompt an agent uses an LLM to request an action to take (e.g., a tool to run).
+2. The agent executes the action (e.g., runs the tool), and receives an observation.
+3. The agent returns the observation to the LLM, which can then be used to generate the next action.
+4. When the agent reaches a stopping condition, it returns a final return value.
+
+The schemas for the agents themselves are defined in langchain.agents.agent.
+"""  # noqa: E501
+
 from __future__ import annotations
 
 import json
@@ -13,7 +37,11 @@ from langchain_core.messages import (
 
 
 class AgentAction(Serializable):
-    """A full description of an action for an ActionAgent to execute."""
+    """Represents a request to execute an action by an agent.
+
+    The action consists of the name of the tool to execute and the input to pass
+    to the tool. The log is used to pass along extra information about the action.
+    """
 
     tool: str
     """The name of the Tool to execute."""
@@ -29,20 +57,23 @@ class AgentAction(Serializable):
     before the tool/tool_input)."""
     type: Literal["AgentAction"] = "AgentAction"
 
+    # Override init to support instantiation by position for backward compat.
     def __init__(
         self, tool: str, tool_input: Union[str, dict], log: str, **kwargs: Any
     ):
-        """Override init to support instantiation by position for backward compat."""
         super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return whether or not the class is serializable.
+        Default is True.
+        """
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "agent"]."""
         return ["langchain", "schema", "agent"]
 
     @property
@@ -52,6 +83,13 @@ class AgentAction(Serializable):
 
 
 class AgentActionMessageLog(AgentAction):
+    """Representation of an action to be executed by an agent.
+
+    This is similar to AgentAction, but includes a message log consisting of
+    chat messages. This is useful when working with ChatModels, and is used
+    to reconstruct conversation history from the agent's perspective.
+    """
+
     message_log: Sequence[BaseMessage]
     """Similar to log, this can be used to pass along extra
     information about what exact messages were predicted by the LLM
@@ -67,7 +105,7 @@ class AgentActionMessageLog(AgentAction):
 
 
 class AgentStep(Serializable):
-    """The result of running an AgentAction."""
+    """Result of running an AgentAction."""
 
     action: AgentAction
     """The AgentAction that was executed."""
@@ -76,12 +114,15 @@ class AgentStep(Serializable):
 
     @property
     def messages(self) -> Sequence[BaseMessage]:
-        """Return the messages that correspond to this observation."""
+        """Messages that correspond to this observation."""
         return _convert_agent_observation_to_messages(self.action, self.observation)
 
 
 class AgentFinish(Serializable):
-    """The final return value of an ActionAgent."""
+    """Final return value of an ActionAgent.
+
+    Agents return an AgentFinish when they have reached a stopping condition.
+    """
 
     return_values: dict
     """Dictionary of return values."""
@@ -110,7 +151,7 @@ class AgentFinish(Serializable):
 
     @property
     def messages(self) -> Sequence[BaseMessage]:
-        """Return the messages that correspond to this observation."""
+        """Messages that correspond to this observation."""
         return [AIMessage(content=self.log)]
 
 
@@ -142,6 +183,7 @@ def _convert_agent_observation_to_messages(
 
     Args:
         agent_action: Agent action to convert.
+        observation: Observation to convert to a message.
 
     Returns:
         AIMessage that corresponds to the original tool invocation.
@@ -156,11 +198,13 @@ def _create_function_message(
     agent_action: AgentAction, observation: Any
 ) -> FunctionMessage:
     """Convert agent action and observation into a function message.
+
     Args:
-        agent_action: the tool invocation request from the agent
-        observation: the result of the tool invocation
+        agent_action: the tool invocation request from the agent.
+        observation: the result of the tool invocation.
+
     Returns:
-        FunctionMessage that corresponds to the original tool invocation
+        FunctionMessage that corresponds to the original tool invocation.
     """
     if not isinstance(observation, str):
         try:

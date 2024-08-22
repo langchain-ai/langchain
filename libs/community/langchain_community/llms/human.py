@@ -9,7 +9,7 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 def _display_prompt(prompt: str) -> None:
     """Displays the given prompt to the user."""
-    print(f"\n{prompt}")
+    print(f"\n{prompt}")  # noqa: T201
 
 
 def _collect_user_input(
@@ -33,9 +33,7 @@ def _collect_user_input(
 
 
 class HumanInputLLM(LLM):
-    """
-    It returns user input as the response.
-    """
+    """User input as the response."""
 
     input_func: Callable = Field(default_factory=lambda: _collect_user_input)
     prompt_func: Callable[[str], None] = Field(default_factory=lambda: _display_prompt)

@@ -1,23 +1,25 @@
 """Chain for interacting with SQL Database."""
+
 from __future__ import annotations
 
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
-from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
 from langchain_community.utilities.sql_database import SQLDatabase
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
+from langchain_experimental.pydantic_v1 import Field, root_validator
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 SQL_QUERY = "SQLQuery:"
+SQL_RESULT = "SQLResult:"
 
 
 class SQLDatabaseChain(Chain):
@@ -65,10 +67,8 @@ class SQLDatabaseChain(Chain):
     """The prompt template that should be used by the query checker"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -143,6 +143,8 @@ class SQLDatabaseChain(Chain):
                 intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
                 if SQL_QUERY in sql_cmd:
                     sql_cmd = sql_cmd.split(SQL_QUERY)[1].strip()
+                if SQL_RESULT in sql_cmd:
+                    sql_cmd = sql_cmd.split(SQL_RESULT)[0].strip()
                 result = self.database.run(sql_cmd)
                 intermediate_steps.append(str(result))  # output: sql exec
             else:
@@ -173,7 +175,7 @@ class SQLDatabaseChain(Chain):
                 sql_cmd = checked_sql_command
 
             _run_manager.on_text("\nSQLResult: ", verbose=self.verbose)
-            _run_manager.on_text(result, color="yellow", verbose=self.verbose)
+            _run_manager.on_text(str(result), color="yellow", verbose=self.verbose)
             # If return direct, we just set the final result equal to
             # the result of the sql query result, otherwise try to get a human readable
             # final answer

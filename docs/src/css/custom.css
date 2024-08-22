@@ -12,6 +12,16 @@
  * bundles Infima by default. Infima is a CSS framework designed to
  * work well for content-centric websites.
  */
+ 
+ @font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/Manrope-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Public Sans';
+  src: url('/fonts/PublicSans-VariableFont_wght.ttf') format('truetype');
+}
 
 /* You can override the default Infima variables here. */
 :root {
@@ -22,7 +32,12 @@
   --ifm-color-primary-light: #33925d;
   --ifm-color-primary-lighter: #359962;
   --ifm-color-primary-lightest: #3cad6e;
+  --ifm-font-weight-bold: 600;
   --ifm-code-font-size: 95%;
+  --ifm-font-family-base: 'Public Sans';
+  --ifm-menu-link-padding-horizontal: 0.5rem;
+  --ifm-menu-link-padding-vertical: 0.5rem;
+  --doc-sidebar-width: 275px !important;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -34,6 +49,10 @@
   --ifm-color-primary-light: #29d5b0;
   --ifm-color-primary-lighter: #32d8b4;
   --ifm-color-primary-lightest: #4fddbf;
+}
+
+nav, h1, h2, h3, h4 {
+  font-family: 'Manrope';
 }
 
 .footer__links {
@@ -83,6 +102,86 @@
   font-size: 0.85rem;
 }
 
+/* .theme-code-block.language-python::before {
+  content: "";
+  padding: 2px 12px;
+  background-color: var(--ifm-color-primary-light);
+  color: #ffffff;
+  font-weight: bold;
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+  display: block;
+  margin-bottom: 12px;
+  font-size: 0.6em;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+} */
+
+.theme-code-block.language-python,
+.theme-code-block.language-javascript,
+.theme-code-block.language-js,
+.theme-code-block.language-typescript,
+.theme-code-block.language-ts {
+  position: relative; /* Ensure this is set so the ::before pseudo-element is positioned relative to this element */
+  padding-left: 4px;
+  border: 1px solid var(--ifm-color-primary-darkest);
+}
+
+.theme-code-block.language-python::before,
+.theme-code-block.language-javascript::before,
+.theme-code-block.language-js::before,
+.theme-code-block.language-typescript::before,
+.theme-code-block.language-ts::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  background-color: var(--ifm-color-primary-light);
+  z-index: 1;
+}
+
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-category:not(:first-of-type),
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-link,
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-link.theme-doc-sidebar-item-link-level-1:not(:first-of-type) {
+  margin-top: 1rem;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-link,
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category {
+  margin-top: 0;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category > ul {
+  margin-top: 0;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-link a,
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category a {
+  margin-top: 0;
+}
+
+.theme-doc-sidebar-item-category, .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.theme-doc-sidebar-item-category button:before {
+  height: 1rem;
+  width: 1.25rem;
+}
+
+.theme-doc-sidebar-item-link, .theme-doc-sidebar-item-category .theme-doc-sidebar-item-category {
+  font-size: .9rem;
+  font-weight: 500;
+}
+
 .theme-doc-sidebar-item-category > div > a {
   flex: 1 1 0;
   overflow: hidden;
@@ -91,6 +190,15 @@
 
 .theme-doc-sidebar-item-category > div > button {
   opacity: 0.5;
+}
+
+/* Hack for "More" style caret buttons */
+.theme-doc-sidebar-item-category > div > a::after {
+  opacity: 0.5;
+}
+
+.markdown {
+  line-height: 2em;
 }
 
 .markdown > h2 {
@@ -119,7 +227,7 @@
 }
 
 .hidden {
-    display: none !important;
+  display: none !important;
 }
 
 .header-github-link:hover {
@@ -140,4 +248,16 @@
     no-repeat;
 }
 
+div[class^=announcementBar_] {
+  height:40px !important;
+  font-size: 20px !important;
+}
 
+[data-theme='dark'] div[class^=announcementBar_] {
+  background-color: #1b1b1b;
+  color: #fff;
+}
+
+[data-theme='dark'] div[class^=announcementBar_] button {
+  color: #fff;
+}

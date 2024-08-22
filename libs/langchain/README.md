@@ -8,7 +8,6 @@
 [![Downloads](https://static.pepy.tech/badge/langchain/month)](https://pepy.tech/project/langchain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
-[![](https://dcbadge.vercel.app/api/server/6adMQxSpJS?compact=true&style=flat)](https://discord.gg/6adMQxSpJS)
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/langchain)
 [![GitHub star chart](https://img.shields.io/github/stars/langchain-ai/langchain?style=social)](https://star-history.com/#langchain-ai/langchain)
@@ -20,7 +19,7 @@ Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langc
 
 To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com). 
 [LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications. 
-Fill out [this form](https://airtable.com/appwQzlErAS2qiP0L/shrGtGaVBVAz7NcV2) to get off the waitlist or speak with our sales team
+Fill out [this form](https://www.langchain.com/contact-sales) to speak with our sales team.
 
 ## Quick Install
 
@@ -34,20 +33,20 @@ Large language models (LLMs) are emerging as a transformative technology, enabli
 
 This library aims to assist in the development of those types of applications. Common examples of these applications include:
 
-**❓ Question Answering over specific documents**
+**❓ Question answering with RAG**
 
 - [Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
-- End-to-end Example: [Question Answering over Notion Database](https://github.com/hwchase17/notion-qa)
+- End-to-end Example: [Chat LangChain](https://chat.langchain.com) and [repo](https://github.com/langchain-ai/chat-langchain)
 
-**💬 Chatbots**
+**🧱 Extracting structured output**
 
-- [Documentation](https://python.langchain.com/docs/use_cases/chatbots/)
-- End-to-end Example: [Chat-LangChain](https://github.com/langchain-ai/chat-langchain)
+- [Documentation](https://python.langchain.com/docs/use_cases/extraction/)
+- End-to-end Example: [SQL Llama2 Template](https://github.com/langchain-ai/langchain-extract/)
 
-**🤖 Agents**
+**🤖 Chatbots**
 
-- [Documentation](https://python.langchain.com/docs/modules/agents/)
-- End-to-end Example: [GPT+WolframAlpha](https://huggingface.co/spaces/JavaFXpert/Chat-GPT-LangChain)
+- [Documentation](https://python.langchain.com/docs/use_cases/chatbots)
+- End-to-end Example: [Web LangChain (web researcher chatbot)](https://weblangchain.vercel.app) and [repo](https://github.com/langchain-ai/weblangchain)
 
 ## 📖 Documentation
 
@@ -60,28 +59,24 @@ Please see [here](https://python.langchain.com) for full documentation on:
 
 ## 🚀 What can this help with?
 
-There are six main areas that LangChain is designed to help with.
+There are five main areas that LangChain is designed to help with.
 These are, in increasing order of complexity:
 
-**📃 LLMs and Prompts:**
+**📃 Models and Prompts:**
 
-This includes prompt management, prompt optimization, a generic interface for all LLMs, and common utilities for working with LLMs.
+This includes prompt management, prompt optimization, a generic interface for all LLMs, and common utilities for working with chat models and LLMs.
 
 **🔗 Chains:**
 
 Chains go beyond a single LLM call and involve sequences of calls (whether to an LLM or a different utility). LangChain provides a standard interface for chains, lots of integrations with other tools, and end-to-end chains for common applications.
 
-**📚 Data Augmented Generation:**
+**📚 Retrieval Augmented Generation:**
 
-Data Augmented Generation involves specific types of chains that first interact with an external data source to fetch data for use in the generation step. Examples include summarization of long pieces of text and question/answering over specific data sources.
+Retrieval Augmented Generation involves specific types of chains that first interact with an external data source to fetch data for use in the generation step. Examples include summarization of long pieces of text and question/answering over specific data sources.
 
 **🤖 Agents:**
 
 Agents involve an LLM making decisions about which Actions to take, taking that Action, seeing an Observation, and repeating that until done. LangChain provides a standard interface for agents, a selection of agents to choose from, and examples of end-to-end agents.
-
-**🧠 Memory:**
-
-Memory refers to persisting state between calls of a chain/agent. LangChain provides a standard interface for memory, a collection of memory implementations, and examples of chains/agents that use memory.
 
 **🧐 Evaluation:**
 

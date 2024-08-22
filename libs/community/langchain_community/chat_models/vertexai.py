@@ -1,4 +1,5 @@
 """Wrapper around Google VertexAI chat-based models."""
+
 from __future__ import annotations
 
 import base64
@@ -26,7 +27,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.vertexai import (
     _VertexAICommon,
@@ -120,11 +121,10 @@ def _parse_chat_history_gemini(
                 image = load_image_from_gcs(path=path, project=project)
             elif path.startswith("data:image/"):
                 # extract base64 component from image uri
-                try:
-                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(
-                        1
-                    )
-                except AttributeError:
+                encoded: Any = re.search(r"data:image/\w{2,4};base64,(.*)", path)
+                if encoded:
+                    encoded = encoded.group(1)
+                else:
                     raise ValueError(
                         "Invalid image uri. It should be in the format "
                         "data:image/<image_type>;base64,<base64_encoded_image>."
@@ -206,7 +206,7 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
 
 @deprecated(
     since="0.0.12",
-    removal="0.2.0",
+    removal="1.0",
     alternative_import="langchain_google_vertexai.ChatVertexAI",
 )
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
@@ -225,7 +225,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "vertexai"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         is_gemini = is_gemini_model(values["model_name"])
@@ -377,9 +377,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             chat = self._start_chat(history, **params)
             responses = chat.send_message_streaming(question.content, **params)
         for response in responses:
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=response.text))
             if run_manager:
-                run_manager.on_llm_new_token(response.text)
-            yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
+                run_manager.on_llm_new_token(response.text, chunk=chunk)
+            yield chunk
 
     def _start_chat(
         self, history: _ChatHistory, **kwargs: Any

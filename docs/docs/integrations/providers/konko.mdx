@@ -1,86 +1,65 @@
 # Konko
-This page covers how to run models on Konko within LangChain.
+All functionality related to Konko
 
-Konko API is a fully managed API designed to help application developers:
+>[Konko AI](https://www.konko.ai/) provides a fully managed API to help application developers
 
-Select the right LLM(s) for their application
-Prototype with various open-source and proprietary LLMs
-Move to production in-line with their security, privacy, throughput, latency SLAs without infrastructure set-up or administration using Konko AI's SOC 2 compliant infrastructure
+>1. **Select** the right open source or proprietary LLMs for their application
+>2. **Build** applications faster with integrations to leading application frameworks and fully managed APIs
+>3. **Fine tune** smaller open-source LLMs to achieve industry-leading performance at a fraction of the cost
+>4. **Deploy production-scale APIs** that meet security, privacy, throughput, and latency SLAs without infrastructure set-up or administration using Konko AI's SOC 2 compliant, multi-cloud infrastructure
 
 ## Installation and Setup
 
-### First you'll need an API key
-You can request it by messaging [support@konko.ai](mailto:support@konko.ai) 
+1. Sign in to our web app to [create an API key](https://platform.konko.ai/settings/api-keys) to access models via our endpoints for [chat completions](https://docs.konko.ai/reference/post-chat-completions) and [completions](https://docs.konko.ai/reference/post-completions).
+2. Enable a Python3.8+ environment
+3. Install the SDK
 
-### Install Konko AI's Python SDK
+```bash
+pip install konko
+```
 
-#### 1. Enable a Python3.8+ environment
+4. Set API Keys as environment variables(`KONKO_API_KEY`,`OPENAI_API_KEY`)
 
-#### 2. Set API Keys
-
-##### Option 1: Set Environment Variables
-
-1. You can set environment variables for 
-   1. KONKO_API_KEY (Required)
-   2. OPENAI_API_KEY (Optional)
-
-2. In your current shell session, use the export command:
-
-```shell
+```bash
 export KONKO_API_KEY={your_KONKO_API_KEY_here}
 export OPENAI_API_KEY={your_OPENAI_API_KEY_here} #Optional
 ```
 
-Alternatively, you can add the above lines directly to your shell startup script (such as .bashrc or .bash_profile for Bash shell and .zshrc for Zsh shell) to have them set automatically every time a new shell session starts.
-
-##### Option 2: Set API Keys Programmatically
-
-If you prefer to set your API keys directly within your Python script or Jupyter notebook, you can use the following commands:
-
-```python
-konko.set_api_key('your_KONKO_API_KEY_here')  
-konko.set_openai_api_key('your_OPENAI_API_KEY_here') # Optional
-```
-
-#### 3. Install the SDK
+Please see [the Konko docs](https://docs.konko.ai/docs/getting-started) for more details.
 
 
-```shell
-pip install konko
-```
+## LLM
 
-#### 4. Verify Installation & Authentication
+**Explore Available Models:** Start by browsing through the [available models](https://docs.konko.ai/docs/list-of-models) on Konko. Each model caters to different use cases and capabilities.
 
-```python
-#Confirm konko has installed successfully
-import konko
-#Confirm API keys from Konko and OpenAI are set properly
-konko.Model.list()
-```
+Another way to find the list of models running on the Konko instance is through this [endpoint](https://docs.konko.ai/reference/get-models).
 
-## Calling a model
+See a usage [example](/docs/integrations/llms/konko).
 
-Find a model on the [Konko Introduction page](https://docs.konko.ai/docs/list-of-models)
+### Examples of Endpoint Usage
 
-Another way to find the list of models running on the Konko instance is through this [endpoint](https://docs.konko.ai/reference/listmodels).
+- **Completion with mistralai/Mistral-7B-v0.1:**
 
-## Examples of Endpoint Usage
+  ```python
+  from langchain_community.llms import Konko
+  llm = Konko(max_tokens=800, model='mistralai/Mistral-7B-v0.1')
+  prompt = "Generate a Product Description for Apple Iphone 15"
+  response = llm.invoke(prompt)
+  ```
+
+## Chat Models
+
+See a usage [example](/docs/integrations/chat/konko).
 
 
 - **ChatCompletion with Mistral-7B:**
+
   ```python
+  from langchain_core.messages import HumanMessage
+  from langchain_community.chat_models import ChatKonko
   chat_instance = ChatKonko(max_tokens=10, model = 'mistralai/mistral-7b-instruct-v0.1')
   msg = HumanMessage(content="Hi")
   chat_response = chat_instance([msg])
-  
-  ```
-
-- **Completion with mistralai/Mistral-7B-v0.1:**
-  ```python
-  from langchain.llms import Konko
-  llm = Konko(max_tokens=800, model='mistralai/Mistral-7B-v0.1')
-  prompt = "Generate a Product Description for Apple Iphone 15"
-  response = llm(prompt)
   ```
 
 For further assistance, contact [support@konko.ai](mailto:support@konko.ai) or join our [Discord](https://discord.gg/TXV2s3z7RZ).

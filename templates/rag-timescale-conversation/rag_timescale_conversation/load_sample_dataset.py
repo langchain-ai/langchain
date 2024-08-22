@@ -3,10 +3,10 @@ import tempfile
 from datetime import datetime, timedelta
 
 import requests
-from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.document_loaders import JSONLoader
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores.timescalevector import TimescaleVector
+from langchain_text_splitters.character import CharacterTextSplitter
 from timescale_vector import client
 
 

@@ -1,4 +1,5 @@
 """Select examples based on length."""
+
 import re
 from typing import Callable, Dict, List
 
@@ -27,12 +28,28 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
     """Max length for the prompt, beyond which examples are cut."""
 
     example_text_lengths: List[int] = []  #: :meta private:
+    """Length of each example."""
 
     def add_example(self, example: Dict[str, str]) -> None:
-        """Add new example to list."""
+        """Add new example to list.
+
+        Args:
+            example: A dictionary with keys as input variables
+                and values as their values.
+        """
         self.examples.append(example)
         string_example = self.example_prompt.format(**example)
         self.example_text_lengths.append(self.get_text_length(string_example))
+
+    async def aadd_example(self, example: Dict[str, str]) -> None:
+        """Async add new example to list.
+
+        Args:
+            example: A dictionary with keys as input variables
+                and values as their values.
+        """
+
+        self.add_example(example)
 
     @validator("example_text_lengths", always=True)
     def calculate_example_text_lengths(cls, v: List[int], values: Dict) -> List[int]:
@@ -47,7 +64,15 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         return [get_text_length(eg) for eg in string_examples]
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
-        """Select which examples to use based on the input lengths."""
+        """Select which examples to use based on the input lengths.
+
+        Args:
+            input_variables: A dictionary with keys as input variables
+               and values as their values.
+
+        Returns:
+            A list of examples to include in the prompt.
+        """
         inputs = " ".join(input_variables.values())
         remaining_length = self.max_length - self.get_text_length(inputs)
         i = 0
@@ -61,3 +86,15 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
                 remaining_length = new_length
             i += 1
         return examples
+
+    async def aselect_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Async select which examples to use based on the input lengths.
+
+        Args:
+            input_variables: A dictionary with keys as input variables
+               and values as their values.
+
+        Returns:
+            A list of examples to include in the prompt.
+        """
+        return self.select_examples(input_variables)

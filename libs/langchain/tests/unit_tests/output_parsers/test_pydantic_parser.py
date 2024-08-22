@@ -1,11 +1,11 @@
 """Test PydanticOutputParser"""
+
 from enum import Enum
 from typing import Optional
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
-
-from langchain.output_parsers.pydantic import PydanticOutputParser
 
 
 class Actions(Enum):
@@ -53,26 +53,27 @@ DEF_EXPECTED_RESULT = TestModel(
 def test_pydantic_output_parser() -> None:
     """Test PydanticOutputParser."""
 
-    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
     result = pydantic_parser.parse(DEF_RESULT)
-    print("parse_result:", result)
+    print("parse_result:", result)  # noqa: T201
     assert DEF_EXPECTED_RESULT == result
+    assert pydantic_parser.OutputType is TestModel
 
 
 def test_pydantic_output_parser_fail() -> None:
     """Test PydanticOutputParser where completion result fails schema validation."""
 
-    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
     try:
         pydantic_parser.parse(DEF_RESULT_FAIL)
     except OutputParserException as e:
-        print("parse_result:", e)
+        print("parse_result:", e)  # noqa: T201
         assert "Failed to parse TestModel from completion" in str(e)
     else:
         assert False, "Expected OutputParserException"
@@ -87,9 +88,7 @@ def test_pydantic_output_parser_type_inference() -> None:
 
     # Ignoring mypy error that appears in python 3.8, but not 3.11.
     # This seems to be functionally correct, so we'll ignore the error.
-    pydantic_parser = PydanticOutputParser(
-        pydantic_object=SampleModel  # type: ignore[var-annotated]
-    )
+    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)  # type: ignore
     schema = pydantic_parser.get_output_schema().schema()
 
     assert schema == {
@@ -101,3 +100,24 @@ def test_pydantic_output_parser_type_inference() -> None:
         "title": "SampleModel",
         "type": "object",
     }
+
+
+def test_format_instructions_preserves_language() -> None:
+    """Test format instructions does not attempt to encode into ascii."""
+    from langchain_core.pydantic_v1 import BaseModel, Field
+
+    description = (
+        "你好, こんにちは, नमस्ते, Bonjour, Hola, "
+        "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
+    )
+
+    class Foo(BaseModel):
+        hello: str = Field(
+            description=(
+                "你好, こんにちは, नमस्ते, Bonjour, Hola, "
+                "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
+            )
+        )
+
+    parser = PydanticOutputParser(pydantic_object=Foo)  # type: ignore
+    assert description in parser.get_format_instructions()

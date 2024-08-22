@@ -40,25 +40,33 @@ async def aenumerate(
 
 
 class IndexableBaseModel(BaseModel):
-    """Allows a BaseModel to return its fields by string variable indexing"""
+    """Allows a BaseModel to return its fields by string variable indexing."""
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
 
 
 class Choice(IndexableBaseModel):
+    """Choice."""
+
     message: dict
 
 
 class ChatCompletions(IndexableBaseModel):
+    """Chat completions."""
+
     choices: List[Choice]
 
 
 class ChoiceChunk(IndexableBaseModel):
+    """Choice chunk."""
+
     delta: dict
 
 
 class ChatCompletionChunk(IndexableBaseModel):
+    """Chat completion chunk."""
+
     choices: List[ChoiceChunk]
 
 
@@ -87,18 +95,18 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
-        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))
+        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))  # type: ignore[arg-type]
     elif role == "tool":
         additional_kwargs = {}
         if "name" in _dict:
             additional_kwargs["name"] = _dict["name"]
         return ToolMessage(
             content=_dict.get("content", ""),
-            tool_call_id=_dict.get("tool_call_id"),
+            tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
             additional_kwargs=additional_kwargs,
         )
     else:
-        return ChatMessage(content=_dict.get("content", ""), role=role)
+        return ChatMessage(content=_dict.get("content", ""), role=role)  # type: ignore[arg-type]
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
@@ -198,8 +206,7 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> dict:
-        ...
+    ) -> dict: ...
 
     @overload
     @staticmethod
@@ -209,8 +216,7 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> Iterable:
-        ...
+    ) -> Iterable: ...
 
     @staticmethod
     def create(
@@ -241,8 +247,7 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> dict:
-        ...
+    ) -> dict: ...
 
     @overload
     @staticmethod
@@ -252,8 +257,7 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> AsyncIterator:
-        ...
+    ) -> AsyncIterator: ...
 
     @staticmethod
     async def acreate(
@@ -301,7 +305,7 @@ def convert_messages_for_finetuning(
 
 
 class Completions:
-    """Completion."""
+    """Completions."""
 
     @overload
     @staticmethod
@@ -311,8 +315,7 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> ChatCompletions:
-        ...
+    ) -> ChatCompletions: ...
 
     @overload
     @staticmethod
@@ -322,8 +325,7 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> Iterable:
-        ...
+    ) -> Iterable: ...
 
     @staticmethod
     def create(
@@ -358,8 +360,7 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> ChatCompletions:
-        ...
+    ) -> ChatCompletions: ...
 
     @overload
     @staticmethod
@@ -369,8 +370,7 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> AsyncIterator:
-        ...
+    ) -> AsyncIterator: ...
 
     @staticmethod
     async def acreate(
@@ -399,6 +399,8 @@ class Completions:
 
 
 class Chat:
+    """Chat."""
+
     def __init__(self) -> None:
         self.completions = Completions()
 

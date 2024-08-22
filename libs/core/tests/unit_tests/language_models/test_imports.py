@@ -6,11 +6,18 @@ EXPECTED_ALL = [
     "SimpleChatModel",
     "BaseLLM",
     "LLM",
+    "LangSmithParams",
     "LanguageModelInput",
     "LanguageModelOutput",
     "LanguageModelLike",
     "get_tokenizer",
     "LanguageModelLike",
+    "FakeMessagesListChatModel",
+    "FakeListChatModel",
+    "GenericFakeChatModel",
+    "FakeStreamingListLLM",
+    "FakeListLLM",
+    "ParrotFakeChatModel",
 ]
 
 

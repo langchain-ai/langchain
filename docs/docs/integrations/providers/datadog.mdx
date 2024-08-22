@@ -66,23 +66,23 @@ patch(langchain=True)
 # patch(langchain=True, openai=True)patch_all
 ```
 
-See the [APM Python library documentation][https://ddtrace.readthedocs.io/en/stable/installation_quickstart.html] for more advanced usage.
+See the [APM Python library documentation](https://ddtrace.readthedocs.io/en/stable/installation_quickstart.html) for more advanced usage.
 
 
 ## Configuration
 
-See the [APM Python library documentation][https://ddtrace.readthedocs.io/en/stable/integrations.html#langchain] for all the available configuration options.
+See the [APM Python library documentation](https://ddtrace.readthedocs.io/en/stable/integrations.html#langchain) for all the available configuration options.
 
 
 ### Log Prompt & Completion Sampling
 
 To enable log prompt and completion sampling, set the `DD_LANGCHAIN_LOGS_ENABLED=1` environment variable. By default, 10% of traced requests will emit logs containing the prompts and completions.
 
-To adjust the log sample rate, see the [APM library documentation][https://ddtrace.readthedocs.io/en/stable/integrations.html#langchain].
+To adjust the log sample rate, see the [APM library documentation](https://ddtrace.readthedocs.io/en/stable/integrations.html#langchain).
 
 **Note**: Logs submission requires `DD_API_KEY` to be specified when running `ddtrace-run`.
 
 
 ## Troubleshooting
 
-Need help? Create an issue on [ddtrace](https://github.com/DataDog/dd-trace-py) or contact [Datadog support][https://docs.datadoghq.com/help/].
+Need help? Create an issue on [ddtrace](https://github.com/DataDog/dd-trace-py) or contact [Datadog support](https://docs.datadoghq.com/help/).

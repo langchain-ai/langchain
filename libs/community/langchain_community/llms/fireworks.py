@@ -2,14 +2,15 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import BaseLLM, create_base_retry_decorator
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str
+from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, pre_init
 from langchain_core.utils.env import get_from_dict_or_env
 
 
@@ -26,6 +27,11 @@ def _stream_response_to_generation_chunk(
     )
 
 
+@deprecated(
+    since="0.0.26",
+    removal="1.0",
+    alternative_import="langchain_fireworks.Fireworks",
+)
 class Fireworks(BaseLLM):
     """Fireworks models."""
 
@@ -55,7 +61,7 @@ class Fireworks(BaseLLM):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "fireworks"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
         try:
@@ -180,9 +186,9 @@ class Fireworks(BaseLLM):
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -201,9 +207,9 @@ class Fireworks(BaseLLM):
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
 
 def conditional_decorator(

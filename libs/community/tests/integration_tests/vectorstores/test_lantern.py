@@ -1,4 +1,5 @@
 """Test Lantern functionality."""
+
 import os
 from typing import List, Tuple
 
@@ -31,7 +32,7 @@ def fix_distance_precision(
 class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
     """Fake embeddings functionality for testing."""
 
-    def __init__(self):
+    def __init__(self):  # type: ignore[no-untyped-def]
         super(FakeEmbeddingsWithAdaDimension, self).__init__(size=ADA_TOKEN_COUNT)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -85,7 +86,7 @@ def test_lantern_embeddings_distance_strategy() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
-        distance_strategy="hamming",
+        distance_strategy="hamming",  # type: ignore[arg-type]
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
@@ -258,7 +259,7 @@ def test_lantern_retriever_search_threshold() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.999},
     )
-    output = retriever.get_relevant_documents("summer")
+    output = retriever.invoke("summer")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
         Document(page_content="bar", metadata={"page": "1"}),
@@ -283,7 +284,7 @@ def test_lantern_retriever_search_threshold_custom_normalization_fn() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.9999},
     )
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
     ]

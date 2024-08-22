@@ -1,5 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, cast
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -70,6 +71,11 @@ def convert_messages_to_prompt_anthropic(
     return text.rstrip()
 
 
+@deprecated(
+    since="0.0.28",
+    removal="1.0",
+    alternative_import="langchain_anthropic.ChatAnthropic",
+)
 class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     """`Anthropic` chat large language models.
 
@@ -86,8 +92,6 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 
@@ -143,9 +147,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         for data in stream_resp:
             delta = data.completion
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(delta, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -163,9 +167,9 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
         async for data in stream_resp:
             delta = data.completion
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(delta, chunk=chunk)
+            yield chunk
 
     def _generate(
         self,

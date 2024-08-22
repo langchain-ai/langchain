@@ -2,60 +2,12 @@
 
 All functionality related to the [Hugging Face Platform](https://huggingface.co/).
 
-## LLMs
+## Installation
 
-### Hugging Face Hub
-
->The [Hugging Face Hub](https://huggingface.co/docs/hub/index) is a platform 
-> with over 350k models, 75k datasets, and 150k demo apps (Spaces), all open source 
-> and publicly available, in an online platform where people can easily 
-> collaborate and build ML together. The Hub works as a central place where anyone 
-> can explore, experiment, collaborate, and build technology with Machine Learning.
-
-To use, we should have the `huggingface_hub` python [package installed](https://huggingface.co/docs/huggingface_hub/installation).
+Most of the Hugging Face integrations are available in the `langchain-huggingface` package.
 
 ```bash
-pip install huggingface_hub
-```
-
-See a [usage example](/docs/integrations/llms/huggingface_hub).
-
-```python
-from langchain_community.llms import HuggingFaceHub
-```
-
-### Hugging Face Local Pipelines
-
-Hugging Face models can be run locally through the `HuggingFacePipeline` class.
-
-We need to install `transformers` python package.
-
-```bash
-pip install transformers
-```
-
-See a [usage example](/docs/integrations/llms/huggingface_pipelines).
-
-```python
-from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
-```
-
-### Hugging Face TextGen Inference
-
->[Text Generation Inference](https://github.com/huggingface/text-generation-inference) is 
-> a Rust, Python and gRPC server for text generation inference. Used in production at 
-> [HuggingFace](https://huggingface.co/) to power LLMs api-inference widgets.
-
-We need to install `text_generation` python package.
-
-```bash
-pip install text_generation
-```
-
-See a [usage example](/docs/integrations/llms/huggingface_textgen_inference).
-
-```python
-from langchain_community.llms import HuggingFaceTextGenInference
+pip install langchain-huggingface
 ```
 
 ## Chat models
@@ -64,43 +16,35 @@ from langchain_community.llms import HuggingFaceTextGenInference
 
 We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
 
-We need to install several python packages.
-
-```bash
-pip install huggingface_hub
-pip install transformers
-```
 See a [usage example](/docs/integrations/chat/huggingface).
 
 ```python
-from langchain_community.chat_models.huggingface import ChatHuggingFace
+from langchain_huggingface import ChatHuggingFace
+```
+
+## LLMs
+
+### Hugging Face Local Pipelines
+
+Hugging Face models can be run locally through the `HuggingFacePipeline` class.
+
+See a [usage example](/docs/integrations/llms/huggingface_pipelines).
+
+```python
+from langchain_huggingface import HuggingFacePipeline
 ```
 
 ## Embedding Models
 
-### Hugging Face Hub
-
->The [Hugging Face Hub](https://huggingface.co/docs/hub/index) is a platform 
-> with over 350k models, 75k datasets, and 150k demo apps (Spaces), all open source 
-> and publicly available, in an online platform where people can easily 
-> collaborate and build ML together. The Hub works as a central place where anyone 
-> can explore, experiment, collaborate, and build technology with Machine Learning.
-
-We need to install the `sentence_transformers` python package.
-
-```bash
-pip install sentence_transformers
-```
-
-
-#### HuggingFaceEmbeddings
+### HuggingFaceEmbeddings
 
 See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
 
 ```python
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 ```
-#### HuggingFaceInstructEmbeddings
+
+### HuggingFaceInstructEmbeddings
 
 See a [usage example](/docs/integrations/text_embedding/instruct_embeddings).
 
@@ -108,10 +52,10 @@ See a [usage example](/docs/integrations/text_embedding/instruct_embeddings).
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 ```
 
-#### HuggingFaceBgeEmbeddings
+### HuggingFaceBgeEmbeddings
 
 >[BGE models on the HuggingFace](https://huggingface.co/BAAI/bge-large-en) are [the best open-source embedding models](https://huggingface.co/spaces/mteb/leaderboard).
->BGE model is created by the [Beijing Academy of Artificial Intelligence (BAAI)](https://www.baai.ac.cn/english.html). `BAAI` is a private non-profit organization engaged in AI research and development.
+>BGE model is created by the [Beijing Academy of Artificial Intelligence (BAAI)](https://en.wikipedia.org/wiki/Beijing_Academy_of_Artificial_Intelligence). `BAAI` is a private non-profit organization engaged in AI research and development.
 
 See a [usage example](/docs/integrations/text_embedding/bge_huggingface).
 
@@ -178,5 +122,5 @@ pip install transformers huggingface_hub
 See a [usage example](/docs/integrations/tools/huggingface_tools).
 
 ```python
-from langchain.agents import load_huggingface_tool
+from langchain_community.agent_toolkits.load_tools import load_huggingface_tool
 ```

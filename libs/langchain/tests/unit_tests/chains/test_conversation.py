@@ -1,5 +1,10 @@
 """Test conversation chain and memory."""
+
+from typing import Any, List, Optional
+
 import pytest
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import LLM
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts.prompt import PromptTemplate
 
@@ -10,27 +15,61 @@ from langchain.memory.summary import ConversationSummaryMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
+class DummyLLM(LLM):
+    last_prompt: str = ""
+
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+
+    @property
+    def _llm_type(self) -> str:
+        return "dummy"
+
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        self.last_prompt = prompt
+        return "dummy"
+
+
 def test_memory_ai_prefix() -> None:
     """Test that ai_prefix in the memory component works."""
     memory = ConversationBufferMemory(memory_key="foo", ai_prefix="Assistant")
     memory.save_context({"input": "bar"}, {"output": "foo"})
-    assert memory.buffer == "Human: bar\nAssistant: foo"
+    assert memory.load_memory_variables({}) == {"foo": "Human: bar\nAssistant: foo"}
 
 
 def test_memory_human_prefix() -> None:
     """Test that human_prefix in the memory component works."""
     memory = ConversationBufferMemory(memory_key="foo", human_prefix="Friend")
     memory.save_context({"input": "bar"}, {"output": "foo"})
-    assert memory.buffer == "Friend: bar\nAI: foo"
+    assert memory.load_memory_variables({}) == {"foo": "Friend: bar\nAI: foo"}
 
 
-def test_conversation_chain_works() -> None:
+async def test_memory_async() -> None:
+    memory = ConversationBufferMemory(memory_key="foo", ai_prefix="Assistant")
+    await memory.asave_context({"input": "bar"}, {"output": "foo"})
+    assert await memory.aload_memory_variables({}) == {
+        "foo": "Human: bar\nAssistant: foo"
+    }
+
+
+async def test_conversation_chain_works() -> None:
     """Test that conversation chain works in basic setting."""
-    llm = FakeLLM()
+    llm = DummyLLM()
     prompt = PromptTemplate(input_variables=["foo", "bar"], template="{foo} {bar}")
     memory = ConversationBufferMemory(memory_key="foo")
     chain = ConversationChain(llm=llm, prompt=prompt, memory=memory, input_key="bar")
-    chain.run("foo")
+    chain.run("aaa")
+    assert llm.last_prompt == " aaa"
+    chain.run("bbb")
+    assert llm.last_prompt == "Human: aaa\nAI: dummy bbb"
+    await chain.arun("ccc")
+    assert llm.last_prompt == "Human: aaa\nAI: dummy\nHuman: bbb\nAI: dummy ccc"
 
 
 def test_conversation_chain_errors_bad_prompt() -> None:
@@ -100,3 +139,23 @@ def test_clearing_conversation_memory(memory: BaseMemory) -> None:
 
     memory.clear()
     assert memory.load_memory_variables({}) == {"baz": ""}
+
+
+@pytest.mark.parametrize(
+    "memory",
+    [
+        ConversationBufferMemory(memory_key="baz"),
+        ConversationSummaryMemory(llm=FakeLLM(), memory_key="baz"),
+        ConversationBufferWindowMemory(memory_key="baz"),
+    ],
+)
+async def test_clearing_conversation_memory_async(memory: BaseMemory) -> None:
+    """Test clearing the conversation memory."""
+    # This is a good input because the input is not the same as baz.
+    good_inputs = {"foo": "bar", "baz": "foo"}
+    # This is a good output because there is one variable.
+    good_outputs = {"bar": "foo"}
+    await memory.asave_context(good_inputs, good_outputs)
+
+    await memory.aclear()
+    assert await memory.aload_memory_variables({}) == {"baz": ""}

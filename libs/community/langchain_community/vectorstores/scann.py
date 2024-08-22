@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils import guard_import
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.docstore.base import AddableMixin, Docstore
@@ -26,14 +27,7 @@ def dependable_scann_import() -> Any:
     """
     Import `scann` if available, otherwise raise error.
     """
-    try:
-        import scann
-    except ImportError:
-        raise ImportError(
-            "Could not import scann python package. "
-            "Please install it with `pip install scann` "
-        )
-    return scann
+    return guard_import("scann")
 
 
 class ScaNN(VectorStore):
@@ -312,7 +306,7 @@ class ScaNN(VectorStore):
         normalize_L2: bool = False,
         **kwargs: Any,
     ) -> ScaNN:
-        scann = dependable_scann_import()
+        scann = guard_import("scann")
         distance_strategy = kwargs.get(
             "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
         )
@@ -460,6 +454,8 @@ class ScaNN(VectorStore):
         folder_path: str,
         embedding: Embeddings,
         index_name: str = "index",
+        *,
+        allow_dangerous_deserialization: bool = False,
         **kwargs: Any,
     ) -> ScaNN:
         """Load ScaNN index, docstore, and index_to_docstore_id from disk.
@@ -467,19 +463,43 @@ class ScaNN(VectorStore):
         Args:
             folder_path: folder path to load index, docstore,
                 and index_to_docstore_id from.
-            embeddings: Embeddings to use when generating queries
+            embedding: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
+            allow_dangerous_deserialization: whether to allow deserialization
+                of the data which involves loading a pickle file.
+                Pickle files can be modified by malicious actors to deliver a
+                malicious payload that results in execution of
+                arbitrary code on your machine.
         """
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "The de-serialization relies loading a pickle file. "
+                "Pickle files can be modified to deliver a malicious payload that "
+                "results in execution of arbitrary code on your machine."
+                "You will need to set `allow_dangerous_deserialization` to `True` to "
+                "enable deserialization. If you do this, make sure that you "
+                "trust the source of the data. For example, if you are loading a "
+                "file that you created, and know that no one else has modified the "
+                "file, then this is safe to do. Do not set this to `True` if you are "
+                "loading a file from an untrusted source (e.g., some random site on "
+                "the internet.)."
+            )
         path = Path(folder_path)
         scann_path = path / "{index_name}.scann".format(index_name=index_name)
         scann_path.mkdir(exist_ok=True, parents=True)
         # load index separately since it is not picklable
-        scann = dependable_scann_import()
+        scann = guard_import("scann")
         index = scann.scann_ops_pybind.load_searcher(str(scann_path))
 
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
-            docstore, index_to_docstore_id = pickle.load(f)
+            (
+                docstore,
+                index_to_docstore_id,
+            ) = pickle.load(  # ignore[pickle]: explicit-opt-in
+                f
+            )
+
         return cls(embedding, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:

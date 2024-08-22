@@ -1,12 +1,9 @@
 """Generic Wrapper for chat LLMs, with sample implementations
 for Llama-2-chat, Llama-2-instruct and Vicuna models.
 """
+
 from typing import Any, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -16,6 +13,10 @@ from langchain.schema import (
     LLMResult,
     SystemMessage,
 )
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LLM, BaseChatModel
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
@@ -24,6 +25,8 @@ If a question does not make any sense, or is not factually coherent, explain why
 
 
 class ChatWrapper(BaseChatModel):
+    """Wrapper for chat LLMs."""
+
     llm: LLM
     sys_beg: str
     sys_end: str
@@ -130,6 +133,8 @@ class ChatWrapper(BaseChatModel):
 
 
 class Llama2Chat(ChatWrapper):
+    """Wrapper for Llama-2-chat model."""
+
     @property
     def _llm_type(self) -> str:
         return "llama-2-chat"
@@ -144,7 +149,26 @@ class Llama2Chat(ChatWrapper):
     usr_0_end: str = " [/INST]"
 
 
+class Mixtral(ChatWrapper):
+    """See https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1#instruction-format"""
+
+    @property
+    def _llm_type(self) -> str:
+        return "mixtral"
+
+    sys_beg: str = "<s>[INST] "
+    sys_end: str = "\n"
+    ai_n_beg: str = " "
+    ai_n_end: str = " </s>"
+    usr_n_beg: str = " [INST] "
+    usr_n_end: str = " [/INST]"
+    usr_0_beg: str = ""
+    usr_0_end: str = " [/INST]"
+
+
 class Orca(ChatWrapper):
+    """Wrapper for Orca-style models."""
+
     @property
     def _llm_type(self) -> str:
         return "orca-style"
@@ -158,6 +182,8 @@ class Orca(ChatWrapper):
 
 
 class Vicuna(ChatWrapper):
+    """Wrapper for Vicuna-style models."""
+
     @property
     def _llm_type(self) -> str:
         return "vicuna-style"

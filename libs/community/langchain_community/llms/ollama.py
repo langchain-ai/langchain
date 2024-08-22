@@ -1,5 +1,18 @@
+from __future__ import annotations
+
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import aiohttp
 import requests
@@ -10,7 +23,6 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Extra
 
 
 def _stream_response_to_generation_chunk(
@@ -65,7 +77,7 @@ class _OllamaCommon(BaseLanguageModel):
     CPU cores your system has (as opposed to the logical number of cores)."""
 
     num_predict: Optional[int] = None
-    """Maximum number of tokens to predict when generating text. 
+    """Maximum number of tokens to predict when generating text.
     (Default: 128, -1 = infinite generation, -2 = fill context)"""
 
     repeat_last_n: Optional[int] = None
@@ -111,11 +123,30 @@ class _OllamaCommon(BaseLanguageModel):
     timeout: Optional[int] = None
     """Timeout for the request stream"""
 
+    keep_alive: Optional[Union[int, str]] = None
+    """How long the model will stay loaded into memory.
+
+    The parameter (Default: 5 minutes) can be set to:
+    1. a duration string in Golang (such as "10m" or "24h");
+    2. a number in seconds (such as 3600);
+    3. any negative number which will keep the model loaded \
+        in memory (e.g. -1 or "-1m");
+    4. 0 which will unload the model immediately after generating a response;
+
+    See the [Ollama documents](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-keep-a-model-loaded-in-memory-or-make-it-unload-immediately)"""
+
+    raw: Optional[bool] = None
+    """raw or not."""
+
     headers: Optional[dict] = None
     """Additional headers to pass to endpoint (e.g. Authorization, Referer).
     This is useful when Ollama is hosted on cloud services that require
     tokens for authentication.
     """
+
+    auth: Union[Callable, Tuple, None] = None
+    """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
+    Expects the same format, type and values as requests.request auth parameter."""
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -141,6 +172,8 @@ class _OllamaCommon(BaseLanguageModel):
             },
             "system": self.system,
             "template": self.template,
+            "keep_alive": self.keep_alive,
+            "raw": self.raw,
         }
 
     @property
@@ -159,7 +192,7 @@ class _OllamaCommon(BaseLanguageModel):
         yield from self._create_stream(
             payload=payload,
             stop=stop,
-            api_url=f"{self.base_url}/api/generate/",
+            api_url=f"{self.base_url}/api/generate",
             **kwargs,
         )
 
@@ -174,7 +207,7 @@ class _OllamaCommon(BaseLanguageModel):
         async for item in self._acreate_stream(
             payload=payload,
             stop=stop,
-            api_url=f"{self.base_url}/api/generate/",
+            api_url=f"{self.base_url}/api/generate",
             **kwargs,
         ):
             yield item
@@ -190,8 +223,6 @@ class _OllamaCommon(BaseLanguageModel):
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
             stop = self.stop
-        elif stop is None:
-            stop = []
 
         params = self._default_params
 
@@ -216,13 +247,13 @@ class _OllamaCommon(BaseLanguageModel):
                 "images": payload.get("images", []),
                 **params,
             }
-
         response = requests.post(
             url=api_url,
             headers={
                 "Content-Type": "application/json",
                 **(self.headers if isinstance(self.headers, dict) else {}),
             },
+            auth=self.auth,
             json=request_payload,
             stream=True,
             timeout=self.timeout,
@@ -236,7 +267,7 @@ class _OllamaCommon(BaseLanguageModel):
                     f"and you should pull the model with `ollama pull {self.model}`."
                 )
             else:
-                optional_detail = response.json().get("error")
+                optional_detail = response.text
                 raise ValueError(
                     f"Ollama call failed with status code {response.status_code}."
                     f" Details: {optional_detail}"
@@ -254,8 +285,6 @@ class _OllamaCommon(BaseLanguageModel):
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
             stop = self.stop
-        elif stop is None:
-            stop = []
 
         params = self._default_params
 
@@ -288,8 +317,9 @@ class _OllamaCommon(BaseLanguageModel):
                     "Content-Type": "application/json",
                     **(self.headers if isinstance(self.headers, dict) else {}),
                 },
+                auth=self.auth,  # type: ignore[arg-type]
                 json=request_payload,
-                timeout=self.timeout,
+                timeout=self.timeout,  # type: ignore[arg-type]
             ) as response:
                 if response.status != 200:
                     if response.status == 404:
@@ -297,7 +327,7 @@ class _OllamaCommon(BaseLanguageModel):
                             "Ollama call failed with status code 404."
                         )
                     else:
-                        optional_detail = await response.json().get("error")
+                        optional_detail = response.text
                         raise ValueError(
                             f"Ollama call failed with status code {response.status}."
                             f" Details: {optional_detail}"
@@ -360,27 +390,22 @@ class _OllamaCommon(BaseLanguageModel):
 
 class Ollama(BaseLLM, _OllamaCommon):
     """Ollama locally runs large language models.
-
     To use, follow the instructions at https://ollama.ai/.
-
     Example:
         .. code-block:: python
-
             from langchain_community.llms import Ollama
             ollama = Ollama(model="llama2")
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "ollama-llm"
 
-    def _generate(
+    def _generate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -389,17 +414,13 @@ class Ollama(BaseLLM, _OllamaCommon):
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to Ollama's generate endpoint.
-
         Args:
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
-
         Returns:
             The string generated by the model.
-
         Example:
             .. code-block:: python
-
                 response = ollama("Tell me a joke.")
         """
         # TODO: add caching here.
@@ -414,9 +435,9 @@ class Ollama(BaseLLM, _OllamaCommon):
                 **kwargs,
             )
             generations.append([final_chunk])
-        return LLMResult(generations=generations)
+        return LLMResult(generations=generations)  # type: ignore[arg-type]
 
-    async def _agenerate(
+    async def _agenerate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -425,17 +446,13 @@ class Ollama(BaseLLM, _OllamaCommon):
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to Ollama's generate endpoint.
-
         Args:
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
-
         Returns:
             The string generated by the model.
-
         Example:
             .. code-block:: python
-
                 response = ollama("Tell me a joke.")
         """
         # TODO: add caching here.
@@ -445,12 +462,12 @@ class Ollama(BaseLLM, _OllamaCommon):
                 prompt,
                 stop=stop,
                 images=images,
-                run_manager=run_manager,
+                run_manager=run_manager,  # type: ignore[arg-type]
                 verbose=self.verbose,
                 **kwargs,
             )
             generations.append([final_chunk])
-        return LLMResult(generations=generations)
+        return LLMResult(generations=generations)  # type: ignore[arg-type]
 
     def _stream(
         self,
@@ -462,12 +479,12 @@ class Ollama(BaseLLM, _OllamaCommon):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=self.verbose,
                     )
+                yield chunk
 
     async def _astream(
         self,
@@ -479,9 +496,9 @@ class Ollama(BaseLLM, _OllamaCommon):
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
-                yield chunk
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=self.verbose,
                     )
+                yield chunk

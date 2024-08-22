@@ -33,12 +33,13 @@ And add the following code to your `server.py` file:
 ```python
 from rag_pinecone import chain as rag_pinecone_chain
 
+# Be careful with this, in the console, when you create the project add_routes(app, rag_pinecone_chain, path="\rag-pinecone") appears with a backslash, the correct route is "/rag-pinecone"
 add_routes(app, rag_pinecone_chain, path="/rag-pinecone")
 ```
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

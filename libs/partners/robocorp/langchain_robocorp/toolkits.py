@@ -1,4 +1,5 @@
 """Robocorp Action Server toolkit."""
+
 from __future__ import annotations
 
 import json
@@ -20,20 +21,25 @@ from langsmith import Client
 
 from langchain_robocorp._common import (
     get_param_fields,
-    get_required_param_descriptions,
+    model_to_dict,
     reduce_openapi_spec,
 )
 from langchain_robocorp._prompts import (
     API_CONTROLLER_PROMPT,
-    TOOLKIT_TOOL_DESCRIPTION,
 )
 
-MAX_RESPONSE_LENGTH = 5000
 LLM_TRACE_HEADER = "X-action-trace"
 
 
 class RunDetailsCallbackHandler(BaseCallbackHandler):
+    """Callback handler to add run details to the run."""
+
     def __init__(self, run_details: dict) -> None:
+        """Initialize the callback handler.
+
+        Args:
+            run_details (dict): Run details.
+        """
         self.run_details = run_details
 
     def on_tool_start(
@@ -50,10 +56,14 @@ class RunDetailsCallbackHandler(BaseCallbackHandler):
 
 
 class ToolInputSchema(BaseModel):
+    """Tool input schema."""
+
     question: str = Field(...)
 
 
 class ToolArgs(TypedDict):
+    """Tool arguments."""
+
     name: str
     description: str
     callback_manager: CallbackManager
@@ -94,6 +104,8 @@ class ActionServerToolkit(BaseModel):
     """Action Server URL"""
     api_key: str = Field(exclude=True, default="")
     """Action Server request API key"""
+    additional_headers: dict = Field(exclude=True, default_factory=dict)
+    """Additional headers to be passed to the Action Server"""
     report_trace: bool = Field(exclude=True, default=False)
     """Enable reporting Langsmith trace to Action Server runs"""
     _run_details: dict = PrivateAttr({})
@@ -145,17 +157,9 @@ class ActionServerToolkit(BaseModel):
             if not endpoint.startswith("/api/actions"):
                 continue
 
-            summary = docs["summary"]
-
-            tool_description = TOOLKIT_TOOL_DESCRIPTION.format(
-                name=summary,
-                description=docs.get("description", summary),
-                required_params=get_required_param_descriptions(docs),
-            )
-
             tool_args: ToolArgs = {
-                "name": f"robocorp_action_server_{docs['operationId']}",
-                "description": tool_description,
+                "name": docs["operationId"],
+                "description": docs["description"],
                 "callback_manager": callback_manager,
             }
 
@@ -207,16 +211,17 @@ class ActionServerToolkit(BaseModel):
         self, endpoint: str, docs: dict, tools_args: ToolArgs
     ) -> BaseTool:
         fields = get_param_fields(docs)
+        _DynamicToolInputSchema = create_model("DynamicToolInputSchema", **fields)
 
-        def create_function(endpoint: str) -> Callable:
-            def func(**data: dict[str, Any]) -> str:
-                return self._action_request(endpoint, **data)
+        def dynamic_func(**data: dict[str, Any]) -> str:
+            return self._action_request(endpoint, **model_to_dict(data))
 
-            return func
+        dynamic_func.__name__ = tools_args["name"]
+        dynamic_func.__doc__ = tools_args["description"]
 
         return StructuredTool(
-            func=create_function(endpoint),
-            args_schema=create_model("DynamicToolInputSchema", **fields),
+            func=dynamic_func,
+            args_schema=_DynamicToolInputSchema,
             **tools_args,
         )
 
@@ -224,6 +229,7 @@ class ActionServerToolkit(BaseModel):
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
+            **self.additional_headers,
         }
 
         try:
@@ -238,6 +244,5 @@ class ActionServerToolkit(BaseModel):
         url = urljoin(self.url, endpoint)
 
         response = requests.post(url, headers=headers, data=json.dumps(data))
-        output = response.text[:MAX_RESPONSE_LENGTH]
 
-        return output
+        return response.text

@@ -108,7 +108,7 @@ class ErnieBotChat(BaseChatModel):
 
     _lock = threading.Lock()
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["ernie_api_base"] = get_from_dict_or_env(
             values, "ernie_api_base", "ERNIE_API_BASE", "https://aip.baidubce.com"
@@ -214,7 +214,7 @@ class ErnieBotChat(BaseChatModel):
         generations = [
             ChatGeneration(
                 message=AIMessage(
-                    content=response.get("result"),
+                    content=response.get("result", ""),
                     additional_kwargs={**additional_kwargs},
                 )
             )

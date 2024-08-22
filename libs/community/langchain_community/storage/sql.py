@@ -1,345 +1,295 @@
-"""SQL storage that persists data in a SQL database
-and supports data isolation using collections."""
-from __future__ import annotations
+import contextlib
+from pathlib import Path
+from typing import (
+    Any,
+    AsyncGenerator,
+    AsyncIterator,
+    Dict,
+    Generator,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
-import uuid
-from typing import Any, Generic, Iterator, List, Optional, Sequence, Tuple, TypeVar
-
-import sqlalchemy
-from sqlalchemy import JSON, UUID
-from sqlalchemy.orm import Session, relationship
+from langchain_core.stores import BaseStore
+from sqlalchemy import (
+    LargeBinary,
+    Text,
+    and_,
+    create_engine,
+    delete,
+    select,
+)
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    create_async_engine,
+)
+from sqlalchemy.orm import (
+    Mapped,
+    Session,
+    declarative_base,
+    sessionmaker,
+)
 
 try:
-    from sqlalchemy.orm import declarative_base
+    from sqlalchemy.ext.asyncio import async_sessionmaker
 except ImportError:
-    from sqlalchemy.ext.declarative import declarative_base
+    # dummy for sqlalchemy < 2
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
 
-from langchain_core.documents import Document
-from langchain_core.load import Serializable, dumps, loads
-from langchain_core.stores import BaseStore
+Base = declarative_base()
 
-V = TypeVar("V")
+try:
+    from sqlalchemy.orm import mapped_column
 
-ITERATOR_WINDOW_SIZE = 1000
+    class LangchainKeyValueStores(Base):  # type: ignore[valid-type,misc]
+        """Table used to save values."""
 
-Base = declarative_base()  # type: Any
+        # ATTENTION:
+        # Prior to modifying this table, please determine whether
+        # we should create migrations for this table to make sure
+        # users do not experience data loss.
+        __tablename__ = "langchain_key_value_stores"
 
-
-_LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
-
-
-class BaseModel(Base):
-    """Base model for the SQL stores."""
-
-    __abstract__ = True
-    uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
-
-_classes: Any = None
-
-
-def _get_storage_stores() -> Any:
-    global _classes
-    if _classes is not None:
-        return _classes
-
-    class CollectionStore(BaseModel):
-        """Collection store."""
-
-        __tablename__ = "langchain_storage_collection"
-
-        name = sqlalchemy.Column(sqlalchemy.String)
-        cmetadata = sqlalchemy.Column(JSON)
-
-        items = relationship(
-            "ItemStore",
-            back_populates="collection",
-            passive_deletes=True,
+        namespace: Mapped[str] = mapped_column(
+            primary_key=True, index=True, nullable=False
         )
+        key: Mapped[str] = mapped_column(primary_key=True, index=True, nullable=False)
+        value = mapped_column(LargeBinary, index=False, nullable=False)
 
-        @classmethod
-        def get_by_name(
-            cls, session: Session, name: str
-        ) -> Optional["CollectionStore"]:
-            # type: ignore
-            return session.query(cls).filter(cls.name == name).first()
+except ImportError:
+    # dummy for sqlalchemy < 2
+    from sqlalchemy import Column
 
-        @classmethod
-        def get_or_create(
-            cls,
-            session: Session,
-            name: str,
-            cmetadata: Optional[dict] = None,
-        ) -> Tuple["CollectionStore", bool]:
-            """
-            Get or create a collection.
-            Returns [Collection, bool] where the bool is True if the collection was created.
-            """  # noqa: E501
-            created = False
-            collection = cls.get_by_name(session, name)
-            if collection:
-                return collection, created
+    class LangchainKeyValueStores(Base):  # type: ignore[valid-type,misc,no-redef]
+        """Table used to save values."""
 
-            collection = cls(name=name, cmetadata=cmetadata)
-            session.add(collection)
-            session.commit()
-            created = True
-            return collection, created
+        # ATTENTION:
+        # Prior to modifying this table, please determine whether
+        # we should create migrations for this table to make sure
+        # users do not experience data loss.
+        __tablename__ = "langchain_key_value_stores"
 
-    class ItemStore(BaseModel):
-        """Item store."""
-
-        __tablename__ = "langchain_storage_items"
-
-        collection_id = sqlalchemy.Column(
-            UUID(as_uuid=True),
-            sqlalchemy.ForeignKey(
-                f"{CollectionStore.__tablename__}.uuid",
-                ondelete="CASCADE",
-            ),
-        )
-        collection = relationship(CollectionStore, back_populates="items")
-
-        content = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-
-        # custom_id : any user defined id
-        custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-
-    _classes = (ItemStore, CollectionStore)
-
-    return _classes
+        namespace = Column(Text(), primary_key=True, index=True, nullable=False)
+        key = Column(Text(), primary_key=True, index=True, nullable=False)
+        value = Column(LargeBinary, index=False, nullable=False)
 
 
-class SQLBaseStore(BaseStore[str, V], Generic[V]):
-    """SQL storage
+def items_equal(x: Any, y: Any) -> bool:
+    return x == y
 
-    Args:
-        connection_string: SQL connection string that will be passed to SQLAlchemy.
-        collection_name: The name of the collection to use. (default: langchain)
-            NOTE: Collections are useful to isolate your data in a given a database.
-            This is not the name of the table, but the name of the collection.
-            The tables will be created when initializing the store (if not exists)
-            So, make sure the user has the right permissions to create tables.
-        pre_delete_collection: If True, will delete the collection if it exists.
-            (default: False). Useful for testing.
-        engine_args: SQLAlchemy's create engine arguments.
 
-    Example:
+# This is a fix of original SQLStore.
+# This can will be removed when a PR will be merged.
+class SQLStore(BaseStore[str, bytes]):
+    """BaseStore interface that works on an SQL database.
+
+    Examples:
+        Create a SQLStore instance and perform operations on it:
+
         .. code-block:: python
 
-            from langchain_community.storage import SQLDocStore
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_rag.storage import SQLStore
 
-            # example using an SQLDocStore to store Document objects for
-            # a ParentDocumentRetriever
-            CONNECTION_STRING = "postgresql+psycopg2://user:pass@localhost:5432/db"
-            COLLECTION_NAME = "state_of_the_union_test"
-            docstore = SQLDocStore(
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-            )
-            child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-            vectorstore = ...
+            # Instantiate the SQLStore with the root path
+            sql_store = SQLStore(namespace="test", db_url="sqlite://:memory:")
 
-            retriever = ParentDocumentRetriever(
-                vectorstore=vectorstore,
-                docstore=docstore,
-                child_splitter=child_splitter,
-            )
+            # Set values for keys
+            sql_store.mset([("key1", b"value1"), ("key2", b"value2")])
 
-            # example using an SQLStrStore to store strings
-            # same example as in "InMemoryStore" but using SQL persistence
-            store = SQLDocStore(
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-            )
-            store.mset([('key1', 'value1'), ('key2', 'value2')])
-            store.mget(['key1', 'key2'])
-            # ['value1', 'value2']
-            store.mdelete(['key1'])
-            list(store.yield_keys())
-            # ['key2']
-            list(store.yield_keys(prefix='k'))
-            # ['key2']
+            # Get values for keys
+            values = sql_store.mget(["key1", "key2"])  # Returns [b"value1", b"value2"]
 
-            # delete the COLLECTION_NAME collection
-            docstore.delete_collection()
+            # Delete keys
+            sql_store.mdelete(["key1"])
+
+            # Iterate over keys
+            for key in sql_store.yield_keys():
+                print(key)
+
     """
 
     def __init__(
         self,
-        connection_string: str,
-        collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        collection_metadata: Optional[dict] = None,
-        pre_delete_collection: bool = False,
-        connection: Optional[sqlalchemy.engine.Connection] = None,
-        engine_args: Optional[dict[str, Any]] = None,
-    ) -> None:
-        self.connection_string = connection_string
-        self.collection_name = collection_name
-        self.collection_metadata = collection_metadata
-        self.pre_delete_collection = pre_delete_collection
-        self.engine_args = engine_args or {}
-        # Create a connection if not provided, otherwise use the provided connection
-        self._conn = connection if connection else self.__connect()
-        self.__post_init__()
+        *,
+        namespace: str,
+        db_url: Optional[Union[str, Path]] = None,
+        engine: Optional[Union[Engine, AsyncEngine]] = None,
+        engine_kwargs: Optional[Dict[str, Any]] = None,
+        async_mode: Optional[bool] = None,
+    ):
+        if db_url is None and engine is None:
+            raise ValueError("Must specify either db_url or engine")
 
-    def __post_init__(
-        self,
-    ) -> None:
-        """Initialize the store."""
-        ItemStore, CollectionStore = _get_storage_stores()
-        self.CollectionStore = CollectionStore
-        self.ItemStore = ItemStore
-        self.__create_tables_if_not_exists()
-        self.__create_collection()
+        if db_url is not None and engine is not None:
+            raise ValueError("Must specify either db_url or engine, not both")
 
-    def __connect(self) -> sqlalchemy.engine.Connection:
-        engine = sqlalchemy.create_engine(self.connection_string, **self.engine_args)
-        conn = engine.connect()
-        return conn
+        _engine: Union[Engine, AsyncEngine]
+        if db_url:
+            if async_mode is None:
+                async_mode = False
+            if async_mode:
+                _engine = create_async_engine(
+                    url=str(db_url),
+                    **(engine_kwargs or {}),
+                )
+            else:
+                _engine = create_engine(url=str(db_url), **(engine_kwargs or {}))
+        elif engine:
+            _engine = engine
 
-    def __create_tables_if_not_exists(self) -> None:
-        with self._conn.begin():
-            Base.metadata.create_all(self._conn)
+        else:
+            raise AssertionError("Something went wrong with configuration of engine.")
 
-    def __create_collection(self) -> None:
-        if self.pre_delete_collection:
-            self.delete_collection()
-        with Session(self._conn) as session:
-            self.CollectionStore.get_or_create(
-                session, self.collection_name, cmetadata=self.collection_metadata
+        _session_maker: Union[sessionmaker[Session], async_sessionmaker[AsyncSession]]
+        if isinstance(_engine, AsyncEngine):
+            self.async_mode = True
+            _session_maker = async_sessionmaker(bind=_engine)
+        else:
+            self.async_mode = False
+            _session_maker = sessionmaker(bind=_engine)
+
+        self.engine = _engine
+        self.dialect = _engine.dialect.name
+        self.session_maker = _session_maker
+        self.namespace = namespace
+
+    def create_schema(self) -> None:
+        Base.metadata.create_all(self.engine)  # problem in sqlalchemy v1
+        # sqlalchemy.exc.CompileError: (in table 'langchain_key_value_stores',
+        # column 'namespace'): Can't generate DDL for NullType(); did you forget
+        # to specify a type on this Column?
+
+    async def acreate_schema(self) -> None:
+        assert isinstance(self.engine, AsyncEngine)
+        async with self.engine.begin() as session:
+            await session.run_sync(Base.metadata.create_all)
+
+    def drop(self) -> None:
+        Base.metadata.drop_all(bind=self.engine.connect())
+
+    async def amget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
+        assert isinstance(self.engine, AsyncEngine)
+        result: Dict[str, bytes] = {}
+        async with self._make_async_session() as session:
+            stmt = select(LangchainKeyValueStores).filter(
+                and_(
+                    LangchainKeyValueStores.key.in_(keys),
+                    LangchainKeyValueStores.namespace == self.namespace,
+                )
             )
+            for v in await session.scalars(stmt):
+                result[v.key] = v.value
+        return [result.get(key) for key in keys]
 
-    def delete_collection(self) -> None:
-        with Session(self._conn) as session:
-            collection = self.__get_collection(session)
-            if not collection:
-                return
-            session.delete(collection)
+    def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
+        result = {}
+
+        with self._make_sync_session() as session:
+            stmt = select(LangchainKeyValueStores).filter(
+                and_(
+                    LangchainKeyValueStores.key.in_(keys),
+                    LangchainKeyValueStores.namespace == self.namespace,
+                )
+            )
+            for v in session.scalars(stmt):
+                result[v.key] = v.value
+        return [result.get(key) for key in keys]
+
+    async def amset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
+        async with self._make_async_session() as session:
+            await self._amdelete([key for key, _ in key_value_pairs], session)
+            session.add_all(
+                [
+                    LangchainKeyValueStores(namespace=self.namespace, key=k, value=v)
+                    for k, v in key_value_pairs
+                ]
+            )
+            await session.commit()
+
+    def mset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
+        values: Dict[str, bytes] = dict(key_value_pairs)
+        with self._make_sync_session() as session:
+            self._mdelete(list(values.keys()), session)
+            session.add_all(
+                [
+                    LangchainKeyValueStores(namespace=self.namespace, key=k, value=v)
+                    for k, v in values.items()
+                ]
+            )
             session.commit()
 
-    def __get_collection(self, session: Session) -> Any:
-        return self.CollectionStore.get_by_name(session, self.collection_name)
-
-    def __del__(self) -> None:
-        if self._conn:
-            self._conn.close()
-
-    def __serialize_value(self, obj: V) -> str:
-        if isinstance(obj, Serializable):
-            return dumps(obj)
-        return obj
-
-    def __deserialize_value(self, obj: V) -> str:
-        try:
-            return loads(obj)
-        except Exception:
-            return obj
-
-    def mget(self, keys: Sequence[str]) -> List[Optional[V]]:
-        """Get the values associated with the given keys.
-
-        Args:
-            keys (Sequence[str]): A sequence of keys.
-
-        Returns:
-            A sequence of optional values associated with the keys.
-            If a key is not found, the corresponding value will be None.
-        """
-        with Session(self._conn) as session:
-            collection = self.__get_collection(session)
-
-            items = (
-                session.query(self.ItemStore.content, self.ItemStore.custom_id)
-                .where(
-                    sqlalchemy.and_(
-                        self.ItemStore.custom_id.in_(keys),
-                        self.ItemStore.collection_id == (collection.uuid),
-                    )
-                )
-                .all()
+    def _mdelete(self, keys: Sequence[str], session: Session) -> None:
+        stmt = delete(LangchainKeyValueStores).filter(
+            and_(
+                LangchainKeyValueStores.key.in_(keys),
+                LangchainKeyValueStores.namespace == self.namespace,
             )
+        )
+        session.execute(stmt)
 
-        ordered_values = {key: None for key in keys}
-        for item in items:
-            v = item[0]
-            val = self.__deserialize_value(v) if v is not None else v
-            k = item[1]
-            ordered_values[k] = val
-
-        return [ordered_values[key] for key in keys]
-
-    def mset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
-        """Set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[Tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
-        with Session(self._conn) as session:
-            collection = self.__get_collection(session)
-            if not collection:
-                raise ValueError("Collection not found")
-            for id, item in key_value_pairs:
-                content = self.__serialize_value(item)
-                item_store = self.ItemStore(
-                    content=content,
-                    custom_id=id,
-                    collection_id=collection.uuid,
-                )
-                session.add(item_store)
-            session.commit()
+    async def _amdelete(self, keys: Sequence[str], session: AsyncSession) -> None:
+        stmt = delete(LangchainKeyValueStores).filter(
+            and_(
+                LangchainKeyValueStores.key.in_(keys),
+                LangchainKeyValueStores.namespace == self.namespace,
+            )
+        )
+        await session.execute(stmt)
 
     def mdelete(self, keys: Sequence[str]) -> None:
-        """Delete the given keys and their associated values.
-
-        Args:
-            keys (Sequence[str]): A sequence of keys to delete.
-        """
-        with Session(self._conn) as session:
-            collection = self.__get_collection(session)
-            if not collection:
-                raise ValueError("Collection not found")
-            if keys is not None:
-                stmt = sqlalchemy.delete(self.ItemStore).where(
-                    sqlalchemy.and_(
-                        self.ItemStore.custom_id.in_(keys),
-                        self.ItemStore.collection_id == (collection.uuid),
-                    )
-                )
-                session.execute(stmt)
+        with self._make_sync_session() as session:
+            self._mdelete(keys, session)
             session.commit()
 
-    def yield_keys(self, prefix: Optional[str] = None) -> Iterator[str]:
-        """Get an iterator over keys that match the given prefix.
+    async def amdelete(self, keys: Sequence[str]) -> None:
+        async with self._make_async_session() as session:
+            await self._amdelete(keys, session)
+            await session.commit()
 
-        Args:
-            prefix (str, optional): The prefix to match. Defaults to None.
+    def yield_keys(self, *, prefix: Optional[str] = None) -> Iterator[str]:
+        with self._make_sync_session() as session:
+            for v in session.query(LangchainKeyValueStores).filter(  # type: ignore
+                LangchainKeyValueStores.namespace == self.namespace
+            ):
+                if str(v.key).startswith(prefix or ""):
+                    yield str(v.key)
+            session.close()
 
-        Returns:
-            Iterator[str]: An iterator over keys that match the given prefix.
-        """
-        with Session(self._conn) as session:
-            collection = self.__get_collection(session)
-            start = 0
-            while True:
-                stop = start + ITERATOR_WINDOW_SIZE
-                query = session.query(self.ItemStore.custom_id).where(
-                    self.ItemStore.collection_id == (collection.uuid)
-                )
-                if prefix is not None:
-                    query = query.filter(self.ItemStore.custom_id.startswith(prefix))
-                items = query.slice(start, stop).all()
+    async def ayield_keys(self, *, prefix: Optional[str] = None) -> AsyncIterator[str]:
+        async with self._make_async_session() as session:
+            stmt = select(LangchainKeyValueStores).filter(
+                LangchainKeyValueStores.namespace == self.namespace
+            )
+            for v in await session.scalars(stmt):
+                if str(v.key).startswith(prefix or ""):
+                    yield str(v.key)
+            await session.close()
 
-                if len(items) == 0:
-                    break
-                for item in items:
-                    yield item[0]
-                start += ITERATOR_WINDOW_SIZE
+    @contextlib.contextmanager
+    def _make_sync_session(self) -> Generator[Session, None, None]:
+        """Make an async session."""
+        if self.async_mode:
+            raise ValueError(
+                "Attempting to use a sync method in when async mode is turned on. "
+                "Please use the corresponding async method instead."
+            )
+        with cast(Session, self.session_maker()) as session:
+            yield cast(Session, session)
 
-
-SQLDocStore = SQLBaseStore[Document]
-SQLStrStore = SQLBaseStore[str]
+    @contextlib.asynccontextmanager
+    async def _make_async_session(self) -> AsyncGenerator[AsyncSession, None]:
+        """Make an async session."""
+        if not self.async_mode:
+            raise ValueError(
+                "Attempting to use an async method in when sync mode is turned on. "
+                "Please use the corresponding async method instead."
+            )
+        async with cast(AsyncSession, self.session_maker()) as session:
+            yield cast(AsyncSession, session)

@@ -6,25 +6,36 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
 
 class NeuralDBVectorStore(VectorStore):
-    """Vectorstore that uses ThirdAI's NeuralDB."""
+    """Vectorstore that uses ThirdAI's NeuralDB.
+
+    To use, you should have the ``thirdai[neural_db]`` python package installed.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_community.vectorstores import NeuralDBVectorStore
+            from thirdai import neural_db as ndb
+
+            db = ndb.NeuralDB()
+            vectorstore = NeuralDBVectorStore(db=db)
+    """
+
+    def __init__(self, db: Any) -> None:
+        self.db = db
 
     db: Any = None  #: :meta private:
     """NeuralDB instance"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     @staticmethod
-    def _verify_thirdai_library(thirdai_key: Optional[str] = None):
+    def _verify_thirdai_library(thirdai_key: Optional[str] = None):  # type: ignore[no-untyped-def]
         try:
             from thirdai import licensing
 
@@ -32,13 +43,13 @@ class NeuralDBVectorStore(VectorStore):
 
             licensing.activate(thirdai_key or os.getenv("THIRDAI_KEY"))
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import thirdai python package and neuraldb dependencies. "
                 "Please install it with `pip install thirdai[neural_db]`."
             )
 
     @classmethod
-    def from_scratch(
+    def from_scratch(  # type: ignore[no-untyped-def, no-untyped-def]
         cls,
         thirdai_key: Optional[str] = None,
         **model_kwargs,
@@ -69,52 +80,10 @@ class NeuralDBVectorStore(VectorStore):
         NeuralDBVectorStore._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(db=ndb.NeuralDB(**model_kwargs))
+        return cls(db=ndb.NeuralDB(**model_kwargs))  # type: ignore[call-arg]
 
     @classmethod
-    def from_bazaar(
-        cls,
-        base: str,
-        bazaar_cache: Optional[str] = None,
-        thirdai_key: Optional[str] = None,
-    ):
-        """
-        Create a NeuralDBVectorStore with a base model from the ThirdAI
-        model bazaar.
-
-        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI
-        API key, or pass ``thirdai_key`` as a named parameter.
-
-        Example:
-            .. code-block:: python
-
-                from langchain_community.vectorstores import NeuralDBVectorStore
-
-                vectorstore = NeuralDBVectorStore.from_bazaar(
-                    base="General QnA",
-                    thirdai_key="your-thirdai-key",
-                )
-
-                vectorstore.insert([
-                    "/path/to/doc.pdf",
-                    "/path/to/doc.docx",
-                    "/path/to/doc.csv",
-                ])
-
-                documents = vectorstore.similarity_search("AI-driven music therapy")
-        """
-        NeuralDBVectorStore._verify_thirdai_library(thirdai_key)
-        from thirdai import neural_db as ndb
-
-        cache = bazaar_cache or str(Path(os.getcwd()) / "model_bazaar")
-        if not os.path.exists(cache):
-            os.mkdir(cache)
-        model_bazaar = ndb.Bazaar(cache)
-        model_bazaar.fetch()
-        return cls(db=model_bazaar.get_model(base))
-
-    @classmethod
-    def from_checkpoint(
+    def from_checkpoint(  # type: ignore[no-untyped-def]
         cls,
         checkpoint: Union[str, Path],
         thirdai_key: Optional[str] = None,
@@ -146,7 +115,7 @@ class NeuralDBVectorStore(VectorStore):
         NeuralDBVectorStore._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(db=ndb.NeuralDB.from_checkpoint(checkpoint))
+        return cls(db=ndb.NeuralDB.from_checkpoint(checkpoint))  # type: ignore[call-arg]
 
     @classmethod
     def from_texts(
@@ -187,25 +156,13 @@ class NeuralDBVectorStore(VectorStore):
         df = pd.DataFrame({"texts": texts})
         if metadatas:
             df = pd.concat([df, pd.DataFrame.from_records(metadatas)], axis=1)
-        temp = tempfile.NamedTemporaryFile("w", delete=False, delete_on_close=False)
+        temp = tempfile.NamedTemporaryFile("w", delete=False, delete_on_close=False)  # type: ignore[call-overload]
         df.to_csv(temp)
         source_id = self.insert([ndb.CSV(temp.name)], **kwargs)[0]
         offset = self.db._savable_state.documents.get_source_by_id(source_id)[1]
-        return [str(offset + i) for i in range(len(texts))]
+        return [str(offset + i) for i in range(len(texts))]  # type: ignore[arg-type]
 
-    @root_validator()
-    def validate_environments(cls, values: Dict) -> Dict:
-        """Validate ThirdAI environment variables."""
-        values["thirdai_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "thirdai_key",
-                "THIRDAI_KEY",
-            )
-        )
-        return values
-
-    def insert(
+    def insert(  # type: ignore[no-untyped-def, no-untyped-def]
         self,
         sources: List[Any],
         train: bool = True,
@@ -229,7 +186,7 @@ class NeuralDBVectorStore(VectorStore):
             **kwargs,
         )
 
-    def _preprocess_sources(self, sources):
+    def _preprocess_sources(self, sources):  # type: ignore[no-untyped-def]
         """Checks if the provided sources are string paths. If they are, convert
         to NeuralDB document objects.
 
@@ -261,7 +218,7 @@ class NeuralDBVectorStore(VectorStore):
                     )
         return preprocessed_sources
 
-    def upvote(self, query: str, document_id: Union[int, str]):
+    def upvote(self, query: str, document_id: Union[int, str]):  # type: ignore[no-untyped-def]
         """The vectorstore upweights the score of a document for a specific query.
         This is useful for fine-tuning the vectorstore to user behavior.
 
@@ -271,7 +228,7 @@ class NeuralDBVectorStore(VectorStore):
         """
         self.db.text_to_result(query, int(document_id))
 
-    def upvote_batch(self, query_id_pairs: List[Tuple[str, int]]):
+    def upvote_batch(self, query_id_pairs: List[Tuple[str, int]]):  # type: ignore[no-untyped-def]
         """Given a batch of (query, document id) pairs, the vectorstore upweights
         the scores of the document for the corresponding queries.
         This is useful for fine-tuning the vectorstore to user behavior.
@@ -284,7 +241,7 @@ class NeuralDBVectorStore(VectorStore):
             [(query, int(doc_id)) for query, doc_id in query_id_pairs]
         )
 
-    def associate(self, source: str, target: str):
+    def associate(self, source: str, target: str):  # type: ignore[no-untyped-def]
         """The vectorstore associates a source phrase with a target phrase.
         When the vectorstore sees the source phrase, it will also consider results
         that are relevant to the target phrase.
@@ -295,7 +252,7 @@ class NeuralDBVectorStore(VectorStore):
         """
         self.db.associate(source, target)
 
-    def associate_batch(self, text_pairs: List[Tuple[str, str]]):
+    def associate_batch(self, text_pairs: List[Tuple[str, str]]):  # type: ignore[no-untyped-def]
         """Given a batch of (source, target) pairs, the vectorstore associates
         each source phrase with the corresponding target phrase.
 
@@ -322,7 +279,6 @@ class NeuralDBVectorStore(VectorStore):
                     metadata={
                         "id": ref.id,
                         "upvote_ids": ref.upvote_ids,
-                        "text": ref.text,
                         "source": ref.source,
                         "metadata": ref.metadata,
                         "score": ref.score,
@@ -334,7 +290,7 @@ class NeuralDBVectorStore(VectorStore):
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
 
-    def save(self, path: str):
+    def save(self, path: str):  # type: ignore[no-untyped-def]
         """Saves a NeuralDB instance to disk. Can be loaded into memory by
         calling NeuralDB.from_checkpoint(path)
 
@@ -342,3 +298,159 @@ class NeuralDBVectorStore(VectorStore):
             path: path on disk to save the NeuralDB instance to.
         """
         self.db.save(path)
+
+
+class NeuralDBClientVectorStore(VectorStore):
+    """Vectorstore that uses ThirdAI's NeuralDB Enterprise Python Client for NeuralDBs.
+
+    To use, you should have the ``thirdai[neural_db]`` python package installed.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_community.vectorstores import NeuralDBClientVectorStore
+            from thirdai.neural_db import ModelBazaar, NeuralDBClient
+
+            bazaar = ModelBazaar(base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/")
+            bazaar.log_in(email="user@thirdai.com", password="1234")
+
+            ndb_client = NeuralDBClient(
+                deployment_identifier="user/model-0:user/deployment-0",
+                base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/",
+                bazaar=bazaar
+            )
+            vectorstore = NeuralDBClientVectorStore(db=ndb_client)
+            retriever = vectorstore.as_retriever(search_kwargs={'k':5})
+
+    """
+
+    def __init__(self, db: Any) -> None:
+        self.db = db
+
+    db: Any = None  #: :meta private:
+    """NeuralDB Client instance"""
+
+    class Config:
+        extra = "forbid"
+        underscore_attrs_are_private = True
+
+    def similarity_search(
+        self, query: str, k: int = 10, **kwargs: Any
+    ) -> List[Document]:
+        """Retrieve {k} contexts with for a given query
+
+        Args:
+            query: Query to submit to the model
+            k: The max number of context results to retrieve. Defaults to 10.
+        """
+        try:
+            references = self.db.search(query=query, top_k=k, **kwargs)["references"]
+            return [
+                Document(
+                    page_content=ref["text"],
+                    metadata={
+                        "id": ref["id"],
+                        "source": ref["source"],
+                        "metadata": ref["metadata"],
+                        "score": ref["source"],
+                        "context": ref["context"],
+                    },
+                )
+                for ref in references
+            ]
+        except Exception as e:
+            raise ValueError(f"Error while retrieving documents: {e}") from e
+
+    def insert(self, documents: List[Dict[str, Any]]):  # type: ignore[no-untyped-def, no-untyped-def]
+        """
+        Inserts documents into the VectorStore and return the corresponding Sources.
+
+        Args:
+            documents (List[Dict[str, Any]]): A list of dictionaries that
+            represent documents to be inserted to the VectorStores.
+            The document dictionaries must be in the following format:
+            {"document_type": "DOCUMENT_TYPE", **kwargs} where "DOCUMENT_TYPE"
+            is one of the following:
+            "PDF", "CSV", "DOCX", "URL", "SentenceLevelPDF", "SentenceLevelDOCX",
+            "Unstructured", "InMemoryText".
+            The kwargs for each document type are shown below:
+
+            class PDF(Document):
+                document_type: Literal["PDF"]
+                path: str
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+                version: str = "v1"
+                chunk_size: int = 100
+                stride: int = 40
+                emphasize_first_words: int = 0
+                ignore_header_footer: bool = True
+                ignore_nonstandard_orientation: bool = True
+
+            class CSV(Document):
+                document_type: Literal["CSV"]
+                path: str
+                id_column: Optional[str] = None
+                strong_columns: Optional[List[str]] = None
+                weak_columns: Optional[List[str]] = None
+                reference_columns: Optional[List[str]] = None
+                save_extra_info: bool = True
+                metadata: Optional[dict[str, Any]] = None
+                has_offset: bool = False
+                on_disk: bool = False
+
+            class DOCX(Document):
+                document_type: Literal["DOCX"]
+                path: str
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class URL(Document):
+                document_type: Literal["URL"]
+                url: str
+                save_extra_info: bool = True
+                title_is_strong: bool = False
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class SentenceLevelPDF(Document):
+                document_type: Literal["SentenceLevelPDF"]
+                path: str
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class SentenceLevelDOCX(Document):
+                document_type: Literal["SentenceLevelDOCX"]
+                path: str
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class Unstructured(Document):
+                document_type: Literal["Unstructured"]
+                path: str
+                save_extra_info: bool = True
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class InMemoryText(Document):
+                document_type: Literal["InMemoryText"]
+                name: str
+                texts: list[str]
+                metadatas: Optional[list[dict[str, Any]]] = None
+                global_metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            For Document types with the arg "path", ensure that
+            the path exists on your local machine.
+        """
+        return self.db.insert(documents)
+
+    def remove_documents(self, source_ids: List[str]):  # type: ignore[no-untyped-def]
+        """
+        Deletes documents from the VectorStore using source ids.
+
+        Args:
+            files (List[str]): A list of source ids to delete from the VectorStore.
+        """
+
+        self.db.delete(source_ids)

@@ -1,4 +1,5 @@
 """PromptLayer wrapper."""
+
 import datetime
 from typing import Any, Dict, List, Optional
 
@@ -33,7 +34,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         .. code-block:: python
 
             from langchain_community.chat_models import PromptLayerChatOpenAI
-            openai = PromptLayerChatOpenAI(model_name="gpt-3.5-turbo")
+            openai = PromptLayerChatOpenAI(model="gpt-3.5-turbo")
     """
 
     pl_tags: Optional[List[str]]

@@ -1,6 +1,7 @@
 """Util that calls Wikipedia."""
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -26,13 +27,14 @@ class WikipediaAPIWrapper(BaseModel):
     load_all_available_meta: bool = False
     doc_content_chars_max: int = 4000
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
             import wikipedia
 
-            wikipedia.set_lang(values["lang"])
+            lang = values.get("lang", "en")
+            wikipedia.set_lang(lang)
             values["wiki_client"] = wikipedia
         except ImportError:
             raise ImportError(
@@ -105,12 +107,20 @@ class WikipediaAPIWrapper(BaseModel):
         Returns: a list of documents.
 
         """
+        return list(self.lazy_load(query))
+
+    def lazy_load(self, query: str) -> Iterator[Document]:
+        """
+        Run Wikipedia search and get the article text plus the meta information.
+        See
+
+        Returns: a list of documents.
+
+        """
         page_titles = self.wiki_client.search(
             query[:WIKIPEDIA_MAX_QUERY_LENGTH], results=self.top_k_results
         )
-        docs = []
         for page_title in page_titles[: self.top_k_results]:
             if wiki_page := self._fetch_page(page_title):
                 if doc := self._page_to_document(page_title, wiki_page):
-                    docs.append(doc)
-        return docs
+                    yield doc

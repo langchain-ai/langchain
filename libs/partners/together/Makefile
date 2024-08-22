@@ -6,12 +6,10 @@ all: help
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
-test:
-	poetry run pytest $(TEST_FILE)
+integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
-tests:
+test tests integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
-
 
 ######################
 # LINTING AND FORMATTING
@@ -27,14 +25,14 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	poetry run ruff .
+	poetry run ruff check .
 	poetry run ruff format $(PYTHON_FILES) --diff
-	poetry run ruff --select I $(PYTHON_FILES)
+	poetry run ruff check --select I $(PYTHON_FILES)
 	mkdir $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
+	poetry run ruff check --select I --fix $(PYTHON_FILES)
 
 spell_check:
 	poetry run codespell --toml pyproject.toml

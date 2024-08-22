@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from requests.adapters import HTTPAdapter, Retry
 from typing_extensions import NotRequired, TypedDict
 
@@ -57,11 +57,9 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
     timeout: Optional[int] = 30
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         embaas_api_key = convert_to_secret_str(
@@ -85,7 +83,7 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
     def _handle_request(self, payload: EmbaasEmbeddingsPayload) -> List[List[float]]:
         """Sends a request to the Embaas API and handles the response."""
         headers = {
-            "Authorization": f"Bearer {self.embaas_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self.embaas_api_key.get_secret_value()}",  # type: ignore[union-attr]
             "Content-Type": "application/json",
         }
 

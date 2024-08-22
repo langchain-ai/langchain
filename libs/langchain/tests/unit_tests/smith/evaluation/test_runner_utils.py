@@ -1,4 +1,5 @@
 """Test the LangSmith evaluation helpers."""
+
 import uuid
 from datetime import datetime
 from typing import Any, Dict, Iterator, List, Optional, Union
@@ -172,7 +173,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         assert "the right input" in inputs
         return {"output": "2"}
 
-    mock_chain = TransformChain(
+    mock_chain = TransformChain(  # type: ignore[call-arg]
         input_variables=["the right input"],
         output_variables=["output"],
         transform=run_val,

@@ -1,5 +1,5 @@
 import re
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
@@ -14,6 +14,7 @@ from langchain_core.prompts.chat import (
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.tools.render import ToolsRenderer
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
@@ -28,7 +29,7 @@ from langchain.tools.render import render_text_description_and_args
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
 
-@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="1.0")
 class StructuredChatAgent(Agent):
     """Structured Chat Agent."""
 
@@ -103,7 +104,7 @@ class StructuredChatAgent(Agent):
             *_memory_prompts,
             HumanMessagePromptTemplate.from_template(human_message_template),
         ]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)  # type: ignore[arg-type]
 
     @classmethod
     def from_llm_and_tools(
@@ -151,7 +152,12 @@ class StructuredChatAgent(Agent):
 
 
 def create_structured_chat_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: ChatPromptTemplate,
+    tools_renderer: ToolsRenderer = render_text_description_and_args,
+    *,
+    stop_sequence: Union[bool, List[str]] = True,
 ) -> Runnable:
     """Create an agent aimed at supporting tools with multiple inputs.
 
@@ -159,6 +165,15 @@ def create_structured_chat_agent(
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
+        stop_sequence: bool or list of str.
+            If True, adds a stop token of "Observation:" to avoid hallucinates.
+            If False, does not add a stop token.
+            If a list of str, uses the provided list as the stop tokens.
+
+            Default is True. You may to set this to False if the LLM you are using
+            does not support stop sequences.
+        tools_renderer: This controls how the tools are converted into a string and
+            then passed into the LLM. Default is `render_text_description`.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -259,16 +274,20 @@ def create_structured_chat_agent(
             )
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables
+        prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     prompt = prompt.partial(
-        tools=render_text_description_and_args(list(tools)),
+        tools=tools_renderer(list(tools)),
         tool_names=", ".join([t.name for t in tools]),
     )
-    llm_with_stop = llm.bind(stop=["Observation"])
+    if stop_sequence:
+        stop = ["\nObservation"] if stop_sequence is True else stop_sequence
+        llm_with_stop = llm.bind(stop=stop)
+    else:
+        llm_with_stop = llm
 
     agent = (
         RunnablePassthrough.assign(

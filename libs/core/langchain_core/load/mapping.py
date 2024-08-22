@@ -1,3 +1,23 @@
+"""
+This file contains a mapping between the lc_namespace path for a given
+subclass that implements from Serializable to the namespace
+where that class is actually located.
+
+This mapping helps maintain the ability to serialize and deserialize
+well-known LangChain objects even if they are moved around in the codebase
+across different LangChain versions.
+
+For example,
+
+The code for AIMessage class is located in langchain_core.messages.ai.AIMessage,
+This message is associated with the lc_namespace
+["langchain", "schema", "messages", "AIMessage"],
+because this code was originally in langchain.schema.messages.AIMessage.
+
+The mapping allows us to deserialize an AIMessage created with an older
+version of LangChain where the code was in a different location.
+"""
+
 from typing import Dict, Tuple
 
 # First value is the value that it is serialized as
@@ -57,6 +77,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "tool",
         "ToolMessage",
     ),
+    ("langchain", "schema", "messages", "RemoveMessage"): (
+        "langchain_core",
+        "messages",
+        "modifier",
+        "RemoveMessage",
+    ),
     ("langchain", "schema", "agent", "AgentAction"): (
         "langchain_core",
         "agents",
@@ -115,17 +141,23 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat",
         "SystemMessagePromptTemplate",
     ),
+    ("langchain", "prompts", "image", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
+    ),
     ("langchain", "schema", "agent", "AgentActionMessageLog"): (
         "langchain_core",
         "agents",
         "AgentActionMessageLog",
     ),
-    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+    ("langchain", "schema", "agent", "ToolAgentAction"): (
         "langchain",
         "agents",
         "output_parsers",
-        "openai_tools",
-        "OpenAIToolAgentAction",
+        "tools",
+        "ToolAgentAction",
     ),
     ("langchain", "prompts", "chat", "BaseMessagePromptTemplate"): (
         "langchain_core",
@@ -229,21 +261,19 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "AzureChatOpenAI",
     ),
     ("langchain", "chat_models", "bedrock", "BedrockChat"): (
-        "langchain",
+        "langchain_aws",
         "chat_models",
         "bedrock",
-        "BedrockChat",
+        "ChatBedrock",
     ),
     ("langchain", "chat_models", "anthropic", "ChatAnthropic"): (
-        "langchain",
+        "langchain_anthropic",
         "chat_models",
-        "anthropic",
         "ChatAnthropic",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
-        "langchain",
+        "langchain_fireworks",
         "chat_models",
-        "fireworks",
         "ChatFireworks",
     ),
     ("langchain", "chat_models", "google_palm", "ChatGooglePalm"): (
@@ -306,15 +336,14 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "BaseOpenAI",
     ),
     ("langchain", "llms", "bedrock", "Bedrock"): (
-        "langchain",
+        "langchain_aws",
         "llms",
         "bedrock",
-        "Bedrock",
+        "BedrockLLM",
     ),
     ("langchain", "llms", "fireworks", "Fireworks"): (
-        "langchain",
+        "langchain_fireworks",
         "llms",
-        "fireworks",
         "Fireworks",
     ),
     ("langchain", "llms", "google_palm", "GooglePalm"): (
@@ -475,6 +504,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "retry",
         "RunnableRetry",
     ),
+    ("langchain_core", "prompts", "structured", "StructuredPrompt"): (
+        "langchain_core",
+        "prompts",
+        "structured",
+        "StructuredPrompt",
+    ),
 }
 
 # Needed for backwards compatibility for old versions of LangChain where things
@@ -509,6 +544,19 @@ _OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "messages",
         "system",
         "SystemMessage",
+    ),
+    ("langchain", "schema", "prompt_template", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
+    ),
+    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+        "langchain",
+        "agents",
+        "output_parsers",
+        "openai_tools",
+        "OpenAIToolAgentAction",
     ),
 }
 
@@ -865,5 +913,98 @@ OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "runnables",
         "retry",
         "RunnableRetry",
+    ),
+}
+
+_JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+    ("langchain_core", "messages", "AIMessage"): (
+        "langchain_core",
+        "messages",
+        "ai",
+        "AIMessage",
+    ),
+    ("langchain_core", "messages", "AIMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "ai",
+        "AIMessageChunk",
+    ),
+    ("langchain_core", "messages", "BaseMessage"): (
+        "langchain_core",
+        "messages",
+        "base",
+        "BaseMessage",
+    ),
+    ("langchain_core", "messages", "BaseMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "base",
+        "BaseMessageChunk",
+    ),
+    ("langchain_core", "messages", "ChatMessage"): (
+        "langchain_core",
+        "messages",
+        "chat",
+        "ChatMessage",
+    ),
+    ("langchain_core", "messages", "ChatMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "chat",
+        "ChatMessageChunk",
+    ),
+    ("langchain_core", "messages", "FunctionMessage"): (
+        "langchain_core",
+        "messages",
+        "function",
+        "FunctionMessage",
+    ),
+    ("langchain_core", "messages", "FunctionMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "function",
+        "FunctionMessageChunk",
+    ),
+    ("langchain_core", "messages", "HumanMessage"): (
+        "langchain_core",
+        "messages",
+        "human",
+        "HumanMessage",
+    ),
+    ("langchain_core", "messages", "HumanMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "human",
+        "HumanMessageChunk",
+    ),
+    ("langchain_core", "messages", "SystemMessage"): (
+        "langchain_core",
+        "messages",
+        "system",
+        "SystemMessage",
+    ),
+    ("langchain_core", "messages", "SystemMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "system",
+        "SystemMessageChunk",
+    ),
+    ("langchain_core", "messages", "ToolMessage"): (
+        "langchain_core",
+        "messages",
+        "tool",
+        "ToolMessage",
+    ),
+    ("langchain_core", "messages", "ToolMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "tool",
+        "ToolMessageChunk",
+    ),
+    ("langchain_core", "prompts", "image", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
     ),
 }

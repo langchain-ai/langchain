@@ -2,7 +2,7 @@ import functools
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, Pattern, Union
 
 import yaml
 from langchain_core.documents import Document
@@ -15,15 +15,22 @@ logger = logging.getLogger(__name__)
 class ObsidianLoader(BaseLoader):
     """Load `Obsidian` files from directory."""
 
-    FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
-    TEMPLATE_VARIABLE_REGEX = re.compile(r"{{(.*?)}}", re.DOTALL)
-    TAG_REGEX = re.compile(r"[^\S\/]#([a-zA-Z_]+[-_/\w]*)")
-    DATAVIEW_LINE_REGEX = re.compile(r"^\s*(\w+)::\s*(.*)$", re.MULTILINE)
-    DATAVIEW_INLINE_BRACKET_REGEX = re.compile(r"\[(\w+)::\s*(.*)\]", re.MULTILINE)
-    DATAVIEW_INLINE_PAREN_REGEX = re.compile(r"\((\w+)::\s*(.*)\)", re.MULTILINE)
+    FRONT_MATTER_REGEX: Pattern = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
+    TEMPLATE_VARIABLE_REGEX: Pattern = re.compile(r"{{(.*?)}}", re.DOTALL)
+    TAG_REGEX: Pattern = re.compile(r"[^\S\/]#([a-zA-Z_]+[-_/\w]*)")
+    DATAVIEW_LINE_REGEX: Pattern = re.compile(r"^\s*(\w+)::\s*(.*)$", re.MULTILINE)
+    DATAVIEW_INLINE_BRACKET_REGEX: Pattern = re.compile(
+        r"\[(\w+)::\s*(.*)\]", re.MULTILINE
+    )
+    DATAVIEW_INLINE_PAREN_REGEX: Pattern = re.compile(
+        r"\((\w+)::\s*(.*)\)", re.MULTILINE
+    )
 
     def __init__(
-        self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
+        self,
+        path: Union[str, Path],
+        encoding: str = "UTF-8",
+        collect_metadata: bool = True,
     ):
         """Initialize with a path.
 
@@ -136,10 +143,8 @@ class ObsidianLoader(BaseLoader):
             return content
         return self.FRONT_MATTER_REGEX.sub("", content)
 
-    def load(self) -> List[Document]:
-        """Load documents."""
+    def lazy_load(self) -> Iterator[Document]:
         paths = list(Path(self.file_path).glob("**/*.md"))
-        docs = []
         for path in paths:
             with open(path, encoding=self.encoding) as f:
                 text = f.read()
@@ -163,6 +168,4 @@ class ObsidianLoader(BaseLoader):
                     tags | set(front_matter.get("tags", []) or [])
                 )
 
-            docs.append(Document(page_content=text, metadata=metadata))
-
-        return docs
+            yield Document(page_content=text, metadata=metadata)

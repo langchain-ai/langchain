@@ -72,7 +72,7 @@ def test_wasm_chat_without_service_url() -> None:
     messages = [system_message, user_message]
 
     with pytest.raises(ValueError) as e:
-        chat(messages)
+        chat.invoke(messages)
 
     assert "Error code: 503" in str(e)
     assert "reason: The IP address or port of the chat service is incorrect." in str(e)

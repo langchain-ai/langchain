@@ -5,18 +5,25 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core._api import beta
 from langchain_core.load.mapping import (
+    _JS_SERIALIZABLE_MAPPING,
     _OG_SERIALIZABLE_MAPPING,
     OLD_CORE_NAMESPACES_MAPPING,
     SERIALIZABLE_MAPPING,
 )
 from langchain_core.load.serializable import Serializable
 
-DEFAULT_NAMESPACES = ["langchain", "langchain_core", "langchain_community"]
+DEFAULT_NAMESPACES = [
+    "langchain",
+    "langchain_core",
+    "langchain_community",
+    "langchain_anthropic",
+]
 
 ALL_SERIALIZABLE_MAPPINGS = {
     **SERIALIZABLE_MAPPING,
     **OLD_CORE_NAMESPACES_MAPPING,
     **_OG_SERIALIZABLE_MAPPING,
+    **_JS_SERIALIZABLE_MAPPING,
 }
 
 
@@ -27,7 +34,20 @@ class Reviver:
         self,
         secrets_map: Optional[Dict[str, str]] = None,
         valid_namespaces: Optional[List[str]] = None,
+        secrets_from_env: bool = True,
     ) -> None:
+        """Initialize the reviver.
+
+        Args:
+            secrets_map: A map of secrets to load. If a secret is not found in
+                the map, it will be loaded from the environment if `secrets_from_env`
+                is True. Defaults to None.
+            valid_namespaces: A list of additional namespaces (modules)
+                to allow to be deserialized. Defaults to None.
+            secrets_from_env: Whether to load secrets from the environment.
+                Defaults to True.
+        """
+        self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or dict()
         # By default only support langchain, but user can pass in additional namespaces
         self.valid_namespaces = (
@@ -46,7 +66,7 @@ class Reviver:
             if key in self.secrets_map:
                 return self.secrets_map[key]
             else:
-                if key in os.environ and os.environ[key]:
+                if self.secrets_from_env and key in os.environ and os.environ[key]:
                     return os.environ[key]
                 raise KeyError(f'Missing key "{key}" in load(secrets_map)')
 
@@ -114,20 +134,27 @@ def loads(
     *,
     secrets_map: Optional[Dict[str, str]] = None,
     valid_namespaces: Optional[List[str]] = None,
+    secrets_from_env: bool = True,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
     Equivalent to `load(json.loads(text))`.
 
     Args:
         text: The string to load.
-        secrets_map: A map of secrets to load.
+        secrets_map: A map of secrets to load. If a secret is not found in
+            the map, it will be loaded from the environment if `secrets_from_env`
+            is True. Defaults to None.
         valid_namespaces: A list of additional namespaces (modules)
-            to allow to be deserialized.
+            to allow to be deserialized. Defaults to None.
+        secrets_from_env: Whether to load secrets from the environment.
+            Defaults to True.
 
     Returns:
         Revived LangChain objects.
     """
-    return json.loads(text, object_hook=Reviver(secrets_map, valid_namespaces))
+    return json.loads(
+        text, object_hook=Reviver(secrets_map, valid_namespaces, secrets_from_env)
+    )
 
 
 @beta()
@@ -136,20 +163,25 @@ def load(
     *,
     secrets_map: Optional[Dict[str, str]] = None,
     valid_namespaces: Optional[List[str]] = None,
+    secrets_from_env: bool = True,
 ) -> Any:
     """Revive a LangChain class from a JSON object. Use this if you already
     have a parsed JSON object, eg. from `json.load` or `orjson.loads`.
 
     Args:
         obj: The object to load.
-        secrets_map: A map of secrets to load.
+        secrets_map: A map of secrets to load. If a secret is not found in
+            the map, it will be loaded from the environment if `secrets_from_env`
+            is True. Defaults to None.
         valid_namespaces: A list of additional namespaces (modules)
-            to allow to be deserialized.
+            to allow to be deserialized. Defaults to None.
+        secrets_from_env: Whether to load secrets from the environment.
+            Defaults to True.
 
     Returns:
         Revived LangChain objects.
     """
-    reviver = Reviver(secrets_map, valid_namespaces)
+    reviver = Reviver(secrets_map, valid_namespaces, secrets_from_env)
 
     def _load(obj: Any) -> Any:
         if isinstance(obj, dict):

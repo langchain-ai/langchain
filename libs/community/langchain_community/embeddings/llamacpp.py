@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
@@ -47,7 +47,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Number of threads to use. If None, the number 
     of threads is automatically determined."""
 
-    n_batch: Optional[int] = Field(8, alias="n_batch")
+    n_batch: Optional[int] = Field(512, alias="n_batch")
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
@@ -61,11 +61,9 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Device type to use and pass to the model"""
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
@@ -92,7 +90,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
             values["client"] = Llama(model_path, embedding=True, **model_params)
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import llama-cpp-python library. "
                 "Please install the llama-cpp-python library to "
                 "use this embedding model: pip install llama-cpp-python"

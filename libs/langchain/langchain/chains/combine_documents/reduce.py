@@ -6,7 +6,6 @@ from typing import Any, Callable, List, Optional, Protocol, Tuple
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 
@@ -200,12 +199,14 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """The maximum number of tokens to group documents into. For example, if
     set to 3000 then documents will be grouped into chunks of no greater than
     3000 tokens before trying to combine them into a smaller chunk."""
+    collapse_max_retries: Optional[int] = None
+    """The maximum number of retries to collapse documents to fit token_max.
+    If None, it will keep trying to collapse documents to fit token_max.
+    Otherwise, after it reaches the max number, it will throw an error"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def _collapse_chain(self) -> BaseCombineDocumentsChain:
@@ -289,6 +290,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             )
 
         _token_max = token_max or self.token_max
+        retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = split_list_of_docs(
                 result_docs, length_func, _token_max, **kwargs
@@ -298,6 +300,12 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 new_doc = collapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
             num_tokens = length_func(result_docs, **kwargs)
+            retries += 1
+            if self.collapse_max_retries and retries == self.collapse_max_retries:
+                raise ValueError(
+                    f"Exceed {self.collapse_max_retries} tries to \
+                        collapse document to {_token_max} tokens."
+                )
         return result_docs, {}
 
     async def _acollapse(
@@ -317,6 +325,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             )
 
         _token_max = token_max or self.token_max
+        retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = split_list_of_docs(
                 result_docs, length_func, _token_max, **kwargs
@@ -326,6 +335,12 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 new_doc = await acollapse_docs(docs, _collapse_docs_func, **kwargs)
                 result_docs.append(new_doc)
             num_tokens = length_func(result_docs, **kwargs)
+            retries += 1
+            if self.collapse_max_retries and retries == self.collapse_max_retries:
+                raise ValueError(
+                    f"Exceed {self.collapse_max_retries} tries to \
+                        collapse document to {_token_max} tokens."
+                )
         return result_docs, {}
 
     @property

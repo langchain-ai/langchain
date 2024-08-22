@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "rag-redis-multi-modal-multi-vector"
+version = "0.0.1"
+description = "Multi-modal RAG using Redis as the vectorstore and docstore"
+authors = ["Tyler Hutcherson <tyler.hutcherson@redis.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain-core = ">=0.1.5"
+langchain-openai = ">=0.0.1"
+redis = "^5.0.1"
+openai = "<=2.0.0"
+pypdfium2 = "^4.27.0"
+pillow = "^10.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "rag_redis_multi_modal_multi_vector"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Redis"
+integrations = ["OpenAI", "Redis"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

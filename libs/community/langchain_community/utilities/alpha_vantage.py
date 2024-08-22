@@ -1,8 +1,9 @@
 """Util that calls AlphaVantage for Currency Exchange Rate."""
+
 from typing import Any, Dict, List, Optional
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -18,9 +19,7 @@ class AlphaVantageAPIWrapper(BaseModel):
     alphavantage_api_key: Optional[str] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -29,6 +28,117 @@ class AlphaVantageAPIWrapper(BaseModel):
             values, "alphavantage_api_key", "ALPHAVANTAGE_API_KEY"
         )
         return values
+
+    def search_symbols(self, keywords: str) -> Dict[str, Any]:
+        """Make a request to the AlphaVantage API to search for symbols."""
+        response = requests.get(
+            "https://www.alphavantage.co/query/",
+            params={
+                "function": "SYMBOL_SEARCH",
+                "keywords": keywords,
+                "apikey": self.alphavantage_api_key,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "Error Message" in data:
+            raise ValueError(f"API Error: {data['Error Message']}")
+
+        return data
+
+    def _get_market_news_sentiment(self, symbol: str) -> Dict[str, Any]:
+        """Make a request to the AlphaVantage API to get market news sentiment for a
+        given symbol."""
+        response = requests.get(
+            "https://www.alphavantage.co/query/",
+            params={
+                "function": "NEWS_SENTIMENT",
+                "symbol": symbol,
+                "apikey": self.alphavantage_api_key,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "Error Message" in data:
+            raise ValueError(f"API Error: {data['Error Message']}")
+
+        return data
+
+    def _get_time_series_daily(self, symbol: str) -> Dict[str, Any]:
+        """Make a request to the AlphaVantage API to get the daily time series."""
+        response = requests.get(
+            "https://www.alphavantage.co/query/",
+            params={
+                "function": "TIME_SERIES_DAILY",
+                "symbol": symbol,
+                "apikey": self.alphavantage_api_key,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "Error Message" in data:
+            raise ValueError(f"API Error: {data['Error Message']}")
+
+        return data
+
+    def _get_quote_endpoint(self, symbol: str) -> Dict[str, Any]:
+        """Make a request to the AlphaVantage API to get the
+        latest price and volume information."""
+        response = requests.get(
+            "https://www.alphavantage.co/query/",
+            params={
+                "function": "GLOBAL_QUOTE",
+                "symbol": symbol,
+                "apikey": self.alphavantage_api_key,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "Error Message" in data:
+            raise ValueError(f"API Error: {data['Error Message']}")
+
+        return data
+
+    def _get_time_series_weekly(self, symbol: str) -> Dict[str, Any]:
+        """Make a request to the AlphaVantage API
+        to get the Weekly Time Series."""
+        response = requests.get(
+            "https://www.alphavantage.co/query/",
+            params={
+                "function": "TIME_SERIES_WEEKLY",
+                "symbol": symbol,
+                "apikey": self.alphavantage_api_key,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "Error Message" in data:
+            raise ValueError(f"API Error: {data['Error Message']}")
+
+        return data
+
+    def _get_top_gainers_losers(self) -> Dict[str, Any]:
+        """Make a request to the AlphaVantage API to get the top gainers, losers,
+        and most actively traded tickers in the US market."""
+        response = requests.get(
+            "https://www.alphavantage.co/query/",
+            params={
+                "function": "TOP_GAINERS_LOSERS",
+                "apikey": self.alphavantage_api_key,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "Error Message" in data:
+            raise ValueError(f"API Error: {data['Error Message']}")
+
+        return data
 
     def _get_exchange_rate(
         self, from_currency: str, to_currency: str

@@ -2,7 +2,7 @@ import importlib.util
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class SpacyEmbeddings(BaseModel, Embeddings):
@@ -23,9 +23,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
     nlp: Optional[Any] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid  # Forbid extra attributes during model initialization
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -78,7 +76,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             A list of embeddings, one for each document.
         """
-        return [self.nlp(text).vector.tolist() for text in texts]
+        return [self.nlp(text).vector.tolist() for text in texts]  # type: ignore[misc]
 
     def embed_query(self, text: str) -> List[float]:
         """
@@ -90,7 +88,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             The embedding for the text.
         """
-        return self.nlp(text).vector.tolist()
+        return self.nlp(text).vector.tolist()  # type: ignore[misc]
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """

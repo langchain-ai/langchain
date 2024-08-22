@@ -7,6 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
@@ -41,24 +42,16 @@ def _is_pinecone_v3() -> bool:
     return version.parse(pinecone_client_version) >= version.parse("3.0.0.dev")
 
 
+@deprecated(
+    since="0.0.18", removal="1.0", alternative_import="langchain_pinecone.Pinecone"
+)
 class Pinecone(VectorStore):
     """`Pinecone` vector store.
 
     To use, you should have the ``pinecone-client`` python package installed.
 
-    Example:
-        .. code-block:: python
-
-            from langchain_community.vectorstores import Pinecone
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
-            import pinecone
-
-            # The environment should be the one specified next to the API key
-            # in your Pinecone console
-            pinecone.init(api_key="***", environment="...")
-            index = pinecone.Index("langchain-demo")
-            embeddings = OpenAIEmbeddings()
-            vectorstore = Pinecone(index, embeddings, "text")
+    This version of Pinecone is deprecated. Please use `langchain_pinecone.Pinecone`
+    instead.
     """
 
     def __init__(
@@ -409,7 +402,9 @@ class Pinecone(VectorStore):
         embeddings_chunk_size: int = 1000,
         **kwargs: Any,
     ) -> Pinecone:
-        """Construct Pinecone wrapper from raw documents.
+        """
+        DEPRECATED: use langchain_pinecone.PineconeVectorStore.from_texts instead:
+        Construct Pinecone wrapper from raw documents.
 
         This is a user friendly interface that:
             1. Embeds documents.
@@ -418,21 +413,20 @@ class Pinecone(VectorStore):
         This is intended to be a quick way to get started.
 
         The `pool_threads` affects the speed of the upsert operations.
+
         Example:
             .. code-block:: python
 
-                from langchain_community.vectorstores import Pinecone
-                from langchain_community.embeddings import OpenAIEmbeddings
-                import pinecone
+                from langchain_pinecone import PineconeVectorStore
+                from langchain_openai import OpenAIEmbeddings
 
-                # The environment should be the one specified next to the API key
-                # in your Pinecone console
-                pinecone.init(api_key="***", environment="...")
                 embeddings = OpenAIEmbeddings()
-                pinecone = Pinecone.from_texts(
-                    texts,
-                    embeddings,
-                    index_name="langchain-demo"
+                index_name = "my-index"
+                namespace = "my-namespace"
+                vectorstore = Pinecone(
+                    index_name=index_name,
+                    embedding=embedding,
+                    namespace=namespace,
                 )
         """
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
