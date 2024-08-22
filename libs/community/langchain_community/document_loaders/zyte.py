@@ -50,7 +50,7 @@ class ZyteURLLoader(BaseLoader):
     ) -> None:
         """Initialize with file path."""
         try:
-            from zyte_api import AsyncZyteAPI, RequestError, ZyteAPI
+            from zyte_api import AsyncZyteAPI, ZyteAPI
             from zyte_api.utils import USER_AGENT as PYTHON_ZYTE_API_USER_AGENT
 
         except ImportError:
@@ -60,7 +60,8 @@ class ZyteURLLoader(BaseLoader):
             )
         if mode not in ("article", "html", "html-text"):
             raise ValueError(
-                f"Unrecognized mode '{mode}'. Expected one of 'article', 'html', 'html-text'."
+                f"Unrecognized mode '{mode}'. Expected one of "
+                f"'article', 'html', 'html-text'."
             )
 
         api_key = api_key or get_from_env("api_key", "ZYTE_API_KEY")
@@ -114,8 +115,9 @@ class ZyteURLLoader(BaseLoader):
                         continue
                     else:
                         logger.exception(
-                            f"Error fetching {url} and aborting, use continue_on_failure=True "
-                            "to continue loading urls after encountering an error."
+                            f"Error fetching {url} and aborting, use "
+                            f"continue_on_failure=True to continue loading "
+                            f"urls after encountering an error."
                         )
                         raise response
 
@@ -140,8 +142,9 @@ class ZyteURLLoader(BaseLoader):
                         continue
                     else:
                         logger.exception(
-                            f"Error fetching {url} and aborting, use continue_on_failure=True "
-                            "to continue loading urls after encountering an error."
+                            f"Error fetching {url} and aborting, use "
+                            f"continue_on_failure=True to continue loading "
+                            f"urls after encountering an error."
                         )
                         raise e
         return results
