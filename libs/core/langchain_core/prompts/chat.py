@@ -37,7 +37,7 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.message import (
     BaseMessagePromptTemplate,
-    _MessageDictPromptTemplate,
+    _DictMessagePromptTemplate,
 )
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
@@ -739,6 +739,7 @@ MessageLikeRepresentation = Union[
         Union[str, List[dict], List[object]],
     ],
     str,
+    Dict[str, Any],
 ]
 
 
@@ -1039,7 +1040,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return cls.from_messages([message])
 
     @classmethod
-    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages", pending=True)
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
@@ -1059,7 +1060,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         )
 
     @classmethod
-    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages", pending=True)
     def from_strings(
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
@@ -1386,8 +1387,14 @@ def _convert_to_message_template(
                 )
             )
     elif isinstance(message, dict):
-        _message = _MessageDictPromptTemplate(
-            template=message, template_format=template_format
+        if template_format == "jinja":
+            raise ValueError(
+                f"{template_format} is unsafe and is not supported for templates "
+                f"expressed as dicts. Please use 'f-string' or 'mustache' format."
+            )
+        _message = _DictMessagePromptTemplate(
+            template=message,
+            template_format=template_format,  # type: ignore[arg-type]
         )
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")

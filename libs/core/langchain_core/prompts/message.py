@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Literal
 
 from langchain_core.load import Serializable
 from langchain_core.messages import BaseMessage, convert_to_messages
@@ -97,10 +97,11 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         return prompt + other
 
 
-class _MessageDictPromptTemplate(BaseMessagePromptTemplate):
+class _DictMessagePromptTemplate(BaseMessagePromptTemplate):
     """Template represented by a dict that looks for input vars in all leaf vals.
 
-    Special handling of any dict value that contains "type": "image_url".
+    Special handling of any dict value that contains
+    ``{"type": "image_url", "image_url": {"path": "..."}}``
     """
 
     template: Dict[str, Any]
