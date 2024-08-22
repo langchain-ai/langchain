@@ -726,6 +726,8 @@ class LLMGraphTransformer:
         else:
             nodes_set = set()
             relationships = []
+            if not isinstance(raw_schema, str):
+                raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
             if isinstance(parsed_json, dict):
                 parsed_json = [parsed_json]
