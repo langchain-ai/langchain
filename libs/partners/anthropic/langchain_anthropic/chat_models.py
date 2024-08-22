@@ -757,9 +757,18 @@ class ChatAnthropic(BaseChatModel):
             "output_tokens": data.usage.output_tokens,
             "total_tokens": data.usage.input_tokens + data.usage.output_tokens,
         }
+        if hasattr(data.usage, "cache_creation_input_tokens"):
+            msg.usage_metadata["cache_creation_input_tokens"] = (
+                data.usage.cache_creation_input_tokens
+            )
+            msg.usage_metadata["total_tokens"] += data.usage.cache_creation_input_tokens
+        if hasattr(data.usage, "cache_read_input_tokens"):
+            msg.usage_metadata["cache_read_input_tokens"] = (
+                data.usage.cache_read_input_tokens
+            )
+            msg.usage_metadata["total_tokens"] += data.usage.cache_read_input_tokens
         return ChatResult(
-            generations=[ChatGeneration(message=msg)],
-            llm_output=llm_output,
+            generations=[ChatGeneration(message=msg)], llm_output=llm_output
         )
 
     def _generate(
