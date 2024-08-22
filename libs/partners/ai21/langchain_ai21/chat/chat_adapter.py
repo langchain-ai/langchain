@@ -197,9 +197,6 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         """
         Convert Langchain ToolCalls to AI21 ToolCalls.
         """
-        if not tool_calls:
-            return None
-
         ai21_tool_calls: List[AI21ToolCall] = []
         for lc_tool_call in tool_calls:
 
