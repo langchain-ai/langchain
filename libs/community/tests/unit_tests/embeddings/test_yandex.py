@@ -7,10 +7,10 @@ import pytest
 from langchain_community.embeddings import YandexGPTEmbeddings
 
 YANDEX_MODULE_NAME2 = (
-    "yandex.cloud.ai.foundation_models.v1.embedding." "embedding_service_pb2_grpc"
+    "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc"
 )
 YANDEX_MODULE_NAME = (
-    "yandex.cloud.ai.foundation_models.v1.embedding." "embedding_service_pb2"
+    "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2"
 )
 
 
@@ -50,7 +50,7 @@ def test_query_embedding_call(api_key_or_token: dict, disable_logging: dict) -> 
         {
             YANDEX_MODULE_NAME: absent_yandex_module_stub,
             YANDEX_MODULE_NAME2: absent_yandex_module_stub,
-            "grpc":MagicMock(),
+            "grpc": MagicMock(),
         },
     ):
         stub = absent_yandex_module_stub.EmbeddingsServiceStub
