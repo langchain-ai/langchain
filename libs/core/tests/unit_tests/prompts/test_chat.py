@@ -937,7 +937,7 @@ def test_chat_tmpl_dict_msg() -> None:
     ).to_messages()
     assert actual == expected
 
-    partial_ = template.partial( **{ "local_image_path": image_path } )
+    partial_ = template.partial(**{"local_image_path": image_path})
     actual = partial_.invoke(
         {
             "text1": "important message",
