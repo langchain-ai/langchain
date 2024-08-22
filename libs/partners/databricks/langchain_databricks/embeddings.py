@@ -59,9 +59,9 @@ class DatabricksEmbeddings(Embeddings, BaseModel):
     """The endpoint to use."""
     target_uri: str = "databricks"
     """The parameters to use for queries."""
-    query_params: Dict[str, str] = {}
+    query_params: Dict[str, Any] = {}
     """The parameters to use for documents."""
-    documents_params: Dict[str, str] = {}
+    documents_params: Dict[str, Any] = {}
     """The target URI to use."""
     _client: Any = PrivateAttr()
 
