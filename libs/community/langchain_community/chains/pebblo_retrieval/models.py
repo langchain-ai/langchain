@@ -109,7 +109,7 @@ class VectorDB(BaseModel):
     embedding_model: Optional[str] = None
 
 
-class Chains(BaseModel):
+class ChainInfo(BaseModel):
     name: str
     model: Optional[Model]
     vector_dbs: Optional[List[VectorDB]]
@@ -121,7 +121,7 @@ class App(BaseModel):
     description: Optional[str]
     runtime: Runtime
     framework: Framework
-    chains: List[Chains]
+    chains: List[ChainInfo]
     plugin_version: str
 
 
@@ -134,9 +134,9 @@ class Context(BaseModel):
 
 class Prompt(BaseModel):
     data: Optional[Union[list, str]]
-    entityCount: Optional[int]
-    entities: Optional[dict]
-    prompt_gov_enabled: Optional[bool]
+    entityCount: Optional[int] = None
+    entities: Optional[dict] = None
+    prompt_gov_enabled: Optional[bool] = None
 
 
 class Qa(BaseModel):
