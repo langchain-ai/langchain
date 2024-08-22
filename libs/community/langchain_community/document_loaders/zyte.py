@@ -170,7 +170,7 @@ class ZyteURLLoader(BaseLoader):
 
     def aload(self):
         docs = []
-        responses = asyncio.run(fetch_items())
+        responses = asyncio.run(self.fetch_items())
         for response in responses:
             content = self._get_content(response)
             doc = Document(page_content=content, metadata={"url": response["url"]})
