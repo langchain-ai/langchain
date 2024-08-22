@@ -629,7 +629,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 
 @deprecated(
     "0.1.0",
-    alternative=(
+    message=(
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
@@ -720,7 +720,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
 @deprecated(
     "0.1.0",
-    alternative=(
+    message=(
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
