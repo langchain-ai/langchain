@@ -130,8 +130,13 @@ def execute_function(
         ) from e
     from databricks.sdk.service.sql import StatementState
 
-    if any(
-        p.name == EXECUTE_FUNCTION_ARG_NAME for p in function.input_params.parameters
+    if (
+        function.input_params
+        and function.input_params.parameters
+        and any(
+            p.name == EXECUTE_FUNCTION_ARG_NAME
+            for p in function.input_params.parameters
+        )
     ):
         raise ValueError(
             "Parameter name conflicts with the reserved argument name for executing "
@@ -167,7 +172,7 @@ def execute_function(
         statement=parametrized_statement.statement,
         warehouse_id=warehouse_id,
         parameters=parametrized_statement.parameters,
-        **execute_statement_args,
+        **execute_statement_args,  # type: ignore
     )
     status = response.status
     assert status is not None, f"Statement execution failed: {response}"

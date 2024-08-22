@@ -23,10 +23,10 @@ from langchain_community.tools.databricks._execution import (
         ),
     ],
 )
-def test_execute_function(parameters, execute_params) -> None:
+def test_execute_function(parameters: dict, execute_params: dict) -> None:
     workspace_client = mock.Mock()
 
-    def mock_execute_statement(
+    def mock_execute_statement(  # no-untyped-def: ignore
         statement,
         warehouse_id,
         *,
@@ -56,7 +56,7 @@ def test_execute_function(parameters, execute_params) -> None:
 def test_execute_function_error() -> None:
     workspace_client = mock.Mock()
 
-    def mock_execute_statement(
+    def mock_execute_statement(  # no-untyped-def: ignore
         statement,
         warehouse_id,
         *,
