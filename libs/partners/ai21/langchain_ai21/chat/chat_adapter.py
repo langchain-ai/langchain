@@ -197,18 +197,26 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         """
         Convert Langchain ToolCalls to AI21 ToolCalls.
         """
-        return [
-            AI21ToolCall(
-                # TODO: This id can be None and we don't accept None.
-                #  What should happen here?
-                id=tool_call["id"],
+        if not tool_calls:
+            return None
+
+        ai21_tool_calls: List[AI21ToolCall] = []
+        for lc_tool_call in tool_calls:
+
+            if "id" not in lc_tool_call or not lc_tool_call["id"]:
+                raise ValueError("Tool call ID is missing or empty.")
+
+            ai21_tool_call = AI21ToolCall(
+                id=lc_tool_call["id"],
                 type="function",
                 function=AI21ToolFunction(
-                    name=tool_call["name"], arguments=str(tool_call["args"])
+                    name=lc_tool_call["name"],
+                    arguments=str(lc_tool_call["args"]),
                 ),
             )
-            for tool_call in tool_calls
-        ]
+            ai21_tool_calls.append(ai21_tool_call)
+
+        return ai21_tool_calls
 
     def _get_content_as_string(self, base_message: BaseMessage) -> str:
         if isinstance(base_message.content, str):
