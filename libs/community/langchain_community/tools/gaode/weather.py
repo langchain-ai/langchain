@@ -7,7 +7,7 @@ API keys:      https://console.amap.com/dev/index
 
 import json
 import os
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Field
