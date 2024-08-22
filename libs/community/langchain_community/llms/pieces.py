@@ -1,3 +1,7 @@
+# Accomplish the following: 
+# Implement method to pass model name from the list of supported models 
+# Implement a method to stream the response from Pieces OS
+
 from __future__ import annotations
 
 from typing import Any, List, Mapping, Optional
