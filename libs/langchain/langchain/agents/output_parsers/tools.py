@@ -78,7 +78,7 @@ def parse_ai_message_to_tool_action(
 
 
 def parse_ollama_ai_message_to_tool_action(
-        message: BaseMessage,
+    message: BaseMessage,
 ) -> Union[List[AgentAction], AgentFinish]:
     """Parse an AI message potentially containing tool_calls."""
     if not isinstance(message, AIMessage):
@@ -96,8 +96,13 @@ def parse_ollama_ai_message_to_tool_action(
             if "arguments" in tool_call["function"]:
                 function_name = tool_call["function"]["name"]
                 tool_input = tool_call["function"]["arguments"]
-                content_msg = f"responded: {message.content}\n" if message.content else "\n"
-                log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
+                content_msg = (
+                    f"responded: {message.content}\n" if message.content else "\n"
+                )
+                log = (
+                    f"\nInvoking: `{function_name}` with "
+                    f"`{tool_input}`\n{content_msg}\n"
+                )
                 actions.append(
                     ToolAgentAction(
                         tool=function_name,
