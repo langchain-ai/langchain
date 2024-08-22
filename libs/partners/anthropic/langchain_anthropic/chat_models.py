@@ -776,7 +776,7 @@ class ChatAnthropic(BaseChatModel):
             input_tokens=data.usage.input_tokens,
             output_tokens=data.usage.output_tokens,
             total_tokens=data.usage.input_tokens + data.usage.output_tokens,
-        )  # type: ignore[typeddict-item]
+        )
         if self.beta:
             usage_metadata["cache_creation_input_tokens"] = (
                 data.usage.cache_creation_input_tokens
@@ -1204,7 +1204,7 @@ def _make_message_chunk_from_anthropic_event(
                 input_tokens=input_tokens,
                 output_tokens=0,
                 total_tokens=input_tokens,
-            ),  # type: ignore[typeddict-item]
+            ),
         )
     elif (
         event.type == "content_block_start"
@@ -1257,7 +1257,7 @@ def _make_message_chunk_from_anthropic_event(
                 input_tokens=0,
                 output_tokens=output_tokens,
                 total_tokens=output_tokens,
-            ),  # type: ignore[typeddict-item]
+            ),
             response_metadata={
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,

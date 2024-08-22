@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, NotRequired
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -51,9 +51,9 @@ class UsageMetadata(TypedDict):
     """Count of output (or completion) tokens."""
     total_tokens: int
     """Total token count."""
-    cache_creation_input_tokens: Optional[int]
+    cache_creation_input_tokens: NotRequired[int]
     """Count of cache creation input tokens."""
-    cache_read_input_tokens: Optional[int]
+    cache_read_input_tokens: NotRequired[int]
     """Count of cache read input tokens."""
 
 

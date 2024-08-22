@@ -5,6 +5,8 @@ from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import Message, TextBlock, Usage
+from anthropic.types.beta.prompt_caching.prompt_caching_beta_usage import PromptCachingBetaUsage
+from anthropic.types.beta.prompt_caching.prompt_caching_beta_message import PromptCachingBetaMessage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
@@ -111,6 +113,54 @@ def test__format_output() -> None:
         },
     )
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    actual = llm._format_output(anthropic_msg)
+    assert expected == actual
+
+def test__format_output_with_cache() -> None:
+    anthropic_msg = PromptCachingBetaMessage(
+        id="foo",
+        content=[TextBlock(type="text", text="bar")],
+        model="baz",
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=PromptCachingBetaUsage(
+            input_tokens=2,
+            output_tokens=1,
+            cache_creation_input_tokens=1234,
+            cache_read_input_tokens=4321,
+        ),
+        type="message",
+    )
+    expected = ChatResult(
+        generations=[
+            ChatGeneration(
+                message=AIMessage(  # type: ignore[misc]
+                    "bar",
+                    usage_metadata={
+                        "input_tokens": 2,
+                        "output_tokens": 1,
+                        "total_tokens": 3,
+                        "cache_creation_input_tokens": 1234,
+                        "cache_read_input_tokens": 4321,
+                    },
+                )
+            ),
+        ],
+        llm_output={
+            "id": "foo",
+            "model": "baz",
+            "stop_reason": None,
+            "stop_sequence": None,
+            "usage": {
+                "input_tokens": 2,
+                "output_tokens": 1,
+                "cache_creation_input_tokens": 1234,
+                "cache_read_input_tokens": 4321,
+            },
+        },
+    )
+    llm = ChatAnthropic(model="test", anthropic_api_key="test", beta=True)  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
     assert expected == actual
 
