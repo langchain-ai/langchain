@@ -449,7 +449,9 @@ class ChatDeepInfra(BaseChatModel):
 
     def _handle_status(self, code: int, text: Any) -> None:
         if code >= 500:
-            raise ChatDeepInfraException(f"DeepInfra Server: Error {code}")
+            raise ChatDeepInfraException(
+                f"DeepInfra Server error status {code}: {text}"
+            )
         elif code >= 400:
             raise ValueError(f"DeepInfra received an invalid payload: {text}")
         elif code != 200:
