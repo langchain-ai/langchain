@@ -54,16 +54,16 @@ def test_completion_call(api_key_or_token: dict, disable_logging: dict) -> None:
     absent_yandex_module_stub = MagicMock()
     grpc_mock = MagicMock()
     with mock.patch.dict(
-            "sys.modules",
-            {
-                "yandex.cloud.ai.foundation_models.v1."
-                "text_common_pb2": absent_yandex_module_stub,
-                "yandex.cloud.ai.foundation_models.v1.text_generation."
-                "text_generation_service_pb2": absent_yandex_module_stub,
-                "yandex.cloud.ai.foundation_models.v1.text_generation."
-                "text_generation_service_pb2_grpc": absent_yandex_module_stub,
-                "grpc": grpc_mock,
-            },
+        "sys.modules",
+        {
+            "yandex.cloud.ai.foundation_models.v1."
+            "text_common_pb2": absent_yandex_module_stub,
+            "yandex.cloud.ai.foundation_models.v1.text_generation."
+            "text_generation_service_pb2": absent_yandex_module_stub,
+            "yandex.cloud.ai.foundation_models.v1.text_generation."
+            "text_generation_service_pb2_grpc": absent_yandex_module_stub,
+            "grpc": grpc_mock,
+        },
     ):
         grpc_mock.RpcError = Exception
         stub = absent_yandex_module_stub.TextGenerationServiceStub
