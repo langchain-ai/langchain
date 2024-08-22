@@ -7,9 +7,9 @@ API keys:      https://console.amap.com/dev/index
 
 import json
 import os
-import requests
 from typing import Any, Dict, Type
 
+import requests
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
@@ -27,7 +27,7 @@ class GaodeWeatherTool(BaseTool):
     """Gaode weather query tool"""
 
     name = "gaode_weather_tool"
-    description = "Search for weather information based on the input city"
+    description = "Query for weather information based on the input city"
     args_schema: Type[BaseModel] = GaodeWeatherInput
     return_direct = True
 
