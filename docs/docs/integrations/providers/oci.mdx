@@ -32,20 +32,18 @@ from langchain_community.embeddings import OCIGenAIEmbeddings
 > as an OCI Model Deployment Endpoint using the
 > [OCI Data Science Model Deployment Service](https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-about.htm).
 
-If you deployed a LLM with the VLLM or TGI framework, you can use the
-`OCIModelDeploymentVLLM` or `OCIModelDeploymentTGI` classes to interact with it.
-
 To use, you should have the latest `oracle-ads` python SDK installed.
 
 ```bash
 pip install -U oracle-ads
 ```
 
-See [usage examples](/docs/integrations/llms/oci_model_deployment_endpoint).
+See [chat](/docs/integrations/chat/oci_data_science) and [complete](/docs/integrations/llms/oci_model_deployment_endpoint) usage examples.
+
 
 ```python
-from langchain_community.llms import OCIModelDeploymentVLLM
+from langchain_community.chat_models import ChatOCIModelDeployment
 
-from langchain_community.llms import OCIModelDeploymentTGI
+from langchain_community.llms import OCIModelDeploymentLLM
 ```
 
