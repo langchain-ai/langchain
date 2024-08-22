@@ -58,7 +58,7 @@ class GaodeWeatherTool(BaseTool):
             return f"Failed to get weather info of {city}! error: {str(e)}"
 
     @staticmethod
-    def _get_json_response(url: str):
+    def _get_json_response(url: str) -> json:
         """Get for gaode json response"""
 
         with requests.session():
