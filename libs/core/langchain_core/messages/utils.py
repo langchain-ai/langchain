@@ -10,6 +10,7 @@ Some examples of what you can do with these functions include:
 from __future__ import annotations
 
 import inspect
+import json
 from functools import partial
 from typing import (
     TYPE_CHECKING,
@@ -213,7 +214,23 @@ def _create_message_from_message_type(
     if id is not None:
         kwargs["id"] = id
     if tool_calls is not None:
-        kwargs["tool_calls"] = tool_calls
+        kwargs["tool_calls"] = []
+        for tool_call in tool_calls:
+            # Convert OpenAI-format tool call to LangChain format.
+            if "function" in tool_call:
+                args = tool_call["function"]["arguments"]
+                if isinstance(args, str):
+                    args = json.loads(args, strict=False)
+                kwargs["tool_calls"].append(
+                    {
+                        "name": tool_call["function"]["name"],
+                        "args": args,
+                        "id": tool_call["id"],
+                        "type": "tool_call",
+                    }
+                )
+            else:
+                kwargs["tool_calls"].append(tool_call)
     if message_type in ("human", "user"):
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
@@ -271,7 +288,8 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 msg_type = msg_kwargs.pop("role")
             except KeyError:
                 msg_type = msg_kwargs.pop("type")
-            msg_content = msg_kwargs.pop("content")
+            # None msg content is not allowed
+            msg_content = msg_kwargs.pop("content") or ""
         except KeyError:
             raise ValueError(
                 f"Message dict must contain 'role' and 'content' keys, got {message}"
