@@ -1,4 +1,4 @@
-# Extraction with OpenAI functions
+# Extraction - OpenAI functions
 
 This template uses [OpenAI function calling](https://python.langchain.com/docs/modules/chains/how_to/openai_functions) for extraction of structured output from unstructured input text.
 

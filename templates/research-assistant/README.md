@@ -1,4 +1,4 @@
-# Research Assistant
+# Research assistant
 
 This template implements a version of  
 [GPT Researcher](https://github.com/assafelovic/gpt-researcher) that you can use

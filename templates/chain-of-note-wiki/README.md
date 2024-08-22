@@ -1,4 +1,4 @@
-# Chain-of-Note (Wikipedia)
+# Chain-of-Note - Wikipedia
 
 Implements `Chain-of-Note` as described in [CHAIN-OF-NOTE: ENHANCING ROBUSTNESS IN
 RETRIEVAL-AUGMENTED LANGUAGE MODELS](https://arxiv.org/pdf/2311.09210.pdf) paper

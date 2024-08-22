@@ -1,4 +1,4 @@
-# Cassandra Entomology RAG
+# Cassandra - Entomology RAG
 
 This template will perform RAG using `Apache Cassandra®` or `Astra DB` 
 through `CQL` (`Cassandra` vector store class)

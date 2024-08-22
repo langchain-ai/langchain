@@ -1,4 +1,4 @@
-# Neo4j AuraDB generation
+# Neo4j AuraDB - generation
 
 This template pairs LLM-based knowledge graph extraction with `Neo4j AuraDB`, 
 a fully managed cloud graph database.

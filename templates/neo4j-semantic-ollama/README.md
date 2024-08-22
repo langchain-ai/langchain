@@ -1,4 +1,4 @@
-# Neo4j Semantic ollama
+# Neo4j, Ollama - Semantic Layer
 
 This template is designed to implement an agent capable of interacting with a 
 graph database like `Neo4j` through a semantic layer using `Mixtral` as 

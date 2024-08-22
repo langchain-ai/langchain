@@ -1,4 +1,4 @@
-# Cassandra Synonym caching
+# Cassandra - synonym caching
 
 This template provides a simple chain template showcasing the usage 
 of LLM Caching backed by `Apache Cassandra®` or `Astra DB` through `CQL`.

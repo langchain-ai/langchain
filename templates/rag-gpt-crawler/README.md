@@ -1,4 +1,3 @@
-
 # RAG - GPT-crawler
 
 `GPT-crawler` crawls websites to produce files for use in custom GPTs or other apps (RAG).

@@ -1,4 +1,4 @@
-# RAG - Olama - multi-query
+# RAG - Ollama - multi-query
 
 This template performs RAG using `Ollama` and `OpenAI` with a multi-query retriever. 
 

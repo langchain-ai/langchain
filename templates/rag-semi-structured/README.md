@@ -1,4 +1,4 @@
-# RAG - Unstructured - Semi-structured
+# RAG - Unstructured - semi-structured
 
 This template performs RAG on `semi-structured data`, such as a PDF with text and tables.
 

@@ -1,4 +1,4 @@
-# Hybrid Search in Weaviate
+# Hybrid search - Weaviate
 
 This template shows you how to use the hybrid search feature in `Weaviate` vector store.
 Hybrid search combines multiple search algorithms to improve the accuracy and relevance of search results. 

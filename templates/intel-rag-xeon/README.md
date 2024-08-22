@@ -1,4 +1,4 @@
-# RAG on Intel Xeon
+# RAG - Intel Xeon
 
 This template performs RAG using `Chroma` and `Hugging Face Text Generation Inference` 
 on `Intel® Xeon® Scalable` Processors.

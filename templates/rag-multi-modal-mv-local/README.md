@@ -1,4 +1,4 @@
-# RAG - Olama, Chroma - multi-modal, multi-vector, local
+# RAG - Ollama, Chroma - multi-modal, multi-vector, local
 
 Visual search is a familiar application to many with iPhones or Android devices. It allows user to search photos using natural language.
   

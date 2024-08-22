@@ -1,4 +1,4 @@
-# Neo4j Semantic Layer
+# Neo4j - Semantic Layer
 
 This template is designed to implement an agent capable of interacting with a graph database like `Neo4j` through a semantic layer using `OpenAI function calling`.
 The semantic layer equips the agent with a suite of robust tools, allowing it to interact with the graph database based on the user's intent.

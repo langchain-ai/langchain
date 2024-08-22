@@ -1,4 +1,4 @@
-# RAG - Zep - Conversation
+# RAG - Zep - conversation
 
 This template demonstrates building a RAG conversation app using `Zep`. 
 

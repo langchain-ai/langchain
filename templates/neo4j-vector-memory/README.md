@@ -1,4 +1,4 @@
-# Neo4j Vector memory
+# Neo4j - vector memory
 
 This template allows you to integrate an LLM with a vector-based 
 retrieval system using `Neo4j` as the vector store.

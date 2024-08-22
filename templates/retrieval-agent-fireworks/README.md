@@ -1,4 +1,4 @@
-# Retrieval Agent - Fireworks, Hugging Face
+# Retrieval agent - Fireworks, Hugging Face
 
 This package uses open source models hosted on `Fireworks AI` to do retrieval using an agent architecture. By default, this does retrieval over `Arxiv`.
 

@@ -1,4 +1,4 @@
-# OpenAI Functions Agent - Gmail
+# OpenAI functions - Gmail agent
 
 Ever struggled to reach inbox zero? 
 

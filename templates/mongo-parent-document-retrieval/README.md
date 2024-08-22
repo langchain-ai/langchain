@@ -1,4 +1,4 @@
-# MongoDB Parent Document Retrieval RAG
+# MongoDB - Parent-Document Retrieval RAG
 
 This template performs RAG using `MongoDB` and `OpenAI`.
 It does a more advanced form of RAG called `Parent-Document Retrieval`.

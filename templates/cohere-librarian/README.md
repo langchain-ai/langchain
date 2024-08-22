@@ -1,4 +1,4 @@
-# Cohere Librarian
+# Cohere - Librarian
 
 This template turns `Cohere` into a librarian.
 

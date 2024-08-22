@@ -1,4 +1,4 @@
-# OpenAI Functions Agent 
+# OpenAI functions - agent 
 
 This template creates an agent that uses `OpenAI function calling` to communicate its decisions on what actions to take. 
 

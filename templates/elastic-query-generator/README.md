@@ -1,4 +1,4 @@
-# Elasticsearch Query generator
+# Elasticsearch - query generator
 
 This template allows interacting with `Elasticsearch` analytics databases 
 in natural language using LLMs. 

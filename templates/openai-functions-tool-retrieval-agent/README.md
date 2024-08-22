@@ -1,4 +1,4 @@
-# OpenAI Functions Tool Retrieval Agent
+# OpenAI functions - tool retrieval agent
 
 The novel idea introduced in this template is the idea of using retrieval to select the set of tools to use to answer an agent query. This is useful when you have many many tools to select from. You cannot put the description of all the tools in the prompt (because of context length issues) so instead you dynamically select the N tools you do want to consider using at run time.
 

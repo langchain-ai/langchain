@@ -1,4 +1,4 @@
-# Retrieval Agent
+# Retrieval agent
 
 This package uses `Azure OpenAI` to do retrieval using an agent architecture.
 By default, this does retrieval over `Arxiv`.

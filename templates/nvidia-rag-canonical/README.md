@@ -1,4 +1,4 @@
-# Nvidia and Milvus - Canonical RAG
+# Nvidia, Milvus - canonical RAG
 
 This template performs RAG using `Milvus` Vector Store 
 and `NVIDIA` Models (Embedding and Chat).

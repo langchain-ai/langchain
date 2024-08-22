@@ -1,4 +1,4 @@
-# Gemini Functions agent
+# Gemini functions - agent
 
 This template creates an agent that uses `Google Gemini function calling` to communicate its decisions on what actions to take. 
 

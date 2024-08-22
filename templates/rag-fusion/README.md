@@ -1,4 +1,4 @@
-# RAG - Pinecone - Fusion
+# RAG - Pinecone - fusion
 
 This template enables `RAG fusion` using a re-implementation of 
 the project found [here](https://github.com/Raudaschl/rag-fusion). 
