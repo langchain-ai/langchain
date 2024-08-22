@@ -804,7 +804,7 @@ def trim_messages(
             list_token_counter = token_counter  # type: ignore[assignment]
     else:
         raise ValueError(
-            f"'token_counter' expected ot be a model that implements "
+            f"'token_counter' expected to be a model that implements "
             f"'get_num_tokens_from_messages()' or a function. Received object of type "
             f"{type(token_counter)}."
         )
