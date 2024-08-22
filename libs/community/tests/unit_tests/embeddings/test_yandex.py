@@ -1,10 +1,10 @@
 import os
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 
 from langchain_community.embeddings import YandexGPTEmbeddings
-
 
 @mock.patch.dict(os.environ, {"YC_API_KEY": "foo"}, clear=True)
 def test_init() -> None:
@@ -28,17 +28,23 @@ def test_init() -> None:
 
 
 @pytest.mark.parametrize(
-    "api_key_or_token", [dict(api_key="bogus"), dict(iam_token="bogus")]
+    "api_key_or_token", [dict(api_key="bogus"), dict(iam_token="bogus")
+                         ]
 )
 @pytest.mark.parametrize(
     "disable_logging",
-    [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)],
+    [dict(), dict(disable_request_logging=True), dict(disable_request_logging=False)
+     ],
 )
 @mock.patch.dict(os.environ, {}, clear=True)
 def test_query_embedding_call(api_key_or_token: dict, disable_logging: dict) -> None:
-    with mock.patch(
-        "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc.EmbeddingsServiceStub"
-    ) as stub:
+    absent_yandex_module_stub = MagicMock()
+    with mock.patch.dict('sys.modules',
+                         {
+                             "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2": absent_yandex_module_stub,
+                             "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc": absent_yandex_module_stub}):
+        stub = absent_yandex_module_stub.EmbeddingsServiceStub
+        request_stub = absent_yandex_module_stub.TextEmbeddingRequest
         args = {"folder_id": "fldr", **api_key_or_token, **disable_logging}
         ygpt = YandexGPTEmbeddings(**args)
         grpc_call_mock = stub.return_value.TextEmbedding
@@ -47,16 +53,17 @@ def test_query_embedding_call(api_key_or_token: dict, disable_logging: dict) -> 
         assert act_emb == [1, 2, 3]
         assert len(grpc_call_mock.call_args_list) == 1
         once_called_args = grpc_call_mock.call_args_list[0]
-        assert "fldr" in once_called_args.args[0].model_uri
-        assert "query" in once_called_args.args[0].model_uri
-        assert "doc" not in once_called_args.args[0].model_uri
-        assert once_called_args.args[0].text == "nomatter"
-        assert once_called_args.kwargs["metadata"]
-        assert len(once_called_args.kwargs["metadata"]) > 0
+        act_model_uri = request_stub.call_args_list[0].kwargs["model_uri"]
+        assert "fldr" in act_model_uri
+        assert "query" in act_model_uri
+        assert "doc" not in act_model_uri
+        act_text = request_stub.call_args_list[0].kwargs["text"]
+        assert act_text == "nomatter"
+        act_metadata = once_called_args.kwargs["metadata"]
+        assert act_metadata
+        assert len(act_metadata) > 0
         if disable_logging.get("disable_request_logging"):
-            assert ("x-data-logging-enabled", "false") in once_called_args.kwargs[
-                "metadata"
-            ]
+            assert ("x-data-logging-enabled", "false") in act_metadata
 
 
 @pytest.mark.parametrize(
@@ -68,9 +75,13 @@ def test_query_embedding_call(api_key_or_token: dict, disable_logging: dict) -> 
 )
 @mock.patch.dict(os.environ, {}, clear=True)
 def test_doc_embedding_call(api_key_or_token: dict, disable_logging: dict) -> None:
-    with mock.patch(
-        "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc.EmbeddingsServiceStub"
-    ) as stub:
+    absent_yandex_module_stub = MagicMock()
+    with mock.patch.dict('sys.modules',
+                         {
+                             "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2": absent_yandex_module_stub,
+                             "yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc": absent_yandex_module_stub}):
+        stub = absent_yandex_module_stub.EmbeddingsServiceStub
+        request_stub = absent_yandex_module_stub.TextEmbeddingRequest
         args = {"folder_id": "fldr", **api_key_or_token, **disable_logging}
         ygpt = YandexGPTEmbeddings(**args)
         grpc_call_mock = stub.return_value.TextEmbedding
@@ -83,13 +94,16 @@ def test_doc_embedding_call(api_key_or_token: dict, disable_logging: dict) -> No
         assert act_emb == [[1, 2, 3], [4, 5, 6]]
         assert len(grpc_call_mock.call_args_list) == 2
         for i, txt in enumerate(["foo", "bar"]):
+            act_model_uri = request_stub.call_args_list[i].kwargs["model_uri"]
+            act_text = request_stub.call_args_list[i].kwargs["text"]
             call_args = grpc_call_mock.call_args_list[i]
-            assert "fldr" in call_args.args[0].model_uri
-            assert "query" not in call_args.args[0].model_uri
-            assert "doc" in call_args.args[0].model_uri
-            assert call_args.args[0].text == txt
-            assert call_args.kwargs["metadata"]
-            assert len(call_args.kwargs["metadata"]) > 0
+            act_metadata = call_args.kwargs["metadata"]
+            assert "fldr" in act_model_uri
+            assert "query" not in act_model_uri
+            assert "doc" in act_model_uri
+            assert act_text == txt
+            assert act_metadata
+            assert len(act_metadata) > 0
             if disable_logging.get("disable_request_logging"):
                 assert ("x-data-logging-enabled", "false") in call_args.kwargs[
                     "metadata"
