@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from langchain_core.prompt_values import PromptValue
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -36,16 +36,6 @@ class BaseInjector(
                     f"as argument of the constructor of injector. "
                 )
         return values
-
-    @property
-    def InputType(self) -> Any:
-        """Return the input type of the injector."""
-        return Type[InputOutputType]
-
-    @property
-    def OutputType(self) -> Any:
-        """Return the output type of the injector."""
-        return Type[InputOutputType]
 
     def invoke(
         self, input: InputOutputType, config: Optional[RunnableConfig] = None
@@ -157,5 +147,15 @@ class PromptInjector(BaseInjector[PromptValue]):
              )
     """  # noqa: E501
 
-    def __init__(self, inject_objects: Sequence[Any], **kwargs: Any) -> None:
+    def __init__(self, inject_objects: List[Any], **kwargs: Any) -> None:
         super().__init__(inject_objects=inject_objects, attr_name="prompt", **kwargs)
+
+    @property
+    def InputType(self) -> Any:
+        """Return the input type of the injector."""
+        return Type[PromptValue]
+
+    @property
+    def OutputType(self) -> Any:
+        """Return the output type of the injector."""
+        return Type[PromptValue]
