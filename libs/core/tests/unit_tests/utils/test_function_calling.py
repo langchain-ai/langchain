@@ -296,6 +296,21 @@ def test_convert_to_openai_function(
     assert actual == runnable_expected
 
 
+@pytest.mark.xfail(reason="Direct pydantic v2 models not yet supported")
+def test_convert_to_openai_function_nested_v2() -> None:
+    class NestedV2(BaseModelV2Maybe):
+        nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
+        nested_v2_arg2: Literal["bar", "baz"] = FieldV2Maybe(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    def my_function(arg1: NestedV2) -> None:
+        """dummy function"""
+        pass
+
+    convert_to_openai_function(my_function)
+
+
 def test_convert_to_openai_function_nested() -> None:
     class Nested(BaseModel):
         nested_arg1: int = Field(..., description="foo")
@@ -303,53 +318,37 @@ def test_convert_to_openai_function_nested() -> None:
             ..., description="one of 'bar', 'baz'"
         )
 
-    class NestedV2(BaseModelV2Maybe):
-        nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
-        nested_v2_arg2: Literal["bar", "baz"] = FieldV2Maybe(
-            ..., description="one of 'bar', 'baz'"
-        )
-
-    def my_function(arg1: Nested, arg2: NestedV2) -> None:
+    def my_function(arg1: Nested) -> None:
         """dummy function"""
         pass
 
-        expected = {
-            "name": "my_function",
-            "description": "dummy function",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "arg1": {
-                        "type": "object",
-                        "properties": {
-                            "nested_arg1": {"type": "integer", "description": "foo"},
-                            "nested_arg2": {
-                                "type": "string",
-                                "enum": ["bar", "baz"],
-                                "description": "one of 'bar', 'baz'",
-                            },
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "type": "object",
+                    "properties": {
+                        "nested_arg1": {"type": "integer", "description": "foo"},
+                        "nested_arg2": {
+                            "type": "string",
+                            "enum": ["bar", "baz"],
+                            "description": "one of 'bar', 'baz'",
                         },
-                        "required": ["nested_arg1", "nested_arg2"],
                     },
-                    "arg2": {
-                        "type": "object",
-                        "properties": {
-                            "nested_v2_arg1": {"type": "integer", "description": "foo"},
-                            "nested_v2_arg2": {
-                                "type": "string",
-                                "enum": ["bar", "baz"],
-                                "description": "one of 'bar', 'baz'",
-                            },
-                        },
-                        "required": ["nested_v2_arg1", "nested_v2_arg2"],
-                    },
+                    "required": ["nested_arg1", "nested_arg2"],
                 },
-                "required": ["arg1", "arg2"],
             },
-        }
+            "required": [
+                "arg1",
+            ],
+        },
+    }
 
-        actual = convert_to_openai_function(my_function)
-        assert actual == expected
+    actual = convert_to_openai_function(my_function)
+    assert actual == expected
 
 
 @pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
