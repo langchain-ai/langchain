@@ -342,7 +342,7 @@ def test_sqlserver_delete_text_by_id_no_ids_provided(
         {"id": 600, "source": "newspaper page", "length": 44},
         {"id": 300, "source": "random texts", "length": 16},
     ]
-    result = store.add_texts(texts, metadatas)
+    store.add_texts(texts, metadatas)
 
     result = store.delete(None)
     # Should return False, since empty list of ids given
