@@ -55,7 +55,8 @@ class GaodeWeatherTool(BaseTool):
                     return "Failed to get city code"
 
                 city_code = city_data.get("districts")[0].get("adcode")
-                weather_url = f"{WEATHER_URL}?city={city_code}&extensions=all&key={api_key}"
+                weather_url = (f"{WEATHER_URL}?city={city_code}"
+                               f"&extensions=all&key={api_key}")
                 weather_resp = session.request(
                     method="GET",
                     url=weather_url,
