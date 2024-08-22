@@ -4,9 +4,21 @@ sidebar_position: 1
 
 # How to migrate from v0.0 chains
 
+LangChain has evolved since its initial release, and many of the original "Chain" classes 
+have been deprecated in favor of the more flexible and powerful frameworks of LCEL and LangGraph. 
+
+This guide will help you migrate your existing v0.0 chains to the new abstractions.
+
+:::info How deprecated implementations work
+Even though many of these implementations are deprecated, they are **still supported** in the codebase. 
+However, they are not recommended for new development, and we recommend re-implementing them using the following guides!
+
+To see the planned removal version for each deprecated implementation, check their API reference.
+:::
+
 :::info Prerequisites
 
-This guide assumes familiarity with the following concepts:
+These guides assume some familiarity with the following concepts:
 - [LangChain Expression Language](/docs/concepts#langchain-expression-language-lcel)
 - [LangGraph](https://langchain-ai.github.io/langgraph/)
 :::
