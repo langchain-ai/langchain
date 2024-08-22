@@ -12,7 +12,6 @@ from typing import Any, Type
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
-from requests import Response
 
 CITY_CODE_URL = "https://restapi.amap.com/v3/config/district"
 WEATHER_URL = "https://restapi.amap.com/v3/weather/weatherInfo"
@@ -59,7 +58,7 @@ class GaodeWeatherTool(BaseTool):
             return f"Failed to get weather info of {city}! error: {str(e)}"
 
     @staticmethod
-    def _get_json_response(url: str) -> Response:
+    def _get_json_response(url: str):
         """Get for gaode json response"""
 
         with requests.session():
