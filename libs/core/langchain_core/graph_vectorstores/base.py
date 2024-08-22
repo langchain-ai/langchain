@@ -32,6 +32,7 @@ def _has_next(iterator: Iterator) -> bool:
     return next(iterator, sentinel) is not sentinel
 
 
+@beta()
 class Node(Serializable):
     """Node in the GraphVectorStore.
 
@@ -115,6 +116,7 @@ def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
         )
 
 
+@beta()
 def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
     for node in nodes:
         metadata = node.metadata.copy()
