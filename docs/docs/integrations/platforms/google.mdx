@@ -625,6 +625,7 @@ from langchain.retrievers import GoogleVertexAISearchRetriever
 > from Google Cloud allows enterprises to search, store, govern, and manage documents and their AI-extracted
 > data and metadata in a single platform.
 
+Note: `GoogleDocumentAIWarehouseRetriever` is deprecated, use `DocumentAIWarehouseRetriever` (see below).
 ```python
 from langchain.retrievers import GoogleDocumentAIWarehouseRetriever
 docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(
@@ -634,6 +635,10 @@ query = ...
 documents = docai_wh_retriever.invoke(
     query, user_ldap=...
 )
+```
+
+```python
+from langchain_google_community.documentai_warehouse import DocumentAIWarehouseRetriever
 ```
 
 ## Tools
