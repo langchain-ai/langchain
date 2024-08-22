@@ -14,7 +14,8 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 from requests import Response
 
-BASE_URL = "https://restapi.amap.com/v3"  # Gaode web base url
+CITY_CODE_URL = "https://restapi.amap.com/v3/config/district"
+WEATHER_URL = "https://restapi.amap.com/v3/weather/weatherInfo"
 
 
 class GaodeWeatherInput(BaseModel):
@@ -38,19 +39,16 @@ class GaodeWeatherTool(BaseTool):
 
         api_key = os.getenv("GAODE_API_KEY")
         if api_key is None:
-            return "Please apply for gaode api_key first."
+            return "Please apply for gaode api_key first"
 
         try:
-            city_url = (f"{BASE_URL}/config/district"
-                        f"?keywords={city}&subdistrict=0&key={api_key}")
+            city_url = f"{CITY_CODE_URL}?keywords={city}&subdistrict=0&key={api_key}"
             city_resp = self._get_json_response(city_url)
             if city_resp.get("info") != "OK":
                 return "Failed to get city code"
 
             city_code = city_resp.get("districts")[0].get("adcode")
-
-            weather_url = (f"{BASE_URL}/weather/weatherInfo"
-                           f"?city={city_code}&extensions=all&key={api_key}")
+            weather_url = f"{WEATHER_URL}?city={city_code}&extensions=all&key={api_key}"
             weather_resp = self._get_json_response(weather_url)
             if weather_resp.get("info") != "OK":
                 return "Failed to get weather info"
