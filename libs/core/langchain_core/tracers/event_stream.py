@@ -28,7 +28,12 @@ from langchain_core.outputs import (
     GenerationChunk,
     LLMResult,
 )
-from langchain_core.runnables.schema import EventData, StreamEvent
+from langchain_core.runnables.schema import (
+    CustomStreamEvent,
+    EventData,
+    StandardStreamEvent,
+    StreamEvent,
+)
 from langchain_core.runnables.utils import (
     Input,
     Output,
@@ -47,7 +52,18 @@ logger = logging.getLogger(__name__)
 
 
 class RunInfo(TypedDict):
-    """Information about a run."""
+    """Information about a run.
+
+    This is used to keep track of the metadata associated with a run.
+
+    Parameters:
+        name: The name of the run.
+        tags: The tags associated with the run.
+        metadata: The metadata associated with the run.
+        run_type: The type of the run.
+        inputs: The inputs to the run.
+        parent_run_id: The ID of the parent run.
+    """
 
     name: str
     tags: List[str]
@@ -145,7 +161,19 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
-        """Tap the output aiter."""
+        """Tap the output aiter.
+
+        This method is used to tap the output of a Runnable that produces
+        an async iterator. It is used to generate stream events for the
+        output of the Runnable.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output of the Runnable.
+
+        Yields:
+            T: The output of the Runnable.
+        """
         sentinel = object()
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
@@ -161,7 +189,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event: StreamEvent = {
+            event: StandardStreamEvent = {
                 "event": f"on_{run_info['run_type']}_stream",
                 "run_id": str(run_id),
                 "name": run_info["name"],
@@ -187,7 +215,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap the output aiter."""
+        """Tap the output aiter.
+
+        Args:
+            run_id: The ID of the run.
+            output: The output of the Runnable.
+
+        Yields:
+            T: The output of the Runnable.
+        """
         sentinel = object()
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
@@ -203,7 +239,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event: StreamEvent = {
+            event: StandardStreamEvent = {
                 "event": f"on_{run_info['run_type']}_stream",
                 "run_id": str(run_id),
                 "name": run_info["name"],
@@ -340,6 +376,28 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             },
             run_type,
         )
+
+    async def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Generate a custom astream event."""
+        event = CustomStreamEvent(
+            event="on_custom_event",
+            run_id=str(run_id),
+            name=name,
+            tags=tags or [],
+            metadata=metadata or {},
+            data=data,
+            parent_ids=self._get_parent_ids(run_id),
+        )
+        self._send(event, name)
 
     async def on_llm_new_token(
         self,
@@ -678,7 +736,7 @@ async def _astream_events_implementation_v1(
     exclude_types: Optional[Sequence[str]] = None,
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
-) -> AsyncIterator[StreamEvent]:
+) -> AsyncIterator[StandardStreamEvent]:
     from langchain_core.runnables import ensure_config
     from langchain_core.runnables.utils import _RootEventFilter
     from langchain_core.tracers.log_stream import (
@@ -733,7 +791,7 @@ async def _astream_events_implementation_v1(
             encountered_start_event = True
             state = run_log.state.copy()
 
-            event = StreamEvent(
+            event = StandardStreamEvent(
                 event=f"on_{state['type']}_start",
                 run_id=state["id"],
                 name=root_name,
@@ -798,7 +856,7 @@ async def _astream_events_implementation_v1(
                 # And this avoids duplicates as well!
                 log_entry["streamed_output"] = []
 
-            yield StreamEvent(
+            yield StandardStreamEvent(
                 event=f"on_{log_entry['type']}_{event_type}",
                 name=log_entry["name"],
                 run_id=log_entry["id"],
@@ -824,7 +882,7 @@ async def _astream_events_implementation_v1(
             # Clean up the stream, we don't need it anymore.
             state["streamed_output"] = []
 
-            event = StreamEvent(
+            event = StandardStreamEvent(
                 event=f"on_{state['type']}_stream",
                 run_id=state["id"],
                 tags=root_tags,
@@ -839,7 +897,7 @@ async def _astream_events_implementation_v1(
     state = run_log.state
 
     # Finally yield the end event for the root runnable.
-    event = StreamEvent(
+    event = StandardStreamEvent(
         event=f"on_{state['type']}_end",
         name=root_name,
         run_id=state["id"],
@@ -866,7 +924,7 @@ async def _astream_events_implementation_v2(
     exclude_types: Optional[Sequence[str]] = None,
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
-) -> AsyncIterator[StreamEvent]:
+) -> AsyncIterator[StandardStreamEvent]:
     """Implementation of the astream events API for V2 runnables."""
     from langchain_core.callbacks.base import BaseCallbackManager
     from langchain_core.runnables import ensure_config

@@ -31,7 +31,7 @@ from langchain.agents.output_parsers.openai_functions import (
 )
 
 
-@deprecated("0.1.0", alternative="create_openai_functions_agent", removal="0.3.0")
+@deprecated("0.1.0", alternative="create_openai_functions_agent", removal="1.0")
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
     """An Agent driven by OpenAIs function powered API.
 
@@ -50,9 +50,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
     prompt: BasePromptTemplate
-    output_parser: Type[
+    output_parser: Type[OpenAIFunctionsAgentOutputParser] = (
         OpenAIFunctionsAgentOutputParser
-    ] = OpenAIFunctionsAgentOutputParser
+    )
 
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
@@ -262,7 +262,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             extra_prompt_messages: Extra prompt messages to use. Defaults to None.
             system_message: The system message to use.
                 Defaults to a default system message.
-            **kwargs: Additional parameters to pass to the agent.
+            kwargs: Additional parameters to pass to the agent.
         """
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,

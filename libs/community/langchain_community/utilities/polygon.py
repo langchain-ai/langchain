@@ -2,6 +2,7 @@
 Util that calls several of Polygon's stock market REST APIs.
 Docs: https://polygon.io/docs/stocks/getting-started
 """
+
 import json
 from typing import Any, Dict, Optional
 
@@ -43,7 +44,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status != "OK":
+        if status not in ("OK", "STOCKBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
@@ -59,7 +60,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status != "OK":
+        if status not in ("OK", "STOCKBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
@@ -80,7 +81,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status != "OK":
+        if status not in ("OK", "STOCKBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)
@@ -114,7 +115,7 @@ class PolygonAPIWrapper(BaseModel):
         data = response.json()
 
         status = data.get("status", None)
-        if status != "OK":
+        if status not in ("OK", "STOCKBUSINESS"):
             raise ValueError(f"API Error: {data}")
 
         return data.get("results", None)

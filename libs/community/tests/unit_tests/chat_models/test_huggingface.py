@@ -1,4 +1,5 @@
 """Test HuggingFace Chat wrapper."""
+
 from importlib import import_module
 
 

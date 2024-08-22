@@ -1,4 +1,5 @@
 """Test in memory docstore."""
+
 from typing import Any, Dict
 
 from langchain.output_parsers.combining import CombiningOutputParser

@@ -1,4 +1,5 @@
 """Module contains a few fake embedding models for testing purposes."""
+
 # Please do not add additional fake embedding model implementations here.
 import hashlib
 from typing import List
@@ -14,14 +15,36 @@ class FakeEmbeddings(Embeddings, BaseModel):
 
     Do not use this outside of testing, as it is not a real embedding model.
 
-    Example:
-
+    Instantiate:
         .. code-block:: python
 
             from langchain_core.embeddings import FakeEmbeddings
+            embed = FakeEmbeddings(size=100)
 
-            fake_embeddings = FakeEmbeddings(size=100)
-            fake_embeddings.embed_documents(["hello world", "foo bar"])
+    Embed single text:
+        .. code-block:: python
+
+            input_text = "The meaning of life is 42"
+            vector = embed.embed_query(input_text)
+            print(vector[:3])
+
+        .. code-block:: python
+
+            [-0.700234640213188, -0.581266257710429, -1.1328482266445354]
+
+    Embed multiple texts:
+        .. code-block:: python
+
+            input_texts = ["Document 1...", "Document 2..."]
+            vectors = embed.embed_documents(input_texts)
+            print(len(vectors))
+            # The first 3 coordinates for the first vector
+            print(vectors[0][:3])
+
+        .. code-block:: python
+
+            2
+            [-0.5670477847544458, -0.31403828652395727, -0.5840547508955257]
     """
 
     size: int
@@ -47,14 +70,36 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
 
     Do not use this outside of testing, as it is not a real embedding model.
 
-    Example:
-
+    Instantiate:
         .. code-block:: python
 
             from langchain_core.embeddings import DeterministicFakeEmbedding
+            embed = DeterministicFakeEmbedding(size=100)
 
-            fake_embeddings = DeterministicFakeEmbedding(size=100)
-            fake_embeddings.embed_documents(["hello world", "foo bar"])
+    Embed single text:
+        .. code-block:: python
+
+            input_text = "The meaning of life is 42"
+            vector = embed.embed_query(input_text)
+            print(vector[:3])
+
+        .. code-block:: python
+
+            [-0.700234640213188, -0.581266257710429, -1.1328482266445354]
+
+    Embed multiple texts:
+        .. code-block:: python
+
+            input_texts = ["Document 1...", "Document 2..."]
+            vectors = embed.embed_documents(input_texts)
+            print(len(vectors))
+            # The first 3 coordinates for the first vector
+            print(vectors[0][:3])
+
+        .. code-block:: python
+
+            2
+            [-0.5670477847544458, -0.31403828652395727, -0.5840547508955257]
     """
 
     size: int

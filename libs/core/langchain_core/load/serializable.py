@@ -16,7 +16,14 @@ from langchain_core.pydantic_v1 import BaseModel
 
 
 class BaseSerialized(TypedDict):
-    """Base class for serialized objects."""
+    """Base class for serialized objects.
+
+    Parameters:
+        lc: The version of the serialization format.
+        id: The unique identifier of the object.
+        name: The name of the object. Optional.
+        graph: The graph of the object. Optional.
+    """
 
     lc: int
     id: List[str]
@@ -25,20 +32,34 @@ class BaseSerialized(TypedDict):
 
 
 class SerializedConstructor(BaseSerialized):
-    """Serialized constructor."""
+    """Serialized constructor.
+
+    Parameters:
+        type: The type of the object. Must be "constructor".
+        kwargs: The constructor arguments.
+    """
 
     type: Literal["constructor"]
     kwargs: Dict[str, Any]
 
 
 class SerializedSecret(BaseSerialized):
-    """Serialized secret."""
+    """Serialized secret.
+
+    Parameters:
+        type: The type of the object. Must be "secret".
+    """
 
     type: Literal["secret"]
 
 
 class SerializedNotImplemented(BaseSerialized):
-    """Serialized not implemented."""
+    """Serialized not implemented.
+
+    Parameters:
+        type: The type of the object. Must be "not_implemented".
+        repr: The representation of the object. Optional.
+    """
 
     type: Literal["not_implemented"]
     repr: Optional[str]
@@ -50,10 +71,13 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     Args:
         value: The value.
         key: The key.
-        model: The model.
+        model: The pydantic model.
 
     Returns:
         Whether the value is different from the default.
+
+    Raises:
+        Exception: If the key is not in the model.
     """
     try:
         return model.__fields__[key].get_default() != value
@@ -69,23 +93,36 @@ class Serializable(BaseModel, ABC):
     It relies on the following methods and properties:
 
     - `is_lc_serializable`: Is this class serializable?
-        By design even if a class inherits from Serializable, it is not serializable by
+        By design, even if a class inherits from Serializable, it is not serializable by
         default. This is to prevent accidental serialization of objects that should not
         be serialized.
     - `get_lc_namespace`: Get the namespace of the langchain object.
-        During de-serialization this namespace is used to identify
+        During deserialization, this namespace is used to identify
         the correct class to instantiate.
         Please see the `Reviver` class in `langchain_core.load.load` for more details.
-        During de-serialization an additional mapping is handle
+        During deserialization an additional mapping is handle
         classes that have moved or been renamed across package versions.
     - `lc_secrets`: A map of constructor argument names to secret ids.
     - `lc_attributes`: List of additional attribute names that should be included
-        as part of the serialized representation..
+        as part of the serialized representation.
     """
+
+    # Remove default BaseModel init docstring.
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """"""
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Is this class serializable?"""
+        """Is this class serializable?
+
+        By design, even if a class inherits from Serializable, it is not serializable by
+        default. This is to prevent accidental serialization of objects that should not
+        be serialized.
+
+        Returns:
+            Whether the class is serializable. Default is False.
+        """
         return False
 
     @classmethod
@@ -111,6 +148,7 @@ class Serializable(BaseModel, ABC):
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.
+        Default is an empty dictionary.
         """
         return {}
 
@@ -120,6 +158,8 @@ class Serializable(BaseModel, ABC):
 
         The unique identifier is a list of strings that describes the path
         to the object.
+        For example, for the class `langchain.llms.openai.OpenAI`, the id is
+        ["langchain", "llms", "openai", "OpenAI"].
         """
         return [*cls.get_lc_namespace(), cls.__name__]
 
@@ -134,6 +174,11 @@ class Serializable(BaseModel, ABC):
         ]
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
+        """Serialize the object to JSON.
+
+        Returns:
+            A json serializable object or a SerializedNotImplemented object.
+        """
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
@@ -209,7 +254,10 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
         value: The value.
 
     Returns:
-        Whether the field is useful.
+        Whether the field is useful. If the field is required, it is useful.
+        If the field is not required, it is useful if the value is not None.
+        If the field is not required and the value is None, it is useful if the
+        default value is different from the value.
     """
     field = inst.__fields__.get(key)
     if not field:
@@ -242,7 +290,7 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     """Serialize a "not implemented" object.
 
     Args:
-        obj: object to serialize
+        obj: object to serialize.
 
     Returns:
         SerializedNotImplemented

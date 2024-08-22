@@ -57,17 +57,29 @@ class BaseMessage(Serializable):
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
-        """Pass in content as positional arg."""
+        """Pass in content as positional arg.
+
+        Args:
+            content: The string contents of the message.
+            kwargs: Additional fields to pass to the
+        """
         super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return whether this class is serializable. This is used to determine
+        whether the class should be included in the langchain schema.
+
+        Returns:
+            True if the class is serializable, False otherwise.
+        """
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
@@ -78,6 +90,15 @@ class BaseMessage(Serializable):
         return prompt + other
 
     def pretty_repr(self, html: bool = False) -> str:
+        """Get a pretty representation of the message.
+
+        Args:
+            html: Whether to format the message as HTML. If True, the message will be
+                formatted with HTML tags. Default is False.
+
+        Returns:
+            A pretty representation of the message.
+        """
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
         # TODO: handle non-string content.
         if self.name is not None:
@@ -90,42 +111,43 @@ class BaseMessage(Serializable):
 
 def merge_content(
     first_content: Union[str, List[Union[str, Dict]]],
-    second_content: Union[str, List[Union[str, Dict]]],
+    *contents: Union[str, List[Union[str, Dict]]],
 ) -> Union[str, List[Union[str, Dict]]]:
     """Merge two message contents.
 
     Args:
-        first_content: The first content.
-        second_content: The second content.
+        first_content: The first content. Can be a string or a list.
+        second_content: The second content. Can be a string or a list.
 
     Returns:
         The merged content.
     """
-    # If first chunk is a string
-    if isinstance(first_content, str):
-        # If the second chunk is also a string, then merge them naively
-        if isinstance(second_content, str):
-            return first_content + second_content
-        # If the second chunk is a list, add the first chunk to the start of the list
+    merged = first_content
+    for content in contents:
+        # If current is a string
+        if isinstance(merged, str):
+            # If the next chunk is also a string, then merge them naively
+            if isinstance(content, str):
+                merged = cast(str, merged) + content
+            # If the next chunk is a list, add the current to the start of the list
+            else:
+                merged = [merged] + content  # type: ignore
+        elif isinstance(content, list):
+            # If both are lists
+            merged = merge_lists(cast(List, merged), content)  # type: ignore
+        # If the first content is a list, and the second content is a string
         else:
-            return_list: List[Union[str, Dict]] = [first_content]
-            return return_list + second_content
-    elif isinstance(second_content, List):
-        # If both are lists
-        merged_list = merge_lists(first_content, second_content)
-        return cast(list, merged_list)
-    # If the first content is a list, and the second content is a string
-    else:
-        # If the last element of the first content is a string
-        # Add the second content to the last element
-        if isinstance(first_content[-1], str):
-            return first_content[:-1] + [first_content[-1] + second_content]
-        # If second content is an empty string, treat as a no-op
-        elif second_content == "":
-            return first_content
-        else:
-            # Otherwise, add the second content as a new element of the list
-            return first_content + [second_content]
+            # If the last element of the first content is a string
+            # Add the second content to the last element
+            if merged and isinstance(merged[-1], str):
+                merged[-1] += content
+            # If second content is an empty string, treat as a no-op
+            elif content == "":
+                pass
+            else:
+                # Otherwise, add the second content as a new element of the list
+                merged.append(content)
+    return merged
 
 
 class BaseMessageChunk(BaseMessage):
@@ -133,7 +155,9 @@ class BaseMessageChunk(BaseMessage):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
@@ -141,6 +165,16 @@ class BaseMessageChunk(BaseMessage):
 
         This functionality is useful to combine message chunks yielded from
         a streaming model into a complete message.
+
+        Args:
+            other: Another message chunk to concatenate with this one.
+
+        Returns:
+            A new message chunk that is the concatenation of this message chunk
+            and the other message chunk.
+
+        Raises:
+            TypeError: If the other object is not a message chunk.
 
         For example,
 
@@ -162,6 +196,22 @@ class BaseMessageChunk(BaseMessage):
                     self.response_metadata, other.response_metadata
                 ),
             )
+        elif isinstance(other, list) and all(
+            isinstance(o, BaseMessageChunk) for o in other
+        ):
+            content = merge_content(self.content, *(o.content for o in other))
+            additional_kwargs = merge_dicts(
+                self.additional_kwargs, *(o.additional_kwargs for o in other)
+            )
+            response_metadata = merge_dicts(
+                self.response_metadata, *(o.response_metadata for o in other)
+            )
+            return self.__class__(  # type: ignore[call-arg]
+                id=self.id,
+                content=content,
+                additional_kwargs=additional_kwargs,
+                response_metadata=response_metadata,
+            )
         else:
             raise TypeError(
                 'unsupported operand type(s) for +: "'
@@ -177,7 +227,8 @@ def message_to_dict(message: BaseMessage) -> dict:
         message: Message to convert.
 
     Returns:
-        Message as a dict.
+        Message as a dict. The dict will have a "type" key with the message type
+        and a "data" key with the message data as a dict.
     """
     return {"type": message.type, "data": message.dict()}
 
@@ -199,7 +250,7 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
 
     Args:
         title: The title.
-        bold: Whether to bold the title.
+        bold: Whether to bold the title. Default is False.
 
     Returns:
         The title representation.

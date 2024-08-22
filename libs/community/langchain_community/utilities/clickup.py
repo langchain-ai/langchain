@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass, fields
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 DEFAULT_URL = "https://api.clickup.com/api/v2"
@@ -283,9 +283,7 @@ class ClickupAPIWrapper(BaseModel):
     list_id: Optional[str] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @classmethod
     def get_access_code_url(
