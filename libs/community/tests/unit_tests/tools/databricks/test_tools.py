@@ -9,6 +9,7 @@ from langchain_community.tools.databricks._execution import (
 )
 
 
+@pytest.mark.requires("databricks-sdk")
 @pytest.mark.parametrize(
     ("parameters", "execute_params"),
     [
@@ -53,6 +54,7 @@ def test_execute_function(parameters: dict, execute_params: dict) -> None:
     )
 
 
+@pytest.mark.requires("databricks-sdk")
 def test_execute_function_error() -> None:
     workspace_client = mock.Mock()
 
