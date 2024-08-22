@@ -44,13 +44,13 @@ class ZyteURLLoader(BaseLoader):
         self,
         urls: List[str],
         api_key: Optional[str],
-        mode: Literal['article', 'html', 'html-text'] = 'article',
+        mode: Literal["article", "html", "html-text"] = "article",
         continue_on_failure: bool = False,
         download_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize with file path."""
         try:
-            from zyte_api import AsyncZyteAPI, ZyteAPI, RequestError
+            from zyte_api import AsyncZyteAPI, RequestError, ZyteAPI
             from zyte_api.utils import USER_AGENT as PYTHON_ZYTE_API_USER_AGENT
 
         except ImportError:
@@ -58,7 +58,7 @@ class ZyteURLLoader(BaseLoader):
                 "zyte-api package not found, please install it with "
                 "`pip install zyte-api`"
             )
-        if mode not in ('article', 'html', 'html-text'):
+        if mode not in ("article", "html", "html-text"):
             raise ValueError(
                 f"Unrecognized mode '{mode}'. Expected one of 'article', 'html', 'html-text'."
             )
@@ -74,27 +74,26 @@ class ZyteURLLoader(BaseLoader):
         self.client_async = AsyncZyteAPI(api_key=api_key, user_agent=user_agent)
 
     def _zyte_html_option(self):
-        if 'browserHtml' in self.download_kwargs:
-            return 'browserHtml'
-        return 'httpResponseBody'
+        if "browserHtml" in self.download_kwargs:
+            return "browserHtml"
+        return "httpResponseBody"
 
     def load(self) -> List[Document]:
         iter = self.lazy_load()
         return list(iter)
 
     def _get_article(self, page):
-        content = (page['article']['headline'] + '\n\n' +
-                   page['article']['articleBody'])
+        content = page["article"]["headline"] + "\n\n" + page["article"]["articleBody"]
         return content
 
     def _zyte_request_params(self, url):
         request_params = {
             "url": url,
         }
-        if self.mode == 'article':
-            request_params.update({'article': True})
+        if self.mode == "article":
+            request_params.update({"article": True})
 
-        if self.mode in ('html', 'html-text'):
+        if self.mode in ("html", "html-text"):
             request_params.update({self.html_option: True})
 
         if self.download_kwargs:
@@ -121,7 +120,7 @@ class ZyteURLLoader(BaseLoader):
                         raise response
 
                 content = self._get_content(response)
-                yield Document(page_content=content, metadata={"url": response['url']})
+                yield Document(page_content=content, metadata={"url": response["url"]})
 
     async def fetch_items(self) -> Iterator[Document]:
         results = []
@@ -148,7 +147,7 @@ class ZyteURLLoader(BaseLoader):
         return results
 
     def _get_content(self, response):
-        if self.mode == 'html-text':
+        if self.mode == "html-text":
             try:
                 from html2text import html2text
 
@@ -157,15 +156,15 @@ class ZyteURLLoader(BaseLoader):
                     "html2text package not found, please install it with "
                     "`pip install html2text`"
                 )
-        if self.mode in ('html', 'html-text'):
+        if self.mode in ("html", "html-text"):
             content = response[self.html_option]
 
-            if self.html_option == 'httpResponseBody':
+            if self.html_option == "httpResponseBody":
                 content = b64decode(content).decode()
 
-            if self.mode == 'html-text':
+            if self.mode == "html-text":
                 content = html2text(content)
-        elif self.mode == 'article':
+        elif self.mode == "article":
             content = self._get_article(response)
         return content
 
@@ -174,6 +173,6 @@ class ZyteURLLoader(BaseLoader):
         responses = asyncio.run(fetch_items())
         for response in responses:
             content = self._get_content(response)
-            doc = Document(page_content=content, metadata={"url": response['url']})
+            doc = Document(page_content=content, metadata={"url": response["url"]})
             docs.append(doc)
         return docs
