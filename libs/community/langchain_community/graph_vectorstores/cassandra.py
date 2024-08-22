@@ -7,7 +7,6 @@ from typing import (
     List,
     Optional,
     Type,
-    cast,
 )
 
 from langchain_core._api import beta
@@ -81,8 +80,6 @@ class CassandraGraphVectorStore(GraphVectorStore):
             **kwargs,
         )
 
-        self._cast_nodes = lambda nodes: cast(Iterable[graph_store.Node], nodes)
-
     @property
     def embeddings(self) -> Optional[Embeddings]:
         return self._embedding
@@ -92,7 +89,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         nodes: Iterable[Node],
         **kwargs: Any,
     ) -> Iterable[str]:
-        return self.store.add_nodes(self._cast_nodes(nodes))
+        return self.store.add_nodes(nodes)
 
     @classmethod
     def from_texts(
@@ -148,7 +145,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             k=k,
             metadata_filter=metadata_filter,
         )
-        return list(nodes_to_documents(cast(Iterable[Node], nodes)))
+        return list(nodes_to_documents(nodes))
 
     def traversal_search(
         self,
@@ -165,7 +162,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
             depth=depth,
             metadata_filter=metadata_filter,
         )
-        return nodes_to_documents(cast(Iterable[Node], nodes))
+        return nodes_to_documents(nodes)
 
     def mmr_traversal_search(
         self,
@@ -190,4 +187,4 @@ class CassandraGraphVectorStore(GraphVectorStore):
             score_threshold=score_threshold,
             metadata_filter=metadata_filter,
         )
-        return nodes_to_documents(cast(Iterable[Node], nodes))
+        return nodes_to_documents(nodes)
