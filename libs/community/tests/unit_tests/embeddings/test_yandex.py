@@ -50,6 +50,7 @@ def test_query_embedding_call(api_key_or_token: dict, disable_logging: dict) -> 
         {
             YANDEX_MODULE_NAME: absent_yandex_module_stub,
             YANDEX_MODULE_NAME2: absent_yandex_module_stub,
+            "grpc":MagicMock(),
         },
     ):
         stub = absent_yandex_module_stub.EmbeddingsServiceStub
@@ -90,6 +91,7 @@ def test_doc_embedding_call(api_key_or_token: dict, disable_logging: dict) -> No
         {
             YANDEX_MODULE_NAME: absent_yandex_module_stub,
             YANDEX_MODULE_NAME2: absent_yandex_module_stub,
+            "grpc": MagicMock(),
         },
     ):
         stub = absent_yandex_module_stub.EmbeddingsServiceStub
