@@ -33,19 +33,19 @@ The following table shows information on all available key-value stores.
 
 KV_STORE_FEAT_TABLE = {
     "AstraDBByteStore": {
-        "class": "[AstraDBByteStore](https://api.python.langchain.com/en/latest/storage/langchain_astradb.storage.AstraDBByteStore.html)",
+        "class": "[AstraDBByteStore](https://python.langchain.com/v0.2/api_reference/astradb/storage/langchain_astradb.storage.AstraDBByteStore.html)",
         "local": False,
         "package": "[langchain_astradb](https://api.python.langchain.com/en/latest/astradb_api_reference.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_astradb?style=flat-square&label=%20)",
     },
     "CassandraByteStore": {
-        "class": "[CassandraByteStore](https://api.python.langchain.com/en/latest/storage/langchain_community.storage.cassandra.CassandraByteStore.html)",
+        "class": "[CassandraByteStore](https://python.langchain.com/v0.2/api_reference/community/storage/langchain_community.storage.cassandra.CassandraByteStore.html)",
         "local": False,
         "package": "[langchain_community](https://api.python.langchain.com/en/latest/community_api_reference.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
     },
     "ElasticsearchEmbeddingsCache": {
-        "class": "[ElasticsearchEmbeddingsCache](https://api.python.langchain.com/en/latest/cache/langchain_elasticsearch.cache.ElasticsearchEmbeddingsCache.html)",
+        "class": "[ElasticsearchEmbeddingsCache](https://python.langchain.com/v0.2/api_reference/elasticsearch/cache/langchain_elasticsearch.cache.ElasticsearchEmbeddingsCache.html)",
         "local": True,
         "package": "[langchain_elasticsearch](https://api.python.langchain.com/en/latest/elasticsearch_api_reference.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_elasticsearch?style=flat-square&label=%20)",
@@ -57,19 +57,19 @@ KV_STORE_FEAT_TABLE = {
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain?style=flat-square&label=%20)",
     },
     "InMemoryByteStore": {
-        "class": "[InMemoryByteStore](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.InMemoryByteStore.html)",
+        "class": "[InMemoryByteStore](https://python.langchain.com/v0.2/api_reference/core/stores/langchain_core.stores.InMemoryByteStore.html)",
         "local": True,
         "package": "[langchain_core](https://api.python.langchain.com/en/latest/core_api_reference.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_core?style=flat-square&label=%20)",
     },
     "RedisStore": {
-        "class": "[RedisStore](https://api.python.langchain.com/en/latest/storage/langchain_community.storage.redis.RedisStore.html)",
+        "class": "[RedisStore](https://python.langchain.com/v0.2/api_reference/community/storage/langchain_community.storage.redis.RedisStore.html)",
         "local": True,
         "package": "[langchain_community](https://api.python.langchain.com/en/latest/community_api_reference.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
     },
     "UpstashRedisByteStore": {
-        "class": "[UpstashRedisByteStore](https://api.python.langchain.com/en/latest/storage/langchain_community.storage.upstash_redis.UpstashRedisByteStore.html)",
+        "class": "[UpstashRedisByteStore](https://python.langchain.com/v0.2/api_reference/community/storage/langchain_community.storage.upstash_redis.UpstashRedisByteStore.html)",
         "local": False,
         "package": "[langchain_community](https://api.python.langchain.com/en/latest/community_api_reference.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
