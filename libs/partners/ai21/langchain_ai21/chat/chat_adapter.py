@@ -199,6 +199,8 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         """
         return [
             AI21ToolCall(
+                # TODO: This id can be None and we don't accept None.
+                #  What should happen here?
                 id=tool_call["id"],
                 type="function",
                 function=AI21ToolFunction(
@@ -271,10 +273,11 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         **params: Any,
     ) -> List[BaseMessage] | Iterator[ChatGenerationChunk]:
         response = client.chat.completions.create(stream=stream, **params)
+
         if stream:
             return self._stream_response(response)
 
-        ai_messages = []
+        ai_messages: List[BaseMessage] = []
         for message in response.choices:
             if message.message.tool_calls:
                 tool_calls = [
