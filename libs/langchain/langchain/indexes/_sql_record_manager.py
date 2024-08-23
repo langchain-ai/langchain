@@ -13,15 +13,15 @@ allow it to work with a variety of SQL as a backend.
 * Keys can be listed based on the updated at field.
 * Keys can be deleted.
 """
+
 import contextlib
 import decimal
 import uuid
 from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Sequence, Union
 
+from langchain_core.indexing import RecordManager
 from sqlalchemy import (
-    URL,
     Column,
-    Engine,
     Float,
     Index,
     String,
@@ -32,16 +32,19 @@ from sqlalchemy import (
     select,
     text,
 )
+from sqlalchemy.engine import URL, Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Query, Session, sessionmaker
+from sqlalchemy.orm import Query, Session, declarative_base, sessionmaker
 
-from langchain.indexes.base import RecordManager
+try:
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+except ImportError:
+    # dummy for sqlalchemy < 2
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
 
 Base = declarative_base()
 

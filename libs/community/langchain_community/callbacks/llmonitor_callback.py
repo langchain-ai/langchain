@@ -204,7 +204,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     llmonitor_callback = LLMonitorCallbackHandler()
     llm = OpenAI(callbacks=[llmonitor_callback],
                  metadata={"userId": "user-123"})
-    llm.predict("Hello, how are you?")
+    llm.invoke("Hello, how are you?")
     ```
     """
 

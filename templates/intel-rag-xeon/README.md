@@ -1,6 +1,8 @@
-# RAG example on Intel Xeon
-This template performs RAG using Chroma and Text Generation Inference on Intel® Xeon® Scalable Processors.
-Intel® Xeon® Scalable processors feature built-in accelerators for more performance-per-core and unmatched AI performance, with advanced security technologies for the most in-demand workload requirements—all while offering the greatest cloud choice and application portability, please check [Intel® Xeon® Scalable Processors](https://www.intel.com/content/www/us/en/products/details/processors/xeon/scalable.html).
+# RAG - Intel Xeon
+
+This template performs RAG using `Chroma` and `Hugging Face Text Generation Inference` 
+on `Intel® Xeon® Scalable` Processors.
+`Intel® Xeon® Scalable` processors feature built-in accelerators for more performance-per-core and unmatched AI performance, with advanced security technologies for the most in-demand workload requirements—all while offering the greatest cloud choice and application portability, please check [Intel® Xeon® Scalable Processors](https://www.intel.com/content/www/us/en/products/details/processors/xeon/scalable.html).
 
 ## Environment Setup
 To use [🤗 text-generation-inference](https://github.com/huggingface/text-generation-inference) on Intel® Xeon® Scalable Processors, please follow these steps:
@@ -22,7 +24,7 @@ Please follow this link [huggingface token](https://huggingface.co/docs/hub/secu
 export HUGGINGFACEHUB_API_TOKEN=<token> 
 ```
 
-Send a request to check if the endpoint is wokring:
+Send a request to check if the endpoint is working:
 
 ```bash
 curl localhost:8080/generate -X POST -d '{"inputs":"Which NFL team won the Super Bowl in the 2010 season?","parameters":{"max_new_tokens":128, "do_sample": true}}'   -H 'Content-Type: application/json'
@@ -68,7 +70,7 @@ from intel_rag_xeon import chain as xeon_rag_chain
 add_routes(app, xeon_rag_chain, path="/intel-rag-xeon")
 ```
 
-(Optional) Let's now configure LangSmith. LangSmith will help us trace, monitor and debug LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
+(Optional) Let's now configure LangSmith. LangSmith will help us trace, monitor and debug LangChain applications. You can sign up for LangSmith [here](https://smith.langchain.com/). If you don't have access, you can skip this section
 
 ```shell
 export LANGCHAIN_TRACING_V2=true

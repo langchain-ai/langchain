@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -20,7 +19,11 @@ VALID_TASKS_DICT = {
 }
 
 
-@deprecated("0.0.21", removal="0.2.0", alternative="HuggingFaceEndpoint")
+@deprecated(
+    "0.0.21",
+    removal="1.0",
+    alternative_import="langchain_huggingface.HuggingFaceEndpoint",
+)
 class HuggingFaceHub(LLM):
     """HuggingFaceHub  models.
     ! This class is deprecated, you should use HuggingFaceEndpoint instead.
@@ -53,11 +56,9 @@ class HuggingFaceHub(LLM):
     huggingfacehub_api_token: Optional[str] = None
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         huggingfacehub_api_token = get_from_dict_or_env(
@@ -88,7 +89,7 @@ class HuggingFaceHub(LLM):
                 )
             values["client"] = client
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )

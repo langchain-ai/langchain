@@ -3,6 +3,7 @@
 In order to run this test, you need to have an Konko api key.
 You'll then need to set KONKO_API_KEY environment variable to your api key.
 """
+
 import pytest as pytest
 
 from langchain_community.llms import Konko
@@ -15,7 +16,7 @@ def test_konko_call() -> None:
         temperature=0.2,
         max_tokens=250,
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "konko"
     assert isinstance(output, str)

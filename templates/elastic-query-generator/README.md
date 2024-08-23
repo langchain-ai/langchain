@@ -1,9 +1,9 @@
+# Elasticsearch - query generator
 
-# elastic-query-generator
+This template allows interacting with `Elasticsearch` analytics databases 
+in natural language using LLMs. 
 
-This template allows interacting with Elasticsearch analytics databases in natural language using LLMs. 
-
-It builds search queries via the Elasticsearch DSL API (filters and aggregations). 
+It builds search queries via the `Elasticsearch DSL API` (filters and aggregations). 
 
 ## Environment Setup
 
@@ -56,7 +56,7 @@ add_routes(app, elastic_query_generator_chain, path="/elastic-query-generator")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

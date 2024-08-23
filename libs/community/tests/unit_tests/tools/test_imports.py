@@ -1,4 +1,4 @@
-from langchain_community.tools import __all__
+from langchain_community.tools import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "AINAppOps",
@@ -9,6 +9,7 @@ EXPECTED_ALL = [
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
+    "AskNewsSearch",
     "AzureAiServicesDocumentIntelligenceTool",
     "AzureAiServicesImageAnalysisTool",
     "AzureAiServicesSpeechToTextTool",
@@ -19,6 +20,7 @@ EXPECTED_ALL = [
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
     "AzureCogsTextAnalyticsHealthTool",
+    "BalanceSheets",
     "BaseGraphQLTool",
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
@@ -28,6 +30,7 @@ EXPECTED_ALL = [
     "BingSearchResults",
     "BingSearchRun",
     "BraveSearch",
+    "CashFlowStatements",
     "ClickTool",
     "CogniswitchKnowledgeSourceFile",
     "CogniswitchKnowledgeSourceURL",
@@ -36,6 +39,7 @@ EXPECTED_ALL = [
     "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
+    "DataheraldTextToSQL",
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
@@ -66,6 +70,7 @@ EXPECTED_ALL = [
     "GoogleSerperRun",
     "HumanInputRun",
     "IFTTTWebhook",
+    "IncomeStatements",
     "InfoPowerBITool",
     "InfoSQLDatabaseTool",
     "InfoSparkSQLTool",
@@ -122,6 +127,8 @@ EXPECTED_ALL = [
     "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
     "StructuredTool",
+    "TavilyAnswer",
+    "TavilySearchResults",
     "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
@@ -133,12 +140,17 @@ EXPECTED_ALL = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
+    "Detector",
+    "ZenGuardInput",
+    "ZenGuardTool",
     "authenticate",
     "format_tool_to_openai_function",
     "tool",
     "MerriamWebsterQueryRun",
+    "MojeekSearch",
 ]
 
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())

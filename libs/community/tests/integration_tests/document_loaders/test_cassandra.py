@@ -1,6 +1,7 @@
 """
 Test of Cassandra document loader class `CassandraLoader`
 """
+
 import os
 from typing import Any, Iterator
 
@@ -55,9 +56,9 @@ def keyspace() -> Iterator[str]:
     session.execute(f"DROP TABLE IF EXISTS {keyspace}.{CASSANDRA_TABLE}")
 
 
-def test_loader_table(keyspace: str) -> None:
+async def test_loader_table(keyspace: str) -> None:
     loader = CassandraLoader(table=CASSANDRA_TABLE)
-    assert loader.load() == [
+    expected = [
         Document(
             page_content="Row(row_id='id1', body_blob='text1')",
             metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace},
@@ -67,24 +68,28 @@ def test_loader_table(keyspace: str) -> None:
             metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace},
         ),
     ]
+    assert loader.load() == expected
+    assert await loader.aload() == expected
 
 
-def test_loader_query(keyspace: str) -> None:
+async def test_loader_query(keyspace: str) -> None:
     loader = CassandraLoader(
         query=f"SELECT body_blob FROM {keyspace}.{CASSANDRA_TABLE}"
     )
-    assert loader.load() == [
+    expected = [
         Document(page_content="Row(body_blob='text1')"),
         Document(page_content="Row(body_blob='text2')"),
     ]
+    assert loader.load() == expected
+    assert await loader.aload() == expected
 
 
-def test_loader_page_content_mapper(keyspace: str) -> None:
+async def test_loader_page_content_mapper(keyspace: str) -> None:
     def mapper(row: Any) -> str:
         return str(row.body_blob)
 
     loader = CassandraLoader(table=CASSANDRA_TABLE, page_content_mapper=mapper)
-    assert loader.load() == [
+    expected = [
         Document(
             page_content="text1",
             metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace},
@@ -94,14 +99,16 @@ def test_loader_page_content_mapper(keyspace: str) -> None:
             metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace},
         ),
     ]
+    assert loader.load() == expected
+    assert await loader.aload() == expected
 
 
-def test_loader_metadata_mapper(keyspace: str) -> None:
+async def test_loader_metadata_mapper(keyspace: str) -> None:
     def mapper(row: Any) -> dict:
         return {"id": row.row_id}
 
     loader = CassandraLoader(table=CASSANDRA_TABLE, metadata_mapper=mapper)
-    assert loader.load() == [
+    expected = [
         Document(
             page_content="Row(row_id='id1', body_blob='text1')",
             metadata={
@@ -119,3 +126,5 @@ def test_loader_metadata_mapper(keyspace: str) -> None:
             },
         ),
     ]
+    assert loader.load() == expected
+    assert await loader.aload() == expected

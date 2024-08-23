@@ -1,8 +1,10 @@
-"""GitHub Toolkit."""
+"""GitLab Toolkit."""
+
 from typing import Dict, List
 
-from langchain_community.agent_toolkits.base import BaseToolkit
-from langchain_community.tools import BaseTool
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
+
 from langchain_community.tools.gitlab.prompt import (
     COMMENT_ON_ISSUE_PROMPT,
     CREATE_FILE_PROMPT,
@@ -28,6 +30,9 @@ class GitLabToolkit(BaseToolkit):
         and comments on GitLab.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
     """
 
     tools: List[BaseTool] = []
@@ -36,6 +41,15 @@ class GitLabToolkit(BaseToolkit):
     def from_gitlab_api_wrapper(
         cls, gitlab_api_wrapper: GitLabAPIWrapper
     ) -> "GitLabToolkit":
+        """Create a GitLabToolkit from a GitLabAPIWrapper.
+
+        Args:
+            gitlab_api_wrapper: GitLabAPIWrapper. The GitLab API wrapper.
+
+        Returns:
+            GitLabToolkit. The GitLab toolkit.
+        """
+
         operations: List[Dict] = [
             {
                 "mode": "get_issues",
@@ -87,7 +101,7 @@ class GitLabToolkit(BaseToolkit):
             )
             for action in operations
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

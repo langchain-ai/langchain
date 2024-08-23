@@ -14,14 +14,15 @@ from typing import (
     Tuple,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 from langchain_community.utilities.anthropic import (
@@ -338,7 +339,7 @@ class BedrockBase(BaseModel, ABC):
         "amazon": "stopSequences",
         "ai21": "stop_sequences",
         "cohere": "stop_sequences",
-        "mistral": "stop_sequences",
+        "mistral": "stop",
     }
 
     guardrails: Optional[Mapping[str, Any]] = {
@@ -388,7 +389,7 @@ class BedrockBase(BaseModel, ABC):
                 ...Logic to handle guardrail intervention...
     """  # noqa: E501
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that AWS credentials to and python package exists in environment."""
 
@@ -423,7 +424,7 @@ class BedrockBase(BaseModel, ABC):
             values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -711,6 +712,9 @@ class BedrockBase(BaseModel, ABC):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)  # type: ignore[unused-coroutine]
 
 
+@deprecated(
+    since="0.0.34", removal="1.0", alternative_import="langchain_aws.BedrockLLM"
+)
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.
 
@@ -739,7 +743,7 @@ class Bedrock(LLM, BedrockBase):
 
     """
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         model_id = values["model_id"]
         if model_id.startswith("anthropic.claude-3"):
@@ -775,9 +779,7 @@ class Bedrock(LLM, BedrockBase):
         return attributes
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def _stream(
         self,
@@ -825,7 +827,7 @@ class Bedrock(LLM, BedrockBase):
         Example:
             .. code-block:: python
 
-                response = llm("Tell me a joke.")
+                response = llm.invoke("Tell me a joke.")
         """
 
         if self.streaming:

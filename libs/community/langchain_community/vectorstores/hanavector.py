@@ -1,4 +1,5 @@
 """SAP HANA Cloud Vector Engine"""
+
 from __future__ import annotations
 
 import importlib.util
@@ -8,9 +9,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
+    Pattern,
     Tuple,
     Type,
 )
@@ -33,6 +36,27 @@ HANA_DISTANCE_FUNCTION: dict = {
     DistanceStrategy.COSINE: ("COSINE_SIMILARITY", "DESC"),
     DistanceStrategy.EUCLIDEAN_DISTANCE: ("L2DISTANCE", "ASC"),
 }
+
+COMPARISONS_TO_SQL = {
+    "$eq": "=",
+    "$ne": "<>",
+    "$lt": "<",
+    "$lte": "<=",
+    "$gt": ">",
+    "$gte": ">=",
+}
+
+IN_OPERATORS_TO_SQL = {
+    "$in": "IN",
+    "$nin": "NOT IN",
+}
+
+BETWEEN_OPERATOR = "$between"
+
+LIKE_OPERATOR = "$like"
+
+LOGICAL_OPERATORS_TO_SQL = {"$and": "AND", "$or": "OR"}
+
 
 default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
@@ -63,6 +87,8 @@ class HanaDB(VectorStore):
         metadata_column: str = default_metadata_column,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
+        *,
+        specific_metadata_columns: Optional[List[str]] = None,
     ):
         # Check if the hdbcli package is installed
         if importlib.util.find_spec("hdbcli") is None:
@@ -88,6 +114,9 @@ class HanaDB(VectorStore):
         self.metadata_column = HanaDB._sanitize_name(metadata_column)
         self.vector_column = HanaDB._sanitize_name(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
+        self.specific_metadata_columns = HanaDB._sanitize_specific_metadata_columns(
+            specific_metadata_columns or []
+        )
 
         # Check if the table exists, and eventually create it
         if not self._table_exists(self.table_name):
@@ -97,7 +126,7 @@ class HanaDB(VectorStore):
                 f'"{self.metadata_column}" NCLOB, '
                 f'"{self.vector_column}" REAL_VECTOR '
             )
-            if self.vector_column_length == -1:
+            if self.vector_column_length in [-1, 0]:
                 sql_str += ");"
             else:
                 sql_str += f"({self.vector_column_length}));"
@@ -117,6 +146,8 @@ class HanaDB(VectorStore):
             ["REAL_VECTOR"],
             self.vector_column_length,
         )
+        for column_name in self.specific_metadata_columns:
+            self._check_column(self.table_name, column_name)
 
     def _table_exists(self, table_name) -> bool:  # type: ignore[no-untyped-def]
         sql_str = (
@@ -134,7 +165,9 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
-    def _check_column(self, table_name, column_name, column_type, column_length=None):  # type: ignore[no-untyped-def]
+    def _check_column(  # type: ignore[no-untyped-def]
+        self, table_name, column_name, column_type=None, column_length=None
+    ):
         sql_str = (
             "SELECT DATA_TYPE_NAME, LENGTH FROM SYS.TABLE_COLUMNS WHERE "
             "SCHEMA_NAME = CURRENT_SCHEMA "
@@ -148,15 +181,19 @@ class HanaDB(VectorStore):
                 if len(rows) == 0:
                     raise AttributeError(f"Column {column_name} does not exist")
                 # Check data type
-                if rows[0][0] not in column_type:
-                    raise AttributeError(
-                        f"Column {column_name} has the wrong type: {rows[0][0]}"
-                    )
+                if column_type:
+                    if rows[0][0] not in column_type:
+                        raise AttributeError(
+                            f"Column {column_name} has the wrong type: {rows[0][0]}"
+                        )
                 # Check length, if parameter was provided
-                if column_length is not None:
+                # Length can either be -1 (QRC01+02-24) or 0 (QRC03-24 onwards)
+                # to indicate no length constraint being present.
+                if column_length is not None and column_length > 0:
                     if rows[0][1] != column_length:
                         raise AttributeError(
-                            f"Column {column_name} has the wrong length: {rows[0][1]}"
+                            f"Column {column_name} has the wrong length: {rows[0][1]} "
+                            f"expected: {column_length}"
                         )
             else:
                 raise AttributeError(f"Column {column_name} does not exist")
@@ -167,31 +204,57 @@ class HanaDB(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
+    @staticmethod
     def _sanitize_name(input_str: str) -> str:  # type: ignore[misc]
         # Remove characters that are not alphanumeric or underscores
         return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
+    @staticmethod
     def _sanitize_int(input_int: any) -> int:  # type: ignore[valid-type]
         value = int(str(input_int))
         if value < -1:
             raise ValueError(f"Value ({value}) must not be smaller than -1")
         return int(str(input_int))
 
-    def _sanitize_list_float(embedding: List[float]) -> List[float]:  # type: ignore[misc]
+    @staticmethod
+    def _sanitize_list_float(embedding: List[float]) -> List[float]:
         for value in embedding:
             if not isinstance(value, float):
                 raise ValueError(f"Value ({value}) does not have type float")
         return embedding
 
     # Compile pattern only once, for better performance
-    _compiled_pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
+    _compiled_pattern: Pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
 
-    def _sanitize_metadata_keys(metadata: dict) -> dict:  # type: ignore[misc]
+    @staticmethod
+    def _sanitize_metadata_keys(metadata: dict) -> dict:
         for key in metadata.keys():
             if not HanaDB._compiled_pattern.match(key):
                 raise ValueError(f"Invalid metadata key {key}")
 
         return metadata
+
+    @staticmethod
+    def _sanitize_specific_metadata_columns(
+        specific_metadata_columns: List[str],
+    ) -> List[str]:
+        metadata_columns = []
+        for c in specific_metadata_columns:
+            sanitized_name = HanaDB._sanitize_name(c)
+            metadata_columns.append(sanitized_name)
+        return metadata_columns
+
+    def _split_off_special_metadata(self, metadata: dict) -> Tuple[dict, list]:
+        # Use provided values by default or fallback
+        special_metadata = []
+
+        if not metadata:
+            return {}, []
+
+        for column_name in self.specific_metadata_columns:
+            special_metadata.append(metadata.get(column_name, None))
+
+        return metadata, special_metadata
 
     def add_texts(  # type: ignore[override]
         self,
@@ -216,30 +279,45 @@ class HanaDB(VectorStore):
         if embeddings is None:
             embeddings = self.embedding.embed_documents(list(texts))
 
+        # Create sql parameters array
+        sql_params = []
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            metadata, extracted_special_metadata = self._split_off_special_metadata(
+                metadata
+            )
+            embedding = (
+                embeddings[i]
+                if embeddings
+                else self.embedding.embed_documents([text])[0]
+            )
+            sql_params.append(
+                (
+                    text,
+                    json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
+                    f"[{','.join(map(str, embedding))}]",
+                    *extracted_special_metadata,
+                )
+            )
+
+        # Insert data into the table
         cur = self.connection.cursor()
         try:
-            # Insert data into the table
-            for i, text in enumerate(texts):
-                # Use provided values by default or fallback
-                metadata = metadatas[i] if metadatas else {}
-                embedding = (
-                    embeddings[i]
-                    if embeddings
-                    else self.embedding.embed_documents([text])[0]
+            specific_metadata_columns_string = '", "'.join(
+                self.specific_metadata_columns
+            )
+            if specific_metadata_columns_string:
+                specific_metadata_columns_string = (
+                    ', "' + specific_metadata_columns_string + '"'
                 )
-                sql_str = (
-                    f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
-                    f'"{self.metadata_column}", "{self.vector_column}") '
-                    f"VALUES (?, ?, TO_REAL_VECTOR (?));"
-                )
-                cur.execute(
-                    sql_str,
-                    (
-                        text,
-                        json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
-                        f"[{','.join(map(str, embedding))}]",
-                    ),
-                )
+            sql_str = (
+                f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
+                f'"{self.metadata_column}", '
+                f'"{self.vector_column}"{specific_metadata_columns_string}) '
+                f"VALUES (?, ?, TO_REAL_VECTOR (?)"
+                f"{', ?' * len(self.specific_metadata_columns)});"
+            )
+            cur.executemany(sql_str, sql_params)
         finally:
             cur.close()
         return []
@@ -257,6 +335,8 @@ class HanaDB(VectorStore):
         metadata_column: str = default_metadata_column,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
+        *,
+        specific_metadata_columns: Optional[List[str]] = None,
     ):
         """Create a HanaDB instance from raw documents.
         This is a user-friendly interface that:
@@ -275,6 +355,7 @@ class HanaDB(VectorStore):
             metadata_column=metadata_column,
             vector_column=vector_column,
             vector_column_length=vector_column_length,  # -1 means dynamic length
+            specific_metadata_columns=specific_metadata_columns,
         )
         instance.add_texts(texts, metadatas)
         return instance
@@ -407,25 +488,105 @@ class HanaDB(VectorStore):
         query_tuple = []
         where_str = ""
         if filter:
+            where_str, query_tuple = self._process_filter_object(filter)
+            where_str = " WHERE " + where_str
+        return where_str, query_tuple
+
+    def _process_filter_object(self, filter):  # type: ignore[no-untyped-def]
+        query_tuple = []
+        where_str = ""
+        if filter:
             for i, key in enumerate(filter.keys()):
-                if i == 0:
-                    where_str += " WHERE "
-                else:
+                filter_value = filter[key]
+                if i != 0:
                     where_str += " AND "
 
-                where_str += f" JSON_VALUE({self.metadata_column}, '$.{key}') = ?"
+                # Handling of 'special' boolean operators "$and", "$or"
+                if key in LOGICAL_OPERATORS_TO_SQL:
+                    logical_operator = LOGICAL_OPERATORS_TO_SQL[key]
+                    logical_operands = filter_value
+                    for j, logical_operand in enumerate(logical_operands):
+                        if j != 0:
+                            where_str += f" {logical_operator} "
+                        (
+                            where_str_logical,
+                            query_tuple_logical,
+                        ) = self._process_filter_object(logical_operand)
+                        where_str += where_str_logical
+                        query_tuple += query_tuple_logical
+                    continue
 
-                if isinstance(filter[key], bool):
-                    if filter[key]:
-                        query_tuple.append("true")
+                operator = "="
+                sql_param = "?"
+
+                if isinstance(filter_value, bool):
+                    query_tuple.append("true" if filter_value else "false")
+                elif isinstance(filter_value, int) or isinstance(filter_value, str):
+                    query_tuple.append(filter_value)
+                elif isinstance(filter_value, Dict):
+                    # Handling of 'special' operators starting with "$"
+                    special_op = next(iter(filter_value))
+                    special_val = filter_value[special_op]
+                    # "$eq", "$ne", "$lt", "$lte", "$gt", "$gte"
+                    if special_op in COMPARISONS_TO_SQL:
+                        operator = COMPARISONS_TO_SQL[special_op]
+                        if isinstance(special_val, bool):
+                            query_tuple.append("true" if special_val else "false")
+                        elif isinstance(special_val, float):
+                            sql_param = "CAST(? as float)"
+                            query_tuple.append(special_val)
+                        elif (
+                            isinstance(special_val, dict)
+                            and "type" in special_val
+                            and special_val["type"] == "date"
+                        ):
+                            # Date type
+                            sql_param = "CAST(? as DATE)"
+                            query_tuple.append(special_val["date"])
+                        else:
+                            query_tuple.append(special_val)
+                    # "$between"
+                    elif special_op == BETWEEN_OPERATOR:
+                        between_from = special_val[0]
+                        between_to = special_val[1]
+                        operator = "BETWEEN"
+                        sql_param = "? AND ?"
+                        query_tuple.append(between_from)
+                        query_tuple.append(between_to)
+                    # "$like"
+                    elif special_op == LIKE_OPERATOR:
+                        operator = "LIKE"
+                        query_tuple.append(special_val)
+                    # "$in", "$nin"
+                    elif special_op in IN_OPERATORS_TO_SQL:
+                        operator = IN_OPERATORS_TO_SQL[special_op]
+                        if isinstance(special_val, list):
+                            for i, list_entry in enumerate(special_val):
+                                if i == 0:
+                                    sql_param = "("
+                                sql_param = sql_param + "?"
+                                if i == (len(special_val) - 1):
+                                    sql_param = sql_param + ")"
+                                else:
+                                    sql_param = sql_param + ","
+                                query_tuple.append(list_entry)
+                        else:
+                            raise ValueError(
+                                f"Unsupported value for {operator}: {special_val}"
+                            )
                     else:
-                        query_tuple.append("false")
-                elif isinstance(filter[key], int) or isinstance(filter[key], str):
-                    query_tuple.append(filter[key])
+                        raise ValueError(f"Unsupported operator: {special_op}")
                 else:
                     raise ValueError(
-                        f"Unsupported filter data-type: {type(filter[key])}"
+                        f"Unsupported filter data-type: {type(filter_value)}"
                     )
+
+                selector = (
+                    f' "{key}"'
+                    if key in self.specific_metadata_columns
+                    else f"JSON_VALUE({self.metadata_column}, '$.{key}')"
+                )
+                where_str += f"{selector} " f"{operator} {sql_param}"
 
         return where_str, query_tuple
 

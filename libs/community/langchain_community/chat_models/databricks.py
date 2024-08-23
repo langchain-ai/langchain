@@ -17,11 +17,18 @@ class ChatDatabricks(ChatMlflow):
 
             from langchain_community.chat_models import ChatDatabricks
 
-            chat = ChatDatabricks(
+            chat_model = ChatDatabricks(
                 target_uri="databricks",
-                endpoint="chat",
-                temperature-0.1,
+                endpoint="databricks-llama-2-70b-chat",
+                temperature=0.1,
             )
+
+            # single input invocation
+            print(chat_model.invoke("What is MLflow?").content)
+
+            # single input invocation with streaming response
+            for chunk in chat_model.stream("What is MLflow?"):
+                print(chunk.content, end="|")
     """
 
     target_uri: str = "databricks"

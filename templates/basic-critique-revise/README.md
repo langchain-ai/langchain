@@ -1,10 +1,10 @@
-# basic-critique-revise
+# Basic critique revise
 
 Iteratively generate schema candidates and revise them based on errors.
 
 ## Environment Setup
 
-This template uses OpenAI function calling, so you will need to set the `OPENAI_API_KEY` environment variable in order to use this template.
+This template uses `OpenAI function calling`, so you will need to set the `OPENAI_API_KEY` environment variable in order to use this template.
 
 ## Usage
 
@@ -35,7 +35,7 @@ add_routes(app, basic_critique_revise_chain, path="/basic-critique-revise")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

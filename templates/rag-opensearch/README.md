@@ -1,6 +1,6 @@
-# rag-opensearch
+# RAG - OpenSearch
 
-This Template performs RAG using [OpenSearch](https://python.langchain.com/docs/integrations/vectorstores/opensearch).
+This template performs RAG using [OpenSearch](https://python.langchain.com/docs/integrations/vectorstores/opensearch).
 
 ## Environment Setup
 
@@ -15,7 +15,7 @@ And optionally set the OpenSearch ones if not using defaults:
 - `OPENSEARCH_PASSWORD` - Password for the OpenSearch instance
 - `OPENSEARCH_INDEX_NAME` - Name of the index 
 
-To run the default OpenSeach instance in docker, you can use the command
+To run the default OpenSearch instance in docker, you can use the command
 ```shell
 docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" --name opensearch-node -d opensearchproject/opensearch:latest
 ```
@@ -51,7 +51,7 @@ add_routes(app, rag_opensearch_chain, path="/rag-opensearch")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

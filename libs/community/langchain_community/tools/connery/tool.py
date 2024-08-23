@@ -13,9 +13,7 @@ from langchain_community.tools.connery.models import Action, Parameter
 
 
 class ConneryAction(BaseTool):
-    """
-    A LangChain Tool wrapping a Connery Action.
-    """
+    """Connery Action tool."""
 
     name: str
     description: str
@@ -27,7 +25,7 @@ class ConneryAction(BaseTool):
     def _run(
         self,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs: Dict[str, str],
+        **kwargs: Any,
     ) -> Dict[str, str]:
         """
         Runs the Connery Action with the provided input.
@@ -42,7 +40,7 @@ class ConneryAction(BaseTool):
     async def _arun(
         self,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        **kwargs: Dict[str, str],
+        **kwargs: Any,
     ) -> Dict[str, str]:
         """
         Runs the Connery Action asynchronously with the provided input.
@@ -65,7 +63,7 @@ class ConneryAction(BaseTool):
 
         return self.args_schema.schema_json(indent=2)
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_attributes(cls, values: dict) -> dict:
         """
         Validate the attributes of the ConneryAction class.

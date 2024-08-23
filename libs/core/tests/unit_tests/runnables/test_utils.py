@@ -1,9 +1,11 @@
 import sys
-from typing import Callable
+from typing import Callable, Dict
 
 import pytest
 
+from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.utils import (
+    get_function_nonlocals,
     get_lambda_source,
     indent_lines_after_first,
 )
@@ -37,3 +39,21 @@ def test_indent_lines_after_first(text: str, prefix: str, expected_output: str) 
     """Test indent_lines_after_first function"""
     indented_text = indent_lines_after_first(text, prefix)
     assert indented_text == expected_output
+
+
+def test_nonlocals() -> None:
+    agent = RunnableLambda(lambda x: x * 2)
+
+    def my_func(input: str, agent: Dict[str, str]) -> str:
+        return agent.get("agent_name", input)
+
+    def my_func2(input: str) -> str:
+        return agent.get("agent_name", input)  # type: ignore[attr-defined]
+
+    def my_func3(input: str) -> str:
+        return agent.invoke(input)
+
+    assert get_function_nonlocals(my_func) == []
+    assert get_function_nonlocals(my_func2) == []
+    assert get_function_nonlocals(my_func3) == [agent.invoke]
+    assert RunnableLambda(my_func3).deps == [agent]

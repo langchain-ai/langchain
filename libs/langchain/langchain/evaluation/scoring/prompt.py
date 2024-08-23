@@ -1,9 +1,10 @@
 """Prompts for scoring the outputs of a models for a given question.
 
-This prompt is used to socre the responses and evaluate how it follows the instructions
+This prompt is used to score the responses and evaluate how it follows the instructions
 and answers the question. The prompt is based on the paper from
 Zheng, et. al. https://arxiv.org/abs/2306.05685
 """
+
 # flake8: noqa
 from langchain_core.prompts.chat import ChatPromptTemplate
 

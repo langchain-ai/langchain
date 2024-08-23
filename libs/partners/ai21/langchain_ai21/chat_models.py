@@ -1,83 +1,32 @@
 import asyncio
 from functools import partial
-from typing import Any, List, Mapping, Optional, Tuple, cast
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
-from ai21.models import ChatMessage, RoleType
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    LangSmithParams,
+    generate_from_stream,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.messages import (
+    BaseMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import root_validator
 
 from langchain_ai21.ai21_base import AI21Base
-
-
-def _get_system_message_from_message(message: BaseMessage) -> str:
-    if not isinstance(message.content, str):
-        raise ValueError(
-            f"System Message must be of type str. Got {type(message.content)}"
-        )
-
-    return message.content
-
-
-def _convert_messages_to_ai21_messages(
-    messages: List[BaseMessage],
-) -> Tuple[Optional[str], List[ChatMessage]]:
-    system_message = None
-    converted_messages: List[ChatMessage] = []
-
-    for i, message in enumerate(messages):
-        if message.type == "system":
-            if i != 0:
-                raise ValueError("System message must be at beginning of message list.")
-            else:
-                system_message = _get_system_message_from_message(message)
-        else:
-            converted_message = _convert_message_to_ai21_message(message)
-            converted_messages.append(converted_message)
-
-    return system_message, converted_messages
-
-
-def _convert_message_to_ai21_message(
-    message: BaseMessage,
-) -> ChatMessage:
-    content = cast(str, message.content)
-
-    role = None
-
-    if isinstance(message, HumanMessage):
-        role = RoleType.USER
-    elif isinstance(message, AIMessage):
-        role = RoleType.ASSISTANT
-
-    if not role:
-        raise ValueError(
-            f"Could not resolve role type from message {message}. "
-            f"Only support {HumanMessage.__name__} and {AIMessage.__name__}."
-        )
-
-    return ChatMessage(role=role, text=content)
-
-
-def _pop_system_messages(messages: List[BaseMessage]) -> List[SystemMessage]:
-    system_message_indexes = [
-        i for i, message in enumerate(messages) if isinstance(message, SystemMessage)
-    ]
-
-    return [cast(SystemMessage, messages.pop(i)) for i in system_message_indexes]
+from langchain_ai21.chat.chat_adapter import ChatAdapter
+from langchain_ai21.chat.chat_factory import create_chat_adapter
 
 
 class ChatAI21(BaseChatModel, AI21Base):
-    """ChatAI21 chat model.
+    """ChatAI21 chat model. Different model types support different parameters and
+    different parameter values. Please read the [AI21 reference documentation]
+    (https://docs.ai21.com/reference) for your model to understand which parameters
+    are available.
 
     Example:
         .. code-block:: python
@@ -85,7 +34,10 @@ class ChatAI21(BaseChatModel, AI21Base):
             from langchain_ai21 import ChatAI21
 
 
-            model = ChatAI21()
+            model = ChatAI21(
+                # defaults to os.environ.get("AI21_API_KEY")
+                api_key="my_api_key"
+            )
     """
 
     model: str
@@ -93,12 +45,15 @@ class ChatAI21(BaseChatModel, AI21Base):
         You can view the options at https://github.com/AI21Labs/ai21-python?tab=readme-ov-file#model-types"""
     num_results: int = 1
     """The number of responses to generate for a given prompt."""
+    stop: Optional[List[str]] = None
+    """Default stop sequences."""
 
     max_tokens: int = 16
     """The maximum number of tokens to generate for each response."""
 
     min_tokens: int = 0
-    """The minimum number of tokens to generate for each response."""
+    """The minimum number of tokens to generate for each response.
+    _Not supported for all models._"""
 
     temperature: float = 0.7
     """A value controlling the "creativity" of the model's responses."""
@@ -107,17 +62,33 @@ class ChatAI21(BaseChatModel, AI21Base):
     """A value controlling the diversity of the model's responses."""
 
     top_k_return: int = 0
-    """The number of top-scoring tokens to consider for each generation step."""
+    """The number of top-scoring tokens to consider for each generation step.
+    _Not supported for all models._"""
 
     frequency_penalty: Optional[Any] = None
-    """A penalty applied to tokens that are frequently generated."""
+    """A penalty applied to tokens that are frequently generated.
+    _Not supported for all models._"""
 
     presence_penalty: Optional[Any] = None
-    """ A penalty applied to tokens that are already present in the prompt."""
+    """ A penalty applied to tokens that are already present in the prompt.
+    _Not supported for all models._"""
 
     count_penalty: Optional[Any] = None
     """A penalty applied to tokens based on their frequency 
-    in the generated responses."""
+    in the generated responses. _Not supported for all models._"""
+
+    n: int = 1
+    """Number of chat completions to generate for each prompt."""
+    streaming: bool = False
+
+    _chat_adapter: ChatAdapter
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate the environment."""
+        model = values["model"]
+        values["_chat_adapter"] = create_chat_adapter(model)
+        return values
 
     class Config:
         """Configuration for this pydantic object."""
@@ -139,7 +110,10 @@ class ChatAI21(BaseChatModel, AI21Base):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k_return": self.top_k_return,
+            "n": self.n,
         }
+        if self.stop:
+            base_params["stop_sequences"] = self.stop
 
         if self.count_penalty is not None:
             base_params["count_penalty"] = self.count_penalty.to_dict()
@@ -152,6 +126,23 @@ class ChatAI21(BaseChatModel, AI21Base):
 
         return base_params
 
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="ai21",
+            ls_model_name=self.model,
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None) or self.stop:
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
+
     def _build_params_for_request(
         self,
         messages: List[BaseMessage],
@@ -159,7 +150,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         **kwargs: Any,
     ) -> Mapping[str, Any]:
         params = {}
-        system, ai21_messages = _convert_messages_to_ai21_messages(messages)
+        converted_messages = self._chat_adapter.convert_messages(messages)
 
         if stop is not None:
             if "stop" in kwargs:
@@ -167,8 +158,7 @@ class ChatAI21(BaseChatModel, AI21Base):
             params["stop_sequences"] = stop
 
         return {
-            "system": system or "",
-            "messages": ai21_messages,
+            **converted_messages,
             **self._default_params,
             **params,
             **kwargs,
@@ -179,15 +169,64 @@ class ChatAI21(BaseChatModel, AI21Base):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._build_params_for_request(messages=messages, stop=stop, **kwargs)
+        should_stream = stream or self.streaming
 
-        response = self.client.chat.create(**params)
+        if should_stream:
+            return self._handle_stream_from_generate(
+                messages=messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
+            )
 
-        outputs = response.outputs
-        message = AIMessage(content=outputs[0].text)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        params = self._build_params_for_request(
+            messages=messages,
+            stop=stop,
+            stream=should_stream,
+            **kwargs,
+        )
+
+        messages = self._chat_adapter.call(self.client, **params)
+        generations = [ChatGeneration(message=message) for message in messages]
+
+        return ChatResult(generations=generations)
+
+    def _handle_stream_from_generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        stream_iter = self._stream(
+            messages=messages,
+            stop=stop,
+            run_manager=run_manager,
+            **kwargs,
+        )
+        return generate_from_stream(stream_iter)
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        params = self._build_params_for_request(
+            messages=messages,
+            stop=stop,
+            stream=True,
+            **kwargs,
+        )
+
+        for chunk in self._chat_adapter.call(self.client, **params):
+            if run_manager and isinstance(chunk.message.content, str):
+                run_manager.on_llm_new_token(token=chunk.message.content, chunk=chunk)
+            yield chunk
 
     async def _agenerate(
         self,
@@ -199,3 +238,11 @@ class ChatAI21(BaseChatModel, AI21Base):
         return await asyncio.get_running_loop().run_in_executor(
             None, partial(self._generate, **kwargs), messages, stop, run_manager
         )
+
+    def _get_system_message_from_message(self, message: BaseMessage) -> str:
+        if not isinstance(message.content, str):
+            raise ValueError(
+                f"System Message must be of type str. Got {type(message.content)}"
+            )
+
+        return message.content

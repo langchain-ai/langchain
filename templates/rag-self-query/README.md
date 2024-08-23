@@ -1,14 +1,16 @@
-# rag-self-query
+# RAG - Elasticsearch - Self-query
 
-This template performs RAG using the self-query retrieval technique. The main idea is to let an LLM convert unstructured queries into structured queries. See the [docs for more on how this works](https://python.langchain.com/docs/modules/data_connection/retrievers/self_query).
+This template performs RAG using the `self-query` retrieval technique. 
+The main idea is to let an LLM convert unstructured queries into 
+structured queries. See the [docs for more on how this works](https://python.langchain.com/docs/modules/data_connection/retrievers/self_query).
 
 ## Environment Setup
 
-In this template we'll use OpenAI models and an Elasticsearch vector store, but the approach generalizes to all LLMs/ChatModels and [a number of vector stores](https://python.langchain.com/docs/integrations/retrievers/self_query/).
+In this template we'll use `OpenAI` models and an `Elasticsearch` vector store, but the approach generalizes to all LLMs/ChatModels and [a number of vector stores](https://python.langchain.com/docs/integrations/retrievers/self_query/).
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+Set the `OPENAI_API_KEY` environment variable to access the `OpenAI` models.
 
-To connect to your Elasticsearch instance, use the following environment variables:
+To connect to your `Elasticsearch` instance, use the following environment variables:
 
 ```bash
 export ELASTIC_CLOUD_ID = <ClOUD_ID>
@@ -56,7 +58,7 @@ python ingest.py
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

@@ -1,4 +1,4 @@
-# Langchain - Robocorp Action Server
+# Robocorp Action Server - agent
 
 This template enables using [Robocorp Action Server](https://github.com/robocorp/robocorp) served actions as tools for an Agent.
 
@@ -49,7 +49,7 @@ action-server start
 ### Configure LangSmith (Optional)
 
 LangSmith will help us trace, monitor and debug LangChain applications.
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/).
+You can sign up for LangSmith [here](https://smith.langchain.com/).
 If you don't have access, you can skip this section
 
 ```shell

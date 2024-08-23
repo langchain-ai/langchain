@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.32",
-    removal="0.2.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GCSDirectoryLoader",
 )
 class GCSDirectoryLoader(BaseLoader):
@@ -65,10 +65,6 @@ class GCSDirectoryLoader(BaseLoader):
             # intermediate directories on the fly
             if blob.name.endswith("/"):
                 continue
-            loader = GCSFileLoader(
-                self.project_name, self.bucket, blob.name, loader_func=self._loader_func
-            )
-            docs.extend(loader.load())
             # Use the try-except block here
             try:
                 loader = GCSFileLoader(

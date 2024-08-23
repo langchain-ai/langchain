@@ -8,8 +8,8 @@ from langchain_core.tools import BaseTool
 
 
 class CogniswitchKnowledgeRequest(BaseTool):
-    """
-    A tool for interacting with the Cogniswitch service to answer questions.
+    """Tool that uses the Cogniswitch service to answer questions.
+
     name: str = "cogniswitch_knowledge_request"
     description: str = (
         "A wrapper around cogniswitch service to answer the question
@@ -24,7 +24,7 @@ class CogniswitchKnowledgeRequest(BaseTool):
     cs_token: str
     OAI_token: str
     apiKey: str
-    api_url = "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeRequest"
+    api_url: str = "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeRequest"
 
     def _run(
         self,
@@ -81,9 +81,9 @@ class CogniswitchKnowledgeRequest(BaseTool):
 
 
 class CogniswitchKnowledgeStatus(BaseTool):
-    """
-    A cogniswitch tool for interacting with the Cogniswitch services to know the
+    """Tool that uses the Cogniswitch services to get the
      status of the document or url uploaded.
+
     name: str = "cogniswitch_knowledge_status"
     description: str = (
         "A wrapper around cogniswitch services to know the status of
@@ -181,8 +181,8 @@ class CogniswitchKnowledgeStatus(BaseTool):
 
 
 class CogniswitchKnowledgeSourceFile(BaseTool):
-    """
-    A cogniswitch tool for interacting with the Cogniswitch services to store data.
+    """Tool that uses the Cogniswitch services to store data from file.
+
     name: str = "cogniswitch_knowledge_source_file"
     description: str = (
         "This calls the CogniSwitch services to analyze & store data from a file.
@@ -294,8 +294,8 @@ class CogniswitchKnowledgeSourceFile(BaseTool):
 
 
 class CogniswitchKnowledgeSourceURL(BaseTool):
-    """
-    A cogniswitch tool for interacting with the Cogniswitch services to store data.
+    """Tool that uses the Cogniswitch services to store data from a URL.
+
     name: str = "cogniswitch_knowledge_source_url"
     description: str = (
         "This calls the CogniSwitch services to analyze & store data from a url.

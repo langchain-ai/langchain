@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils.pydantic import get_fields
 
 if TYPE_CHECKING:
     from replicate.prediction import Prediction
@@ -44,7 +45,7 @@ class Replicate(LLM):
     replicate_api_token: Optional[str] = None
     prompt_key: Optional[str] = None
     version_obj: Any = Field(default=None, exclude=True)
-    """Optionally pass in the model version object during initialization to avoid 
+    """Optionally pass in the model version object during initialization to avoid
         having to make an extra API call to retrieve it during streaming. NOTE: not
         serializable, is excluded from serialization.
     """
@@ -56,10 +57,8 @@ class Replicate(LLM):
     """Stop sequences to early-terminate generation."""
 
     class Config:
-        """Configuration for this pydantic config."""
-
         allow_population_by_field_name = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -77,7 +76,7 @@ class Replicate(LLM):
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {field.alias for field in get_fields(cls).values()}
 
         input = values.pop("input", {})
         if input:
@@ -97,7 +96,7 @@ class Replicate(LLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         replicate_api_token = get_from_dict_or_env(
@@ -197,9 +196,13 @@ class Replicate(LLM):
 
         # get the model and version
         if self.version_obj is None:
-            model_str, version_str = self.model.split(":")
-            model = replicate_python.models.get(model_str)
-            self.version_obj = model.versions.get(version_str)
+            if ":" in self.model:
+                model_str, version_str = self.model.split(":")
+                model = replicate_python.models.get(model_str)
+                self.version_obj = model.versions.get(version_str)
+            else:
+                model = replicate_python.models.get(self.model)
+                self.version_obj = model.latest_version
 
         if self.prompt_key is None:
             # sort through the openapi schema to get the name of the first input
@@ -217,6 +220,11 @@ class Replicate(LLM):
             **self.model_kwargs,
             **kwargs,
         }
-        return replicate_python.predictions.create(
-            version=self.version_obj, input=input_
-        )
+
+        # if it's an official model
+        if ":" not in self.model:
+            return replicate_python.models.predictions.create(self.model, input=input_)
+        else:
+            return replicate_python.predictions.create(
+                version=self.version_obj, input=input_
+            )

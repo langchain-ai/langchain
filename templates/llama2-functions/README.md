@@ -1,7 +1,6 @@
+# Llama.cpp functions
 
-# llama2-functions
-
-This template performs extraction of structured data from unstructured data using a [LLaMA2 model that supports a specified JSON output schema](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md). 
+This template performs extraction of structured data from unstructured data using  [Llama.cpp package with the LLaMA2 model that supports a specified JSON output schema](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md). 
 
 The extraction schema can be set in `chain.py`.
 
@@ -40,7 +39,7 @@ add_routes(app, llama2_functions_chain, path="/llama2-functions")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

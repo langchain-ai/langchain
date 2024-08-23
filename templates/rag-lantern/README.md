@@ -1,7 +1,6 @@
+# RAG - Lantern
 
-# rag_lantern
-
-This template performs RAG with Lantern.
+This template performs RAG with `Lantern`.
 
 [Lantern](https://lantern.dev) is an open-source vector database built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL). It enables vector search and embedding generation inside your database.
 
@@ -99,7 +98,7 @@ add_routes(app, rag_lantern_chain, path="/rag-lantern")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

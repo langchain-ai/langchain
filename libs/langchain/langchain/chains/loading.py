@@ -1,11 +1,13 @@
 """Functionality for loading chains."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import yaml
-from langchain_community.llms.loading import load_llm, load_llm_from_config
+from langchain_core._api import deprecated
 from langchain_core.prompts.loading import (
     _load_output_parser,
     load_prompt,
@@ -19,16 +21,40 @@ from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChai
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
-from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
+
+if TYPE_CHECKING:
+    from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+
+    from langchain.chains.llm_requests import LLMRequestsChain
+
+try:
+    from langchain_community.llms.loading import load_llm, load_llm_from_config
+except ImportError:
+
+    def load_llm(*args: Any, **kwargs: Any) -> None:  # type: ignore
+        raise ImportError(
+            "To use this load_llm functionality you must install the "
+            "langchain_community package. "
+            "You can install it with `pip install langchain_community`"
+        )
+
+    def load_llm_from_config(  # type: ignore
+        *args: Any, **kwargs: Any
+    ) -> None:
+        raise ImportError(
+            "To use this load_llm_from_config functionality you must install the "
+            "langchain_community package. "
+            "You can install it with `pip install langchain_community`"
+        )
+
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 
@@ -134,7 +160,7 @@ def _load_map_reduce_documents_chain(
     )
 
 
-def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:
+def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:  # type: ignore[valid-type]
     combine_documents_chain = None
     collapse_documents_chain = None
 
@@ -187,7 +213,7 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
             config.pop("collapse_document_chain_path"), **kwargs
         )
 
-    return ReduceDocumentsChain(
+    return ReduceDocumentsChain(  # type: ignore[misc]
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_documents_chain,
         **config,
@@ -383,8 +409,8 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
         raise ValueError("`database` must be present.")
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
-        chain = load_chain_from_config(llm_chain_config, **kwargs, **kwargs)
-        return SQLDatabaseChain(llm_chain=chain, database=database, **config)
+        chain = load_chain_from_config(llm_chain_config, **kwargs)
+        return SQLDatabaseChain(llm_chain=chain, database=database, **config)  # type: ignore[arg-type]
     if "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config, **kwargs)
@@ -527,6 +553,14 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
     else:
         raise ValueError("`qa_chain` must be present.")
 
+    try:
+        from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+    except ImportError:
+        raise ImportError(
+            "To use this GraphCypherQAChain functionality you must install the "
+            "langchain_community package. "
+            "You can install it with `pip install langchain_community`"
+        )
     return GraphCypherQAChain(
         graph=graph,
         cypher_generation_chain=cypher_generation_chain,  # type: ignore[arg-type]
@@ -567,6 +601,15 @@ def _load_api_chain(config: dict, **kwargs: Any) -> APIChain:
 
 
 def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
+    try:
+        from langchain.chains.llm_requests import LLMRequestsChain
+    except ImportError:
+        raise ImportError(
+            "To use this LLMRequestsChain functionality you must install the "
+            "langchain package. "
+            "You can install it with `pip install langchain`"
+        )
+
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config, **kwargs)
@@ -607,6 +650,14 @@ type_to_loader_dict = {
 }
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "This function is deprecated and will be removed in langchain 1.0. "
+        "At that point chains must be imported from their respective modules."
+    ),
+    removal="1.0",
+)
 def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
     """Load chain from Config Dict."""
     if "_type" not in config:
@@ -620,6 +671,14 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
     return chain_loader(config, **kwargs)
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "This function is deprecated and will be removed in langchain 1.0. "
+        "At that point chains must be imported from their respective modules."
+    ),
+    removal="1.0",
+)
 def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
     """Unified method for loading a chain from LangChainHub or local fs."""
     if isinstance(path, str) and path.startswith("lc://"):

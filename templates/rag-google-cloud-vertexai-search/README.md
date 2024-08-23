@@ -1,9 +1,10 @@
-# rag-google-cloud-vertexai-search
+# RAG - Google Cloud Vertex AI Search
 
-This template is an application that utilizes Google Vertex AI Search, a machine learning powered search service, and
+This template is an application that utilizes `Google Vertex AI Search`, 
+a machine learning powered search service, and
 PaLM 2 for Chat (chat-bison). The application uses a Retrieval chain to answer questions based on your documents.
 
-For more context on building RAG applications with Vertex AI Search,
+For more context on building RAG applications with `Vertex AI Search`,
 check [here](https://cloud.google.com/generative-ai-app-builder/docs/enterprise-search-introduction).
 
 ## Environment Setup
@@ -57,7 +58,7 @@ add_routes(app, rag_google_cloud_vertexai_search_chain, path="/rag-google-cloud-
 
 (Optional) Let's now configure LangSmith.
 LangSmith will help us trace, monitor and debug LangChain applications.
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/).
+You can sign up for LangSmith [here](https://smith.langchain.com/).
 If you don't have access, you can skip this section
 
 ```shell

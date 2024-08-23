@@ -1,9 +1,14 @@
 """Test ChatMistral chat model."""
 
 import json
-from typing import Any
+from typing import Any, Optional
 
-from langchain_core.messages import AIMessageChunk, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessageChunk,
+    HumanMessage,
+)
 from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_mistralai.chat_models import ChatMistralAI
@@ -21,8 +26,28 @@ async def test_astream() -> None:
     """Test streaming tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
+    full: Optional[BaseMessageChunk] = None
+    chunks_with_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
+        assert isinstance(token, AIMessageChunk)
         assert isinstance(token.content, str)
+        full = token if full is None else full + token
+        if token.usage_metadata is not None:
+            chunks_with_token_counts += 1
+    if chunks_with_token_counts != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with token counts. "
+            "AIMessageChunk aggregation adds counts. Check that "
+            "this is behaving properly."
+        )
+    assert isinstance(full, AIMessageChunk)
+    assert full.usage_metadata is not None
+    assert full.usage_metadata["input_tokens"] > 0
+    assert full.usage_metadata["output_tokens"] > 0
+    assert (
+        full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
+        == full.usage_metadata["total_tokens"]
+    )
 
 
 async def test_abatch() -> None:
@@ -113,7 +138,7 @@ def test_chat_mistralai_streaming_llm_output_not_contain_token_usage() -> None:
 
 
 def test_structured_output() -> None:
-    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
     schema = {
         "title": "AnswerWithJustification",
         "description": (
@@ -134,7 +159,7 @@ def test_structured_output() -> None:
 
 
 def test_streaming_structured_output() -> None:
-    llm = ChatMistralAI(model="mistral-large", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
 
     class Person(BaseModel):
         name: str
@@ -151,8 +176,25 @@ def test_streaming_structured_output() -> None:
         chunk_num += 1
 
 
+def test_tool_call() -> None:
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
+
+    class Person(BaseModel):
+        name: str
+        age: int
+
+    tool_llm = llm.bind_tools([Person])
+
+    result = tool_llm.invoke("Erick, 27 years old")
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+    tool_call = result.tool_calls[0]
+    assert tool_call["name"] == "Person"
+    assert tool_call["args"] == {"name": "Erick", "age": 27}
+
+
 def test_streaming_tool_call() -> None:
-    llm = ChatMistralAI(model="mistral-large", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)  # type: ignore[call-arg]
 
     class Person(BaseModel):
         name: str
@@ -177,6 +219,12 @@ def test_streaming_tool_call() -> None:
         "name": "Erick",
         "age": 27,
     }
+
+    assert isinstance(chunk, AIMessageChunk)
+    assert len(chunk.tool_call_chunks) == 1
+    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert tool_call_chunk["name"] == "Person"
+    assert tool_call_chunk["args"] == '{"name": "Erick", "age": 27}'
 
     # where it doesn't call the tool
     strm = tool_llm.stream("What is 2+2?")

@@ -9,8 +9,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
     retry,
@@ -54,7 +54,10 @@ class _BaseYandexGPT(Serializable):
     """Maximum number of retries to make when generating."""
     sleep_interval: float = 1.0
     """Delay between API requests"""
-    _grpc_metadata: Sequence
+    disable_request_logging: bool = False
+    """YandexGPT API logs all request data by default. 
+    If you provide personal data, confidential information, disable logging."""
+    _grpc_metadata: Optional[Sequence] = None
 
     @property
     def _llm_type(self) -> str:
@@ -71,7 +74,7 @@ class _BaseYandexGPT(Serializable):
             "max_retries": self.max_retries,
         }
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
@@ -101,9 +104,16 @@ class _BaseYandexGPT(Serializable):
         if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
         if not values["model_uri"]:
-            values[
-                "model_uri"
-            ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            values["model_uri"] = (
+                f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            )
+        if values["disable_request_logging"]:
+            values["_grpc_metadata"].append(
+                (
+                    "x-data-logging-enabled",
+                    "false",
+                )
+            )
         return values
 
 

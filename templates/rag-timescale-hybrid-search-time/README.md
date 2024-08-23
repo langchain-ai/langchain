@@ -1,6 +1,7 @@
-# RAG with Timescale Vector using hybrid search
+# RAG - Timescale - hybrid search
 
-This template shows how to use timescale-vector with the self-query retriver to perform hybrid search on similarity and time.
+This template shows how to use `Timescale Vector` with the self-query retriever to perform hybrid search on similarity and time.
+
 This is useful any time your data has a strong time-based component. Some examples of such data are:
 - News articles (politics, business, etc)
 - Blog posts, documentation or other published material (public or private).
@@ -15,6 +16,7 @@ Such items are often searched by both similarity and time. For example: Show me 
 Langchain's self-query retriever allows deducing time-ranges (as well as other search criteria) from the text of user queries.
 
 ## What is Timescale Vector?
+
 **[Timescale Vector](https://www.timescale.com/ai?utm_campaign=vectorlaunch&utm_source=langchain&utm_medium=referral) is PostgreSQL++ for AI applications.**
 
 Timescale Vector enables you to efficiently store and query billions of vector embeddings in `PostgreSQL`.
@@ -71,7 +73,7 @@ add_routes(app, rag_timescale_hybrid_search_chain, path="/rag-timescale-hybrid-s
 
 (Optional) Let's now configure LangSmith.
 LangSmith will help us trace, monitor and debug LangChain applications.
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/).
+You can sign up for LangSmith [here](https://smith.langchain.com/).
 If you don't have access, you can skip this section
 
 ```shell

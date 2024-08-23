@@ -1,7 +1,6 @@
+# Vertex AI - Chuck Norris
 
-# vertexai-chuck-norris
-
-This template makes jokes about Chuck Norris using Vertex AI PaLM2. 
+This template makes jokes about Chuck Norris using `Google Cloud Vertex AI PaLM2`. 
 
 ## Environment Setup
 
@@ -53,7 +52,7 @@ add_routes(app, vertexai_chuck_norris_chain, path="/vertexai-chuck-norris")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

@@ -1,6 +1,8 @@
-# rag-semi-structured
+# RAG - Unstructured - semi-structured
 
-This template performs RAG on semi-structured data, such as a PDF with text and tables.
+This template performs RAG on `semi-structured data`, such as a PDF with text and tables.
+
+It uses the `unstructured` parser to extract the text and tables from the PDF and then uses the LLM to generate queries based on the user input. 
 
 See [this cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/Semi_Structured_RAG.ipynb) as a reference.
 
@@ -45,7 +47,7 @@ add_routes(app, rag_semi_structured_chain, path="/rag-semi-structured")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

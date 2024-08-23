@@ -15,7 +15,7 @@ AV_PATTERN = re.compile(r"av[0-9]+")
 
 class BiliBiliLoader(BaseLoader):
     """
-    Loader for fetching transcripts from BiliBili videos.
+    Load fetching transcripts from BiliBili videos.
     """
 
     def __init__(

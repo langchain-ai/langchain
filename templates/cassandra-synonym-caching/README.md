@@ -1,7 +1,7 @@
+# Cassandra - synonym caching
 
-# cassandra-synonym-caching
-
-This template provides a simple chain template showcasing the usage of LLM Caching backed by Apache Cassandra® or Astra DB through CQL.
+This template provides a simple chain template showcasing the usage 
+of LLM Caching backed by `Apache Cassandra®` or `Astra DB` through `CQL`.
 
 ## Environment Setup
 
@@ -42,7 +42,7 @@ add_routes(app, cassandra_synonym_caching_chain, path="/cassandra-synonym-cachin
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

@@ -25,6 +25,9 @@ EXPECTED_ALL = [
     "LabelStudioCallbackHandler",
     "TrubricsCallbackHandler",
     "FiddlerCallbackHandler",
+    "UpTrainCallbackHandler",
+    "UpstashRatelimitError",
+    "UpstashRatelimitHandler",
 ]
 
 

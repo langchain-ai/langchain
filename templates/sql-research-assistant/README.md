@@ -1,4 +1,4 @@
-# sql-research-assistant
+# SQL - Research assistant
 
 This package does research over a SQL database
 
@@ -37,7 +37,7 @@ add_routes(app, sql_research_assistant_chain, path="/sql-research-assistant")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

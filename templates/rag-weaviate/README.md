@@ -1,7 +1,6 @@
+# RAG - Weaviate
 
-# rag-weaviate
-
-This template performs RAG with Weaviate.
+This template performs RAG with `Weaviate` vectorstore.
 
 ## Environment Setup
 
@@ -40,7 +39,7 @@ add_routes(app, rag_weaviate_chain, path="/rag-weaviate")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

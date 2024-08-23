@@ -1,9 +1,8 @@
+# OpenAI functions - agent 
 
-# openai-functions-agent
+This template creates an agent that uses `OpenAI function calling` to communicate its decisions on what actions to take. 
 
-This template creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take. 
-
-This example creates an agent that can optionally look up information on the internet using Tavily's search engine.
+This example creates an agent that can optionally look up information on the internet using `Tavily`'s search engine.
 
 ## Environment Setup
 
@@ -42,7 +41,7 @@ add_routes(app, openai_functions_agent_chain, path="/openai-functions-agent")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

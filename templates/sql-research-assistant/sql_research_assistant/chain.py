@@ -17,6 +17,6 @@ chain = chain_notypes.with_types(input_type=InputType)
 
 
 if __name__ == "__main__":
-    print(  # noqa: T201
+    print(
         chain.invoke({"question": "who is typically older: point guards or centers?"})
     )

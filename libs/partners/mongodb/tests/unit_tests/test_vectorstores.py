@@ -1,12 +1,14 @@
+from json import dumps, loads
 from typing import Any, Optional
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from pymongo.collection import Collection
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
-from tests.utils import ConsistentFakeEmbeddings, MockCollection
+
+from ..utils import ConsistentFakeEmbeddings, MockCollection
 
 INDEX_NAME = "langchain-test-index"
 NAMESPACE = "langchain_test_db.langchain_test_collection"
@@ -44,7 +46,7 @@ class TestMongoDBAtlasVectorSearch:
     def setup_class(cls) -> None:
         # ensure the test collection is empty
         collection = get_collection()
-        assert collection.count_documents({}) == 0  # type: ignore[index]  # noqa: E501
+        assert collection.count_documents({}) == 0  # type: ignore[index]
 
     @classmethod
     def teardown_class(cls) -> None:
@@ -75,6 +77,10 @@ class TestMongoDBAtlasVectorSearch:
         output = vectorstore.similarity_search("", k=1)
         assert output[0].page_content == page_content
         assert output[0].metadata.get("c") == metadata
+        # Validate the ObjectId provided is json serializable
+        assert loads(dumps(output[0].page_content)) == output[0].page_content
+        assert loads(dumps(output[0].metadata)) == output[0].metadata
+        assert isinstance(output[0].metadata["_id"], str)
 
     def test_from_documents(
         self, embedding_openai: Embeddings, collection: MockCollection
@@ -90,7 +96,7 @@ class TestMongoDBAtlasVectorSearch:
             documents,
             embedding_openai,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         self._validate_search(
             vectorstore, collection, metadata=documents[2].metadata["c"]
@@ -109,7 +115,7 @@ class TestMongoDBAtlasVectorSearch:
             texts,
             embedding_openai,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         self._validate_search(vectorstore, collection, metadata=None)
 
@@ -128,7 +134,7 @@ class TestMongoDBAtlasVectorSearch:
             embedding_openai,
             metadatas=metadatas,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         self._validate_search(vectorstore, collection, metadata=metadatas[2]["c"])
 
@@ -147,7 +153,7 @@ class TestMongoDBAtlasVectorSearch:
             embedding_openai,
             metadatas=metadatas,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         collection._aggregate_result = list(
             filter(
@@ -167,9 +173,9 @@ class TestMongoDBAtlasVectorSearch:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         query = "foo"
         self._validate_search(

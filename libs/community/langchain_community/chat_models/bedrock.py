@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
@@ -15,7 +16,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.chat_models.anthropic import (
     convert_messages_to_prompt_anthropic,
@@ -192,11 +192,20 @@ class ChatPromptAdapter:
         )
 
 
-_message_type_lookups = {"human": "user", "ai": "assistant"}
+_message_type_lookups = {
+    "human": "user",
+    "ai": "assistant",
+    "AIMessageChunk": "assistant",
+    "HumanMessageChunk": "user",
+    "function": "user",
+}
 
 
+@deprecated(
+    since="0.0.34", removal="1.0", alternative_import="langchain_aws.ChatBedrock"
+)
 class BedrockChat(BaseChatModel, BedrockBase):
-    """A chat model that uses the Bedrock API."""
+    """Chat model that uses the Bedrock API."""
 
     @property
     def _llm_type(self) -> str:
@@ -223,9 +232,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
         return attributes
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def _stream(
         self,
@@ -308,7 +315,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
         final_output = {}
         for output in llm_outputs:
             output = output or {}
-            usage = output.pop("usage", {})
+            usage = output.get("usage", {})
             for token_type, token_count in usage.items():
                 final_usage[token_type] += token_count
             final_output.update(output)

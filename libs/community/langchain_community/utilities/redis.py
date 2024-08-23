@@ -28,7 +28,7 @@ class TokenEscaper:
 
     # Characters that RediSearch requires us to escape during queries.
     # Source: https://redis.io/docs/stack/search/reference/escaping/#the-rules-of-text-field-tokenization
-    DEFAULT_ESCAPED_CHARS = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/ ]"
+    DEFAULT_ESCAPED_CHARS: str = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/ ]"
 
     def __init__(self, escape_chars_re: Optional[Pattern] = None):
         if escape_chars_re:
@@ -214,4 +214,4 @@ def _check_for_cluster(redis_client: RedisType) -> bool:
 def _redis_cluster_client(redis_url: str, **kwargs: Any) -> RedisType:
     from redis.cluster import RedisCluster
 
-    return RedisCluster.from_url(redis_url, **kwargs)
+    return RedisCluster.from_url(redis_url, **kwargs)  # type: ignore[return-value]

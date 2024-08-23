@@ -4,9 +4,10 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
+from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
     retry,
@@ -44,6 +45,9 @@ def embed_with_retry(embeddings: SolarEmbeddings, *args: Any, **kwargs: Any) -> 
     return _embed_with_retry(*args, **kwargs)
 
 
+@deprecated(
+    since="0.0.34", removal="1.0", alternative_import="langchain_upstage.ChatUpstage"
+)
 class SolarEmbeddings(BaseModel, Embeddings):
     """Solar's embedding service.
 
@@ -72,11 +76,9 @@ class SolarEmbeddings(BaseModel, Embeddings):
     """API Key for Solar API."""
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key exists in environment."""
         solar_api_key = convert_to_secret_str(

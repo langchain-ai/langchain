@@ -1,4 +1,4 @@
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 sentence_template = """Given the following fields, create a sentence about them. 
 Make the sentence detailed and interesting. Use every given field.

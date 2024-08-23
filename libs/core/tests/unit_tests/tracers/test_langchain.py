@@ -2,11 +2,13 @@ import threading
 import time
 import unittest
 import unittest.mock
+import uuid
 from typing import Any, Dict
 from uuid import UUID
 
 import pytest
 from langsmith import Client
+from langsmith.run_trees import RunTree
 
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer
@@ -57,6 +59,25 @@ def test_example_id_assignment_threadsafe() -> None:
         }
         tracer.wait_for_futures()
         assert example_ids == expected_example_ids
+
+
+def test_tracer_with_run_tree_parent() -> None:
+    mock_session = unittest.mock.MagicMock()
+    client = Client(session=mock_session, api_key="test")
+    parent = RunTree(name="parent", inputs={"input": "foo"}, client=client)
+    run_id = uuid.uuid4()
+    tracer = LangChainTracer(client=client)
+    tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
+    tracer.run_map[str(parent.id)] = parent  # type: ignore
+    tracer.on_chain_start(
+        {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
+    )
+    tracer.on_chain_end({}, run_id=run_id)
+    assert parent.child_runs
+    assert len(parent.child_runs) == 1
+    assert parent.child_runs[0].id == run_id
+    assert parent.child_runs[0].trace_id == parent.id
+    assert parent.child_runs[0].parent_run_id == parent.id
 
 
 def test_log_lock() -> None:

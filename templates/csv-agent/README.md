@@ -1,7 +1,6 @@
+# CSV agent
 
-# csv-agent
-
-This template uses a [csv agent](https://python.langchain.com/docs/integrations/toolkits/csv) with tools (Python REPL) and memory (vectorstore) for interaction (question-answering) with text data.
+This template uses a [CSV agent](https://python.langchain.com/docs/integrations/toolkits/csv) with tools (Python REPL) and memory (vectorstore) for interaction (question-answering) with text data.
 
 ## Environment Setup
 
@@ -38,7 +37,7 @@ add_routes(app, csv_agent_chain, path="/csv-agent")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 
