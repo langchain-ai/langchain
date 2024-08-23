@@ -291,7 +291,6 @@ class PebbloRetrievalAPIWrapper(BaseModel):
                 "POST", prompt_gov_api_url, headers, prompt_payload
             )
             if pebblo_resp:
-                logger.debug(f"pebblo_resp.json() {pebblo_resp.json()}")
                 prompt_entities["entities"] = pebblo_resp.json().get("entities", {})
                 prompt_entities["entityCount"] = pebblo_resp.json().get(
                     "entityCount", 0
@@ -325,7 +324,6 @@ class PebbloRetrievalAPIWrapper(BaseModel):
                 "POST", prompt_gov_api_url, headers, prompt_payload
             )
             if pebblo_resp:
-                logger.debug(f"pebblo_resp {pebblo_resp}")
                 prompt_entities["entities"] = pebblo_resp.get("entities", {})
                 prompt_entities["entityCount"] = pebblo_resp.get("entityCount", 0)
         return is_valid_prompt, prompt_entities
