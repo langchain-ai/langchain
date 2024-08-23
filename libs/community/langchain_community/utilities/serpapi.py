@@ -8,7 +8,7 @@ import sys
 from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -53,10 +53,8 @@ class SerpAPIWrapper(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

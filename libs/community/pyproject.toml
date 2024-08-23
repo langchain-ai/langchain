@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-community"
-version = "0.2.8"
+version = "0.2.12"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -24,10 +24,14 @@ skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package
 ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann"
 
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/community"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-community%3D%3D0%22&expanded=true"
+
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.20"
-langchain = "^0.2.9"
+langchain-core = "^0.2.30"
+langchain = "^0.2.13"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -35,6 +39,7 @@ aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
 dataclasses-json = ">= 0.5.7, < 0.7"
 langsmith = "^0.1.0"
+
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
@@ -98,7 +103,7 @@ cassio = "^0.1.6"
 tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 fireworks-ai = "^0.9.0"
-vdms = "^0.0.20"
+vdms = ">=0.0.20"
 exllamav2 = "^0.0.18"
 
 [tool.poetry.group.lint.dependencies]

@@ -57,7 +57,7 @@ class _BaseYandexGPT(Serializable):
     disable_request_logging: bool = False
     """YandexGPT API logs all request data by default. 
     If you provide personal data, confidential information, disable logging."""
-    _grpc_metadata: Sequence
+    _grpc_metadata: Optional[Sequence] = None
 
     @property
     def _llm_type(self) -> str:

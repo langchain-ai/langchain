@@ -13,10 +13,12 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
         )
     out = schema
     for component in components[1:]:
-        if component.isdigit():
+        if component in out:
+            out = out[component]
+        elif component.isdigit() and int(component) in out:
             out = out[int(component)]
         else:
-            out = out[component]
+            raise KeyError(f"Reference '{path}' not found.")
     return deepcopy(out)
 
 
