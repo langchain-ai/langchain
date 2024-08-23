@@ -71,7 +71,7 @@ def _cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
         return similarity
 
 
-def _maximal_marginal_relevance(
+def maximal_marginal_relevance(
     query_embedding: np.ndarray,
     embedding_list: list,
     lambda_mult: float = 0.5,
