@@ -134,52 +134,63 @@ class BoxAuthType(Enum):
     an enum to tell BoxLoader how you wish to autheticate your Box connection.
 
     Options are:
+
     TOKEN - Use a developer token generated from the Box Deevloper Token.
             Only recommended for development.
-            Provide `box_developer_token`.
+            Provide ``box_developer_token``.
     CCG - Client Credentials Grant.
-          provide `box_client_id`, `box_client_secret`,
-          and `box_enterprise_id` or optionally `box_user_id`.
+          provide ``box_client_id`, ``box_client_secret`,
+          and ``box_enterprise_id`` or optionally `box_user_id`.
     JWT - Use JWT for authentication. Config should be stored on the file
           system accessible to your app.
-          provide `box_jwt_path`. Optionally, provide `box_user_id` to
+          provide ``box_jwt_path``. Optionally, provide ``box_user_id`` to
           act as a specific user
     """
 
     TOKEN = "token"
-    """Use a developer token or a token retrieved from box-sdk-gen"""
+    """Use a developer token or a token retrieved from ``box-sdk-gen``"""
 
     CCG = "ccg"
-    """Use `client_credentials` type grant"""
+    """Use ``client_credentials`` type grant"""
 
     JWT = "jwt"
     """Use JWT bearer token auth"""
 
 
 class BoxAuth(BaseModel):
-    """BoxAuth.
+    """**BoxAuth.**
+
+    The ``box-langchain`` package offers some flexibility to authentication. The
+    most basic authentication method is by using a developer token. This can be
+    found in the `Box developer console <https://account.box.com/developers/console>`_
+    on the configuration screen. This token is purposely short-lived (1 hour) and is
+    intended for development. With this token, you can add it to your environment as
+    ``BOX_DEVELOPER_TOKEN``, you can pass it directly to the loader, or you can use the
+    ``BoxAuth`` authentication helper class.
 
     `BoxAuth` supports the following authentication methods:
 
-    * Token — either a developer token or any token generated through the Box SDK
-    * JWT with a service account
-    * JWT with a specified user
-    * CCG with a service account
-    * CCG with a specified user
+    * **Token** — either a developer token or any token generated through the Box SDK
+    * **JWT** with a service account
+    * **JWT** with a specified user
+    * **CCG** with a service account
+    * **CCG** with a specified user
 
     .. note::
-    If using JWT authentication, you will need to download the configuration from the
-    Box developer console after generating your public/private key pair. Place this
-    file in your application directory structure somewhere. You will use the path to
-    this file when using the `BoxAuth` helper class.
+        If using JWT authentication, you will need to download the configuration from
+        the Box developer console after generating your public/private key pair. Place
+        this file in your application directory structure somewhere. You will use the
+        path to this file when using the ``BoxAuth`` helper class. If you wish to use
+        OAuth2 with the authorization_code flow, please use ``BoxAuthType.TOKEN`` with
+        the token you have acquired.
 
     For more information, learn about how to
-    [set up a Box application](https://developer.box.com/guides/getting-started/first-application/),
+    `set up a Box application <https://developer.box.com/guides/getting-started/first-application/>`_,
     and check out the
-    [Box authentication guide](https://developer.box.com/guides/authentication/select/)
+    `Box authentication guide <https://developer.box.com/guides/authentication/select/>`_
     for more about our different authentication options.
 
-    Simple implementation
+    Simple implementation:
 
         To instantiate, you must provide a ``langchain_box.utilities.BoxAuthType``.
 
@@ -187,18 +198,24 @@ class BoxAuth(BaseModel):
         Box connection.
 
         Options are:
+
         TOKEN - Use a developer token generated from the Box Deevloper Token.
                 Only recommended for development.
-                Provide `box_developer_token`.
+                Provide ``box_developer_token``.
         CCG - Client Credentials Grant.
-            provide `box_client_id`, `box_client_secret`,
-            and `box_enterprise_id` or optionally `box_user_id`.
+            provide ``box_client_id``, ``box_client_secret``,
+            and ``box_enterprise_id`` or optionally ``box_user_id``.
         JWT - Use JWT for authentication. Config should be stored on the file
             system accessible to your app.
-            provide `box_jwt_path`. Optionally, provide `box_user_id` to
+            provide ``box_jwt_path``. Optionally, provide ``box_user_id`` to
             act as a specific user
 
+        **Examples**:
+
+        **Token**
+
         .. code-block:: python
+
             from langchain_box.document_loaders import BoxLoader
             from langchain_box.utilities import BoxAuth, BoxAuthType
 
@@ -212,37 +229,109 @@ class BoxAuth(BaseModel):
                 ...
             )
 
-    To see examples for each supported authentication methodology, visit the
-    [Box providers](/docs/integrations/providers/box) page. If you want to
-    use OAuth 2.0 `authorization_code` flow, use
-    [box-sdk-gen](https://github.com/box/box-python-sdk-gen) SDK, get your
-    token, and use `BoxAuthType.TOKEN` type.
+
+        **JWT with a service account**
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+            from langchain_box.utilities import BoxAuth, BoxAuthType
+
+            auth = BoxAuth(
+                auth_type=BoxAuthType.JWT,
+                box_jwt_path=box_jwt_path
+            )
+
+            loader = BoxLoader(
+                box_auth=auth,
+                ...
+            )
+
+
+        **JWT with a specified user**
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+            from langchain_box.utilities import BoxAuth, BoxAuthType
+
+            auth = BoxAuth(
+                auth_type=BoxAuthType.JWT,
+                box_jwt_path=box_jwt_path,
+                box_user_id=box_user_id
+            )
+
+            loader = BoxLoader(
+                box_auth=auth,
+                ...
+            )
+
+
+        **CCG with a service account**
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+            from langchain_box.utilities import BoxAuth, BoxAuthType
+
+            auth = BoxAuth(
+                auth_type=BoxAuthType.CCG,
+                box_client_id=box_client_id,
+                box_client_secret=box_client_secret,
+                box_enterprise_id=box_enterprise_id
+            )
+
+            loader = BoxLoader(
+                box_auth=auth,
+                ...
+            )
+
+
+        **CCG with a specified user**
+
+        .. code-block:: python
+
+            from langchain_box.document_loaders import BoxLoader
+            from langchain_box.utilities import BoxAuth, BoxAuthType
+
+            auth = BoxAuth(
+                auth_type=BoxAuthType.CCG,
+                box_client_id=box_client_id,
+                box_client_secret=box_client_secret,
+                box_user_id=box_user_id
+            )
+
+            loader = BoxLoader(
+                box_auth=auth,
+                ...
+            )
+
     """
 
     auth_type: BoxAuthType
-    """langchain_box.utilities.BoxAuthType. Enum describing how to
+    """``langchain_box.utilities.BoxAuthType``. Enum describing how to
        authenticate against Box"""
 
     box_developer_token: Optional[str] = None
-    """ If using BoxAuthType.TOKEN, provide your token here"""
+    """ If using ``BoxAuthType.TOKEN``, provide your token here"""
 
     box_jwt_path: Optional[str] = None
-    """If using BoxAuthType.JWT, provide local path to your
+    """If using ``BoxAuthType.JWT``, provide local path to your
        JWT configuration file"""
 
     box_client_id: Optional[str] = None
-    """If using BoxAuthType.CCG, provide your app's client ID"""
+    """If using ``BoxAuthType.CCG``, provide your app's client ID"""
 
     box_client_secret: Optional[str] = None
-    """If using BoxAuthType.CCG, provide your app's client secret"""
+    """If using ``BoxAuthType.CCG``, provide your app's client secret"""
 
     box_enterprise_id: Optional[str] = None
-    """If using BoxAuthType.CCG, provide your enterprise ID.
-       Only required if you are not sending `box_user_id`"""
+    """If using ``BoxAuthType.CCG``, provide your enterprise ID.
+       Only required if you are not sending ``box_user_id``"""
 
     box_user_id: Optional[str] = None
-    """If using BoxAuthType.CCG or BoxAuthType.JWT, providing 
-       `box_user_id` will act on behalf of a specific user"""
+    """If using ``BoxAuthType.CCG`` or ``BoxAuthType.JWT``, providing 
+       ``box_user_id`` will act on behalf of a specific user"""
 
     _box_client: Optional[box_sdk_gen.BoxClient] = None
     _custom_header: Dict = dict({"x-box-ai-library": "langchain"})
