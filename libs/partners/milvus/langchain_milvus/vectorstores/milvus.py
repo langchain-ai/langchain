@@ -351,7 +351,7 @@ class Milvus(VectorStore):
         address: str = connection_args.get("address", None)
         uri: str = connection_args.get("uri", None)
         user = connection_args.get("user", None)
-        db_name = connection_args.get("db_name", 'default')
+        db_name = connection_args.get("db_name", "default")
 
         # Order of use is host/port, uri, address
         if host is not None and port is not None:
