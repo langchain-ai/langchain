@@ -1,6 +1,6 @@
 """Models for the PebbloRetrievalQA chain."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -109,7 +109,7 @@ class VectorDB(BaseModel):
     embedding_model: Optional[str] = None
 
 
-class Chains(BaseModel):
+class ChainInfo(BaseModel):
     name: str
     model: Optional[Model]
     vector_dbs: Optional[List[VectorDB]]
@@ -121,7 +121,7 @@ class App(BaseModel):
     description: Optional[str]
     runtime: Runtime
     framework: Framework
-    chains: List[Chains]
+    chains: List[ChainInfo]
     plugin_version: str
 
 
@@ -129,17 +129,22 @@ class Context(BaseModel):
     retrieved_from: Optional[str]
     doc: Optional[str]
     vector_db: str
+    pb_checksum: Optional[str]
 
 
 class Prompt(BaseModel):
-    data: str
+    data: Optional[Union[list, str]]
+    entityCount: Optional[int] = None
+    entities: Optional[dict] = None
+    prompt_gov_enabled: Optional[bool] = None
 
 
 class Qa(BaseModel):
     name: str
-    context: List[Optional[Context]]
-    prompt: Prompt
-    response: Prompt
+    context: Union[List[Optional[Context]], Optional[Context]]
+    prompt: Optional[Prompt]
+    response: Optional[Prompt]
     prompt_time: str
     user: str
     user_identities: Optional[List[str]]
+    classifier_location: str

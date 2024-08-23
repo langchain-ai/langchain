@@ -16,6 +16,7 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs
 
@@ -135,7 +136,7 @@ class ChatSnowflakeCortex(BaseChatModel):
         )
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         try:
             from snowflake.snowpark import Session

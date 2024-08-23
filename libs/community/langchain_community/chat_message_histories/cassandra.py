@@ -1,4 +1,5 @@
 """Cassandra-based chat message history, based on cassIO."""
+
 from __future__ import annotations
 
 import json

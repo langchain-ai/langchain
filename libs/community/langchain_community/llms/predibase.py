@@ -49,9 +49,11 @@ class Predibase(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        options: Dict[str, Union[str, float]] = (
-            self.model_kwargs or self.default_options_for_generation
-        )
+        options: Dict[str, Union[str, float]] = {
+            **(self.model_kwargs or {}),
+            **self.default_options_for_generation,
+            **(kwargs or {}),
+        }
         if self._is_deprecated_sdk_version():
             try:
                 from predibase import PredibaseClient
@@ -137,6 +139,9 @@ class Predibase(LLM):
             if self.adapter_version:
                 # Since the adapter version is provided, query the Predibase repository.
                 pb_adapter_id: str = f"{self.adapter_id}/{self.adapter_version}"
+                options.pop(
+                    "api_token", None
+                )  # The "api_token" is not used for Predibase-hosted models.
                 try:
                     response = lorax_client.generate(
                         prompt=prompt,

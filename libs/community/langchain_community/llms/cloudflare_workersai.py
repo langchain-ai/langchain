@@ -70,7 +70,9 @@ class CloudflareWorkersAI(LLM):
         """Call Cloudflare Workers API"""
         headers = {"Authorization": f"Bearer {self.api_token}"}
         data = {"prompt": prompt, "stream": self.streaming, **params}
-        response = requests.post(self.endpoint_url, headers=headers, json=data)
+        response = requests.post(
+            self.endpoint_url, headers=headers, json=data, stream=self.streaming
+        )
         return response
 
     def _process_response(self, response: requests.Response) -> str:

@@ -1,4 +1,5 @@
 """Schemas for tracers."""
+
 from __future__ import annotations
 
 import datetime
@@ -14,7 +15,7 @@ from langchain_core.outputs import LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 
-@deprecated("0.1.0", alternative="Use string instead.", removal="0.3.0")
+@deprecated("0.1.0", alternative="Use string instead.", removal="1.0")
 def RunTypeEnum() -> Type[RunTypeEnumDep]:
     """RunTypeEnum."""
     warnings.warn(
@@ -25,7 +26,7 @@ def RunTypeEnum() -> Type[RunTypeEnumDep]:
     return RunTypeEnumDep
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class TracerSessionV1Base(BaseModel):
     """Base class for TracerSessionV1."""
 
@@ -34,33 +35,33 @@ class TracerSessionV1Base(BaseModel):
     extra: Optional[Dict[str, Any]] = None
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class TracerSessionV1Create(TracerSessionV1Base):
     """Create class for TracerSessionV1."""
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class TracerSessionV1(TracerSessionV1Base):
     """TracerSessionV1 schema."""
 
     id: int
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class TracerSessionBase(TracerSessionV1Base):
     """Base class for TracerSession."""
 
     tenant_id: UUID
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 class TracerSession(TracerSessionBase):
     """TracerSessionV1 schema for the V2 API."""
 
     id: UUID
 
 
-@deprecated("0.1.0", alternative="Run", removal="0.3.0")
+@deprecated("0.1.0", alternative="Run", removal="1.0")
 class BaseRun(BaseModel):
     """Base class for Run."""
 
@@ -76,7 +77,7 @@ class BaseRun(BaseModel):
     error: Optional[str] = None
 
 
-@deprecated("0.1.0", alternative="Run", removal="0.3.0")
+@deprecated("0.1.0", alternative="Run", removal="1.0")
 class LLMRun(BaseRun):
     """Class for LLMRun."""
 
@@ -84,7 +85,7 @@ class LLMRun(BaseRun):
     response: Optional[LLMResult] = None
 
 
-@deprecated("0.1.0", alternative="Run", removal="0.3.0")
+@deprecated("0.1.0", alternative="Run", removal="1.0")
 class ChainRun(BaseRun):
     """Class for ChainRun."""
 
@@ -95,7 +96,7 @@ class ChainRun(BaseRun):
     child_tool_runs: List[ToolRun] = Field(default_factory=list)
 
 
-@deprecated("0.1.0", alternative="Run", removal="0.3.0")
+@deprecated("0.1.0", alternative="Run", removal="1.0")
 class ToolRun(BaseRun):
     """Class for ToolRun."""
 
@@ -111,7 +112,15 @@ class ToolRun(BaseRun):
 
 
 class Run(BaseRunV2):
-    """Run schema for the V2 API in the Tracer."""
+    """Run schema for the V2 API in the Tracer.
+
+    Parameters:
+        child_runs: The child runs.
+        tags: The tags. Default is an empty list.
+        events: The events. Default is an empty list.
+        trace_id: The trace ID. Default is None.
+        dotted_order: The dotted order.
+    """
 
     child_runs: List[Run] = Field(default_factory=list)
     tags: Optional[List[str]] = Field(default_factory=list)

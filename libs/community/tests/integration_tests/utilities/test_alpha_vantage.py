@@ -1,4 +1,5 @@
 """Integration test for Alpha Vantage API Wrapper."""
+
 import pytest
 
 from langchain_community.utilities.alpha_vantage import AlphaVantageAPIWrapper

@@ -18,7 +18,17 @@ logger = logging.getLogger(__name__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
-    """Load prompt from Config Dict."""
+    """Load prompt from Config Dict.
+
+    Args:
+        config: Dict containing the prompt configuration.
+
+    Returns:
+        A PromptTemplate object.
+
+    Raises:
+        ValueError: If the prompt type is not supported.
+    """
     if "_type" not in config:
         logger.warning("No `_type` key found, defaulting to `prompt`.")
     config_type = config.pop("_type", "prompt")
@@ -128,7 +138,18 @@ def _load_prompt(config: dict) -> PromptTemplate:
 def load_prompt(
     path: Union[str, Path], encoding: Optional[str] = None
 ) -> BasePromptTemplate:
-    """Unified method for loading a prompt from LangChainHub or local fs."""
+    """Unified method for loading a prompt from LangChainHub or local fs.
+
+    Args:
+        path: Path to the prompt file.
+        encoding: Encoding of the file. Defaults to None.
+
+    Returns:
+        A PromptTemplate object.
+
+    Raises:
+        RuntimeError: If the path is a Lang Chain Hub path.
+    """
     if isinstance(path, str) and path.startswith("lc://"):
         raise RuntimeError(
             "Loading from the deprecated github-based Hub is no longer supported. "
@@ -152,7 +173,7 @@ def _load_prompt_from_file(
         with open(file_path, encoding=encoding) as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path, mode="r", encoding=encoding) as f:
+        with open(file_path, encoding=encoding) as f:
             config = yaml.safe_load(f)
     else:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")

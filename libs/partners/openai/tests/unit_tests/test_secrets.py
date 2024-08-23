@@ -16,28 +16,28 @@ from langchain_openai import (
 
 
 def test_chat_openai_secrets() -> None:
-    o = ChatOpenAI(openai_api_key="foo")
+    o = ChatOpenAI(openai_api_key="foo")  # type: ignore[call-arg]
     s = str(o)
     assert "foo" not in s
 
 
 def test_openai_secrets() -> None:
-    o = OpenAI(openai_api_key="foo")
+    o = OpenAI(openai_api_key="foo")  # type: ignore[call-arg]
     s = str(o)
     assert "foo" not in s
 
 
 def test_openai_embeddings_secrets() -> None:
-    o = OpenAIEmbeddings(openai_api_key="foo")
+    o = OpenAIEmbeddings(openai_api_key="foo")  # type: ignore[call-arg]
     s = str(o)
     assert "foo" not in s
 
 
 def test_azure_chat_openai_secrets() -> None:
-    o = AzureChatOpenAI(
+    o = AzureChatOpenAI(  # type: ignore[call-arg]
         openai_api_key="foo1",
         azure_endpoint="endpoint",
-        azure_ad_token="foo2",
+        azure_ad_token="foo2",  # type: ignore[arg-type]
         api_version="version",
     )
     s = str(o)
@@ -46,10 +46,10 @@ def test_azure_chat_openai_secrets() -> None:
 
 
 def test_azure_openai_secrets() -> None:
-    o = AzureOpenAI(
+    o = AzureOpenAI(  # type: ignore[call-arg]
         openai_api_key="foo1",
         azure_endpoint="endpoint",
-        azure_ad_token="foo2",
+        azure_ad_token="foo2",  # type: ignore[arg-type]
         api_version="version",
     )
     s = str(o)
@@ -58,10 +58,10 @@ def test_azure_openai_secrets() -> None:
 
 
 def test_azure_openai_embeddings_secrets() -> None:
-    o = AzureOpenAIEmbeddings(
+    o = AzureOpenAIEmbeddings(  # type: ignore[call-arg]
         openai_api_key="foo1",
         azure_endpoint="endpoint",
-        azure_ad_token="foo2",
+        azure_ad_token="foo2",  # type: ignore[arg-type]
         api_version="version",
     )
     s = str(o)

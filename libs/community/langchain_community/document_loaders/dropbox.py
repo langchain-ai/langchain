@@ -33,7 +33,7 @@ class DropboxLoader(BaseLoader, BaseModel):
     recursive: bool = False
     """Flag to indicate whether to load files recursively from subfolders."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_inputs(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that either folder_path or file_paths is set, but not both."""
         if (

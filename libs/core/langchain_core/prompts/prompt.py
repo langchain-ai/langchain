@@ -1,4 +1,5 @@
 """Prompt schema definition."""
+
 from __future__ import annotations
 
 import warnings
@@ -24,7 +25,8 @@ class PromptTemplate(StringPromptTemplate):
 
     The template can be formatted using either f-strings (default) or jinja2 syntax.
 
-    *Security warning*: Prefer using `template_format="f-string"` instead of
+    *Security warning*:
+        Prefer using `template_format="f-string"` instead of
         `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
         from untrusted sources as they may lead to arbitrary Python code execution.
 
@@ -60,9 +62,6 @@ class PromptTemplate(StringPromptTemplate):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "prompt"]
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
 
     template: str
     """The prompt template."""
@@ -112,6 +111,14 @@ class PromptTemplate(StringPromptTemplate):
         return values
 
     def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+        """Get the input schema for the prompt.
+
+        Args:
+            config: The runnable configuration.
+
+        Returns:
+            The input schema for the prompt.
+        """
         if self.template_format != "mustache":
             return super().get_input_schema(config)
 
@@ -160,6 +167,14 @@ class PromptTemplate(StringPromptTemplate):
         return "prompt"
 
     def format(self, **kwargs: Any) -> str:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
@@ -199,6 +214,7 @@ class PromptTemplate(StringPromptTemplate):
         cls,
         template_file: Union[str, Path],
         input_variables: Optional[List[str]] = None,
+        encoding: Optional[str] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt from a file.
@@ -206,14 +222,16 @@ class PromptTemplate(StringPromptTemplate):
         Args:
             template_file: The path to the file containing the prompt template.
             input_variables: [DEPRECATED] A list of variable names the final prompt
-                template will expect.
+                template will expect. Defaults to None.
+            encoding: The encoding system for opening the template file.
+                If not provided, will use the OS default.
 
         input_variables is ignored as from_file now delegates to from_template().
 
         Returns:
             The prompt loaded from the file.
         """
-        with open(str(template_file), "r") as f:
+        with open(str(template_file), encoding=encoding) as f:
             template = f.read()
         if input_variables:
             warnings.warn(
@@ -232,7 +250,8 @@ class PromptTemplate(StringPromptTemplate):
     ) -> PromptTemplate:
         """Load a prompt template from a template.
 
-        *Security warning*: Prefer using `template_format="f-string"` instead of
+        *Security warning*:
+            Prefer using `template_format="f-string"` instead of
             `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
             from untrusted sources as they may lead to arbitrary Python code execution.
 
@@ -241,18 +260,20 @@ class PromptTemplate(StringPromptTemplate):
             be treated as a best-effort approach rather than a guarantee of security,
             as it is an opt-out rather than opt-in approach.
 
-            Despite the sand-boxing, we recommend to never use jinja2 templates
+            Despite the sand-boxing, we recommend never using jinja2 templates
             from untrusted sources.
 
         Args:
             template: The template to load.
             template_format: The format of the template. Use `jinja2` for jinja2,
                              and `f-string` or None for f-strings.
+                             Defaults to `f-string`.
             partial_variables: A dictionary of variables that can be used to partially
                                fill in the template. For example, if the template is
                               `"{variable1} {variable2}"`, and `partial_variables` is
                               `{"variable1": "foo"}`, then the final prompt will be
-                              `"foo {variable2}"`.
+                              `"foo {variable2}"`. Defaults to None.
+            kwargs: Any other arguments to pass to the prompt template.
 
         Returns:
             The prompt template loaded from the template.

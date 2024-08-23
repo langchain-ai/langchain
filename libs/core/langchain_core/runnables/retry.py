@@ -112,7 +112,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     """Whether to add jitter to the exponential backoff."""
 
     max_attempt_number: int = 3
-    """The maximum number of attempts to retry the runnable."""
+    """The maximum number of attempts to retry the Runnable."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -147,7 +147,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
         retry_state: RetryCallState,
     ) -> RunnableConfig:
         attempt = retry_state.attempt_number
-        tag = "retry:attempt:{}".format(attempt) if attempt > 1 else None
+        tag = f"retry:attempt:{attempt}" if attempt > 1 else None
         return patch_config(config, callbacks=run_manager.get_child(tag))
 
     def _patch_config_list(
