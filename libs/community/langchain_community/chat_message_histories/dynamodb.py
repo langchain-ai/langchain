@@ -45,7 +45,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             [AWS DynamoDB documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-how-to.html)
         history_size: Maximum number of messages to store. If None then there is no
             limit. If not None then only the latest `history_size` messages are stored.
-        history_messages_key: Key for the chat history where the messages are stored and updated
+        history_messages_key: Key for the chat history where the messages 
+            are stored and updated
     """
 
     def __init__(
@@ -165,10 +166,17 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
                 expireAt = int(time.time()) + self.ttl
                 self.table.put_item(
-                    Item={**self.key, self.history_messages_key: messages, self.ttl_key_name: expireAt}
+                    Item={
+                        **self.key, 
+                        self.history_messages_key: messages, 
+                        self.ttl_key_name: expireAt
+                    }
                 )
             else:
-                self.table.put_item(Item={**self.key, self.history_messages_key: messages})
+                self.table.put_item(Item={
+                    **self.key,
+                    self.history_messages_key: messages
+                })
         except ClientError as err:
             logger.error(err)
 
