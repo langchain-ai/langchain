@@ -1,4 +1,5 @@
 """Azure OpenAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -8,8 +9,8 @@ from typing import Any, Callable, Dict, List, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.10",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_openai.AzureChatOpenAI",
 )
 class AzureChatOpenAI(ChatOpenAI):
@@ -85,7 +86,7 @@ class AzureChatOpenAI(ChatOpenAI):
         
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         
@@ -105,7 +106,7 @@ class AzureChatOpenAI(ChatOpenAI):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "azure_openai"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:

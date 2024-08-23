@@ -23,7 +23,7 @@ def amazon_retriever(
 ) -> AmazonKnowledgeBasesRetriever:
     return AmazonKnowledgeBasesRetriever(
         knowledge_base_id="test_kb_id",
-        retrieval_config=mock_retriever_config,
+        retrieval_config=mock_retriever_config,  # type: ignore[arg-type]
         client=mock_client,
     )
 
@@ -31,6 +31,11 @@ def amazon_retriever(
 def test_create_client(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
     with pytest.raises(ImportError):
         amazon_retriever.create_client({})
+
+
+def test_standard_params(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
+    ls_params = amazon_retriever._get_ls_params()
+    assert ls_params == {"ls_retriever_name": "amazonknowledgebases"}
 
 
 def test_get_relevant_documents(

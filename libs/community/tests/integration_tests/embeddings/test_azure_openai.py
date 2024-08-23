@@ -1,4 +1,5 @@
 """Test openai embeddings."""
+
 import os
 from typing import Any
 
@@ -17,7 +18,7 @@ DEPLOYMENT_NAME = os.environ.get(
 
 
 def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:
-    return AzureOpenAIEmbeddings(
+    return AzureOpenAIEmbeddings(  # type: ignore[call-arg]
         azure_deployment=DEPLOYMENT_NAME,
         api_version=OPENAI_API_VERSION,
         openai_api_base=OPENAI_API_BASE,

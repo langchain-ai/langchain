@@ -20,7 +20,7 @@ print
 
 
 def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:
-    return AzureOpenAIEmbeddings(
+    return AzureOpenAIEmbeddings(  # type: ignore[call-arg]
         azure_deployment=DEPLOYMENT_NAME,
         api_version=OPENAI_API_VERSION,
         azure_endpoint=OPENAI_API_BASE,

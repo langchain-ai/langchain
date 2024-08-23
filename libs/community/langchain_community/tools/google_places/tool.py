@@ -18,7 +18,7 @@ class GooglePlacesSchema(BaseModel):
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GooglePlacesTool",
 )
 class GooglePlacesTool(BaseTool):
@@ -31,7 +31,7 @@ class GooglePlacesTool(BaseTool):
         "discover addressed from ambiguous text. "
         "Input should be a search query."
     )
-    api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)
+    api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)  # type: ignore[arg-type]
     args_schema: Type[BaseModel] = GooglePlacesSchema
 
     def _run(

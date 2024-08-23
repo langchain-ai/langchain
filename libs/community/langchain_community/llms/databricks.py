@@ -9,7 +9,6 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     PrivateAttr,
     root_validator,
@@ -44,8 +43,7 @@ class _DatabricksClientBase(BaseModel, ABC):
     @abstractmethod
     def post(
         self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     @property
     def llm(self) -> bool:
@@ -242,7 +240,7 @@ def _load_pickled_fn_from_hex_string(
         raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
 
     try:
-        return cloudpickle.loads(bytes.fromhex(data))
+        return cloudpickle.loads(bytes.fromhex(data))  # ignore[pickle]: explicit-opt-in
     except Exception as e:
         raise ValueError(
             f"Failed to load the pickled function from a hexadecimal string. Error: {e}"
@@ -398,7 +396,7 @@ class Databricks(LLM):
     _client: _DatabricksClientBase = PrivateAttr()
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     @property
@@ -490,7 +488,7 @@ class Databricks(LLM):
                 task=self.task,
             )
         elif self.cluster_id and self.cluster_driver_port:
-            self._client = _DatabricksClusterDriverProxyClient(
+            self._client = _DatabricksClusterDriverProxyClient(  # type: ignore[call-arg]
                 host=self.host,
                 api_token=self.api_token,
                 cluster_id=self.cluster_id,

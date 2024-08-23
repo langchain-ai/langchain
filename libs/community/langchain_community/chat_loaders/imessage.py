@@ -13,6 +13,14 @@ if TYPE_CHECKING:
 
 
 def nanoseconds_from_2001_to_datetime(nanoseconds: int) -> datetime:
+    """Convert nanoseconds since 2001 to a datetime object.
+
+    Args:
+        nanoseconds (int): Nanoseconds since January 1, 2001.
+
+    Returns:
+        datetime: Datetime object.
+    """
     # Convert nanoseconds to seconds (1 second = 1e9 nanoseconds)
     timestamp_in_seconds = nanoseconds / 1e9
 
@@ -148,7 +156,7 @@ class IMessageChatLoader(BaseChatLoader):
                 continue
 
             results.append(
-                HumanMessage(
+                HumanMessage(  # type: ignore[call-arg]
                     role=sender,
                     content=content,
                     additional_kwargs={

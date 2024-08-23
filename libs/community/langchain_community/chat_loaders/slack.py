@@ -28,7 +28,8 @@ class SlackChatLoader(BaseChatLoader):
         if not self.zip_path.exists():
             raise FileNotFoundError(f"File {self.zip_path} not found")
 
-    def _load_single_chat_session(self, messages: List[Dict]) -> ChatSession:
+    @staticmethod
+    def _load_single_chat_session(messages: List[Dict]) -> ChatSession:
         results: List[Union[AIMessage, HumanMessage]] = []
         previous_sender = None
         for message in messages:
@@ -51,7 +52,7 @@ class SlackChatLoader(BaseChatLoader):
                 )
             else:
                 results.append(
-                    HumanMessage(
+                    HumanMessage(  # type: ignore[call-arg]
                         role=sender,
                         content=text,
                         additional_kwargs={
@@ -63,7 +64,8 @@ class SlackChatLoader(BaseChatLoader):
             previous_sender = sender
         return ChatSession(messages=results)
 
-    def _read_json(self, zip_file: zipfile.ZipFile, file_path: str) -> List[dict]:
+    @staticmethod
+    def _read_json(zip_file: zipfile.ZipFile, file_path: str) -> List[dict]:
         """Read JSON data from a zip subfile."""
         with zip_file.open(file_path, "r") as f:
             data = json.load(f)

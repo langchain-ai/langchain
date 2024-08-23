@@ -29,11 +29,11 @@ def test_replicate_streaming_call() -> None:
 
 def test_replicate_model_kwargs() -> None:
     """Test simple non-streaming call to Replicate."""
-    llm = Replicate(
+    llm = Replicate(  # type: ignore[call-arg]
         model=TEST_MODEL, model_kwargs={"max_length": 100, "temperature": 0.01}
     )
     long_output = llm.invoke("What is LangChain")
-    llm = Replicate(
+    llm = Replicate(  # type: ignore[call-arg]
         model=TEST_MODEL, model_kwargs={"max_length": 10, "temperature": 0.01}
     )
     short_output = llm.invoke("What is LangChain")

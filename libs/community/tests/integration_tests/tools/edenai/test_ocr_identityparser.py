@@ -8,12 +8,13 @@ clicking on the 'sandbox' toggle.
 
 You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
+
 from langchain_community.tools.edenai import EdenAiParsingIDTool
 
 
 def test_edenai_call() -> None:
     """Test simple call to edenai's identity parser endpoint."""
-    id_parser = EdenAiParsingIDTool(providers=["amazon"], language="en")
+    id_parser = EdenAiParsingIDTool(providers=["amazon"], language="en")  # type: ignore[call-arg]
 
     output = id_parser.invoke(
         "https://www.citizencard.com/images/citizencard-uk-id-card-2023.jpg"

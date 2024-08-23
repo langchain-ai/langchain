@@ -6,6 +6,14 @@ from langchain_ai21.chat.chat_adapter import (
 
 
 def create_chat_adapter(model: str) -> ChatAdapter:
+    """Create a chat adapter based on the model.
+
+    Args:
+        model: The model to create the chat adapter for.
+
+    Returns:
+        The chat adapter.
+    """
     if "j2" in model:
         return J2ChatAdapter()
 

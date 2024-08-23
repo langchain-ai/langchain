@@ -1,14 +1,20 @@
 import json
-import os
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
 
 
+@deprecated(
+    since="0.2.2",
+    removal="1.0",
+    alternative_import="langchain_huggingface.HuggingFaceEndpointEmbeddings",
+)
 class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     """HuggingFaceHub embedding models.
 
@@ -42,23 +48,21 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     huggingfacehub_api_token: Optional[str] = None
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv(
-            "HUGGINGFACEHUB_API_TOKEN"
+        huggingfacehub_api_token = get_from_dict_or_env(
+            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
         )
 
         try:
             from huggingface_hub import AsyncInferenceClient, InferenceClient
 
-            if values["model"]:
+            if values.get("model"):
                 values["repo_id"] = values["model"]
-            elif values["repo_id"]:
+            elif values.get("repo_id"):
                 values["model"] = values["repo_id"]
             else:
                 values["model"] = DEFAULT_MODEL
@@ -74,11 +78,6 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
                 token=huggingfacehub_api_token,
             )
 
-            if values["task"] not in VALID_TASKS:
-                raise ValueError(
-                    f"Got invalid task {values['task']}, "
-                    f"currently only {VALID_TASKS} are supported"
-                )
             values["client"] = client
             values["async_client"] = async_client
 
@@ -86,6 +85,16 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
+            )
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        """Post init validation for the class."""
+        if values["task"] not in VALID_TASKS:
+            raise ValueError(
+                f"Got invalid task {values['task']}, "
+                f"currently only {VALID_TASKS} are supported"
             )
         return values
 
@@ -101,8 +110,9 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         # replace newlines, which can negatively affect performance.
         texts = [text.replace("\n", " ") for text in texts]
         _model_kwargs = self.model_kwargs or {}
+        #  api doc: https://huggingface.github.io/text-embeddings-inference/#/Text%20Embeddings%20Inference/embed
         responses = self.client.post(
-            json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
+            json={"inputs": texts, **_model_kwargs}, task=self.task
         )
         return json.loads(responses.decode())
 

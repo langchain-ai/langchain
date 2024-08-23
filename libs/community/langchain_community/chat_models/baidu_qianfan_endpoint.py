@@ -1,4 +1,6 @@
+import json
 import logging
+import uuid
 from operator import itemgetter
 from typing import (
     Any,
@@ -29,18 +31,27 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import get_fields, is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -59,16 +70,30 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
-    elif isinstance(message, FunctionMessage):
+    elif isinstance(message, (FunctionMessage, ToolMessage)):
         message_dict = {
             "role": "function",
-            "content": message.content,
-            "name": message.name,
+            "content": _create_tool_content(message.content),
+            "name": message.name or message.additional_kwargs.get("name"),
         }
     else:
         raise TypeError(f"Got unknown type {message}")
 
     return message_dict
+
+
+def _create_tool_content(content: Union[str, List[Union[str, Dict[Any, Any]]]]) -> str:
+    """Convert tool content to dict scheme."""
+    if isinstance(content, str):
+        try:
+            if isinstance(json.loads(content), dict):
+                return content
+            else:
+                return json.dumps({"tool_result": content})
+        except json.JSONDecodeError:
+            return json.dumps({"tool_result": content})
+    else:
+        return json.dumps({"tool_result": content})
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
@@ -80,42 +105,238 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             # align to api sample, which affects the llm function_call output
             additional_kwargs["function_call"].pop("thoughts")
 
+    # DO NOT ADD ANY NUMERIC OBJECT TO `msg_additional_kwargs` AND `additional_kwargs`
+    # ALONG WITH THEIRS SUB-CONTAINERS !!!
+    # OR IT WILL RAISE A DEADLY EXCEPTION FROM `merge_dict`
+    # 不要往 `msg_additional_kwargs` 和 `additional_kwargs` 里面加任何数值类对象！
+    # 子容器也不行！
+    # 不然 `merge_dict` 会报错导致代码无法运行
     additional_kwargs = {**_dict.get("body", {}), **additional_kwargs}
-    return AIMessage(
-        content=content,
-        additional_kwargs=dict(
-            finish_reason=additional_kwargs.get("finish_reason", ""),
-            request_id=additional_kwargs["id"],
-            object=additional_kwargs.get("object", ""),
-            search_info=additional_kwargs.get("search_info", []),
-            function_call=additional_kwargs.get("function_call", {}),
-            tool_calls=[
-                {
-                    "type": "function",
-                    "function": additional_kwargs.get("function_call", {}),
-                }
-            ],
-        ),
+    msg_additional_kwargs = dict(
+        finish_reason=additional_kwargs.get("finish_reason", ""),
+        request_id=additional_kwargs["id"],
+        object=additional_kwargs.get("object", ""),
+        search_info=additional_kwargs.get("search_info", []),
     )
+
+    if additional_kwargs.get("function_call", {}):
+        msg_additional_kwargs["function_call"] = additional_kwargs.get(
+            "function_call", {}
+        )
+        msg_additional_kwargs["tool_calls"] = [
+            {
+                "type": "function",
+                "function": additional_kwargs.get("function_call", {}),
+                "id": str(uuid.uuid4()),
+            }
+        ]
+
+    ret = AIMessage(
+        content=content,
+        additional_kwargs=msg_additional_kwargs,
+    )
+
+    if usage := additional_kwargs.get("usage", None):
+        ret.usage_metadata = UsageMetadata(
+            input_tokens=usage.get("prompt_tokens", 0),
+            output_tokens=usage.get("completion_tokens", 0),
+            total_tokens=usage.get("total_tokens", 0),
+        )
+
+    return ret
 
 
 class QianfanChatEndpoint(BaseChatModel):
-    """Baidu Qianfan chat models.
+    """Baidu Qianfan chat model integration.
 
-    To use, you should have the ``qianfan`` python package installed, and
-    the environment variable ``qianfan_ak`` and ``qianfan_sk`` set with your
-    API key and Secret Key.
+    Setup:
+        Install ``qianfan`` and set environment variables ``QIANFAN_AK``, ``QIANFAN_SK``.
 
-    ak, sk are required parameters
-    which you could get from  https://cloud.baidu.com/product/wenxinworkshop
+        .. code-block:: bash
 
-    Example:
+            pip install qianfan
+            export QIANFAN_AK="your-api-key"
+            export QIANFAN_SK="your-secret_key"
+
+    Key init args — completion params:
+        model: str
+            Name of Qianfan model to use.
+        temperature: Optional[float]
+            Sampling temperature.
+        endpoint: Optional[str]
+            Endpoint of the Qianfan LLM
+        top_p: Optional[float]
+            What probability mass to use.
+
+    Key init args — client params:
+        timeout: Optional[int]
+            Timeout for requests.
+        api_key: Optional[str]
+            Qianfan API KEY. If not passed in will be read from env var QIANFAN_AK.
+        secret_key: Optional[str]
+            Qianfan SECRET KEY. If not passed in will be read from env var QIANFAN_SK.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.chat_models import QianfanChatEndpoint
-            qianfan_chat = QianfanChatEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
-    """
+
+            qianfan_chat = QianfanChatEndpoint(
+                model="ERNIE-3.5-8K",
+                temperature=0.2,
+                timeout=30,
+                # api_key="...",
+                # secret_key="...",
+                # top_p="...",
+                # other params...
+            )
+
+    Invoke:
+         .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            qianfan_chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content='I enjoy programming.', additional_kwargs={'finish_reason': 'normal', 'request_id': 'as-7848zeqn1c', 'object': 'chat.completion', 'search_info': []}, response_metadata={'token_usage': {'prompt_tokens': 16, 'completion_tokens': 4, 'total_tokens': 20}, 'model_name': 'ERNIE-3.5-8K', 'finish_reason': 'normal', 'id': 'as-7848zeqn1c', 'object': 'chat.completion', 'created': 1719153606, 'result': 'I enjoy programming.', 'is_truncated': False, 'need_clear_history': False, 'usage': {'prompt_tokens': 16, 'completion_tokens': 4, 'total_tokens': 20}}, id='run-4bca0c10-5043-456b-a5be-2f62a980f3f0-0')
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in qianfan_chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I enjoy' response_metadata={'finish_reason': 'normal', 'request_id': 'as-yz0yz1w1rq', 'object': 'chat.completion', 'search_info': []} id='run-0fa9da50-003e-4a26-ba16-dbfe96249b8b' role='assistant'
+            content=' programming.' response_metadata={'finish_reason': 'normal', 'request_id': 'as-yz0yz1w1rq', 'object': 'chat.completion', 'search_info': []} id='run-0fa9da50-003e-4a26-ba16-dbfe96249b8b' role='assistant'
+
+        .. code-block:: python
+
+            stream = chat.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block::
+
+            AIMessageChunk(content='I enjoy programming.', response_metadata={'finish_reason': 'normalnormal', 'request_id': 'as-p63cnn3ppnas-p63cnn3ppn', 'object': 'chat.completionchat.completion', 'search_info': []}, id='run-09a8cbbd-5ded-4529-981d-5bc9d1206404')
+
+    Async:
+        .. code-block:: python
+
+            await qianfan_chat.ainvoke(messages)
+
+            # stream:
+            # async for chunk in qianfan_chat.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await qianfan_chat.abatch([messages])
+
+        .. code-block:: python
+
+            [AIMessage(content='I enjoy programming.', additional_kwargs={'finish_reason': 'normal', 'request_id': 'as-mpqa8qa1qb', 'object': 'chat.completion', 'search_info': []}, response_metadata={'token_usage': {'prompt_tokens': 16, 'completion_tokens': 4, 'total_tokens': 20}, 'model_name': 'ERNIE-3.5-8K', 'finish_reason': 'normal', 'id': 'as-mpqa8qa1qb', 'object': 'chat.completion', 'created': 1719155120, 'result': 'I enjoy programming.', 'is_truncated': False, 'need_clear_history': False, 'usage': {'prompt_tokens': 16, 'completion_tokens': 4, 'total_tokens': 20}}, id='run-443b2231-08f9-4725-b807-b77d0507ad44-0')]
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+            chat_with_tools = qianfan_chat.bind_tools([GetWeather, GetPopulation])
+            ai_msg = chat_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': '533e5f63-a3dc-40f2-9d9c-22b1feee62e0'
+                }
+            ]
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+
+            structured_chat = qianfan_chat.with_structured_output(Joke)
+            structured_chat.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(
+                setup='A cat is sitting in front of a mirror and sees another cat. What does the cat think?',
+                punchline="The cat doesn't think it's another cat, it thinks it's another mirror.",
+                rating=None
+            )
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = qianfan_chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+            {
+                'token_usage': {
+                    'prompt_tokens': 16,
+                    'completion_tokens': 4,
+                    'total_tokens': 20},
+                    'model_name': 'ERNIE-3.5-8K',
+                    'finish_reason': 'normal',
+                    'id': 'as-qbzwtydqmi',
+                    'object': 'chat.completion',
+                    'created': 1719158153,
+                    'result': 'I enjoy programming.',
+                    'is_truncated': False,
+                    'need_clear_history': False,
+                    'usage': {
+                        'prompt_tokens': 16,
+                        'completion_tokens': 4,
+                        'total_tokens': 20
+                    }
+            }
+
+    """  # noqa: E501
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """init kwargs for qianfan client init, such as `query_per_second` which is 
@@ -124,11 +345,14 @@ class QianfanChatEndpoint(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    client: Any
+    client: Any  #: :meta private:
 
-    qianfan_ak: Optional[SecretStr] = None
-    qianfan_sk: Optional[SecretStr] = None
-
+    # It could be empty due to the use of Console API
+    # And they're not list here
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
+    """Qianfan API KEY"""
+    qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
+    """Qianfan SECRET KEY"""
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
 
@@ -136,58 +360,62 @@ class QianfanChatEndpoint(BaseChatModel):
     """request timeout for chat http requests"""
 
     top_p: Optional[float] = 0.8
+    """What probability mass to use."""
     temperature: Optional[float] = 0.95
+    """What sampling temperature to use."""
     penalty_score: Optional[float] = 1
     """Model params, only supported in ERNIE-Bot and ERNIE-Bot-turbo.
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Bot-turbo"
+    model: Optional[str] = Field(default=None)
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set.
-    Default is ERNIE-Bot-turbo.
+    Default is set by `qianfan` SDK, not here
     """
 
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                "qianfan_ak",
-                "QIANFAN_AK",
-                default="",
+                values, ["qianfan_ak", "api_key"], "QIANFAN_AK", default=""
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                "qianfan_sk",
-                "QIANFAN_SK",
-                default="",
+                values, ["qianfan_sk", "secret_key"], "QIANFAN_SK", default=""
             )
         )
+
+        default_values = {
+            name: field.default
+            for name, field in get_fields(cls).items()
+            if field.default is not None
+        }
+        default_values.update(values)
         params = {
             **values.get("init_kwargs", {}),
-            "model": values["model"],
-            "stream": values["streaming"],
+            "model": default_values.get("model"),
+            "stream": default_values.get("streaming"),
         }
         if values["qianfan_ak"].get_secret_value() != "":
             params["ak"] = values["qianfan_ak"].get_secret_value()
         if values["qianfan_sk"].get_secret_value() != "":
             params["sk"] = values["qianfan_sk"].get_secret_value()
-        if values["endpoint"] is not None and values["endpoint"] != "":
-            params["endpoint"] = values["endpoint"]
+        if (
+            default_values.get("endpoint") is not None
+            and default_values["endpoint"] != ""
+        ):
+            params["endpoint"] = default_values["endpoint"]
         try:
             import qianfan
 
@@ -283,8 +511,8 @@ class QianfanChatEndpoint(BaseChatModel):
         """
         if self.streaming:
             completion = ""
-            token_usage = {}
             chat_generation_info: Dict = {}
+            usage_metadata: Optional[UsageMetadata] = None
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
                     chunk.generation_info
@@ -292,7 +520,14 @@ class QianfanChatEndpoint(BaseChatModel):
                     else chat_generation_info
                 )
                 completion += chunk.text
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+                if isinstance(chunk.message, AIMessageChunk):
+                    usage_metadata = chunk.message.usage_metadata
+
+            lc_msg = AIMessage(
+                content=completion,
+                additional_kwargs={},
+                usage_metadata=usage_metadata,
+            )
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -300,7 +535,7 @@ class QianfanChatEndpoint(BaseChatModel):
             return ChatResult(
                 generations=[gen],
                 llm_output={
-                    "token_usage": chat_generation_info.get("usage", {}),
+                    "token_usage": usage_metadata or {},
                     "model_name": self.model,
                 },
             )
@@ -328,8 +563,8 @@ class QianfanChatEndpoint(BaseChatModel):
     ) -> ChatResult:
         if self.streaming:
             completion = ""
-            token_usage = {}
             chat_generation_info: Dict = {}
+            usage_metadata: Optional[UsageMetadata] = None
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
                     chunk.generation_info
@@ -338,7 +573,14 @@ class QianfanChatEndpoint(BaseChatModel):
                 )
                 completion += chunk.text
 
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+                if isinstance(chunk.message, AIMessageChunk):
+                    usage_metadata = chunk.message.usage_metadata
+
+            lc_msg = AIMessage(
+                content=completion,
+                additional_kwargs={},
+                usage_metadata=usage_metadata,
+            )
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -346,7 +588,7 @@ class QianfanChatEndpoint(BaseChatModel):
             return ChatResult(
                 generations=[gen],
                 llm_output={
-                    "token_usage": chat_generation_info.get("usage", {}),
+                    "token_usage": usage_metadata or {},
                     "model_name": self.model,
                 },
             )
@@ -383,10 +625,20 @@ class QianfanChatEndpoint(BaseChatModel):
                 additional_kwargs = msg.additional_kwargs.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
-                    message=AIMessageChunk(
+                    message=AIMessageChunk(  # type: ignore[call-arg]
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
+                        usage_metadata=msg.usage_metadata,
+                        tool_call_chunks=[
+                            tool_call_chunk(
+                                name=tc["name"],
+                                args=json.dumps(tc["args"]),
+                                id=tc["id"],
+                                index=None,
+                            )
+                            for tc in msg.tool_calls
+                        ],
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -410,10 +662,20 @@ class QianfanChatEndpoint(BaseChatModel):
                 additional_kwargs = msg.additional_kwargs.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
-                    message=AIMessageChunk(
+                    message=AIMessageChunk(  # type: ignore[call-arg]
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
+                        usage_metadata=msg.usage_metadata,
+                        tool_call_chunks=[
+                            tool_call_chunk(
+                                name=tc["name"],
+                                args=json.dumps(tc["args"]),
+                                id=tc["id"],
+                                index=None,
+                            )
+                            for tc in msg.tool_calls
+                        ],
                     ),
                     generation_info=msg.additional_kwargs,
                 )
@@ -548,11 +810,12 @@ class QianfanChatEndpoint(BaseChatModel):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         llm = self.bind_tools([schema])
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[schema], first_tool_only=True
+                tools=[schema],  # type: ignore[list-item]
+                first_tool_only=True,  # type: ignore[list-item]
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]

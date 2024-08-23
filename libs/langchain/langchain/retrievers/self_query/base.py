@@ -64,13 +64,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.query_constructors.weaviate import WeaviateTranslator
     from langchain_community.vectorstores import (
         AstraDB,
-        Chroma,
         DashVector,
         DatabricksVectorSearch,
         DeepLake,
         Dingo,
         Milvus,
-        MongoDBAtlasVectorSearch,
         MyScale,
         OpenSearchVectorSearch,
         PGVector,
@@ -83,7 +81,13 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Weaviate,
     )
     from langchain_community.vectorstores import (
+        Chroma as CommunityChroma,
+    )
+    from langchain_community.vectorstores import (
         ElasticsearchStore as ElasticsearchStoreCommunity,
+    )
+    from langchain_community.vectorstores import (
+        MongoDBAtlasVectorSearch as CommunityMongoDBAtlasVectorSearch,
     )
     from langchain_community.vectorstores import (
         Pinecone as CommunityPinecone,
@@ -93,7 +97,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         AstraDB: AstraDBTranslator,
         PGVector: PGVectorTranslator,
         CommunityPinecone: PineconeTranslator,
-        Chroma: ChromaTranslator,
+        CommunityChroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
         Dingo: DingoDBTranslator,
         Weaviate: WeaviateTranslator,
@@ -106,7 +110,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         SupabaseVectorStore: SupabaseVectorTranslator,
         TimescaleVector: TimescaleVectorTranslator,
         OpenSearchVectorSearch: OpenSearchTranslator,
-        MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
+        CommunityMongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
     if isinstance(vectorstore, DatabricksVectorSearch):
         return DatabricksVectorSearchTranslator()
@@ -148,6 +152,41 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             if isinstance(vectorstore, PineconeVectorStore):
                 return PineconeTranslator()
 
+        try:
+            from langchain_mongodb import MongoDBAtlasVectorSearch
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, MongoDBAtlasVectorSearch):
+                return MongoDBAtlasTranslator()
+
+        try:
+            from langchain_chroma import Chroma
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, Chroma):
+                return ChromaTranslator()
+
+        try:
+            from langchain_postgres import PGVector  # type: ignore[no-redef]
+            from langchain_postgres import PGVectorTranslator as NewPGVectorTranslator
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, PGVector):
+                return NewPGVectorTranslator()
+
+        try:
+            # Added in langchain-community==0.2.11
+            from langchain_community.query_constructors.hanavector import HanaTranslator
+            from langchain_community.vectorstores import HanaDB
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, HanaDB):
+                return HanaTranslator()
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
@@ -176,10 +215,8 @@ class SelfQueryRetriever(BaseRetriever):
     """Use original query instead of the revised new query from LLM"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
         allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @root_validator(pre=True)
     def validate_translator(cls, values: Dict) -> Dict:
@@ -281,16 +318,16 @@ class SelfQueryRetriever(BaseRetriever):
             "allowed_comparators" not in chain_kwargs
             and structured_query_translator.allowed_comparators is not None
         ):
-            chain_kwargs[
-                "allowed_comparators"
-            ] = structured_query_translator.allowed_comparators
+            chain_kwargs["allowed_comparators"] = (
+                structured_query_translator.allowed_comparators
+            )
         if (
             "allowed_operators" not in chain_kwargs
             and structured_query_translator.allowed_operators is not None
         ):
-            chain_kwargs[
-                "allowed_operators"
-            ] = structured_query_translator.allowed_operators
+            chain_kwargs["allowed_operators"] = (
+                structured_query_translator.allowed_operators
+            )
         query_constructor = load_query_constructor_runnable(
             llm,
             document_contents,

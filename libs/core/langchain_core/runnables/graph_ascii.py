@@ -17,6 +17,7 @@ class VertexViewer:
     """
 
     HEIGHT = 3  # top and bottom box edges + text
+    """Height of the box."""
 
     def __init__(self, name: str) -> None:
         self._h = self.HEIGHT  # top and bottom box edges + text
@@ -244,8 +245,8 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
 
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
-    Xs = []  # noqa: N806
-    Ys = []  # noqa: N806
+    Xs = []
+    Ys = []
 
     sug = _build_sugiyama_layout(vertices, edges)
 

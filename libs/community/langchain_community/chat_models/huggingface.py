@@ -1,6 +1,8 @@
 """Hugging Face Chat Wrapper."""
+
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -34,6 +36,11 @@ from langchain_community.llms.huggingface_text_gen_inference import (
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
 
+@deprecated(
+    since="0.0.37",
+    removal="1.0",
+    alternative_import="langchain_huggingface.ChatHuggingFace",
+)
 class ChatHuggingFace(BaseChatModel):
     """
     Wrapper for using Hugging Face LLM's as ChatModels.
@@ -69,7 +76,7 @@ class ChatHuggingFace(BaseChatModel):
             else self.tokenizer
         )
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_llm(cls, values: dict) -> dict:
         if not isinstance(
             values["llm"],

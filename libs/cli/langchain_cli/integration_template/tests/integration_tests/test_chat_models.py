@@ -1,4 +1,5 @@
 """Test Chat__ModuleName__ chat model."""
+
 from __module_name__.chat_models import Chat__ModuleName__
 
 
