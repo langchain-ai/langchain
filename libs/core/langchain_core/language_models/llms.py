@@ -120,7 +120,7 @@ def create_base_retry_decorator(
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    retry_instance: "retry_base" = retry_if_exception_type(error_types[0])
+    retry_instance: retry_base = retry_if_exception_type(error_types[0])
     for error in error_types[1:]:
         retry_instance = retry_instance | retry_if_exception_type(error)
     return retry(
