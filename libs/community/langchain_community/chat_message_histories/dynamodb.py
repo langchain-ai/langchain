@@ -100,7 +100,9 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
             actions = AttributeActions(
                 default_action=CryptoAction.DO_NOTHING,
-                attribute_actions={self.history_messages_key: CryptoAction.ENCRYPT_AND_SIGN},
+                attribute_actions={
+                    self.history_messages_key: CryptoAction.ENCRYPT_AND_SIGN
+                },
             )
             aws_kms_cmp = AwsKmsCryptographicMaterialsProvider(key_id=kms_key_id)
             self.table = EncryptedTable(
