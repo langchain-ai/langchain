@@ -4,11 +4,11 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
 from langchain.utils import mock_now
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ class GenerativeAgentMemory(BaseMemory):
             + " following piece of memory. Always answer with only a list of numbers."
             + " If just given one memory still respond in a list."
             + " Memories are separated by semi colans (;)"
-            + "\Memories: {memory_content}"
+            + "\nMemories: {memory_content}"
             + "\nRating: "
         )
         scores = self.chain(prompt).run(memory_content=memory_content).strip()
@@ -224,9 +224,9 @@ class GenerativeAgentMemory(BaseMemory):
         """Fetch related memories."""
         if now is not None:
             with mock_now(now):
-                return self.memory_retriever.get_relevant_documents(observation)
+                return self.memory_retriever.invoke(observation)
         else:
-            return self.memory_retriever.get_relevant_documents(observation)
+            return self.memory_retriever.invoke(observation)
 
     def format_memories_detail(self, relevant_memories: List[Document]) -> str:
         content = []

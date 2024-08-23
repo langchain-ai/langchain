@@ -22,7 +22,7 @@ from langchain_community.document_loaders.blob_loaders import (
 from langchain_community.document_loaders.parsers.registry import get_parser
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import TextSplitter
+    from langchain_text_splitters import TextSplitter
 
 _PathLike = Union[str, Path]
 
@@ -96,7 +96,7 @@ class GenericLoader(BaseLoader):
 
     def __init__(
         self,
-        blob_loader: BlobLoader,
+        blob_loader: BlobLoader,  # type: ignore[valid-type]
         blob_parser: BaseBlobParser,
     ) -> None:
         """A generic document loader.
@@ -112,12 +112,8 @@ class GenericLoader(BaseLoader):
         self,
     ) -> Iterator[Document]:
         """Load documents lazily. Use this when working at a large scale."""
-        for blob in self.blob_loader.yield_blobs():
+        for blob in self.blob_loader.yield_blobs():  # type: ignore[attr-defined]
             yield from self.blob_parser.lazy_parse(blob)
-
-    def load(self) -> List[Document]:
-        """Load all documents."""
-        return list(self.lazy_load())
 
     def load_and_split(
         self, text_splitter: Optional[TextSplitter] = None
@@ -163,7 +159,7 @@ class GenericLoader(BaseLoader):
         Returns:
             A generic document loader.
         """
-        blob_loader = FileSystemBlobLoader(
+        blob_loader = FileSystemBlobLoader(  # type: ignore[attr-defined, misc]
             path,
             glob=glob,
             exclude=exclude,

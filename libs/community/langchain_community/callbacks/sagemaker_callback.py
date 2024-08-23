@@ -186,8 +186,9 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
 
         self.jsonf(resp, self.temp_dir, f"tool_start_{tool_starts}")
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        output = str(output)
         self.metrics["step"] += 1
         self.metrics["tool_ends"] += 1
         self.metrics["ends"] += 1

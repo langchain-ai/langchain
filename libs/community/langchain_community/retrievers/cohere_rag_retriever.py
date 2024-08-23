@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -40,6 +41,11 @@ def _get_docs(response: Any) -> List[Document]:
     return docs
 
 
+@deprecated(
+    since="0.0.30",
+    removal="1.0",
+    alternative_import="langchain_cohere.CohereRagRetriever",
+)
 class CohereRagRetriever(BaseRetriever):
     """Cohere Chat API with RAG."""
 
@@ -56,10 +62,7 @@ class CohereRagRetriever(BaseRetriever):
     """Cohere ChatModel to use."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
-        """Allow arbitrary types."""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any

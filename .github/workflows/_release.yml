@@ -13,14 +13,19 @@ on:
         required: true
         type: string
         default: 'libs/langchain'
+      dangerous-nonmaster-release:
+        required: false
+        type: boolean
+        default: false
+        description: "Release from a non-master branch (danger!)"
 
 env:
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: "3.11"
   POETRY_VERSION: "1.7.1"
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
     runs-on: ubuntu-latest
 
@@ -55,7 +60,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Upload build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -67,19 +72,78 @@ jobs:
         run: |
           echo pkg-name="$(poetry version | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
           echo version="$(poetry version --short)" >> $GITHUB_OUTPUT
+  release-notes:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    outputs:
+      release-body: ${{ steps.generate-release-body.outputs.release-body }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain
+          path: langchain
+          sparse-checkout: | # this only grabs files for relevant dir
+            ${{ inputs.working-directory }}
+          ref: master # this scopes to just master branch
+          fetch-depth: 0 # this fetches entire commit history
+      - name: Check Tags
+        id: check-tags
+        shell: bash
+        working-directory: langchain/${{ inputs.working-directory }}
+        env:
+          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+          echo $REGEX
+          PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX || true | head -1)
+          TAG="${PKG_NAME}==${VERSION}"
+          if [ "$TAG" == "$PREV_TAG" ]; then
+            echo "No new version to release"
+            exit 1
+          fi
+          echo tag="$TAG" >> $GITHUB_OUTPUT
+          echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
+      - name: Generate release body
+        id: generate-release-body
+        working-directory: langchain
+        env:
+          WORKING_DIR: ${{ inputs.working-directory }}
+          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
+          TAG: ${{ steps.check-tags.outputs.tag }}
+          PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
+        run: |
+          PREAMBLE="Changes since $PREV_TAG"
+          # if PREV_TAG is empty, then we are releasing the first version
+          if [ -z "$PREV_TAG" ]; then
+            PREAMBLE="Initial release"
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          {
+            echo 'release-body<<EOF'
+            echo $PREAMBLE
+            echo
+            git log --format="%s" "$PREV_TAG"..HEAD -- $WORKING_DIR
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
 
   test-pypi-publish:
     needs:
       - build
+      - release-notes
     uses:
       ./.github/workflows/_test_release.yml
+    permissions: write-all
     with:
       working-directory: ${{ inputs.working-directory }}
+      dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
     secrets: inherit
 
   pre-release-checks:
     needs:
       - build
+      - release-notes
       - test-pypi-publish
     runs-on: ubuntu-latest
     steps:
@@ -112,7 +176,7 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         # Here we use:
-        # - The default regular PyPI index as the *primary* index, meaning 
+        # - The default regular PyPI index as the *primary* index, meaning
         #   that it takes priority (https://pypi.org/simple)
         # - The test PyPI index as an extra index, so that any dependencies that
         #   are not found on test PyPI can be resolved and installed anyway.
@@ -125,7 +189,7 @@ jobs:
             --extra-index-url https://test.pypi.org/simple/ \
             "$PKG_NAME==$VERSION" || \
           ( \
-            sleep 5 && \
+            sleep 15 && \
             poetry run pip install \
               --extra-index-url https://test.pypi.org/simple/ \
               "$PKG_NAME==$VERSION" \
@@ -138,7 +202,7 @@ jobs:
           poetry run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
       - name: Import test dependencies
-        run: poetry install --with test,test_integration
+        run: poetry install --with test
         working-directory: ${{ inputs.working-directory }}
 
       # Overwrite the local version of the package with the test PyPI version.
@@ -157,38 +221,83 @@ jobs:
         run: make tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Check for prerelease versions
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
+
+      - name: Get minimum versions
+        working-directory: ${{ inputs.working-directory }}
+        id: min-version
+        run: |
+          poetry run pip install packaging
+          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml release)"
+          echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
+          echo "min-versions=$min_versions"
+
+      - name: Run unit tests with minimum dependency versions
+        if: ${{ steps.min-version.outputs.min-versions != '' }}
+        env:
+          MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
+        run: |
+          poetry run pip install --force-reinstall $MIN_VERSIONS --editable .
+          make tests
+        working-directory: ${{ inputs.working-directory }}
+
       - name: 'Authenticate to Google Cloud'
         id: 'auth'
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
+      - name: Import integration test dependencies
+        run: poetry install --with test,test_integration
+        working-directory: ${{ inputs.working-directory }}
+
       - name: Run integration tests
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         env:
+          AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
+          WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
+          WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_ENVIRONMENT: ${{ secrets.PINECONE_ENVIRONMENT }}
+          ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
+          ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+          ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+          ES_URL: ${{ secrets.ES_URL }}
+          ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
+          ES_API_KEY: ${{ secrets.ES_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for airbyte
+          MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
+          VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+          UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          UNSTRUCTURED_API_KEY: ${{ secrets.UNSTRUCTURED_API_KEY }}
         run: make integration_tests
-        working-directory: ${{ inputs.working-directory }}
-
-      - name: Run unit tests with minimum dependency versions
-        if: ${{ (inputs.working-directory == 'libs/langchain') || (inputs.working-directory == 'libs/community') || (inputs.working-directory == 'libs/experimental') }}
-        run: |
-          poetry run pip install -r _test_minimum_requirements.txt
-          make tests
         working-directory: ${{ inputs.working-directory }}
 
   publish:
     needs:
       - build
+      - release-notes
       - test-pypi-publish
       - pre-release-checks
     runs-on: ubuntu-latest
@@ -215,7 +324,7 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           cache-key: release
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -230,6 +339,7 @@ jobs:
   mark-release:
     needs:
       - build
+      - release-notes
       - test-pypi-publish
       - pre-release-checks
       - publish
@@ -254,18 +364,18 @@ jobs:
           working-directory: ${{ inputs.working-directory }}
           cache-key: release
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
-
-      - name: Create Release
+          
+      - name: Create Tag
         uses: ncipollo/release-action@v1
-        if: ${{ inputs.working-directory == 'libs/langchain' }}
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
-          generateReleaseNotes: true
-          tag: v${{ needs.build.outputs.version }}
-          commit: master
+          generateReleaseNotes: false
+          tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}
+          body: ${{ needs.release-notes.outputs.release-body }}
+          commit: ${{ github.sha }}
+          makeLatest: ${{ needs.build.outputs.pkg-name == 'langchain-core'}}

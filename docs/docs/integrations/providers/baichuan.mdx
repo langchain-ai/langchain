@@ -1,16 +1,33 @@
 # Baichuan
 
->[Baichuan Inc.](https://www.baichuan-ai.com/) is a Chinese startup in the era of AGI, dedicated to addressing fundamental human needs: Efficiency, Health, and Happiness.
+>[Baichuan Inc.](https://www.baichuan-ai.com/) is a Chinese startup in the era of AGI, 
+> dedicated to addressing fundamental human needs: Efficiency, Health, and Happiness.
 
-## Visit Us
-Visit us at https://www.baichuan-ai.com/.
-Register and get an API key if you are trying out our APIs.
 
-## Baichuan LLM Endpoint
-An example is available at [example](/docs/integrations/llms/baichuan)
+## Installation and Setup
 
-## Baichuan Chat Model
-An example is available at [example](/docs/integrations/chat/baichuan).
+Register and get an API key [here](https://platform.baichuan-ai.com/).
 
-## Baichuan Text Embedding Model
-An example is available at [example](/docs/integrations/text_embedding/baichuan)
+## LLMs
+
+See a [usage example](/docs/integrations/llms/baichuan).
+
+```python
+from langchain_community.llms import BaichuanLLM
+```
+
+## Chat models
+
+See a [usage example](/docs/integrations/chat/baichuan).
+
+```python
+from langchain_community.chat_models import ChatBaichuan
+```
+
+## Embedding models
+
+See a [usage example](/docs/integrations/text_embedding/baichuan).
+
+```python
+from langchain_community.embeddings import BaichuanTextEmbeddings
+```

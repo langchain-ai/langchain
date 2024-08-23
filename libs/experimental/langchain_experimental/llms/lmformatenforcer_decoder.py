@@ -1,11 +1,12 @@
 """Experimental implementation of lm-format-enforcer wrapped LLM."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema import LLMResult
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 
 from langchain_experimental.pydantic_v1 import Field
 
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def import_lmformatenforcer() -> lmformatenforcer:
-    """Lazily import lmformatenforcer."""
+    """Lazily import of the lmformatenforcer package."""
     try:
         import lmformatenforcer
     except ImportError:

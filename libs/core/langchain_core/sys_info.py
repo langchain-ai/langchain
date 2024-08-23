@@ -1,9 +1,44 @@
-"""Print information about the system and langchain packages for debugging purposes."""
-from typing import Sequence
+"""**sys_info** prints information about the system and langchain packages
+for debugging purposes.
+"""
+
+from typing import List, Sequence
+
+
+def _get_sub_deps(packages: Sequence[str]) -> List[str]:
+    """Get any specified sub-dependencies."""
+    from importlib import metadata
+
+    sub_deps = set()
+    _underscored_packages = set(pkg.replace("-", "_") for pkg in packages)
+
+    for pkg in packages:
+        try:
+            required = metadata.requires(pkg)
+        except metadata.PackageNotFoundError:
+            continue
+
+        if not required:
+            continue
+
+        for req in required:
+            try:
+                cleaned_req = req.split(" ")[0]
+            except Exception:  # In case parsing of requirement spec fails
+                continue
+
+            if cleaned_req.replace("-", "_") not in _underscored_packages:
+                sub_deps.add(cleaned_req)
+
+    return sorted(sub_deps, key=lambda x: x.lower())
 
 
 def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
-    """Print information about the environment for debugging purposes."""
+    """Print information about the environment for debugging purposes.
+
+    Args:
+        additional_pkgs: Additional packages to include in the output.
+    """
     import pkgutil
     import platform
     import sys
@@ -37,17 +72,17 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
         "OS Version": platform.version(),
         "Python Version": sys.version,
     }
-    print()
-    print("System Information")
-    print("------------------")
-    print("> OS: ", system_info["OS"])
-    print("> OS Version: ", system_info["OS Version"])
-    print("> Python Version: ", system_info["Python Version"])
+    print()  # noqa: T201
+    print("System Information")  # noqa: T201
+    print("------------------")  # noqa: T201
+    print("> OS: ", system_info["OS"])  # noqa: T201
+    print("> OS Version: ", system_info["OS Version"])  # noqa: T201
+    print("> Python Version: ", system_info["Python Version"])  # noqa: T201
 
     # Print out only langchain packages
-    print()
-    print("Package Information")
-    print("-------------------")
+    print()  # noqa: T201
+    print("Package Information")  # noqa: T201
+    print("-------------------")  # noqa: T201
 
     not_installed = []
 
@@ -68,18 +103,30 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
 
         # Print package with version
         if package_version is not None:
-            print(f"> {pkg}: {package_version}")
+            print(f"> {pkg}: {package_version}")  # noqa: T201
         else:
-            print(f"> {pkg}: Installed. No version info available.")
+            print(f"> {pkg}: Installed. No version info available.")  # noqa: T201
 
     if not_installed:
-        print()
-        print("Packages not installed (Not Necessarily a Problem)")
-        print("--------------------------------------------------")
-        print("The following packages were not found:")
-        print()
+        print()  # noqa: T201
+        print("Optional packages not installed")  # noqa: T201
+        print("-------------------------------")  # noqa: T201
         for pkg in not_installed:
-            print(f"> {pkg}")
+            print(f"> {pkg}")  # noqa: T201
+
+    sub_dependencies = _get_sub_deps(all_packages)
+
+    if sub_dependencies:
+        print()  # noqa: T201
+        print("Other Dependencies")  # noqa: T201
+        print("------------------")  # noqa: T201
+
+        for dep in sub_dependencies:
+            try:
+                dep_version = metadata.version(dep)
+                print(f"> {dep}: {dep_version}")  # noqa: T201
+            except Exception:
+                print(f"> {dep}: Installed. No version info available.")  # noqa: T201
 
 
 if __name__ == "__main__":

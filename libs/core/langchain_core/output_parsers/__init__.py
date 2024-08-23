@@ -1,3 +1,18 @@
+"""**OutputParser** classes parse the output of an LLM call.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseLLMOutputParser --> BaseOutputParser --> <name>OutputParser  # ListOutputParser, PydanticOutputParser
+
+**Main helpers:**
+
+.. code-block::
+
+    Serializable, Generation, PromptValue
+"""  # noqa: E501
+
 from langchain_core.output_parsers.base import (
     BaseGenerationOutputParser,
     BaseLLMOutputParser,
@@ -10,6 +25,12 @@ from langchain_core.output_parsers.list import (
     MarkdownListOutputParser,
     NumberedListOutputParser,
 )
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    JsonOutputToolsParser,
+    PydanticToolsParser,
+)
+from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.transform import (
     BaseCumulativeTransformOutputParser,
@@ -31,4 +52,8 @@ __all__ = [
     "SimpleJsonOutputParser",
     "XMLOutputParser",
     "JsonOutputParser",
+    "PydanticOutputParser",
+    "JsonOutputToolsParser",
+    "JsonOutputKeyToolsParser",
+    "PydanticToolsParser",
 ]

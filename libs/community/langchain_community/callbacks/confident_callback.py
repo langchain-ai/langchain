@@ -116,13 +116,13 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
                         output=output,
                         query=query,
                     )
-                    print(f"Answer Relevancy: {result}")
+                    print(f"Answer Relevancy: {result}")  # noqa: T201
                 elif isinstance(metric, UnBiasedMetric):
                     score = metric.measure(output)
-                    print(f"Bias Score: {score}")
+                    print(f"Bias Score: {score}")  # noqa: T201
                 elif isinstance(metric, NonToxicMetric):
                     score = metric.measure(output)
-                    print(f"Toxic Score: {score}")
+                    print(f"Toxic Score: {score}")  # noqa: T201
                 else:
                     raise ValueError(
                         f"""Metric {metric.__name__} is not supported by deepeval 
@@ -162,7 +162,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,

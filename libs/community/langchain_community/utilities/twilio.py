@@ -1,7 +1,8 @@
 """Util that calls Twilio."""
+
 from typing import Any, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -40,15 +41,13 @@ class TwilioAPIWrapper(BaseModel):
         Twilio also work here. You cannot, for example, spoof messages from a private 
         cell phone number. If you are using `messaging_service_sid`, this parameter 
         must be empty.
-    """  # noqa: E501
+    """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = False
+        extra = "forbid"
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         try:
@@ -77,6 +76,6 @@ class TwilioAPIWrapper(BaseModel):
                 SMS/MMS or
                 [Channel user address](https://www.twilio.com/docs/sms/channels#channel-addresses)
                 for other 3rd-party channels.
-        """  # noqa: E501
+        """
         message = self.client.messages.create(to, from_=self.from_number, body=body)
         return message.sid

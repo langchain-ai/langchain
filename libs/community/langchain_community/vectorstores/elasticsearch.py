@@ -15,6 +15,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -113,6 +114,9 @@ class BaseRetrievalStrategy(ABC):
         return True
 
 
+@deprecated(
+    "0.0.27", alternative="Use class in langchain-elasticsearch package", pending=True
+)
 class ApproxRetrievalStrategy(BaseRetrievalStrategy):
     """Approximate retrieval strategy using the `HNSW` algorithm."""
 
@@ -233,6 +237,9 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         }
 
 
+@deprecated(
+    "0.0.27", alternative="Use class in langchain-elasticsearch package", pending=True
+)
 class ExactRetrievalStrategy(BaseRetrievalStrategy):
     """Exact retrieval strategy using the `script_score` query."""
 
@@ -300,6 +307,9 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         }
 
 
+@deprecated(
+    "0.0.27", alternative="Use class in langchain-elasticsearch package", pending=True
+)
 class SparseRetrievalStrategy(BaseRetrievalStrategy):
     """Sparse retrieval strategy using the `text_expansion` processor."""
 
@@ -381,6 +391,9 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
         return False
 
 
+@deprecated(
+    "0.0.27", alternative="Use class in langchain-elasticsearch package", pending=True
+)
 class ElasticsearchStore(VectorStore):
     """`Elasticsearch` vector store.
 
@@ -484,8 +497,8 @@ class ElasticsearchStore(VectorStore):
             from langchain_community.vectorstores.utils import DistanceStrategy
 
             vectorstore = ElasticsearchStore(
+                "langchain-demo",
                 embedding=OpenAIEmbeddings(),
-                index_name="langchain-demo",
                 es_url="http://localhost:9200",
                 distance_strategy="DOT_PRODUCT"
             )
@@ -528,9 +541,9 @@ class ElasticsearchStore(VectorStore):
         self.strategy = strategy
 
         if es_connection is not None:
-            self.client = es_connection.options(
-                headers={"user-agent": self.get_user_agent()}
-            )
+            headers = dict(es_connection._headers)
+            headers.update({"user-agent": self.get_user_agent()})
+            self.client = es_connection.options(headers=headers)
         elif es_url is not None or es_cloud_id is not None:
             self.client = ElasticsearchStore.connect_to_elasticsearch(
                 es_url=es_url,
@@ -792,7 +805,7 @@ class ElasticsearchStore(VectorStore):
         if self.query_field not in fields:
             fields.append(self.query_field)
 
-        if self.embedding and query is not None:
+        if self.embedding and query is not None and query_vector is None:
             query_vector = self.embedding.embed_query(query)
 
         query_body = self.strategy.query(

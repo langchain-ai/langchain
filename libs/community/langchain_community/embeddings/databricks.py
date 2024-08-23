@@ -12,10 +12,10 @@ def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
 
 
 class DatabricksEmbeddings(MlflowEmbeddings):
-    """Wrapper around embeddings LLMs in Databricks.
+    """Databricks embeddings.
 
     To use, you should have the ``mlflow`` python package installed.
-    For more information, see https://mlflow.org/docs/latest/llms/deployments/databricks.html.
+    For more information, see https://mlflow.org/docs/latest/llms/deployments.
 
     Example:
         .. code-block:: python

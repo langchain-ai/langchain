@@ -37,7 +37,7 @@ import os
 
 import predictionguard as pg
 from langchain_community.llms import PredictionGuard
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 # Your Prediction Guard API key. Get one at predictionguard.com
@@ -55,7 +55,7 @@ Head to stories to get ALL the deets on each box! 👆 BONUS: Save 50% on your f
 Query: {query}
 
 Result: """
-prompt = PromptTemplate(template=template, input_variables=["query"])
+prompt = PromptTemplate.from_template(template)
 
 # With "guarding" or controlling the output of the LLM. See the 
 # Prediction Guard docs (https://docs.predictionguard.com) to learn how to 
@@ -77,7 +77,7 @@ Basic LLM Chaining with the Prediction Guard wrapper:
 ```python
 import os
 
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_community.llms import PredictionGuard
 
@@ -93,7 +93,7 @@ pgllm = PredictionGuard(model="OpenAI-gpt-3.5-turbo-instruct")
 template = """Question: {question}
 
 Answer: Let's think step by step."""
-prompt = PromptTemplate(template=template, input_variables=["question"])
+prompt = PromptTemplate.from_template(template)
 llm_chain = LLMChain(prompt=prompt, llm=pgllm, verbose=True)
 
 question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"

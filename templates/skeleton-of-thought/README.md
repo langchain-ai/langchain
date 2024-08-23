@@ -1,6 +1,6 @@
-# skeleton-of-thought
+# Skeleton-of-Thought
 
-Implements "Skeleton of Thought" from [this](https://sites.google.com/view/sot-llm) paper.
+It implements [Skeleton-of-Thought: Prompting LLMs for Efficient Parallel Generation](https://arxiv.org/abs/2307.15337) paper.
 
 This technique makes it possible to generate longer generations more quickly by first generating a skeleton, then generating each point of the outline.
 
@@ -39,7 +39,7 @@ add_routes(app, skeleton_of_thought_chain, path="/skeleton-of-thought")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

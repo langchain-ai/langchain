@@ -2,9 +2,21 @@
 
 The `LangChain` integrations related to [Amazon AWS](https://aws.amazon.com/) platform.
 
-## LLMs
+First-party AWS integrations are available in the `langchain_aws` package.
 
-### Bedrock
+```bash
+pip install langchain-aws
+```
+
+And there are also some community integrations available in the `langchain_community` package with the `boto3` optional dependency.
+
+```bash
+pip install langchain-community boto3
+```
+
+## Chat models
+
+### Bedrock Chat
 
 >[Amazon Bedrock](https://aws.amazon.com/bedrock/) is a fully managed service that offers a choice of 
 > high-performing foundation models (FMs) from leading AI companies like `AI21 Labs`, `Anthropic`, `Cohere`, 
@@ -16,11 +28,29 @@ The `LangChain` integrations related to [Amazon AWS](https://aws.amazon.com/) pl
 > serverless, you don't have to manage any infrastructure, and you can securely integrate and deploy 
 > generative AI capabilities into your applications using the AWS services you are already familiar with.
 
+See a [usage example](/docs/integrations/chat/bedrock).
+
+```python
+from langchain_aws import ChatBedrock
+```
+
+### Bedrock Converse
+AWS has recently released the Bedrock Converse API which provides a unified conversational interface for Bedrock models. This API does not yet support custom models. You can see a list of all [models that are supported here](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html). To improve reliability the ChatBedrock integration will switch to using the Bedrock Converse API as soon as it has feature parity with the existing Bedrock API. Until then a separate [ChatBedrockConverse](https://python.langchain.com/v0.2/api_reference/aws/chat_models/langchain_aws.chat_models.bedrock_converse.ChatBedrockConverse.html) integration has been released.
+
+We recommend using `ChatBedrockConverse` for users who do not need to use custom models. See the [docs](/docs/integrations/chat/bedrock/#bedrock-converse-api) and [API reference](https://python.langchain.com/v0.2/api_reference/aws/chat_models/langchain_aws.chat_models.bedrock_converse.ChatBedrockConverse.html) for more detail.
+
+```python
+from langchain_aws import ChatBedrockConverse
+```
+
+## LLMs
+
+### Bedrock
  
 See a [usage example](/docs/integrations/llms/bedrock).
 
 ```python
-from langchain_community.llms.bedrock import Bedrock
+from langchain_aws import BedrockLLM
 ```
 
 ### Amazon API Gateway
@@ -53,21 +83,10 @@ We use `SageMaker` to host our model and expose it as the `SageMaker Endpoint`.
 See a [usage example](/docs/integrations/llms/sagemaker).
 
 ```python
-from langchain_community.llms import SagemakerEndpoint
-from langchain_community.llms.sagemaker_endpoint import LLMContentHandler
+from langchain_aws import SagemakerEndpoint
 ```
 
-## Chat models
-
-### Bedrock Chat
-
-See a [usage example](/docs/integrations/chat/bedrock).
-
-```python
-from langchain_community.chat_models import BedrockChat
-```
-
-## Text Embedding Models
+## Embedding Models
 
 ### Bedrock
 
@@ -82,26 +101,6 @@ See a [usage example](/docs/integrations/text_embedding/sagemaker-endpoint).
 ```python
 from langchain_community.embeddings import SagemakerEndpointEmbeddings
 from langchain_community.llms.sagemaker_endpoint import ContentHandlerBase
-```
-
-## Chains
-
-### Amazon Comprehend Moderation Chain
-
->[Amazon Comprehend](https://aws.amazon.com/comprehend/) is a natural-language processing (NLP) service that 
-> uses machine learning to uncover valuable insights and connections in text.
-
-
-We need to install the `boto3` and `nltk` libraries.
-
-```bash
-pip install boto3 nltk
-```
-
-See a [usage example](/docs/guides/safety/amazon_comprehend_chain).
-
-```python
-from langchain_experimental.comprehend_moderation import AmazonComprehendModerationChain
 ```
 
 ## Document loaders
@@ -132,69 +131,29 @@ See a [usage example](/docs/integrations/document_loaders/amazon_textract).
 from langchain_community.document_loaders import AmazonTextractPDFLoader
 ```
 
-## Memory
+### Amazon Athena
 
-### AWS DynamoDB
+>[Amazon Athena](https://aws.amazon.com/athena/) is a serverless, interactive analytics service built
+>on open-source frameworks, supporting open-table and file formats.
 
->[AWS DynamoDB](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/dynamodb/index.html) 
-> is a fully managed `NoSQL` database service that provides fast and predictable performance with seamless scalability.
- 
-We have to configure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). 
-
-We need to install the `boto3` library.
-
-```bash
-pip install boto3
-```
-
-See a [usage example](/docs/integrations/memory/aws_dynamodb).
+See a [usage example](/docs/integrations/document_loaders/athena).
 
 ```python
-from langchain.memory import DynamoDBChatMessageHistory
+from langchain_community.document_loaders.athena import AthenaLoader
 ```
 
-## Retrievers
+### AWS Glue
 
-### Amazon Kendra
+>The [AWS Glue Data Catalog](https://docs.aws.amazon.com/en_en/glue/latest/dg/catalog-and-crawler.html) is a centralized metadata 
+> repository that allows you to manage, access, and share metadata about 
+> your data stored in AWS. It acts as a metadata store for your data assets, 
+> enabling various AWS services and your applications to query and connect 
+> to the data they need efficiently.
 
-> [Amazon Kendra](https://docs.aws.amazon.com/kendra/latest/dg/what-is-kendra.html) is an intelligent search service 
-> provided by `Amazon Web Services` (`AWS`). It utilizes advanced natural language processing (NLP) and machine 
-> learning algorithms to enable powerful search capabilities across various data sources within an organization. 
-> `Kendra` is designed to help users find the information they need quickly and accurately, 
-> improving productivity and decision-making.
-
-> With `Kendra`, we can search across a wide range of content types, including documents, FAQs, knowledge bases, 
-> manuals, and websites. It supports multiple languages and can understand complex queries, synonyms, and 
-> contextual meanings to provide highly relevant search results.
-
-We need to install the `boto3` library.
-
-```bash
-pip install boto3
-```
-
-See a [usage example](/docs/integrations/retrievers/amazon_kendra_retriever).
+See a [usage example](/docs/integrations/document_loaders/glue_catalog).
 
 ```python
-from langchain.retrievers import AmazonKendraRetriever
-```
-
-### Amazon Bedrock (Knowledge Bases)
-
-> [Knowledge bases for Amazon Bedrock](https://aws.amazon.com/bedrock/knowledge-bases/) is an 
-> `Amazon Web Services` (`AWS`) offering which lets you quickly build RAG applications by using your 
-> private data to customize foundation model response.
-
-We need to install the `boto3` library.
-
-```bash
-pip install boto3
-```
-
-See a [usage example](/docs/integrations/retrievers/bedrock).
-
-```python
-from langchain.retrievers import AmazonKnowledgeBasesRetriever
+from langchain_community.document_loaders.glue_catalog import GlueCatalogLoader
 ```
 
 ## Vector stores
@@ -220,6 +179,96 @@ See a [usage example](/docs/integrations/vectorstores/opensearch#using-aos-amazo
 from langchain_community.vectorstores import OpenSearchVectorSearch
 ```
 
+### Amazon DocumentDB Vector Search
+
+>[Amazon DocumentDB (with MongoDB Compatibility)](https://docs.aws.amazon.com/documentdb/) makes it easy to set up, operate, and scale MongoDB-compatible databases in the cloud.
+> With Amazon DocumentDB, you can run the same application code and use the same drivers and tools that you use with MongoDB.
+> Vector search for Amazon DocumentDB combines the flexibility and rich querying capability of a JSON-based document database with the power of vector search.
+
+#### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/documentdb).
+
+We need to install the `pymongo` python package.
+
+```bash
+pip install pymongo
+```
+
+#### Deploy DocumentDB on AWS
+
+[Amazon DocumentDB (with MongoDB Compatibility)](https://docs.aws.amazon.com/documentdb/) is a fast, reliable, and fully managed database service. Amazon DocumentDB makes it easy to set up, operate, and scale MongoDB-compatible databases in the cloud.
+
+AWS offers services for computing, databases, storage, analytics, and other functionality. For an overview of all AWS services, see [Cloud Computing with Amazon Web Services](https://aws.amazon.com/what-is-aws/).
+
+See a [usage example](/docs/integrations/vectorstores/documentdb).
+
+```python
+from langchain.vectorstores import DocumentDBVectorSearch
+```
+### Amazon MemoryDB 
+[Amazon MemoryDB](https://aws.amazon.com/memorydb/) is a durable, in-memory database service that delivers ultra-fast performance. MemoryDB is compatible with Redis OSS, a popular open source data store, 
+enabling you to quickly build applications using the same flexible and friendly Redis OSS APIs, and commands that they already use today. 
+
+InMemoryVectorStore class provides a vectorstore to connect with Amazon MemoryDB.
+
+```python
+from langchain_aws.vectorstores.inmemorydb import InMemoryVectorStore
+
+vds = InMemoryVectorStore.from_documents(
+            chunks,
+            embeddings,
+            redis_url="rediss://cluster_endpoint:6379/ssl=True ssl_cert_reqs=none",
+            vector_schema=vector_schema,
+            index_name=INDEX_NAME,
+        )
+```
+See a [usage example](/docs/integrations/vectorstores/memorydb).
+
+## Retrievers
+
+### Amazon Kendra
+
+> [Amazon Kendra](https://docs.aws.amazon.com/kendra/latest/dg/what-is-kendra.html) is an intelligent search service 
+> provided by `Amazon Web Services` (`AWS`). It utilizes advanced natural language processing (NLP) and machine 
+> learning algorithms to enable powerful search capabilities across various data sources within an organization. 
+> `Kendra` is designed to help users find the information they need quickly and accurately, 
+> improving productivity and decision-making.
+
+> With `Kendra`, we can search across a wide range of content types, including documents, FAQs, knowledge bases, 
+> manuals, and websites. It supports multiple languages and can understand complex queries, synonyms, and 
+> contextual meanings to provide highly relevant search results.
+
+We need to install the `langchain-aws` library.
+
+```bash
+pip install langchain-aws
+```
+
+See a [usage example](/docs/integrations/retrievers/amazon_kendra_retriever).
+
+```python
+from langchain_aws import AmazonKendraRetriever
+```
+
+### Amazon Bedrock (Knowledge Bases)
+
+> [Knowledge bases for Amazon Bedrock](https://aws.amazon.com/bedrock/knowledge-bases/) is an 
+> `Amazon Web Services` (`AWS`) offering which lets you quickly build RAG applications by using your 
+> private data to customize foundation model response.
+
+We need to install the `langchain-aws` library.
+
+```bash
+pip install langchain-aws
+```
+
+See a [usage example](/docs/integrations/retrievers/bedrock).
+
+```python
+from langchain_aws import AmazonKnowledgeBasesRetriever
+```
+
 ## Tools
 
 ### AWS Lambda
@@ -237,6 +286,49 @@ pip install boto3
 ```
 
 See a [usage example](/docs/integrations/tools/awslambda).
+
+## Memory
+
+### AWS DynamoDB
+
+>[AWS DynamoDB](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/dynamodb/index.html) 
+> is a fully managed `NoSQL` database service that provides fast and predictable performance with seamless scalability.
+ 
+We have to configure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). 
+
+We need to install the `boto3` library.
+
+```bash
+pip install boto3
+```
+
+See a [usage example](/docs/integrations/memory/aws_dynamodb).
+
+```python
+from langchain.memory import DynamoDBChatMessageHistory
+```
+
+## Graphs
+
+### Amazon Neptune with Cypher
+
+See a [usage example](/docs/integrations/graphs/amazon_neptune_open_cypher).
+
+```python
+from langchain_community.graphs import NeptuneGraph
+from langchain_community.graphs import NeptuneAnalyticsGraph
+from langchain_community.chains.graph_qa.neptune_cypher import NeptuneOpenCypherQAChain
+```
+
+### Amazon Neptune with SPARQL
+
+See a [usage example](/docs/integrations/graphs/amazon_neptune_sparql).
+
+```python
+from langchain_community.graphs import NeptuneRdfGraph
+from langchain_community.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
+```
+
 
 
 ## Callbacks
@@ -260,4 +352,24 @@ See a [usage example](/docs/integrations/callbacks/sagemaker_tracking).
 
 ```python
 from langchain.callbacks import SageMakerCallbackHandler
+```
+
+## Chains
+
+### Amazon Comprehend Moderation Chain
+
+>[Amazon Comprehend](https://aws.amazon.com/comprehend/) is a natural-language processing (NLP) service that 
+> uses machine learning to uncover valuable insights and connections in text.
+
+
+We need to install the `boto3` and `nltk` libraries.
+
+```bash
+pip install boto3 nltk
+```
+
+See a [usage example](https://python.langchain.com/v0.1/docs/guides/productionization/safety/amazon_comprehend_chain/).
+
+```python
+from langchain_experimental.comprehend_moderation import AmazonComprehendModerationChain
 ```

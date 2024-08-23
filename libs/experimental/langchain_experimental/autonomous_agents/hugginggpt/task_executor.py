@@ -3,12 +3,14 @@ import uuid
 from typing import Dict, List
 
 import numpy as np
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 
 from langchain_experimental.autonomous_agents.hugginggpt.task_planner import Plan
 
 
 class Task:
+    """Task to be executed."""
+
     def __init__(self, task: str, id: int, dep: List[int], args: Dict, tool: BaseTool):
         self.task = task
         self.id = id
@@ -67,6 +69,8 @@ class Task:
         except Exception as e:
             self.status = "failed"
             self.message = str(e)
+            return self.message
+
         self.status = "completed"
         self.save_product()
 
@@ -74,7 +78,7 @@ class Task:
 
 
 class TaskExecutor:
-    """Load tools to execute tasks."""
+    """Load tools and execute tasks."""
 
     def __init__(self, plan: Plan):
         self.plan = plan
@@ -117,7 +121,7 @@ class TaskExecutor:
 
     def run(self) -> str:
         for task in self.tasks:
-            print(f"running {task}")
+            print(f"running {task}")  # noqa: T201
             if task.pending() and self.check_dependency(task):
                 self.update_args(task)
                 task.run()

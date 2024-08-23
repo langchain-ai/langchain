@@ -1,6 +1,7 @@
+import base64
 from abc import ABC
 from datetime import datetime
-from typing import Dict, Iterator, List, Literal, Optional, Union
+from typing import Callable, Dict, Iterator, List, Literal, Optional, Union
 
 import requests
 from langchain_core.documents import Document
@@ -64,8 +65,14 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     since: Optional[str] = None
     """Only show notifications updated after the given time.
         This is a timestamp in ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ."""
+    page: Optional[int] = None
+    """The page number for paginated results. 
+        Defaults to 1 in the GitHub API."""
+    per_page: Optional[int] = None
+    """Number of items per page. 
+        Defaults to 30 in the GitHub API."""
 
-    @validator("since")
+    @validator("since", allow_reuse=True)
     def validate_since(cls, v: Optional[str]) -> Optional[str]:
         if v:
             try:
@@ -111,36 +118,14 @@ class GitHubIssuesLoader(BaseGitHubLoader):
                 if not self.include_prs and doc.metadata["is_pull_request"]:
                     continue
                 yield doc
-            if response.links and response.links.get("next"):
+            if (
+                response.links
+                and response.links.get("next")
+                and (not self.page and not self.per_page)
+            ):
                 url = response.links["next"]["url"]
             else:
                 url = None
-
-    def load(self) -> List[Document]:
-        """
-        Get issues of a GitHub repository.
-
-        Returns:
-            A list of Documents with attributes:
-                - page_content
-                - metadata
-                    - url
-                    - title
-                    - creator
-                    - created_at
-                    - last_update_time
-                    - closed_time
-                    - number of comments
-                    - state
-                    - labels
-                    - assignee
-                    - assignees
-                    - milestone
-                    - locked
-                    - number
-                    - is_pull_request
-        """
-        return list(self.lazy_load())
 
     def parse_issue(self, issue: dict) -> Document:
         """Create Document objects from a list of GitHub issues."""
@@ -175,6 +160,8 @@ class GitHubIssuesLoader(BaseGitHubLoader):
             "sort": self.sort,
             "direction": self.direction,
             "since": self.since,
+            "page": self.page,
+            "per_page": self.per_page,
         }
         query_params_list = [
             f"{k}={v}" for k, v in query_params_dict.items() if v is not None
@@ -186,3 +173,60 @@ class GitHubIssuesLoader(BaseGitHubLoader):
     def url(self) -> str:
         """Create URL for GitHub API."""
         return f"{self.github_api_url}/repos/{self.repo}/issues?{self.query_params}"
+
+
+class GithubFileLoader(BaseGitHubLoader, ABC):
+    """Load GitHub File"""
+
+    branch: str = "main"
+
+    file_filter: Optional[Callable[[str], bool]]
+
+    def get_file_paths(self) -> List[Dict]:
+        base_url = (
+            f"{self.github_api_url}/repos/{self.repo}/git/trees/"
+            f"{self.branch}?recursive=1"
+        )
+        response = requests.get(base_url, headers=self.headers)
+        response.raise_for_status()
+        all_files = response.json()["tree"]
+        """ one element in all_files
+        {
+            'path': '.github', 
+            'mode': '040000', 
+            'type': 'tree', 
+            'sha': '5dc46e6b38b22707894ced126270b15e2f22f64e', 
+            'url': 'https://api.github.com/repos/langchain-ai/langchain/git/blobs/5dc46e6b38b22707894ced126270b15e2f22f64e'
+        }
+        """
+        return [
+            f
+            for f in all_files
+            if not (self.file_filter and not self.file_filter(f["path"]))
+        ]
+
+    def get_file_content_by_path(self, path: str) -> str:
+        base_url = f"{self.github_api_url}/repos/{self.repo}/contents/{path}"
+        response = requests.get(base_url, headers=self.headers)
+        response.raise_for_status()
+
+        if isinstance(response.json(), dict):
+            content_encoded = response.json()["content"]
+            return base64.b64decode(content_encoded).decode("utf-8")
+
+        return ""
+
+    def lazy_load(self) -> Iterator[Document]:
+        files = self.get_file_paths()
+        for file in files:
+            content = self.get_file_content_by_path(file["path"])
+            if content == "":
+                continue
+
+            metadata = {
+                "path": file["path"],
+                "sha": file["sha"],
+                "source": f"{self.github_api_url}/{self.repo}/{file['type']}/"
+                f"{self.branch}/{file['path']}",
+            }
+            yield Document(page_content=content, metadata=metadata)

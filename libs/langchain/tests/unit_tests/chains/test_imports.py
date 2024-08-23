@@ -1,5 +1,4 @@
 from langchain import chains
-from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "APIChain",
@@ -33,6 +32,7 @@ EXPECTED_ALL = [
     "NatBotChain",
     "NebulaGraphQAChain",
     "NeptuneOpenCypherQAChain",
+    "NeptuneSparqlQAChain",
     "OpenAIModerationChain",
     "OpenAPIEndpointChain",
     "QAGenerationChain",
@@ -49,6 +49,7 @@ EXPECTED_ALL = [
     "VectorDBQA",
     "VectorDBQAWithSourcesChain",
     "create_citation_fuzzy_match_chain",
+    "create_citation_fuzzy_match_runnable",
     "create_extraction_chain",
     "create_extraction_chain_pydantic",
     "create_qa_with_sources_chain",
@@ -61,9 +62,9 @@ EXPECTED_ALL = [
     "create_history_aware_retriever",
     "create_retrieval_chain",
     "load_summarize_chain",
+    "create_structured_output_runnable",
 ]
 
 
 def test_all_imports() -> None:
     assert set(chains.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(chains)

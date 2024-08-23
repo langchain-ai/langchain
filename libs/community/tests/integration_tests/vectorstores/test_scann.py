@@ -1,4 +1,5 @@
 """Test ScaNN functionality."""
+
 import datetime
 import tempfile
 
@@ -252,7 +253,9 @@ def test_scann_local_save_load() -> None:
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
-        new_docsearch = ScaNN.load_local(temp_folder, FakeEmbeddings())
+        new_docsearch = ScaNN.load_local(
+            temp_folder, FakeEmbeddings(), allow_dangerous_deserialization=True
+        )
     assert new_docsearch.index is not None
 
 

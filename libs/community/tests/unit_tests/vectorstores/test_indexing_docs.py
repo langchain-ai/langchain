@@ -16,7 +16,7 @@ def test_compatible_vectorstore_documentation() -> None:
     case and 1) update docs in [1] and 2) update the `documented`
     dict in this test case.
 
-    [1] langchain/docs/docs_skeleton/docs/modules/data_connection/indexing.ipynb
+    [1] langchain/docs/docs/modules/data_connection/indexing.ipynb
     """
 
     # Check if a vectorstore is compatible with the indexing API
@@ -46,40 +46,65 @@ def test_compatible_vectorstore_documentation() -> None:
 
     # These are mentioned in the indexing.ipynb documentation
     documented = {
+        "Aerospike",
         "AnalyticDB",
+        "ApertureDB",
         "AstraDB",
         "AzureCosmosDBVectorSearch",
+        "AzureCosmosDBNoSqlVectorSearch",
+        "AzureSearch",
         "AwaDB",
         "Bagel",
+        "BESVectorStore",
+        "BigQueryVectorSearch",
         "Cassandra",
         "Chroma",
+        "CouchbaseVectorStore",
         "DashVector",
         "DatabricksVectorSearch",
+        "TiDBVectorStore",
         "DeepLake",
         "Dingo",
+        "DocumentDBVectorSearch",
         "ElasticVectorSearch",
         "ElasticsearchStore",
         "FAISS",
         "HanaDB",
+        "InMemoryVectorStore",
+        "LanceDB",
         "Milvus",
         "MomentoVectorIndex",
         "MyScale",
+        "OpenSearchVectorSearch",
+        "OracleVS",
         "PGVector",
         "Pinecone",
         "Qdrant",
         "Redis",
+        "Relyt",
+        "Rockset",
         "ScaNN",
         "SemaDB",
+        "SingleStoreDB",
         "SupabaseVectorStore",
         "SurrealDBStore",
         "TileDB",
         "TimescaleVector",
+        "TencentVectorDB",
+        "UpstashVectorStore",
+        "EcloudESVectorStore",
         "Vald",
+        "VDMS",
         "Vearch",
+        "Vectara",
         "VespaStore",
+        "VLite",
         "Weaviate",
+        "Yellowbrick",
         "ZepVectorStore",
+        "ZepCloudVectorStore",
         "Zilliz",
         "Lantern",
+        "OpenSearchVectorSearch",
     }
     assert compatible == documented

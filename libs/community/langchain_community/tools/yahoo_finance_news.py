@@ -1,12 +1,19 @@
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 from requests.exceptions import HTTPError, ReadTimeout
 from urllib3.exceptions import ConnectionError
 
 from langchain_community.document_loaders.web_base import WebBaseLoader
+
+
+class YahooFinanceNewsInput(BaseModel):
+    """Input for the YahooFinanceNews tool."""
+
+    query: str = Field(description="company ticker query to look up")
 
 
 class YahooFinanceNewsTool(BaseTool):
@@ -21,6 +28,8 @@ class YahooFinanceNewsTool(BaseTool):
     )
     top_k: int = 10
     """The number of results to return."""
+
+    args_schema: Type[BaseModel] = YahooFinanceNewsInput
 
     def _run(
         self,

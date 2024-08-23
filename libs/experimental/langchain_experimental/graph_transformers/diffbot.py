@@ -1,12 +1,21 @@
+from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
-from langchain.schema import Document
 from langchain.utils import get_from_env
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
+from langchain_core.documents import Document
+
+
+class TypeOption(str, Enum):
+    FACTS = "facts"
+    ENTITIES = "entities"
+    SENTIMENT = "sentiment"
 
 
 def format_property_key(s: str) -> str:
+    """Formats a string to be used as a property key."""
+
     words = s.split()
     if not words:
         return s
@@ -16,8 +25,7 @@ def format_property_key(s: str) -> str:
 
 
 class NodesList:
-    """
-    Manages a list of nodes with associated properties.
+    """List of nodes with associated properties.
 
     Attributes:
         nodes (Dict[Tuple, Any]): Stores nodes as keys and their properties as values.
@@ -85,8 +93,7 @@ schema_mapping = [
 
 
 class SimplifiedSchema:
-    """
-    Provides functionality for working with a simplified schema mapping.
+    """Simplified schema mapping.
 
     Attributes:
         schema (Dict): A dictionary containing the mapping to simplified schema types.
@@ -116,31 +123,22 @@ class SimplifiedSchema:
 
 
 class DiffbotGraphTransformer:
-    """Transforms documents into graph documents using Diffbot's NLP API.
+    """Transform documents into graph documents using Diffbot NLP API.
 
     A graph document transformation system takes a sequence of Documents and returns a
     sequence of Graph Documents.
 
     Example:
         .. code-block:: python
+          from langchain_experimental.graph_transformers import DiffbotGraphTransformer
+          from langchain_core.documents import Document
 
-            class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
+          diffbot_api_key = "DIFFBOT_API_KEY"
+          diffbot_nlp = DiffbotGraphTransformer(diffbot_api_key=diffbot_api_key)
 
-                def transform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[GraphDocument]:
-                    results = []
+          document = Document(page_content="Mike Tunge is the CEO of Diffbot.")
+          graph_documents = diffbot_nlp.convert_to_graph_documents([document])
 
-                    for document in documents:
-                        raw_results = self.nlp_request(document.page_content)
-                        graph_document = self.process_response(raw_results, document)
-                        results.append(graph_document)
-                    return results
-
-                async def atransform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[Document]:
-                    raise NotImplementedError
     """
 
     def __init__(
@@ -150,6 +148,9 @@ class DiffbotGraphTransformer:
         include_qualifiers: bool = True,
         include_evidence: bool = True,
         simplified_schema: bool = True,
+        extract_types: List[TypeOption] = [TypeOption.FACTS],
+        *,
+        include_confidence: bool = False,
     ) -> None:
         """
         Initialize the graph transformer with various options.
@@ -166,6 +167,13 @@ class DiffbotGraphTransformer:
                 Whether to include evidence for the relationships.
             simplified_schema (bool):
                 Whether to use a simplified schema for relationships.
+            extract_types (List[TypeOption]):
+                A list of data types to extract. Facts, entities, and
+                sentiment are supported. By default, the option is
+                set to facts. A fact represents a combination of
+                source and target nodes with a relationship type.
+            include_confidence (bool):
+                Whether to include confidence scores on nodes and rels
         """
         self.diffbot_api_key = diffbot_api_key or get_from_env(
             "diffbot_api_key", "DIFFBOT_API_KEY"
@@ -173,9 +181,17 @@ class DiffbotGraphTransformer:
         self.fact_threshold_confidence = fact_confidence_threshold
         self.include_qualifiers = include_qualifiers
         self.include_evidence = include_evidence
+        self.include_confidence = include_confidence
         self.simplified_schema = None
         if simplified_schema:
             self.simplified_schema = SimplifiedSchema()
+        if not extract_types:
+            raise ValueError(
+                "`extract_types` cannot be an empty array. "
+                "Allowed values are 'facts', 'entities', or both."
+            )
+
+        self.extract_types = extract_types
 
     def nlp_request(self, text: str) -> Dict[str, Any]:
         """
@@ -194,7 +210,7 @@ class DiffbotGraphTransformer:
             "lang": "en",
         }
 
-        FIELDS = "facts"
+        FIELDS = ",".join(self.extract_types)
         HOST = "nl.diffbot.com"
         url = (
             f"https://{HOST}/v1/?fields={FIELDS}&"
@@ -218,77 +234,110 @@ class DiffbotGraphTransformer:
         """
 
         # Return empty result if there are no facts
-        if "facts" not in payload or not payload["facts"]:
+        if ("facts" not in payload or not payload["facts"]) and (
+            "entities" not in payload or not payload["entities"]
+        ):
             return GraphDocument(nodes=[], relationships=[], source=document)
 
         # Nodes are a custom class because we need to deduplicate
         nodes_list = NodesList()
-        # Relationships are a list because we don't deduplicate nor anything else
+        if "entities" in payload and payload["entities"]:
+            for record in payload["entities"]:
+                # Ignore if it doesn't have a type
+                if not record["allTypes"]:
+                    continue
+
+                # Define source node
+                source_id = (
+                    record["allUris"][0] if record["allUris"] else record["name"]
+                )
+                source_label = record["allTypes"][0]["name"].capitalize()
+                source_name = record["name"]
+                nodes_list.add_node_property(
+                    (source_id, source_label), {"name": source_name}
+                )
+                if record.get("sentiment") is not None:
+                    nodes_list.add_node_property(
+                        (source_id, source_label),
+                        {"sentiment": record.get("sentiment")},
+                    )
+                if self.include_confidence:
+                    nodes_list.add_node_property(
+                        (source_id, source_label),
+                        {"confidence": record.get("confidence")},
+                    )
+
         relationships = list()
-        for record in payload["facts"]:
-            # Skip if the fact is below the threshold confidence
-            if record["confidence"] < self.fact_threshold_confidence:
-                continue
+        # Relationships are a list because we don't deduplicate nor anything else
+        if "facts" in payload and payload["facts"]:
+            for record in payload["facts"]:
+                # Skip if the fact is below the threshold confidence
+                if record["confidence"] < self.fact_threshold_confidence:
+                    continue
 
-            # TODO: It should probably be treated as a node property
-            if not record["value"]["allTypes"]:
-                continue
+                # TODO: It should probably be treated as a node property
+                if not record["value"]["allTypes"]:
+                    continue
 
-            # Define source node
-            source_id = (
-                record["entity"]["allUris"][0]
-                if record["entity"]["allUris"]
-                else record["entity"]["name"]
-            )
-            source_label = record["entity"]["allTypes"][0]["name"].capitalize()
-            source_name = record["entity"]["name"]
-            source_node = Node(id=source_id, type=source_label)
-            nodes_list.add_node_property(
-                (source_id, source_label), {"name": source_name}
-            )
-
-            # Define target node
-            target_id = (
-                record["value"]["allUris"][0]
-                if record["value"]["allUris"]
-                else record["value"]["name"]
-            )
-            target_label = record["value"]["allTypes"][0]["name"].capitalize()
-            target_name = record["value"]["name"]
-            # Some facts are better suited as node properties
-            if target_label in FACT_TO_PROPERTY_TYPE:
+                # Define source node
+                source_id = (
+                    record["entity"]["allUris"][0]
+                    if record["entity"]["allUris"]
+                    else record["entity"]["name"]
+                )
+                source_label = record["entity"]["allTypes"][0]["name"].capitalize()
+                source_name = record["entity"]["name"]
+                source_node = Node(id=source_id, type=source_label)
                 nodes_list.add_node_property(
-                    (source_id, source_label),
-                    {format_property_key(record["property"]["name"]): target_name},
+                    (source_id, source_label), {"name": source_name}
                 )
-            else:  # Define relationship
-                # Define target node object
-                target_node = Node(id=target_id, type=target_label)
-                nodes_list.add_node_property(
-                    (target_id, target_label), {"name": target_name}
-                )
-                # Define relationship type
-                rel_type = record["property"]["name"].replace(" ", "_").upper()
-                if self.simplified_schema:
-                    rel_type = self.simplified_schema.get_type(rel_type)
 
-                # Relationship qualifiers/properties
-                rel_properties = dict()
-                relationship_evidence = [el["passage"] for el in record["evidence"]][0]
-                if self.include_evidence:
-                    rel_properties.update({"evidence": relationship_evidence})
-                if self.include_qualifiers and record.get("qualifiers"):
-                    for property in record["qualifiers"]:
-                        prop_key = format_property_key(property["property"]["name"])
-                        rel_properties[prop_key] = property["value"]["name"]
-
-                relationship = Relationship(
-                    source=source_node,
-                    target=target_node,
-                    type=rel_type,
-                    properties=rel_properties,
+                # Define target node
+                target_id = (
+                    record["value"]["allUris"][0]
+                    if record["value"]["allUris"]
+                    else record["value"]["name"]
                 )
-                relationships.append(relationship)
+                target_label = record["value"]["allTypes"][0]["name"].capitalize()
+                target_name = record["value"]["name"]
+                # Some facts are better suited as node properties
+                if target_label in FACT_TO_PROPERTY_TYPE:
+                    nodes_list.add_node_property(
+                        (source_id, source_label),
+                        {format_property_key(record["property"]["name"]): target_name},
+                    )
+                else:  # Define relationship
+                    # Define target node object
+                    target_node = Node(id=target_id, type=target_label)
+                    nodes_list.add_node_property(
+                        (target_id, target_label), {"name": target_name}
+                    )
+                    # Define relationship type
+                    rel_type = record["property"]["name"].replace(" ", "_").upper()
+                    if self.simplified_schema:
+                        rel_type = self.simplified_schema.get_type(rel_type)
+
+                    # Relationship qualifiers/properties
+                    rel_properties = dict()
+                    relationship_evidence = [
+                        el["passage"] for el in record["evidence"]
+                    ][0]
+                    if self.include_evidence:
+                        rel_properties.update({"evidence": relationship_evidence})
+                    if self.include_confidence:
+                        rel_properties.update({"confidence": record["confidence"]})
+                    if self.include_qualifiers and record.get("qualifiers"):
+                        for property in record["qualifiers"]:
+                            prop_key = format_property_key(property["property"]["name"])
+                            rel_properties[prop_key] = property["value"]["name"]
+
+                    relationship = Relationship(
+                        source=source_node,
+                        target=target_node,
+                        type=rel_type,
+                        properties=rel_properties,
+                    )
+                    relationships.append(relationship)
 
         return GraphDocument(
             nodes=nodes_list.return_node_list(),
@@ -303,7 +352,7 @@ class DiffbotGraphTransformer:
 
         Args:
             documents (Sequence[Document]): The original documents.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             Sequence[GraphDocument]: The transformed documents as graphs.

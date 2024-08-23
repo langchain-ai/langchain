@@ -8,10 +8,10 @@ from langchain.schema import (
     BaseChatMessageHistory,
     Document,
 )
-from langchain.tools.base import BaseTool
 from langchain_community.tools.human.tool import HumanInputRun
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.output_parser import (
@@ -26,7 +26,7 @@ from langchain_experimental.pydantic_v1 import ValidationError
 
 
 class AutoGPT:
-    """Agent class for interacting with Auto-GPT."""
+    """Agent for interacting with AutoGPT."""
 
     def __init__(
         self,
@@ -59,7 +59,7 @@ class AutoGPT:
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
         chat_history_memory: Optional[BaseChatMessageHistory] = None,
     ) -> AutoGPT:
-        prompt = AutoGPTPrompt(
+        prompt = AutoGPTPrompt(  # type: ignore[call-arg, call-arg, call-arg, call-arg]
             ai_name=ai_name,
             ai_role=ai_role,
             tools=tools,
@@ -98,7 +98,7 @@ class AutoGPT:
             )
 
             # Print Assistant thoughts
-            print(assistant_reply)
+            print(assistant_reply)  # noqa: T201
             self.chat_history_memory.add_message(HumanMessage(content=user_input))
             self.chat_history_memory.add_message(AIMessage(content=assistant_reply))
 
@@ -133,11 +133,11 @@ class AutoGPT:
                 f"Assistant Reply: {assistant_reply} " f"\nResult: {result} "
             )
             if self.feedback_tool is not None:
-                feedback = f"\n{self.feedback_tool.run('Input: ')}"
+                feedback = f"{self.feedback_tool.run('Input: ')}"
                 if feedback in {"q", "stop"}:
-                    print("EXITING")
+                    print("EXITING")  # noqa: T201
                     return "EXITING"
-                memory_to_add += feedback
+                memory_to_add += f"\n{feedback}"
 
             self.memory.add_documents([Document(page_content=memory_to_add)])
             self.chat_history_memory.add_message(SystemMessage(content=result))

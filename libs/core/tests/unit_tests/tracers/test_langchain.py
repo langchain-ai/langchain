@@ -2,11 +2,13 @@ import threading
 import time
 import unittest
 import unittest.mock
+import uuid
 from typing import Any, Dict
 from uuid import UUID
 
 import pytest
 from langsmith import Client
+from langsmith.run_trees import RunTree
 
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer
@@ -22,6 +24,7 @@ def test_example_id_assignment_threadsafe() -> None:
         return unittest.mock.MagicMock()
 
     client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
     client.create_run = mock_create_run
     tracer = LangChainTracer(client=client)
     old_persist_run_single = tracer._persist_run_single
@@ -35,6 +38,7 @@ def test_example_id_assignment_threadsafe() -> None:
     ):
         run_id_1 = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
         run_id_2 = UUID("f1f9fa53-8b2f-4742-bdbc-38215f7bd1e1")
+        run_id_3 = UUID("f1f9fa53-8b2f-4742-bdbc-38215f7cd1e1")
         example_id_1 = UUID("57e42c57-8c79-4d9f-8765-bf6cd3a98055")
         tracer.example_id = example_id_1
         tracer.on_llm_start({"name": "example_1"}, ["foo"], run_id=run_id_1)
@@ -44,12 +48,36 @@ def test_example_id_assignment_threadsafe() -> None:
         tracer.on_llm_start({"name": "example_2"}, ["foo"], run_id=run_id_2)
         tracer.on_llm_end(LLMResult(generations=[], llm_output={}), run_id=run_id_2)
         tracer.example_id = None
+        tracer.on_chain_start(
+            {"name": "no_examples"}, {"inputs": (i for i in range(10))}, run_id=run_id_3
+        )
+        tracer.on_chain_error(ValueError("Foo bar"), run_id=run_id_3)
         expected_example_ids = {
             run_id_1: example_id_1,
             run_id_2: example_id_2,
+            run_id_3: None,
         }
         tracer.wait_for_futures()
         assert example_ids == expected_example_ids
+
+
+def test_tracer_with_run_tree_parent() -> None:
+    mock_session = unittest.mock.MagicMock()
+    client = Client(session=mock_session, api_key="test")
+    parent = RunTree(name="parent", inputs={"input": "foo"}, client=client)
+    run_id = uuid.uuid4()
+    tracer = LangChainTracer(client=client)
+    tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
+    tracer.run_map[str(parent.id)] = parent  # type: ignore
+    tracer.on_chain_start(
+        {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
+    )
+    tracer.on_chain_end({}, run_id=run_id)
+    assert parent.child_runs
+    assert len(parent.child_runs) == 1
+    assert parent.child_runs[0].id == run_id
+    assert parent.child_runs[0].trace_id == parent.id
+    assert parent.child_runs[0].parent_run_id == parent.id
 
 
 def test_log_lock() -> None:

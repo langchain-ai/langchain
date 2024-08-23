@@ -1,7 +1,6 @@
+# RAG - Chroma
 
-# rag-chroma
-
-This template performs RAG using Chroma and OpenAI.
+This template performs RAG using `Chroma` and `OpenAI`.
 
 The vectorstore is created in `chain.py` and by default indexes a [popular blog posts on Agents](https://lilianweng.github.io/posts/2023-06-23-agent/) for question-answering.
 
@@ -38,7 +37,7 @@ add_routes(app, rag_chroma_chain, path="/rag-chroma")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

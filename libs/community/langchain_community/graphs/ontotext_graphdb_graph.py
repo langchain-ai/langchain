@@ -81,7 +81,7 @@ class OntotextGraphDBGraph:
             import rdflib
             from rdflib.plugins.stores import sparqlstore
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import rdflib python package. "
                 "Please install it with `pip install rdflib`."
             )
@@ -204,11 +204,7 @@ class OntotextGraphDBGraph:
         """
         Query the graph.
         """
-        from rdflib.exceptions import ParserError
         from rdflib.query import ResultRow
 
-        try:
-            res = self.graph.query(query)
-        except ParserError as e:
-            raise ValueError(f"Generated SPARQL statement is invalid\n{e}")
+        res = self.graph.query(query)
         return [r for r in res if isinstance(r, ResultRow)]

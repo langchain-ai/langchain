@@ -10,20 +10,40 @@ from __future__ import annotations
 import ast
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain_community.utilities import PythonREPL
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
-from langchain_experimental.pydantic_v1 import Extra, Field
+from langchain_experimental.pydantic_v1 import Field, root_validator
+from langchain_experimental.utilities import PythonREPL
 
-COMMAND_EXECUTION_FUNCTIONS = ["system", "exec", "execfile", "eval", "__import__"]
+COMMAND_EXECUTION_FUNCTIONS = [
+    "system",
+    "exec",
+    "execfile",
+    "eval",
+    "__import__",
+    "compile",
+]
+COMMAND_EXECUTION_ATTRIBUTES = [
+    "__import__",
+    "__subclasses__",
+    "__builtins__",
+    "__globals__",
+    "__getattribute__",
+    "__code__",
+    "__bases__",
+    "__mro__",
+    "__base__",
+]
 
 
 class PALValidation:
+    """Validation for PAL generated code."""
+
     SOLUTION_EXPRESSION_TYPE_FUNCTION = ast.FunctionDef
     SOLUTION_EXPRESSION_TYPE_VARIABLE = ast.Name
 
@@ -85,7 +105,7 @@ class PALValidation:
 
 
 class PALChain(Chain):
-    """Implements Program-Aided Language Models (PAL).
+    """Chain that implements Program-Aided Language Models (PAL).
 
     This class implements the Program-Aided Language Models (PAL) for generating code
     solutions. PAL is a technique described in the paper "Program-Aided Language Models"
@@ -117,12 +137,40 @@ class PALChain(Chain):
     """Validations to perform on the generated code."""
     timeout: Optional[int] = 10
     """Timeout in seconds for the generated code to execute."""
+    allow_dangerous_code: bool = False
+    """This chain relies on the execution of generated code, which can be dangerous.
+    
+    This class implements an AI technique that generates and evaluates
+    Python code, which can be dangerous and requires a specially sandboxed
+    environment to be safely used. While this class implements some basic guardrails
+    by limiting available locals/globals and by parsing and inspecting
+    the generated Python AST using `PALValidation`, those guardrails will not
+    deter sophisticated attackers and are not a replacement for a proper sandbox.
+    Do not use this class on untrusted inputs, with elevated permissions,
+    or without consulting your security team about proper sandboxing!
+    
+    Failure to properly sandbox this class can lead to arbitrary code execution
+    vulnerabilities, which can lead to data breaches, data loss, or other security
+    incidents.
+    """
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        if not values["allow_dangerous_code"]:
+            raise ValueError(
+                "This chain relies on the execution of generated code, "
+                "which can be dangerous. "
+                "Please read the security notice for this class, and only "
+                "use it if you understand the security implications. "
+                "If you want to proceed, you will need to opt-in, by setting "
+                "`allow_dangerous_code` to `True`."
+            )
+
+        return values
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -232,6 +280,15 @@ class PALChain(Chain):
             or not code_validations.allow_imports
         ):
             for node in ast.walk(code_tree):
+                if (
+                    not code_validations.allow_command_exec
+                    and isinstance(node, ast.Attribute)
+                    and node.attr in COMMAND_EXECUTION_ATTRIBUTES
+                ):
+                    raise ValueError(
+                        f"Found illegal command execution function "
+                        f"{node.attr} in code {code}"
+                    )
                 if (not code_validations.allow_command_exec) and isinstance(
                     node, ast.Call
                 ):

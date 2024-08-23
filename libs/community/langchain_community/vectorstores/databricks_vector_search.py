@@ -3,11 +3,25 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
+import numpy as np
+from langchain_core._api import warn_deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
+
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from databricks.vector_search.client import VectorSearchIndex
@@ -190,7 +204,7 @@ class DatabricksVectorSearch(VectorStore):
         cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> VST:
         raise NotImplementedError(
@@ -201,7 +215,7 @@ class DatabricksVectorSearch(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[List[Dict]] = None,
         ids: Optional[List[Any]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -274,32 +288,50 @@ class DatabricksVectorSearch(VectorStore):
         return True
 
     def similarity_search(
-        self, query: str, k: int = 4, filters: Optional[Any] = None, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        *,
+        query_type: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filters: Filters to apply to the query. Defaults to None.
+            filter: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
 
         Returns:
             List of Documents most similar to the embedding.
         """
         docs_with_score = self.similarity_search_with_score(
-            query=query, k=k, filters=filters, **kwargs
+            query=query,
+            k=k,
+            filter=filter,
+            query_type=query_type,
+            **kwargs,
         )
         return [doc for doc, _ in docs_with_score]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[Any] = None, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        *,
+        query_type: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query, along with scores.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filters: Filters to apply to the query. Defaults to None.
+            filter: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
 
         Returns:
             List of Documents most similar to the embedding and score for each.
@@ -309,23 +341,157 @@ class DatabricksVectorSearch(VectorStore):
             query_vector = None
         else:
             assert self.embeddings is not None, "embedding model is required."
-            query_text = None
+            # The value for `query_text` needs to be specified only for hybrid search.
+            if query_type is not None and query_type.upper() == "HYBRID":
+                query_text = query
+            else:
+                query_text = None
             query_vector = self.embeddings.embed_query(query)
-
         search_resp = self.index.similarity_search(
             columns=self.columns,
             query_text=query_text,
             query_vector=query_vector,
-            filters=filters,
+            filters=filter or _alias_filters(kwargs),
             num_results=k,
+            query_type=query_type,
         )
         return self._parse_search_response(search_resp)
+
+    @staticmethod
+    def _identity_fn(score: float) -> float:
+        return score
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        Databricks Vector search uses a normalized score 1/(1+d) where d
+        is the L2 distance. Hence, we simply return the identity function.
+        """
+
+        return self._identity_fn
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        *,
+        query_type: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        if not self._is_databricks_managed_embeddings():
+            assert self.embeddings is not None, "embedding model is required."
+            query_vector = self.embeddings.embed_query(query)
+        else:
+            raise ValueError(
+                "`max_marginal_relevance_search` is not supported for index with "
+                "Databricks-managed embeddings."
+            )
+
+        docs = self.max_marginal_relevance_search_by_vector(
+            query_vector,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter or _alias_filters(kwargs),
+            query_type=query_type,
+        )
+        return docs
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        if not self._is_databricks_managed_embeddings():
+            embedding_column = self._embedding_vector_column_name()
+        else:
+            raise ValueError(
+                "`max_marginal_relevance_search` is not supported for index with "
+                "Databricks-managed embeddings."
+            )
+        search_resp = self.index.similarity_search(
+            columns=list(set(self.columns + [embedding_column])),
+            query_text=None,
+            query_vector=embedding,
+            filters=filter or _alias_filters(kwargs),
+            num_results=fetch_k,
+            query_type=query_type,
+        )
+
+        embeddings_result_index = (
+            search_resp.get("manifest").get("columns").index({"name": embedding_column})
+        )
+        embeddings = [
+            doc[embeddings_result_index]
+            for doc in search_resp.get("result").get("data_array")
+        ]
+
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+
+        ignore_cols: List = (
+            [embedding_column] if embedding_column not in self.columns else []
+        )
+        candidates = self._parse_search_response(search_resp, ignore_cols=ignore_cols)
+        selected_results = [r[0] for i, r in enumerate(candidates) if i in mmr_selected]
+        return selected_results
 
     def similarity_search_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
-        filters: Optional[Any] = None,
+        filter: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
+        query: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -333,13 +499,19 @@ class DatabricksVectorSearch(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filters: Filters to apply to the query. Defaults to None.
+            filter: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
 
         Returns:
             List of Documents most similar to the embedding.
         """
         docs_with_score = self.similarity_search_by_vector_with_score(
-            embedding=embedding, k=k, filters=filters, **kwargs
+            embedding=embedding,
+            k=k,
+            filter=filter,
+            query_type=query_type,
+            query=query,
+            **kwargs,
         )
         return [doc for doc, _ in docs_with_score]
 
@@ -347,7 +519,10 @@ class DatabricksVectorSearch(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filters: Optional[Any] = None,
+        filter: Optional[Any] = None,
+        *,
+        query_type: Optional[str] = None,
+        query: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector, along with scores.
@@ -355,7 +530,8 @@ class DatabricksVectorSearch(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filters: Filters to apply to the query. Defaults to None.
+            filter: Filters to apply to the query. Defaults to None.
+            query_type: The type of this query. Supported values are "ANN" and "HYBRID".
 
         Returns:
             List of Documents most similar to the embedding and score for each.
@@ -365,16 +541,38 @@ class DatabricksVectorSearch(VectorStore):
                 "`similarity_search_by_vector` is not supported for index with "
                 "Databricks-managed embeddings."
             )
+        if query_type is not None and query_type.upper() == "HYBRID":
+            if query is None:
+                raise ValueError(
+                    "A value for `query` must be specified for hybrid search."
+                )
+            query_text = query
+        else:
+            if query is not None:
+                raise ValueError(
+                    (
+                        "Cannot specify both `embedding` and "
+                        '`query` unless `query_type="HYBRID"'
+                    )
+                )
+            query_text = None
         search_resp = self.index.similarity_search(
             columns=self.columns,
             query_vector=embedding,
-            filters=filters,
+            query_text=query_text,
+            filters=filter or _alias_filters(kwargs),
             num_results=k,
+            query_type=query_type,
         )
         return self._parse_search_response(search_resp)
 
-    def _parse_search_response(self, search_resp: dict) -> List[Tuple[Document, float]]:
+    def _parse_search_response(
+        self, search_resp: Dict, ignore_cols: Optional[List[str]] = None
+    ) -> List[Tuple[Document, float]]:
         """Parse the search response into a list of Documents with score."""
+        if ignore_cols is None:
+            ignore_cols = []
+
         columns = [
             col["name"]
             for col in search_resp.get("manifest", dict()).get("columns", [])
@@ -386,7 +584,7 @@ class DatabricksVectorSearch(VectorStore):
             metadata = {
                 col: value
                 for col, value in zip(columns[:-1], result[:-1])
-                if col not in [self.primary_key, self.text_column]
+                if col not in ([self.primary_key, self.text_column] + ignore_cols)
             }
             metadata[self.primary_key] = doc_id
             score = result[-1]
@@ -394,7 +592,7 @@ class DatabricksVectorSearch(VectorStore):
             docs_with_score.append((doc, score))
         return docs_with_score
 
-    def _index_schema(self) -> Optional[dict]:
+    def _index_schema(self) -> Optional[Dict]:
         """Return the index schema as a dictionary.
         Return None if no schema found.
         """
@@ -416,7 +614,7 @@ class DatabricksVectorSearch(VectorStore):
         """
         return self._embedding_vector_column().get("embedding_dimension")
 
-    def _embedding_vector_column(self) -> dict:
+    def _embedding_vector_column(self) -> Dict:
         """Return the embedding vector column configs as a dictionary.
         Empty if the index is not a self-managed embedding index.
         """
@@ -433,7 +631,7 @@ class DatabricksVectorSearch(VectorStore):
         """
         return self._embedding_source_column().get("name")
 
-    def _embedding_source_column(self) -> dict:
+    def _embedding_source_column(self) -> Dict:
         """Return the embedding source column configs as a dictionary.
         Empty if the index is not a Databricks-managed embedding index.
         """
@@ -471,3 +669,20 @@ class DatabricksVectorSearch(VectorStore):
         """Raise ValueError if the required arg with name `arg_name` is None."""
         if not arg:
             raise ValueError(f"`{arg_name}` is required for this index.")
+
+
+def _alias_filters(kwargs: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    The `filters` argument was used in the previous versions. It is now
+    replaced with `filter` for consistency with other vector stores, but
+    we still support `filters` for backward compatibility.
+    """
+    if "filters" in kwargs:
+        warn_deprecated(
+            since="0.2.11",
+            removal="1.0",
+            message="DatabricksVectorSearch received a key `filters` in search_kwargs. "
+            "`filters` was deprecated since langchain-community 0.2.11 and will "
+            "be removed in 0.3. Please use `filter` instead.",
+        )
+    return kwargs.pop("filters", None)

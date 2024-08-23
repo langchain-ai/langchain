@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -129,7 +129,7 @@ class AlephAlpha(LLM):
     """Stop sequences to use."""
 
     # Client params
-    aleph_alpha_api_key: Optional[str] = None
+    aleph_alpha_api_key: Optional[SecretStr] = None
     """API key for Aleph Alpha API."""
     host: str = "https://api.aleph-alpha.com"
     """The hostname of the API host. 
@@ -163,11 +163,9 @@ class AlephAlpha(LLM):
     by de-prioritizing your request below concurrent ones."""
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["aleph_alpha_api_key"] = convert_to_secret_str(
@@ -282,6 +280,6 @@ class AlephAlpha(LLM):
 
 
 if __name__ == "__main__":
-    aa = AlephAlpha()
+    aa = AlephAlpha()  # type: ignore[call-arg]
 
-    print(aa("How are you?"))
+    print(aa.invoke("How are you?"))  # noqa: T201

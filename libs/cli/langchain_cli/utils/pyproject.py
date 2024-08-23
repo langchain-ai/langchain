@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Tuple
 
 from tomlkit import dump, inline_table, load
 from tomlkit.items import InlineTable
@@ -12,7 +12,7 @@ def _get_dep_inline_table(path: Path) -> InlineTable:
 
 
 def add_dependencies_to_pyproject_toml(
-    pyproject_toml: Path, local_editable_dependencies: Iterable[tuple[str, Path]]
+    pyproject_toml: Path, local_editable_dependencies: Iterable[Tuple[str, Path]]
 ) -> None:
     """Add dependencies to pyproject.toml."""
     with open(pyproject_toml, encoding="utf-8") as f:

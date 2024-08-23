@@ -1,7 +1,6 @@
+# SQL - llama.cpp
 
-# sql-llamacpp
-
-This template enables a user to interact with a SQL database using natural language. 
+This template enables a user to interact with a `SQL` database using natural language. 
 
 It uses [Mistral-7b](https://mistral.ai/news/announcing-mistral-7b/) via [llama.cpp](https://github.com/ggerganov/llama.cpp) to run inference locally on a Mac laptop.
 
@@ -48,7 +47,7 @@ The package will download the Mistral-7b model from [here](https://huggingface.c
 
 This package includes an example DB of 2023 NBA rosters. You can see instructions to build this DB [here](https://github.com/facebookresearch/llama-recipes/blob/main/demo_apps/StructuredLlama.ipynb).
 
-(Optional) Configure LangSmith for tracing, monitoring and debugging LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
+(Optional) Configure LangSmith for tracing, monitoring and debugging LangChain applications. You can sign up for LangSmith [here](https://smith.langchain.com/). If you don't have access, you can skip this section
 
 ```shell
 export LANGCHAIN_TRACING_V2=true

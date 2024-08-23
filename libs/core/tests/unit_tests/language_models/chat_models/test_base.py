@@ -1,16 +1,31 @@
 """Test base chat model."""
 
+import uuid
+from typing import Any, AsyncIterator, Iterator, List, Literal, Optional, Union
+
 import pytest
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import BaseChatModel, FakeListChatModel
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
+from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
+from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
+from langchain_core.tracers.schemas import Run
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
-from tests.unit_tests.fake.chat_model import FakeListChatModel
+from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
 @pytest.fixture
@@ -106,3 +121,248 @@ async def test_stream_error_callback() -> None:
                 pass
 
             eval_response(cb_sync, i)
+
+
+async def test_astream_fallback_to_ainvoke() -> None:
+    """Test astream uses appropriate implementation."""
+
+    class ModelWithGenerate(BaseChatModel):
+        def _generate(
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call"""
+            message = AIMessage(content="hello")
+            generation = ChatGeneration(message=message)
+            return ChatResult(generations=[generation])
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithGenerate()
+    chunks = [chunk for chunk in model.stream("anything")]
+    assert chunks == [_AnyIdAIMessage(content="hello")]
+
+    chunks = [chunk async for chunk in model.astream("anything")]
+    assert chunks == [_AnyIdAIMessage(content="hello")]
+
+
+async def test_astream_implementation_fallback_to_stream() -> None:
+    """Test astream uses appropriate implementation."""
+
+    class ModelWithSyncStream(BaseChatModel):
+        def _generate(
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call"""
+            raise NotImplementedError()
+
+        def _stream(
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> Iterator[ChatGenerationChunk]:
+            """Stream the output of the model."""
+            yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
+            yield ChatGenerationChunk(message=AIMessageChunk(content="b"))
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithSyncStream()
+    chunks = [chunk for chunk in model.stream("anything")]
+    assert chunks == [
+        _AnyIdAIMessageChunk(content="a"),
+        _AnyIdAIMessageChunk(content="b"),
+    ]
+    assert len({chunk.id for chunk in chunks}) == 1
+    assert type(model)._astream == BaseChatModel._astream
+    astream_chunks = [chunk async for chunk in model.astream("anything")]
+    assert astream_chunks == [
+        _AnyIdAIMessageChunk(content="a"),
+        _AnyIdAIMessageChunk(content="b"),
+    ]
+    assert len({chunk.id for chunk in astream_chunks}) == 1
+
+
+async def test_astream_implementation_uses_astream() -> None:
+    """Test astream uses appropriate implementation."""
+
+    class ModelWithAsyncStream(BaseChatModel):
+        def _generate(
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call"""
+            raise NotImplementedError()
+
+        async def _astream(  # type: ignore
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> AsyncIterator[ChatGenerationChunk]:
+            """Stream the output of the model."""
+            yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
+            yield ChatGenerationChunk(message=AIMessageChunk(content="b"))
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithAsyncStream()
+    chunks = [chunk async for chunk in model.astream("anything")]
+    assert chunks == [
+        _AnyIdAIMessageChunk(content="a"),
+        _AnyIdAIMessageChunk(content="b"),
+    ]
+    assert len({chunk.id for chunk in chunks}) == 1
+
+
+class FakeTracer(BaseTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.traced_run_ids: list = []
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+
+        self.traced_run_ids.append(run.id)
+
+
+def test_pass_run_id() -> None:
+    llm = FakeListChatModel(responses=["a", "b", "c"])
+    cb = FakeTracer()
+    uid1 = uuid.uuid4()
+    llm.invoke("Dummy message", {"callbacks": [cb], "run_id": uid1})
+    assert cb.traced_run_ids == [uid1]
+    uid2 = uuid.uuid4()
+    list(llm.stream("Dummy message", {"callbacks": [cb], "run_id": uid2}))
+    assert cb.traced_run_ids == [uid1, uid2]
+    uid3 = uuid.uuid4()
+    llm.batch([["Dummy message"]], {"callbacks": [cb], "run_id": uid3})
+    assert cb.traced_run_ids == [uid1, uid2, uid3]
+
+
+async def test_async_pass_run_id() -> None:
+    llm = FakeListChatModel(responses=["a", "b", "c"])
+    cb = FakeTracer()
+    uid1 = uuid.uuid4()
+    await llm.ainvoke("Dummy message", {"callbacks": [cb], "run_id": uid1})
+    assert cb.traced_run_ids == [uid1]
+    uid2 = uuid.uuid4()
+    async for _ in llm.astream("Dummy message", {"callbacks": [cb], "run_id": uid2}):
+        pass
+    assert cb.traced_run_ids == [uid1, uid2]
+
+    uid3 = uuid.uuid4()
+    await llm.abatch([["Dummy message"]], {"callbacks": [cb], "run_id": uid3})
+    assert cb.traced_run_ids == [uid1, uid2, uid3]
+
+
+class NoStreamingModel(BaseChatModel):
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage("invoke"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "model1"
+
+
+class StreamingModel(NoStreamingModel):
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(message=AIMessageChunk(content="stream"))
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+async def test_disable_streaming(
+    disable_streaming: Union[bool, Literal["tool_calling"]],
+) -> None:
+    model = StreamingModel(disable_streaming=disable_streaming)
+    assert model.invoke([]).content == "invoke"
+    assert (await model.ainvoke([])).content == "invoke"
+
+    expected = "invoke" if disable_streaming is True else "stream"
+    assert next(model.stream([])).content == expected
+    async for c in model.astream([]):
+        assert c.content == expected
+        break
+    assert (
+        model.invoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}
+        ).content
+        == expected
+    )
+    assert (
+        await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == expected
+
+    expected = "invoke" if disable_streaming in ("tool_calling", True) else "stream"
+    assert next(model.stream([], tools=[{"type": "function"}])).content == expected
+    async for c in model.astream([], tools=[{}]):
+        assert c.content == expected
+        break
+    assert (
+        model.invoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
+        ).content
+        == expected
+    )
+    assert (
+        await model.ainvoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
+        )
+    ).content == expected
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+async def test_disable_streaming_no_streaming_model(
+    disable_streaming: Union[bool, Literal["tool_calling"]],
+) -> None:
+    model = NoStreamingModel(disable_streaming=disable_streaming)
+    assert model.invoke([]).content == "invoke"
+    assert (await model.ainvoke([])).content == "invoke"
+    assert next(model.stream([])).content == "invoke"
+    async for c in model.astream([]):
+        assert c.content == "invoke"
+        break
+    assert (
+        model.invoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}
+        ).content
+        == "invoke"
+    )
+    assert (
+        await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
+    assert next(model.stream([], tools=[{}])).content == "invoke"
+    async for c in model.astream([], tools=[{}]):
+        assert c.content == "invoke"
+        break

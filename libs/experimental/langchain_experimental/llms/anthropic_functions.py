@@ -3,14 +3,15 @@ from collections import defaultdict
 from html.parser import HTMLParser
 from typing import Any, DefaultDict, Dict, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
 from langchain_community.chat_models.anthropic import ChatAnthropic
+from langchain_core._api.deprecation import deprecated
+from langchain_core.callbacks.manager import (
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -41,6 +42,8 @@ for the weather in SF you would respond:
 
 
 class TagParser(HTMLParser):
+    """Parser for the tool tags."""
+
     def __init__(self) -> None:
         """A heavy-handed solution, but it's fast for prototyping.
 
@@ -121,7 +124,14 @@ def _destrip(tool_input: Any) -> Any:
         raise ValueError
 
 
+@deprecated(
+    since="0.0.54",
+    removal="1.0",
+    alternative_import="langchain_anthropic.experimental.ChatAnthropicTools",
+)
 class AnthropicFunctions(BaseChatModel):
+    """Chat model for interacting with Anthropic functions."""
+
     llm: BaseChatModel
 
     @root_validator(pre=True)
@@ -173,7 +183,7 @@ class AnthropicFunctions(BaseChatModel):
                 raise ValueError(
                     "if `function_call` provided, `functions` must also be"
                 )
-        response = self.model.predict_messages(
+        response = self.model.invoke(
             messages, stop=stop, callbacks=run_manager, **kwargs
         )
         completion = cast(str, response.content)
@@ -190,7 +200,7 @@ class AnthropicFunctions(BaseChatModel):
 
             kwargs = {
                 "function_call": {
-                    "name": function_call_name,
+                    "name": function_call_name,  # type: ignore[has-type]
                     "arguments": arguments,
                 }
             }

@@ -39,7 +39,13 @@ class TigerGraph(GraphStore):
             return str(self._schema)
 
     def set_connection(self, conn: Any) -> None:
-        from pyTigerGraph import TigerGraphConnection
+        try:
+            from pyTigerGraph import TigerGraphConnection
+        except ImportError:
+            raise ImportError(
+                "Could not import pyTigerGraph python package. "
+                "Please install it with `pip install pyTigerGraph`."
+            )
 
         if not isinstance(conn, TigerGraphConnection):
             msg = "**conn** parameter must inherit from TigerGraphConnection"

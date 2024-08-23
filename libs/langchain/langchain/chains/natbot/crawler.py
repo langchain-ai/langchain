@@ -114,7 +114,7 @@ class Crawler:
 
             self.page.mouse.click(x, y)
         else:
-            print("Could not find element")
+            print("Could not find element")  # noqa: T201
 
     def type(self, id: Union[str, int], text: str) -> None:
         self.click(id)
@@ -442,5 +442,5 @@ class Crawler:
                 )
             id_counter += 1
 
-        print("Parsing time: {:0.2f} seconds".format(time.time() - start))
+        print("Parsing time: {:0.2f} seconds".format(time.time() - start))  # noqa: T201
         return elements_of_interest

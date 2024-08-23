@@ -1,0 +1,11 @@
+# Adapted from https://github.com/tiangolo/fastapi/blob/master/.github/actions/people/action.yml
+name: "Generate LangChain People"
+description: "Generate the data for the LangChain People page"
+author: "Jacob Lee <jacob@langchain.dev>"
+inputs:
+  token:
+    description: 'User token, to read the GitHub API. Can be passed in using {{ secrets.LANGCHAIN_PEOPLE_GITHUB_TOKEN }}'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

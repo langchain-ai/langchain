@@ -16,17 +16,18 @@ from typing import (
     Union,
 )
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts import (
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.prompts import (
     BasePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
 
-from langchain_experimental.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_experimental.pydantic_v1 import BaseModel, root_validator
+from langchain_experimental.rl_chain.helpers import _Embed
 from langchain_experimental.rl_chain.metrics import (
     MetricsTrackerAverage,
     MetricsTrackerRollingWindow,
@@ -51,6 +52,8 @@ class _BasedOn:
 
 
 def BasedOn(anything: Any) -> _BasedOn:
+    """Wrap a value to indicate that it should be based on."""
+
     return _BasedOn(anything)
 
 
@@ -65,23 +68,16 @@ class _ToSelectFrom:
 
 
 def ToSelectFrom(anything: Any) -> _ToSelectFrom:
+    """Wrap a value to indicate that it should be selected from."""
+
     if not isinstance(anything, list):
         raise ValueError("ToSelectFrom must be a list to select from")
     return _ToSelectFrom(anything)
 
 
-class _Embed:
-    def __init__(self, value: Any, keep: bool = False):
-        self.value = value
-        self.keep = keep
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    __repr__ = __str__
-
-
 def Embed(anything: Any, keep: bool = False) -> Any:
+    """Wrap a value to indicate that it should be embedded."""
+
     if isinstance(anything, _ToSelectFrom):
         return ToSelectFrom(Embed(anything.value, keep=keep))
     elif isinstance(anything, _BasedOn):
@@ -96,21 +92,22 @@ def Embed(anything: Any, keep: bool = False) -> Any:
 
 
 def EmbedAndKeep(anything: Any) -> Any:
+    """Wrap a value to indicate that it should be embedded and kept."""
+
     return Embed(anything, keep=True)
 
 
 # helper functions
 
 
-def stringify_embedding(embedding: List) -> str:
-    return " ".join([f"{i}:{e}" for i, e in enumerate(embedding)])
-
-
 def parse_lines(parser: "vw.TextFormatParser", input_str: str) -> List["vw.Example"]:
+    """Parse the input string into a list of examples."""
+
     return [parser.parse_line(line) for line in input_str.split("\n")]
 
 
 def get_based_on_and_to_select_from(inputs: Dict[str, Any]) -> Tuple[Dict, Dict]:
+    """Get the BasedOn and ToSelectFrom from the inputs."""
     to_select_from = {
         k: inputs[k].value
         for k in inputs.keys()
@@ -132,8 +129,9 @@ def get_based_on_and_to_select_from(inputs: Dict[str, Any]) -> Tuple[Dict, Dict]
 
 
 def prepare_inputs_for_autoembed(inputs: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    go over all the inputs and if something is either wrapped in _ToSelectFrom or _BasedOn, and if their inner values are not already _Embed,
+    """Prepare the inputs for auto embedding.
+
+    Go over all the inputs and if something is either wrapped in _ToSelectFrom or _BasedOn, and if their inner values are not already _Embed,
     then wrap them in EmbedAndKeep while retaining their _ToSelectFrom or _BasedOn status
     """  # noqa: E501
 
@@ -149,6 +147,8 @@ def prepare_inputs_for_autoembed(inputs: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class Selected(ABC):
+    """Abstract class to represent the selected item."""
+
     pass
 
 
@@ -156,6 +156,8 @@ TSelected = TypeVar("TSelected", bound=Selected)
 
 
 class Event(Generic[TSelected], ABC):
+    """Abstract class to represent an event."""
+
     inputs: Dict[str, Any]
     selected: Optional[TSelected]
 
@@ -168,26 +170,27 @@ TEvent = TypeVar("TEvent", bound=Event)
 
 
 class Policy(Generic[TEvent], ABC):
+    """Abstract class to represent a policy."""
+
     def __init__(self, **kwargs: Any):
         pass
 
     @abstractmethod
-    def predict(self, event: TEvent) -> Any:
-        ...
+    def predict(self, event: TEvent) -> Any: ...
 
     @abstractmethod
-    def learn(self, event: TEvent) -> None:
-        ...
+    def learn(self, event: TEvent) -> None: ...
 
     @abstractmethod
-    def log(self, event: TEvent) -> None:
-        ...
+    def log(self, event: TEvent) -> None: ...
 
     def save(self) -> None:
         pass
 
 
 class VwPolicy(Policy):
+    """Vowpal Wabbit policy."""
+
     def __init__(
         self,
         model_repo: ModelRepository,
@@ -229,25 +232,27 @@ class VwPolicy(Policy):
 
 
 class Embedder(Generic[TEvent], ABC):
+    """Abstract class to represent an embedder."""
+
     def __init__(self, *args: Any, **kwargs: Any):
         pass
 
     @abstractmethod
-    def format(self, event: TEvent) -> str:
-        ...
+    def format(self, event: TEvent) -> str: ...
 
 
 class SelectionScorer(Generic[TEvent], ABC, BaseModel):
-    """Abstract method to grade the chosen selection or the response of the llm"""
+    """Abstract class to grade the chosen selection or the response of the llm."""
 
     @abstractmethod
     def score_response(
         self, inputs: Dict[str, Any], llm_response: str, event: TEvent
-    ) -> float:
-        ...
+    ) -> float: ...
 
 
 class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
+    """Auto selection scorer."""
+
     llm_chain: LLMChain
     prompt: Union[BasePromptTemplate, None] = None
     scoring_criteria_template_str: Optional[str] = None
@@ -290,7 +295,7 @@ class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
                 [default_system_prompt, human_message_prompt]
             )
         values["prompt"] = prompt
-        values["llm_chain"] = LLMChain(llm=llm, prompt=prompt)
+        values["llm_chain"] = LLMChain(llm=llm, prompt=prompt)  # type: ignore[arg-type, arg-type]
         return values
 
     def score_response(
@@ -308,8 +313,8 @@ class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
 
 
 class RLChain(Chain, Generic[TEvent]):
-    """
-    The `RLChain` class leverages the Vowpal Wabbit (VW) model as a learned policy for reinforcement learning.
+    """Chain that leverages the Vowpal Wabbit (VW) model as a learned policy
+    for reinforcement learning.
 
     Attributes:
         - llm_chain (Chain): Represents the underlying Language Model chain.
@@ -396,10 +401,8 @@ class RLChain(Chain, Generic[TEvent]):
             self.metrics = MetricsTrackerAverage(step=metrics_step)
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:
@@ -449,7 +452,7 @@ class RLChain(Chain, Generic[TEvent]):
     def save_progress(self) -> None:
         """
         This function should be called to save the state of the learned policy model.
-        """  # noqa: E501
+        """
         self.active_policy.save()
 
     def _validate_inputs(self, inputs: Dict[str, Any]) -> None:
@@ -469,26 +472,22 @@ class RLChain(Chain, Generic[TEvent]):
         return self.selection_scorer is not None and self.selection_scorer_activated
 
     @abstractmethod
-    def _call_before_predict(self, inputs: Dict[str, Any]) -> TEvent:
-        ...
+    def _call_before_predict(self, inputs: Dict[str, Any]) -> TEvent: ...
 
     @abstractmethod
     def _call_after_predict_before_llm(
         self, inputs: Dict[str, Any], event: TEvent, prediction: Any
-    ) -> Tuple[Dict[str, Any], TEvent]:
-        ...
+    ) -> Tuple[Dict[str, Any], TEvent]: ...
 
     @abstractmethod
     def _call_after_llm_before_scoring(
         self, llm_response: str, event: TEvent
-    ) -> Tuple[Dict[str, Any], TEvent]:
-        ...
+    ) -> Tuple[Dict[str, Any], TEvent]: ...
 
     @abstractmethod
     def _call_after_scoring_before_learning(
         self, event: TEvent, score: Optional[float]
-    ) -> TEvent:
-        ...
+    ) -> TEvent: ...
 
     def _call(
         self,
@@ -544,92 +543,3 @@ class RLChain(Chain, Generic[TEvent]):
     @property
     def _chain_type(self) -> str:
         return "llm_personalizer_chain"
-
-
-def is_stringtype_instance(item: Any) -> bool:
-    """Helper function to check if an item is a string."""
-    return isinstance(item, str) or (
-        isinstance(item, _Embed) and isinstance(item.value, str)
-    )
-
-
-def embed_string_type(
-    item: Union[str, _Embed], model: Any, namespace: Optional[str] = None
-) -> Dict[str, Union[str, List[str]]]:
-    """Helper function to embed a string or an _Embed object."""
-    keep_str = ""
-    if isinstance(item, _Embed):
-        encoded = stringify_embedding(model.encode(item.value))
-        if item.keep:
-            keep_str = item.value.replace(" ", "_") + " "
-    elif isinstance(item, str):
-        encoded = item.replace(" ", "_")
-    else:
-        raise ValueError(f"Unsupported type {type(item)} for embedding")
-
-    if namespace is None:
-        raise ValueError(
-            "The default namespace must be provided when embedding a string or _Embed object."  # noqa: E501
-        )
-
-    return {namespace: keep_str + encoded}
-
-
-def embed_dict_type(item: Dict, model: Any) -> Dict[str, Any]:
-    """Helper function to embed a dictionary item."""
-    inner_dict: Dict = {}
-    for ns, embed_item in item.items():
-        if isinstance(embed_item, list):
-            inner_dict[ns] = []
-            for embed_list_item in embed_item:
-                embedded = embed_string_type(embed_list_item, model, ns)
-                inner_dict[ns].append(embedded[ns])
-        else:
-            inner_dict.update(embed_string_type(embed_item, model, ns))
-    return inner_dict
-
-
-def embed_list_type(
-    item: list, model: Any, namespace: Optional[str] = None
-) -> List[Dict[str, Union[str, List[str]]]]:
-    ret_list: List = []
-    for embed_item in item:
-        if isinstance(embed_item, dict):
-            ret_list.append(embed_dict_type(embed_item, model))
-        elif isinstance(embed_item, list):
-            item_embedding = embed_list_type(embed_item, model, namespace)
-            # Get the first key from the first dictionary
-            first_key = next(iter(item_embedding[0]))
-            # Group the values under that key
-            grouping = {first_key: [item[first_key] for item in item_embedding]}
-            ret_list.append(grouping)
-        else:
-            ret_list.append(embed_string_type(embed_item, model, namespace))
-    return ret_list
-
-
-def embed(
-    to_embed: Union[Union[str, _Embed], Dict, List[Union[str, _Embed]], List[Dict]],
-    model: Any,
-    namespace: Optional[str] = None,
-) -> List[Dict[str, Union[str, List[str]]]]:
-    """
-    Embeds the actions or context using the SentenceTransformer model (or a model that has an `encode` function)
-
-    Attributes:
-        to_embed: (Union[Union(str, _Embed(str)), Dict, List[Union(str, _Embed(str))], List[Dict]], required) The text to be embedded, either a string, a list of strings or a dictionary or a list of dictionaries.
-        namespace: (str, optional) The default namespace to use when dictionary or list of dictionaries not provided.
-        model: (Any, required) The model to use for embedding
-    Returns:
-        List[Dict[str, str]]: A list of dictionaries where each dictionary has the namespace as the key and the embedded string as the value
-    """  # noqa: E501
-    if (isinstance(to_embed, _Embed) and isinstance(to_embed.value, str)) or isinstance(
-        to_embed, str
-    ):
-        return [embed_string_type(to_embed, model, namespace)]
-    elif isinstance(to_embed, dict):
-        return [embed_dict_type(to_embed, model)]
-    elif isinstance(to_embed, list):
-        return embed_list_type(to_embed, model, namespace)
-    else:
-        raise ValueError("Invalid input format for embedding")

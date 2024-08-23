@@ -22,22 +22,22 @@ class LlamaIndexRetriever(BaseRetriever):
     ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
-            from llama_index.indices.base import BaseGPTIndex
-            from llama_index.response.schema import Response
+            from llama_index.core.base.response.schema import Response
+            from llama_index.core.indices.base import BaseGPTIndex
         except ImportError:
             raise ImportError(
                 "You need to install `pip install llama-index` to use this retriever."
             )
         index = cast(BaseGPTIndex, self.index)
 
-        response = index.query(query, response_mode="no_text", **self.query_kwargs)
+        response = index.query(query, **self.query_kwargs)
         response = cast(Response, response)
         # parse source nodes
         docs = []
         for source_node in response.source_nodes:
-            metadata = source_node.extra_info or {}
+            metadata = source_node.metadata or {}
             docs.append(
-                Document(page_content=source_node.source_text, metadata=metadata)
+                Document(page_content=source_node.get_content(), metadata=metadata)
             )
         return docs
 
@@ -58,11 +58,11 @@ class LlamaIndexGraphRetriever(BaseRetriever):
     ) -> List[Document]:
         """Get documents relevant for a query."""
         try:
-            from llama_index.composability.graph import (
+            from llama_index.core.base.response.schema import Response
+            from llama_index.core.composability.base import (
                 QUERY_CONFIG_TYPE,
                 ComposableGraph,
             )
-            from llama_index.response.schema import Response
         except ImportError:
             raise ImportError(
                 "You need to install `pip install llama-index` to use this retriever."
@@ -79,8 +79,8 @@ class LlamaIndexGraphRetriever(BaseRetriever):
         # parse source nodes
         docs = []
         for source_node in response.source_nodes:
-            metadata = source_node.extra_info or {}
+            metadata = source_node.metadata or {}
             docs.append(
-                Document(page_content=source_node.source_text, metadata=metadata)
+                Document(page_content=source_node.get_content(), metadata=metadata)
             )
         return docs

@@ -15,6 +15,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
@@ -31,24 +32,141 @@ logger = logging.getLogger(__name__)
 VST = TypeVar("VST", bound=VectorStore)
 
 
-class Pinecone(VectorStore):
-    """`Pinecone` vector store.
+class PineconeVectorStore(VectorStore):
+    """Pinecone vector store integration.
 
-    Example:
+    Setup:
+        Install ``langchain-pinecone`` and set the environment variable ``PINECONE_API_KEY``.
+
+        .. code-block:: bash
+
+            pip install -qU langchain-pinecone
+            export PINECONE_API_KEY = "your-pinecone-api-key"
+
+    Key init args — indexing params:
+        embedding: Embeddings
+            Embedding function to use.
+
+    Key init args — client params:
+        index: Optional[Index]
+            Index to use.
+
+
+    # TODO: Replace with relevant init params.
+    Instantiate:
         .. code-block:: python
 
-            from langchain_pinecone import Pinecone
+            import time
+            import os
+            from pinecone import Pinecone, ServerlessSpec
+            from langchain_pinecone import PineconeVectorStore
             from langchain_openai import OpenAIEmbeddings
 
-            embeddings = OpenAIEmbeddings()
-            index_name = "my-index"
-            namespace = "my-namespace"
-            vectorstore = Pinecone(
-                index_name=index_name,
-                embedding=embedding,
-                namespace=namespace,
+            pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+
+            index_name = "langchain-test-index"  # change if desired
+
+            existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+
+            if index_name not in existing_indexes:
+                pc.create_index(
+                    name=index_name,
+                    dimension=1536,
+                    metric="cosine",
+                    spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+                )
+                while not pc.describe_index(index_name).status["ready"]:
+                    time.sleep(1)
+
+            index = pc.Index(index_name)
+            vector_store = PineconeVectorStore(index=index, embedding=OpenAIEmbeddings())
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'bar': 'baz'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'bar': 'baz'}]
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.832268] foo [{'baz': 'bar'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.832268] foo [{'baz': 'bar'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
             )
-    """
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            [Document(metadata={'bar': 'baz'}, page_content='thud')]
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -97,7 +215,7 @@ class Pinecone(VectorStore):
                 )
 
             # needs
-            client = PineconeClient(api_key=_pinecone_api_key)
+            client = PineconeClient(api_key=_pinecone_api_key, source_tag="langchain")
             self._index = client.Index(_index_name)
 
     @property
@@ -115,6 +233,7 @@ class Pinecone(VectorStore):
         embedding_chunk_size: int = 1000,
         *,
         async_req: bool = True,
+        id_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -130,6 +249,8 @@ class Pinecone(VectorStore):
             namespace: Optional pinecone namespace to add the texts to.
             batch_size: Batch size to use when adding the texts to the vectorstore.
             embedding_chunk_size: Chunk size to use when embedding the texts.
+            async_req: Whether runs asynchronously.
+            id_prefix: Optional string to use as an ID prefix when upserting vectors.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -140,6 +261,10 @@ class Pinecone(VectorStore):
 
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
+        if id_prefix:
+            ids = [
+                id_prefix + "#" + id if id_prefix + "#" not in id else id for id in ids
+            ]
         metadatas = metadatas or [{} for _ in texts]
         for metadata, text in zip(metadatas, texts):
             metadata[self._text_key] = text
@@ -152,18 +277,26 @@ class Pinecone(VectorStore):
             chunk_ids = ids[i : i + embedding_chunk_size]
             chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embedding.embed_documents(chunk_texts)
-            async_res = [
+            vector_tuples = zip(chunk_ids, embeddings, chunk_metadatas)
+            if async_req:
+                # Runs the pinecone upsert asynchronously.
+                async_res = [
+                    self._index.upsert(
+                        vectors=batch_vector_tuples,
+                        namespace=namespace,
+                        async_req=async_req,
+                        **kwargs,
+                    )
+                    for batch_vector_tuples in batch_iterate(batch_size, vector_tuples)
+                ]
+                [res.get() for res in async_res]
+            else:
                 self._index.upsert(
-                    vectors=batch,
+                    vectors=vector_tuples,
                     namespace=namespace,
                     async_req=async_req,
                     **kwargs,
                 )
-                for batch in batch_iterate(
-                    batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
-                )
-            ]
-            [res.get() for res in async_res]
 
         return ids
 
@@ -211,10 +344,13 @@ class Pinecone(VectorStore):
         )
         for res in results["matches"]:
             metadata = res["metadata"]
+            id = res.get("id")
             if self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 score = res["score"]
-                docs.append((Document(page_content=text, metadata=metadata), score))
+                docs.append(
+                    (Document(id=id, page_content=text, metadata=metadata), score)
+                )
             else:
                 logger.warning(
                     f"Found document with no `{self._text_key}` key. Skipping."
@@ -295,6 +431,9 @@ class Pinecone(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Dictionary of argument(s) to filter on metadata
+            namespace: Namespace to search in. Default will search in '' namespace.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -343,6 +482,9 @@ class Pinecone(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Dictionary of argument(s) to filter on metadata
+            namespace: Namespace to search in. Default will search in '' namespace.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -364,10 +506,13 @@ class Pinecone(VectorStore):
         Args:
             index_name: Name of the index to use.
             pool_threads: Number of threads to use for index upsert.
+            pinecone_api_key: The api_key of Pinecone.
         Returns:
             Pinecone Index instance."""
         _pinecone_api_key = pinecone_api_key or os.environ.get("PINECONE_API_KEY") or ""
-        client = PineconeClient(api_key=_pinecone_api_key, pool_threads=pool_threads)
+        client = PineconeClient(
+            api_key=_pinecone_api_key, pool_threads=pool_threads, source_tag="langchain"
+        )
         indexes = client.list_indexes()
         index_names = [i.name for i in indexes.index_list["indexes"]]
 
@@ -400,32 +545,36 @@ class Pinecone(VectorStore):
         upsert_kwargs: Optional[dict] = None,
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
+        async_req: bool = True,
+        *,
+        id_prefix: Optional[str] = None,
         **kwargs: Any,
-    ) -> Pinecone:
+    ) -> PineconeVectorStore:
         """Construct Pinecone wrapper from raw documents.
 
-        This is a user friendly interface that:
+        This is a user-friendly interface that:
             1. Embeds documents.
             2. Adds the documents to a provided Pinecone index
 
         This is intended to be a quick way to get started.
 
         The `pool_threads` affects the speed of the upsert operations.
+
+        Setup: set the `PINECONE_API_KEY` environment variable to your Pinecone API key.
+
         Example:
             .. code-block:: python
 
-                from langchain_community.vectorstores import Pinecone
-                from langchain_community.embeddings import OpenAIEmbeddings
-                import pinecone
+                from langchain_pinecone import PineconeVectorStore, PineconeEmbeddings
 
-                # The environment should be the one specified next to the API key
-                # in your Pinecone console
-                pinecone.init(api_key="***", environment="...")
-                embeddings = OpenAIEmbeddings()
-                pinecone = Pinecone.from_texts(
+                embeddings = PineconeEmbeddings(model="multilingual-e5-large")
+
+                index_name = "my-index"
+                vectorstore = PineconeVectorStore.from_texts(
                     texts,
-                    embeddings,
-                    index_name="langchain-demo"
+                    index_name=index_name,
+                    embedding=embedding,
+                    namespace=namespace,
                 )
         """
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
@@ -438,6 +587,8 @@ class Pinecone(VectorStore):
             namespace=namespace,
             batch_size=batch_size,
             embedding_chunk_size=embeddings_chunk_size,
+            async_req=async_req,
+            id_prefix=id_prefix,
             **(upsert_kwargs or {}),
         )
         return pinecone
@@ -450,7 +601,7 @@ class Pinecone(VectorStore):
         text_key: str = "text",
         namespace: Optional[str] = None,
         pool_threads: int = 4,
-    ) -> Pinecone:
+    ) -> PineconeVectorStore:
         """Load pinecone vectorstore from index name."""
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
         return cls(pinecone_index, embedding, text_key, namespace)
@@ -466,7 +617,9 @@ class Pinecone(VectorStore):
         """Delete by vector IDs or filter.
         Args:
             ids: List of ids to delete.
+            delete_all: Whether delete all vectors in the index.
             filter: Dictionary of conditions to filter vectors to delete.
+            namespace: Namespace to search in. Default will search in '' namespace.
         """
 
         if namespace is None:
@@ -485,3 +638,10 @@ class Pinecone(VectorStore):
             raise ValueError("Either ids, delete_all, or filter must be provided.")
 
         return None
+
+
+@deprecated(since="0.0.3", removal="0.3.0", alternative="PineconeVectorStore")
+class Pinecone(PineconeVectorStore):
+    """Deprecated. Use PineconeVectorStore instead."""
+
+    pass

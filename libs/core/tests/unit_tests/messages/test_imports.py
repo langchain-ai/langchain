@@ -1,6 +1,8 @@
 from langchain_core.messages import __all__
 
 EXPECTED_ALL = [
+    "MessageLikeRepresentation",
+    "_message_from_dict",
     "AIMessage",
     "AIMessageChunk",
     "AnyMessage",
@@ -12,17 +14,24 @@ EXPECTED_ALL = [
     "FunctionMessageChunk",
     "HumanMessage",
     "HumanMessageChunk",
+    "InvalidToolCall",
     "SystemMessage",
     "SystemMessageChunk",
+    "ToolCall",
+    "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
+    "RemoveMessage",
     "convert_to_messages",
     "get_buffer_string",
+    "merge_content",
     "message_chunk_to_message",
+    "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
-    "message_to_dict",
-    "merge_content",
+    "filter_messages",
+    "merge_message_runs",
+    "trim_messages",
 ]
 
 

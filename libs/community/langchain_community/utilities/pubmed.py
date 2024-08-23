@@ -48,7 +48,7 @@ class PubMedAPIWrapper(BaseModel):
     doc_content_chars_max: int = 2000
     email: str = "your_email@example.com"
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
@@ -144,7 +144,7 @@ class PubMedAPIWrapper(BaseModel):
                 if e.code == 429 and retry < self.max_retry:
                     # Too Many Requests errors
                     # wait for an exponentially increasing amount of time
-                    print(
+                    print(  # noqa: T201
                         f"Too Many Requests, "
                         f"waiting for {self.sleep_time:.2f} seconds..."
                     )

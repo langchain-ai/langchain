@@ -15,7 +15,7 @@ tiktoken = "^0.5.1"
 astrapy = "^0.5.3"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "astradb_entomology_rag"

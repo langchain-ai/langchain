@@ -1,3 +1,5 @@
+"""Custom **exceptions** for LangChain."""
+
 from typing import Any, Optional
 
 
@@ -17,16 +19,17 @@ class OutputParserException(ValueError, LangChainException):
     available to catch and handle in ways to fix the parsing error, while other
     errors will be raised.
 
-    Args:
+    Parameters:
         error: The error that's being re-raised or an error message.
         observation: String explanation of error which can be passed to a
-            model to try and remediate the issue.
+            model to try and remediate the issue. Defaults to None.
         llm_output: String model output which is error-ing.
+            Defaults to None.
         send_to_llm: Whether to send the observation and llm_output back to an Agent
             after an OutputParserException has been raised. This gives the underlying
             model driving the agent the context that the previous output was improperly
             structured, in the hopes that it will update the output to the correct
-            format.
+            format. Defaults to False.
     """
 
     def __init__(
@@ -36,7 +39,7 @@ class OutputParserException(ValueError, LangChainException):
         llm_output: Optional[str] = None,
         send_to_llm: bool = False,
     ):
-        super(OutputParserException, self).__init__(error)
+        super().__init__(error)
         if send_to_llm:
             if observation is None or llm_output is None:
                 raise ValueError(

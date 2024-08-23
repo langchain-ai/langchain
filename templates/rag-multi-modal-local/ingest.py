@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 
-from langchain_community.vectorstores import Chroma
-from langchain_experimental.open_clip import OpenCLIPEmbeddings
+from langchain_chroma import Chroma
+from langchain_nomic import NomicMultimodalEmbeddings
 
 # Load images
 img_dump_path = Path(__file__).parent / "docs/"
@@ -21,7 +21,9 @@ re_vectorstore_path = vectorstore.relative_to(Path.cwd())
 
 # Load embedding function
 print("Loading embedding function")
-embedding = OpenCLIPEmbeddings(model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k")
+embedding = NomicMultimodalEmbeddings(
+    vision_model="nomic-embed-vision-v1", text_model="nomic-embed-text-v1"
+)
 
 # Create chroma
 vectorstore_mmembd = Chroma(

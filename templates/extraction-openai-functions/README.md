@@ -1,5 +1,4 @@
-
-# extraction-openai-functions
+# Extraction - OpenAI functions
 
 This template uses [OpenAI function calling](https://python.langchain.com/docs/modules/chains/how_to/openai_functions) for extraction of structured output from unstructured input text.
 
@@ -38,7 +37,7 @@ add_routes(app, extraction_openai_functions_chain, path="/extraction-openai-func
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

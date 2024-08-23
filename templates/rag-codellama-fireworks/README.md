@@ -1,9 +1,8 @@
-
-# rag-codellama-fireworks
+# RAG - codellama, Fireworks
 
 This template performs RAG on a codebase. 
  
-It uses codellama-34b hosted by Fireworks' [LLM inference API](https://blog.fireworks.ai/accelerating-code-completion-with-fireworks-fast-llm-inference-f4e8b5ec534a).
+It uses `codellama-34b` hosted by `Fireworks` [LLM inference API](https://blog.fireworks.ai/accelerating-code-completion-with-fireworks-fast-llm-inference-f4e8b5ec534a).
 
 ## Environment Setup
 
@@ -40,7 +39,7 @@ add_routes(app, rag_codellama_fireworks_chain, path="/rag-codellama-fireworks")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

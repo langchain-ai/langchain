@@ -10,8 +10,8 @@ from langchain_community.tools.connery.tool import ConneryAction
 
 
 class ConneryService(BaseModel):
-    """
-    A service for interacting with the Connery Runner API.
+    """Service for interacting with the Connery Runner API.
+
     It gets the list of available actions from the Connery Runner,
     wraps them in ConneryAction Tools and returns them to the user.
     It also provides a method for running the actions.
@@ -20,7 +20,7 @@ class ConneryService(BaseModel):
     runner_url: Optional[str] = None
     api_key: Optional[str] = None
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_attributes(cls, values: Dict) -> Dict:
         """
         Validate the attributes of the ConneryService class.

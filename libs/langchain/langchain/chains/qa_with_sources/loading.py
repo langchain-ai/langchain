@@ -1,8 +1,10 @@
 """Load question answering with sources chains."""
+
 from __future__ import annotations
 
 from typing import Any, Mapping, Optional, Protocol
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 
@@ -59,12 +61,12 @@ def _load_stuff_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
-    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)  # type: ignore[arg-type]
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
         document_prompt=document_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         **kwargs,
     )
 
@@ -83,14 +85,14 @@ def _load_map_reduce_chain(
     token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
-    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
+    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)  # type: ignore[arg-type]
     _reduce_llm = reduce_llm or llm
-    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)
+    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)  # type: ignore[arg-type]
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
         document_prompt=document_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
     )
     if collapse_prompt is None:
         collapse_chain = None
@@ -105,7 +107,7 @@ def _load_map_reduce_chain(
             llm_chain=LLMChain(
                 llm=_collapse_llm,
                 prompt=collapse_prompt,
-                verbose=verbose,
+                verbose=verbose,  # type: ignore[arg-type]
             ),
             document_variable_name=combine_document_variable_name,
             document_prompt=document_prompt,
@@ -114,13 +116,13 @@ def _load_map_reduce_chain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
         token_max=token_max,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
         reduce_documents_chain=reduce_documents_chain,
         document_variable_name=map_reduce_document_variable_name,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         **kwargs,
     )
 
@@ -136,20 +138,35 @@ def _load_refine_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
-    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
+    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)  # type: ignore[arg-type]
     _refine_llm = refine_llm or llm
-    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)
+    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)  # type: ignore[arg-type]
     return RefineDocumentsChain(
         initial_llm_chain=initial_chain,
         refine_llm_chain=refine_chain,
         document_variable_name=document_variable_name,
         initial_response_name=initial_response_name,
         document_prompt=document_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         **kwargs,
     )
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This function is deprecated. Refer to this guide on retrieval and question "
+        "answering with sources: "
+        "https://python.langchain.com/v0.2/docs/how_to/qa_sources/"
+        "\nSee also the following migration guides for replacements "
+        "based on `chain_type`:\n"
+        "stuff: https://python.langchain.com/v0.2/docs/versions/migrating_chains/stuff_docs_chain\n"  # noqa: E501
+        "map_reduce: https://python.langchain.com/v0.2/docs/versions/migrating_chains/map_reduce_chain\n"  # noqa: E501
+        "refine: https://python.langchain.com/v0.2/docs/versions/migrating_chains/refine_chain\n"  # noqa: E501
+        "map_rerank: https://python.langchain.com/v0.2/docs/versions/migrating_chains/map_rerank_docs_chain\n"  # noqa: E501
+    ),
+)
 def load_qa_with_sources_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",

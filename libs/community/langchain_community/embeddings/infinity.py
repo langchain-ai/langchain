@@ -8,18 +8,20 @@ import aiohttp
 import numpy as np
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 __all__ = ["InfinityEmbeddings"]
 
 
 class InfinityEmbeddings(BaseModel, Embeddings):
-    """Embedding models for self-hosted https://github.com/michaelfeil/infinity
-    This should also work for text-embeddings-inference and other
+    """Self-hosted embedding models for `infinity` package.
+
+    See https://github.com/michaelfeil/infinity
+    This also works for text-embeddings-inference and other
     self-hosted openai-compatible servers.
 
-    Infinity is a class to interact with Embedding Models on https://github.com/michaelfeil/infinity
+    Infinity is a package to interact with Embedding Models on https://github.com/michaelfeil/infinity
 
 
     Example:
@@ -28,14 +30,14 @@ class InfinityEmbeddings(BaseModel, Embeddings):
             from langchain_community.embeddings import InfinityEmbeddings
             InfinityEmbeddings(
                 model="BAAI/bge-small",
-                infinity_api_url="http://localhost:7797/v1",
+                infinity_api_url="http://localhost:7997",
             )
     """
 
     model: str
     "Underlying Infinity model id."
 
-    infinity_api_url: str = "http://localhost:7797/v1"
+    infinity_api_url: str = "http://localhost:7997"
     """Endpoint URL to use."""
 
     client: Any = None  #: :meta private:
@@ -43,11 +45,9 @@ class InfinityEmbeddings(BaseModel, Embeddings):
 
     # LLM call kwargs
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 
@@ -115,7 +115,9 @@ class InfinityEmbeddings(BaseModel, Embeddings):
 
 
 class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
-    """A helper tool to embed Infinity. Not part of Langchain's stable API,
+    """Helper tool to embed Infinity.
+
+    It is not a part of Langchain's stable API,
     direct use discouraged.
 
     Example:
@@ -178,7 +180,7 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
         length_sorted_idx = np.argsort([-sorter(sen) for sen in texts])
         texts_sorted = [texts[idx] for idx in length_sorted_idx]
 
-        return texts_sorted, lambda unsorted_embeddings: [  # noqa E731
+        return texts_sorted, lambda unsorted_embeddings: [  # E731
             unsorted_embeddings[idx] for idx in np.argsort(length_sorted_idx)
         ]
 

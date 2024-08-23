@@ -1,5 +1,4 @@
 #! /bin/bash
-REPOSITORY_ID="starwars"
 GRAPHDB_URI="http://localhost:7200/"
 
 echo -e "\nUsing GraphDB: ${GRAPHDB_URI}"
@@ -24,7 +23,10 @@ function waitGraphDBStart {
 
 function loadData {
   echo -e "\nImporting starwars-data.trig"
-  curl -X POST -H "Content-Type: application/x-trig" -T /starwars-data.trig ${GRAPHDB_URI}/repositories/${REPOSITORY_ID}/statements
+  curl -X POST -H "Content-Type: application/x-trig" -T /starwars-data.trig ${GRAPHDB_URI}/repositories/starwars/statements
+
+  echo -e "\nImporting berners-lee-card.ttl"
+  curl -X POST -H "Content-Type:application/x-turtle" -T /berners-lee-card.ttl  ${GRAPHDB_URI}/repositories/langchain/statements
 }
 
 startGraphDB &

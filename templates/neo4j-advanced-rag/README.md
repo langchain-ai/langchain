@@ -1,6 +1,7 @@
-# neo4j-advanced-rag
+# Neo4j - advanced RAG
 
-This template allows you to balance precise embeddings and context retention by implementing advanced retrieval strategies.
+This template allows you to balance precise embeddings and context retention 
+by implementing advanced retrieval strategies.
 
 ## Strategies
 
@@ -67,7 +68,7 @@ add_routes(app, neo4j_advanced_chain, path="/neo4j-advanced-rag")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

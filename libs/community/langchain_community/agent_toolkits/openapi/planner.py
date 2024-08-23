@@ -1,8 +1,9 @@
 """Agent that interacts with OpenAPI APIs via a hierarchical planning approach."""
+
 import json
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, cast
 
 import yaml
 from langchain_core.callbacks import BaseCallbackManager
@@ -43,6 +44,8 @@ from langchain_community.utilities.requests import RequestsWrapper
 # However, the goal for now is to have only a single inference step.
 MAX_RESPONSE_LENGTH = 5000
 """Maximum length of the response to be returned."""
+
+Operation = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 
 
 def _get_default_llm_chain(prompt: BasePromptTemplate) -> Any:
@@ -191,7 +194,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
-    """A tool that sends a DELETE request and parses the response."""
+    """Tool that sends a DELETE request and parses the response."""
 
     name: str = "requests_delete"
     """The name of the tool."""
@@ -252,21 +255,61 @@ def _create_api_controller_agent(
     api_docs: str,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    allow_dangerous_requests: bool,
+    allowed_operations: Sequence[Operation],
 ) -> Any:
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
     from langchain.chains.llm import LLMChain
 
-    get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
-    post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
-    tools: List[BaseTool] = [
-        RequestsGetToolWithParsing(
-            requests_wrapper=requests_wrapper, llm_chain=get_llm_chain
-        ),
-        RequestsPostToolWithParsing(
-            requests_wrapper=requests_wrapper, llm_chain=post_llm_chain
-        ),
-    ]
+    tools: List[BaseTool] = []
+    if "GET" in allowed_operations:
+        get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
+        tools.append(
+            RequestsGetToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=get_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
+        )
+    if "POST" in allowed_operations:
+        post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
+        tools.append(
+            RequestsPostToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=post_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
+        )
+    if "PUT" in allowed_operations:
+        put_llm_chain = LLMChain(llm=llm, prompt=PARSING_PUT_PROMPT)
+        tools.append(
+            RequestsPutToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=put_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
+        )
+    if "DELETE" in allowed_operations:
+        delete_llm_chain = LLMChain(llm=llm, prompt=PARSING_DELETE_PROMPT)
+        tools.append(
+            RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=delete_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
+        )
+    if "PATCH" in allowed_operations:
+        patch_llm_chain = LLMChain(llm=llm, prompt=PARSING_PATCH_PROMPT)
+        tools.append(
+            RequestsPatchToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=patch_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
+        )
+    if not tools:
+        raise ValueError("Tools not found")
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
         input_variables=["input", "agent_scratchpad"],
@@ -290,6 +333,8 @@ def _create_api_controller_tool(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    allow_dangerous_requests: bool,
+    allowed_operations: Sequence[Operation],
 ) -> Tool:
     """Expose controller as a tool.
 
@@ -301,7 +346,7 @@ def _create_api_controller_tool(
     base_url = api_spec.servers[0]["url"]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
-        pattern = r"\b(GET|POST|PATCH|DELETE)\s+(/\S+)*"
+        pattern = r"\b(GET|POST|PATCH|DELETE|PUT)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
         endpoint_names = [
             "{method} {route}".format(method=method, route=route.split("?")[0])
@@ -318,7 +363,14 @@ def _create_api_controller_tool(
             if not found_match:
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
 
-        agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper, llm)
+        agent = _create_api_controller_agent(
+            base_url,
+            docs_str,
+            requests_wrapper,
+            llm,
+            allow_dangerous_requests,
+            allowed_operations,
+        )
         return agent.run(plan_str)
 
     return Tool(
@@ -336,15 +388,43 @@ def create_openapi_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    allow_dangerous_requests: bool = False,
+    allowed_operations: Sequence[Operation] = ("GET", "POST"),
     **kwargs: Any,
 ) -> Any:
-    """Instantiate OpenAI API planner and controller for a given spec.
+    """Construct an OpenAI API planner and controller for a given spec.
 
     Inject credentials via requests_wrapper.
 
     We use a top-level "orchestrator" agent to invoke the planner and controller,
     rather than a top-level planner
     that invokes a controller with its plan. This is to keep the planner simple.
+
+    You need to set allow_dangerous_requests to True to use Agent with BaseRequestsTool.
+    Requests can be dangerous and can lead to security vulnerabilities.
+    For example, users can ask a server to make a request to an internal
+    server. It's recommended to use requests through a proxy server
+    and avoid accepting inputs from untrusted sources without proper sandboxing.
+    Please see: https://python.langchain.com/docs/security
+    for further security information.
+
+    Args:
+        api_spec: The OpenAPI spec.
+        requests_wrapper: The requests wrapper.
+        llm: The language model.
+        shared_memory: Optional. The shared memory. Default is None.
+        callback_manager: Optional. The callback manager. Default is None.
+        verbose: Optional. Whether to print verbose output. Default is True.
+        agent_executor_kwargs: Optional. Additional keyword arguments
+            for the agent executor.
+        allow_dangerous_requests: Optional. Whether to allow dangerous requests.
+            Default is False.
+        allowed_operations: Optional. The allowed operations.
+            Default is ("GET", "POST").
+        kwargs: Additional arguments.
+
+    Returns:
+        The agent executor.
     """
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
@@ -352,7 +432,13 @@ def create_openapi_agent(
 
     tools = [
         _create_api_planner_tool(api_spec, llm),
-        _create_api_controller_tool(api_spec, requests_wrapper, llm),
+        _create_api_controller_tool(
+            api_spec,
+            requests_wrapper,
+            llm,
+            allow_dangerous_requests,
+            allowed_operations,
+        ),
     ]
     prompt = PromptTemplate(
         template=API_ORCHESTRATOR_PROMPT,

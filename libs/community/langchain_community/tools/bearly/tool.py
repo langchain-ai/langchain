@@ -7,8 +7,7 @@ from typing import Dict, List, Type
 
 import requests
 from langchain_core.pydantic_v1 import BaseModel, Field
-
-from langchain_community.tools import Tool
+from langchain_core.tools import Tool
 
 
 def strip_markdown_code(md_string: str) -> str:
@@ -74,8 +73,8 @@ class BearlyInterpreterTool:
     """Tool for evaluating python code in a sandbox environment."""
 
     api_key: str
-    endpoint = "https://exec.bearly.ai/v1/interpreter"
-    name = "bearly_interpreter"
+    endpoint: str = "https://exec.bearly.ai/v1/interpreter"
+    name: str = "bearly_interpreter"
     args_schema: Type[BaseModel] = BearlyInterpreterToolArguments
     files: Dict[str, FileInfo] = {}
 
@@ -125,12 +124,16 @@ class BearlyInterpreterTool:
             headers={"Authorization": self.api_key},
         ).json()
         return {
-            "stdout": base64.b64decode(resp["stdoutBasesixtyfour"]).decode()
-            if resp["stdoutBasesixtyfour"]
-            else "",
-            "stderr": base64.b64decode(resp["stderrBasesixtyfour"]).decode()
-            if resp["stderrBasesixtyfour"]
-            else "",
+            "stdout": (
+                base64.b64decode(resp["stdoutBasesixtyfour"]).decode()
+                if resp["stdoutBasesixtyfour"]
+                else ""
+            ),
+            "stderr": (
+                base64.b64decode(resp["stderrBasesixtyfour"]).decode()
+                if resp["stderrBasesixtyfour"]
+                else ""
+            ),
             "fileLinks": resp["fileLinks"],
             "exitCode": resp["exitCode"],
         }

@@ -1,10 +1,13 @@
 """Test logic on base chain class."""
+
+import uuid
 from typing import Any, Dict, List, Optional
 
 import pytest
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.memory import BaseMemory
+from langchain_core.tracers.context import collect_runs
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.schema import RUN_KEY
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -162,3 +165,66 @@ def test_run_with_callback() -> None:
     assert handler.starts == 1
     assert handler.ends == 1
     assert handler.errors == 0
+
+
+def test_run_with_callback_and_input_error() -> None:
+    """Test callback manager catches run validation input error."""
+    handler = FakeCallbackHandler()
+    chain = FakeChain(
+        the_input_keys=["foo", "bar"],
+        callbacks=[handler],
+    )
+
+    with pytest.raises(ValueError):
+        chain({"bar": "foo"})
+
+    assert handler.starts == 1
+    assert handler.ends == 0
+    assert handler.errors == 1
+
+
+def test_manually_specify_rid() -> None:
+    chain = FakeChain()
+    run_id = uuid.uuid4()
+    with collect_runs() as cb:
+        chain.invoke({"foo": "bar"}, {"run_id": run_id})
+        run = cb.traced_runs[0]
+        assert run.id == run_id
+
+    run_id2 = uuid.uuid4()
+    with collect_runs() as cb:
+        list(chain.stream({"foo": "bar"}, {"run_id": run_id2}))
+        run = cb.traced_runs[0]
+        assert run.id == run_id2
+
+
+async def test_manually_specify_rid_async() -> None:
+    chain = FakeChain()
+    run_id = uuid.uuid4()
+    with collect_runs() as cb:
+        await chain.ainvoke({"foo": "bar"}, {"run_id": run_id})
+        run = cb.traced_runs[0]
+        assert run.id == run_id
+    run_id2 = uuid.uuid4()
+    with collect_runs() as cb:
+        res = chain.astream({"foo": "bar"}, {"run_id": run_id2})
+        async for _ in res:
+            pass
+        run = cb.traced_runs[0]
+        assert run.id == run_id2
+
+
+def test_run_with_callback_and_output_error() -> None:
+    """Test callback manager catches run validation output error."""
+    handler = FakeCallbackHandler()
+    chain = FakeChain(
+        the_output_keys=["foo", "bar"],
+        callbacks=[handler],
+    )
+
+    with pytest.raises(ValueError):
+        chain("foo")
+
+    assert handler.starts == 1
+    assert handler.ends == 0
+    assert handler.errors == 1

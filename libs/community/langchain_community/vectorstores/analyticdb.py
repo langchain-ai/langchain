@@ -71,9 +71,9 @@ class AnalyticDB(VectorStore):
         if (
             "pool_recycle" not in _engine_args
         ):  # Check if pool_recycle is not in _engine_args
-            _engine_args[
-                "pool_recycle"
-            ] = 3600  # Set pool_recycle to 3600s if not present
+            _engine_args["pool_recycle"] = (
+                3600  # Set pool_recycle to 3600s if not present
+            )
 
         self.engine = create_engine(self.connection_string, **_engine_args)
         self.create_collection()
@@ -157,7 +157,7 @@ class AnalyticDB(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         embeddings = self.embedding_function.embed_documents(list(texts))
 
@@ -347,7 +347,7 @@ class AnalyticDB(VectorStore):
                     conn.execute(chunks_table.delete().where(delete_condition))
                     return True
         except Exception as e:
-            print("Delete operation failed:", str(e))
+            print("Delete operation failed:", str(e))  # noqa: T201
             return False
 
     @classmethod

@@ -1,17 +1,13 @@
-from typing import List
-
-from langchain.chains import LLMChain
-from langchain.output_parsers import PydanticOutputParser
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_chroma import Chroma
 from langchain_community.chat_models import ChatOllama, ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Load
 loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
@@ -29,23 +25,6 @@ vectorstore = Chroma.from_documents(
 )
 
 
-# Output parser will split the LLM result into a list of queries
-class LineList(BaseModel):
-    # "lines" is the key (attribute name) of the parsed output
-    lines: List[str] = Field(description="Lines of text")
-
-
-class LineListOutputParser(PydanticOutputParser):
-    def __init__(self) -> None:
-        super().__init__(pydantic_object=LineList)
-
-    def parse(self, text: str) -> LineList:
-        lines = text.strip().split("\n")
-        return LineList(lines=lines)
-
-
-output_parser = LineListOutputParser()
-
 QUERY_PROMPT = PromptTemplate(
     input_variables=["question"],
     template="""You are an AI language model assistant. Your task is to generate five
@@ -60,12 +39,9 @@ QUERY_PROMPT = PromptTemplate(
 ollama_llm = "zephyr"
 llm = ChatOllama(model=ollama_llm)
 
-# Chain
-llm_chain = LLMChain(llm=llm, prompt=QUERY_PROMPT, output_parser=output_parser)
-
 # Run
-retriever = MultiQueryRetriever(
-    retriever=vectorstore.as_retriever(), llm_chain=llm_chain, parser_key="lines"
+retriever = MultiQueryRetriever.from_llm(
+    vectorstore.as_retriever(), llm, prompt=QUERY_PROMPT
 )  # "lines" is the key (attribute name) of the parsed output
 
 # RAG prompt

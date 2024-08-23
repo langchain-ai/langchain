@@ -1,10 +1,11 @@
 """Lightweight wrapper around requests library, with async support."""
+
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict, Literal, Optional, Union
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 from requests import Response
 
 
@@ -18,38 +19,56 @@ class Requests(BaseModel):
     headers: Optional[Dict[str, str]] = None
     aiosession: Optional[aiohttp.ClientSession] = None
     auth: Optional[Any] = None
+    verify: Optional[bool] = True
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     def get(self, url: str, **kwargs: Any) -> requests.Response:
         """GET the URL and return the text."""
-        return requests.get(url, headers=self.headers, auth=self.auth, **kwargs)
+        return requests.get(
+            url, headers=self.headers, auth=self.auth, verify=self.verify, **kwargs
+        )
 
     def post(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
         """POST to the URL and return the text."""
         return requests.post(
-            url, json=data, headers=self.headers, auth=self.auth, **kwargs
+            url,
+            json=data,
+            headers=self.headers,
+            auth=self.auth,
+            verify=self.verify,
+            **kwargs,
         )
 
     def patch(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
         """PATCH the URL and return the text."""
         return requests.patch(
-            url, json=data, headers=self.headers, auth=self.auth, **kwargs
+            url,
+            json=data,
+            headers=self.headers,
+            auth=self.auth,
+            verify=self.verify,
+            **kwargs,
         )
 
     def put(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
         """PUT the URL and return the text."""
         return requests.put(
-            url, json=data, headers=self.headers, auth=self.auth, **kwargs
+            url,
+            json=data,
+            headers=self.headers,
+            auth=self.auth,
+            verify=self.verify,
+            **kwargs,
         )
 
     def delete(self, url: str, **kwargs: Any) -> requests.Response:
         """DELETE the URL and return the text."""
-        return requests.delete(url, headers=self.headers, auth=self.auth, **kwargs)
+        return requests.delete(
+            url, headers=self.headers, auth=self.auth, verify=self.verify, **kwargs
+        )
 
     @asynccontextmanager
     async def _arequest(
@@ -59,12 +78,22 @@ class Requests(BaseModel):
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    method, url, headers=self.headers, auth=self.auth, **kwargs
+                    method,
+                    url,
+                    headers=self.headers,
+                    auth=self.auth,
+                    verify_ssl=self.verify,
+                    **kwargs,
                 ) as response:
                     yield response
         else:
             async with self.aiosession.request(
-                method, url, headers=self.headers, auth=self.auth, **kwargs
+                method,
+                url,
+                headers=self.headers,
+                auth=self.auth,
+                verify_ssl=self.verify,
+                **kwargs,
             ) as response:
                 yield response
 
@@ -116,17 +145,19 @@ class GenericRequestsWrapper(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
     auth: Optional[Any] = None
     response_content_type: Literal["text", "json"] = "text"
+    verify: bool = True
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def requests(self) -> Requests:
         return Requests(
-            headers=self.headers, aiosession=self.aiosession, auth=self.auth
+            headers=self.headers,
+            aiosession=self.aiosession,
+            auth=self.auth,
+            verify=self.verify,
         )
 
     def _get_resp_content(self, response: Response) -> Union[str, Dict[str, Any]]:
@@ -137,13 +168,13 @@ class GenericRequestsWrapper(BaseModel):
         else:
             raise ValueError(f"Invalid return type: {self.response_content_type}")
 
-    def _aget_resp_content(
+    async def _aget_resp_content(
         self, response: aiohttp.ClientResponse
     ) -> Union[str, Dict[str, Any]]:
         if self.response_content_type == "text":
-            return response.text()  # type: ignore[return-value]
+            return await response.text()
         elif self.response_content_type == "json":
-            return response.json()  # type: ignore[return-value]
+            return await response.json()
         else:
             raise ValueError(f"Invalid return type: {self.response_content_type}")
 
@@ -176,33 +207,33 @@ class GenericRequestsWrapper(BaseModel):
     async def aget(self, url: str, **kwargs: Any) -> Union[str, Dict[str, Any]]:
         """GET the URL and return the text asynchronously."""
         async with self.requests.aget(url, **kwargs) as response:
-            return await self._aget_resp_content(response)  # type: ignore[misc]
+            return await self._aget_resp_content(response)
 
     async def apost(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, Dict[str, Any]]:
         """POST to the URL and return the text asynchronously."""
         async with self.requests.apost(url, data, **kwargs) as response:
-            return await self._aget_resp_content(response)  # type: ignore[misc]
+            return await self._aget_resp_content(response)
 
     async def apatch(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, Dict[str, Any]]:
         """PATCH the URL and return the text asynchronously."""
         async with self.requests.apatch(url, data, **kwargs) as response:
-            return await self._aget_resp_content(response)  # type: ignore[misc]
+            return await self._aget_resp_content(response)
 
     async def aput(
         self, url: str, data: Dict[str, Any], **kwargs: Any
     ) -> Union[str, Dict[str, Any]]:
         """PUT the URL and return the text asynchronously."""
         async with self.requests.aput(url, data, **kwargs) as response:
-            return await self._aget_resp_content(response)  # type: ignore[misc]
+            return await self._aget_resp_content(response)
 
     async def adelete(self, url: str, **kwargs: Any) -> Union[str, Dict[str, Any]]:
         """DELETE the URL and return the text asynchronously."""
         async with self.requests.adelete(url, **kwargs) as response:
-            return await self._aget_resp_content(response)  # type: ignore[misc]
+            return await self._aget_resp_content(response)
 
 
 class JsonRequestsWrapper(GenericRequestsWrapper):

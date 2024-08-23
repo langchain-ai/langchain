@@ -19,7 +19,7 @@ If you get a not found error, ensure that you are using a path that actually exi
 OPENAPI_SUFFIX = """Begin!
 
 Question: {input}
-Thought: I should explore the spec to find the base url for the API.
+Thought: I should explore the spec to find the base server url for the API in the servers node.
 {agent_scratchpad}"""
 
 DESCRIPTION = """Can be used to answer questions about the openapi spec for the API. Always use this tool before trying to make a request. 

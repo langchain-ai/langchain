@@ -6,7 +6,7 @@ from langchain_community.docstore.base import Docstore
 
 
 class DocstoreFn(Docstore):
-    """Langchain Docstore via arbitrary lookup function.
+    """Docstore via arbitrary lookup function.
 
     This is useful when:
      * it's expensive to construct an InMemoryDocstore/dict

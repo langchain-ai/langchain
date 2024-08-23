@@ -1,25 +1,27 @@
 """Chain for applying self-critique using the SmartGPT workflow."""
+
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
-from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.chat import (
+from langchain.schema import LLMResult, PromptValue
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.schema import LLMResult, PromptValue
 
-from langchain_experimental.pydantic_v1 import Extra, root_validator
+from langchain_experimental.pydantic_v1 import root_validator
 
 
 class SmartLLMChain(Chain):
-    """
-    Generalized implementation of SmartGPT (origin: https://youtu.be/wVzuvf9D9BU)
+    """Chain for applying self-critique using the SmartGPT workflow.
+
+    See details at https://youtu.be/wVzuvf9D9BU
 
     A SmartLLMChain is an LLMChain that instead of simply passing the prompt to the LLM
     performs these 3 steps:
@@ -82,7 +84,7 @@ class SmartLLMChain(Chain):
     history: SmartLLMChainHistory = SmartLLMChainHistory()
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
     # TODO: move away from `root_validator` since it is deprecated in pydantic v2
     #       and causes mypy type-checking failures (hence the `type: ignore`)
@@ -215,7 +217,7 @@ class SmartLLMChain(Chain):
                     HumanMessagePromptTemplate,
                     "You are a researcher tasked with investigating the "
                     f"{self.n_ideas} response options provided. List the flaws and "
-                    "faulty logic of each answer options. Let'w work this out in a step"
+                    "faulty logic of each answer option. Let's work this out in a step"
                     " by step way to be sure we have all the errors:",
                 ),
             ]
@@ -229,10 +231,10 @@ class SmartLLMChain(Chain):
                     HumanMessagePromptTemplate,
                     "You are a resolver tasked with 1) finding which of "
                     f"the {self.n_ideas} answer options the researcher thought was  "
-                    "best,2) improving that answer and 3) printing the answer in full. "
-                    "Don't output anything for step 1 or 2, only the full answer in 3. "
-                    "Let's work this out in a step by step way to be sure we have "
-                    "the right answer:",
+                    "best, 2) improving that answer and 3) printing the answer in "
+                    "full. Don't output anything for step 1 or 2, only the full "
+                    "answer in 3. Let's work this out in a step by step way to "
+                    "be sure we have the right answer:",
                 ),
             ]
         )

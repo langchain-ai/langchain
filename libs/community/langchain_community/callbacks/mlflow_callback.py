@@ -12,7 +12,7 @@ from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, guard_import
 
 from langchain_community.callbacks.utils import (
     BaseMetadataCallbackHandler,
@@ -28,17 +28,11 @@ logger = logging.getLogger(__name__)
 
 def import_mlflow() -> Any:
     """Import the mlflow python package and raise an error if it is not installed."""
-    try:
-        import mlflow
-    except ImportError:
-        raise ImportError(
-            "To use the mlflow callback manager you need to have the `mlflow` python "
-            "package installed. Please install it with `pip install mlflow>=2.3.0`"
-        )
-    return mlflow
+    return guard_import("mlflow")
 
 
 def mlflow_callback_metrics() -> List[str]:
+    """Get the metrics to log to MLFlow."""
     return [
         "step",
         "starts",
@@ -59,6 +53,7 @@ def mlflow_callback_metrics() -> List[str]:
 
 
 def get_text_complexity_metrics() -> List[str]:
+    """Get the text complexity metrics from textstat."""
     return [
         "flesch_reading_ease",
         "flesch_kincaid_grade",
@@ -516,8 +511,9 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.records["action_records"].append(resp)
         self.mlflg.jsonf(resp, f"tool_start_{tool_starts}")
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        output = str(output)
         self.metrics["step"] += 1
         self.metrics["tool_ends"] += 1
         self.metrics["ends"] += 1
@@ -644,9 +640,11 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             {
                 "page_content": doc.page_content,
                 "metadata": {
-                    k: str(v)
-                    if not isinstance(v, list)
-                    else ",".join(str(x) for x in v)
+                    k: (
+                        str(v)
+                        if not isinstance(v, list)
+                        else ",".join(str(x) for x in v)
+                    )
                     for k, v in doc.metadata.items()
                 },
             }
@@ -755,15 +753,15 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                         langchain_asset.save_agent(langchain_asset_path)
                         self.mlflg.artifact(langchain_asset_path)
                     except AttributeError:
-                        print("Could not save model.")
+                        print("Could not save model.")  # noqa: T201
                         traceback.print_exc()
                         pass
                     except NotImplementedError:
-                        print("Could not save model.")
+                        print("Could not save model.")  # noqa: T201
                         traceback.print_exc()
                         pass
                 except NotImplementedError:
-                    print("Could not save model.")
+                    print("Could not save model.")  # noqa: T201
                     traceback.print_exc()
                     pass
         if finish:

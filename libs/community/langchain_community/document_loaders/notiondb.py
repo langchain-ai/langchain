@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -10,6 +11,10 @@ DATABASE_URL = NOTION_BASE_URL + "/databases/{database_id}/query"
 PAGE_URL = NOTION_BASE_URL + "/pages/{page_id}"
 BLOCK_URL = NOTION_BASE_URL + "/blocks/{block_id}/children"
 
+# Configure logging
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
+
 
 class NotionDBLoader(BaseLoader):
     """Load from `Notion DB`.
@@ -20,6 +25,17 @@ class NotionDBLoader(BaseLoader):
         database_id (str): Notion database id.
         request_timeout_sec (int): Timeout for Notion requests in seconds.
             Defaults to 10.
+        filter_object (Dict[str, Any]): Filter object used to limit returned
+            entries based on specified criteria.
+            E.g.: {
+                "timestamp": "last_edited_time",
+                "last_edited_time": {
+                    "on_or_after": "2024-02-07"
+                }
+            } -> will only return entries that were last edited
+                on or after 2024-02-07
+            Notion docs: https://developers.notion.com/reference/post-database-query-filter
+            Defaults to None, which will return ALL entries.
     """
 
     def __init__(
@@ -27,6 +43,8 @@ class NotionDBLoader(BaseLoader):
         integration_token: str,
         database_id: str,
         request_timeout_sec: Optional[int] = 10,
+        *,
+        filter_object: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize with parameters."""
         if not integration_token:
@@ -42,6 +60,7 @@ class NotionDBLoader(BaseLoader):
             "Notion-Version": "2022-06-28",
         }
         self.request_timeout_sec = request_timeout_sec
+        self.filter_object = filter_object or {}
 
     def load(self) -> List[Document]:
         """Load documents from the Notion database.
@@ -49,13 +68,15 @@ class NotionDBLoader(BaseLoader):
             List[Document]: List of documents.
         """
         page_summaries = self._retrieve_page_summaries()
-
         return list(self.load_page(page_summary) for page_summary in page_summaries)
 
     def _retrieve_page_summaries(
         self, query_dict: Dict[str, Any] = {"page_size": 100}
     ) -> List[Dict[str, Any]]:
-        """Get all the pages from a Notion database."""
+        """
+        Get all the pages from a Notion database
+        OR filter based on specified criteria.
+        """
         pages: List[Dict[str, Any]] = []
 
         while True:
@@ -63,6 +84,7 @@ class NotionDBLoader(BaseLoader):
                 DATABASE_URL.format(database_id=self.database_id),
                 method="POST",
                 query_dict=query_dict,
+                filter_object=self.filter_object,
             )
 
             pages.extend(data.get("results"))
@@ -115,11 +137,16 @@ class NotionDBLoader(BaseLoader):
             elif prop_type == "status":
                 value = prop_data["status"]["name"] if prop_data["status"] else None
             elif prop_type == "people":
-                value = (
-                    [item["name"] for item in prop_data["people"]]
-                    if prop_data["people"]
-                    else []
-                )
+                value = []
+                if prop_data["people"]:
+                    for item in prop_data["people"]:
+                        name = item.get("name")
+                        if not name:
+                            logger.warning(
+                                "Missing 'name' in 'people' property "
+                                f"for page {page_id}"
+                            )
+                        value.append(name)
             elif prop_type == "date":
                 value = prop_data["date"] if prop_data["date"] else None
             elif prop_type == "last_edited_time":
@@ -182,13 +209,21 @@ class NotionDBLoader(BaseLoader):
         return "\n".join(result_lines_arr)
 
     def _request(
-        self, url: str, method: str = "GET", query_dict: Dict[str, Any] = {}
+        self,
+        url: str,
+        method: str = "GET",
+        query_dict: Dict[str, Any] = {},
+        *,
+        filter_object: Optional[Dict[str, Any]] = None,
     ) -> Any:
+        json_payload = query_dict.copy()
+        if filter_object:
+            json_payload["filter"] = filter_object
         res = requests.request(
             method,
             url,
             headers=self.headers,
-            json=query_dict,
+            json=json_payload,
             timeout=self.request_timeout_sec,
         )
         res.raise_for_status()

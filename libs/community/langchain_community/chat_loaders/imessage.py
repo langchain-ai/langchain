@@ -4,16 +4,23 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
+from langchain_core.chat_loaders import BaseChatLoader
 from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import HumanMessage
-
-from langchain_community.chat_loaders.base import BaseChatLoader
 
 if TYPE_CHECKING:
     import sqlite3
 
 
 def nanoseconds_from_2001_to_datetime(nanoseconds: int) -> datetime:
+    """Convert nanoseconds since 2001 to a datetime object.
+
+    Args:
+        nanoseconds (int): Nanoseconds since January 1, 2001.
+
+    Returns:
+        datetime: Datetime object.
+    """
     # Convert nanoseconds to seconds (1 second = 1e9 nanoseconds)
     timestamp_in_seconds = nanoseconds / 1e9
 
@@ -149,7 +156,7 @@ class IMessageChatLoader(BaseChatLoader):
                 continue
 
             results.append(
-                HumanMessage(
+                HumanMessage(  # type: ignore[call-arg]
                     role=sender,
                     content=content,
                     additional_kwargs={

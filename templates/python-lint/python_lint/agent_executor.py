@@ -4,12 +4,12 @@ import subprocess  # nosec
 import tempfile
 
 from langchain.agents import AgentType, initialize_agent
-from langchain.agents.tools import Tool
 from langchain.pydantic_v1 import BaseModel, Field, ValidationError, validator
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.language_models import BaseLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import ConfigurableField, Runnable
+from langchain_core.tools import Tool
 
 
 def strip_python_markdown_tags(text: str) -> str:
@@ -203,13 +203,13 @@ class Instruction(BaseModel):
 
 
 agent_executor = (
-    get_agent_executor(ChatOpenAI(model_name="gpt-4-1106-preview", temperature=0.0))
+    get_agent_executor(ChatOpenAI(model="gpt-4-1106-preview", temperature=0.0))
     .configurable_alternatives(
         ConfigurableField("model_name"),
         default_key="gpt4turbo",
-        gpt4=get_agent_executor(ChatOpenAI(model_name="gpt-4", temperature=0.0)),
+        gpt4=get_agent_executor(ChatOpenAI(model="gpt-4", temperature=0.0)),
         gpt35t=get_agent_executor(
-            ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.0),
+            ChatOpenAI(model="gpt-3.5-turbo", temperature=0.0),
         ),
     )
     .with_types(input_type=Instruction, output_type=str)

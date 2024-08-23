@@ -9,11 +9,11 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = "^0.1"
 cohere = "^4.37"
-chromadb = "^0.4.18"
+langchain-chroma = "^0.1.2"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
-fastapi = "^0.104.0"
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
@@ -27,7 +27,5 @@ integrations = ["Cohere"]
 tags = ["getting-started"]
 
 [build-system]
-requires = [
-    "poetry-core",
-]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

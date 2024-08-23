@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 from langchain_community.callbacks.utils import (
     BaseMetadataCallbackHandler,
@@ -20,14 +21,7 @@ from langchain_community.callbacks.utils import (
 
 def import_wandb() -> Any:
     """Import the wandb python package and raise an error if it is not installed."""
-    try:
-        import wandb  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use the wandb callback manager you need to have the `wandb` python "
-            "package installed. Please install it with `pip install wandb`"
-        )
-    return wandb
+    return guard_import("wandb")
 
 
 def load_json_to_dict(json_path: Union[str, Path]) -> dict:
@@ -356,8 +350,9 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if self.stream_logs:
             self.run.log(resp)
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        output = str(output)
         self.step += 1
         self.tool_ends += 1
         self.ends += 1
@@ -558,8 +553,8 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 model_artifact.add_file(str(langchain_asset_path))
                 model_artifact.metadata = load_json_to_dict(langchain_asset_path)
             except NotImplementedError as e:
-                print("Could not save model.")
-                print(repr(e))
+                print("Could not save model.")  # noqa: T201
+                print(repr(e))  # noqa: T201
                 pass
             self.run.log_artifact(model_artifact)
 
@@ -577,7 +572,9 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 name=name if name else self.name,
                 notes=notes if notes else self.notes,
                 visualize=visualize if visualize else self.visualize,
-                complexity_metrics=complexity_metrics
-                if complexity_metrics
-                else self.complexity_metrics,
+                complexity_metrics=(
+                    complexity_metrics
+                    if complexity_metrics
+                    else self.complexity_metrics
+                ),
             )

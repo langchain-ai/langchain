@@ -1,4 +1,5 @@
 """Test Annoy functionality."""
+
 import tempfile
 
 import pytest
@@ -116,7 +117,9 @@ def test_annoy_local_save_load() -> None:
 
     temp_dir = tempfile.TemporaryDirectory()
     docsearch.save_local(temp_dir.name)
-    loaded_docsearch = Annoy.load_local(temp_dir.name, FakeEmbeddings())
+    loaded_docsearch = Annoy.load_local(
+        temp_dir.name, FakeEmbeddings(), allow_dangerous_deserialization=True
+    )
 
     assert docsearch.index_to_docstore_id == loaded_docsearch.index_to_docstore_id
     assert docsearch.docstore.__dict__ == loaded_docsearch.docstore.__dict__

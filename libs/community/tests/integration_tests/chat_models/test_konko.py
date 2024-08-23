@@ -1,4 +1,5 @@
 """Evaluate ChatKonko Interface."""
+
 from typing import Any, cast
 
 import pytest
@@ -21,11 +22,11 @@ def test_konko_key_masked_when_passed_from_env(
 
     chat = ChatKonko()
 
-    print(chat.openai_api_key, end="")
+    print(chat.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.konko_api_key, end="")
+    print(chat.konko_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
@@ -36,11 +37,11 @@ def test_konko_key_masked_when_passed_via_constructor(
     """Test initialization with an API key provided via the initializer"""
     chat = ChatKonko(openai_api_key="test-openai-key", konko_api_key="test-konko-key")
 
-    print(chat.konko_api_key, end="")
+    print(chat.konko_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.konko_secret_key, end="")  # type: ignore[attr-defined]
+    print(chat.konko_secret_key, end="")  # type: ignore[attr-defined] # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
@@ -56,7 +57,7 @@ def test_konko_chat_test() -> None:
     """Evaluate basic ChatKonko functionality."""
     chat_instance = ChatKonko(max_tokens=10)
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
@@ -65,7 +66,7 @@ def test_konko_chat_test_openai() -> None:
     """Evaluate basic ChatKonko functionality."""
     chat_instance = ChatKonko(max_tokens=10, model="meta-llama/llama-2-70b-chat")
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
@@ -90,7 +91,7 @@ def test_konko_system_msg_test() -> None:
     chat_instance = ChatKonko(max_tokens=10)
     sys_msg = SystemMessage(content="Initiate user chat.")
     user_msg = HumanMessage(content="Hi there")
-    chat_response = chat_instance([sys_msg, user_msg])
+    chat_response = chat_instance.invoke([sys_msg, user_msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
@@ -134,7 +135,7 @@ def test_konko_streaming_callback_test() -> None:
         verbose=True,
     )
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert callback_instance.llm_streams > 0
     assert isinstance(chat_response, BaseMessage)
 
@@ -191,15 +192,15 @@ def test_konko_streaming_param_validation_test() -> None:
 
 def test_konko_additional_args_test() -> None:
     """Evaluate extra arguments for ChatKonko."""
-    chat_instance = ChatKonko(extra=3, max_tokens=10)
+    chat_instance = ChatKonko(extra=3, max_tokens=10)  # type: ignore[call-arg]
     assert chat_instance.max_tokens == 10
     assert chat_instance.model_kwargs == {"extra": 3}
 
-    chat_instance = ChatKonko(extra=3, model_kwargs={"addition": 2})
+    chat_instance = ChatKonko(extra=3, model_kwargs={"addition": 2})  # type: ignore[call-arg]
     assert chat_instance.model_kwargs == {"extra": 3, "addition": 2}
 
     with pytest.raises(ValueError):
-        ChatKonko(extra=3, model_kwargs={"extra": 2})
+        ChatKonko(extra=3, model_kwargs={"extra": 2})  # type: ignore[call-arg]
 
     with pytest.raises(ValueError):
         ChatKonko(model_kwargs={"temperature": 0.2})

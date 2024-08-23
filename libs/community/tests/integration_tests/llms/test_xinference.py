@@ -1,4 +1,5 @@
 """Test Xinference wrapper."""
+
 import time
 from typing import AsyncGenerator, Tuple
 
@@ -17,7 +18,7 @@ async def setup() -> AsyncGenerator[Tuple[str, str], None]:
     pool = await create_worker_actor_pool(
         f"test://127.0.0.1:{xo.utils.get_next_port()}"
     )
-    print(f"Pool running on localhost:{pool.external_address}")
+    print(f"Pool running on localhost:{pool.external_address}")  # noqa: T201
 
     endpoint = await start_supervisor_components(
         pool.external_address, "127.0.0.1", xo.utils.get_next_port()
@@ -45,12 +46,12 @@ def test_xinference_llm_(setup: Tuple[str, str]) -> None:
 
     llm = Xinference(server_url=endpoint, model_uid=model_uid)
 
-    answer = llm(prompt="Q: What food can we try in the capital of France? A:")
+    answer = llm.invoke("Q: What food can we try in the capital of France? A:")
 
     assert isinstance(answer, str)
 
-    answer = llm(
-        prompt="Q: where can we visit in the capital of France? A:",
+    answer = llm.invoke(
+        "Q: where can we visit in the capital of France? A:",
         generate_config={"max_tokens": 1024, "stream": True},
     )
 

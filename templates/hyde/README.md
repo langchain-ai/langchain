@@ -1,15 +1,14 @@
+# Hypothetical Document Embeddings (HyDE)
 
-# hyde
+This template uses `HyDE` with RAG. 
 
-This template uses HyDE with RAG. 
-
-Hyde is a retrieval method that stands for Hypothetical Document Embeddings (HyDE). It is a method used to enhance retrieval by generating a hypothetical document for an incoming query. 
+`Hyde` is a retrieval method that stands for `Hypothetical Document Embeddings`. It is a method used to enhance retrieval by generating a hypothetical document for an incoming query. 
 
 The document is then embedded, and that embedding is utilized to look up real documents that are similar to the hypothetical document. 
 
 The underlying concept is that the hypothetical document may be closer in the embedding space than the query. 
 
-For a more detailed description, see the paper [here](https://arxiv.org/abs/2212.10496).
+For a more detailed description, see the[Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/abs/2212.10496) paper.
 
 ## Environment Setup
 
@@ -44,7 +43,7 @@ add_routes(app, hyde_chain, path="/hyde")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

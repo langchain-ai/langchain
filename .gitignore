@@ -115,13 +115,11 @@ celerybeat.pid
 # Environments
 .env
 .envrc
-.venv
-.venvs
+.venv*
+venv*
 env/
-venv/
 ENV/
 env.bak/
-venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -135,6 +133,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+.mypy_cache_test/
 .dmypy.json
 dmypy.json
 
@@ -173,8 +172,13 @@ docs/api_reference/*/
 !docs/api_reference/_static/
 !docs/api_reference/templates/
 !docs/api_reference/themes/
+!docs/api_reference/_extensions/
+!docs/api_reference/scripts/
 docs/docs/build
 docs/docs/node_modules
 docs/docs/yarn.lock
 _dist
 docs/docs/templates
+
+prof
+virtualenv/

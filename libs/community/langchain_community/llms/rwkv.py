@@ -3,11 +3,13 @@
 Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.py
          https://github.com/BlinkDL/ChatRWKV/blob/main/v2/chat.py
 """
+
 from typing import Any, Dict, List, Mapping, Optional, Set
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -25,7 +27,7 @@ class RWKV(LLM, BaseModel):
             model = RWKV(model="./models/rwkv-3b-fp16.bin", strategy="cpu fp32")
 
             # Simplest invocation
-            response = model("Once upon a time, ")
+            response = model.invoke("Once upon a time, ")
     """
 
     model: str
@@ -73,9 +75,7 @@ class RWKV(LLM, BaseModel):
     model_state: Any = None  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -97,7 +97,7 @@ class RWKV(LLM, BaseModel):
             "verbose",
         }
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in the environment."""
         try:
@@ -225,7 +225,7 @@ class RWKV(LLM, BaseModel):
             .. code-block:: python
 
                 prompt = "Once upon a time, "
-                response = model(prompt, n_predict=55)
+                response = model.invoke(prompt, n_predict=55)
         """
         text = self.rwkv_generate(prompt)
 

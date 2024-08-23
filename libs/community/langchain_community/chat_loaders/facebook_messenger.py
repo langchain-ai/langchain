@@ -3,10 +3,9 @@ import logging
 from pathlib import Path
 from typing import Iterator, Union
 
+from langchain_core.chat_loaders import BaseChatLoader
 from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import HumanMessage
-
-from langchain_community.chat_loaders.base import BaseChatLoader
 
 logger = logging.getLogger(__file__)
 
@@ -16,9 +15,6 @@ class SingleFileFacebookMessengerChatLoader(BaseChatLoader):
 
     Args:
         path (Union[Path, str]): The path to the chat file.
-
-    Attributes:
-        path (Path): The path to the chat file.
 
     """
 
@@ -58,9 +54,6 @@ class FolderFacebookMessengerChatLoader(BaseChatLoader):
     Args:
         path (Union[str, Path]): The path to the directory
             containing the chat files.
-
-    Attributes:
-        path (Path): The path to the directory containing the chat files.
 
     """
 

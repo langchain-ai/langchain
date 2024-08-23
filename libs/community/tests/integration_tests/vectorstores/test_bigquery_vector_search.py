@@ -79,7 +79,7 @@ class TestBigQueryVectorStore:
     def test_semantic_search(self, store: BigQueryVectorSearch) -> None:
         """Test on semantic similarity."""
         docs = store.similarity_search("food", k=4)
-        print(docs)
+        print(docs)  # noqa: T201
         kinds = [d.metadata["kind"] for d in docs]
         assert "fruit" in kinds
         assert "treat" in kinds

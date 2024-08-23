@@ -1,4 +1,5 @@
 """Test Anthropic Chat API wrapper."""
+
 from typing import List
 from unittest.mock import MagicMock
 
@@ -58,3 +59,32 @@ def test_different_models_bedrock(model_id: str) -> None:
 
     # should not throw an error
     model.invoke("hello there")
+
+
+def test_bedrock_combine_llm_output() -> None:
+    model_id = "anthropic.claude-3-haiku-20240307-v1:0"
+    client = MagicMock()
+    llm_outputs = [
+        {
+            "model_id": "anthropic.claude-3-haiku-20240307-v1:0",
+            "usage": {
+                "completion_tokens": 1,
+                "prompt_tokens": 2,
+                "total_tokens": 3,
+            },
+        },
+        {
+            "model_id": "anthropic.claude-3-haiku-20240307-v1:0",
+            "usage": {
+                "completion_tokens": 1,
+                "prompt_tokens": 2,
+                "total_tokens": 3,
+            },
+        },
+    ]
+    model = BedrockChat(model_id=model_id, client=client)
+    final_output = model._combine_llm_outputs(llm_outputs)  # type: ignore[arg-type]
+    assert final_output["model_id"] == model_id
+    assert final_output["usage"]["completion_tokens"] == 2
+    assert final_output["usage"]["prompt_tokens"] == 4
+    assert final_output["usage"]["total_tokens"] == 6

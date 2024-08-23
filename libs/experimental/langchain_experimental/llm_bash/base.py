@@ -1,19 +1,20 @@
 """Chain that interprets a prompt and executes bash operations."""
+
 from __future__ import annotations
 
 import logging
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate, OutputParserException
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.llm_bash.bash import BashProcess
 from langchain_experimental.llm_bash.prompt import PROMPT
-from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
+from langchain_experimental.pydantic_v1 import Field, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +40,8 @@ class LLMBashChain(Chain):
     bash_process: BashProcess = Field(default_factory=BashProcess)  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:

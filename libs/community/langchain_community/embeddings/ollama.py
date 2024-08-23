@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +105,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     show_progress: bool = False
     """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
 
+    headers: Optional[dict] = None
+    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
+    This is useful when Ollama is hosted on cloud services that require
+    tokens for authentication.
+    """
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -136,9 +142,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         return {**{"model": self.model}, **self._default_params}
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def _process_emb_response(self, input: str) -> List[float]:
         """Process a response from the API.
@@ -151,6 +155,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """
         headers = {
             "Content-Type": "application/json",
+            **(self.headers or {}),
         }
 
         try:

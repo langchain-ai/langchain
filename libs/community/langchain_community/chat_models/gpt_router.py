@@ -53,6 +53,8 @@ class GPTRouterException(Exception):
 
 
 class GPTRouterModel(BaseModel):
+    """GPTRouter model."""
+
     name: str
     provider_name: str
 
@@ -165,7 +167,7 @@ class GPTRouter(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: int = 256
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["gpt_router_api_base"] = get_from_dict_or_env(
             values,
@@ -181,7 +183,10 @@ class GPTRouter(BaseChatModel):
                 "GPT_ROUTER_API_KEY",
             )
         )
+        return values
 
+    @root_validator(pre=True, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
         try:
             from gpt_router.client import GPTRouterClient
 
@@ -323,12 +328,12 @@ class GPTRouter(BaseChatModel):
                 chunk.data, default_chunk_class
             )
 
-            yield chunk
-
             if run_manager:
                 run_manager.on_llm_new_token(
                     token=chunk.message.content, chunk=chunk.message
                 )
+
+            yield chunk
 
     async def _astream(
         self,
@@ -356,12 +361,12 @@ class GPTRouter(BaseChatModel):
                 chunk.data, default_chunk_class
             )
 
-            yield chunk
-
             if run_manager:
                 await run_manager.on_llm_new_token(
                     token=chunk.message.content, chunk=chunk.message
                 )
+
+            yield chunk
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]

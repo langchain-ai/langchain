@@ -7,13 +7,13 @@ from contextlib import redirect_stdout
 from io import StringIO
 from typing import Any, Dict, Optional, Type
 
-from langchain.callbacks.manager import (
+from langchain.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.pydantic_v1 import BaseModel, Field, root_validator
-from langchain.tools.base import BaseTool
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.tools import BaseTool
 
 from langchain_experimental.utilities.python import PythonREPL
 
@@ -24,6 +24,7 @@ def _get_default_python_repl() -> PythonREPL:
 
 def sanitize_input(query: str) -> str:
     """Sanitize input to the python REPL.
+
     Remove whitespace, backtick & python (if llm mistakes python console as terminal)
 
     Args:
@@ -41,7 +42,7 @@ def sanitize_input(query: str) -> str:
 
 
 class PythonREPLTool(BaseTool):
-    """A tool for running python code in a REPL."""
+    """Tool for running python code in a REPL."""
 
     name: str = "Python_REPL"
     description: str = (
@@ -76,11 +77,13 @@ class PythonREPLTool(BaseTool):
 
 
 class PythonInputs(BaseModel):
+    """Python inputs."""
+
     query: str = Field(description="code snippet to run")
 
 
 class PythonAstREPLTool(BaseTool):
-    """A tool for running python code in a REPL."""
+    """Tool for running python code in a REPL."""
 
     name: str = "python_repl_ast"
     description: str = (

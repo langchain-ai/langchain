@@ -1,7 +1,6 @@
+# RAG - GPT-crawler
 
-# rag-gpt-crawler
-
-GPT-crawler will crawl websites to produce files for use in custom GPTs or other apps (RAG).
+`GPT-crawler` crawls websites to produce files for use in custom GPTs or other apps (RAG).
 
 This template uses [gpt-crawler](https://github.com/BuilderIO/gpt-crawler) to build a RAG app
 
@@ -11,7 +10,7 @@ Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 ## Crawling
 
-Run GPT-crawler to extact content from a set of urls, using the config file in GPT-crawler repo.
+Run GPT-crawler to extract content from a set of urls, using the config file in GPT-crawler repo.
 
 Here is example config for LangChain use-case docs:
 
@@ -62,7 +61,7 @@ add_routes(app, rag_gpt_crawler, path="/rag-gpt-crawler")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

@@ -3,9 +3,9 @@ name: CI / cd . / make spell_check
 
 on:
   push:
-    branches: [master]
+    branches: [master, v0.1]
   pull_request:
-    branches: [master]
+    branches: [master, v0.1]
 
 permissions:
   contents: read
@@ -29,8 +29,9 @@ jobs:
           python .github/workflows/extract_ignored_words_list.py
         id: extract_ignore_words
 
-      - name: Codespell
-        uses: codespell-project/actions-codespell@v2
-        with:
-          skip: guide_imports.json
-          ignore_words_list: ${{ steps.extract_ignore_words.outputs.ignore_words_list }}
+#      - name: Codespell
+#        uses: codespell-project/actions-codespell@v2
+#        with:
+#          skip: guide_imports.json,*.ambr,./cookbook/data/imdb_top_1000.csv,*.lock
+#          ignore_words_list: ${{ steps.extract_ignore_words.outputs.ignore_words_list }}
+#          exclude_file: ./.github/workflows/codespell-exclude

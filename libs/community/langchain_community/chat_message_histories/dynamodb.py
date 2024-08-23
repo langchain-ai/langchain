@@ -43,6 +43,10 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             table. DynamoDB handles deletion of expired items without consuming
             write throughput. To enable this feature on the table, follow the
             [AWS DynamoDB documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-how-to.html)
+        history_size: Maximum number of messages to store. If None then there is no
+            limit. If not None then only the latest `history_size` messages are stored.
+        history_messages_key: Key for the chat history where the messages
+            are stored and updated
     """
 
     def __init__(
@@ -56,6 +60,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         kms_key_id: Optional[str] = None,
         ttl: Optional[int] = None,
         ttl_key_name: str = "expireAt",
+        history_size: Optional[int] = None,
+        history_messages_key: Optional[str] = "History",
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -75,6 +81,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.key: Dict = key or {primary_key_name: session_id}
         self.ttl = ttl
         self.ttl_key_name = ttl_key_name
+        self.history_size = history_size
+        self.history_messages_key = history_messages_key
 
         if kms_key_id:
             try:
@@ -92,7 +100,9 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
             actions = AttributeActions(
                 default_action=CryptoAction.DO_NOTHING,
-                attribute_actions={"History": CryptoAction.ENCRYPT_AND_SIGN},
+                attribute_actions={
+                    self.history_messages_key: CryptoAction.ENCRYPT_AND_SIGN
+                },
             )
             aws_kms_cmp = AwsKmsCryptographicMaterialsProvider(key_id=kms_key_id)
             self.table = EncryptedTable(
@@ -103,7 +113,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             )
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from DynamoDB"""
         try:
             from botocore.exceptions import ClientError
@@ -122,12 +132,19 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                 logger.error(error)
 
         if response and "Item" in response:
-            items = response["Item"]["History"]
+            items = response["Item"][self.history_messages_key]
         else:
             items = []
 
         messages = messages_from_dict(items)
         return messages
+
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError(
+            "Direct assignment to 'messages' is not allowed."
+            " Use the 'add_messages' instead."
+        )
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in DynamoDB"""
@@ -142,16 +159,25 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         _message = message_to_dict(message)
         messages.append(_message)
 
+        if self.history_size:
+            messages = messages[-self.history_size :]
+
         try:
             if self.ttl:
                 import time
 
                 expireAt = int(time.time()) + self.ttl
                 self.table.put_item(
-                    Item={**self.key, "History": messages, self.ttl_key_name: expireAt}
+                    Item={
+                        **self.key,
+                        self.history_messages_key: messages,
+                        self.ttl_key_name: expireAt,
+                    }
                 )
             else:
-                self.table.put_item(Item={**self.key, "History": messages})
+                self.table.put_item(
+                    Item={**self.key, self.history_messages_key: messages}
+                )
         except ClientError as err:
             logger.error(err)
 

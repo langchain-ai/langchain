@@ -1,4 +1,5 @@
 """Test Xinference embeddings."""
+
 import time
 from typing import AsyncGenerator, Tuple
 
@@ -17,7 +18,7 @@ async def setup() -> AsyncGenerator[Tuple[str, str], None]:
     pool = await create_worker_actor_pool(
         f"test://127.0.0.1:{xo.utils.get_next_port()}"
     )
-    print(f"Pool running on localhost:{pool.external_address}")
+    print(f"Pool running on localhost:{pool.external_address}")  # noqa: T201
 
     endpoint = await start_supervisor_components(
         pool.external_address, "127.0.0.1", xo.utils.get_next_port()
@@ -72,3 +73,13 @@ def test_xinference_embedding_query(setup: Tuple[str, str]) -> None:
     document = "foo bar"
     output = xinference.embed_query(document)
     assert len(output) == 4096
+
+
+def test_xinference_embedding() -> None:
+    embedding_model = XinferenceEmbeddings(
+        server_url="http://xinference-hostname:9997", model_uid="foo"
+    )
+
+    embedding_model.embed_documents(
+        texts=["hello", "i'm trying to upgrade xinference embedding"]
+    )

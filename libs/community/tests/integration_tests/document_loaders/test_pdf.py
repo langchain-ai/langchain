@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Sequence, Union
 
@@ -100,6 +101,22 @@ def test_pypdf_loader() -> None:
     assert len(docs) == 16
 
 
+def test_pypdf_loader_with_layout() -> None:
+    """Test PyPDFLoader with layout mode."""
+    file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
+    loader = PyPDFLoader(str(file_path), extraction_mode="layout")
+
+    docs = loader.load()
+    first_page = docs[0].page_content
+
+    expected = (
+        Path(__file__).parent.parent / "examples/layout-parser-paper-page-1.txt"
+    ).read_text(encoding="utf-8")
+    cleaned_first_page = re.sub(r"\x00", "", first_page)
+    cleaned_expected = re.sub(r"\x00", "", expected)
+    assert cleaned_first_page == cleaned_expected
+
+
 def test_pypdfium2_loader() -> None:
     """Test PyPDFium2Loader."""
     file_path = Path(__file__).parent.parent / "examples/hello.pdf"
@@ -145,14 +162,14 @@ def test_mathpix_loader() -> None:
     docs = loader.load()
 
     assert len(docs) == 1
-    print(docs[0].page_content)
+    print(docs[0].page_content)  # noqa: T201
 
     file_path = Path(__file__).parent.parent / "examples/layout-parser-paper.pdf"
     loader = MathpixPDFLoader(str(file_path))
 
     docs = loader.load()
     assert len(docs) == 1
-    print(docs[0].page_content)
+    print(docs[0].page_content)  # noqa: T201
 
 
 @pytest.mark.parametrize(
@@ -230,7 +247,7 @@ def test_amazontextract_loader(
     else:
         loader = AmazonTextractPDFLoader(file_path, textract_features=features)
     docs = loader.load()
-    print(docs)
+    print(docs)  # noqa: T201
 
     assert len(docs) == docs_length
 

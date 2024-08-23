@@ -1,6 +1,7 @@
-# python-lint
+# Python linting
 
-This agent specializes in generating high-quality Python code with a focus on proper formatting and linting. It uses `black`, `ruff`, and `mypy` to ensure the code meets standard quality checks.
+This agent specializes in generating high-quality `Python` code with 
+a focus on proper formatting and linting. It uses `black`, `ruff`, and `mypy` to ensure the code meets standard quality checks.
 
 This streamlines the coding process by integrating and responding to these checks, resulting in reliable and consistent code output.
 
@@ -43,7 +44,7 @@ add_routes(app, python_lint_agent, path="/python-lint")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

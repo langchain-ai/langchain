@@ -1,5 +1,7 @@
 """Loads Microsoft Excel files."""
-from typing import Any, List
+
+from pathlib import Path
+from typing import Any, List, Union
 
 from langchain_community.document_loaders.unstructured import (
     UnstructuredFileLoader,
@@ -27,7 +29,10 @@ class UnstructuredExcelLoader(UnstructuredFileLoader):
     """
 
     def __init__(
-        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
+        self,
+        file_path: Union[str, Path],
+        mode: str = "single",
+        **unstructured_kwargs: Any,
     ):
         """
 

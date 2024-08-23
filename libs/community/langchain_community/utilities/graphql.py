@@ -1,7 +1,7 @@
 import json
 from typing import Any, Callable, Dict, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class GraphQLAPIWrapper(BaseModel):
@@ -12,14 +12,13 @@ class GraphQLAPIWrapper(BaseModel):
     """
 
     custom_headers: Optional[Dict[str, str]] = None
+    fetch_schema_from_transport: Optional[bool] = None
     graphql_endpoint: str
     gql_client: Any  #: :meta private:
     gql_function: Callable[[str], Any]  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -37,7 +36,10 @@ class GraphQLAPIWrapper(BaseModel):
             url=values["graphql_endpoint"],
             headers=headers,
         )
-        client = Client(transport=transport, fetch_schema_from_transport=True)
+        fetch_schema_from_transport = values.get("fetch_schema_from_transport", True)
+        client = Client(
+            transport=transport, fetch_schema_from_transport=fetch_schema_from_transport
+        )
         values["gql_client"] = client
         values["gql_function"] = gql
         return values

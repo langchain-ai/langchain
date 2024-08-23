@@ -1,23 +1,26 @@
 """Vector SQL Database Chain Retriever"""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseOutputParser, BasePromptTemplate
 from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
 from langchain_community.utilities.sql_database import SQLDatabase
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain_experimental.sql.base import INTERMEDIATE_STEPS_KEY, SQLDatabaseChain
 
 
 class VectorSQLOutputParser(BaseOutputParser[str]):
-    """Output Parser for Vector SQL
+    """Output Parser for Vector SQL.
+
     1. finds for `NeuralArray()` and replace it with the embedding
     2. finds for `DISTANCE()` and replace it with the distance name in backend SQL
     """
@@ -37,7 +40,7 @@ class VectorSQLOutputParser(BaseOutputParser[str]):
     @classmethod
     def from_embeddings(
         cls, model: Embeddings, distance_func_name: str = "distance", **kwargs: Any
-    ) -> BaseOutputParser:
+    ) -> VectorSQLOutputParser:
         return cls(model=model, distance_func_name=distance_func_name, **kwargs)
 
     def parse(self, text: str) -> str:
@@ -59,8 +62,8 @@ class VectorSQLOutputParser(BaseOutputParser[str]):
 
 
 class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
-    """Based on VectorSQLOutputParser
-    It also modify the SQL to get all columns
+    """Parser based on VectorSQLOutputParser.
+    It also modifies the SQL to get all columns.
     """
 
     @property
@@ -77,7 +80,10 @@ class VectorSQLRetrieveAllOutputParser(VectorSQLOutputParser):
 
 
 def get_result_from_sqldb(db: SQLDatabase, cmd: str) -> Sequence[Dict[str, Any]]:
+    """Get result from SQL Database."""
+
     result = db._execute(cmd, fetch="all")
+    assert isinstance(result, Sequence)
     return result
 
 

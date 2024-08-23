@@ -1,4 +1,5 @@
 """Integration test for Kay.ai API Wrapper."""
+
 import pytest
 from langchain_core.documents import Document
 
@@ -12,7 +13,7 @@ def test_kay_retriever() -> None:
         data_types=["10-K", "10-Q", "8-K", "PressRelease"],
         num_contexts=3,
     )
-    docs = retriever.get_relevant_documents(
+    docs = retriever.invoke(
         "What were the biggest strategy changes and partnerships made by Roku "
         "in 2023?",
     )

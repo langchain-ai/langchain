@@ -1,5 +1,6 @@
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Iterator,
     List,
@@ -73,6 +74,15 @@ class EncoderBackedStore(BaseStore[K, V]):
             for value in values
         ]
 
+    async def amget(self, keys: Sequence[K]) -> List[Optional[V]]:
+        """Get the values associated with the given keys."""
+        encoded_keys: List[str] = [self.key_encoder(key) for key in keys]
+        values = await self.store.amget(encoded_keys)
+        return [
+            self.value_deserializer(value) if value is not None else value
+            for value in values
+        ]
+
     def mset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
         """Set the values for the given keys."""
         encoded_pairs = [
@@ -81,10 +91,23 @@ class EncoderBackedStore(BaseStore[K, V]):
         ]
         self.store.mset(encoded_pairs)
 
+    async def amset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
+        """Set the values for the given keys."""
+        encoded_pairs = [
+            (self.key_encoder(key), self.value_serializer(value))
+            for key, value in key_value_pairs
+        ]
+        await self.store.amset(encoded_pairs)
+
     def mdelete(self, keys: Sequence[K]) -> None:
         """Delete the given keys and their associated values."""
         encoded_keys = [self.key_encoder(key) for key in keys]
         self.store.mdelete(encoded_keys)
+
+    async def amdelete(self, keys: Sequence[K]) -> None:
+        """Delete the given keys and their associated values."""
+        encoded_keys = [self.key_encoder(key) for key in keys]
+        await self.store.amdelete(encoded_keys)
 
     def yield_keys(
         self, *, prefix: Optional[str] = None
@@ -93,3 +116,12 @@ class EncoderBackedStore(BaseStore[K, V]):
         # For the time being this does not return K, but str
         # it's for debugging purposes. Should fix this.
         yield from self.store.yield_keys(prefix=prefix)
+
+    async def ayield_keys(
+        self, *, prefix: Optional[str] = None
+    ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
+        """Get an iterator over keys that match the given prefix."""
+        # For the time being this does not return K, but str
+        # it's for debugging purposes. Should fix this.
+        async for key in self.store.ayield_keys(prefix=prefix):
+            yield key
