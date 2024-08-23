@@ -53,3 +53,10 @@ def test_chat_spark_llm_with_temperature() -> None:
     print(response)  # noqa: T201
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+
+
+def test_chat_spark_llm_streaming_with_stream_method() -> None:
+    chat = ChatSparkLLM()  # type: ignore[call-arg]
+    for chunk in chat.stream("Hello!"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, str)

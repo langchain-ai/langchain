@@ -39,7 +39,7 @@ def _encoding_file_extension_map(encoding: texttospeech.AudioEncoding) -> Option
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.TextToSpeechTool",
 )
 class GoogleCloudTextToSpeechTool(BaseTool):

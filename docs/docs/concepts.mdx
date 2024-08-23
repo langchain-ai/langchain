@@ -90,7 +90,7 @@ LCEL aims to provide consistency around behavior and customization over legacy s
 `ConversationalRetrievalChain`. Many of these legacy chains hide important details like prompts, and as a wider variety
 of viable models emerge, customization has become more and more important.
 
-If you are currently using one of these legacy chains, please see [this guide for guidance on how to migrate](/docs/how_to/migrate_chains/).
+If you are currently using one of these legacy chains, please see [this guide for guidance on how to migrate](/docs/versions/migrating_chains).
 
 For guides on how to do specific tasks with LCEL, check out [the relevant how-to guides](/docs/how_to/#langchain-expression-language-lcel).
 
@@ -165,7 +165,7 @@ Some important things to note:
 ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the API reference for that model.
 
 :::important
-**Tool Calling** Some chat models have been fine-tuned for tool calling and provide a dedicated API for tool calling.
+Some chat models have been fine-tuned for **tool calling** and provide a dedicated API for it.
 Generally, such models are better at tool calling than non-fine-tuned models, and are recommended for use cases that require tool calling.
 Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
 :::
@@ -209,7 +209,7 @@ Some language models take a list of messages as input and return a message.
 There are a few different types of messages.
 All messages have a `role`, `content`, and `response_metadata` property.
 
-The `role` describes WHO is saying the message.
+The `role` describes WHO is saying the message. The standard roles are "user", "assistant", "system", and "tool".
 LangChain has different message classes for different roles.
 
 The `content` property describes the content of the message.
@@ -218,13 +218,16 @@ This can be a few different things:
 - A string (most models deal this type of content)
 - A List of dictionaries (this is used for multimodal input, where the dictionary contains information about that input type and that input location)
 
+Optionally, messages can have a `name` property which allows for differentiating between multiple speakers with the same role.
+For example, if there are two users in the chat history it can be useful to differentiate between them. Not all models support this.
+
 #### HumanMessage
 
-This represents a message from the user.
+This represents a message with role "user".
 
 #### AIMessage
 
-This represents a message from the model. In addition to the `content` property, these messages also have:
+This represents a message with role "assistant". In addition to the `content` property, these messages also have:
 
 **`response_metadata`**
 
@@ -236,7 +239,7 @@ This is where information like log-probs and token usage may be stored.
 These represent a decision from an language model to call a tool. They are included as part of an `AIMessage` output.
 They can be accessed from there with the `.tool_calls` property.
 
-This property returns a list of dictionaries. Each dictionary has the following keys:
+This property returns a list of `ToolCall`s. A `ToolCall` is a dictionary with the following arguments:
 
 - `name`: The name of the tool that should be called.
 - `args`: The arguments to that tool.
@@ -244,18 +247,18 @@ This property returns a list of dictionaries. Each dictionary has the following 
 
 #### SystemMessage
 
-This represents a system message, which tells the model how to behave. Not every model provider supports this.
+This represents a message with role "system", which tells the model how to behave. Not every model provider supports this.
 
 #### ToolMessage
 
-This represents the result of a tool call. In addition to `role` and `content`, this message has:
+This represents a message with role "tool", which contains the result of calling a tool. In addition to `role` and `content`, this message has:
 
 - a `tool_call_id` field which conveys the id of the call to the tool that was called to produce this result.
 - an `artifact` field which can be used to pass along arbitrary artifacts of the tool execution which are useful to track but which should not be sent to the model.
 
 #### (Legacy) FunctionMessage
 
-This is a legacy message type, corresponding to OpenAI's legacy function-calling API. ToolMessage should be used instead to correspond to the updated tool-calling API.
+This is a legacy message type, corresponding to OpenAI's legacy function-calling API. `ToolMessage` should be used instead to correspond to the updated tool-calling API.
 
 This represents the result of a function call. In addition to `role` and `content`, this message has a `name` parameter which conveys the name of the function that was called to produce this result.
 
@@ -343,6 +346,7 @@ For specifics on how to use prompt templates, see the [relevant how-to guides he
 
 ### Example selectors
 One common prompting technique for achieving better performance is to include examples as part of the prompt.
+This is known as [few-shot prompting](/docs/concepts/#few-shot-prompting).
 This gives the language model concrete examples of how it should behave.
 Sometimes these examples are hardcoded into the prompt, but for more advanced situations it may be nice to dynamically select them.
 Example Selectors are classes responsible for selecting and then formatting examples into prompts.
@@ -498,6 +502,30 @@ Retrievers accept a string query as input and return a list of Document's as out
 
 For specifics on how to use retrievers, see the [relevant how-to guides here](/docs/how_to/#retrievers).
 
+### Key-value stores
+
+For some techniques, such as [indexing and retrieval with multiple vectors per document](/docs/how_to/multi_vector/) or
+[caching embeddings](/docs/how_to/caching_embeddings/), having a form of key-value (KV) storage is helpful.
+
+LangChain includes a [`BaseStore`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) interface,
+which allows for storage of arbitrary data. However, LangChain components that require KV-storage accept a
+more specific `BaseStore[str, bytes]` instance that stores binary data (referred to as a `ByteStore`), and internally take care of
+encoding and decoding data for their specific needs.
+
+This means that as a user, you only need to think about one type of store rather than different ones for different types of data.
+
+#### Interface
+
+All [`BaseStores`](https://api.python.langchain.com/en/latest/stores/langchain_core.stores.BaseStore.html) support the following interface. Note that the interface allows
+for modifying **multiple** key-value pairs at once:
+
+- `mget(key: Sequence[str]) -> List[Optional[bytes]]`: get the contents of multiple keys, returning `None` if the key does not exist
+- `mset(key_value_pairs: Sequence[Tuple[str, bytes]]) -> None`: set the contents of multiple keys
+- `mdelete(key: Sequence[str]) -> None`: delete multiple keys
+- `yield_keys(prefix: Optional[str] = None) -> Iterator[str]`: yield all keys in the store, optionally filtering by a prefix
+
+For key-value store implementations, see [this section](/docs/integrations/stores/).
+
 ### Tools
 <span data-heading-keywords="tool,tools"></span>
 
@@ -513,67 +541,74 @@ A tool consists of:
 
 When a tool is bound to a model, the name, description and JSON schema are provided as context to the model.
 Given a list of tools and a set of instructions, a model can request to call one or more tools with specific inputs.
+Typical usage may look like the following:
+
+```python
+tools = [...] # Define a list of tools
+llm_with_tools = llm.bind_tools(tools)
+ai_msg = llm_with_tools.invoke("do xyz...")
+# -> AIMessage(tool_calls=[ToolCall(...), ...], ...)
+```
+
+The `AIMessage` returned from the model MAY have `tool_calls` associated with it.
+Read [this guide](/docs/concepts/#aimessage) for more information on what the response type may look like.
+
 Once the chosen tools are invoked, the results can be passed back to the model so that it can complete whatever task
 it's performing.
+There are generally two different ways to invoke the tool and pass back the response:
 
-#### Tool inputs
+#### Invoke with just the arguments
 
-A tool can take arbitrary arguments as input. At runtime, these arguments can be passed in either:
-
-1. As a dict of just the arguments,
-2. As a `ToolCall`, which contains the arguments along with other metadata like the tool call ID.
-
-```python
-tool = ...
-llm_with_tools = llm.bind_tools([tool])
-ai_msg = llm_with_tools.invoke("do xyz...")  # AIMessage(tool_calls=[ToolCall(...), ...], ...)
-tool_call = ai_msg.tool_calls[0]  # ToolCall(args={...}, id=..., ...)
-
-# 1. pass in args directly
-tool.invoke(tool_call["args"])
-
-# 2. pass in the whole ToolCall
-tool.invoke(tool_call)
-```
-
-A tool also has access to the `RunnableConfig` that's passed into whatever chain the tool is a part of. This allows you to write tool logic that can be parameterized by the chain config.
+When you invoke a tool with just the arguments, you will get back the raw tool output (usually a string).
+This generally looks like:
 
 ```python
-config = {"configurable": {"tool_param_foo": ...}}
-tool.invoke(tool_call, config)
+# You will want to previously check that the LLM returned tool calls
+tool_call = ai_msg.tool_calls[0]
+# ToolCall(args={...}, id=..., ...)
+tool_output = tool.invoke(tool_call["args"])
+tool_message = ToolMessage(
+    content=tool_output,
+    tool_call_id=tool_call["id"],
+    name=tool_call["name"]
+)
 ```
 
-See the how-to guide for [passing in configs here](/docs/how_to/tool_configure/).
-
-#### Tool outputs
-
-The format of a tool's output depends on the format of the input. If a tool is called:
-
-1. With a dict of its arguments then it will produce an arbitrary output that we assume can be passed to a model as the `ToolMessage.content` field,
-2. A `ToolCall` then it will produce a `ToolMessage(content=..., ...)` where the tool output has already been assigned to the `ToolMessage.content` field.
+Note that the `content` field will generally be passed back to the model.
+If you do not want the raw tool response to be passed to the model, but you still want to keep it around,
+you can transform the tool output but also pass it as an artifact (read more about [`ToolMessage.artifact` here](/docs/concepts/#toolmessage))
 
 ```python
-# 1. pass in args directly
-
-tool.invoke(tool_call["args"])
-# -> "tool result foobar..."
-
-# 2. pass in the whole ToolCall
-
-tool.invoke(tool_call)
-# -> ToolMessage(content="tool result foobar...", tool_call_id=..., name="tool_name")
+... # Same code as above
+response_for_llm = transform(response)
+tool_message = ToolMessage(
+    content=response_for_llm,
+    tool_call_id=tool_call["id"],
+    name=tool_call["name"],
+    artifact=tool_output
+)
 ```
 
-A tool can also be defined to include an artifact when invoked with a `ToolCall`. An artifact is some element of the
-tool's execution which is useful to return but shouldn't be sent to the model. The artifact can *only* be returned
-when the tool input is a `ToolCall`:
+#### Invoke with `ToolCall`
+
+The other way to invoke a tool is to call it with the full `ToolCall` that was generated by the model.
+When you do this, the tool will return a ToolMessage.
+The benefits of this are that you don't have to write the logic yourself to transform the tool output into a ToolMessage.
+This generally looks like:
 
 ```python
-tool_with_artifact.invoke(tool_call)
-# -> ToolMessage(content="tool result foobar...", tool_call_id=..., name="tool_name", artifact=...).
+tool_call = ai_msg.tool_calls[0]
+# -> ToolCall(args={...}, id=..., ...)
+tool_message = tool.invoke(tool_call)
+# -> ToolMessage(
+    content="tool result foobar...",
+    tool_call_id=...,
+    name="tool_name"
+)
 ```
 
-Learn about [`ToolMessage.artifact` here](/docs/concepts/#toolmessage) and about [defining tools that return artifacts here](/docs/how_to/tool_artifacts/).
+If you are invoking the tool this way and want to include an [artifact](/docs/concepts/#toolmessage) for the ToolMessage, you will need to have the tool return two things.
+Read more about [defining tools that return artifacts here](/docs/how_to/tool_artifacts/).
 
 #### Best practices
 
@@ -835,6 +870,61 @@ units (like words or subwords) that carry meaning, rather than individual charac
 to learn and understand the structure of the language, including grammar and context.
 Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
 
+### Function/tool calling
+
+:::info
+We use the term tool calling interchangeably with function calling. Although
+function calling is sometimes meant to refer to invocations of a single function,
+we treat all models as though they can return multiple tool or function calls in
+each message.
+:::
+
+Tool calling allows a [chat model](/docs/concepts/#chat-models) to respond to a given prompt by generating output that
+matches a user-defined schema.
+
+While the name implies that the model is performing
+some action, this is actually not the case! The model only generates the arguments to a tool, and actually running the tool (or not) is up to the user.
+One common example where you **wouldn't** want to call a function with the generated arguments
+is if you want to [extract structured output matching some schema](/docs/concepts/#structured-output)
+from unstructured text. You would give the model an "extraction" tool that takes
+parameters matching the desired schema, then treat the generated output as your final
+result.
+
+![Diagram of a tool call by a chat model](/img/tool_call.png)
+
+Tool calling is not universal, but is supported by many popular LLM providers, including [Anthropic](/docs/integrations/chat/anthropic/), 
+[Cohere](/docs/integrations/chat/cohere/), [Google](/docs/integrations/chat/google_vertex_ai_palm/), 
+[Mistral](/docs/integrations/chat/mistralai/), [OpenAI](/docs/integrations/chat/openai/), and even for locally-running models via [Ollama](/docs/integrations/chat/ollama/).
+
+LangChain provides a standardized interface for tool calling that is consistent across different models.
+
+The standard interface consists of:
+
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) as well as [Pydantic](https://pydantic.dev/) objects.
+* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+
+#### Tool usage
+
+After the model calls tools, you can use the tool by invoking it, then passing the arguments back to the model.
+LangChain provides the [`Tool`](/docs/concepts/#tools) abstraction to help you handle this.
+
+The general flow is this:
+
+1. Generate tool calls with a chat model in response to a query.
+2. Invoke the appropriate tools using the generated tool call as arguments.
+3. Format the result of the tool invocations as [`ToolMessages`](/docs/concepts/#toolmessage).
+4. Pass the entire list of messages back to the model so that it can generate a final answer (or call more tools).
+
+![Diagram of a complete tool calling flow](/img/tool_calling_flow.png)
+
+This is how tool calling [agents](/docs/concepts/#agents) perform tasks and answer queries.
+
+Check out some more focused guides below:
+
+- [How to use chat models to call tools](/docs/how_to/tool_calling/)
+- [How to pass tool outputs to chat models](/docs/how_to/tool_results_pass_to_model/)
+- [Building an agent with LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
+
 ### Structured output
 
 LLMs are capable of generating arbitrary text. This enables the model to respond appropriately to a wide
@@ -967,53 +1057,128 @@ chain.invoke({ "question": "What is the powerhouse of the cell?" })
 
 For a full list of model providers that support JSON mode, see [this table](/docs/integrations/chat/#advanced-features).
 
-#### Function/tool calling
+#### Tool calling {#structured-output-tool-calling}
 
-:::info
-We use the term tool calling interchangeably with function calling. Although
-function calling is sometimes meant to refer to invocations of a single function,
-we treat all models as though they can return multiple tool or function calls in
-each message
-:::
+For models that support it, [tool calling](/docs/concepts/#functiontool-calling) can be very convenient for structured output. It removes the
+guesswork around how best to prompt schemas in favor of a built-in model feature.
 
-Tool calling allows a model to respond to a given prompt by generating output that
-matches a user-defined schema. While the name implies that the model is performing
-some action, this is actually not the case! The model is coming up with the
-arguments to a tool, and actually running the tool (or not) is up to the user -
-for example, if you want to [extract output matching some schema](/docs/tutorials/extraction)
-from unstructured text, you could give the model an "extraction" tool that takes
-parameters matching the desired schema, then treat the generated output as your final
-result.
+It works by first binding the desired schema either directly or via a [LangChain tool](/docs/concepts/#tools) to a
+[chat model](/docs/concepts/#chat-models) using the `.bind_tools()` method. The model will then generate an `AIMessage` containing
+a `tool_calls` field containing `args` that match the desired shape.
 
-For models that support it, tool calling can be very convenient. It removes the
-guesswork around how best to prompt schemas in favor of a built-in model feature. It can also
-more naturally support agentic flows, since you can just pass multiple tool schemas instead
-of fiddling with enums or unions.
+There are several acceptable formats you can use to bind tools to a model in LangChain. Here's one example:
 
-Many LLM providers, including [Anthropic](https://www.anthropic.com/),
-[Cohere](https://cohere.com/), [Google](https://cloud.google.com/vertex-ai),
-[Mistral](https://mistral.ai/), [OpenAI](https://openai.com/), and others,
-support variants of a tool calling feature. These features typically allow requests
-to the LLM to include available tools and their schemas, and for responses to include
-calls to these tools. For instance, given a search engine tool, an LLM might handle a
-query by first issuing a call to the search engine. The system calling the LLM can
-receive the tool call, execute it, and return the output to the LLM to inform its
-response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/)
-and supports several methods for defining your own [custom tools](/docs/how_to/custom_tools).
+```python
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_openai import ChatOpenAI
 
-LangChain provides a standardized interface for tool calling that is consistent across different models.
+class ResponseFormatter(BaseModel):
+    """Always use this tool to structure your response to the user."""
 
-The standard interface consists of:
+    answer: str = Field(description="The answer to the user's question")
+    followup_question: str = Field(description="A followup question the user could ask")
 
-* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) here.
-* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+model = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0,
+)
 
-The following how-to guides are good practical resources for using function/tool calling:
+model_with_tools = model.bind_tools([ResponseFormatter])
+
+ai_msg = model_with_tools.invoke("What is the powerhouse of the cell?")
+
+ai_msg.tool_calls[0]["args"]
+```
+
+```
+{'answer': "The powerhouse of the cell is the mitochondrion. It generates most of the cell's supply of adenosine triphosphate (ATP), which is used as a source of chemical energy.",
+ 'followup_question': 'How do mitochondria generate ATP?'}
+```
+
+Tool calling is a generally consistent way to get a model to generate structured output, and is the default technique
+used for the [`.with_structured_output()`](/docs/concepts/#with_structured_output) method when a model supports it.
+
+The following how-to guides are good practical resources for using function/tool calling for structured output:
 
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
 - [How to use a model to call tools](/docs/how_to/tool_calling)
 
 For a full list of model providers that support tool calling, [see this table](/docs/integrations/chat/#advanced-features).
+
+### Few-shot prompting
+
+One of the most effective ways to improve model performance is to give a model examples of what you want it to do. The technique of adding example inputs and expected outputs to a model prompt is known as "few-shot prompting". There are a few things to think about when doing few-shot prompting:
+
+1. How are examples generated?
+2. How many examples are in each prompt?
+3. How are examples selected at runtime?
+4. How are examples formatted in the prompt?
+
+Here are the considerations for each.
+
+#### 1. Generating examples
+
+The first and most important step of few-shot prompting is coming up with a good dataset of examples. Good examples should be relevant at runtime, clear, informative, and provide information that was not already known to the model.
+
+At a high-level, the basic ways to generate examples are:
+- Manual: a person/people generates examples they think are useful.
+- Better model: a better (presumably more expensive/slower) model's responses are used as examples for a worse (presumably cheaper/faster) model.
+- User feedback: users (or labelers) leave feedback on interactions with the application and examples are generated based on that feedback (for example, all interactions with positive feedback could be turned into examples).
+- LLM feedback: same as user feedback but the process is automated by having models evaluate themselves.
+
+Which approach is best depends on your task. For tasks where a small number core principles need to be understood really well, it can be valuable hand-craft a few really good examples.
+For tasks where the space of correct behaviors is broader and more nuanced, it can be useful to generate many examples in a more automated fashion so that there's a higher likelihood of there being some highly relevant examples for any runtime input.
+
+**Single-turn v.s. multi-turn examples**
+
+Another dimension to think about when generating examples is what the example is actually showing.
+
+The simplest types of examples just have a user input and an expected model output. These are single-turn examples.
+
+One more complex type if example is where the example is an entire conversation, usually in which a model initially responds incorrectly and a user then tells the model how to correct its answer.
+This is called a multi-turn example. Multi-turn examples can be useful for more nuanced tasks where its useful to show common errors and spell out exactly why they're wrong and what should be done instead.
+
+#### 2. Number of examples
+
+Once we have a dataset of examples, we need to think about how many examples should be in each prompt.
+The key tradeoff is that more examples generally improve performance, but larger prompts increase costs and latency.
+And beyond some threshold having too many examples can start to confuse the model.
+Finding the right number of examples is highly dependent on the model, the task, the quality of the examples, and your cost and latency constraints.
+Anecdotally, the better the model is the fewer examples it needs to perform well and the more quickly you hit steeply diminishing returns on adding more examples.
+But, the best/only way to reliably answer this question is to run some experiments with different numbers of examples.
+
+#### 3. Selecting examples
+
+Assuming we are not adding our entire example dataset into each prompt, we need to have a way of selecting examples from our dataset based on a given input. We can do this:
+- Randomly
+- By (semantic or keyword-based) similarity of the inputs
+- Based on some other constraints, like token size
+
+LangChain has a number of [`ExampleSelectors`](/docs/concepts/#example-selectors) which make it easy to use any of these techniques.
+
+Generally, selecting by semantic similarity leads to the best model performance. But how important this is is again model and task specific, and is something worth experimenting with.
+
+#### 4. Formatting examples
+
+Most state-of-the-art models these days are chat models, so we'll focus on formatting examples for those. Our basic options are to insert the examples:
+- In the system prompt as a string
+- As their own messages
+
+If we insert our examples into the system prompt as a string, we'll need to make sure it's clear to the model where each example begins and which parts are the input versus output. Different models respond better to different syntaxes, like [ChatML](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chat-markup-language), XML, TypeScript, etc.
+
+If we insert our examples as messages, where each example is represented as a sequence of Human, AI messages, we might want to also assign [names](/docs/concepts/#messages) to our messages like `"example_user"` and `"example_assistant"` to make it clear that these messages correspond to different actors than the latest input message.
+
+**Formatting tool call examples**
+
+One area where formatting examples as messages can be tricky is when our example outputs have tool calls. This is because different models have different constraints on what types of message sequences are allowed when any tool calls are generated.
+- Some models require that any AIMessage with tool calls be immediately followed by ToolMessages for every tool call,
+- Some models additionally require that any ToolMessages be immediately followed by an AIMessage before the next HumanMessage,
+- Some models require that tools are passed in to the model if there are any tool calls / ToolMessages in the chat history.
+
+These requirements are model-specific and should be checked for the model you are using. If your model requires ToolMessages after tool calls and/or AIMessages after ToolMessages and your examples only include expected tool calls and not the actual tool outputs, you can try adding dummy ToolMessages / AIMessages to the end of each example with generic contents to satisfy the API constraints.
+In these cases it's especially worth experimenting with inserting your examples as strings versus messages, as having dummy messages can adversely affect certain models.
+
+You can see a case study of how Anthropic and OpenAI respond to different few-shot prompting techniques on two different tool calling benchmarks [here](https://blog.langchain.dev/few-shot-prompting-to-improve-tool-calling-performance/).
 
 ### Retrieval
 

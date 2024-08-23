@@ -105,7 +105,6 @@ def test_configurable() -> None:
             "model": "gpt-4o",
             "stream": False,
             "n": 1,
-            "logprobs": False,
             "temperature": 0.7,
             "_type": "openai-chat",
         },
@@ -113,7 +112,11 @@ def test_configurable() -> None:
             "tools": [
                 {
                     "type": "function",
-                    "function": {"name": "foo", "description": "foo", "parameters": {}},
+                    "function": {
+                        "name": "foo",
+                        "description": "foo",
+                        "parameters": {},
+                    },
                 }
             ]
         },

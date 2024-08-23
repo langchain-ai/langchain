@@ -8,7 +8,6 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.37",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_huggingface.HuggingFacePipeline",
 )
 class HuggingFacePipeline(BaseLLM):
@@ -71,9 +70,7 @@ class HuggingFacePipeline(BaseLLM):
     """Batch size to use when passing multiple documents to generate."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @classmethod
     def from_model_id(
@@ -264,7 +261,10 @@ class HuggingFacePipeline(BaseLLM):
     ) -> LLMResult:
         # List to hold all results
         text_generations: List[str] = []
-        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+
+        default_pipeline_kwargs = self.pipeline_kwargs if self.pipeline_kwargs else {}
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", default_pipeline_kwargs)
+
         skip_prompt = kwargs.get("skip_prompt", False)
 
         for i in range(0, len(prompts), self.batch_size):

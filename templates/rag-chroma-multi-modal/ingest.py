@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import pypdfium2 as pdfium
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_experimental.open_clip import OpenCLIPEmbeddings
 
 
