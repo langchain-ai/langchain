@@ -24,17 +24,17 @@ def test_yuan2_model_param() -> None:
 
 @pytest.mark.requires("openai")
 def test_yuan2_timeout_param() -> None:
-    chat = ChatYuan2(request_timeout=5)
+    chat = ChatYuan2(request_timeout=5)  # type: ignore[call-arg]
     assert chat.request_timeout == 5
-    chat = ChatYuan2(timeout=10)
+    chat = ChatYuan2(timeout=10)  # type: ignore[call-arg]
     assert chat.request_timeout == 10
 
 
 @pytest.mark.requires("openai")
 def test_yuan2_stop_sequences_param() -> None:
-    chat = ChatYuan2(stop=["<eod>"])
+    chat = ChatYuan2(stop=["<eod>"])  # type: ignore[call-arg]
     assert chat.stop == ["<eod>"]
-    chat = ChatYuan2(stop_sequences=["<eod>"])
+    chat = ChatYuan2(stop_sequences=["<eod>"])  # type: ignore[call-arg]
     assert chat.stop == ["<eod>"]
 
 
