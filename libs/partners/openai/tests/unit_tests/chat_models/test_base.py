@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     FunctionMessage,
     HumanMessage,
     InvalidToolCall,
@@ -15,6 +16,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_openai import ChatOpenAI
@@ -179,18 +181,18 @@ class MockAsyncContextManager:
         self.chunk_list = chunk_list
         self.chunk_num = len(chunk_list)
 
-    async def __aenter__(self) -> 'MockAsyncContextManager':
+    async def __aenter__(self) -> "MockAsyncContextManager":
         return self
 
     async def __aexit__(
-            self,
-            exc_type: Optional[Type[BaseException]],
-            exc: Optional[BaseException],
-            tb: Optional[TracebackType]
-    ):
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
         pass
 
-    def __aiter__(self) -> 'MockAsyncContextManager':
+    def __aiter__(self) -> "MockAsyncContextManager":
         return self
 
     async def __anext__(self) -> dict:
@@ -208,18 +210,18 @@ class MockSyncContextManager:
         self.chunk_list = chunk_list
         self.chunk_num = len(chunk_list)
 
-    def __enter__(self) -> 'MockSyncContextManager':
+    def __enter__(self) -> "MockSyncContextManager":
         return self
 
     def __exit__(
-            self,
-            exc_type: Optional[Type[BaseException]],
-            exc: Optional[BaseException],
-            tb: Optional[TracebackType]
-    ):
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
         pass
 
-    def __iter__(self) -> 'MockSyncContextManager':
+    def __iter__(self) -> "MockSyncContextManager":
         return self
 
     def __next__(self) -> dict:
@@ -265,11 +267,14 @@ async def test_glm4_astream(mock_glm4_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata: Optional[dict] = None
+    usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
 
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
@@ -287,11 +292,15 @@ def test_glm4_stream(mock_glm4_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata: Optional[dict] = None
+    usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
@@ -338,18 +347,21 @@ async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata: Optional[dict] = None
+    usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
 
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
 
 
-def test_deepseek_stream(mock_deepseek_completion) -> None:
+def test_deepseek_stream(mock_deepseek_completion: list) -> None:
     llm_name = "deepseek-chat"
     llm = ChatOpenAI(model=llm_name, stream_usage=True)
     mock_client = MagicMock()
@@ -359,11 +371,14 @@ def test_deepseek_stream(mock_deepseek_completion) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata: Optional[dict] = None
+    usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
 
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
@@ -400,11 +415,14 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata: Optional[dict] = None
+    usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
 
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
@@ -421,11 +439,15 @@ def test_openai_stream(mock_openai_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata: Optional[dict] = None
+    usage_metadata: Optional[UsageMetadata] = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
