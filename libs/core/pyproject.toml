@@ -41,7 +41,11 @@ python = ">=3.12.4"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = [ "E", "F", "I", "T201", "UP",]
+ignore = [
+    "UP006", # Incompatible with pydantic v1
+    "UP007", # Incompatible with pydantic v1
+]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
