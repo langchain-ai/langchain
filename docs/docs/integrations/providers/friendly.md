@@ -1,7 +1,7 @@
 # Friendli AI
 
->[Friendli AI](https://fireworks.ai/) is company that fine-tunes, deploys LLMs, 
-> and serves a wide range of generative AI use cases.
+>[Friendli AI](https://friendli.ai/) is a company that fine-tunes, deploys LLMs, 
+> and serves a wide range of Generative AI use cases.
 
 
 ## Installation and setup
