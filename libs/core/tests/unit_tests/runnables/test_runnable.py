@@ -3133,7 +3133,7 @@ def test_map_stream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -3191,7 +3191,7 @@ def test_map_stream() -> None:
 
     assert streamed_chunks[0] in [
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(llm_res) + len(chat_res)
 
@@ -3234,7 +3234,7 @@ def test_map_stream_iterator_input() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": "i"},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
