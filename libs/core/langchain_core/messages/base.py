@@ -61,7 +61,7 @@ class BaseMessage(Serializable):
 
         Args:
             content: The string contents of the message.
-            **kwargs: Additional fields to pass to the
+            kwargs: Additional fields to pass to the
         """
         super().__init__(content=content, **kwargs)
 

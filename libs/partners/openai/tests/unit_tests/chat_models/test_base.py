@@ -1,7 +1,7 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
-from typing import Any, List, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -343,17 +343,32 @@ class MakeASandwich(BaseModel):
         None,
     ],
 )
-def test_bind_tools_tool_choice(tool_choice: Any) -> None:
+@pytest.mark.parametrize("strict", [True, False, None])
+def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> None:
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-    llm.bind_tools(tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice)
+    llm.bind_tools(
+        tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice, strict=strict
+    )
 
 
 @pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
-def test_with_structured_output(schema: Union[Type[BaseModel], dict]) -> None:
+@pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
+@pytest.mark.parametrize("include_raw", [True, False])
+@pytest.mark.parametrize("strict", [True, False, None])
+def test_with_structured_output(
+    schema: Union[Type, Dict[str, Any], None],
+    method: Literal["function_calling", "json_mode", "json_schema"],
+    include_raw: bool,
+    strict: Optional[bool],
+) -> None:
     """Test passing in manually construct tool call message."""
+    if method == "json_mode":
+        strict = None
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-    llm.with_structured_output(schema)
+    llm.with_structured_output(
+        schema, method=method, strict=strict, include_raw=include_raw
+    )
 
 
 def test_get_num_tokens_from_messages() -> None:

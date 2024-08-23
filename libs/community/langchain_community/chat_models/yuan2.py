@@ -121,8 +121,6 @@ class ChatYuan2(BaseChatModel):
     """The penalty to apply to repeated tokens."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @property

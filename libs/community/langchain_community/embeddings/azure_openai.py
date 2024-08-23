@@ -16,7 +16,7 @@ from langchain_community.utils.openai import is_openai_v1
 
 @deprecated(
     since="0.0.9",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_openai.AzureOpenAIEmbeddings",
 )
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):

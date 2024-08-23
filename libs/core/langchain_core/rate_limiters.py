@@ -105,23 +105,31 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
         .. code-block:: python
 
-            from langchain_core import InMemoryRateLimiter
+            import time
 
-            from langchain_core.runnables import RunnableLambda, InMemoryRateLimiter
+            from langchain_core.rate_limiters import InMemoryRateLimiter
 
             rate_limiter = InMemoryRateLimiter(
-                requests_per_second=100, check_every_n_seconds=0.1, max_bucket_size=10
+                requests_per_second=0.1,  # <-- Can only make a request once every 10 seconds!!
+                check_every_n_seconds=0.1,  # Wake up every 100 ms to check whether allowed to make a request,
+                max_bucket_size=10,  # Controls the maximum burst size.
             )
 
-            def foo(x: int) -> int:
-                return x
+            from langchain_anthropic import ChatAnthropic
+            model = ChatAnthropic(
+                model_name="claude-3-opus-20240229",
+                rate_limiter=rate_limiter
+            )
 
-            foo_ = RunnableLambda(foo)
-            chain = rate_limiter | foo_
-            assert chain.invoke(1) == 1
+            for _ in range(5):
+                tic = time.time()
+                model.invoke("hello")
+                toc = time.time()
+                print(toc - tic)
+
 
     .. versionadded:: 0.2.24
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -173,7 +181,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
             the caller should try again later.
         """
         with self._consume_lock:
-            now = time.time()
+            now = time.monotonic()
 
             # initialize on first call to avoid a burst
             if self.last is None:
