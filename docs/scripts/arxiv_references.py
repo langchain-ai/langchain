@@ -523,10 +523,9 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
  Templates, and Cookbooks.
 
 From the opposite direction, scientists use `LangChain` in research and reference it in the research papers. 
-Here you find papers that reference:
-- [LangChain](https://arxiv.org/search/?query=langchain&searchtype=all&source=header)
-- [LangGraph](https://arxiv.org/search/?query=langgraph&searchtype=all&source=header)
-- [LangSmith](https://arxiv.org/search/?query=langsmith&searchtype=all&source=header)
+
+`arXiv` papers with references to:
+ [LangChain](https://arxiv.org/search/?query=langchain&searchtype=all&source=header) | [LangGraph](https://arxiv.org/search/?query=langgraph&searchtype=all&source=header) | [LangSmith](https://arxiv.org/search/?query=langsmith&searchtype=all&source=header)
 
 ## Summary
 
