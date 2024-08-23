@@ -92,7 +92,7 @@ def create_importer(
                         warn_deprecated(
                             since="0.1",
                             pending=False,
-                            removal="0.4",
+                            removal="1.0",
                             message=(
                                 f"Importing {name} from {package} is deprecated. "
                                 f"Please replace deprecated imports:\n\n"
@@ -124,7 +124,7 @@ def create_importer(
                         warn_deprecated(
                             since="0.1",
                             pending=False,
-                            removal="0.4",
+                            removal="1.0",
                             message=(
                                 f"Importing {name} from {package} is deprecated. "
                                 f"Please replace deprecated imports:\n\n"

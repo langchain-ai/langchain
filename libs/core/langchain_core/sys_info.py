@@ -2,7 +2,35 @@
 for debugging purposes.
 """
 
-from typing import Sequence
+from typing import List, Sequence
+
+
+def _get_sub_deps(packages: Sequence[str]) -> List[str]:
+    """Get any specified sub-dependencies."""
+    from importlib import metadata
+
+    sub_deps = set()
+    _underscored_packages = set(pkg.replace("-", "_") for pkg in packages)
+
+    for pkg in packages:
+        try:
+            required = metadata.requires(pkg)
+        except metadata.PackageNotFoundError:
+            continue
+
+        if not required:
+            continue
+
+        for req in required:
+            try:
+                cleaned_req = req.split(" ")[0]
+            except Exception:  # In case parsing of requirement spec fails
+                continue
+
+            if cleaned_req.replace("-", "_") not in _underscored_packages:
+                sub_deps.add(cleaned_req)
+
+    return sorted(sub_deps, key=lambda x: x.lower())
 
 
 def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
@@ -81,12 +109,24 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
 
     if not_installed:
         print()  # noqa: T201
-        print("Packages not installed (Not Necessarily a Problem)")  # noqa: T201
-        print("--------------------------------------------------")  # noqa: T201
-        print("The following packages were not found:")  # noqa: T201
-        print()  # noqa: T201
+        print("Optional packages not installed")  # noqa: T201
+        print("-------------------------------")  # noqa: T201
         for pkg in not_installed:
             print(f"> {pkg}")  # noqa: T201
+
+    sub_dependencies = _get_sub_deps(all_packages)
+
+    if sub_dependencies:
+        print()  # noqa: T201
+        print("Other Dependencies")  # noqa: T201
+        print("------------------")  # noqa: T201
+
+        for dep in sub_dependencies:
+            try:
+                dep_version = metadata.version(dep)
+                print(f"> {dep}: {dep_version}")  # noqa: T201
+            except Exception:
+                print(f"> {dep}: Installed. No version info available.")  # noqa: T201
 
 
 if __name__ == "__main__":

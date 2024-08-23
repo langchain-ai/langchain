@@ -1,4 +1,7 @@
+"""Couchbase Chat Message History"""
+
 import logging
+import time
 import uuid
 from typing import Any, Dict, List, Sequence
 
@@ -14,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_SESSION_ID_KEY = "session_id"
 DEFAULT_MESSAGE_KEY = "message"
+DEFAULT_TS_KEY = "ts"
 DEFAULT_INDEX_NAME = "LANGCHAIN_CHAT_HISTORY"
 DEFAULT_BATCH_SIZE = 100
 
@@ -128,10 +132,13 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         self._message_key = message_key
         self._create_index = create_index
         self._session_id = session_id
+        self._ts_key = DEFAULT_TS_KEY
 
         # Create an index if it does not exist if requested
         if create_index:
-            index_fields = f"({self._session_id_key}, {self._message_key})"
+            index_fields = (
+                f"({self._session_id_key}, {self._ts_key}, {self._message_key})"
+            )
             index_creation_query = (
                 f"CREATE INDEX {DEFAULT_INDEX_NAME} IF NOT EXISTS ON "
                 + f"{self._collection_name}{index_fields} "
@@ -146,6 +153,8 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         """Add a message to the cache"""
         # Generate a UUID for the document key
         document_key = uuid.uuid4().hex
+        # get utc timestamp for ordering the messages
+        timestamp = time.time()
         message_content = message_to_dict(message)
         try:
             self._collection.insert(
@@ -153,6 +162,7 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
                 value={
                     self._message_key: message_content,
                     self._session_id_key: self._session_id,
+                    self._ts_key: timestamp,
                 },
             )
         except Exception as e:
@@ -164,12 +174,14 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         messages_to_insert = []
         for message in messages:
             document_key = uuid.uuid4().hex
+            timestamp = time.time()
             message_content = message_to_dict(message)
             messages_to_insert.append(
                 {
                     document_key: {
                         self._message_key: message_content,
                         self._session_id_key: self._session_id,
+                        self._ts_key: timestamp,
                     },
                 }
             )
@@ -189,7 +201,7 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         # Delete all documents in the collection with the session_id
         clear_query = (
             f"DELETE FROM `{self._collection_name}`"
-            + f"where {self._session_id_key}=$session_id"
+            + f"WHERE {self._session_id_key}=$session_id"
         )
         try:
             self._scope.query(clear_query, session_id=self._session_id).execute()
@@ -202,6 +214,7 @@ class CouchbaseChatMessageHistory(BaseChatMessageHistory):
         fetch_query = (
             f"SELECT {self._message_key} FROM `{self._collection_name}` "
             + f"where {self._session_id_key}=$session_id"
+            + f" ORDER BY {self._ts_key} ASC"
         )
         message_items = []
 

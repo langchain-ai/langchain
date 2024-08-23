@@ -9,6 +9,7 @@ from typing import (
     Type,
 )
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.graph_vectorstores.base import (
@@ -23,25 +24,21 @@ if TYPE_CHECKING:
     from cassandra.cluster import Session
 
 
+@beta()
 class CassandraGraphVectorStore(GraphVectorStore):
     def __init__(
         self,
         embedding: Embeddings,
         *,
         node_table: str = "graph_nodes",
-        targets_table: str = "graph_targets",
         session: Optional[Session] = None,
         keyspace: Optional[str] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
+        **kwargs: Any,
     ):
         """
         Create the hybrid graph store.
-        Parameters configure the ways that edges should be added between
-        documents. Many take `Union[bool, Set[str]]`, with `False` disabling
-        inference, `True` enabling it globally between all documents, and a set
-        of metadata fields defining a scope in which to enable it. Specifically,
-        passing a set of metadata fields such as `source` only links documents
-        with the same `source` metadata value.
+
         Args:
             embedding: The embeddings to use for the document content.
             setup_mode: Mode used to create the Cassandra table (SYNC,
@@ -51,8 +48,8 @@ class CassandraGraphVectorStore(GraphVectorStore):
             from ragstack_knowledge_store import EmbeddingModel, graph_store
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
-                "Could not import ragstack-knowledge-store python package. "
-                "Please install it with `pip install ragstack-knowledge-store`."
+                "Could not import ragstack_knowledge_store python package. "
+                "Please install it with `pip install ragstack-ai-knowledge-store`."
             )
 
         self._embedding = embedding
@@ -77,10 +74,10 @@ class CassandraGraphVectorStore(GraphVectorStore):
         self.store = graph_store.GraphStore(
             embedding=_EmbeddingModelAdapter(embedding),
             node_table=node_table,
-            targets_table=targets_table,
             session=session,
             keyspace=keyspace,
             setup_mode=_setup_mode,
+            **kwargs,
         )
 
     @property
@@ -123,18 +120,31 @@ class CassandraGraphVectorStore(GraphVectorStore):
         return store
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        metadata_filter: dict[str, Any] = {},
+        **kwargs: Any,
     ) -> List[Document]:
         embedding_vector = self._embedding.embed_query(query)
         return self.similarity_search_by_vector(
             embedding_vector,
             k=k,
+            metadata_filter=metadata_filter,
         )
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        metadata_filter: dict[str, Any] = {},
+        **kwargs: Any,
     ) -> List[Document]:
-        nodes = self.store.similarity_search(embedding, k=k)
+        nodes = self.store.similarity_search(
+            embedding,
+            k=k,
+            metadata_filter=metadata_filter,
+        )
         return list(nodes_to_documents(nodes))
 
     def traversal_search(
@@ -143,9 +153,15 @@ class CassandraGraphVectorStore(GraphVectorStore):
         *,
         k: int = 4,
         depth: int = 1,
+        metadata_filter: dict[str, Any] = {},
         **kwargs: Any,
     ) -> Iterable[Document]:
-        nodes = self.store.traversal_search(query, k=k, depth=depth)
+        nodes = self.store.traversal_search(
+            query,
+            k=k,
+            depth=depth,
+            metadata_filter=metadata_filter,
+        )
         return nodes_to_documents(nodes)
 
     def mmr_traversal_search(
@@ -158,6 +174,7 @@ class CassandraGraphVectorStore(GraphVectorStore):
         adjacent_k: int = 10,
         lambda_mult: float = 0.5,
         score_threshold: float = float("-inf"),
+        metadata_filter: dict[str, Any] = {},
         **kwargs: Any,
     ) -> Iterable[Document]:
         nodes = self.store.mmr_traversal_search(
@@ -168,5 +185,6 @@ class CassandraGraphVectorStore(GraphVectorStore):
             adjacent_k=adjacent_k,
             lambda_mult=lambda_mult,
             score_threshold=score_threshold,
+            metadata_filter=metadata_filter,
         )
         return nodes_to_documents(nodes)

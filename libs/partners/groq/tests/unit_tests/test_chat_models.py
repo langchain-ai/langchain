@@ -173,7 +173,7 @@ def test_groq_invoke(mock_completion: dict) -> None:
     ):
         res = llm.invoke("bar")
         assert res.content == "Bar Baz"
-        assert type(res) == AIMessage
+        assert type(res) is AIMessage
     assert completed
 
 
@@ -195,7 +195,7 @@ async def test_groq_ainvoke(mock_completion: dict) -> None:
     ):
         res = await llm.ainvoke("bar")
         assert res.content == "Bar Baz"
-        assert type(res) == AIMessage
+        assert type(res) is AIMessage
     assert completed
 
 

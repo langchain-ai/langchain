@@ -13,6 +13,7 @@ from typing import (
     NamedTuple,
     Optional,
     Protocol,
+    Sequence,
     Tuple,
     Type,
     TypedDict,
@@ -22,6 +23,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
@@ -229,7 +231,7 @@ def node_data_json(
                 "name": node_data_str(node.id, node.data),
             },
         }
-    elif inspect.isclass(node.data) and issubclass(node.data, BaseModel):
+    elif inspect.isclass(node.data) and is_basemodel_subclass(node.data):
         json = (
             {
                 "type": "schema",
@@ -447,48 +449,27 @@ class Graph:
         """Find the single node that is not a target of any edge.
         If there is no such node, or there are multiple, return None.
         When drawing the graph, this node would be the origin."""
-        targets = {edge.target for edge in self.edges}
-        found: List[Node] = []
-        for node in self.nodes.values():
-            if node.id not in targets:
-                found.append(node)
-        return found[0] if len(found) == 1 else None
+        return _first_node(self)
 
     def last_node(self) -> Optional[Node]:
         """Find the single node that is not a source of any edge.
         If there is no such node, or there are multiple, return None.
-        When drawing the graph, this node would be the destination.
-        """
-        sources = {edge.source for edge in self.edges}
-        found: List[Node] = []
-        for node in self.nodes.values():
-            if node.id not in sources:
-                found.append(node)
-        return found[0] if len(found) == 1 else None
+        When drawing the graph, this node would be the destination."""
+        return _last_node(self)
 
     def trim_first_node(self) -> None:
         """Remove the first node if it exists and has a single outgoing edge,
         i.e., if removing it would not leave the graph without a "first" node."""
         first_node = self.first_node()
-        if first_node:
-            if (
-                len(self.nodes) == 1
-                or len([edge for edge in self.edges if edge.source == first_node.id])
-                == 1
-            ):
-                self.remove_node(first_node)
+        if first_node and _first_node(self, exclude=[first_node.id]):
+            self.remove_node(first_node)
 
     def trim_last_node(self) -> None:
         """Remove the last node if it exists and has a single incoming edge,
         i.e., if removing it would not leave the graph without a "last" node."""
         last_node = self.last_node()
-        if last_node:
-            if (
-                len(self.nodes) == 1
-                or len([edge for edge in self.edges if edge.target == last_node.id])
-                == 1
-            ):
-                self.remove_node(last_node)
+        if last_node and _last_node(self, exclude=[last_node.id]):
+            self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
         """Draw the graph as an ASCII art string."""
@@ -630,3 +611,29 @@ class Graph:
             background_color=background_color,
             padding=padding,
         )
+
+
+def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+    """Find the single node that is not a target of any edge.
+    Exclude nodes/sources with ids in the exclude list.
+    If there is no such node, or there are multiple, return None.
+    When drawing the graph, this node would be the origin."""
+    targets = {edge.target for edge in graph.edges if edge.source not in exclude}
+    found: List[Node] = []
+    for node in graph.nodes.values():
+        if node.id not in exclude and node.id not in targets:
+            found.append(node)
+    return found[0] if len(found) == 1 else None
+
+
+def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+    """Find the single node that is not a source of any edge.
+    Exclude nodes/targets with ids in the exclude list.
+    If there is no such node, or there are multiple, return None.
+    When drawing the graph, this node would be the destination."""
+    sources = {edge.source for edge in graph.edges if edge.target not in exclude}
+    found: List[Node] = []
+    for node in graph.nodes.values():
+        if node.id not in exclude and node.id not in sources:
+            found.append(node)
+    return found[0] if len(found) == 1 else None
