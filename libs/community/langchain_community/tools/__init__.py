@@ -133,6 +133,9 @@ if TYPE_CHECKING:
     from langchain_community.tools.financial_datasets.income_statements import (
         IncomeStatements,
     )
+    from langchain_community.tools.gaode.weather import (
+        GaodeWeatherTool,
+    )
     from langchain_community.tools.gmail import (
         GmailCreateDraft,
         GmailGetMessage,
@@ -489,6 +492,7 @@ __all__ = [
     "ZenGuardTool",
     "authenticate",
     "format_tool_to_openai_function",
+    "GaodeWeatherTool",
 ]
 
 # Used for internal purposes
@@ -642,6 +646,7 @@ _module_lookup = {
     "authenticate": "langchain_community.tools.office365.utils",
     "format_tool_to_openai_function": "langchain_community.tools.convert_to_openai",
     "tool": "langchain_core.tools",
+    "GaodeWeatherTool": "langchain_community.tools.gaode.weather",
 }
 
 
