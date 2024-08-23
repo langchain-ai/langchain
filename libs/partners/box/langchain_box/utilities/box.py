@@ -177,12 +177,12 @@ class BoxAuth(BaseModel):
     * **CCG** with a specified user
 
     .. note::
-        If using JWT authentication, you will need to download the configuration from the
-        Box developer console after generating your public/private key pair. Place this
-        file in your application directory structure somewhere. You will use the path to
-        this file when using the ``BoxAuth`` helper class. If you wish to use OAuth2 with
-        the authorization_code flow, please use ``BoxAuthType.TOKEN`` with the token you
-        have acquired.
+        If using JWT authentication, you will need to download the configuration from 
+        the Box developer console after generating your public/private key pair. Place 
+        this file in your application directory structure somewhere. You will use the 
+        path to this file when using the ``BoxAuth`` helper class. If you wish to use 
+        OAuth2 with the authorization_code flow, please use ``BoxAuthType.TOKEN`` with 
+        the token you have acquired.
 
     For more information, learn about how to
     `set up a Box application <https://developer.box.com/guides/getting-started/first-application/>`_,
