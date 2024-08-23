@@ -177,11 +177,11 @@ class BoxAuth(BaseModel):
     * **CCG** with a specified user
 
     .. note::
-        If using JWT authentication, you will need to download the configuration from 
-        the Box developer console after generating your public/private key pair. Place 
-        this file in your application directory structure somewhere. You will use the 
-        path to this file when using the ``BoxAuth`` helper class. If you wish to use 
-        OAuth2 with the authorization_code flow, please use ``BoxAuthType.TOKEN`` with 
+        If using JWT authentication, you will need to download the configuration from
+        the Box developer console after generating your public/private key pair. Place
+        this file in your application directory structure somewhere. You will use the
+        path to this file when using the ``BoxAuth`` helper class. If you wish to use
+        OAuth2 with the authorization_code flow, please use ``BoxAuthType.TOKEN`` with
         the token you have acquired.
 
     For more information, learn about how to
@@ -215,7 +215,7 @@ class BoxAuth(BaseModel):
         **Token**
 
         .. code-block:: python
-        
+
             from langchain_box.document_loaders import BoxLoader
             from langchain_box.utilities import BoxAuth, BoxAuthType
 
@@ -270,7 +270,7 @@ class BoxAuth(BaseModel):
         **CCG with a service account**
 
         .. code-block:: python
-            
+
             from langchain_box.document_loaders import BoxLoader
             from langchain_box.utilities import BoxAuth, BoxAuthType
 
@@ -290,7 +290,7 @@ class BoxAuth(BaseModel):
         **CCG with a specified user**
 
         .. code-block:: python
-            
+
             from langchain_box.document_loaders import BoxLoader
             from langchain_box.utilities import BoxAuth, BoxAuthType
 

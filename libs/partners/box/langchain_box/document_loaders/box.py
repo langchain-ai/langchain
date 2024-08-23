@@ -145,7 +145,7 @@ class BoxLoader(BaseLoader, BaseModel):
             page_content='Vendor: AstroTech Solutions\\nInvoice Number: A5555\\n\\nLine
             Items:\\n    - Gravitational Wave Detector Kit: $800\\n    - Exoplanet
             Terrarium: $120\\nTotal: $920')
-            
+
     """
 
     box_developer_token: Optional[str] = None
