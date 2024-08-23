@@ -3,6 +3,8 @@ sidebar_position: 0
 sidebar_class_name: hidden
 ---
 
+import {CategoryTable, IndexTable} from '@theme/FeatureTables'
+
 # Retrievers
 
 A [retriever](/docs/concepts/#retrievers) is an interface that returns documents given an unstructured query.
@@ -22,20 +24,14 @@ This page lists custom retrievers, implemented via subclassing [BaseRetriever](/
 
 The below retrievers allow you to index and search a custom corpus of documents.
 
-| Retriever | Self-host | Cloud offering | Package |
-|-----------|-----------|----------------|---------|
-| [AmazonKnowledgeBasesRetriever](/docs/integrations/retrievers/bedrock) | ❌ | ✅ | [langchain_aws](https://api.python.langchain.com/en/latest/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html) |
-| [AzureAISearchRetriever](/docs/integrations/retrievers/azure_ai_search) | ❌ | ✅ | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html) |
-| [ElasticsearchRetriever](/docs/integrations/retrievers/elasticsearch_retriever) | ✅ | ✅ | [langchain_elasticsearch](https://api.python.langchain.com/en/latest/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html) |
-| [MilvusCollectionHybridSearchRetriever](/docs/integrations/retrievers/milvus_hybrid_search) | ✅ | ❌ | [langchain_milvus](https://api.python.langchain.com/en/latest/retrievers/langchain_milvus.retrievers.milvus_hybrid_search.MilvusCollectionHybridSearchRetriever.html) |
-| [VertexAISearchRetriever](/docs/integrations/retrievers/google_vertex_ai_search) | ❌ | ✅ | [langchain_google_community](https://api.python.langchain.com/en/latest/vertex_ai_search/langchain_google_community.vertex_ai_search.VertexAISearchRetriever.html) |
+<CategoryTable category="document_retrievers" />
 
 ## External index
 
 The below retrievers will search over an external index (e.g., constructed from Internet data or similar).
 
-| Retriever | Source | Package |
-|-----------|--------|---------|
-| [ArxivRetriever](/docs/integrations/retrievers/arxiv) | Scholarly articles on [arxiv.org](https://arxiv.org/) | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.arxiv.ArxivRetriever.html) |
-| [TavilySearchAPIRetriever](/docs/integrations/retrievers/tavily) | Internet search | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html) |
-| [WikipediaRetriever](/docs/integrations/retrievers/wikipedia) | [Wikipedia](https://www.wikipedia.org/) articles | [langchain_community](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.wikipedia.WikipediaRetriever.html) |
+<CategoryTable category="external_retrievers" />
+
+## All retrievers
+
+<IndexTable />
