@@ -606,9 +606,8 @@ From the opposite direction, scientists use `LangChain` in research and referenc
                 f"""
 ## {paper.title}
 
-- **arXiv id:** [{paper.arxiv_id}]({paper.url})  **Published Date:** {paper.published_date}
-- **Title:** {paper.title}
 - **Authors:** {', '.join(paper.authors)}
+- **arXiv id:** [{paper.arxiv_id}]({paper.url})  **Published Date:** {paper.published_date}
 - **LangChain:**
 
 {refs}
