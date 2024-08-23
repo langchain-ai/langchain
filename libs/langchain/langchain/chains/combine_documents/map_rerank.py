@@ -25,7 +25,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     Example:
         .. code-block:: python
 
-            from langchain.chains import StuffDocumentsChain, LLMChain
+            from langchain.chains import MapRerankDocumentsChain, LLMChain
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI
             from langchain.output_parsers.regex import RegexParser
@@ -39,7 +39,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             prompt_template = (
                 "Use the following context to tell me the chemical formula "
                 "for water. Output both your answer and a score of how confident "
-                "you are. Context: {content}"
+                "you are. Context: {context}"
             )
             output_parser = RegexParser(
                 regex=r"(.*?)\nScore: (.*)",

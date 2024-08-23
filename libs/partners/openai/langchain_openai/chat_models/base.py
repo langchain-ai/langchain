@@ -383,7 +383,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Penalizes repeated tokens according to frequency."""
     seed: Optional[int] = None
     """Seed for generation"""
-    logprobs: Optional[bool] = False
+    logprobs: Optional[bool] = None
     """Whether to return logprobs."""
     top_logprobs: Optional[int] = None
     """Number of most likely tokens to return at each token position, each with
@@ -1110,7 +1110,6 @@ class BaseChatOpenAI(BaseChatModel):
         Args:
             schema:
                 The output schema. Can be passed in as:
-
                     - an OpenAI function/tool schema,
                     - a JSON Schema,
                     - a TypedDict class (support added in 0.1.20),
@@ -1128,13 +1127,12 @@ class BaseChatOpenAI(BaseChatModel):
 
             method:
                 The method for steering model generation, one of:
-
                     - "function_calling":
                         Uses OpenAI's tool-calling (formerly called function calling)
                         API: https://platform.openai.com/docs/guides/function-calling
                     - "json_schema":
                         Uses OpenAI's Structured Output API:
-                        https://platform.openai.com/docs/guides/structured-outputs.
+                        https://platform.openai.com/docs/guides/structured-outputs
                         Supported for "gpt-4o-mini", "gpt-4o-2024-08-06", and later
                         models.
                     - "json_mode":
@@ -1146,8 +1144,8 @@ class BaseChatOpenAI(BaseChatModel):
                 Learn more about the differences between the methods and which models
                 support which methods here:
 
-                    - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
-                    - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
+                - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
+                - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
 
                 .. versionchanged:: 0.1.21
 
@@ -1168,7 +1166,7 @@ class BaseChatOpenAI(BaseChatModel):
                 - True:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to
-                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas.
+                    https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
                 - False:
                     Input schema will not be validated and model output will not be
                     validated.
@@ -1190,26 +1188,22 @@ class BaseChatOpenAI(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            - "raw": BaseMessage
+            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - "parsing_error": Optional[BaseException]
 
-                - "raw": BaseMessage
-                - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - "parsing_error": Optional[BaseException]
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True
 
-        Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True:
-            .. note:: Valid schemas when using ``strict`` = True
+            Note, OpenAI has a number of restrictions on what types of schemas can be
+            provided if ``strict`` = True. When using Pydantic, our model cannot
+            specify any Field metadata (like min/max constraints) and fields cannot
+            have default values.
 
-                OpenAI has a number of restrictions on what types of schemas can be
-                provided if ``strict`` = True. When using Pydantic, our model cannot
-                specify any Field metadata (like min/max constraints) and fields cannot
-                have default values.
-
-                See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+            See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
 
             .. code-block:: python
 
@@ -1242,7 +1236,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: schema=Pydantic class, method="function_calling", include_raw=True:
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=True
+
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -1270,7 +1265,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: schema=TypedDict class, method="function_calling", include_raw=False:
+        .. dropdown:: Example: schema=TypedDict class, method="function_calling", include_raw=False
+
             .. code-block:: python
 
                 # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
@@ -1300,7 +1296,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+        .. dropdown:: Example: schema=OpenAI function schema, method="function_calling", include_raw=False
+
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -1329,7 +1326,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: schema=Pydantic class, method="json_mode", include_raw=True:
+        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+
             .. code-block::
 
                 from langchain_openai import ChatOpenAI
@@ -1357,7 +1355,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: schema=None, method="json_mode", include_raw=True:
+        .. dropdown:: Example: schema=None, method="json_mode", include_raw=True
+
             .. code-block::
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
@@ -1448,7 +1447,9 @@ class BaseChatOpenAI(BaseChatModel):
 class ChatOpenAI(BaseChatOpenAI):
     """OpenAI chat model integration.
 
-    Setup:
+    .. dropdown:: Setup
+        :open:
+
         Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
 
         .. code-block:: bash
@@ -1456,7 +1457,8 @@ class ChatOpenAI(BaseChatOpenAI):
             pip install -U langchain-openai
             export OPENAI_API_KEY="your-api-key"
 
-    Key init args — completion params:
+    .. dropdown:: Key init args — completion params
+
         model: str
             Name of OpenAI model to use.
         temperature: float
@@ -1469,7 +1471,10 @@ class ChatOpenAI(BaseChatOpenAI):
             Configure streaming outputs, like whether to return token usage when
             streaming (``{"include_usage": True}``).
 
-    Key init args — client params:
+        See full list of supported init args and their descriptions in the params section.
+
+    .. dropdown:: Key init args — client params
+
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
         max_retries: int
@@ -1483,9 +1488,10 @@ class ChatOpenAI(BaseChatOpenAI):
             OpenAI organization ID. If not passed in will be read from env
             var OPENAI_ORG_ID.
 
-    See full list of supported init args and their descriptions in the params section.
+        See full list of supported init args and their descriptions in the params section.
 
-    Instantiate:
+    .. dropdown:: Instantiate
+
         .. code-block:: python
 
             from langchain_openai import ChatOpenAI
@@ -1502,9 +1508,10 @@ class ChatOpenAI(BaseChatOpenAI):
                 # other params...
             )
 
-    **NOTE**: Any param which is not explicitly supported will be passed directly to the
-    ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
-    invoked. For example:
+        **NOTE**: Any param which is not explicitly supported will be passed directly to the
+        ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
+        invoked. For example:
+
         .. code-block:: python
 
             from langchain_openai import ChatOpenAI
@@ -1520,7 +1527,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
             ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
 
-    Invoke:
+    .. dropdown:: Invoke
+
         .. code-block:: python
 
             messages = [
@@ -1532,7 +1540,7 @@ class ChatOpenAI(BaseChatOpenAI):
             ]
             llm.invoke(messages)
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             AIMessage(
                 content="J'adore la programmation.",
@@ -1551,7 +1559,8 @@ class ChatOpenAI(BaseChatOpenAI):
                 usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
             )
 
-    Stream:
+    .. dropdown:: Stream
+
         .. code-block:: python
 
             for chunk in llm.stream(messages):
@@ -1589,7 +1598,8 @@ class ChatOpenAI(BaseChatOpenAI):
                 id="run-bf917526-7f58-4683-84f7-36a6b671d140",
             )
 
-    Async:
+    .. dropdown:: Async
+
         .. code-block:: python
 
             await llm.ainvoke(messages)
@@ -1619,7 +1629,8 @@ class ChatOpenAI(BaseChatOpenAI):
                 usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
             )
 
-    Tool calling:
+    .. dropdown:: Tool calling
+
         .. code-block:: python
 
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -1702,7 +1713,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
         See ``ChatOpenAI.bind_tools()`` method for more.
 
-    Structured output:
+    .. dropdown:: Structured output
+
         .. code-block:: python
 
             from typing import Optional
@@ -1731,7 +1743,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
         See ``ChatOpenAI.with_structured_output()`` for more.
 
-    JSON mode:
+    .. dropdown:: JSON mode
+
         .. code-block:: python
 
             json_llm = llm.bind(response_format={"type": "json_object"})
@@ -1744,7 +1757,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
             '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
 
-    Image input:
+    .. dropdown:: Image input
+
         .. code-block:: python
 
             import base64
@@ -1769,7 +1783,8 @@ class ChatOpenAI(BaseChatOpenAI):
 
             "The weather in the image appears to be clear and pleasant. The sky is mostly blue with scattered, light clouds, suggesting a sunny day with minimal cloud cover. There is no indication of rain or strong winds, and the overall scene looks bright and calm. The lush green grass and clear visibility further indicate good weather conditions."
 
-    Token usage:
+    .. dropdown:: Token usage
+
         .. code-block:: python
 
             ai_msg = llm.invoke(messages)
@@ -1803,7 +1818,8 @@ class ChatOpenAI(BaseChatOpenAI):
             llm = ChatOpenAI(model="gpt-4o", stream_usage=True)
             structured_llm = llm.with_structured_output(...)
 
-    Logprobs:
+    .. dropdown:: Logprobs
+
         .. code-block:: python
 
             logprobs_llm = llm.bind(logprobs=True)
@@ -1862,7 +1878,8 @@ class ChatOpenAI(BaseChatOpenAI):
                 ]
             }
 
-    Response metadata
+    .. dropdown:: Response metadata
+
         .. code-block:: python
 
             ai_msg = llm.invoke(messages)

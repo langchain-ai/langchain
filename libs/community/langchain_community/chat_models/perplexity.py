@@ -55,20 +55,20 @@ class ChatPerplexity(BaseChatModel):
             from langchain_community.chat_models import ChatPerplexity
 
             chat = ChatPerplexity(
-                model="llama-3-sonar-small-32k-online",
+                model="llama-3.1-sonar-small-128k-online",
                 temperature=0.7,
             )
     """
 
     client: Any  #: :meta private:
-    model: str = "llama-3-sonar-small-32k-online"
+    model: str = "llama-3.1-sonar-small-128k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     pplx_api_key: Optional[str] = Field(None, alias="api_key")
-    """Base URL path for API requests, 
+    """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
@@ -88,7 +88,7 @@ class ChatPerplexity(BaseChatModel):
     def lc_secrets(self) -> Dict[str, str]:
         return {"pplx_api_key": "PPLX_API_KEY"}
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
@@ -114,7 +114,7 @@ class ChatPerplexity(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["pplx_api_key"] = get_from_dict_or_env(

@@ -1,6 +1,6 @@
-# rag-conversation-zep
+# RAG - Zep - conversation
 
-This template demonstrates building a RAG conversation app using Zep. 
+This template demonstrates building a RAG conversation app using `Zep`. 
 
 Included in this template:
 - Populating a [Zep Document Collection](https://docs.getzep.com/sdk/documents/) with a set of documents (a Collection is analogous to an index in other Vector Databases).
@@ -9,12 +9,15 @@ Included in this template:
 - Prompts, a simple chat history data structure, and other components required to build a RAG conversation app.
 - The RAG conversation chain.
 
-## About [Zep - Fast, scalable building blocks for LLM Apps](https://www.getzep.com/)
+## About Zep
+
+[Zep - Fast, scalable building blocks for LLM Apps](https://www.getzep.com/)
+
 Zep is an open source platform for productionizing LLM apps. Go from a prototype built in LangChain or LlamaIndex, or a custom app, to production in minutes without rewriting code.
 
 Key Features:
 
-- Fast! Zep’s async extractors operate independently of the your chat loop, ensuring a snappy user experience.
+- Fast! Zep’s async extractors operate independently of the chat loop, ensuring a snappy user experience.
 - Long-term memory persistence, with access to historical messages irrespective of your summarization strategy.
 - Auto-summarization of memory messages based on a configurable message window. A series of summaries are stored, providing flexibility for future summarization strategies.
 - Hybrid search over memories and metadata, with messages automatically embedded on creation.
@@ -22,7 +25,7 @@ Key Features:
 - Auto-token counting of memories and summaries, allowing finer-grained control over prompt assembly.
 - Python and JavaScript SDKs.
 
-Zep project: https://github.com/getzep/zep | Docs: https://docs.getzep.com/
+`Zep` project: https://github.com/getzep/zep | Docs: https://docs.getzep.com/
 
 ## Environment Setup
 

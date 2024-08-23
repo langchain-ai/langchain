@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun, Callbacks
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
@@ -22,6 +23,16 @@ from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "Refer here for a recommended map-reduce implementation using langgraph: "
+        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/. See also "
+        "migration guide: "
+        "https://python.langchain.com/v0.2/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
+    ),
+)
 class MapReduceChain(Chain):
     """Map-reduce chain."""
 

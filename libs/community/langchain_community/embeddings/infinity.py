@@ -47,7 +47,7 @@ class InfinityEmbeddings(BaseModel, Embeddings):
     class Config:
         extra = "forbid"
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 
