@@ -1120,7 +1120,6 @@ class BaseChatOpenAI(BaseChatModel):
         Args:
             schema:
                 The output schema. Can be passed in as:
-
                     - an OpenAI function/tool schema,
                     - a JSON Schema,
                     - a TypedDict class (support added in 0.1.20),
@@ -1138,7 +1137,6 @@ class BaseChatOpenAI(BaseChatModel):
 
             method:
                 The method for steering model generation, one of:
-
                     - "function_calling":
                         Uses OpenAI's tool-calling (formerly called function calling)
                         API: https://platform.openai.com/docs/guides/function-calling
@@ -1156,8 +1154,8 @@ class BaseChatOpenAI(BaseChatModel):
                 Learn more about the differences between the methods and which models
                 support which methods here:
 
-                    - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
-                    - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
+                - https://platform.openai.com/docs/guides/structured-outputs/structured-outputs-vs-json-mode
+                - https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format
 
                 .. versionchanged:: 0.1.21
 
@@ -1200,26 +1198,22 @@ class BaseChatOpenAI(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            - "raw": BaseMessage
+            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - "parsing_error": Optional[BaseException]
 
-                - "raw": BaseMessage
-                - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - "parsing_error": Optional[BaseException]
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True
 
-        Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=True:
-            .. note:: Valid schemas when using ``strict`` = True
+            Note, OpenAI has a number of restrictions on what types of schemas can be
+            provided if ``strict`` = True. When using Pydantic, our model cannot
+            specify any Field metadata (like min/max constraints) and fields cannot
+            have default values.
 
-                OpenAI has a number of restrictions on what types of schemas can be
-                provided if ``strict`` = True. When using Pydantic, our model cannot
-                specify any Field metadata (like min/max constraints) and fields cannot
-                have default values.
-
-                See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
+            See all constraints here: https://platform.openai.com/docs/guides/structured-outputs/supported-schemas
 
             .. code-block:: python
 
@@ -1252,7 +1246,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        Example: schema=Pydantic class, method="function_calling", include_raw=True:
+        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=True
+
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -1280,7 +1275,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: schema=TypedDict class, method="function_calling", include_raw=False:
+        .. dropdown:: Example: schema=TypedDict class, method="function_calling", include_raw=False
+
             .. code-block:: python
 
                 # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
@@ -1310,7 +1306,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+        .. dropdown:: Example: schema=OpenAI function schema, method="function_calling", include_raw=False
+
             .. code-block:: python
 
                 from langchain_openai import ChatOpenAI
@@ -1339,7 +1336,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        Example: schema=Pydantic class, method="json_mode", include_raw=True:
+        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+
             .. code-block::
 
                 from langchain_openai import ChatOpenAI
@@ -1367,7 +1365,8 @@ class BaseChatOpenAI(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: schema=None, method="json_mode", include_raw=True:
+        .. dropdown:: Example: schema=None, method="json_mode", include_raw=True
+
             .. code-block::
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)

@@ -5127,8 +5127,7 @@ async def test_runnable_gen_transform() -> None:
     """Test that a generator can be used as a runnable."""
 
     def gen_indexes(length_iter: Iterator[int]) -> Iterator[int]:
-        for i in range(next(length_iter)):
-            yield i
+        yield from range(next(length_iter))
 
     async def agen_indexes(length_iter: AsyncIterator[int]) -> AsyncIterator[int]:
         async for length in length_iter:
