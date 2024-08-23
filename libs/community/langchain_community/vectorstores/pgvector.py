@@ -19,8 +19,8 @@ from typing import (
 
 import numpy as np
 import sqlalchemy
-from langchain_core._api import warn_deprecated
-from sqlalchemy import SQLColumnExpression, delete, func
+from langchain_core._api import deprecated, warn_deprecated
+from sqlalchemy import delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
@@ -28,6 +28,12 @@ try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
+
+try:
+    from sqlalchemy import SQLColumnExpression
+except ImportError:
+    # for sqlalchemy < 2
+    SQLColumnExpression = Any  # type: ignore
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -209,8 +215,37 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     return [doc for doc, _ in docs_and_scores]
 
 
+@deprecated(
+    since="0.0.31",
+    message=(
+        "This class is pending deprecation and may be removed in a future version. "
+        "You can swap to using the `PGVector`"
+        " implementation in `langchain_postgres`. "
+        "Please read the guidelines in the doc-string of this class "
+        "to follow prior to migrating as there are some differences "
+        "between the implementations. "
+        "See <https://github.com/langchain-ai/langchain-postgres> for details about"
+        "the new implementation."
+    ),
+    alternative="from langchain_postgres import PGVector;",
+    pending=True,
+)
 class PGVector(VectorStore):
     """`Postgres`/`PGVector` vector store.
+
+    **DEPRECATED**: This class is pending deprecation and will likely receive
+        no updates. An improved version of this class is available in
+        `langchain_postgres` as `PGVector`. Please use that class instead.
+
+        When migrating please keep in mind that:
+            * The new implementation works with psycopg3, not with psycopg2
+              (This implementation does not work with psycopg3).
+            * Filtering syntax has changed to use $ prefixed operators for JSONB
+              metadata fields. (New implementation only uses JSONB field for metadata)
+            * The new implementation made some schema changes to address issues
+              with the existing implementation. So you will need to re-create
+              your tables and re-index your data or else carry out a manual
+              migration.
 
     To use, you should have the ``pgvector`` python package installed.
 
@@ -239,22 +274,22 @@ class PGVector(VectorStore):
             disabling creation is useful when using ReadOnly Databases.
 
     Example:
-        .. code-block:: python
 
-            from langchain_community.vectorstores import PGVector
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+       .. code-block:: python
 
-            CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
-            COLLECTION_NAME = "state_of_the_union_test"
-            embeddings = OpenAIEmbeddings()
-            vectorestore = PGVector.from_documents(
-                embedding=embeddings,
-                documents=docs,
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-                use_jsonb=True,
-            )
-    """
+           from langchain_community.vectorstores import PGVector
+           from langchain_community.embeddings.openai import OpenAIEmbeddings
+           CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
+           COLLECTION_NAME = "state_of_the_union_test"
+           embeddings = OpenAIEmbeddings()
+           vectorestore = PGVector.from_documents(
+               embedding=embeddings,
+               documents=docs,
+               collection_name=COLLECTION_NAME,
+               connection_string=CONNECTION_STRING,
+               use_jsonb=True,
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -426,7 +461,7 @@ class PGVector(VectorStore):
         return self.CollectionStore.get_by_name(session, self.collection_name)
 
     @classmethod
-    def __from(
+    def _from(
         cls,
         texts: List[str],
         embeddings: List[List[float]],
@@ -442,7 +477,7 @@ class PGVector(VectorStore):
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -482,7 +517,7 @@ class PGVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -594,7 +629,7 @@ class PGVector(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        results = self.__query_collection(embedding=embedding, k=k, filter=filter)
+        results = self._query_collection(embedding=embedding, k=k, filter=filter)
 
         return self._results_to_docs_and_scores(results)
 
@@ -704,7 +739,7 @@ class PGVector(VectorStore):
             if operator in {"$in"}:
                 return queried_field.in_([str(val) for val in filter_value])
             elif operator in {"$nin"}:
-                return queried_field.nin_([str(val) for val in filter_value])
+                return queried_field.not_in([str(val) for val in filter_value])
             elif operator in {"$like"}:
                 return queried_field.like(filter_value)
             elif operator in {"$ilike"}:
@@ -766,13 +801,13 @@ class PGVector(VectorStore):
             )
         elif OR in map(str.lower, value):
             or_clauses = [
-                self._create_filter_clause(key, sub_value)
+                self._create_filter_clause_deprecated(key, sub_value)
                 for sub_value in value_case_insensitive[OR]
             ]
             filter_by_metadata = sqlalchemy.or_(*or_clauses)
         elif AND in map(str.lower, value):
             and_clauses = [
-                self._create_filter_clause(key, sub_value)
+                self._create_filter_clause_deprecated(key, sub_value)
                 for sub_value in value_case_insensitive[AND]
             ]
             filter_by_metadata = sqlalchemy.and_(*and_clauses)
@@ -893,7 +928,7 @@ class PGVector(VectorStore):
                 f"Invalid type: Expected a dictionary but got type: {type(filters)}"
             )
 
-    def __query_collection(
+    def _query_collection(
         self,
         embedding: List[float],
         k: int = 4,
@@ -979,7 +1014,7 @@ class PGVector(VectorStore):
         """
         embeddings = embedding.embed_documents(list(texts))
 
-        return cls.__from(
+        return cls._from(
             texts,
             embeddings,
             embedding,
@@ -1025,7 +1060,7 @@ class PGVector(VectorStore):
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
 
-        return cls.__from(
+        return cls._from(
             texts,
             embeddings,
             embedding,
@@ -1189,7 +1224,7 @@ class PGVector(VectorStore):
             List[Tuple[Document, float]]: List of Documents selected by maximal marginal
                 relevance to the query and score for each.
         """
-        results = self.__query_collection(embedding=embedding, k=fetch_k, filter=filter)
+        results = self._query_collection(embedding=embedding, k=fetch_k, filter=filter)
 
         embedding_list = [result.EmbeddingStore.embedding for result in results]
 

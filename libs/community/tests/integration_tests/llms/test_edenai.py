@@ -8,13 +8,16 @@ clicking on the 'sandbox' toggle.
 
 You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
+
+from langchain_core.pydantic_v1 import SecretStr
+
 from langchain_community.llms import EdenAI
 
 
 def test_edenai_call() -> None:
     """Test simple call to edenai."""
     llm = EdenAI(provider="openai", temperature=0.2, max_tokens=250)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "edenai"
     assert llm.feature == "text"
@@ -38,9 +41,19 @@ def test_edenai_call_with_old_params() -> None:
     to pass optional parameters to api
     """
     llm = EdenAI(provider="openai", params={"temperature": 0.2, "max_tokens": 250})
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "edenai"
     assert llm.feature == "text"
     assert llm.subfeature == "generation"
     assert isinstance(output, str)
+
+
+def test_api_key_is_secret_string() -> None:
+    llm = EdenAI(provider="openai", edenai_api_key="secret-api-key")
+    assert isinstance(llm.edenai_api_key, SecretStr)
+
+
+def test_uses_actual_secret_value() -> None:
+    llm = EdenAI(provider="openai", edenai_api_key="secret-api-key")
+    assert llm.edenai_api_key.get_secret_value() == "secret-api-key"

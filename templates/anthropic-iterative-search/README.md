@@ -1,5 +1,4 @@
-
-# anthropic-iterative-search
+# Anthropic - iterative search
 
 This template will create a virtual research assistant with the ability to search Wikipedia to find answers to your questions.
 
@@ -38,7 +37,7 @@ add_routes(app, anthropic_iterative_search_chain, path="/anthropic-iterative-sea
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

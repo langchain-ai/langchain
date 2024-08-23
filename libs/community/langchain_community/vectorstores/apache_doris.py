@@ -63,8 +63,8 @@ class ApacheDorisSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_prefix = "apache_doris_"
         env_file_encoding = "utf-8"
+        env_prefix = "apache_doris_"
 
 
 class ApacheDoris(VectorStore):
@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                     (
                         f"'{self.escape_str(str(_n))}'"
                         if idx != embed_tuple_index
-                        else f"array<float>{str(_n)}"
+                        else f"{str(_n)}"
                     )
                     for (idx, _n) in enumerate(n)
                 ]

@@ -1,13 +1,12 @@
+# RAG - SingleStoreDB
 
-# rag-singlestoredb
-
-This template performs RAG using SingleStoreDB and OpenAI.
+This template performs RAG using `SingleStoreDB` and OpenAI.
 
 ## Environment Setup
 
-This template uses SingleStoreDB as a vectorstore and requires that `SINGLESTOREDB_URL` is set. It should take the form `admin:password@svc-xxx.svc.singlestore.com:port/db_name`
+This template uses `SingleStoreDB` as a vectorstore and requires that `SINGLESTOREDB_URL` is set. It should take the form `admin:password@svc-xxx.svc.singlestore.com:port/db_name`
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+Set the `OPENAI_API_KEY` environment variable to access the `OpenAI` models.
 
 ## Usage
 
@@ -38,7 +37,7 @@ add_routes(app, rag_singlestoredb_chain, path="/rag-singlestoredb")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

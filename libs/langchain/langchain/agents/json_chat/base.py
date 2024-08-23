@@ -4,11 +4,11 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.tools.render import ToolsRenderer, render_text_description
 
 from langchain.agents.format_scratchpad import format_log_to_messages
 from langchain.agents.json_chat.prompt import TEMPLATE_TOOL_RESPONSE
 from langchain.agents.output_parsers import JSONAgentOutputParser
-from langchain.tools.render import ToolsRenderer, render_text_description
 
 
 def create_json_chat_agent(
@@ -36,11 +36,17 @@ def create_json_chat_agent(
             then passed into the LLM. Default is `render_text_description`.
         template_tool_response: Template prompt that uses the tool response (observation)
             to make the LLM generate the next action to take.
+            Default is TEMPLATE_TOOL_RESPONSE.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
+        
+    Raises:
+        ValueError: If the prompt is missing required variables.
+        ValueError: If the template_tool_response is missing
+            the required variable 'observation'.
 
     Example:
 
@@ -122,8 +128,8 @@ def create_json_chat_agent(
 
             ```json
             {{
-                "action": string, \ The action to take. Must be one of {tool_names}
-                "action_input": string \ The input to the action
+                "action": string, \\ The action to take. Must be one of {tool_names}
+                "action_input": string \\ The input to the action
             }}
             ```
 
@@ -134,7 +140,7 @@ def create_json_chat_agent(
             ```json
             {{
                 "action": "Final Answer",
-                "action_input": string \ You should put what you want to return to use here
+                "action_input": string \\ You should put what you want to return to use here
             }}
             ```
 
@@ -155,7 +161,7 @@ def create_json_chat_agent(
             )
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables
+        prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")

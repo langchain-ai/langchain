@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
     from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
-
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -50,6 +50,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     ]
 
 
+@deprecated(since="0.2.9", removal="1.0", alternative_import="langchain_chroma.Chroma")
 class Chroma(VectorStore):
     """`ChromaDB` vector store.
 
@@ -65,7 +66,7 @@ class Chroma(VectorStore):
                 vectorstore = Chroma("langchain_store", embeddings)
     """
 
-    _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
+    _LANGCHAIN_DEFAULT_COLLECTION_NAME: str = "langchain"
 
     def __init__(
         self,
@@ -81,7 +82,6 @@ class Chroma(VectorStore):
         try:
             import chromadb
             import chromadb.config
-            from chromadb.utils import embedding_functions
         except ImportError:
             raise ImportError(
                 "Could not import chromadb python package. "
@@ -124,12 +124,10 @@ class Chroma(VectorStore):
                 _client_settings.persist_directory or persist_directory
             )
 
-        self._embedding_function = (
-            embedding_function or embedding_functions.DefaultEmbeddingFunction()
-        )
+        self._embedding_function = embedding_function
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_function,
+            embedding_function=None,
             metadata=collection_metadata,
         )
         self.override_relevance_score_fn = relevance_score_fn
@@ -152,7 +150,7 @@ class Chroma(VectorStore):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
@@ -481,6 +479,93 @@ class Chroma(VectorStore):
                 "Consider providing relevance_score_fn to Chroma constructor."
             )
 
+    def similarity_search_by_image(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return. Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+        Returns:
+            List of Images most similar to the provided image.
+            Each element in list is a Langchain Document Object.
+            The page content is b64 encoded image, metadata is default or
+            as defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
+    def similarity_search_by_image_with_relevance_score(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return.
+            Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+        Returns:
+            List[Tuple[Document, float]]: List of tuples containing documents similar
+            to the query image and their similarity scores.
+            0th element in each tuple is a Langchain Document Object.
+            The page content is b64 encoded img, metadata is default or defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector_with_relevance_scores(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -614,11 +699,22 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)
 
+    @deprecated(
+        since="0.1.17",
+        message=(
+            "Since Chroma 0.4.x the manual persistence method is no longer "
+            "supported as docs are automatically persisted."
+        ),
+        removal="1.0",
+    )
     def persist(self) -> None:
         """Persist the collection.
 
         This can be used to explicitly persist the data to disk.
         It will also be called automatically when the object is destroyed.
+
+        Since Chroma 0.4.x the manual persistence method is no longer
+        supported as docs are automatically persisted.
         """
         if self._persist_directory is None:
             raise ValueError(
@@ -798,7 +894,7 @@ class Chroma(VectorStore):
         Args:
             ids: List of ids to delete.
         """
-        self._collection.delete(ids=ids)
+        self._collection.delete(ids=ids, **kwargs)
 
     def __len__(self) -> int:
         """Count the number of documents in the collection."""

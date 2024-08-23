@@ -1,4 +1,5 @@
 """Test DocugamiLoader."""
+
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,7 @@ DOCUGAMI_XML_PATH = Path(__file__).parent / "test_data" / "docugami-example.xml"
 @pytest.mark.requires("dgml_utils")
 def test_docugami_loader_local() -> None:
     """Test DocugamiLoader."""
-    loader = DocugamiLoader(file_paths=[DOCUGAMI_XML_PATH])
+    loader = DocugamiLoader(file_paths=[DOCUGAMI_XML_PATH])  # type: ignore[call-arg]
     docs = loader.load()
 
     assert len(docs) == 25
@@ -24,4 +25,4 @@ def test_docugami_loader_local() -> None:
 
 def test_docugami_initialization() -> None:
     """Test correct initialization in remote mode."""
-    DocugamiLoader(access_token="test", docset_id="123")
+    DocugamiLoader(access_token="test", docset_id="123")  # type: ignore[call-arg]

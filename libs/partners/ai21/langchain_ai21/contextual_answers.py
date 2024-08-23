@@ -19,11 +19,15 @@ ContextType = Union[str, List[Union[Document, str]]]
 
 
 class ContextualAnswerInput(TypedDict):
+    """Input for the ContextualAnswers runnable."""
+
     context: ContextType
     question: str
 
 
 class AI21ContextualAnswers(RunnableSerializable[ContextualAnswerInput, str], AI21Base):
+    """Runnable for the AI21 Contextual Answers API."""
+
     class Config:
         """Configuration for this pydantic object."""
 

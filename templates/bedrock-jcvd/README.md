@@ -1,12 +1,13 @@
-# Bedrock JCVD 🕺🥋
+# Bedrock - JCVD 🕺🥋
 
 ## Overview
 
-LangChain template that uses [Anthropic's Claude on Amazon Bedrock](https://aws.amazon.com/bedrock/claude/) to behave like JCVD.
+LangChain template that uses [Anthropic's Claude on Amazon Bedrock](https://aws.amazon.com/bedrock/claude/)
+to behave like `Jean-Claude Van Damme` (`JCVD`).
 
 > I am the Fred Astaire of Chatbots! 🕺
 
-'![Animated GIF of Jean-Claude Van Damme dancing.](https://media.tenor.com/CVp9l7g3axwAAAAj/jean-claude-van-damme-jcvd.gif "Jean-Claude Van Damme Dancing")
+![Animated GIF of Jean-Claude Van Damme dancing.](https://media.tenor.com/CVp9l7g3axwAAAAj/jean-claude-van-damme-jcvd.gif) "Jean-Claude Van Damme Dancing"
 
 ## Environment Setup
 
@@ -55,7 +56,7 @@ add_routes(app, bedrock_jcvd_chain, path="/bedrock-jcvd")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 
@@ -78,4 +79,4 @@ We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/d
 
 We can also access the playground at [http://127.0.0.1:8000/bedrock-jcvd/playground](http://127.0.0.1:8000/bedrock-jcvd/playground)
 
-![Screenshot of the LangServe Playground interface with an example input and output demonstrating a Jean-Claude Van Damme voice imitation.](jcvd_langserve.png "JCVD Playground")
+![Screenshot of the LangServe Playground interface with an example input and output demonstrating a Jean-Claude Van Damme voice imitation.](jcvd_langserve.png) "JCVD Playground"

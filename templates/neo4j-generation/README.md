@@ -1,7 +1,7 @@
+# Neo4j AuraDB - generation
 
-# neo4j-generation
-
-This template pairs LLM-based knowledge graph extraction with Neo4j AuraDB, a fully managed cloud graph database.
+This template pairs LLM-based knowledge graph extraction with `Neo4j AuraDB`, 
+a fully managed cloud graph database.
 
 You can create a free instance on [Neo4j Aura](https://neo4j.com/cloud/platform/aura-graph-database?utm_source=langchain&utm_content=langserve).
 
@@ -51,7 +51,7 @@ add_routes(app, neo4j_generation_chain, path="/neo4j-generation")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

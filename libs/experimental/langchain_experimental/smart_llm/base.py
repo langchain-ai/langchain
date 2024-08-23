@@ -1,20 +1,21 @@
 """Chain for applying self-critique using the SmartGPT workflow."""
+
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.input import get_colored_text
-from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.chat import (
+from langchain.schema import LLMResult, PromptValue
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.schema import LLMResult, PromptValue
 
-from langchain_experimental.pydantic_v1 import Extra, root_validator
+from langchain_experimental.pydantic_v1 import root_validator
 
 
 class SmartLLMChain(Chain):
@@ -83,7 +84,7 @@ class SmartLLMChain(Chain):
     history: SmartLLMChainHistory = SmartLLMChainHistory()
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
     # TODO: move away from `root_validator` since it is deprecated in pydantic v2
     #       and causes mypy type-checking failures (hence the `type: ignore`)

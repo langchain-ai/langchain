@@ -1,3 +1,7 @@
+---
+keywords: [openai]
+---
+
 # OpenAI
 
 All functionality related to OpenAI
@@ -21,6 +25,19 @@ pip install langchain-openai
 
 Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
 
+## Chat model
+
+See a [usage example](/docs/integrations/chat/openai).
+
+```python
+from langchain_openai import ChatOpenAI
+```
+
+If you are using a model hosted on `Azure`, you should use different wrapper for that:
+```python
+from langchain_openai import AzureChatOpenAI
+```
+For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/chat/azure_chat_openai).
 
 ## LLM
 
@@ -34,21 +51,7 @@ If you are using a model hosted on `Azure`, you should use different wrapper for
 ```python
 from langchain_openai import AzureOpenAI
 ```
-For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/llms/azure_openai)
-
-## Chat model
-
-See a [usage example](/docs/integrations/chat/openai).
-
-```python
-from langchain_openai import ChatOpenAI
-```
-
-If you are using a model hosted on `Azure`, you should use different wrapper for that:
-```python
-from langchain_openai import AzureChatOpenAI
-```
-For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/chat/azure_chat_openai)
+For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/llms/azure_openai).
 
 ## Embedding Model
 
@@ -107,11 +110,11 @@ You can also use it to count tokens when splitting documents with
 from langchain.text_splitter import CharacterTextSplitter
 CharacterTextSplitter.from_tiktoken_encoder(...)
 ```
-For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_connection/document_transformers/split_by_token#tiktoken)
+For a more detailed walkthrough of this, see [this notebook](/docs/how_to/split_by_token/#tiktoken)
 
 ## Chain
 
-See a [usage example](/docs/guides/safety/moderation).
+See a [usage example](https://python.langchain.com/v0.1/docs/guides/productionization/safety/moderation).
 
 ```python
 from langchain.chains import OpenAIModerationChain

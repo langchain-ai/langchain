@@ -14,6 +14,7 @@ tiktoken = "^0.5.1"
 openai = "<2"
 neo4j = "^5.14.0"
 langchain-text-splitters = ">=0.0.1,<0.1"
+langchain-openai = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"

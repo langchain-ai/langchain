@@ -1,4 +1,5 @@
 """Sagemaker InvokeEndpoint API."""
+
 import io
 import json
 from abc import abstractmethod
@@ -6,7 +7,7 @@ from typing import Any, Dict, Generic, Iterator, List, Mapping, Optional, TypeVa
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -15,8 +16,7 @@ OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]], Iterato
 
 
 class LineIterator:
-    """
-    A helper class for parsing the byte stream input.
+    """Parse the byte stream input.
 
     The output of the model will be in the following format:
 
@@ -74,7 +74,7 @@ class LineIterator:
 
 
 class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
-    """A handler class to transform input from LLM to a
+    """Handler class to transform input from LLM to a
     format that SageMaker endpoint expects.
 
     Similarly, the class handles transforming output from the
@@ -245,11 +245,9 @@ class SagemakerEndpoint(LLM):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Dont do anything if client provided externally"""
         if values.get("client") is not None:

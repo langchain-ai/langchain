@@ -1,9 +1,12 @@
+# Neo4j - hybrid parent-child retrieval
 
-# neo4j-parent
+This template allows you to balance precise embeddings and context retention 
+by splitting documents into smaller chunks and retrieving their original 
+or larger text information. 
 
-This template allows you to balance precise embeddings and context retention by splitting documents into smaller chunks and retrieving their original or larger text information. 
-
-Using a Neo4j vector index, the package queries child nodes using vector similarity search and retrieves the corresponding parent's text by defining an appropriate `retrieval_query` parameter.
+Using a `Neo4j` vector index, the package queries child nodes using 
+vector similarity search and retrieves the corresponding parent's text 
+by defining an appropriate `retrieval_query` parameter.
 
 ## Environment Setup
 
@@ -54,7 +57,7 @@ add_routes(app, neo4j_parent_chain, path="/neo4j-parent")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

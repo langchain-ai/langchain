@@ -100,7 +100,7 @@ def check_operator_misuse(func: Callable) -> Callable:
 
 
 class RedisTag(RedisFilterField):
-    """A RedisFilterField representing a tag in a Redis index."""
+    """RedisFilterField representing a tag in a Redis index."""
 
     OPERATORS: Dict[RedisFilterOperator, str] = {
         RedisFilterOperator.EQ: "==",
@@ -192,7 +192,7 @@ class RedisTag(RedisFilterField):
 
 
 class RedisNum(RedisFilterField):
-    """A RedisFilterField representing a numeric field in a Redis index."""
+    """RedisFilterField representing a numeric field in a Redis index."""
 
     OPERATORS: Dict[RedisFilterOperator, str] = {
         RedisFilterOperator.EQ: "==",
@@ -311,7 +311,7 @@ class RedisNum(RedisFilterField):
 
 
 class RedisText(RedisFilterField):
-    """A RedisFilterField representing a text field in a Redis index."""
+    """RedisFilterField representing a text field in a Redis index."""
 
     OPERATORS: Dict[RedisFilterOperator, str] = {
         RedisFilterOperator.EQ: "==",
@@ -381,7 +381,7 @@ class RedisText(RedisFilterField):
 
 
 class RedisFilterExpression:
-    """A logical expression of RedisFilterFields.
+    """Logical expression of RedisFilterFields.
 
     RedisFilterExpressions can be combined using the & and | operators to create
     complex logical expressions that evaluate to the Redis Query language.

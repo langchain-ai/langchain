@@ -1,7 +1,6 @@
+# RAG - Pinecone - multi-query
 
-# rag-pinecone-multi-query
-
-This template performs RAG using Pinecone and OpenAI with a multi-query retriever. 
+This template performs RAG using `Pinecone` and `OpenAI` with a multi-query retriever. 
 
 It uses an LLM to generate multiple queries from different perspectives based on the user's input query. 
 
@@ -41,7 +40,7 @@ from rag_pinecone_multi_query import chain as rag_pinecone_multi_query_chain
 add_routes(app, rag_pinecone_multi_query_chain, path="/rag-pinecone-multi-query")
 ```
 
-(Optional) Now, let's configure LangSmith. LangSmith will help us trace, monitor, and debug LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
+(Optional) Now, let's configure LangSmith. LangSmith will help us trace, monitor, and debug LangChain applications. You can sign up for LangSmith [here](https://smith.langchain.com/). If you don't have access, you can skip this section
 
 ```shell
 export LANGCHAIN_TRACING_V2=true

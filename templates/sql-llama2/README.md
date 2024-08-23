@@ -1,9 +1,8 @@
+# SQL - LLamA2
 
-# sql-llama2
+This template enables a user to interact with a `SQL` database using natural language. 
 
-This template enables a user to interact with a SQL database using natural language. 
-
-It uses LLamA2-13b hosted by [Replicate](https://python.langchain.com/docs/integrations/llms/replicate), but can be adapted to any API that supports LLaMA2 including [Fireworks](https://python.langchain.com/docs/integrations/chat/fireworks). 
+It uses `LLamA2-13b` hosted by [Replicate](https://python.langchain.com/docs/integrations/llms/replicate), but can be adapted to any API that supports LLaMA2 including [Fireworks](https://python.langchain.com/docs/integrations/chat/fireworks). 
 
 The template includes an example database of 2023 NBA rosters. 
 
@@ -42,7 +41,7 @@ add_routes(app, sql_llama2_chain, path="/sql-llama2")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

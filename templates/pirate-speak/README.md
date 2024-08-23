@@ -1,7 +1,6 @@
+# Pirate speak
 
-# pirate-speak
-
-This template converts user input into pirate speak.
+This template converts user input into `pirate speak`.
 
 ## Environment Setup
 
@@ -36,7 +35,7 @@ add_routes(app, pirate_speak_chain, path="/pirate-speak")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

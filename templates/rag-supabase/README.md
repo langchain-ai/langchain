@@ -1,9 +1,9 @@
+# RAG - Supabase
 
-# rag_supabase
+This template performs RAG with `Supabase`.
 
-This template performs RAG with Supabase.
+[Supabase](https://supabase.com/docs) is an open-source `Firebase` alternative. It is built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL), a free and open-source relational database management system (RDBMS) and uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
 
-[Supabase](https://supabase.com/docs) is an open-source Firebase alternative. It is built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL), a free and open-source relational database management system (RDBMS) and uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
@@ -101,7 +101,7 @@ add_routes(app, rag_supabase_chain, path="/rag-supabase")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

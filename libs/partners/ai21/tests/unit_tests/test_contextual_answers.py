@@ -30,7 +30,8 @@ def test_invoke__on_bad_input(
     mock_client_with_contextual_answers: Mock,
 ) -> None:
     tsm = AI21ContextualAnswers(
-        api_key=DUMMY_API_KEY, client=mock_client_with_contextual_answers
+        api_key=DUMMY_API_KEY,  # type: ignore[arg-type]
+        client=mock_client_with_contextual_answers,  # type: ignore[arg-type]
     )
 
     with pytest.raises(ValueError) as error:
@@ -55,7 +56,7 @@ def test_invoke__on_context_bad_input(
     input: ContextualAnswerInput, mock_client_with_contextual_answers: Mock
 ) -> None:
     tsm = AI21ContextualAnswers(
-        api_key=DUMMY_API_KEY,
+        api_key=DUMMY_API_KEY,  # type: ignore[arg-type]
         client=mock_client_with_contextual_answers,
     )
 
@@ -100,7 +101,7 @@ def test_invoke__on_good_input(
     input: ContextualAnswerInput, mock_client_with_contextual_answers: Mock
 ) -> None:
     tsm = AI21ContextualAnswers(
-        api_key=DUMMY_API_KEY,
+        api_key=DUMMY_API_KEY,  # type: ignore[arg-type]
         client=mock_client_with_contextual_answers,
     )
 

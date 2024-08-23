@@ -172,7 +172,7 @@ def _import_databricks() -> Type[BaseLLM]:
 def _import_databricks_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
-        removal="0.2",
+        removal="1.0",
         alternative_import="langchain_community.chat_models.ChatDatabricks",
     )
     from langchain_community.chat_models.databricks import ChatDatabricks
@@ -342,7 +342,7 @@ def _import_mlflow() -> Type[BaseLLM]:
 def _import_mlflow_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
-        removal="0.2",
+        removal="1.0",
         alternative_import="langchain_community.chat_models.ChatMlflow",
     )
     from langchain_community.chat_models.mlflow import ChatMlflow
@@ -354,6 +354,12 @@ def _import_mlflow_ai_gateway() -> Type[BaseLLM]:
     from langchain_community.llms.mlflow_ai_gateway import MlflowAIGateway
 
     return MlflowAIGateway
+
+
+def _import_mlx_pipeline() -> Type[BaseLLM]:
+    from langchain_community.llms.mlx_pipeline import MLXPipeline
+
+    return MLXPipeline
 
 
 def _import_modal() -> Type[BaseLLM]:
@@ -504,6 +510,18 @@ def _import_sagemaker_endpoint() -> Type[BaseLLM]:
     return SagemakerEndpoint
 
 
+def _import_sambaverse() -> Type[BaseLLM]:
+    from langchain_community.llms.sambanova import Sambaverse
+
+    return Sambaverse
+
+
+def _import_sambastudio() -> Type[BaseLLM]:
+    from langchain_community.llms.sambanova import SambaStudio
+
+    return SambaStudio
+
+
 def _import_self_hosted() -> Type[BaseLLM]:
     from langchain_community.llms.self_hosted import SelfHostedPipeline
 
@@ -543,9 +561,9 @@ def _import_titan_takeoff() -> Type[BaseLLM]:
 
 
 def _import_titan_takeoff_pro() -> Type[BaseLLM]:
-    from langchain_community.llms.titan_takeoff_pro import TitanTakeoffPro
+    from langchain_community.llms.titan_takeoff import TitanTakeoff
 
-    return TitanTakeoffPro
+    return TitanTakeoff
 
 
 def _import_together() -> Type[BaseLLM]:
@@ -590,6 +608,14 @@ def _import_watsonxllm() -> Type[BaseLLM]:
     return WatsonxLLM
 
 
+def _import_weight_only_quantization() -> Any:
+    from langchain_community.llms.weight_only_quantization import (
+        WeightOnlyQuantPipeline,
+    )
+
+    return WeightOnlyQuantPipeline
+
+
 def _import_writer() -> Type[BaseLLM]:
     from langchain_community.llms.writer import Writer
 
@@ -624,6 +650,18 @@ def _import_sparkllm() -> Type[BaseLLM]:
     from langchain_community.llms.sparkllm import SparkLLM
 
     return SparkLLM
+
+
+def _import_you() -> Type[BaseLLM]:
+    from langchain_community.llms.you import You
+
+    return You
+
+
+def _import_yi() -> Type[BaseLLM]:
+    from langchain_community.llms.yi import YiLLM
+
+    return YiLLM
 
 
 def __getattr__(name: str) -> Any:
@@ -729,6 +767,8 @@ def __getattr__(name: str) -> Any:
         return _import_mlflow()
     elif name == "MlflowAIGateway":
         return _import_mlflow_ai_gateway()
+    elif name == "MLXPipeline":
+        return _import_mlx_pipeline()
     elif name == "Modal":
         return _import_modal()
     elif name == "MosaicML":
@@ -777,6 +817,10 @@ def __getattr__(name: str) -> Any:
         return _import_rwkv()
     elif name == "SagemakerEndpoint":
         return _import_sagemaker_endpoint()
+    elif name == "Sambaverse":
+        return _import_sambaverse()
+    elif name == "SambaStudio":
+        return _import_sambastudio()
     elif name == "SelfHostedPipeline":
         return _import_self_hosted()
     elif name == "SelfHostedHuggingFaceLLM":
@@ -805,6 +849,8 @@ def __getattr__(name: str) -> Any:
         return _import_vllm_openai()
     elif name == "WatsonxLLM":
         return _import_watsonxllm()
+    elif name == "WeightOnlyQuantPipeline":
+        return _import_weight_only_quantization()
     elif name == "Writer":
         return _import_writer()
     elif name == "Xinference":
@@ -815,14 +861,18 @@ def __getattr__(name: str) -> Any:
         return _import_yuan2()
     elif name == "VolcEngineMaasLLM":
         return _import_volcengine_maas()
+    elif name == "SparkLLM":
+        return _import_sparkllm()
+    elif name == "YiLLM":
+        return _import_yi()
+    elif name == "You":
+        return _import_you()
     elif name == "type_to_cls_dict":
         # for backwards compatibility
         type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
             k: v() for k, v in get_type_to_cls_dict().items()
         }
         return type_to_cls_dict
-    elif name == "SparkLLM":
-        return _import_sparkllm()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -877,6 +927,7 @@ __all__ = [
     "Minimax",
     "Mlflow",
     "MlflowAIGateway",
+    "MLXPipeline",
     "Modal",
     "MosaicML",
     "NIBittensorLLM",
@@ -903,6 +954,8 @@ __all__ = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
+    "Sambaverse",
+    "SambaStudio",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "SparkLLM",
@@ -918,10 +971,13 @@ __all__ = [
     "VertexAIModelGarden",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
+    "WeightOnlyQuantPipeline",
     "Writer",
     "Xinference",
     "YandexGPT",
     "Yuan2",
+    "YiLLM",
+    "You",
 ]
 
 
@@ -974,6 +1030,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "mlflow": _import_mlflow,
         "mlflow-chat": _import_mlflow_chat,  # deprecated / only for back compat
         "mlflow-ai-gateway": _import_mlflow_ai_gateway,
+        "mlx_pipeline": _import_mlx_pipeline,
         "modal": _import_modal,
         "mosaic": _import_mosaicml,
         "nebula": _import_symblai_nebula,
@@ -982,6 +1039,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
         "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
         "oci_generative_ai": _import_oci_gen_ai,
+        "octoai_endpoint": _import_octoai_endpoint,
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,
@@ -993,6 +1051,8 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "replicate": _import_replicate,
         "rwkv": _import_rwkv,
         "sagemaker_endpoint": _import_sagemaker_endpoint,
+        "sambaverse": _import_sambaverse,
+        "sambastudio": _import_sambastudio,
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
         "stochasticai": _import_stochasticai,
@@ -1007,6 +1067,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "watsonxllm": _import_watsonxllm,
+        "weight_only_quantization": _import_weight_only_quantization,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
@@ -1015,4 +1076,6 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "yuan2": _import_yuan2,
         "VolcEngineMaasLLM": _import_volcengine_maas,
         "SparkLLM": _import_sparkllm,
+        "yi": _import_yi,
+        "you": _import_you,
     }

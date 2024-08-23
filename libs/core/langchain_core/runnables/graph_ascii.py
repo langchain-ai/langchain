@@ -3,7 +3,9 @@ Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py"""
 
 import math
 import os
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Sequence
+
+from langchain_core.runnables.graph import Edge as LangEdge
 
 
 class VertexViewer:
@@ -15,6 +17,7 @@ class VertexViewer:
     """
 
     HEIGHT = 3  # top and bottom box edges + text
+    """Height of the box."""
 
     def __init__(self, name: str) -> None:
         self._h = self.HEIGHT  # top and bottom box edges + text
@@ -156,7 +159,7 @@ class AsciiCanvas:
 
 
 def _build_sugiyama_layout(
-    vertices: Mapping[str, str], edges: Sequence[Tuple[str, str]]
+    vertices: Mapping[str, str], edges: Sequence[LangEdge]
 ) -> Any:
     try:
         from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import]
@@ -181,7 +184,7 @@ def _build_sugiyama_layout(
     #
 
     vertices_ = {id: Vertex(f" {data} ") for id, data in vertices.items()}
-    edges_ = [Edge(vertices_[s], vertices_[e]) for s, e in edges]
+    edges_ = [Edge(vertices_[s], vertices_[e], data=cond) for s, e, _, cond in edges]
     vertices_list = vertices_.values()
     graph = Graph(vertices_list, edges_)
 
@@ -209,7 +212,7 @@ def _build_sugiyama_layout(
     return sug
 
 
-def draw_ascii(vertices: Mapping[str, str], edges: Sequence[Tuple[str, str]]) -> str:
+def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
     """Build a DAG and draw it in ASCII.
 
     Args:
@@ -220,7 +223,6 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[Tuple[str, str]]) ->
         str: ASCII representation
 
     Example:
-        >>> from dvc.dagascii import draw
         >>> vertices = [1, 2, 3, 4]
         >>> edges = [(1, 2), (2, 3), (2, 4), (1, 4)]
         >>> print(draw(vertices, edges))
@@ -243,8 +245,8 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[Tuple[str, str]]) ->
 
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
-    Xs = []  # noqa: N806
-    Ys = []  # noqa: N806
+    Xs = []
+    Ys = []
 
     sug = _build_sugiyama_layout(vertices, edges)
 
@@ -287,7 +289,7 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[Tuple[str, str]]) ->
             assert end_x >= 0
             assert end_y >= 0
 
-            canvas.line(start_x, start_y, end_x, end_y, "*")
+            canvas.line(start_x, start_y, end_x, end_y, "." if edge.data else "*")
 
     for vertex in sug.g.sV:
         # NOTE: moving boxes w/2 to the left

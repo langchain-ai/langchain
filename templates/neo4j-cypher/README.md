@@ -1,11 +1,13 @@
+# Neo4j Cypher
 
-# neo4j_cypher
+This template allows you to interact with a `Neo4j` graph database 
+in natural language, using an `OpenAI` LLM. 
 
-This template allows you to interact with a Neo4j graph database in natural language, using an OpenAI LLM. 
+It transforms a natural language question into a `Cypher` query 
+(used to fetch data from `Neo4j` databases), executes the query, 
+and provides a natural language response based on the query results.
 
-It transforms a natural language question into a Cypher query (used to fetch data from Neo4j databases), executes the query, and provides a natural language response based on the query results.
-
-[![Diagram showing the workflow of a user asking a question, which is processed by a Cypher generating chain, resulting in a Cypher query to the Neo4j Knowledge Graph, and then an answer generating chain that provides a generated answer based on the information from the graph.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher/static/workflow.png "Neo4j Cypher Workflow Diagram")](https://medium.com/neo4j/langchain-cypher-search-tips-tricks-f7c9e9abca4d)
+![Diagram showing the workflow of a user asking a question, which is processed by a Cypher generating chain, resulting in a Cypher query to the Neo4j Knowledge Graph, and then an answer generating chain that provides a generated answer based on the information from the graph.](https://raw.githubusercontent.com/langchain-ai/langchain/master/templates/neo4j-cypher/static/workflow.png) "Neo4j Cypher Workflow Diagram"
 
 ## Environment Setup
 
@@ -62,7 +64,7 @@ add_routes(app, neo4j_cypher_chain, path="/neo4j-cypher")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

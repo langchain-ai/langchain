@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
-from langchain_community.document_loaders.base import BaseLoader
+from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
@@ -736,6 +736,70 @@ def test_incremental_delete(
     }
 
 
+def test_incremental_indexing_with_batch_size(
+    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test indexing with incremental indexing"""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="1",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="2",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="3",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="4",
+                metadata={"source": "1"},
+            ),
+        ]
+    )
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=2,
+        ) == {
+            "num_added": 4,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=2,
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 4,
+            "num_updated": 0,
+        }
+
+    doc_texts = set(
+        # Ignoring type since doc should be in the store and not a None
+        vector_store.store.get(uid).page_content  # type: ignore
+        for uid in vector_store.store
+    )
+    assert doc_texts == {"1", "2", "3", "4"}
+
+
 def test_incremental_delete_with_batch_size(
     record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -1322,7 +1386,14 @@ def test_indexing_custom_batch_size(
     with patch.object(vector_store, "add_documents") as mock_add_documents:
         index(docs, record_manager, vector_store, batch_size=batch_size)
         args, kwargs = mock_add_documents.call_args
-        assert args == (docs,)
+        docs_with_id = [
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+                id=ids[0],
+            )
+        ]
+        assert args == (docs_with_id,)
         assert kwargs == {"ids": ids, "batch_size": batch_size}
 
 
@@ -1343,5 +1414,12 @@ async def test_aindexing_custom_batch_size(
     with patch.object(vector_store, "aadd_documents") as mock_add_documents:
         await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
         args, kwargs = mock_add_documents.call_args
-        assert args == (docs,)
+        docs_with_id = [
+            Document(
+                page_content="This is a test document.",
+                metadata={"source": "1"},
+                id=ids[0],
+            )
+        ]
+        assert args == (docs_with_id,)
         assert kwargs == {"ids": ids, "batch_size": batch_size}

@@ -1,4 +1,5 @@
 """Integration test for Github Wrapper."""
+
 import pytest
 
 from langchain_community.utilities.github import GitHubAPIWrapper
@@ -12,7 +13,7 @@ from langchain_community.utilities.github import GitHubAPIWrapper
 
 @pytest.fixture
 def api_client() -> GitHubAPIWrapper:
-    return GitHubAPIWrapper()
+    return GitHubAPIWrapper()  # type: ignore[call-arg]
 
 
 def test_get_open_issues(api_client: GitHubAPIWrapper) -> None:

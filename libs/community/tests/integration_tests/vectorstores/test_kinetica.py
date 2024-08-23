@@ -46,7 +46,8 @@ def test_kinetica(create_config: KineticaSettings) -> None:
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        collection_name="test_kinetica",
+        collection_name="1test_kinetica",
+        schema_name="1test",
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
@@ -268,7 +269,7 @@ def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) ->
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.999},
     )
-    output = retriever.get_relevant_documents("summer")
+    output = retriever.invoke("summer")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
     ]
@@ -296,5 +297,5 @@ def test_kinetica_retriever_search_threshold_custom_normalization_fn(
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.5},
     )
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == []

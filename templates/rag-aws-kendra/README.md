@@ -1,10 +1,14 @@
-# rag-aws-kendra
+# RAG - AWS Kendra
 
-This template is an application that utilizes Amazon Kendra, a machine learning powered search service, and Anthropic Claude for text generation. The application retrieves documents using a Retrieval chain to answer questions from your documents. 
+This template is an application that utilizes `Amazon Kendra`, 
+a machine learning powered search service, 
+and `Anthropic Claude` for text generation. 
+The application retrieves documents using a Retrieval chain to answer 
+questions from your documents. 
 
-It uses the `boto3` library to connect with the Bedrock service. 
+It uses the `boto3` library to connect with the `Bedrock` service. 
 
-For more context on building RAG applications with Amazon Kendra, check [this page](https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/).
+For more context on building RAG applications with `Amazon Kendra`, check [this page](https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/).
 
 ## Environment Setup
 
@@ -53,7 +57,7 @@ add_routes(app, rag_aws_kendra_chain, path="/rag-aws-kendra")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

@@ -2,7 +2,6 @@ from typing import Dict, List, Tuple
 
 from langchain.agents import (
     AgentExecutor,
-    Tool,
 )
 from langchain.agents.format_scratchpad import format_to_openai_functions
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
@@ -20,7 +19,7 @@ from langchain_core.prompts import (
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable, RunnableLambda, RunnableParallel
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseTool, Tool
 
 # Create the tools
 search = TavilySearchAPIWrapper()
@@ -55,7 +54,7 @@ retriever = vector_store.as_retriever()
 
 
 def get_tools(query: str) -> List[Tool]:
-    docs = retriever.get_relevant_documents(query)
+    docs = retriever.invoke(query)
     return [ALL_TOOLS[d.metadata["index"]] for d in docs]
 
 

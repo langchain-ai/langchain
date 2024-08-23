@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class CloudflareWorkersAI(LLM):
-    """Langchain LLM class to help to access Cloudflare Workers AI service.
+    """Cloudflare Workers AI service.
 
     To use, you must provide an API token and
     account ID to access Cloudflare Workers AI, and
@@ -70,7 +70,9 @@ class CloudflareWorkersAI(LLM):
         """Call Cloudflare Workers API"""
         headers = {"Authorization": f"Bearer {self.api_token}"}
         data = {"prompt": prompt, "stream": self.streaming, **params}
-        response = requests.post(self.endpoint_url, headers=headers, json=data)
+        response = requests.post(
+            self.endpoint_url, headers=headers, json=data, stream=self.streaming
+        )
         return response
 
     def _process_response(self, response: requests.Response) -> str:

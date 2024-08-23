@@ -1,7 +1,7 @@
+# Cassandra - Entomology RAG
 
-# cassandra-entomology-rag
-
-This template will perform RAG using Apache Cassandra® or Astra DB through CQL (`Cassandra` vector store class)
+This template will perform RAG using `Apache Cassandra®` or `Astra DB` 
+through `CQL` (`Cassandra` vector store class)
 
 ## Environment Setup
 
@@ -43,7 +43,7 @@ add_routes(app, cassandra_entomology_rag_chain, path="/cassandra-entomology-rag"
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

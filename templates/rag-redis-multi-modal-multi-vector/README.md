@@ -1,11 +1,10 @@
+# RAG - Redis - multi-modal, multi-vector
 
-# rag-redis-multi-modal-multi-vector
-
-Multi-modal LLMs enable visual assistants that can perform question-answering about images.
+`Multi-modal` LLMs enable visual assistants that can perform question-answering about images.
 
 This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
 
-It uses GPT-4V to create image summaries for each slide, embeds the summaries, and stores them in Redis.
+It uses `GPT-4V` to create image summaries for each slide, embeds the summaries, and stores them in `Redis`.
 
 Given a question, relevant slides are retrieved and passed to GPT-4V for answer synthesis.
 
@@ -89,7 +88,7 @@ add_routes(app, rag_redis_multi_modal_chain_mv, path="/rag-redis-multi-modal-mul
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

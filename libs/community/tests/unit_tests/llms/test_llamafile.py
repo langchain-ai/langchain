@@ -42,7 +42,7 @@ def mock_response() -> requests.Response:
 def mock_response_stream():  # type: ignore[no-untyped-def]
     mock_response = deque(
         [
-            b'data: {"content":"the","multimodal":false,"slot_id":0,"stop":false}\n\n',  # noqa
+            b'data: {"content":"the","multimodal":false,"slot_id":0,"stop":false}\n\n',
             b'data: {"content":" quick","multimodal":false,"slot_id":0,"stop":false}\n\n',  # noqa
         ]
     )

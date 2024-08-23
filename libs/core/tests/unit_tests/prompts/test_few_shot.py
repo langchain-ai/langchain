@@ -1,4 +1,5 @@
 """Test few shot prompt template."""
+
 from typing import Any, Dict, List, Sequence, Tuple
 
 import pytest
@@ -57,6 +58,17 @@ def test_suffix_only() -> None:
     assert output == expected_output
 
 
+def test_auto_infer_input_variables() -> None:
+    """Test prompt works with just a suffix."""
+    suffix = "This is a {foo} test."
+    prompt = FewShotPromptTemplate(
+        suffix=suffix,
+        examples=[],
+        example_prompt=EXAMPLE_PROMPT,
+    )
+    assert prompt.input_variables == ["foo"]
+
+
 def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     # Test when missing in suffix
@@ -96,7 +108,7 @@ def test_prompt_missing_input_variables() -> None:
     ).input_variables == ["foo"]
 
 
-def test_few_shot_functionality() -> None:
+async def test_few_shot_functionality() -> None:
     """Test that few shot works with examples."""
     prefix = "This is a test about {content}."
     suffix = "Now you try to talk about {new_content}."
@@ -112,13 +124,15 @@ def test_few_shot_functionality() -> None:
         example_prompt=EXAMPLE_PROMPT,
         example_separator="\n",
     )
-    output = prompt.format(content="animals", new_content="party")
     expected_output = (
         "This is a test about animals.\n"
         "foo: bar\n"
         "baz: foo\n"
         "Now you try to talk about party."
     )
+    output = prompt.format(content="animals", new_content="party")
+    assert output == expected_output
+    output = await prompt.aformat(content="animals", new_content="party")
     assert output == expected_output
 
 
@@ -365,6 +379,24 @@ class AsIsSelector(BaseExampleSelector):
         return list(self.examples)
 
 
+def test_few_shot_prompt_template_with_selector() -> None:
+    """Tests for few shot chat message template with an example selector."""
+    examples = [
+        {"question": "foo", "answer": "bar"},
+        {"question": "baz", "answer": "foo"},
+    ]
+    example_selector = AsIsSelector(examples)
+
+    few_shot_prompt = FewShotPromptTemplate(
+        input_variables=["foo"],
+        suffix="This is a {foo} test.",
+        example_prompt=EXAMPLE_PROMPT,
+        example_selector=example_selector,
+    )
+    messages = few_shot_prompt.format(foo="bar")
+    assert messages == "foo: bar\n\nbaz: foo\n\nThis is a bar test."
+
+
 def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     """Tests for few shot chat message template with an example selector."""
     examples = [
@@ -401,6 +433,30 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     assert messages == expected
 
 
+def test_few_shot_chat_message_prompt_template_infer_input_variables() -> None:
+    """Check that it can infer input variables if not provided."""
+    examples = [
+        {"input": "2+2", "output": "4"},
+        {"input": "2+3", "output": "5"},
+    ]
+    example_selector = AsIsSelector(examples)
+    example_prompt = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate.from_template("{input}"),
+            AIMessagePromptTemplate.from_template("{output}"),
+        ]
+    )
+
+    few_shot_prompt = FewShotChatMessagePromptTemplate(
+        example_prompt=example_prompt,
+        example_selector=example_selector,
+    )
+
+    # The prompt template does not have any inputs! They
+    # have already been filled in.
+    assert few_shot_prompt.input_variables == []
+
+
 class AsyncAsIsSelector(BaseExampleSelector):
     """An example selector for testing purposes.
 
@@ -419,6 +475,24 @@ class AsyncAsIsSelector(BaseExampleSelector):
 
     async def aselect_examples(self, input_variables: Dict[str, str]) -> List[dict]:
         return list(self.examples)
+
+
+async def test_few_shot_prompt_template_with_selector_async() -> None:
+    """Tests for few shot chat message template with an example selector."""
+    examples = [
+        {"question": "foo", "answer": "bar"},
+        {"question": "baz", "answer": "foo"},
+    ]
+    example_selector = AsyncAsIsSelector(examples)
+
+    few_shot_prompt = FewShotPromptTemplate(
+        input_variables=["foo"],
+        suffix="This is a {foo} test.",
+        example_prompt=EXAMPLE_PROMPT,
+        example_selector=example_selector,
+    )
+    messages = await few_shot_prompt.aformat(foo="bar")
+    assert messages == "foo: bar\n\nbaz: foo\n\nThis is a bar test."
 
 
 async def test_few_shot_chat_message_prompt_template_with_selector_async() -> None:

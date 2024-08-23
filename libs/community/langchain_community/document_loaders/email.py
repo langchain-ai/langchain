@@ -116,3 +116,4 @@ class OutlookMessageLoader(BaseLoader):
                 "date": msg.date,
             },
         )
+        msg.close()

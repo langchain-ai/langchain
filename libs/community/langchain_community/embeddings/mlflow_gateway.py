@@ -13,8 +13,7 @@ def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
 
 
 class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
-    """
-    Wrapper around embeddings LLMs in the MLflow AI Gateway.
+    """MLflow AI Gateway embeddings.
 
     To use, you should have the ``mlflow[gateway]`` python package installed.
     For more information, see https://mlflow.org/docs/latest/gateway/index.html.
@@ -65,7 +64,12 @@ class MlflowAIGatewayEmbeddings(Embeddings, BaseModel):
         embeddings = []
         for txt in _chunk(texts, 20):
             resp = mlflow.gateway.query(self.route, data={"text": txt})
-            embeddings.append(resp["embeddings"])
+            # response is List[List[float]]
+            if isinstance(resp["embeddings"][0], List):
+                embeddings.extend(resp["embeddings"])
+            # response is List[float]
+            else:
+                embeddings.append(resp["embeddings"])
         return embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

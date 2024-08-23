@@ -1,11 +1,12 @@
 """Test Base Schema of documents."""
+
 from typing import Iterator, List
 
 import pytest
 
 from langchain_core.document_loaders.base import BaseBlobParser, BaseLoader
-from langchain_core.document_loaders.blob_loaders import Blob
 from langchain_core.documents import Document
+from langchain_core.documents.base import Blob
 
 
 def test_base_blob_parser() -> None:
@@ -64,3 +65,4 @@ async def test_default_aload() -> None:
     docs = loader.load()
     assert docs == [Document(page_content="foo"), Document(page_content="bar")]
     assert docs == [doc async for doc in loader.alazy_load()]
+    assert docs == await loader.aload()

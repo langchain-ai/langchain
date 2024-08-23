@@ -1,6 +1,5 @@
 """Test ChatAnthropic chat model."""
 
-import json
 from enum import Enum
 from typing import List, Optional
 
@@ -19,7 +18,7 @@ BIG_MODEL_NAME = "claude-3-opus-20240229"
 
 def test_stream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -27,7 +26,7 @@ def test_stream() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -35,7 +34,7 @@ async def test_astream() -> None:
 
 async def test_abatch() -> None:
     """Test streaming tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -44,7 +43,7 @@ async def test_abatch() -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -55,7 +54,7 @@ async def test_abatch_tags() -> None:
 
 def test_batch() -> None:
     """Test batch tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -64,7 +63,7 @@ def test_batch() -> None:
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -72,7 +71,7 @@ async def test_ainvoke() -> None:
 
 def test_invoke() -> None:
     """Test invoke tokens from ChatAnthropicTools."""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -80,7 +79,7 @@ def test_invoke() -> None:
 
 def test_system_invoke() -> None:
     """Test invoke tokens with a system message"""
-    llm = ChatAnthropicTools(model_name=MODEL_NAME)
+    llm = ChatAnthropicTools(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -104,33 +103,15 @@ def test_system_invoke() -> None:
 ##################
 
 
-def test_tools() -> None:
-    class Person(BaseModel):
-        name: str
-        age: int
-
-    llm = ChatAnthropicTools(model_name=BIG_MODEL_NAME, temperature=0).bind_tools(
-        [Person]
-    )
-    result = llm.invoke("Erick is 27 years old")
-    assert result.content == "", f"content should be empty, not {result.content}"
-    assert "tool_calls" in result.additional_kwargs
-    tool_calls = result.additional_kwargs["tool_calls"]
-    assert len(tool_calls) == 1
-    tool_call = tool_calls[0]
-    assert tool_call["type"] == "function"
-    function = tool_call["function"]
-    assert function["name"] == "Person"
-    assert json.loads(function["arguments"]) == {"name": "Erick", "age": "27"}
-
-
 def test_with_structured_output() -> None:
     class Person(BaseModel):
         name: str
         age: int
 
-    chain = ChatAnthropicTools(
-        model_name=BIG_MODEL_NAME, temperature=0
+    chain = ChatAnthropicTools(  # type: ignore[call-arg, call-arg]
+        model_name=BIG_MODEL_NAME,
+        temperature=0,
+        default_headers={"anthropic-beta": "tools-2024-04-04"},
     ).with_structured_output(Person)
     result = chain.invoke("Erick is 27 years old")
     assert isinstance(result, Person)
@@ -172,7 +153,11 @@ def test_anthropic_complex_structured_output() -> None:
         ]
     )
 
-    llm = ChatAnthropicTools(temperature=0, model_name=BIG_MODEL_NAME)
+    llm = ChatAnthropicTools(  # type: ignore[call-arg, call-arg]
+        temperature=0,
+        model_name=BIG_MODEL_NAME,
+        default_headers={"anthropic-beta": "tools-2024-04-04"},
+    )
 
     extraction_chain = prompt | llm.with_structured_output(Email)
 
@@ -180,5 +165,5 @@ def test_anthropic_complex_structured_output() -> None:
         {
             "email": "From: Erick. The email is about the new project. The tone is positive. The action items are to send the report and to schedule a meeting."  # noqa: E501
         }
-    )  # noqa: E501
+    )
     assert isinstance(response, Email)

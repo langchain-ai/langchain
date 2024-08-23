@@ -15,7 +15,7 @@ def test_ctransformers_call() -> None:
         callbacks=[callback_handler],
     )
 
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
     assert len(output) > 1
     assert 0 < callback_handler.llm_streams <= config["max_new_tokens"]

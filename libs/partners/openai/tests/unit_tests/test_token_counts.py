@@ -12,17 +12,8 @@ _EXPECTED_NUM_TOKENS = {
     "gpt-3.5-turbo": 12,
 }
 
-_MODELS = models = [
-    "ada",
-    "babbage",
-    "curie",
-    "davinci",
-]
-_CHAT_MODELS = [
-    "gpt-4",
-    "gpt-4-32k",
-    "gpt-3.5-turbo",
-]
+_MODELS = models = ["ada", "babbage", "curie", "davinci"]
+_CHAT_MODELS = ["gpt-4", "gpt-4-32k", "gpt-3.5-turbo"]
 
 
 @pytest.mark.parametrize("model", _MODELS)

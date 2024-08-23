@@ -1,12 +1,12 @@
 """A fake callback handler for testing purposes."""
+
 from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import BaseModel
-
-from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -22,7 +22,7 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_retriever_: bool = False
     ignore_chat_model_: bool = False
 
-    # to allow for similar callback handlers that are not technicall equal
+    # to allow for similar callback handlers that are not technically equal
     fake_id: Union[str, None] = None
 
     # add finer-grained counters for easier debugging of failing tests
