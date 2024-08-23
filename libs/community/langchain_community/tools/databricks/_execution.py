@@ -150,7 +150,7 @@ def execute_function(
         ws.statement_execution.execute_statement
     ).parameters
     if not any(
-        p.kind == p.VAR_POSITIONAL or p.kind == p.VAR_KEYWORD
+        p.kind in (p.VAR_POSITIONAL, p.VAR_KEYWORD)
         for p in allowed_execute_statement_args.values()
     ):
         invalid_params = set()
