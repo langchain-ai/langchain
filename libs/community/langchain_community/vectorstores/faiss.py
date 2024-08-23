@@ -73,7 +73,7 @@ def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
 
 class FAISS(VectorStore):
     """FAISS vector store integration.
-    
+
     See [The FAISS Library](https://arxiv.org/pdf/2401.08281) paper.
 
     Setup:
