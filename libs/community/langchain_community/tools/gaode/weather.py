@@ -6,7 +6,6 @@ API keys:      https://console.amap.com/dev/index
 """
 
 import json
-import os
 from typing import Any, Type
 
 import requests
@@ -30,15 +29,16 @@ class GaodeWeatherTool(BaseTool):
     description = "Query for weather information based on the input city"
     args_schema: Type[BaseModel] = GaodeWeatherInput
     return_direct = True
+    api_key: str
 
     def _run(self, *args: Any, **kwargs: Any) -> str:
+        api_key = self.api_key
+        if api_key is None:
+            raise ValueError("Please set GAODE_API_KEY environment variable")
+
         city = kwargs.get("city")
         if city is None:
-            return "Invalid city input!"
-
-        api_key = os.getenv("GAODE_API_KEY")
-        if api_key is None:
-            return "Please apply for gaode api_key first"
+            raise ValueError("Invalid city input!")
 
         try:
             city_url = f"{CITY_CODE_URL}?keywords={city}&subdistrict=0&key={api_key}"
