@@ -28,15 +28,15 @@ def tools() -> List[BaseTool]:
 
 def test_render_text_description(tools: List[BaseTool]) -> None:
     tool_string = render_text_description(tools)
-    expected_string = """search: search(query: str) -> str - Lookup things online.
-calculator: calculator(expression: str) -> str - Do math."""
+    expected_string = """search(query: str) -> str - Lookup things online.
+calculator(expression: str) -> str - Do math."""
     assert tool_string == expected_string
 
 
 def test_render_text_description_and_args(tools: List[BaseTool]) -> None:
     tool_string = render_text_description_and_args(tools)
-    expected_string = """search: search(query: str) -> str - Lookup things online., \
+    expected_string = """search(query: str) -> str - Lookup things online., \
 args: {'query': {'title': 'Query', 'type': 'string'}}
-calculator: calculator(expression: str) -> str - Do math., \
+calculator(expression: str) -> str - Do math., \
 args: {'expression': {'title': 'Expression', 'type': 'string'}}"""
     assert tool_string == expected_string

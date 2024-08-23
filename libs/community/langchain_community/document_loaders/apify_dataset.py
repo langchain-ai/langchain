@@ -49,7 +49,7 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
             dataset_id=dataset_id, dataset_mapping_function=dataset_mapping_function
         )
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate environment.
 
@@ -60,7 +60,11 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
         try:
             from apify_client import ApifyClient
 
-            values["apify_client"] = ApifyClient()
+            client = ApifyClient()
+            if httpx_client := getattr(client.http_client, "httpx_client"):
+                httpx_client.headers["user-agent"] += "; Origin/langchain"
+
+            values["apify_client"] = client
         except ImportError:
             raise ImportError(
                 "Could not import apify-client Python package. "

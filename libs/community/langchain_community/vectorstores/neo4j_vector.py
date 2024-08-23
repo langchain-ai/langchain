@@ -587,7 +587,11 @@ class Neo4jVector(VectorStore):
                 pass
 
     def query(
-        self, query: str, *, params: Optional[dict] = None
+        self,
+        query: str,
+        *,
+        params: Optional[dict] = None,
+        retry_on_session_expired: bool = True,
     ) -> List[Dict[str, Any]]:
         """
         This method sends a Cypher query to the connected Neo4j database
@@ -600,7 +604,7 @@ class Neo4jVector(VectorStore):
         Returns:
             List[Dict[str, Any]]: List of dictionaries containing the query results.
         """
-        from neo4j.exceptions import CypherSyntaxError
+        from neo4j.exceptions import CypherSyntaxError, SessionExpired
 
         params = params or {}
         with self._driver.session(database=self._database) as session:
@@ -609,6 +613,15 @@ class Neo4jVector(VectorStore):
                 return [r.data() for r in data]
             except CypherSyntaxError as e:
                 raise ValueError(f"Cypher Statement is not valid\n{e}")
+            except (
+                SessionExpired
+            ) as e:  # Session expired is a transient error that can be retried
+                if retry_on_session_expired:
+                    return self.query(
+                        query, params=params, retry_on_session_expired=False
+                    )
+                else:
+                    raise e
 
     def verify_version(self) -> None:
         """
@@ -854,11 +867,11 @@ class Neo4jVector(VectorStore):
             "CALL { WITH row "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
-            f"CALL db.create.setVectorProperty(c, "
+            f"CALL db.create.setNodeVectorProperty(c, "
             f"'{self.embedding_node_property}', row.embedding) "
-            "YIELD node "
             f"SET c.`{self.text_node_property}` = row.text "
-            "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
+            "SET c += row.metadata "
+            "} IN TRANSACTIONS OF 1000 ROWS "
         )
 
         parameters = {
@@ -909,6 +922,11 @@ class Neo4jVector(VectorStore):
         Args:
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query.
@@ -936,6 +954,11 @@ class Neo4jVector(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -972,6 +995,11 @@ class Neo4jVector(VectorStore):
         Args:
             embedding (List[float]): The embedding vector to compare against.
             k (int, optional): The number of top similar documents to retrieve.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
 
         Returns:
             List[Tuple[Document, float]]: A list of tuples, each containing
@@ -1043,6 +1071,19 @@ class Neo4jVector(VectorStore):
 
         results = self.query(read_query, params=parameters)
 
+        if any(result["text"] is None for result in results):
+            if not self.retrieval_query:
+                raise ValueError(
+                    f"Make sure that none of the `{self.text_node_property}` "
+                    f"properties on nodes with label `{self.node_label}` "
+                    "are missing or empty"
+                )
+            else:
+                raise ValueError(
+                    "Inspect the `retrieval_query` and ensure it doesn't "
+                    "return None for the `text` column"
+                )
+
         docs = [
             (
                 Document(
@@ -1064,6 +1105,7 @@ class Neo4jVector(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
+        params: Dict[str, Any] = {},
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -1071,12 +1113,17 @@ class Neo4jVector(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
 
         Returns:
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter, **kwargs
+            embedding=embedding, k=k, filter=filter, params=params, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -1415,6 +1462,8 @@ class Neo4jVector(VectorStore):
                 "LIMIT 1000"
             )
             data = store.query(fetch_query, params={"props": text_node_properties})
+            if not data:
+                break
             text_embeddings = embedding.embed_documents([el["text"] for el in data])
 
             params = {
@@ -1428,9 +1477,9 @@ class Neo4jVector(VectorStore):
                 "UNWIND $data AS row "
                 f"MATCH (n:`{node_label}`) "
                 "WHERE elementId(n) = row.id "
-                f"CALL db.create.setVectorProperty(n, "
+                f"CALL db.create.setNodeVectorProperty(n, "
                 f"'{embedding_node_property}', row.embedding) "
-                "YIELD node RETURN count(*)",
+                "RETURN count(*)",
                 params=params,
             )
             # If embedding calculation should be stopped

@@ -1,15 +1,15 @@
 ---
 sidebar_position: 0
-sidebar_label: Overview
+sidebar_label: Overview of v0.2
 ---
 
-# LangChain Over Time
+# Overview of LangChain v0.2
 
 ## What’s new in LangChain?
 
 The following features have been added during the development of 0.1.x:
 
-- Better streaming support via the [Event Streaming API](https://python.langchain.com/docs/expression_language/streaming/#using-stream-events)
+- Better streaming support via the [Event Streaming API](https://python.langchain.com/docs/expression_language/streaming/#using-stream-events).
 - [Standardized tool calling support](https://blog.langchain.dev/tool-calling-with-langchain/)
 - A standardized interface for [structuring output](https://github.com/langchain-ai/langchain/discussions/18154)
 - [@chain decorator](https://python.langchain.com/docs/expression_language/how_to/decorator/) to more easily create **RunnableLambdas**
@@ -20,9 +20,10 @@ The following features have been added during the development of 0.1.x:
 - Interoperability of chat message histories across most providers
 - [Over 20+ partner packages in python](https://python.langchain.com/docs/integrations/platforms/) for popular integrations
 
+
 ## What’s coming to LangChain?
 
-- We’ve been working hard on [langgraph](https://python.langchain.com/docs/langgraph/). We will be building more capabilities on top of it and focusing on making it the go-to framework for agent architectures.
+- We’ve been working hard on [langgraph](https://langchain-ai.github.io/langgraph/). We will be building more capabilities on top of it and focusing on making it the go-to framework for agent architectures.
 - Vectorstores V2! We’ll be revisiting our vectorstores abstractions to help improve usability and reliability.
 - Better documentation and versioned docs!
 - We’re planning a breaking release (0.3.0) sometime between July-September to [upgrade to full support of Pydantic 2](https://github.com/langchain-ai/langchain/discussions/19339), and will drop support for Pydantic 1 (including objects originating from the `v1` namespace of Pydantic 2).
@@ -45,7 +46,7 @@ This document serves to outline at a high level what has changed and why.
 
 - `langchain` was split into the following component packages: `langchain-core`, `langchain`, `langchain-community`, `langchain-[partner]` to improve the usability of langchain code in production settings. You can read more about it on our [blog](https://blog.langchain.dev/langchain-v0-1-0/).
 
-### Ecosystem Organization
+### Ecosystem organization
 
 By the release of 0.1.0, LangChain had grown to a large ecosystem with many integrations and a large community.
 

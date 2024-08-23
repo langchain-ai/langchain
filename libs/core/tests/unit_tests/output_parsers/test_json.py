@@ -9,6 +9,7 @@ from langchain_core.output_parsers.json import (
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.json import parse_json_markdown, parse_partial_json
+from tests.unit_tests.pydantic_utils import _schema
 
 GOOD_JSON = """```json
 {
@@ -492,8 +493,7 @@ EXPECTED_STREAMED_JSON_DIFF = [
 
 def test_partial_text_json_output_parser() -> None:
     def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
+        yield from STREAMED_TOKENS
 
     chain = input_iter | SimpleJsonOutputParser()
 
@@ -502,8 +502,7 @@ def test_partial_text_json_output_parser() -> None:
 
 def test_partial_text_json_output_parser_diff() -> None:
     def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
+        yield from STREAMED_TOKENS
 
     chain = input_iter | SimpleJsonOutputParser(diff=True)
 
@@ -575,8 +574,7 @@ def test_partial_text_json_output_parser_with_json_code_block() -> None:
     """Test json parser works correctly when the response contains a json code-block."""
 
     def input_iter(_: Any) -> Iterator[str]:
-        for token in TOKENS_WITH_JSON_CODE_BLOCK:
-            yield token
+        yield from TOKENS_WITH_JSON_CODE_BLOCK
 
     chain = input_iter | SimpleJsonOutputParser()
 
@@ -596,10 +594,10 @@ def test_base_model_schema_consistency() -> None:
         setup: str
         punchline: str
 
-    initial_joke_schema = {k: v for k, v in Joke.schema().items()}
+    initial_joke_schema = {k: v for k, v in _schema(Joke).items()}
     SimpleJsonOutputParser(pydantic_object=Joke)
     openai_func = convert_to_openai_function(Joke)
-    retrieved_joke_schema = {k: v for k, v in Joke.schema().items()}
+    retrieved_joke_schema = {k: v for k, v in _schema(Joke).items()}
 
     assert initial_joke_schema == retrieved_joke_schema
     assert openai_func.get("name", None) is not None

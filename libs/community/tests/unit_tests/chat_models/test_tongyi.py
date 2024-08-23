@@ -1,5 +1,6 @@
 from langchain_core.messages import (
     AIMessage,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -58,7 +59,7 @@ def test__convert_dict_to_message_function_call() -> None:
     expected_output = AIMessage(
         content="foo",
         additional_kwargs={"tool_calls": raw_function_calls},
-        tool_calls=tool_calls,
+        tool_calls=tool_calls,  # type: ignore[arg-type]
         invalid_tool_calls=[],
     )
     assert result == expected_output
@@ -82,4 +83,16 @@ def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
     result = convert_message_to_dict(message)
     expected_output = {"role": "system", "content": "foo"}
+    assert result == expected_output
+
+
+def test__convert_message_to_dict_tool() -> None:
+    message = FunctionMessage(name="foo", content="bar")
+    result = convert_message_to_dict(message)
+    expected_output = {
+        "role": "tool",
+        "tool_call_id": "",
+        "content": "bar",
+        "name": "foo",
+    }
     assert result == expected_output

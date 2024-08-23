@@ -65,7 +65,7 @@ def _get_message_data(service: Any, message: Any) -> ChatSession:
 
 @deprecated(
     since="0.0.32",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GMailLoader",
 )
 class GMailLoader(BaseChatLoader):

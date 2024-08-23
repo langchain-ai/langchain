@@ -15,17 +15,20 @@ coverage:
 		--cov-report term-missing:skip-covered \
 		$(TEST_FILE)
 
-test tests integration_tests:
+test tests:
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+
+integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
+	poetry run ptw --disable-socket --allow-unix-socket --snapshot-update --now . -- -vv -x tests/unit_tests
 
 check_imports: $(shell find langchain_community -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 extended_tests:
-	poetry run pytest --only-extended tests/unit_tests
+	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 
 ######################
@@ -43,15 +46,16 @@ lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
-	./scripts/lint_imports.sh
-	poetry run ruff .
+	./scripts/lint_imports.sh .
+	./scripts/check_pickle.sh .
+	poetry run ruff check .
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check --select I $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
+	poetry run ruff check --select I --fix $(PYTHON_FILES)
 
 spell_check:
 	poetry run codespell --toml pyproject.toml

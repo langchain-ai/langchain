@@ -285,7 +285,7 @@ class TiDBVectorStore(VectorStore):
 
         Args:
             ids (Optional[List[str]]): A list of vector IDs to delete.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
         """
 
         self._tidb.delete(ids=ids, **kwargs)
@@ -305,7 +305,7 @@ class TiDBVectorStore(VectorStore):
             k (int, optional): The number of results to retrieve. Defaults to 4.
             filter (dict, optional): A filter to apply to the search results.
                 Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             List[Document]: A list of Document objects representing the search results.
@@ -328,7 +328,7 @@ class TiDBVectorStore(VectorStore):
             k (int, optional): The number of results to return. Defaults to 5.
             filter (dict, optional): A filter to apply to the search results.
                 Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             A list of tuples containing relevant documents and their similarity scores.

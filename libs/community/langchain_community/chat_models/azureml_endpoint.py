@@ -141,9 +141,8 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
-                message=BaseMessage(
+                message=AIMessage(
                     content=choice.strip(),
-                    type="assistant",
                 ),
                 generation_info=None,
             )
@@ -159,7 +158,9 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
-                message=BaseMessage(
+                message=AIMessage(content=choice["message"]["content"].strip())
+                if choice["message"]["role"] == "assistant"
+                else BaseMessage(
                     content=choice["message"]["content"].strip(),
                     type=choice["message"]["role"],
                 ),
@@ -235,7 +236,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
                 endpoint_api_key="my-api-key",
                 content_formatter=chat_content_formatter,
             )
-    """  # noqa: E501
+    """
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -423,4 +424,4 @@ def _convert_delta_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]

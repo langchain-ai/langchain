@@ -1,8 +1,10 @@
 from unittest.mock import MagicMock
 from uuid import uuid4
 
+import numpy as np
 import pytest
 from langchain_core.outputs import LLMResult
+from langchain_core.utils.pydantic import get_fields
 
 from langchain_community.callbacks import OpenAICallbackHandler
 from langchain_community.llms.openai import BaseOpenAI
@@ -22,7 +24,7 @@ def test_on_llm_end(handler: OpenAICallbackHandler) -> None:
                 "completion_tokens": 1,
                 "total_tokens": 3,
             },
-            "model_name": BaseOpenAI.__fields__["model_name"].default,
+            "model_name": get_fields(BaseOpenAI)["model_name"].default,
         },
     )
     handler.on_llm_end(response)
@@ -58,7 +60,7 @@ def test_on_llm_end_custom_model(handler: OpenAICallbackHandler) -> None:
         ("davinci:ft-your-org:custom-model-name-2022-02-15-04-21-04", 0.24),
         ("ft:babbage-002:your-org:custom-model-name:1abcdefg", 0.0032),
         ("ft:davinci-002:your-org:custom-model-name:1abcdefg", 0.024),
-        ("ft:gpt-3.5-turbo-0613:your-org:custom-model-name:1abcdefg", 0.028),
+        ("ft:gpt-3.5-turbo-0613:your-org:custom-model-name:1abcdefg", 0.009),
         ("babbage-002.ft-0123456789abcdefghijklmnopqrstuv", 0.0008),
         ("davinci-002.ft-0123456789abcdefghijklmnopqrstuv", 0.004),
         ("gpt-35-turbo-0613.ft-0123456789abcdefghijklmnopqrstuv", 0.0035),
@@ -79,14 +81,14 @@ def test_on_llm_end_finetuned_model(
         },
     )
     handler.on_llm_end(response)
-    assert handler.total_cost == expected_cost
+    assert np.isclose(handler.total_cost, expected_cost)
 
 
 @pytest.mark.parametrize(
     "model_name,expected_cost",
     [
         ("gpt-35-turbo", 0.0035),
-        ("gpt-35-turbo-0301", 0.0035),
+        ("gpt-35-turbo-0301", 0.004),
         (
             "gpt-35-turbo-0613",
             0.0035,

@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.jira.prompt import (
     JIRA_CATCH_ALL_PROMPT,
     JIRA_CONFLUENCE_PAGE_CREATE_PROMPT,
@@ -22,12 +22,24 @@ class JiraToolkit(BaseToolkit):
         reading underlying data.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
     """
 
     tools: List[BaseTool] = []
 
     @classmethod
     def from_jira_api_wrapper(cls, jira_api_wrapper: JiraAPIWrapper) -> "JiraToolkit":
+        """Create a JiraToolkit from a JiraAPIWrapper.
+
+        Args:
+            jira_api_wrapper: JiraAPIWrapper. The Jira API wrapper.
+
+        Returns:
+            JiraToolkit. The Jira toolkit.
+        """
+
         operations: List[Dict] = [
             {
                 "mode": "jql",
@@ -64,7 +76,7 @@ class JiraToolkit(BaseToolkit):
             )
             for action in operations
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

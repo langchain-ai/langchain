@@ -54,23 +54,26 @@ class ChatPerplexity(BaseChatModel):
 
             from langchain_community.chat_models import ChatPerplexity
 
-            chat = ChatPerplexity(model="pplx-70b-online", temperature=0.7)
+            chat = ChatPerplexity(
+                model="llama-3.1-sonar-small-128k-online",
+                temperature=0.7,
+            )
     """
 
     client: Any  #: :meta private:
-    model: str = "pplx-70b-online"
+    model: str = "llama-3.1-sonar-small-128k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     pplx_api_key: Optional[str] = Field(None, alias="api_key")
-    """Base URL path for API requests, 
+    """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
         None, alias="timeout"
     )
-    """Timeout for requests to PerplexityChat completion API. Default is 600 seconds."""
+    """Timeout for requests to PerplexityChat completion API. Default is None."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -79,15 +82,13 @@ class ChatPerplexity(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"pplx_api_key": "PPLX_API_KEY"}
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
@@ -113,7 +114,7 @@ class ChatPerplexity(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["pplx_api_key"] = get_from_dict_or_env(
@@ -198,9 +199,9 @@ class ChatPerplexity(BaseChatModel):
         elif role == "tool" or default_class == ToolMessageChunk:
             return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
         elif role or default_class == ChatMessageChunk:
-            return ChatMessageChunk(content=content, role=role)
+            return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
         else:
-            return default_class(content=content)
+            return default_class(content=content)  # type: ignore[call-arg]
 
     def _stream(
         self,

@@ -58,8 +58,8 @@ class MHTMLLoader(BaseLoader):
                 parts = [message]
 
             for part in parts:
-                if part.get_content_type() == "text/html":
-                    html = part.get_payload(decode=True).decode()
+                if part.get_content_type() == "text/html":  # type: ignore[union-attr]
+                    html = part.get_payload(decode=True).decode()  # type: ignore[union-attr]
 
                     soup = BeautifulSoup(html, **self.bs_kwargs)
                     text = soup.get_text(self.get_text_separator)

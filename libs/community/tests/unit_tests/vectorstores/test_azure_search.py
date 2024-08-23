@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
 import pytest
@@ -121,12 +121,15 @@ def mock_default_index(*args, **kwargs):  # type: ignore[no-untyped-def]
     )
 
 
-def create_vector_store() -> AzureSearch:
+def create_vector_store(
+    additional_search_client_options: Optional[Dict[str, Any]] = None,
+) -> AzureSearch:
     return AzureSearch(
         azure_search_endpoint=DEFAULT_ENDPOINT,
         azure_search_key=DEFAULT_KEY,
         index_name=DEFAULT_INDEX_NAME,
         embedding_function=DEFAULT_EMBEDDING_MODEL,
+        additional_search_client_options=additional_search_client_options,
     )
 
 
@@ -168,3 +171,20 @@ def test_init_new_index() -> None:
         assert json.dumps(created_index.as_dict()) == json.dumps(
             mock_default_index().as_dict()
         )
+
+
+@pytest.mark.requires("azure.search.documents")
+def test_additional_search_options() -> None:
+    from azure.search.documents.indexes import SearchIndexClient
+
+    def mock_create_index() -> None:
+        pytest.fail("Should not create index in this test")
+
+    with patch.multiple(
+        SearchIndexClient, get_index=mock_default_index, create_index=mock_create_index
+    ):
+        vector_store = create_vector_store(
+            additional_search_client_options={"api_version": "test"}
+        )
+        assert vector_store.client is not None
+        assert vector_store.client._api_version == "test"
