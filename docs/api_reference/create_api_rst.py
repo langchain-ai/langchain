@@ -475,7 +475,7 @@ def _package_namespace(package_name: str) -> str:
 
     Args:
         package_name: Can be either "langchain" or "core" or "experimental".
-    
+
     Returns:
         modified package_name: Can be either "langchain" or "langchain_{package_name}"
     """
