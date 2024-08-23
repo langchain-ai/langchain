@@ -366,7 +366,7 @@ def test_delete_not_supported_for_delta_sync_index(index_name: str) -> None:
 
 
 @pytest.mark.parametrize("index_name", ALL_INDEX_NAMES)
-@pytest.mark.parametrize("query_type", [None, "ANN", "HYBRID"])
+@pytest.mark.parametrize("query_type", [None, "ANN"])
 def test_similarity_search(index_name: str, query_type: Optional[str]) -> None:
     vectorsearch = init_vector_search(index_name)
     query = "foo"
@@ -393,6 +393,39 @@ def test_similarity_search(index_name: str, query_type: Optional[str]) -> None:
             filters=filters,
             num_results=limit,
             query_type=query_type,
+        )
+    assert len(search_result) == len(INPUT_TEXTS)
+    assert sorted([d.page_content for d in search_result]) == sorted(INPUT_TEXTS)
+    assert all(["id" in d.metadata for d in search_result])
+
+
+@pytest.mark.parametrize("index_name", ALL_INDEX_NAMES)
+def test_similarity_search_hybrid(index_name: str) -> None:
+    vectorsearch = init_vector_search(index_name)
+    query = "foo"
+    filters = {"some filter": True}
+    limit = 7
+
+    search_result = vectorsearch.similarity_search(
+        query, k=limit, filter=filters, query_type="HYBRID"
+    )
+    if index_name == DELTA_SYNC_INDEX:
+        vectorsearch.index.similarity_search.assert_called_once_with(
+            columns=["id", "text"],
+            query_text=query,
+            query_vector=None,
+            filters=filters,
+            num_results=limit,
+            query_type="HYBRID",
+        )
+    else:
+        vectorsearch.index.similarity_search.assert_called_once_with(
+            columns=["id", "text"],
+            query_text=query,
+            query_vector=EMBEDDING_MODEL.embed_query(query),
+            filters=filters,
+            num_results=limit,
+            query_type="HYBRID",
         )
     assert len(search_result) == len(INPUT_TEXTS)
     assert sorted([d.page_content for d in search_result]) == sorted(INPUT_TEXTS)
@@ -511,21 +544,48 @@ def test_standard_params() -> None:
 
 
 @pytest.mark.parametrize("index_name", ALL_INDEX_NAMES - {DELTA_SYNC_INDEX})
-def test_similarity_search_by_vector(index_name: str) -> None:
+@pytest.mark.parametrize("query_type", [None, "ANN"])
+def test_similarity_search_by_vector(
+    index_name: str, query_type: Optional[str]
+) -> None:
     vectorsearch = init_vector_search(index_name)
     query_embedding = EMBEDDING_MODEL.embed_query("foo")
     filters = {"some filter": True}
     limit = 7
 
     search_result = vectorsearch.similarity_search_by_vector(
-        query_embedding, k=limit, filter=filters
+        query_embedding, k=limit, filter=filters, query_type=query_type
     )
     vectorsearch.index.similarity_search.assert_called_once_with(
         columns=["id", "text"],
         query_vector=query_embedding,
         filters=filters,
         num_results=limit,
-        query_type=None,
+        query_type=query_type,
+        query_text=None,
+    )
+    assert len(search_result) == len(INPUT_TEXTS)
+    assert sorted([d.page_content for d in search_result]) == sorted(INPUT_TEXTS)
+    assert all(["id" in d.metadata for d in search_result])
+
+
+@pytest.mark.parametrize("index_name", ALL_INDEX_NAMES - {DELTA_SYNC_INDEX})
+def test_similarity_search_by_vector_hybrid(index_name: str) -> None:
+    vectorsearch = init_vector_search(index_name)
+    query_embedding = EMBEDDING_MODEL.embed_query("foo")
+    filters = {"some filter": True}
+    limit = 7
+
+    search_result = vectorsearch.similarity_search_by_vector(
+        query_embedding, k=limit, filter=filters, query_type="HYBRID", query="foo"
+    )
+    vectorsearch.index.similarity_search.assert_called_once_with(
+        columns=["id", "text"],
+        query_vector=query_embedding,
+        filters=filters,
+        num_results=limit,
+        query_type="HYBRID",
+        query_text="foo",
     )
     assert len(search_result) == len(INPUT_TEXTS)
     assert sorted([d.page_content for d in search_result]) == sorted(INPUT_TEXTS)

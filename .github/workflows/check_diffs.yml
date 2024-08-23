@@ -128,7 +128,7 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          echo "Running extended tests, installing dependencies with poetry..."
+          echo "Running extended tests, installing dependencies with poetry..."extended_testing_deps
           poetry install --with test
           poetry run pip install uv
           poetry run uv pip install -r extended_testing_deps.txt
