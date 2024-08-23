@@ -14,9 +14,9 @@ import contextlib
 import functools
 import inspect
 import warnings
-from collections.abc import Callable
 from typing import (
     Any,
+    Callable,
     Generator,
     Type,
     TypeVar,
