@@ -4185,6 +4185,7 @@ tqdm = "*"
 typing-extensions = "*"
 unstructured-client = "*"
 unstructured-inference = {version = "0.7.36", optional = true, markers = "extra == \"all-docs\""}
+"unstructured.pytesseract" = {version = ">=0.3.12", optional = true, markers = "extra == \"all-docs\""}
 wrapt = "*"
 xlrd = {version = "*", optional = true, markers = "extra == \"all-docs\""}
 
@@ -4312,6 +4313,21 @@ rapidfuzz = "*"
 timm = "*"
 torch = "*"
 transformers = ">=4.25.1"
+
+[[package]]
+name = "unstructured-pytesseract"
+version = "0.3.13"
+description = "Python-tesseract is a python wrapper for Google's Tesseract-OCR"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "unstructured.pytesseract-0.3.13-py3-none-any.whl", hash = "sha256:8001bc860470d56185176eb3ceb4623e888eba058ca3b30af79003784bc40e19"},
+    {file = "unstructured.pytesseract-0.3.13.tar.gz", hash = "sha256:ff2e6391496e457dbf4b4e327f4a4577cce18921ea6570dc74bd64381b10e963"},
+]
+
+[package.dependencies]
+packaging = ">=21.3"
+Pillow = ">=8.0.0"
 
 [[package]]
 name = "urllib3"
@@ -4457,4 +4473,4 @@ local = ["unstructured"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "d95a01d052e3f6175a45c5a589692274300a88782938ed71f835c5f68842d821"
+content-hash = "d4f2a9a001f41c52964628e5d82d74e0938c75f75dbc5a08ff9d829c53fb74b9"
