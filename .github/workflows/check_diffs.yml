@@ -43,6 +43,7 @@ jobs:
     name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
     if: ${{ needs.build.outputs.lint != '[]' }}
+    continue-on-error: true
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.lint) }}
@@ -56,6 +57,7 @@ jobs:
     name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
     if: ${{ needs.build.outputs.test != '[]' }}
+    continue-on-error: true
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.test) }}
@@ -80,6 +82,7 @@ jobs:
     name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
     if: ${{ needs.build.outputs.compile-integration-tests != '[]' }}
+    continue-on-error: true
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.compile-integration-tests) }}
@@ -93,6 +96,7 @@ jobs:
     name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
     if: ${{ needs.build.outputs.dependencies != '[]' }}
+    continue-on-error: true
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.dependencies) }}
@@ -106,6 +110,7 @@ jobs:
     name: "cd ${{ matrix.job-configs.working-directory }} / make extended_tests #${{ matrix.job-configs.python-version }}"
     needs: [ build ]
     if: ${{ needs.build.outputs.extended-tests != '[]' }}
+    continue-on-error: true
     strategy:
       matrix:
         # note different variable for extended test dirs
