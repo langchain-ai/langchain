@@ -341,13 +341,52 @@ def test_convert_to_openai_function_nested() -> None:
                     "required": ["nested_arg1", "nested_arg2"],
                 },
             },
-            "required": [
-                "arg1",
-            ],
+            "required": ["arg1"],
         },
     }
 
     actual = convert_to_openai_function(my_function)
+    assert actual == expected
+
+
+def test_convert_to_openai_function_nested_strict() -> None:
+    class Nested(BaseModel):
+        nested_arg1: int = Field(..., description="foo")
+        nested_arg2: Literal["bar", "baz"] = Field(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    def my_function(arg1: Nested) -> None:
+        """dummy function"""
+        pass
+
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "type": "object",
+                    "properties": {
+                        "nested_arg1": {"type": "integer", "description": "foo"},
+                        "nested_arg2": {
+                            "type": "string",
+                            "enum": ["bar", "baz"],
+                            "description": "one of 'bar', 'baz'",
+                        },
+                    },
+                    "required": ["nested_arg1", "nested_arg2"],
+                    "additionalProperties": False,
+                },
+            },
+            "required": ["arg1"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    actual = convert_to_openai_function(my_function, strict=True)
     assert actual == expected
 
 

@@ -389,9 +389,13 @@ def convert_to_openai_function(
 
     if strict is not None:
         oai_function["strict"] = strict
-        # As of 08/06/24, OpenAI requires that additionalProperties be supplied and set
-        # to False if strict is True.
-        oai_function["parameters"]["additionalProperties"] = False
+        if strict:
+            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
+            # set to False if strict is True.
+            # All properties layer needs 'additionalProperties=False'
+            oai_function["parameters"] = _recursive_set_additional_properties_false(
+                oai_function["parameters"]
+            )
     return oai_function
 
 
@@ -592,3 +596,20 @@ def _py_38_safe_origin(origin: Type) -> Type:
         **origin_union_type_map,
     }
     return cast(Type, origin_map.get(origin, origin))
+
+
+def _recursive_set_additional_properties_false(
+    schema: Dict[str, Any],
+) -> Dict[str, Any]:
+    if isinstance(schema, dict):
+        # Check if 'required' is a key at the current level
+        if "required" in schema:
+            schema["additionalProperties"] = False
+        # Recursively check 'properties' and 'items' if they exist
+        if "properties" in schema:
+            for value in schema["properties"].values():
+                _recursive_set_additional_properties_false(value)
+        if "items" in schema:
+            _recursive_set_additional_properties_false(schema["items"])
+
+    return schema
