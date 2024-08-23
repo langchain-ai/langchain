@@ -109,6 +109,10 @@
     {
       "source": "/v0.2/docs/integrations/chat/ollama_functions/",
       "destination": "https://python.langchain.com/v0.1/docs/integrations/chat/ollama_functions/"
+    },
+    {
+      "source": "/v0.2/docs/templates/:path(.*/?)*",
+      "destination": "https://github.com/langchain-ai/langchain/tree/master/templates/:path*"
     }
   ]
 }

@@ -39,15 +39,12 @@ install-py-deps:
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
 	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
-	mkdir -p $(INTERMEDIATE_DIR)/templates
 
 	$(PYTHON) scripts/tool_feat_table.py $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/kv_store_feat_table.py $(INTERMEDIATE_DIR)
 
 	$(PYTHON) scripts/partner_pkg_table.py $(INTERMEDIATE_DIR)
-
-	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
 
 	wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O $(INTERMEDIATE_DIR)/langserve.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/

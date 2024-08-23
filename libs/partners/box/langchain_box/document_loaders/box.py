@@ -21,11 +21,12 @@ class BoxLoader(BaseLoader, BaseModel):
     Plus plan or above. The free developer account does not have access to Box AI.
 
     In addition, using the Box AI API requires a few prerequisite steps:
-    * Your administrator must enable the Box AI API
-    * You must enable the `Manage AI` scope in your app in the developer console.
-    * Your administratormust install and enable your application.
 
-    Setup:
+    * Your administrator must enable the Box AI API
+    * You must enable the ``Manage AI`` scope in your app in the developer console.
+    * Your administrator must install and enable your application.
+
+    **Setup**:
         Install ``langchain-box`` and set environment variable ``BOX_DEVELOPER_TOKEN``.
 
         .. code-block:: bash
@@ -34,7 +35,7 @@ class BoxLoader(BaseLoader, BaseModel):
             export BOX_DEVELOPER_TOKEN="your-api-key"
 
 
-    This loader returns ``Document `` objects built from text representations of files
+    This loader returns ``Document`` objects built from text representations of files
     in Box. It will skip any document without a text representation available. You can
     provide either a ``List[str]`` containing Box file IDS, or you can provide a
     ``str`` contining a Box folder ID. If providing a folder ID, you can also enable
@@ -46,19 +47,44 @@ class BoxLoader(BaseLoader, BaseModel):
         recommend never getting all files from folder 0 recursively. Folder ID 0 is your
         root folder.
 
-    Instantiate:
+    **Instantiate**:
 
-        Initialization variables
-            variable | description | type | required
-            ---+---+---
-            box_developer_token | token to use for auth. | string | no
-            box_auth | client id for you app. Used for CCG | string | no
-            box_file_ids | Array of Box file Ids to retrieve | array of strings | no
-            box_folder_id | Box folder id to retrieve | string | no
-            recursive | whether to return subfolders, default False | bool | no
+        .. list-table:: Initialization variables
+            :widths: 25 50 15 10
+            :header-rows: 1
 
-    Get files — this method requires you pass the ``box_file_ids`` parameter. This is a
-    ``List[str]`` containing the file IDs you wish to index.
+            * - Variable
+              - Description
+              - Type
+              - Default
+            * - box_developer_token
+              - Token to use for auth.
+              - ``str``
+              - ``None``
+            * - box_auth
+              - client id for you app. Used for CCG
+              - ``langchain_box.utilities.BoxAuth``
+              - ``None``
+            * - box_file_ids
+              - client id for you app. Used for CCG
+              - ``List[str]``
+              - ``None``
+            * - box_folder_id
+              - client id for you app. Used for CCG
+              - ``str``
+              - ``None``
+            * - recursive
+              - client id for you app. Used for CCG
+              - ``Bool``
+              - ``False``
+            * - character_limit
+              - client id for you app. Used for CCG
+              - ``int``
+              - ``-1``
+
+
+    **Get files** — this method requires you pass the ``box_file_ids`` parameter.
+    This is a ``List[str]`` containing the file IDs you wish to index.
 
         .. code-block:: python
 
@@ -71,7 +97,7 @@ class BoxLoader(BaseLoader, BaseModel):
                 character_limit=10000  # Optional. Defaults to no limit
             )
 
-    Get files in a folder — this method requires you pass the ``box_folder_id``
+    **Get files in a folder** — this method requires you pass the ``box_folder_id``
     parameter. This is a ``str`` containing the folder ID you wish to index.
 
         .. code-block:: python
@@ -85,7 +111,7 @@ class BoxLoader(BaseLoader, BaseModel):
                 recursive=False  # Optional. return entire tree, defaults to False
             )
 
-    Load:
+    **Load**:
         .. code-block:: python
 
             docs = loader.load()
@@ -96,11 +122,11 @@ class BoxLoader(BaseLoader, BaseModel):
             Document(metadata={'source': 'https://dl.boxcloud.com/api/2.0/
             internal_files/1514555423624/versions/1663171610024/representations
             /extracted_text/content/', 'title': 'Invoice-A5555_txt'},
-            page_content='Vendor: AstroTech Solutions\nInvoice Number: A5555\n\nLine
-            Items:\n    - Gravitational Wave Detector Kit: $800\n    - Exoplanet
-            Terrarium: $120\nTotal: $920')
+            page_content='Vendor: AstroTech Solutions\\nInvoice Number: A5555\\n\\nLine
+            Items:\\n    - Gravitational Wave Detector Kit: $800\\n    - Exoplanet
+            Terrarium: $120\\nTotal: $920')
 
-    Lazy load:
+    **Lazy load**:
         .. code-block:: python
 
             docs = []
@@ -116,16 +142,19 @@ class BoxLoader(BaseLoader, BaseModel):
             Document(metadata={'source': 'https://dl.boxcloud.com/api/2.0/
             internal_files/1514555423624/versions/1663171610024/representations
             /extracted_text/content/', 'title': 'Invoice-A5555_txt'},
-            page_content='Vendor: AstroTech Solutions\nInvoice Number: A5555\n\nLine
-            Items:\n    - Gravitational Wave Detector Kit: $800\n    - Exoplanet
-            Terrarium: $120\nTotal: $920')
+            page_content='Vendor: AstroTech Solutions\\nInvoice Number: A5555\\n\\nLine
+            Items:\\n    - Gravitational Wave Detector Kit: $800\\n    - Exoplanet
+            Terrarium: $120\\nTotal: $920')
+
     """
 
     box_developer_token: Optional[str] = None
     """String containing the Box Developer Token generated in the developer console"""
 
     box_auth: Optional[BoxAuth] = None
-    """Configured langchain_box.utilities.BoxAuth object"""
+    """Configured 
+       `BoxAuth <https://python.langchain.com/v0.2/api_reference/box/utilities/langchain_box.utilities.box.BoxAuth.html>`_ 
+       object"""
 
     box_file_ids: Optional[List[str]] = None
     """List[str] containing Box file ids"""
