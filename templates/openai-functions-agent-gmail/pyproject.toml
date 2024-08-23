@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "openai-functions-agent-gmail"
 version = "0.1.0"
-description = "Agent using OpenAI function calling to execute functions, including search"
+description = "Agent using OpenAI function calling to execute functions, including Gmail managing"
 authors = [
     "Lance Martin <lance@langchain.dev>",
 ]
