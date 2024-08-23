@@ -868,6 +868,43 @@ def test_structured_output_strict(
         next(chat.stream("Tell me a joke about cats."))
 
 
+@pytest.mark.parametrize(
+    ("model", "method", "strict"), [("gpt-4o-2024-08-06", "json_schema", None)]
+)
+def test_nested_structured_output_strict(
+    model: str, method: Literal["json_schema"], strict: Optional[bool]
+) -> None:
+    """Test to verify structured output with strict=True for nested object."""
+
+    from typing import TypedDict
+
+    llm = ChatOpenAI(model=model, temperature=0)
+
+    class SelfEvaluation(TypedDict):
+        score: int
+        text: str
+
+    class JokeWithEvaluation(TypedDict):
+        """Joke to tell user."""
+
+        setup: str
+        punchline: str
+        self_evaluation: SelfEvaluation
+
+    # Schema
+    chat = llm.with_structured_output(JokeWithEvaluation, method=method, strict=strict)
+    result = chat.invoke("Tell me a joke about cats.")
+    assert isinstance(result, dict)
+    assert set(result.keys()) == {"setup", "punchline", "self_evaluation"}
+    assert set(result["self_evaluation"].keys()) == {"score", "text"}
+
+    for chunk in chat.stream("Tell me a joke about cats."):
+        assert isinstance(chunk, dict)
+    assert isinstance(chunk, dict)  # for mypy
+    assert set(chunk.keys()) == {"setup", "punchline", "self_evaluation"}
+    assert set(chunk["self_evaluation"].keys()) == {"score", "text"}
+
+
 def test_json_mode() -> None:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     response = llm.invoke(
