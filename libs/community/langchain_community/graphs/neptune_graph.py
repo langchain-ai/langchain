@@ -279,7 +279,6 @@ class NeptuneGraph(BaseNeptuneGraph):
         client: optional boto3 Neptune client
         credentials_profile_name: optional AWS profile name
         region_name: optional AWS region, e.g., us-west-2
-        service: optional service name, default is neptunedata
         sign: optional, whether to sign the request payload, default is True
 
     Example:
@@ -310,7 +309,6 @@ class NeptuneGraph(BaseNeptuneGraph):
         client: Any = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
-        service: str = "neptunedata",
         sign: bool = True,
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
@@ -336,13 +334,13 @@ class NeptuneGraph(BaseNeptuneGraph):
                 client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
 
                 if sign:
-                    self.client = session.client(service_name=service, **client_params)
+                    self.client = session.client("neptunedata", **client_params)
                 else:
                     from botocore import UNSIGNED
                     from botocore.config import Config
 
                     self.client = session.client(
-                        service_name=service,
+                        "neptunedata",
                         **client_params,
                         config=Config(signature_version=UNSIGNED),
                     )
