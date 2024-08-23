@@ -32,6 +32,7 @@ class BoxRetriever(BaseRetriever):
     Instantiate:
 
         To use search:
+
         .. code-block:: python
 
             from langchain_box.retrievers import BoxRetriever
@@ -39,6 +40,7 @@ class BoxRetriever(BaseRetriever):
             retriever = BoxRetriever()
 
         To use Box AI:
+
         .. code-block:: python
 
             from langchain_box.retrievers import BoxRetriever
@@ -114,10 +116,13 @@ class BoxRetriever(BaseRetriever):
     """String containing the Box Developer Token generated in the developer console"""
 
     box_auth: Optional[BoxAuth] = None
-    """Configured langchain_box.utilities.BoxAuth object"""
+    """Configured 
+       `BoxAuth <https://python.langchain.com/v0.2/api_reference/box/utilities/langchain_box.utilities.box.BoxAuth.html>`_ 
+       object"""
 
     box_file_ids: Optional[List[str]] = None
     """List[str] containing Box file ids"""
+
     character_limit: Optional[int] = -1
     """character_limit is an int that caps the number of characters to
        return per document."""
