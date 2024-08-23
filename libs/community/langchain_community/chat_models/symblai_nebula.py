@@ -1,5 +1,6 @@
 import json
 from json import JSONDecodeError
+import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import requests
@@ -94,13 +95,12 @@ class ChatNebula(BaseChatModel):
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key exists in environment."""
-        values["nebula_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "nebula_api_key", "NEBULA_API_KEY")
-        )
-        return values
+    def __init__(self, **kwargs: Any) -> None:
+        if "nebula_api_key" in kwargs:
+            api_key = convert_to_secret_str(kwargs.pop("nebula_api_key"))
+        else:
+            api_key = convert_to_secret_str(os.getenv("NEBULA_API_KEY"))
+        super().__init__(nebula_api_key=api_key, **kwargs)
 
     @property
     def _llm_type(self) -> str:
