@@ -43,10 +43,8 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     """Extra arguments passed to similarity_search function of the vectorstore."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = Extra.forbid
 
     @staticmethod
     def _example_to_text(

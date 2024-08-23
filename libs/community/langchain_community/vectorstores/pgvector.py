@@ -274,22 +274,22 @@ class PGVector(VectorStore):
             disabling creation is useful when using ReadOnly Databases.
 
     Example:
-        .. code-block:: python
 
-            from langchain_community.vectorstores import PGVector
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+       .. code-block:: python
 
-            CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
-            COLLECTION_NAME = "state_of_the_union_test"
-            embeddings = OpenAIEmbeddings()
-            vectorestore = PGVector.from_documents(
-                embedding=embeddings,
-                documents=docs,
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-                use_jsonb=True,
-            )
-    """
+           from langchain_community.vectorstores import PGVector
+           from langchain_community.embeddings.openai import OpenAIEmbeddings
+           CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
+           COLLECTION_NAME = "state_of_the_union_test"
+           embeddings = OpenAIEmbeddings()
+           vectorestore = PGVector.from_documents(
+               embedding=embeddings,
+               documents=docs,
+               collection_name=COLLECTION_NAME,
+               connection_string=CONNECTION_STRING,
+               use_jsonb=True,
+
+    """  # noqa: E501
 
     def __init__(
         self,

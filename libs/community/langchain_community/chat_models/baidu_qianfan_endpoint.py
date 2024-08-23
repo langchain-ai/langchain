@@ -51,7 +51,7 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import get_fields, is_basemodel_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +200,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
                 ("human", "我喜欢编程。"),
             ]
-            qianfan_chat.invoke(message)
+            qianfan_chat.invoke(messages)
 
         .. code-block:: python
 
@@ -219,6 +219,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
         .. code-block:: python
 
+            stream = chat.stream(messages)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -346,7 +347,9 @@ class QianfanChatEndpoint(BaseChatModel):
 
     client: Any  #: :meta private:
 
-    qianfan_ak: SecretStr = Field(alias="api_key")
+    # It could be empty due to the use of Console API
+    # And they're not list here
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Qianfan API KEY"""
     qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
     """Qianfan SECRET KEY"""
@@ -365,43 +368,37 @@ class QianfanChatEndpoint(BaseChatModel):
     In the case of other model, passing these params will not affect the result.
     """
 
-    model: str = "ERNIE-Lite-8K"
+    model: Optional[str] = Field(default=None)
     """Model name.
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     
     preset models are mapping to an endpoint.
     `model` will be ignored if `endpoint` is set.
-    Default is ERNIE-Lite-8K.
+    Default is set by `qianfan` SDK, not here
     """
 
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                ["qianfan_ak", "api_key"],
-                "QIANFAN_AK",
+                values, ["qianfan_ak", "api_key"], "QIANFAN_AK", default=""
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
-                ["qianfan_sk", "secret_key"],
-                "QIANFAN_SK",
+                values, ["qianfan_sk", "secret_key"], "QIANFAN_SK", default=""
             )
         )
 
         default_values = {
             name: field.default
-            for name, field in cls.__fields__.items()
+            for name, field in get_fields(cls).items()
             if field.default is not None
         }
         default_values.update(values)
@@ -515,6 +512,7 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             chat_generation_info: Dict = {}
+            usage_metadata: Optional[UsageMetadata] = None
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
                     chunk.generation_info
@@ -522,7 +520,14 @@ class QianfanChatEndpoint(BaseChatModel):
                     else chat_generation_info
                 )
                 completion += chunk.text
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+                if isinstance(chunk.message, AIMessageChunk):
+                    usage_metadata = chunk.message.usage_metadata
+
+            lc_msg = AIMessage(
+                content=completion,
+                additional_kwargs={},
+                usage_metadata=usage_metadata,
+            )
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -530,7 +535,7 @@ class QianfanChatEndpoint(BaseChatModel):
             return ChatResult(
                 generations=[gen],
                 llm_output={
-                    "token_usage": chat_generation_info.get("usage", {}),
+                    "token_usage": usage_metadata or {},
                     "model_name": self.model,
                 },
             )
@@ -559,6 +564,7 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             chat_generation_info: Dict = {}
+            usage_metadata: Optional[UsageMetadata] = None
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
                     chunk.generation_info
@@ -567,7 +573,14 @@ class QianfanChatEndpoint(BaseChatModel):
                 )
                 completion += chunk.text
 
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+                if isinstance(chunk.message, AIMessageChunk):
+                    usage_metadata = chunk.message.usage_metadata
+
+            lc_msg = AIMessage(
+                content=completion,
+                additional_kwargs={},
+                usage_metadata=usage_metadata,
+            )
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -575,7 +588,7 @@ class QianfanChatEndpoint(BaseChatModel):
             return ChatResult(
                 generations=[gen],
                 llm_output={
-                    "token_usage": chat_generation_info.get("usage", {}),
+                    "token_usage": usage_metadata or {},
                     "model_name": self.model,
                 },
             )

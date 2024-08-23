@@ -1,5 +1,6 @@
 """Test AzureChatOpenAI wrapper."""
 
+import json
 import os
 from typing import Any, Optional
 
@@ -225,3 +226,39 @@ def test_openai_invoke(llm: AzureChatOpenAI) -> None:
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
     assert result.response_metadata.get("model_name") is not None
+
+
+def test_json_mode(llm: AzureChatOpenAI) -> None:
+    response = llm.invoke(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    )
+    assert isinstance(response.content, str)
+    assert json.loads(response.content) == {"a": 1}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    ):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, str)
+    assert json.loads(full.content) == {"a": 1}
+
+
+async def test_json_mode_async(llm: AzureChatOpenAI) -> None:
+    response = await llm.ainvoke(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    )
+    assert isinstance(response.content, str)
+    assert json.loads(response.content) == {"a": 1}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    ):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, str)
+    assert json.loads(full.content) == {"a": 1}

@@ -25,6 +25,7 @@ import pytest
 from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 from typing_extensions import Annotated, TypedDict, TypeVar
 
+from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -39,15 +40,17 @@ from langchain_core.runnables import (
 )
 from langchain_core.tools import (
     BaseTool,
-    InjectedToolArg,
-    SchemaAnnotationError,
     StructuredTool,
     Tool,
     ToolException,
+    tool,
+)
+from langchain_core.tools.base import (
+    InjectedToolArg,
+    SchemaAnnotationError,
     _get_all_basemodel_annotations,
     _is_message_content_block,
     _is_message_content_type,
-    tool,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
@@ -1746,6 +1749,7 @@ def test__is_message_content_type(obj: Any, expected: bool) -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Testing pydantic v2.")
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
+@pytest.mark.filterwarnings("error")
 def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
@@ -1761,7 +1765,7 @@ def test__get_all_basemodel_annotations_v2(use_v1_namespace: bool) -> None:
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
 
-    class Mixin(object):
+    class Mixin:
         def foo(self) -> str:
             return "foo"
 
@@ -1818,7 +1822,7 @@ def test__get_all_basemodel_annotations_v1() -> None:
     class ModelB(ModelA[str]):
         b: Annotated[ModelA[Dict[str, Any]], "foo"]
 
-    class Mixin(object):
+    class Mixin:
         def foo(self) -> str:
             return "foo"
 
@@ -1901,3 +1905,26 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     assert foo.invoke({"x": [0] * 10})
     with pytest.raises(ValidationErrorV2):
         foo.invoke({"x": [0] * 9})
+
+
+def test_imports() -> None:
+    expected_all = [
+        "FILTERED_ARGS",
+        "SchemaAnnotationError",
+        "create_schema_from_function",
+        "ToolException",
+        "BaseTool",
+        "Tool",
+        "StructuredTool",
+        "tool",
+        "RetrieverInput",
+        "create_retriever_tool",
+        "ToolsRenderer",
+        "render_text_description",
+        "render_text_description_and_args",
+        "BaseToolkit",
+        "convert_runnable_to_tool",
+        "InjectedToolArg",
+    ]
+    for module_name in expected_all:
+        assert hasattr(tools, module_name) and getattr(tools, module_name) is not None

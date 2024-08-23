@@ -96,118 +96,126 @@ def maximal_marginal_relevance(
 
 
 class Milvus(VectorStore):
-    """`Milvus` vector store.
+    """Milvus vector store integration.
 
-    You need to install `pymilvus` and run Milvus.
+    Setup:
+        Install ``langchain_milvus`` package:
 
-    See the following documentation for how to run a Milvus instance:
-    https://milvus.io/docs/install_standalone-docker.md
+        .. code-block:: bash
 
-    If looking for a hosted Milvus, take a look at this documentation:
-    https://zilliz.com/cloud and make use of the Zilliz vectorstore found in
-    this project.
+            pip install -qU  langchain_milvus
 
-    IF USING L2/IP metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
+    Key init args — indexing params:
+        collection_name: str
+            Name of the collection.
+        collection_description: str
+            Description of the collection.
+        embedding_function: Embeddings
+            Embedding function to use.
 
-    Parameters:
-        embedding_function (Embeddings): Function used to embed the text.
-        collection_name (str): Which Milvus collection to use. Defaults to
-            "LangChainCollection".
-        collection_description (str): The description of the collection. Defaults to
-            "".
-        collection_properties (Optional[dict[str, any]]): The collection properties.
-            Defaults to None.
-            If set, will override collection existing properties.
-            For example: {"collection.ttl.seconds": 60}.
-        connection_args (Optional[dict[str, any]]): The connection args used for
-            this class comes in the form of a dict.
-        consistency_level (str): The consistency level to use for a collection.
-            Defaults to "Session".
-        index_params (Optional[dict]): Which index params to use. Defaults to
-            HNSW/AUTOINDEX depending on service.
-        search_params (Optional[dict]): Which search params to use. Defaults to
-            default of index.
-        drop_old (Optional[bool]): Whether to drop the current collection. Defaults
-            to False.
-        auto_id (bool): Whether to enable auto id for primary key. Defaults to False.
-            If False, you need to provide text ids (string less than 65535 bytes).
-            If True, Milvus will generate unique integers as primary keys.
-        primary_field (str): Name of the primary key field. Defaults to "pk".
-        text_field (str): Name of the text field. Defaults to "text".
-        vector_field (str): Name of the vector field. Defaults to "vector".
-        enable_dynamic_field (Optional[bool]): Whether to enable
-            dynamic schema or not in Milvus. Defaults to False.
-            For more information about dynamic schema, please refer to
-            https://milvus.io/docs/enable-dynamic-field.md
-        metadata_field (str): Name of the metadata field. Defaults to None.
-            When metadata_field is specified,
-            the document's metadata will store as json.
-            This argument is about to be deprecated,
-            because it can be replaced by setting `enable_dynamic_field`=True.
-        partition_key_field (Optional[str]): Name of the partition key field.
-            Defaults to None. For more information about partition key, please refer to
-            https://milvus.io/docs/use-partition-key.md#Use-Partition-Key
-        partition_names (Optional[list]): List of specific partition names.
-            Defaults to None. For more information about partition, please refer to
-            https://milvus.io/docs/manage-partitions.md#Manage-Partitions
-        replica_number (int): The number of replicas for the collection. Defaults to 1.
-            For more information about replica, please refer to
-            https://milvus.io/docs/replica.md#In-Memory-Replica
-        timeout (Optional[float]): The timeout for Milvus operations. Defaults to None.
-            An optional duration of time in seconds to allow for the RPCs.
-            If timeout is not set, the client keeps waiting until the server responds
-            or an error occurs.
-        num_shards (Optional[int]): The number of shards for the collection.
-            Defaults to None. For more information about shards, please refer to
-            https://milvus.io/docs/glossary.md#Shard
+    Key init args — client params:
+        connection_args: Optional[dict]
+            Connection arguments.
 
-    The connection args used for this class comes in the form of a dict,
-    here are a few of the options:
-        address (str): The actual address of Milvus
-            instance. Example address: "localhost:19530"
-        uri (str): The uri of Milvus instance. Example uri:
-            "path/to/local/directory/milvus_demo.db" for Milvus Lite.
-            "http://randomwebsite:19530",
-            "tcp:foobarsite:19530",
-            "https://ok.s3.south.com:19530".
-        host (str): The host of Milvus instance. Default at "localhost",
-            PyMilvus will fill in the default host if only port is provided.
-        port (str/int): The port of Milvus instance. Default at 19530, PyMilvus
-            will fill in the default port if only host is provided.
-        user (str): Use which user to connect to Milvus instance. If user and
-            password are provided, we will add related header in every RPC call.
-        password (str): Required when user is provided. The password
-            corresponding to the user.
-        secure (bool): Default is false. If set to true, tls will be enabled.
-        client_key_path (str): If use tls two-way authentication, need to
-            write the client.key path.
-        client_pem_path (str): If use tls two-way authentication, need to
-            write the client.pem path.
-        ca_pem_path (str): If use tls two-way authentication, need to write
-            the ca.pem path.
-        server_pem_path (str): If use tls one-way authentication, need to
-            write the server.pem path.
-        server_name (str): If use tls, need to write the common name.
-
-    Example:
+    Instantiate:
         .. code-block:: python
 
-        from langchain_milvus.vectorstores import Milvus
-        from langchain_openai.embeddings import OpenAIEmbeddings
+            from langchain_milvus import Milvus
+            from langchain_openai import OpenAIEmbeddings
 
-        embedding = OpenAIEmbeddings()
-        # Connect to a milvus instance on localhost
-        milvus_store = Milvus(
-            embedding_function = Embeddings,
-            collection_name = "LangChainCollection",
-            connection_args = {"uri": "./milvus_demo.db"},
-            drop_old = True,
-            auto_id = True
-        )
+            URI = "./milvus_example.db"
 
-    Raises:
-        ValueError: If the pymilvus python package is not installed.
-    """
+            vector_store = Milvus(
+                embedding_function=OpenAIEmbeddings(),
+                connection_args={"uri": URI},
+            )
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"baz": "baz"})
+            document_3 = Document(page_content="i will be deleted :(", metadata={"baz": "qux"})
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'baz': 'baz', 'pk': '2'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'baz': 'baz', 'pk': '2'}]
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.335463] foo [{'baz': 'bar', 'pk': '1'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.335463] foo [{'baz': 'bar', 'pk': '1'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            [Document(metadata={'baz': 'baz', 'pk': '2'}, page_content='thud')]
+
+    """  # noqa: E501
 
     def __init__(
         self,
