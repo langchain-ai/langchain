@@ -94,7 +94,7 @@ class LangChainTracer(BaseTracer):
             project_name: The project name. Defaults to the tracer project.
             client: The client. Defaults to the global client.
             tags: The tags. Defaults to an empty list.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
@@ -127,7 +127,7 @@ class LangChainTracer(BaseTracer):
             parent_run_id: The parent run ID. Defaults to None.
             metadata: The metadata. Defaults to None.
             name: The name. Defaults to None.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             Run: The run.

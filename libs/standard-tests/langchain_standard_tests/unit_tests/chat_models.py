@@ -1,5 +1,6 @@
 """Unit tests for chat models."""
-from abc import ABC, abstractmethod
+
+from abc import abstractmethod
 from typing import Any, List, Literal, Optional, Type
 
 import pytest
@@ -8,6 +9,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
 
+from langchain_standard_tests.base import BaseStandardTests
 from langchain_standard_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
@@ -64,7 +66,7 @@ def my_adder(a: int, b: int) -> int:
     return a + b
 
 
-class ChatModelTests(ABC):
+class ChatModelTests(BaseStandardTests):
     @property
     @abstractmethod
     def chat_model_class(self) -> Type[BaseChatModel]:
@@ -93,6 +95,11 @@ class ChatModelTests(ABC):
     @property
     def has_tool_calling(self) -> bool:
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
+
+    @property
+    def tool_choice_value(self) -> Optional[str]:
+        """Value to use for tool choice when used in tests."""
+        return None
 
     @property
     def has_structured_output(self) -> bool:

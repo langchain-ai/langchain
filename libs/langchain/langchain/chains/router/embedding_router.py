@@ -8,7 +8,6 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.vectorstores import VectorStore
 
 from langchain.chains.router.base import RouterChain
@@ -21,10 +20,8 @@ class EmbeddingRouterChain(RouterChain):
     routing_keys: List[str] = ["query"]
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

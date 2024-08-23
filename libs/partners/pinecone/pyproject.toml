@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-pinecone"
-version = "0.1.2"
+version = "0.1.3"
 description = "An integration package connecting Pinecone and LangChain"
 authors = []
 readme = "README.md"
@@ -21,7 +21,9 @@ disallow_untyped_defs = "True"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.13"
 langchain-core = ">=0.1.52,<0.3"
-pinecone-client = ">=3.2.2,<5"
+pinecone-client = "^5.0.0"
+aiohttp = "^3.9.5"
+
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
