@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, cast
 
+from langchain_core._api import deprecated
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
@@ -257,6 +258,11 @@ def get_query_constructor_prompt(
     )
 
 
+@deprecated(
+    since="0.2.13",
+    alternative="load_query_constructor_runnable",
+    removal="1.0",
+)
 def load_query_constructor_chain(
     llm: BaseLanguageModel,
     document_contents: str,

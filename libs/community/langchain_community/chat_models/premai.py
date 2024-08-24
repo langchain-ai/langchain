@@ -40,7 +40,6 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     SecretStr,
 )
@@ -299,11 +298,9 @@ class ChatPremAI(BaseChatModel, BaseModel):
     client: Any
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @pre_init
     def validate_environments(cls, values: Dict) -> Dict:

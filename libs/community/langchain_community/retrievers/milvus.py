@@ -15,7 +15,73 @@ from langchain_community.vectorstores.milvus import Milvus
 
 
 class MilvusRetriever(BaseRetriever):
-    """`Milvus API` retriever."""
+    """Milvus API retriever.
+
+    See detailed instructions here: https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/
+
+    Setup:
+        Install ``langchain-milvus`` and other dependencies:
+
+        .. code-block:: bash
+
+            pip install -U pymilvus[model] langchain-milvus
+
+    Key init args:
+        collection: Milvus Collection
+
+    Instantiate:
+        .. code-block:: python
+
+            retriever = MilvusCollectionHybridSearchRetriever(collection=collection)
+
+    Usage:
+        .. code-block:: python
+
+            query = "What are the story about ventures?"
+
+            retriever.invoke(query)
+
+        .. code-block:: none
+
+            [Document(page_content="In 'The Lost Expedition' by Caspian Grey...", metadata={'doc_id': '449281835035545843'}),
+            Document(page_content="In 'The Phantom Pilgrim' by Rowan Welles...", metadata={'doc_id': '449281835035545845'}),
+            Document(page_content="In 'The Dreamwalker's Journey' by Lyra Snow..", metadata={'doc_id': '449281835035545846'})]
+
+    Use within a chain:
+        .. code-block:: python
+
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnablePassthrough
+            from langchain_openai import ChatOpenAI
+
+            prompt = ChatPromptTemplate.from_template(
+                \"\"\"Answer the question based only on the context provided.
+
+            Context: {context}
+
+            Question: {question}\"\"\"
+            )
+
+            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+
+            def format_docs(docs):
+                return "\\n\\n".join(doc.page_content for doc in docs)
+
+            chain = (
+                {"context": retriever | format_docs, "question": RunnablePassthrough()}
+                | prompt
+                | llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("What novels has Lila written and what are their contents?")
+
+        .. code-block:: none
+
+             "Lila Rose has written 'The Memory Thief,' which follows a charismatic thief..."
+
+    """  # noqa: E501
 
     embedding_function: Embeddings
     collection_name: str = "LangChainCollection"

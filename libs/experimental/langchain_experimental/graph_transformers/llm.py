@@ -729,6 +729,8 @@ class LLMGraphTransformer:
             if not isinstance(raw_schema, str):
                 raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
+            if isinstance(parsed_json, dict):
+                parsed_json = [parsed_json]
             for rel in parsed_json:
                 # Nodes need to be deduplicated using a set
                 nodes_set.add((rel["head"], rel["head_type"]))

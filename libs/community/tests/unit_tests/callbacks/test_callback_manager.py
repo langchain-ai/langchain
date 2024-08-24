@@ -6,6 +6,7 @@ import pytest
 from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer, wait_for_all_tracers
+from langchain_core.utils.pydantic import get_fields
 
 from langchain_community.callbacks import get_openai_callback
 from langchain_community.callbacks.manager import get_bedrock_anthropic_callback
@@ -44,7 +45,7 @@ def test_callback_manager_configure_context_vars(
                                 "completion_tokens": 1,
                                 "total_tokens": 3,
                             },
-                            "model_name": BaseOpenAI.__fields__["model_name"].default,
+                            "model_name": get_fields(BaseOpenAI)["model_name"].default,
                         },
                     )
                     mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
@@ -74,7 +75,7 @@ def test_callback_manager_configure_context_vars(
                                 "completion_tokens": 1,
                                 "total_tokens": 3,
                             },
-                            "model_name": BaseOpenAI.__fields__["model_name"].default,
+                            "model_name": get_fields(BaseOpenAI)["model_name"].default,
                         },
                     )
                     mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
