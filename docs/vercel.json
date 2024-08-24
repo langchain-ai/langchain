@@ -113,6 +113,10 @@
     {
       "source": "/v0.2/docs/templates/:path(.*/?)*",
       "destination": "https://github.com/langchain-ai/langchain/tree/master/templates/:path*"
+    },
+    {
+      "source": "/v0.2/docs/integrations/text_embedding/nemo/",
+      "destination": "/v0.2/docs/integrations/text_embedding/nvidia_ai_endpoints/"
     }
   ]
 }
