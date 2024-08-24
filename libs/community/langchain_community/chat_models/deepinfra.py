@@ -257,7 +257,6 @@ class ChatDeepInfra(BaseChatModel):
                 self._handle_status(response.status_code, response.text)
                 return response
             except Exception as e:
-                # import pdb; pdb.set_trace()
                 print("EX", e)  # noqa: T201
                 raise
 
@@ -449,7 +448,9 @@ class ChatDeepInfra(BaseChatModel):
 
     def _handle_status(self, code: int, text: Any) -> None:
         if code >= 500:
-            raise ChatDeepInfraException(f"DeepInfra Server: Error {code}")
+            raise ChatDeepInfraException(
+                f"DeepInfra Server error status {code}: {text}"
+            )
         elif code >= 400:
             raise ValueError(f"DeepInfra received an invalid payload: {text}")
         elif code != 200:
