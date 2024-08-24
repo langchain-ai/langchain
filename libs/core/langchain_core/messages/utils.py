@@ -443,6 +443,8 @@ def filter_messages(
 @_runnable_support
 def merge_message_runs(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    *,
+    chunk_separator: str = "\n",
 ) -> List[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
@@ -451,13 +453,16 @@ def merge_message_runs(
 
     Args:
         messages: Sequence Message-like objects to merge.
+        chunk_separator: Specify the string to be inserted between message chunks.
+        Default is "\n".
 
     Returns:
         List of BaseMessages with consecutive runs of message types merged into single
-        messages. If two messages being merged both have string contents, the merged
-        content is a concatenation of the two strings with a new-line separator. If at
-        least one of the messages has a list of content blocks, the merged content is a
-        list of content blocks.
+        messages. By default, if two messages being merged both have string contents,
+        the merged content is a concatenation of the two strings with a new-line separator.
+        The separator inserted between message chunks can be controlled by specifying
+        any string with ``chunk_separator``. If at least one of the messages has a list of
+        content blocks, the merged content is a list of content blocks.
 
     Example:
         .. code-block:: python
@@ -527,7 +532,7 @@ def merge_message_runs(
                 and last_chunk.content
                 and curr_chunk.content
             ):
-                last_chunk.content += "\n"
+                last_chunk.content += chunk_separator
             merged.append(_chunk_to_msg(last_chunk + curr_chunk))
     return merged
 
@@ -799,7 +804,7 @@ def trim_messages(
             list_token_counter = token_counter  # type: ignore[assignment]
     else:
         raise ValueError(
-            f"'token_counter' expected ot be a model that implements "
+            f"'token_counter' expected to be a model that implements "
             f"'get_num_tokens_from_messages()' or a function. Received object of type "
             f"{type(token_counter)}."
         )

@@ -73,6 +73,7 @@ ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
+simsimd = "^5.0.0"
 
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../../core"
