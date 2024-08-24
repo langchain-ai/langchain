@@ -5,6 +5,7 @@ import warnings
 from importlib import metadata
 from typing import Any, Optional
 
+from langchain.chat_models import init_chat_model
 from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
 
 try:
@@ -436,4 +437,5 @@ __all__ = [
     "QAWithSourcesChain",
     "LlamaCpp",
     "HuggingFaceTextGenInference",
+    "init_chat_model",
 ]

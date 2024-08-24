@@ -23,3 +23,6 @@ except metadata.PackageNotFoundError:
 
 surface_langchain_deprecation_warnings()
 surface_langchain_beta_warnings()
+
+
+from langchain_core.chat_history import InMemManager

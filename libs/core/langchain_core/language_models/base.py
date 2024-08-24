@@ -36,6 +36,8 @@ if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
     from langchain_core.callbacks import Callbacks
     from langchain_core.outputs import LLMResult
+    from langchain_core.chat_history import BaseHistoryManager
+    from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
 class LangSmithParams(TypedDict, total=False):
@@ -383,3 +385,13 @@ class BaseLanguageModel(
         Use get_pydantic_field_names.
         """
         return get_pydantic_field_names(cls)
+
+    def with_history(self, get_session_history: Union[Callable, BaseHistoryManager]) -> RunnableWithMessageHistory:
+        from langchain_core.chat_history import BaseHistoryManager
+        from langchain_core.runnables.history import RunnableWithMessageHistory
+
+        if isinstance(get_session_history, BaseHistoryManager):
+            get_session_history = get_session_history.get_session
+
+        return RunnableWithMessageHistory(self, get_session_history)
+

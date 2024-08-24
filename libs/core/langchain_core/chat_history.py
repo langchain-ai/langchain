@@ -18,7 +18,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Union
+from typing import List, Sequence, Union, Optional
+from uuid import UUID
 
 from langchain_core.messages import (
     AIMessage,
@@ -206,38 +207,27 @@ class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
     messages: List[BaseMessage] = Field(default_factory=list)
     """A list of messages stored in memory."""
 
-    async def aget_messages(self) -> List[BaseMessage]:
-        """Async version of getting messages.
-
-        Can over-ride this method to provide an efficient async implementation.
-        In general, fetching messages may involve IO to the underlying
-        persistence layer.
-
-        Returns:
-            List of messages.
-        """
-        return self.messages
-
     def add_message(self, message: BaseMessage) -> None:
-        """Add a self-created message to the store.
-
-        Args:
-            message: The message to add.
-        """
         self.messages.append(message)
-
-    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
-        """Async add messages to the store.
-
-        Args:
-            messages: The messages to add.
-        """
-        self.add_messages(messages)
 
     def clear(self) -> None:
         """Clear all messages from the store."""
         self.messages = []
 
-    async def aclear(self) -> None:
-        """Async clear all messages from the store."""
-        self.clear()
+
+class BaseHistoryManager(ABC):
+    @abstractmethod
+    def get_session(self, session_id: Union[str, UUID]) -> BaseChatMessageHistory:
+        """"""
+
+
+class InMemManager(BaseHistoryManager):
+    """"""
+
+    def __init__(self, sessions: Optional[dict]=None) -> None:
+        self.sessions = sessions or {}
+
+    def get_session(self, session_id: Union[str, UUID]) -> InMemoryChatMessageHistory:
+        if session_id not in self.sessions:
+            self.sessions[session_id] = InMemoryChatMessageHistory()
+        return self.sessions[session_id]
