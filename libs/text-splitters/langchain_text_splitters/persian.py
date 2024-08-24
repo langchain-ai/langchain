@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, List
 
 from langchain_text_splitters.base import TextSplitter
+from nltk.tokenize import sent_tokenize
 
 class NLTKTextSplitter(TextSplitter):
     """Splitting text using NLTK package."""
@@ -11,16 +12,8 @@ class NLTKTextSplitter(TextSplitter):
         self, separator: str = "\n\n", language: str = "english", **kwargs: Any
     ) -> None:
         """Initialize the NLTK splitter."""
-        super().__init__(**kwargs)
-        try:
-            import nltk
-            from nltk.tokenize import sent_tokenizer
-
-            self._tokenizer = sent_tokenizer
-        except ImportError:
-            raise ImportError(
-                "NLTK is not installed, please install it with `pip install nltk`."
-            )
+        super().__init__(**kwargs)                          
+        self._tokenizer = sent_tokenize            
         self._separator = separator
         self._language = language
 
@@ -31,4 +24,4 @@ class NLTKTextSplitter(TextSplitter):
         return self._merge_splits(splits, self._separator)
 
 a = NLTKTextSplitter()
-print(a.split_text('hello, how are you?!'))
+print(a.split_text("hello how are you?!"))

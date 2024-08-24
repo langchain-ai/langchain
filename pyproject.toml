@@ -13,8 +13,8 @@ python = ">=3.8.1,<4.0"
 black = "^24.2.0"
 spacy = "^3.7.5"
 transformers = "^4.44.0"
-nltk = "^3.8.1"
 lxml = "^5.3.0"
+nltk = "^3.9.1"
 
 [tool.poetry.group.docs.dependencies]
 langchain = { path = "libs/langchain/", develop = true }
@@ -61,12 +61,6 @@ numpy = [
     { version = "^1.24.0", python = "<3.12" },
     { version = "^1.26.0", python = ">=3.12" },
 ]
-
-[tool.poetry.group.test.dependencies]
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.typing.dependencies]
 
 [tool.codespell]
 skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
