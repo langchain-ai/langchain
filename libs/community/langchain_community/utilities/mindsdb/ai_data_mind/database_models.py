@@ -3,7 +3,7 @@ import json
 import inspect
 from typing import Text, Dict, Literal, Union
 
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
@@ -23,50 +23,52 @@ class PostgresModel(BaseModel):
     database: Text = Field(default=None)
     database_schema: Text = Field(alias='schema', default=None)
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        values["user"] = get_from_dict_or_env(
-            values,
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.user = get_from_dict_or_env(
+            data,
             "user",
             "DATABASE_USER",
         )
-        values["password"] = convert_to_secret_str(
+        self.password = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
+                data,
                 "password",
                 "DATABASE_PASSWORD",
             )
         )
-        values["host"] = get_from_dict_or_env(
-            values,
+        self.host = get_from_dict_or_env(
+            data,
             "host",
             "DATABASE_HOST",
         )
-        values["port"] = get_from_dict_or_env(
-            values,
+        self.port = get_from_dict_or_env(
+            data,
             "port",
             "DATABASE_PORT",
             default=5432,
         )
-        values["database"] = get_from_dict_or_env(
-            values,
+        self.database = get_from_dict_or_env(
+            data,
             "database",
             "DATABASE_DATABASE",
         )
-        values["schema"] = get_from_dict_or_env(
-            values,
-            "database_schema",
+        self.database_schema = get_from_dict_or_env(
+            data,
+            "schema",
             "DATABASE_SCHEMA",
         )
-        del values["database_schema"]
 
-        return values
-    
     def dict(self, **kwargs):
         base_dict = super().dict(**kwargs)
 
         # Convert the secret password to a string.
         base_dict["password"] = base_dict["password"].get_secret_value()
+
+        # Convert database_schema to schema and remove database_schema.
+        base_dict["schema"] = base_dict["database_schema"]
+        del base_dict["database_schema"]
+
         return base_dict
 
 
@@ -77,39 +79,37 @@ class MySQLModel(BaseModel):
     port: int = Field(default=3306)
     database: Text = Field(default=None)
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        values["user"] = get_from_dict_or_env(
-            values,
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.user = get_from_dict_or_env(
+            data,
             "user",
             "DATABASE_USER",
         )
-        values["password"] = convert_to_secret_str(
+        self.password = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
+                data,
                 "password",
                 "DATABASE_PASSWORD",
             )
         )
-        values["host"] = get_from_dict_or_env(
-            values,
+        self.host = get_from_dict_or_env(
+            data,
             "host",
             "DATABASE_HOST",
         )
-        values["port"] = get_from_dict_or_env(
-            values,
+        self.port = get_from_dict_or_env(
+            data,
             "port",
             "DATABASE_PORT",
-            default=5432,
+            default=3306,
         )
-        values["database"] = get_from_dict_or_env(
-            values,
+        self.database = get_from_dict_or_env(
+            data,
             "database",
             "DATABASE_DATABASE",
         )
 
-        return values
-    
     def dict(self, **kwargs):
         base_dict = super().dict(**kwargs)
 
@@ -130,45 +130,43 @@ class ClickHouseModel(BaseModel):
     database: Text = Field(default=None)
     protocol: Literal['native', 'http', 'https'] = Field(default='http')
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        values["user"] = get_from_dict_or_env(
-            values,
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.user = get_from_dict_or_env(
+            data,
             "user",
             "DATABASE_USER",
         )
-        values["password"] = convert_to_secret_str(
+        self.password = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
+                data,
                 "password",
                 "DATABASE_PASSWORD",
             )
         )
-        values["host"] = get_from_dict_or_env(
-            values,
+        self.host = get_from_dict_or_env(
+            data,
             "host",
             "DATABASE_HOST",
         )
-        values["port"] = get_from_dict_or_env(
-            values,
+        self.port = get_from_dict_or_env(
+            data,
             "port",
             "DATABASE_PORT",
             default=8443,
         )
-        values["database"] = get_from_dict_or_env(
-            values,
+        self.database = get_from_dict_or_env(
+            data,
             "database",
             "DATABASE_DATABASE",
         )
-        values["protocol"] = get_from_dict_or_env(
-            values,
+        self.protocol = get_from_dict_or_env(
+            data,
             "protocol",
             "DATABASE_PROTOCOL",
             default='http',
         )
 
-        return values
-    
     def dict(self, **kwargs):
         base_dict = super().dict(**kwargs)
 
@@ -185,49 +183,51 @@ class SnowflakeModel(BaseModel):
     database: Text = Field(default=None)
     database_schema: Text = Field(alias='schema', default=None)
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        values["account"] = get_from_dict_or_env(
-            values,
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.account = get_from_dict_or_env(
+            data,
             "account",
             "DATABASE_ACCOUNT",
         )
-        values["user"] = get_from_dict_or_env(
-            values,
+        self.user = get_from_dict_or_env(
+            data,
             "user",
             "DATABASE_USER",
         )
-        values["password"] = convert_to_secret_str(
+        self.password = convert_to_secret_str(
             get_from_dict_or_env(
-                values,
+                data,
                 "password",
                 "DATABASE_PASSWORD",
             )
         )
-        values["warehouse"] = get_from_dict_or_env(
-            values,
+        self.warehouse = get_from_dict_or_env(
+            data,
             "warehouse",
             "DATABASE_WAREHOUSE",
         )
-        values["database"] = get_from_dict_or_env(
-            values,
+        self.database = get_from_dict_or_env(
+            data,
             "database",
             "DATABASE_DATABASE",
         )
-        values["schema"] = get_from_dict_or_env(
-            values,
-            "database_schema",
+        self.database_schema = get_from_dict_or_env(
+            data,
+            "schema",
             "DATABASE_SCHEMA",
         )
-        del values["database_schema"]
 
-        return values
-    
     def dict(self, **kwargs):
         base_dict = super().dict(**kwargs)
 
         # Convert the secret password to a string.
         base_dict["password"] = base_dict["password"].get_secret_value()
+
+        # Convert database_schema to schema and remove database_schema.
+        base_dict["schema"] = base_dict["database_schema"]
+        del base_dict["database_schema"]
+
         return base_dict
     
 
@@ -236,33 +236,31 @@ class BigQueryModel(BaseModel):
     dataset: Text = Field(default=None)
     service_account_json: Union[SecretStr, Dict] = Field(default=None)
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        values["project_id"] = get_from_dict_or_env(
-            values,
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.project_id = get_from_dict_or_env(
+            data,
             "project_id",
             "DATABASE_PROJECT_ID",
         )
-        values["dataset"] = get_from_dict_or_env(
-            values,
+        self.dataset = get_from_dict_or_env(
+            data,
             "dataset",
             "DATABASE_DATASET",
         )
         service_account_json = get_from_dict_or_env(
-            values,
+            data,
             "service_account_json",
             "DATABASE_SERVICE_ACCOUNT_JSON",
         )
         if isinstance(service_account_json, Dict):
-            service_account_json_str = json.dumps(service_account_json)
+            service_account_json = json.dumps(service_account_json)
 
-        values["service_account_json"] = convert_to_secret_str(service_account_json_str)
+        self.service_account_json = convert_to_secret_str(service_account_json)
 
-        return values
-    
     def dict(self, **kwargs):
         base_dict = super().dict(**kwargs)
 
-        # Convert the  secret service account json to a dict.
+        # Convert the secret service account json to a dict.
         base_dict["service_account_json"] = json.loads(base_dict["service_account_json"].get_secret_value())
         return base_dict
