@@ -28,35 +28,35 @@ class PostgresModel(BaseModel):
         self.user = get_from_dict_or_env(
             data,
             "user",
-            "DATABASE_USER",
+            "POSTGRES_USER",
         )
         self.password = convert_to_secret_str(
             get_from_dict_or_env(
                 data,
                 "password",
-                "DATABASE_PASSWORD",
+                "POSTGRES_PASSWORD",
             )
         )
         self.host = get_from_dict_or_env(
             data,
             "host",
-            "DATABASE_HOST",
+            "POSTGRES_HOST",
         )
         self.port = get_from_dict_or_env(
             data,
             "port",
-            "DATABASE_PORT",
+            "POSTGRES_PORT",
             default=5432,
         )
         self.database = get_from_dict_or_env(
             data,
             "database",
-            "DATABASE_DATABASE",
+            "POSTGRES_DATABASE",
         )
         self.database_schema = get_from_dict_or_env(
             data,
             "schema",
-            "DATABASE_SCHEMA",
+            "POSTGRES_SCHEMA",
         )
 
     def dict(self, **kwargs):
@@ -84,30 +84,30 @@ class MySQLModel(BaseModel):
         self.user = get_from_dict_or_env(
             data,
             "user",
-            "DATABASE_USER",
+            "MYSQL_USER",
         )
         self.password = convert_to_secret_str(
             get_from_dict_or_env(
                 data,
                 "password",
-                "DATABASE_PASSWORD",
+                "MYSQL_PASSWORD",
             )
         )
         self.host = get_from_dict_or_env(
             data,
             "host",
-            "DATABASE_HOST",
+            "MYSQL_HOST",
         )
         self.port = get_from_dict_or_env(
             data,
             "port",
-            "DATABASE_PORT",
+            "MYSQL_PORT",
             default=3306,
         )
         self.database = get_from_dict_or_env(
             data,
             "database",
-            "DATABASE_DATABASE",
+            "MYSQL_DATABASE",
         )
 
     def dict(self, **kwargs):
@@ -119,7 +119,36 @@ class MySQLModel(BaseModel):
 
 
 class MariaDBModel(MySQLModel):
-    pass
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.user = get_from_dict_or_env(
+            data,
+            "user",
+            "MARIADB_USER",
+        )
+        self.password = convert_to_secret_str(
+            get_from_dict_or_env(
+                data,
+                "password",
+                "MARIADB_PASSWORD",
+            )
+        )
+        self.host = get_from_dict_or_env(
+            data,
+            "host",
+            "MARIADB_HOST",
+        )
+        self.port = get_from_dict_or_env(
+            data,
+            "port",
+            "MARIADB_PORT",
+            default=3306,
+        )
+        self.database = get_from_dict_or_env(
+            data,
+            "database",
+            "MARIADB_DATABASE",
+        )
 
 
 class ClickHouseModel(BaseModel):
@@ -135,35 +164,35 @@ class ClickHouseModel(BaseModel):
         self.user = get_from_dict_or_env(
             data,
             "user",
-            "DATABASE_USER",
+            "CLICKHOUSE_USER",
         )
         self.password = convert_to_secret_str(
             get_from_dict_or_env(
                 data,
                 "password",
-                "DATABASE_PASSWORD",
+                "CLICKHOUSE_PASSWORD",
             )
         )
         self.host = get_from_dict_or_env(
             data,
             "host",
-            "DATABASE_HOST",
+            "CLICKHOUSE_HOST",
         )
         self.port = get_from_dict_or_env(
             data,
             "port",
-            "DATABASE_PORT",
+            "CLICKHOUSE_PORT",
             default=8443,
         )
         self.database = get_from_dict_or_env(
             data,
             "database",
-            "DATABASE_DATABASE",
+            "CLICKHOUSE_DATABASE",
         )
         self.protocol = get_from_dict_or_env(
             data,
             "protocol",
-            "DATABASE_PROTOCOL",
+            "CLICKHOUSE_PROTOCOL",
             default='http',
         )
 
@@ -188,34 +217,34 @@ class SnowflakeModel(BaseModel):
         self.account = get_from_dict_or_env(
             data,
             "account",
-            "DATABASE_ACCOUNT",
+            "SNOWFLAKE_ACCOUNT",
         )
         self.user = get_from_dict_or_env(
             data,
             "user",
-            "DATABASE_USER",
+            "SNOWFLAKE_USER",
         )
         self.password = convert_to_secret_str(
             get_from_dict_or_env(
                 data,
                 "password",
-                "DATABASE_PASSWORD",
+                "SNOWFLAKE_PASSWORD",
             )
         )
         self.warehouse = get_from_dict_or_env(
             data,
             "warehouse",
-            "DATABASE_WAREHOUSE",
+            "SNOWFLAKE_WAREHOUSE",
         )
         self.database = get_from_dict_or_env(
             data,
             "database",
-            "DATABASE_DATABASE",
+            "SNOWFLAKE_DATABASE",
         )
         self.database_schema = get_from_dict_or_env(
             data,
             "schema",
-            "DATABASE_SCHEMA",
+            "SNOWFLAKE_SCHEMA",
         )
 
     def dict(self, **kwargs):
@@ -241,17 +270,17 @@ class BigQueryModel(BaseModel):
         self.project_id = get_from_dict_or_env(
             data,
             "project_id",
-            "DATABASE_PROJECT_ID",
+            "BIGQUERY_PROJECT_ID",
         )
         self.dataset = get_from_dict_or_env(
             data,
             "dataset",
-            "DATABASE_DATASET",
+            "BIGQUERY_DATASET",
         )
         service_account_json = get_from_dict_or_env(
             data,
             "service_account_json",
-            "DATABASE_SERVICE_ACCOUNT_JSON",
+            "BIGQUERY_SERVICE_ACCOUNT_JSON",
         )
         if isinstance(service_account_json, Dict):
             service_account_json = json.dumps(service_account_json)
