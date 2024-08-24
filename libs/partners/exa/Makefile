@@ -29,6 +29,8 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
+	./scripts/check_pydantic.sh .
+	./scripts/lint_imports.sh
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
 	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
