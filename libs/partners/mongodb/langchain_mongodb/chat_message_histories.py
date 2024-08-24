@@ -60,7 +60,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
     def __init__(
         self,
-        connection_string: str,
+        connection_string: Optional[str],
         session_id: str,
         database_name: str = DEFAULT_DBNAME,
         collection_name: str = DEFAULT_COLLECTION_NAME,
@@ -70,12 +70,14 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         create_index: bool = True,
         history_size: Optional[int] = None,
         index_kwargs: Optional[Dict] = None,
+        mongo_client: Optional[MongoClient] = None,
     ):
         """Initialize with a MongoDBChatMessageHistory instance.
 
         Args:
-            connection_string: str
-                connection string to connect to MongoDB.
+            connection_string: Optional[str]
+                connection string to connect to MongoDB. Can be None if mongo_client is
+                provided.
             session_id: str
                 arbitrary key that is used to store the messages of
                  a single chat session.
@@ -93,8 +95,10 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
                 count of (most recent) messages to fetch from MongoDB.
             index_kwargs: Optional[Dict]
                 additional keyword arguments to pass to the index creation.
+            mongo_client: Optional[MongoClient]
+                an existing MongoClient instance.
+                If provided, connection_string is ignored.
         """
-        self.connection_string = connection_string
         self.session_id = session_id
         self.database_name = database_name
         self.collection_name = collection_name
@@ -102,10 +106,17 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         self.history_key = history_key
         self.history_size = history_size
 
-        try:
-            self.client: MongoClient = MongoClient(connection_string)
-        except errors.ConnectionFailure as error:
-            logger.error(error)
+        if mongo_client:
+            self.client = mongo_client
+        elif connection_string:
+            try:
+                self.client = MongoClient(connection_string)
+            except errors.ConnectionFailure as error:
+                logger.error(error)
+        else:
+            raise ValueError(
+                "Either connection_string or mongo_client must be provided"
+            )
 
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
