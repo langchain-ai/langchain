@@ -4,7 +4,7 @@ from typing import Text, Dict, Any
 from langchain_community.utils.openai import is_openai_v1
 
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 
 DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"

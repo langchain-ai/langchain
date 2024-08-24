@@ -1,10 +1,8 @@
 from typing import Text, List, Dict, Any, Optional
 
-from mindsdb_sdk.utils.mind import DatabaseConfig
-
 from langchain_community.utilities.mindsdb import BaseMindWrapper
 from langchain_community.utilities.mindsdb.ai_data_mind.database_models import get_supported_data_sources
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 class DataSourceConfig(BaseModel):
@@ -27,7 +25,16 @@ class DataSourceConfig(BaseModel):
         model_obj = model_cls(**self.connection_args)
         self.connection_args = model_obj.dict()
 
-    def to_database_config(self) -> DatabaseConfig:
+    def to_database_config(self) -> "DatabaseConfig":
+        # Validate that the `mindsdb_sdk` package can be imported.
+        try:
+            from mindsdb_sdk.utils.mind import DatabaseConfig
+        except ImportError as e:
+            raise ImportError(
+                "Could not import mindsdb_sdk python package. "
+                "Please install it with `pip install mindsdb_sdk`.",
+            ) from e
+
         return DatabaseConfig(
             type=self.type,
             description=self.description,
