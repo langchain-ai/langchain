@@ -277,7 +277,7 @@ def test_relevance_score() -> None:
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch_consine = TiDBVectorStore.from_texts(
         texts=texts,
-        table_name="test_tidb_vectorstore_langchain",
+        table_name="test_tidb_vectorstore_langchain_cosine",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
         metadatas=metadatas,
@@ -294,11 +294,14 @@ def test_relevance_score() -> None:
         (Document(page_content="baz", metadata={"page": "2"}), 0.9953081577931554),
     ]
 
-    docsearch_l2 = TiDBVectorStore.from_existing_vector_table(
-        table_name="test_tidb_vectorstore_langchain",
+    docsearch_l2 = TiDBVectorStore.from_texts(
+        texts=texts,
+        table_name="test_tidb_vectorstore_langchain_cosine",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=TiDB_CONNECT_URL,
+        metadatas=metadatas,
         distance_strategy="l2",
+        drop_existing_table=True,
     )
     output_l2 = docsearch_l2.similarity_search_with_relevance_scores("foo", k=3)
     assert output_l2 == [
@@ -310,7 +313,7 @@ def test_relevance_score() -> None:
     try:
         _ = TiDBVectorStore.from_texts(
             texts=texts,
-            table_name="test_tidb_vectorstore_langchain",
+            table_name="test_tidb_vectorstore_langchain_inner",
             embedding=FakeEmbeddingsWithAdaDimension(),
             connection_string=TiDB_CONNECT_URL,
             metadatas=metadatas,

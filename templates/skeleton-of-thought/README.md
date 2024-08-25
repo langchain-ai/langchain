@@ -1,6 +1,6 @@
-# skeleton-of-thought
+# Skeleton-of-Thought
 
-Implements "Skeleton of Thought" from [this](https://sites.google.com/view/sot-llm) paper.
+It implements [Skeleton-of-Thought: Prompting LLMs for Efficient Parallel Generation](https://arxiv.org/abs/2307.15337) paper.
 
 This technique makes it possible to generate longer generations more quickly by first generating a skeleton, then generating each point of the outline.
 
