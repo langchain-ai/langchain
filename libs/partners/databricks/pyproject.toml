@@ -26,6 +26,7 @@ scipy = [
     {version = ">=1.11", python = ">=3.12"},
     {version = "<2", python = "<3.12"}
 ]
+databricks-vectorsearch = "^0.40"
 
 [tool.poetry.group.test]
 optional = true

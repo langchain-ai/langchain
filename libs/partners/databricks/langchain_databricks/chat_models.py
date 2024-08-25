@@ -15,7 +15,6 @@ from typing import (
     Type,
     Union,
 )
-from urllib.parse import urlparse
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
@@ -49,6 +48,8 @@ from langchain_core.pydantic_v1 import (
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+
+from langchain_databricks.utils import get_deployment_client
 
 logger = logging.getLogger(__name__)
 
@@ -230,25 +231,7 @@ class ChatDatabricks(BaseChatModel):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
-        self._validate_uri()
-        try:
-            from mlflow.deployments import get_deploy_client  # type: ignore
-
-            self._client = get_deploy_client(self.target_uri)
-        except ImportError as e:
-            raise ImportError(
-                "Failed to create the client. Please run `pip install mlflow` to "
-                "install required dependencies."
-            ) from e
-
-    def _validate_uri(self) -> None:
-        if self.target_uri == "databricks":
-            return
-
-        if urlparse(self.target_uri).scheme != "databricks":
-            raise ValueError(
-                "Invalid target URI. The target URI must be a valid databricks URI."
-            )
+        self._client = get_deployment_client(self.target_uri)
 
     @property
     def _default_params(self) -> Dict[str, Any]:
