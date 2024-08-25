@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -9,7 +9,7 @@ from .utils import load, prepare
 def create_chat_prompt(
     path: str,
     input_name_agent_scratchpad: str = "agent_scratchpad",
-    template_format: str = "f-string",
+    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
 ) -> Runnable[Dict[str, Any], ChatPromptTemplate]:
     """Create a chat prompt from a Langchain schema."""
 
