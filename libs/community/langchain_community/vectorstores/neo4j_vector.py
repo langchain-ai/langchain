@@ -587,7 +587,11 @@ class Neo4jVector(VectorStore):
                 pass
 
     def query(
-        self, query: str, *, params: Optional[dict] = None
+        self,
+        query: str,
+        *,
+        params: Optional[dict] = None,
+        retry_on_session_expired: bool = True,
     ) -> List[Dict[str, Any]]:
         """
         This method sends a Cypher query to the connected Neo4j database
@@ -600,7 +604,7 @@ class Neo4jVector(VectorStore):
         Returns:
             List[Dict[str, Any]]: List of dictionaries containing the query results.
         """
-        from neo4j.exceptions import CypherSyntaxError
+        from neo4j.exceptions import CypherSyntaxError, SessionExpired
 
         params = params or {}
         with self._driver.session(database=self._database) as session:
@@ -609,6 +613,15 @@ class Neo4jVector(VectorStore):
                 return [r.data() for r in data]
             except CypherSyntaxError as e:
                 raise ValueError(f"Cypher Statement is not valid\n{e}")
+            except (
+                SessionExpired
+            ) as e:  # Session expired is a transient error that can be retried
+                if retry_on_session_expired:
+                    return self.query(
+                        query, params=params, retry_on_session_expired=False
+                    )
+                else:
+                    raise e
 
     def verify_version(self) -> None:
         """
