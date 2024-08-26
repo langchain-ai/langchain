@@ -21,7 +21,7 @@ For comprehensive descriptions of every class and function see the [API Referenc
 This highlights functionality that is core to using LangChain.
 
 - [How to: return structured data from a model](/docs/how_to/structured_output/)
-- [How to: use a model to call tools](/docs/how_to/tool_calling)
+- [How to: use a chat model to call tools](/docs/how_to/tool_calling)
 - [How to: stream runnables](/docs/how_to/streaming)
 - [How to: debug your LLM apps](/docs/how_to/debugging/)
 
@@ -37,10 +37,10 @@ This highlights functionality that is core to using LangChain.
 - [How to: stream runnables](/docs/how_to/streaming)
 - [How to: invoke runnables in parallel](/docs/how_to/parallel/)
 - [How to: add default invocation args to runnables](/docs/how_to/binding/)
-- [How to: turn any function into a runnable](/docs/how_to/functions)
-- [How to: pass through inputs from one chain step to the next](/docs/how_to/passthrough)
-- [How to: configure runnable behavior at runtime](/docs/how_to/configure)
-- [How to: add message history (memory) to a chain](/docs/how_to/message_history)
+- [How to: run custom functions](/docs/how_to/functions)
+- [How to: pass through arguments from one step to the next](/docs/how_to/passthrough)
+- [How to: configure runtime chain internals](/docs/how_to/configure)
+- [How to: add message history](/docs/how_to/message_history)
 - [How to: route between sub-chains](/docs/how_to/routing)
 - [How to: create a dynamic (self-constructing) chain](/docs/how_to/dynamic_chain/)
 - [How to: inspect runnables](/docs/how_to/inspect)
@@ -66,30 +66,30 @@ These are the core building blocks you can use when building applications.
 
 - [How to: use example selectors](/docs/how_to/example_selectors)
 - [How to: select examples by length](/docs/how_to/example_selectors_length_based)
-- [How to: select examples by semantic similarity](/docs/how_to/example_selectors_similarity)
-- [How to: select examples by semantic ngram overlap](/docs/how_to/example_selectors_ngram)
-- [How to: select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr)
-- [How to: select examples from LangSmith few-shot datasets](/docs/how_to/example_selectors_langsmith/)
+- [How to: select examples by similarity](/docs/how_to/example_selectors_similarity)
+- [How to: select examples by n-gram overlap](/docs/how_to/example_selectors_ngram)
+- [How to: select examples by maximal marginal relevance (MMR)](/docs/how_to/example_selectors_mmr)
+- [How to: select examples from a LangSmith dataset](/docs/how_to/example_selectors_langsmith/)
 
 ### Chat models
 
 [Chat Models](/docs/concepts/#chat-models) are newer forms of language models that take messages in and output a message.
 
-- [How to: do function/tool calling](/docs/how_to/tool_calling)
-- [How to: get models to return structured output](/docs/how_to/structured_output)
-- [How to: cache model responses](/docs/how_to/chat_model_caching)
+- [How to: use chat models to call tools](/docs/how_to/tool_calling)
+- [How to: return structured data from a model](/docs/how_to/structured_output)
+- [How to: cache chat model responses](/docs/how_to/chat_model_caching)
 - [How to: get log probabilities](/docs/how_to/logprobs)
 - [How to: create a custom chat model class](/docs/how_to/custom_chat_model)
-- [How to: stream a response back](/docs/how_to/chat_streaming)
-- [How to: track token usage](/docs/how_to/chat_token_usage_tracking)
-- [How to: track response metadata across providers](/docs/how_to/response_metadata)
+- [How to: stream chat model responses](/docs/how_to/chat_streaming)
+- [How to: track token usage in ChatModels](/docs/how_to/chat_token_usage_tracking)
+- [How to: Response metadata](/docs/how_to/response_metadata)
 - [How to: use chat model to call tools](/docs/how_to/tool_calling)
 - [How to: stream tool calls](/docs/how_to/tool_streaming)
 - [How to: handle rate limits](/docs/how_to/chat_model_rate_limiting)
-- [How to: few shot prompt tool behavior](/docs/how_to/tools_few_shot)
-- [How to: bind model-specific formatted tools](/docs/how_to/tools_model_specific)
-- [How to: force a specific tool call](/docs/how_to/tool_choice)
-- [How to: work with local models](/docs/how_to/local_llms)
+- [How to: use few-shot prompting with tool calling](/docs/how_to/tools_few_shot)
+- [How to: bind model-specific tools](/docs/how_to/tools_model_specific)
+- [How to: force models to call a tool](/docs/how_to/tool_choice)
+- [How to: Run models locally](/docs/how_to/local_llms)
 - [How to: init any model in one line](/docs/how_to/chat_models_universal_init/)
 
 ### Messages
@@ -104,11 +104,11 @@ These are the core building blocks you can use when building applications.
 
 What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language models that take a string in and output a string.
 
-- [How to: cache model responses](/docs/how_to/llm_caching)
+- [How to: cache LLM responses](/docs/how_to/llm_caching)
 - [How to: create a custom LLM class](/docs/how_to/custom_llm)
-- [How to: stream a response back](/docs/how_to/streaming_llm)
-- [How to: track token usage](/docs/how_to/llm_token_usage_tracking)
-- [How to: work with local models](/docs/how_to/local_llms)
+- [How to: stream responses from an LLM](/docs/how_to/streaming_llm)
+- [How to: track token usage for LLMs](/docs/how_to/llm_token_usage_tracking)
+- [How to: Run models locally](/docs/how_to/local_llms)
 
 ### Output parsers
 
@@ -118,55 +118,55 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 - [How to: parse JSON output](/docs/how_to/output_parser_json)
 - [How to: parse XML output](/docs/how_to/output_parser_xml)
 - [How to: parse YAML output](/docs/how_to/output_parser_yaml)
-- [How to: retry when output parsing errors occur](/docs/how_to/output_parser_retry)
-- [How to: try to fix errors in output parsing](/docs/how_to/output_parser_fixing)
-- [How to: write a custom output parser class](/docs/how_to/output_parser_custom)
+- [How to: retry when a parsing error occurs](/docs/how_to/output_parser_retry)
+- [How to: use the output-fixing parser](/docs/how_to/output_parser_fixing)
+- [How to: create a custom Output Parser](/docs/how_to/output_parser_custom)
 
 ### Document loaders
 
 [Document Loaders](/docs/concepts/#document-loaders) are responsible for loading documents from a variety of sources.
 
-- [How to: load CSV data](/docs/how_to/document_loader_csv)
-- [How to: load data from a directory](/docs/how_to/document_loader_directory)
-- [How to: load HTML data](/docs/how_to/document_loader_html)
-- [How to: load JSON data](/docs/how_to/document_loader_json)
-- [How to: load Markdown data](/docs/how_to/document_loader_markdown)
-- [How to: load Microsoft Office data](/docs/how_to/document_loader_office_file)
-- [How to: load PDF files](/docs/how_to/document_loader_pdf)
-- [How to: write a custom document loader](/docs/how_to/document_loader_custom)
+- [How to: load CSVs](/docs/how_to/document_loader_csv)
+- [How to: load documents from a directory](/docs/how_to/document_loader_directory)
+- [How to: load HTML](/docs/how_to/document_loader_html)
+- [How to: load JSON](/docs/how_to/document_loader_json)
+- [How to: load Markdown](/docs/how_to/document_loader_markdown)
+- [How to: load Microsoft Office files](/docs/how_to/document_loader_office_file)
+- [How to: load PDFs](/docs/how_to/document_loader_pdf)
+- [How to: create a custom Document Loader](/docs/how_to/document_loader_custom)
 
 ### Text splitters
 
 [Text Splitters](/docs/concepts/#text-splitters) take a document and split into chunks that can be used for retrieval.
 
-- [How to: recursively split text](/docs/how_to/recursive_text_splitter)
-- [How to: split by HTML headers](/docs/how_to/HTML_header_metadata_splitter)
+- [How to: recursively split text by characters](/docs/how_to/recursive_text_splitter)
+- [How to: split by HTML header](/docs/how_to/HTML_header_metadata_splitter)
 - [How to: split by HTML sections](/docs/how_to/HTML_section_aware_splitter)
 - [How to: split by character](/docs/how_to/character_text_splitter)
 - [How to: split code](/docs/how_to/code_splitter)
-- [How to: split Markdown by headers](/docs/how_to/markdown_header_metadata_splitter)
-- [How to: recursively split JSON](/docs/how_to/recursive_json_splitter)
-- [How to: split text into semantic chunks](/docs/how_to/semantic-chunker)
+- [How to: split Markdown by Headers](/docs/how_to/markdown_header_metadata_splitter)
+- [How to: split JSON data](/docs/how_to/recursive_json_splitter)
+- [How to: split text based on semantic similarity](/docs/how_to/semantic-chunker)
 - [How to: split by tokens](/docs/how_to/split_by_token)
 
 ### Embedding models
 
 [Embedding Models](/docs/concepts/#embedding-models) take a piece of text and create a numerical representation of it.
 
-- [How to: embed text data](/docs/how_to/embed_text)
-- [How to: cache embedding results](/docs/how_to/caching_embeddings)
+- [How to: Text embedding models](/docs/how_to/embed_text)
+- [How to: Caching](/docs/how_to/caching_embeddings)
 
 ### Vector stores
 
 [Vector stores](/docs/concepts/#vector-stores) are databases that can efficiently store and retrieve embeddings.
 
-- [How to: use a vector store to retrieve data](/docs/how_to/vectorstores)
+- [How to: create and query vector stores](/docs/how_to/vectorstores)
 
 ### Retrievers
 
 [Retrievers](/docs/concepts/#retrievers) are responsible for taking a query and returning relevant documents.
 
-- [How to: use a vector store to retrieve data](/docs/how_to/vectorstore_retriever)
+- [How to: use a vectorstore as a retriever](/docs/how_to/vectorstore_retriever)
 - [How to: generate multiple queries to retrieve data for](/docs/how_to/MultiQueryRetriever)
 - [How to: use contextual compression to compress the data retrieved](/docs/how_to/contextual_compression)
 - [How to: write a custom retriever class](/docs/how_to/custom_retriever)
