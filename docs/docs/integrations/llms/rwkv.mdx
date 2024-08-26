@@ -3,22 +3,12 @@
 >[RWKV](https://www.rwkv.com/) (pronounced RwaKuv) language model is an RNN 
 > with GPT-level LLM performance, 
 > and it can also be directly trained like a GPT transformer (parallelizable).
->
->It's combining the best of RNN and transformer - great performance, fast inference, 
-> fast training, saves VRAM, "infinite" ctxlen, and free text embedding. 
-> Moreover, it's 100% attention-free, and a LFAI project.
 
+## Overview
 
-## Installation and Setup
-
-- Install the Python `rwkv` and `tokenizer` packages
-
-```bash
-pip install rwkv tokenizer
-```
-
-- Download a [RWKV model](https://huggingface.co/BlinkDL/rwkv-4-raven/tree/main) and place it in your desired directory
-- Download a [tokens file](https://raw.githubusercontent.com/BlinkDL/ChatRWKV/main/20B_tokenizer.json)
+RWKV is combining the best of RNN and transformer - great performance, fast inference, 
+fast training, saves VRAM, "infinite" ctxlen, and free text embedding. 
+Moreover, it's 100% attention-free, and a LFAI project.
 
 ### Rwkv models recommended VRAM
 
@@ -32,15 +22,33 @@ pip install rwkv tokenizer
 See the [rwkv pip](https://pypi.org/project/rwkv/) page for more information about strategies, 
 including streaming and CUDA support.
 
-## Usage
+## Setup
 
+- Install the Python `rwkv` and `tokenizer` packages
 
-To use the RWKV wrapper, you need to provide the path to the pre-trained model file and the tokenizer's configuration.
+```bash
+pip install rwkv tokenizer
+```
+
+- Download a [RWKV model](https://huggingface.co/BlinkDL/rwkv-4-raven/tree/main) and place it in your desired directory
+- Download a [tokens file](https://raw.githubusercontent.com/BlinkDL/ChatRWKV/main/20B_tokenizer.json)
+
+## Instantiation
+
 ```python
 from langchain_community.llms import RWKV
 ```
 
-## Test the model
+To use the RWKV wrapper, you need to provide the path to the pre-trained model file and the tokenizer's configuration.
+```python
+model = RWKV(
+    model="./models/RWKV-4-Raven-3B-v7-Eng-20230404-ctx4096.pth",
+    strategy="cpu fp32",
+    tokens_path="./rwkv/20B_tokenizer.json"
+)
+```
+
+## Invocation
 
 ```python
 
@@ -67,11 +75,6 @@ appropriately completes the request.
 # Response:
 """
 
-model = RWKV(
-    model="./models/RWKV-4-Raven-3B-v7-Eng-20230404-ctx4096.pth",
-    strategy="cpu fp32",
-    tokens_path="./rwkv/20B_tokenizer.json"
-)
 response = model.invoke(generate_prompt("Once upon a time, "))
 ```
 
