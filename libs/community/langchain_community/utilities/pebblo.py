@@ -675,7 +675,8 @@ class PebbloLoaderAPIWrapper(BaseModel):
             loader_details (dict): Contains loader info.
 
         Returns:
-            Tuple[List[dict], int, dict]: Documents and the aggregate size of the source.
+            Tuple[List[dict], int, dict]: Documents and the aggregate size
+            of the source.
         """
         docs = []
         source_aggregate_size = 0
