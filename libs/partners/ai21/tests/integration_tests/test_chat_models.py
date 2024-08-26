@@ -157,7 +157,7 @@ def test_tool_calls(model: str) -> None:
             return "25 celsius"
         return "32 celsius"
 
-    llm = ChatAI21(model=model, temperature=0)
+    llm = ChatAI21(model=model, temperature=0)  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools([convert_to_openai_tool(get_weather)])
 
     chat_messages = [
