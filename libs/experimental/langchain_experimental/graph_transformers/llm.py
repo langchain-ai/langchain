@@ -469,7 +469,6 @@ def _parse_and_clean_json(
     argument_json: Dict[str, Any],
 ) -> Tuple[List[Node], List[Relationship]]:
     nodes = []
-    # Cast to list if needed
     for node in argument_json["nodes"]:
         if not node.get("id"):  # Id is mandatory, skip this node
             continue
@@ -601,7 +600,7 @@ def _convert_to_graph_document(
                         )
 
             nodes, relationships = _parse_and_clean_json(argument_json)
-        except Exception as e:  # If we can't parse JSON
+        except Exception:  # If we can't parse JSON
             return ([], [])
     else:  # If there are no validation errors use parsed pydantic object
         parsed_schema: _Graph = raw_schema["parsed"]
