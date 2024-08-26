@@ -665,7 +665,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
         docs_with_id: List[IndexedDocument],
         source_path: str,
         loader_details: dict,
-    ) -> Tuple[List[dict], int]:
+    ) -> Tuple[List[dict], int, dict]:
         """
         Prepare documents for classification.
 
@@ -675,7 +675,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
             loader_details (dict): Contains loader info.
 
         Returns:
-            Tuple[List[dict], int]: Documents and the aggregate size of the source.
+            Tuple[List[dict], int, dict]: Documents and the aggregate size of the source.
         """
         docs = []
         source_aggregate_size = 0
