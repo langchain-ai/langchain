@@ -2,6 +2,8 @@
 
 import os
 from typing import Any, Dict, Generator, List
+from unittest import mock
+from unittest.mock import Mock
 
 import pytest
 from langchain_core.documents import Document
@@ -30,6 +32,15 @@ from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
 )
 
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
+_CONNECTION_STRING_WITH_UID_AND_PWD = str(
+    os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING_WITH_UID")
+)
+_CONNECTION_STRING_WITH_TRUSTED_CONNECTION = str(
+    os.environ.get("TEST_AZURESQLSERVER_TRUSTED_CONNECTION")
+)
+_ENTRA_ID_CONNECTION_STRING = str(
+    os.environ.get("TEST_AZURESQLSERVER_ENTRA_ID_CONNECTION_STRING")
+)
 _SCHEMA = "lc_test"
 _COLLATION_DB_NAME = "LangChainCollationTest"
 _TABLE_NAME = "langchain_vector_store_tests"
@@ -592,3 +603,92 @@ def test_invalid_filters(
     store.delete(["1", "2", "3"])
     with pytest.raises(ValueError):
         store.similarity_search("meow", k=5, filter=invalid_filter)
+
+
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
+)
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_table_if_not_exists"
+)
+def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_is_used(
+    provide_token: Mock,
+    create_table: Mock,
+) -> None:
+    """Test that if a valid entra_id connection string is passed in
+    to SQLServer_VectorStore object, entra id authentication is used
+    and connection is successful."""
+
+    # Connection string does not contain username and password,
+    # and Trusted_connection is set to `no`.
+    # mssql+pyodbc://lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=no"
+    SQLServer_VectorStore(
+        connection_string=_ENTRA_ID_CONNECTION_STRING,
+        embedding_length=EMBEDDING_LENGTH,
+        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        table_name=_TABLE_NAME,
+    )
+
+    # _provide_token is called only during Entra ID authentication.
+    provide_token.assert_called()
+
+
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_table_if_not_exists"
+)
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
+)
+def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_used(
+    provide_token: Mock,
+    create_table: Mock,
+) -> None:
+    """Test that if a connection string is provided to SQLServer_VectorStore object,
+    and connection string has username and password, entra id authentication is not
+    used and connection is successful."""
+
+    # Connection string contains username and password,
+    # mssql+pyodbc://username:password@lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server"
+    SQLServer_VectorStore(
+        connection_string=_CONNECTION_STRING_WITH_UID_AND_PWD,
+        embedding_length=EMBEDDING_LENGTH,
+        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        table_name=_TABLE_NAME,
+    )
+
+    # _provide_token is called only during Entra ID authentication.
+    provide_token.assert_not_called()
+
+
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
+)
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_table_if_not_exists"
+)
+def test_that_connection_string_with_trusted_connection_yes_does_not_use_entra_id_auth(
+    create_table: Mock,
+    provide_token: Mock,
+) -> None:
+    """Test that if a connection string is provided to SQLServer_VectorStore object,
+    and connection string has `trusted_connection` set to `yes`, entra id
+    authentication is not used and connection is successful."""
+
+    # Connection string does not contain username and password,
+    # but has `trusted_connection=yes`
+    # mssql+pyodbc://@lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+    SQLServer_VectorStore(
+        connection_string=_CONNECTION_STRING_WITH_TRUSTED_CONNECTION,
+        embedding_length=EMBEDDING_LENGTH,
+        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        table_name=_TABLE_NAME,
+    )
+
+    # _provide_token is called only during Entra ID authentication.
+    provide_token.assert_not_called()
