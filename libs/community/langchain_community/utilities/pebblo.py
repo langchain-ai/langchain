@@ -69,9 +69,6 @@ class Routes(str, Enum):
 
     loader_doc = "/v1/loader/doc"
     loader_app_discover = "/v1/app/discover"
-    retrieval_app_discover = "/v1/app/discover"
-    prompt = "/v1/prompt"
-    prompt_governance = "/v1/prompt/governance"
 
 
 class IndexedDocument(Document):
@@ -452,7 +449,9 @@ class PebbloLoaderAPIWrapper(BaseModel):
         if self.classifier_location == "local":
             # Send app details to local classifier
             headers = self._make_headers()
-            app_discover_url = f"{self.classifier_url}{Routes.loader_app_discover}"
+            app_discover_url = (
+                f"{self.classifier_url}{Routes.loader_app_discover.value}"
+            )
             pebblo_resp = self.make_request("POST", app_discover_url, headers, payload)
 
         if self.api_key:
@@ -465,7 +464,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
                 payload.update({"pebblo_server_version": pebblo_server_version})
 
             payload.update({"pebblo_client_version": PLUGIN_VERSION})
-            pebblo_cloud_url = f"{self.cloud_url}{Routes.loader_app_discover}"
+            pebblo_cloud_url = f"{self.cloud_url}{Routes.loader_app_discover.value}"
             _ = self.make_request("POST", pebblo_cloud_url, headers, payload)
 
     def classify_documents(
@@ -500,7 +499,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
         if self.classifier_location == "local":
             # Send docs to local classifier
             headers = self._make_headers()
-            load_doc_url = f"{self.classifier_url}{Routes.loader_doc}"
+            load_doc_url = f"{self.classifier_url}{Routes.loader_doc.value}"
             try:
                 pebblo_resp = self.make_request(
                     "POST", load_doc_url, headers, payload, 300
@@ -536,7 +535,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
             payload (dict): The payload containing documents to be sent.
         """
         headers = self._make_headers(cloud_request=True)
-        pebblo_cloud_url = f"{self.cloud_url}{Routes.loader_doc}"
+        pebblo_cloud_url = f"{self.cloud_url}{Routes.loader_doc.value}"
         try:
             _ = self.make_request("POST", pebblo_cloud_url, headers, payload)
         except Exception as e:

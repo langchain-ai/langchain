@@ -127,7 +127,9 @@ class PebbloRetrievalAPIWrapper(BaseModel):
         if self.classifier_location == "local":
             # Send app details to local classifier
             headers = self._make_headers()
-            app_discover_url = f"{self.classifier_url}{Routes.retrieval_app_discover}"
+            app_discover_url = (
+                f"{self.classifier_url}{Routes.retrieval_app_discover.value}"
+            )
             pebblo_resp = self.make_request("POST", app_discover_url, headers, payload)
 
         if self.api_key:
@@ -140,7 +142,7 @@ class PebbloRetrievalAPIWrapper(BaseModel):
                 payload.update({"pebblo_server_version": pebblo_server_version})
 
             payload.update({"pebblo_client_version": PLUGIN_VERSION})
-            pebblo_cloud_url = f"{self.cloud_url}{Routes.retrieval_app_discover}"
+            pebblo_cloud_url = f"{self.cloud_url}{Routes.retrieval_app_discover.value}"
             _ = self.make_request("POST", pebblo_cloud_url, headers, payload)
 
     def send_prompt(
@@ -186,7 +188,7 @@ class PebbloRetrievalAPIWrapper(BaseModel):
         if self.classifier_location == "local":
             # Send prompt to local classifier
             headers = self._make_headers()
-            prompt_url = f"{self.classifier_url}{Routes.prompt}"
+            prompt_url = f"{self.classifier_url}{Routes.prompt.value}"
             pebblo_resp = self.make_request("POST", prompt_url, headers, payload)
 
         if self.api_key:
@@ -198,7 +200,7 @@ class PebbloRetrievalAPIWrapper(BaseModel):
                 self.update_cloud_payload(payload, pebblo_resp)
 
             headers = self._make_headers(cloud_request=True)
-            pebblo_cloud_prompt_url = f"{self.cloud_url}{Routes.prompt}"
+            pebblo_cloud_prompt_url = f"{self.cloud_url}{Routes.prompt.value}"
             _ = self.make_request("POST", pebblo_cloud_prompt_url, headers, payload)
         elif self.classifier_location == "pebblo-cloud":
             logger.warning("API key is missing for sending prompt to Pebblo cloud.")
@@ -286,7 +288,9 @@ class PebbloRetrievalAPIWrapper(BaseModel):
         is_valid_prompt: bool = True
         if self.classifier_location == "local":
             headers = self._make_headers()
-            prompt_gov_api_url = f"{self.classifier_url}{Routes.prompt_governance}"
+            prompt_gov_api_url = (
+                f"{self.classifier_url}{Routes.prompt_governance.value}"
+            )
             pebblo_resp = self.make_request(
                 "POST", prompt_gov_api_url, headers, prompt_payload
             )
