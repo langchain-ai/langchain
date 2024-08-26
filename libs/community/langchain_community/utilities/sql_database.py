@@ -297,15 +297,9 @@ class SQLDatabase:
         """Information about all tables in the database."""
         return self.get_table_info()
 
-    def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
-        """Get information about specified tables.
-
-        Follows best practices as specified in: Rajkumar et al, 2022
-        (https://arxiv.org/abs/2204.00498)
-
-        If `sample_rows_in_table_info`, the specified number of sample rows will be
-        appended to each table description. This can increase performance as
-        demonstrated in the paper.
+    def get_table_info_list(self, table_names: Optional[List[str]] = None) -> List[str]:
+        """
+        Получает схему таблиц из базы данных
         """
         all_table_names = self.get_usable_table_names()
         if table_names is not None:
@@ -358,7 +352,19 @@ class SQLDatabase:
                 table_info += "*/"
             tables.append(table_info)
         tables.sort()
-        final_str = "\n\n".join(tables)
+        return tables
+
+    def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
+        """Get information about specified tables.
+
+        Follows best practices as specified in: Rajkumar et al, 2022
+        (https://arxiv.org/abs/2204.00498)
+
+        If `sample_rows_in_table_info`, the specified number of sample rows will be
+        appended to each table description. This can increase performance as
+        demonstrated in the paper.
+        """
+        final_str = "\n\n".join(self.get_table_info_list(table_names))
         return final_str
 
     def _get_table_indexes(self, table: Table) -> str:

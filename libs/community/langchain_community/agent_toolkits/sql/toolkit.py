@@ -92,29 +92,35 @@ class SQLDatabaseToolkit(BaseToolkit):
         """Get the tools in the toolkit."""
         list_sql_database_tool = ListSQLDatabaseTool(db=self.db)
         info_sql_database_tool_description = (
-            "Input to this tool is a comma-separated list of tables, output is the "
-            "schema and sample rows for those tables. "
-            "Be sure that the tables actually exist by calling "
-            f"{list_sql_database_tool.name} first! "
-            "Example Input: table1, table2, table3"
+            "Входными данными для этого инструмента является список таблиц, "
+            "разделённый запятыми, на выходе — "
+            "схема и образцы строк для этих таблиц. "
+            "Убедись, что таблицы действительно существуют, сначала вызвав "
+            f"{list_sql_database_tool.name}! "
+            'Параметры передавай в виде JSON: ["table1", "table2", "table3"]. '
+            "Если данных в таблице недостаточно запроси другие таблицы"
         )
         info_sql_database_tool = InfoSQLDatabaseTool(
             db=self.db, description=info_sql_database_tool_description
         )
         query_sql_database_tool_description = (
-            "Input to this tool is a detailed and correct SQL query, output is a "
-            "result from the database. If the query is not correct, an error message "
-            "will be returned. If an error is returned, rewrite the query, check the "
-            "query, and try again. If you encounter an issue with Unknown column "
-            f"'xxxx' in 'field list', use {info_sql_database_tool.name} "
-            "to query the correct table fields."
+            "Входными данными для этого инструмента является подробный "
+            "и корректный SQL-запрос, на выходе — "
+            "результат из базы данных. Если запрос некорректен, "
+            "будет возвращено сообщение об ошибке. "
+            "Если вернулась ошибка, перепиши запрос, проверь его "
+            "и попробуй снова. Если возникнет ошибка "
+            f"с сообщением 'Unknown column 'xxxx' in 'field list'', "
+            f"используй {info_sql_database_tool.name}, "
+            "чтобы запросить правильные поля таблицы."
         )
         query_sql_database_tool = QuerySQLDataBaseTool(
             db=self.db, description=query_sql_database_tool_description
         )
         query_sql_checker_tool_description = (
-            "Use this tool to double check if your query is correct before executing "
-            "it. Always use this tool before executing a query with "
+            "Используй этот инструмент, чтобы проверить правильность "
+            "своего запроса перед его выполнением. "
+            "Всегда используй этот инструмент перед выполнением запроса с помощью "
             f"{query_sql_database_tool.name}!"
         )
         query_sql_checker_tool = QuerySQLCheckerTool(
