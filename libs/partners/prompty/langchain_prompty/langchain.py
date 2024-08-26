@@ -25,7 +25,9 @@ def create_chat_prompt(
                 variable_name=input_name_agent_scratchpad, optional=True
             )  # type: ignore[arg-type]
         )
-        lc_p = ChatPromptTemplate.from_messages(lc_messages, template_format)
+        lc_p = ChatPromptTemplate.from_messages(
+            lc_messages, template_format=template_format
+        )
         lc_p = lc_p.partial(**p.inputs)
         return lc_p
 
