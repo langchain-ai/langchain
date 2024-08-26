@@ -11,7 +11,7 @@ xmltodict = pytest.importorskip("xmltodict")
 def api_client() -> PmcIDyRun:
     return PmcIDyRun()  # type: ignore[call-arg]
 
-
+@pytest.mark.requires('indra', 'lxml', 'bs4', 'xmltodict')
 def test_run_success(api_client: PmcIDyRun) -> None:
     """Test that returns the full-text of pmc paper"""
 
@@ -23,7 +23,7 @@ def test_run_success(api_client: PmcIDyRun) -> None:
     )
     assert test_string in output
 
-
+@pytest.mark.requires('indra', 'lxml', 'bs4', 'xmltodict')
 def test_run_returns_no_result(api_client: PmcIDyRun) -> None:
     """Test that gives no result. This pmcid has no free full text to extract"""
 
@@ -31,7 +31,7 @@ def test_run_returns_no_result(api_client: PmcIDyRun) -> None:
     print(output)
     assert "Error read and extract pmcid PMC10043565" == output
 
-
+@pytest.mark.requires('indra', 'lxml', 'bs4', 'xmltodict')
 def test_wrong_id(api_client: PmcIDyRun) -> None:
     """Test that pmcid is wrong or not exist"""
 

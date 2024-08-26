@@ -1,48 +1,47 @@
 from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 import os
 import os.path
 import shutil
 import xml.etree.ElementTree as ET
-from builtins import str
-from typing import Any, ClassVar, Dict
-
 import boto3
-import requests
 from botocore import UNSIGNED
 from botocore.config import Config
-from bs4 import BeautifulSoup
-from indra.literature import pubmed_client
-from indra.util import UnicodeXMLTreeBuilder as UTB
-from langchain_core.pydantic_v1 import BaseModel, root_validator
 from lxml import etree
-from lxml.etree import QName
-from pydantic import BaseModel as PydanticBaseModel
-from pydantic import ConfigDict
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from typing import Any, Dict
+# from indra.literature import pubmed_client
+# from indra.util import UnicodeXMLTreeBuilder as UTB
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-class PmcIDSearchWrapper(BaseModel):
+class PubMed_Central_Parser(BaseModel):
     """
-    Wrapper around PubMed API.
+    A parser for handling and extracting data from PubMed Central (PMC) articles in XML format.
 
-    This wrapper will use the PMC API to conduct pmc_id searches and fetch
-    the full text of paper. By default, it will return the full text of paper with the pmc_id
+    This class provides functionality to interact with and extract information from PMC articles, 
+    including retrieving the full-text XML, extracting plaintext from the XML, filtering articles 
+    based on their availability in different formats, and downloading PMC files from AWS S3. 
 
-    Parameters:
+    The methods in this class are designed to support various use cases such as:
 
-        pmc_id: the unique id of pubmed central paper
+    - **ID Lookup:** Convert between different article identifiers (PMID, PMCID, DOI) using the 
+      PubMed ID mapping service.
+    - **XML Retrieval:** Fetch and parse XML content for a given PMC ID, either directly from 
+      PMC or from a file.
+    - **Text Extraction:** Extract relevant paragraphs and titles from the article body, front 
+      section, or subarticles, while excluding irrelevant content such as LaTeX formulas or certain 
+      floating elements (e.g., tables and figures).
+    - **Filtering:** Filter lists of PubMed IDs (PMIDs) to identify those that have full-text 
+      availability in PMC, depending on the desired source type.
+    - **S3 Integration:** One of the official ways to download PMC XML or text files is directly from the PMC Open Access 
+      subset hosted on AWS S3. For more information, visit the https://www.ncbi.nlm.nih.gov/pmc/tools/pmcaws/
+
     """
-
-    # model_config = ConfigDict(ignored_types=(IgnoredType,))
-    parse: Any  #: :meta private:
-
     # Default values for the parameters
-
-    pmc_url = "https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi"
+    # official ID Converter API for pmcid, can be found here: https://www.ncbi.nlm.nih.gov/pmc/tools/id-converter-api/
     pmid_convert_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
 
     # Paths to resource files
@@ -59,38 +58,18 @@ class PmcIDSearchWrapper(BaseModel):
         """Validate that the python package exists in environment."""
         try:
             import xmltodict
-
+            import boto3
+            from indra.literature import pubmed_client
+            from indra.util import UnicodeXMLTreeBuilder as UTB
             values["parse"] = xmltodict.parse
-        except ImportError:
+            
+        except ImportError as e:
+            missing_package = str(e).split("No module named ")[-1]
             raise ImportError(
-                "Could not import xmltodict python package. "
-                "Please install it with `pip install xmltodict`."
-            )
+                f"Missing required package: '{missing_package}'. "
+                "Please install it with `pip install {missing_package}`."
+        )
         return values
-
-    def run(self, query: str) -> str:
-        """
-        Run PMC_ID search and get the full text.
-        """
-
-        try:
-            self.download_pmc_s3(query)
-        except Exception as e:
-            raise ("This pmcid is wrong or the pmcid doesn't have free full text")
-
-        try:
-            fileName = str("pmc/" + query + ".xml")
-            text = self.read_and_extract_xml_data(fileName)
-            return text
-        except Exception as e:
-            print(f"Error read and extract pmcid {query}: {e}")
-
-    def read_and_extract_xml_data(self, fileName):
-        with open(fileName, "r") as f:
-            data = f.read()
-        xml_data = BeautifulSoup(data, "xml")
-        text = self.extract_text(xml_data)
-        return text
 
     def id_lookup(self, paper_id, idtype=None):
         """Return PMID, DOI and PMCID based on an input ID.
@@ -143,53 +122,9 @@ class PmcIDSearchWrapper(BaseModel):
         pmcid = record.attrib.get("pmcid")
         ids = {"doi": doi, "pmid": pmid, "pmcid": pmcid}
         return ids
-        # def get_ids(search_term, retmax=1000):
-        #     return pubmed_client.get_ids(search_term, retmax=retmax, db='pmc')
 
-    def get_xml(self, pmc_id):
-        """Returns XML for the article corresponding to a PMC ID."""
-        if pmc_id.upper().startswith("PMC"):
-            pmc_id = pmc_id[3:]
-        # Request params
-        params = {}
-        params["verb"] = "GetRecord"
-        params["identifier"] = "oai:pubmedcentral.nih.gov:%s" % pmc_id
-        params["metadataPrefix"] = "pmc"
-        # Submit the request
-        res = requests.get(self.pmc_url, params)
-        if not res.status_code == 200:
-            logger.warning("Couldn't download %s" % pmc_id)
-            return None
-        # Read the bytestream
-        xml_bytes = res.content
-        # Check for any XML errors; xml_str should still be bytes
-        # tree = ET.XML(xml_bytes, parser=UTB())
-        tree = ET.XML(xml_bytes)
-        xmlns = "http://www.openarchives.org/OAI/2.0/"
-        err_tag = tree.find("{%s}error" % xmlns)
-        if err_tag is not None:
-            err_code = err_tag.attrib["code"]
-            err_text = err_tag.text
-            logger.warning(
-                "PMC client returned with error %s: %s" % (err_code, err_text)
-            )
-            return None
-        # If no error, return the XML as a unicode string
-        else:
-            return xml_bytes.decode("utf-8")
-
-    def get_xml_from_file(self, file):
-        # Check for any XML errors; xml_str should still be bytes
-        # tree = ET.XML(xml_bytes, parser=UTB())
-        tree = ET.parse(file)
-
-        # Get the root element of the XML file
-        root = tree.getroot()
-
-        # Convert the entire ElementTree (from root) to a string
-        xml_string = ET.tostring(root, encoding="unicode")
-
-        return xml_string
+    def get_ids(search_term, retmax=1000):
+        return pubmed_client.get_ids(search_term, retmax=retmax, db='pmc')
 
     def extract_text(self, xml_string):
         """Get plaintext from the body of the given NLM XML string.
@@ -277,38 +212,6 @@ class PmcIDSearchWrapper(BaseModel):
         for element in subarticles:
             output.extend(self._extract_from_subarticle(element))
         return output
-
-    def filter_pmids(self, pmid_list, source_type):
-        """Filter a list of PMIDs for ones with full text from PMC.
-        Parameters
-        ----------
-        pmid_list : list of str
-            List of PMIDs to filter.
-        source_type : string
-            One of 'fulltext', 'oa_xml', 'oa_txt', or 'auth_xml'.
-        Returns
-        -------
-        list of str
-            PMIDs available in the specified source/format type.
-        """
-        global pmids_fulltext_dict
-        # Check args
-        if source_type not in ("fulltext", "oa_xml", "oa_txt", "auth_xml"):
-            raise ValueError(
-                "source_type must be one of: 'fulltext', 'oa_xml', "
-                "'oa_txt', or 'auth_xml'."
-            )
-        # Check if we've loaded this type, and lazily initialize
-        if pmids_fulltext_dict.get(source_type) is None:
-            fulltext_list_path = os.path.join(
-                os.path.dirname(__file__), "pmids_%s.txt" % source_type
-            )
-            with open(fulltext_list_path, "rb") as f:
-                fulltext_list = set(
-                    [line.strip().decode("utf-8") for line in f.readlines()]
-                )
-                pmids_fulltext_dict[source_type] = fulltext_list
-        return list(set(pmid_list).intersection(pmids_fulltext_dict.get(source_type)))
 
     def _select_from_top_level(self, tree, tag):
         """Select direct children of the article element of a tree by tag.

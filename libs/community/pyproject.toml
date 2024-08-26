@@ -39,6 +39,11 @@ aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
 dataclasses-json = ">= 0.5.7, < 0.7"
 langsmith = "^0.1.0"
+indra = {version = "^1.23.0", optional = true}
+bs4 = {version = "^0.0.2", optional = true}
+lxml = {version = "^5.3.0", optional = true}
+xmltodict = {version = "^0.13.0", optional = true}
+boto3 = {version = "^1.35.5", optional = true}
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
