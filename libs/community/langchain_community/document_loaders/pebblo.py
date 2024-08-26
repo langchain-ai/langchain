@@ -3,6 +3,7 @@
 import logging
 import os
 import uuid
+from importlib.metadata import version
 from typing import Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
@@ -12,6 +13,7 @@ from langchain_community.utilities.pebblo import (
     BATCH_SIZE_BYTES,
     PLUGIN_VERSION,
     App,
+    Framework,
     IndexedDocument,
     PebbloLoaderAPIWrapper,
     generate_size_based_batches,
@@ -175,6 +177,10 @@ class PebbloSafeLoader(BaseLoader):
             runtime=runtime,
             framework=framework,
             plugin_version=PLUGIN_VERSION,
+            client_version=Framework(
+                name="langchain_community",
+                version=version("langchain_community"),
+            ),
         )
         return app
 
