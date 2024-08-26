@@ -27,5 +27,5 @@ class TestMoonshotChat(ChatModelIntegrationTests):
 def test_chat_moonshot_instantiate_with_alias() -> None:
     """Test MoonshotChat instantiate when using alias."""
     api_key = "your-api-key"
-    chat = MoonshotChat(api_key=api_key)
+    chat = MoonshotChat(api_key=api_key)  # type: ignore[call-arg]
     assert cast(SecretStr, chat.moonshot_api_key).get_secret_value() == api_key
