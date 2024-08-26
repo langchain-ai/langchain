@@ -76,6 +76,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             chat message history instance.
         input_messages_key: Must be specified if the base runnable accepts a dict
             as input. The key in the input dict that contains the messages.
+        extra_input_keys: Must be specified if the base runnable accepts a dict
+            as input. The key in the input dict that contains the extra prompt input keys.
         output_messages_key: Must be specified if the base Runnable returns a dict
             as output. The key in the output dict that contains the messages.
         history_messages_key: Must be specified if the base runnable accepts a dict
@@ -231,6 +233,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     get_session_history: GetSessionHistoryCallable
     input_messages_key: Optional[str] = None
+    extra_input_keys: Optional[List[str]] = None
     output_messages_key: Optional[str] = None
     history_messages_key: Optional[str] = None
     history_factory_config: Sequence[ConfigurableFieldSpec]
@@ -252,6 +255,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         get_session_history: GetSessionHistoryCallable,
         *,
         input_messages_key: Optional[str] = None,
+        extra_input_keys: Optional[List[str]] = None,
         output_messages_key: Optional[str] = None,
         history_messages_key: Optional[str] = None,
         history_factory_config: Optional[Sequence[ConfigurableFieldSpec]] = None,
@@ -355,6 +359,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         super().__init__(
             get_session_history=get_session_history,
             input_messages_key=input_messages_key,
+            extra_input_keys=extra_input_keys,
             output_messages_key=output_messages_key,
             bound=bound,
             history_messages_key=history_messages_key,
@@ -388,6 +393,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
             else:
                 fields["__root__"] = (Sequence[BaseMessage], ...)
+            
+            if self.extra_input_keys:
+                for key in self.extra_input_keys:
+                    fields[key] = (
+                        Union[str, Sequence[str]],
+                        ...,
+                    )
+                    
             return create_model(  # type: ignore[call-overload]
                 "RunnableWithChatHistoryInput",
                 **fields,
