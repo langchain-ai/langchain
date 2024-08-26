@@ -69,7 +69,7 @@ class IMessageChatLoader(BaseChatLoader):
             ) from e
 
     @staticmethod
-    def _parse_attributedBody(attributedBody: bytes) -> str:
+    def _parse_attributed_body(attributed_body: bytes) -> str:
         """
         Parse the attributedBody field of the message table
         for the text content of the message.
@@ -89,11 +89,11 @@ class IMessageChatLoader(BaseChatLoader):
           that byte.
 
         Args:
-            attributedBody (bytes): attributedBody field of the message table.
+            attributed_body (bytes): attributedBody field of the message table.
         Return:
             str: Text content of the message.
         """
-        content = attributedBody.split(b"NSString")[1][5:]
+        content = attributed_body.split(b"NSString")[1][5:]
         length, start = content[0], 1
         if content[0] == 129:
             length, start = int.from_bytes(content[1:3], "little"), 3
@@ -153,7 +153,7 @@ class IMessageChatLoader(BaseChatLoader):
             if text:
                 content = text
             elif attributedBody:
-                content = self._parse_attributedBody(attributedBody)
+                content = self._parse_attributed_body(attributedBody)
             else:  # Skip messages with no content
                 continue
 
