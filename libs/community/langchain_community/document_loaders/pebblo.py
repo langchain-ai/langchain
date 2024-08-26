@@ -252,11 +252,16 @@ class PebbloSafeLoader(BaseLoader):
         """Add Pebblo specific metadata to documents."""
         for doc in self.docs_with_id:
             doc_metadata = doc.metadata
-            doc_metadata["full_path"] = get_full_path(
-                doc_metadata.get(
-                    "full_path", doc_metadata.get("source", self.source_path)
+            if self.loader.__class__.__name__ == "SharePointLoader":
+                doc_metadata["full_path"] = get_full_path(
+                    doc_metadata.get("source", self.source_path)
                 )
-            )
+            else:
+                doc_metadata["full_path"] = get_full_path(
+                    doc_metadata.get(
+                        "full_path", doc_metadata.get("source", self.source_path)
+                    )
+                )
             doc_metadata["pb_checksum"] = classified_docs.get(doc.pb_id, {}).get(
                 "pb_checksum", None
             )
