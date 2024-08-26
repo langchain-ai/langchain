@@ -261,7 +261,10 @@ class HuggingFacePipeline(BaseLLM):
     ) -> LLMResult:
         # List to hold all results
         text_generations: List[str] = []
-        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+
+        default_pipeline_kwargs = self.pipeline_kwargs if self.pipeline_kwargs else {}
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", default_pipeline_kwargs)
+
         skip_prompt = kwargs.get("skip_prompt", False)
 
         for i in range(0, len(prompts), self.batch_size):

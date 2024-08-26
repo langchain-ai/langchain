@@ -1,5 +1,6 @@
 from typing import Any, Sequence
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.documents.transformers import BaseDocumentTransformer
 from langchain_core.graph_vectorstores.links import copy_with_links
@@ -9,6 +10,7 @@ from langchain_community.graph_vectorstores.extractors.link_extractor import (
 )
 
 
+@beta()
 class LinkExtractorTransformer(BaseDocumentTransformer):
     """DocumentTransformer for applying one or more LinkExtractors.
 
