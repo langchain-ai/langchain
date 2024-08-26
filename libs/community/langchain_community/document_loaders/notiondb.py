@@ -111,15 +111,9 @@ class NotionDBLoader(BaseLoader):
             prop_type = prop_data["type"]
 
             if prop_type == "rich_text":
-                value = (
-                    prop_data["rich_text"][0]["plain_text"]
-                    if prop_data["rich_text"]
-                    else None
-                )
+                value = self._concatenate_rich_text(prop_data["title"])
             elif prop_type == "title":
-                value = (
-                    prop_data["title"][0]["plain_text"] if prop_data["title"] else None
-                )
+                value = self._concatenate_rich_text(prop_data["title"])
             elif prop_type == "multi_select":
                 value = (
                     [item["name"] for item in prop_data["multi_select"]]
@@ -228,3 +222,7 @@ class NotionDBLoader(BaseLoader):
         )
         res.raise_for_status()
         return res.json()
+
+    def _concatenate_rich_text(self, rich_text_array: List[Dict[str, Any]]) -> str:
+        """Concatenate all text content from a rich_text array."""
+        return "".join(item["plain_text"] for item in rich_text_array)
