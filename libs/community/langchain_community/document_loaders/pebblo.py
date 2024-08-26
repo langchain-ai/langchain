@@ -13,6 +13,7 @@ from langchain_community.utilities.pebblo import (
     BATCH_SIZE_BYTES,
     PLUGIN_VERSION,
     App,
+    Framework,
     IndexedDocument,
     PebbloLoaderAPIWrapper,
     generate_size_based_batches,
@@ -21,7 +22,6 @@ from langchain_community.utilities.pebblo import (
     get_loader_type,
     get_runtime,
     get_source_size,
-    Framework,
 )
 
 logger = logging.getLogger(__name__)
