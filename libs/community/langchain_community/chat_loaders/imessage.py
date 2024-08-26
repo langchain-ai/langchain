@@ -68,7 +68,8 @@ class IMessageChatLoader(BaseChatLoader):
                 "Please install it with `pip install pysqlite3`"
             ) from e
 
-    def _parse_attributedBody(self, attributedBody: bytes) -> str:
+    @staticmethod
+    def _parse_attributedBody(attributedBody: bytes) -> str:
         """
         Parse the attributedBody field of the message table
         for the text content of the message.
@@ -98,7 +99,8 @@ class IMessageChatLoader(BaseChatLoader):
             length, start = int.from_bytes(content[1:3], "little"), 3
         return content[start : start + length].decode("utf-8", errors="ignore")
 
-    def _get_session_query(self, use_chat_handle_table: bool) -> str:
+    @staticmethod
+    def _get_session_query(use_chat_handle_table: bool) -> str:
         # Messages sent pre OSX 12 require a join through the chat_handle_join table
         # However, the table doesn't exist if database created with OSX 12 or above.
 
