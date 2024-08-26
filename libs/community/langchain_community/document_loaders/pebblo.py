@@ -3,6 +3,7 @@
 import logging
 import os
 import uuid
+from importlib.metadata import version
 from typing import Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
@@ -12,6 +13,7 @@ from langchain_community.utilities.pebblo import (
     BATCH_SIZE_BYTES,
     PLUGIN_VERSION,
     App,
+    Framework,
     IndexedDocument,
     PebbloLoaderAPIWrapper,
     generate_size_based_batches,
@@ -175,6 +177,10 @@ class PebbloSafeLoader(BaseLoader):
             runtime=runtime,
             framework=framework,
             plugin_version=PLUGIN_VERSION,
+            client_version=Framework(
+                name="langchain_community",
+                version=version("langchain_community"),
+            ),
         )
         return app
 
@@ -252,11 +258,16 @@ class PebbloSafeLoader(BaseLoader):
         """Add Pebblo specific metadata to documents."""
         for doc in self.docs_with_id:
             doc_metadata = doc.metadata
-            doc_metadata["full_path"] = get_full_path(
-                doc_metadata.get(
-                    "full_path", doc_metadata.get("source", self.source_path)
+            if self.loader.__class__.__name__ == "SharePointLoader":
+                doc_metadata["full_path"] = get_full_path(
+                    doc_metadata.get("source", self.source_path)
                 )
-            )
+            else:
+                doc_metadata["full_path"] = get_full_path(
+                    doc_metadata.get(
+                        "full_path", doc_metadata.get("source", self.source_path)
+                    )
+                )
             doc_metadata["pb_checksum"] = classified_docs.get(doc.pb_id, {}).get(
                 "pb_checksum", None
             )

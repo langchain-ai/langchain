@@ -6,6 +6,7 @@ against a vector database.
 import datetime
 import inspect
 import logging
+from importlib.metadata import version
 from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
@@ -27,6 +28,7 @@ from langchain_community.chains.pebblo_retrieval.models import (
     App,
     AuthContext,
     ChainInfo,
+    Framework,
     Model,
     SemanticContext,
     VectorDB,
@@ -327,6 +329,10 @@ class PebbloRetrievalQA(Chain):
             framework=framework,
             chains=chains,
             plugin_version=PLUGIN_VERSION,
+            client_version=Framework(
+                name="langchain_community",
+                version=version("langchain_community"),
+            ),
         )
         return app
 
