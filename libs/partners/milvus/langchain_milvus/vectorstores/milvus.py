@@ -31,7 +31,7 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
             f"and Y has shape {Y.shape}."
         )
     try:
-        import simsimd as simd  # type: ignore
+        import simsimd as simd
 
         X = np.array(X, dtype=np.float32)
         Y = np.array(Y, dtype=np.float32)

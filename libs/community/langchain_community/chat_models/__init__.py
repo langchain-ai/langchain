@@ -153,6 +153,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.sparkllm import (
         ChatSparkLLM,
     )
+    from langchain_community.chat_models.symblai_nebula import ChatNebula
     from langchain_community.chat_models.tongyi import (
         ChatTongyi,
     )
@@ -201,6 +202,7 @@ __all__ = [
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
+    "ChatNebula",
     "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
@@ -257,6 +259,7 @@ _module_lookup = {
     "ChatMLX": "langchain_community.chat_models.mlx",
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
+    "ChatNebula": "langchain_community.chat_models.symblai_nebula",
     "ChatOctoAI": "langchain_community.chat_models.octoai",
     "ChatOCIGenAI": "langchain_community.chat_models.oci_generative_ai",
     "ChatOllama": "langchain_community.chat_models.ollama",

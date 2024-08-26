@@ -117,7 +117,12 @@ def _get_jwt_token(api_key: str) -> str:
     Returns:
         The JWT token.
     """
-    import jwt
+    try:
+        import jwt
+    except ImportError:
+        raise ImportError(
+            "jwt package not found, please install it with" "`pip install pyjwt`"
+        )
 
     try:
         id, secret = api_key.split(".")
@@ -322,6 +327,67 @@ class ChatZhipuAI(BaseChatModel):
         .. code-block:: python
 
             [AIMessage(content='I enjoy programming.', response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 23, 'total_tokens': 29}, 'model_name': 'glm-4', 'finish_reason': 'stop'}, id='run-ba06af9d-4baa-40b2-9298-be9c62aa0849-0')]
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+            chat_with_tools = zhipuai_chat.bind_tools([GetWeather, GetPopulation])
+            ai_msg = chat_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': 'call_202408222146464ea49ec8731145a9',
+                    'type': 'tool_call'
+                }
+            ]
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+
+            structured_chat = zhipuai_chat.with_structured_output(Joke)
+            structured_chat.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(setup='What do cats like to eat for breakfast?', punchline='Mice Krispies!', rating=None)
 
     Response metadata
         .. code-block:: python
