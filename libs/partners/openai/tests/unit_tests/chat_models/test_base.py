@@ -1,12 +1,14 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
+from types import TracebackType
 from typing import Any, Dict, List, Literal, Optional, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     FunctionMessage,
     HumanMessage,
     InvalidToolCall,
@@ -14,6 +16,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_openai import ChatOpenAI
@@ -170,6 +173,284 @@ def test__convert_dict_to_message_tool_call() -> None:
         sorted(reverted_message_dict["tool_calls"], key=lambda x: x["id"])
     )
     assert reverted_message_dict == message
+
+
+class MockAsyncContextManager:
+    def __init__(self, chunk_list: list):
+        self.current_chunk = 0
+        self.chunk_list = chunk_list
+        self.chunk_num = len(chunk_list)
+
+    async def __aenter__(self) -> "MockAsyncContextManager":
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
+        pass
+
+    def __aiter__(self) -> "MockAsyncContextManager":
+        return self
+
+    async def __anext__(self) -> dict:
+        if self.current_chunk < self.chunk_num:
+            chunk = self.chunk_list[self.current_chunk]
+            self.current_chunk += 1
+            return chunk
+        else:
+            raise StopAsyncIteration
+
+
+class MockSyncContextManager:
+    def __init__(self, chunk_list: list):
+        self.current_chunk = 0
+        self.chunk_list = chunk_list
+        self.chunk_num = len(chunk_list)
+
+    def __enter__(self) -> "MockSyncContextManager":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
+        pass
+
+    def __iter__(self) -> "MockSyncContextManager":
+        return self
+
+    def __next__(self) -> dict:
+        if self.current_chunk < self.chunk_num:
+            chunk = self.chunk_list[self.current_chunk]
+            self.current_chunk += 1
+            return chunk
+        else:
+            raise StopIteration
+
+
+GLM4_STREAM_META = """{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4eba\u5de5\u667a\u80fd"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"，"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4f60\u53ef\u4ee5"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u53eb\u6211"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"AI"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"。"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"finish_reason":"stop","delta":{"role":"assistant","content":""}}],"usage":{"prompt_tokens":13,"completion_tokens":10,"total_tokens":23}}
+[DONE]"""  # noqa: E501
+
+
+@pytest.fixture
+def mock_glm4_completion() -> list:
+    list_chunk_data = GLM4_STREAM_META.split("\n")
+    result_list = []
+    for msg in list_chunk_data:
+        if msg != "[DONE]":
+            result_list.append(json.loads(msg))
+
+    return result_list
+
+
+async def test_glm4_astream(mock_glm4_completion: list) -> None:
+    llm_name = "glm-4"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = AsyncMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(mock_glm4_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_glm4_completion[-1]
+
+    usage_metadata: Optional[UsageMetadata] = None
+    with patch.object(llm, "async_client", mock_client):
+        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+def test_glm4_stream(mock_glm4_completion: list) -> None:
+    llm_name = "glm-4"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_glm4_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_glm4_completion[-1]
+
+    usage_metadata: Optional[UsageMetadata] = None
+    with patch.object(llm, "client", mock_client):
+        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+DEEPSEEK_STREAM_DATA = """{"id":"d3610c24e6b42518a7883ea57c3ea2c3","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":null,"logprobs":null}],"created":1721630271,"model":"deepseek-chat","system_fingerprint":"fp_7e0991cad4","object":"chat.completion.chunk","usage":null}
+{"choices":[{"delta":{"content":"我是","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"Deep","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"Seek","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":" Chat","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"，","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"一个","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"由","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"深度","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"求","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"索","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"公司","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"开发的","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"智能","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"助手","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"。","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"","role":null},"finish_reason":"stop","index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":{"completion_tokens":15,"prompt_tokens":11,"total_tokens":26}}
+[DONE]"""  # noqa: E501
+
+
+@pytest.fixture
+def mock_deepseek_completion() -> List[Dict]:
+    list_chunk_data = DEEPSEEK_STREAM_DATA.split("\n")
+    result_list = []
+    for msg in list_chunk_data:
+        if msg != "[DONE]":
+            result_list.append(json.loads(msg))
+
+    return result_list
+
+
+async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
+    llm_name = "deepseek-chat"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = AsyncMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(mock_deepseek_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_deepseek_completion[-1]
+    usage_metadata: Optional[UsageMetadata] = None
+    with patch.object(llm, "async_client", mock_client):
+        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+def test_deepseek_stream(mock_deepseek_completion: list) -> None:
+    llm_name = "deepseek-chat"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_deepseek_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_deepseek_completion[-1]
+    usage_metadata: Optional[UsageMetadata] = None
+    with patch.object(llm, "client", mock_client):
+        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"我是"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"助手"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"。"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[],"usage":{"prompt_tokens":14,"completion_tokens":3,"total_tokens":17}}
+[DONE]"""  # noqa: E501
+
+
+@pytest.fixture
+def mock_openai_completion() -> List[Dict]:
+    list_chunk_data = OPENAI_STREAM_DATA.split("\n")
+    result_list = []
+    for msg in list_chunk_data:
+        if msg != "[DONE]":
+            result_list.append(json.loads(msg))
+
+    return result_list
+
+
+async def test_openai_astream(mock_openai_completion: list) -> None:
+    llm_name = "gpt-4o"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = AsyncMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_openai_completion[-1]
+    usage_metadata: Optional[UsageMetadata] = None
+    with patch.object(llm, "async_client", mock_client):
+        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+def test_openai_stream(mock_openai_completion: list) -> None:
+    llm_name = "gpt-4o"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_openai_completion[-1]
+    usage_metadata: Optional[UsageMetadata] = None
+    with patch.object(llm, "client", mock_client):
+        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
 
 
 @pytest.fixture
