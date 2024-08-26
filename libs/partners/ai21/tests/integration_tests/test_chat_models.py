@@ -121,7 +121,7 @@ async def test_ageneration(model: str) -> None:
 
 
 def test__chat_stream() -> None:
-    llm = ChatAI21(model="jamba-instruct")  # type: ignore[call-arg]
+    llm = ChatAI21(model="jamba-1.5-mini")  # type: ignore[call-arg]
     message = HumanMessage(content="What is the meaning of life?")
 
     for chunk in llm.stream([message]):
@@ -175,14 +175,14 @@ def test_tool_calls(model: str) -> None:
 
     response = llm_with_tools.invoke(chat_messages)
     chat_messages.append(response)
-    assert response.tool_calls is not None
-    tool_call = response.tool_calls[0]
+    assert response.tool_calls is not None  # type: ignore[attr-defined]
+    tool_call = response.tool_calls[0]  # type: ignore[attr-defined]
     assert tool_call["name"] == "get_weather"
 
-    weather = get_weather.invoke(
+    weather = get_weather.invoke(  # type: ignore[attr-defined]
         {"location": tool_call["args"]["location"], "date": tool_call["args"]["date"]}
     )
     chat_messages.append(ToolMessage(content=weather, tool_call_id=tool_call["id"]))
     llm_answer = llm_with_tools.invoke(chat_messages)
-    content = llm_answer.content.lower()
+    content = llm_answer.content.lower()  # type: ignore[union-attr]
     assert "new york" in content and "25" in content and "celsius" in content

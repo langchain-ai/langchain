@@ -30,11 +30,11 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_ai21.ai21_base import AI21Base
 from langchain_ai21.chat.chat_adapter import ChatAdapter
 from langchain_ai21.chat.chat_factory import create_chat_adapter
-from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
 class ChatAI21(BaseChatModel, AI21Base):

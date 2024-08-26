@@ -54,7 +54,7 @@ class AI21Base(BaseModel):
         api_host = values["api_host"]
         timeout_sec = values["timeout_sec"]
         if values.get("client") is None:
-            values["client"] = AI21Client(  # type: ignore
+            values["client"] = AI21Client(
                 api_key=api_key.get_secret_value(),
                 api_host=api_host,
                 timeout_sec=None if timeout_sec is None else float(timeout_sec),
