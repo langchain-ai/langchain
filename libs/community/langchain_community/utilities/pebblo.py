@@ -488,10 +488,8 @@ class PebbloLoaderAPIWrapper(BaseModel):
         source_path = loader_details.get("source_path", "")
         source_owner = get_file_owner_from_path(source_path)
         # Prepare docs for classification
-        docs, source_aggregate_size, loader_details = (
-            self.prepare_docs_for_classification(
-                docs_with_id, source_path, loader_details
-            )
+        docs, source_aggregate_size = self.prepare_docs_for_classification(
+            docs_with_id, source_path, loader_details
         )
         # Build payload for classification
         payload = self.build_classification_payload(
@@ -665,7 +663,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
         docs_with_id: List[IndexedDocument],
         source_path: str,
         loader_details: dict,
-    ) -> Tuple[List[dict], int, dict]:
+    ) -> Tuple[List[dict], int]:
         """
         Prepare documents for classification.
 
@@ -681,6 +679,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
         docs = []
         source_aggregate_size = 0
         doc_content = [doc.dict() for doc in docs_with_id]
+        source_path_update = False
         for doc in doc_content:
             doc_metadata = doc.get("metadata", {})
             doc_authorized_identities = doc_metadata.get("authorized_identities", [])
@@ -722,9 +721,13 @@ class PebbloLoaderAPIWrapper(BaseModel):
                     ),
                 }
             )
-            if loader_details["loader"] == "SharePointLoader":
+            if (
+                loader_details["loader"] == "SharePointLoader"
+                and not source_path_update
+            ):
                 loader_details["source_path"] = doc_metadata.get("source_full_url")
-        return docs, source_aggregate_size, loader_details
+                source_path_update = True
+        return docs, source_aggregate_size
 
     @staticmethod
     def update_doc_data(docs: List[dict], classified_docs: dict) -> None:
