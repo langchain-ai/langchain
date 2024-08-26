@@ -83,9 +83,9 @@ class PebbloRetrievalQA(Chain):
     """Pebblo Retrieval API client"""
 
     def _call(
-            self,
-            inputs: Dict[str, Any],
-            run_manager: Optional[CallbackManagerForChainRun] = None,
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
@@ -106,7 +106,7 @@ class PebbloRetrievalQA(Chain):
         _, prompt_entities = self.pb_client.check_prompt_validity(question)
 
         accepts_run_manager = (
-                "run_manager" in inspect.signature(self._get_docs).parameters
+            "run_manager" in inspect.signature(self._get_docs).parameters
         )
         if accepts_run_manager:
             docs = self._get_docs(
@@ -136,9 +136,9 @@ class PebbloRetrievalQA(Chain):
             return {self.output_key: answer}
 
     async def _acall(
-            self,
-            inputs: Dict[str, Any],
-            run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
@@ -156,7 +156,7 @@ class PebbloRetrievalQA(Chain):
         auth_context = inputs.get(self.auth_context_key)
         semantic_context = inputs.get(self.semantic_context_key)
         accepts_run_manager = (
-                "run_manager" in inspect.signature(self._aget_docs).parameters
+            "run_manager" in inspect.signature(self._aget_docs).parameters
         )
 
         _, prompt_entities = self.pb_client.check_prompt_validity(question)
@@ -207,17 +207,17 @@ class PebbloRetrievalQA(Chain):
 
     @classmethod
     def from_chain_type(
-            cls,
-            llm: BaseLanguageModel,
-            app_name: str,
-            description: str,
-            owner: str,
-            chain_type: str = "stuff",
-            chain_type_kwargs: Optional[dict] = None,
-            api_key: Optional[str] = None,
-            classifier_url: Optional[str] = None,
-            classifier_location: str = "local",
-            **kwargs: Any,
+        cls,
+        llm: BaseLanguageModel,
+        app_name: str,
+        description: str,
+        owner: str,
+        chain_type: str = "stuff",
+        chain_type_kwargs: Optional[dict] = None,
+        api_key: Optional[str] = None,
+        classifier_url: Optional[str] = None,
+        classifier_location: str = "local",
+        **kwargs: Any,
     ) -> "PebbloRetrievalQA":
         """Load chain from chain type."""
         from langchain.chains.question_answering import load_qa_chain
@@ -257,7 +257,7 @@ class PebbloRetrievalQA(Chain):
 
     @validator("retriever", pre=True, always=True)
     def validate_vectorstore(
-            cls, retriever: VectorStoreRetriever
+        cls, retriever: VectorStoreRetriever
     ) -> VectorStoreRetriever:
         """
         Validate that the vectorstore of the retriever is supported vectorstores.
@@ -271,12 +271,12 @@ class PebbloRetrievalQA(Chain):
         return retriever
 
     def _get_docs(
-            self,
-            question: str,
-            auth_context: Optional[AuthContext],
-            semantic_context: Optional[SemanticContext],
-            *,
-            run_manager: CallbackManagerForChainRun,
+        self,
+        question: str,
+        auth_context: Optional[AuthContext],
+        semantic_context: Optional[SemanticContext],
+        *,
+        run_manager: CallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
         set_enforcement_filters(self.retriever, auth_context, semantic_context)
@@ -285,12 +285,12 @@ class PebbloRetrievalQA(Chain):
         )
 
     async def _aget_docs(
-            self,
-            question: str,
-            auth_context: Optional[AuthContext],
-            semantic_context: Optional[SemanticContext],
-            *,
-            run_manager: AsyncCallbackManagerForChainRun,
+        self,
+        question: str,
+        auth_context: Optional[AuthContext],
+        semantic_context: Optional[SemanticContext],
+        *,
+        run_manager: AsyncCallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
         set_enforcement_filters(self.retriever, auth_context, semantic_context)
@@ -300,7 +300,7 @@ class PebbloRetrievalQA(Chain):
 
     @staticmethod
     def _get_app_details(  # type: ignore
-            app_name: str, owner: str, description: str, llm: BaseLanguageModel, **kwargs
+        app_name: str, owner: str, description: str, llm: BaseLanguageModel, **kwargs
     ) -> App:
         """Fetch app details. Internal method.
         Returns:
@@ -329,7 +329,7 @@ class PebbloRetrievalQA(Chain):
 
     @classmethod
     def get_chain_details(
-            cls, llm: BaseLanguageModel, **kwargs: Any
+        cls, llm: BaseLanguageModel, **kwargs: Any
     ) -> List[ChainInfo]:
         """
         Get chain details.
