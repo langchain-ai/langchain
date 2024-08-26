@@ -22,7 +22,7 @@ disallow_untyped_defs = "True"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.4"
 langchain-text-splitters = "^0.2.0"
-ai21 = "^2.7.0"
+ai21 = "^2.14.1"
 
 [tool.ruff.lint]
 select = [ "E", "F", "I",]
