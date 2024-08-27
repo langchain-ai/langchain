@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, List, Optional, Set, Union
 from urllib.parse import urldefrag, urljoin, urlparse
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.graph_vectorstores import Link
 
@@ -61,6 +62,7 @@ class HtmlInput:
     base_url: str
 
 
+@beta()
 class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
     def __init__(self, *, kind: str = "hyperlink", drop_fragments: bool = True):
         """Extract hyperlinks from HTML content.
