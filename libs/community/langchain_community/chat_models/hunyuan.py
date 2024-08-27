@@ -80,8 +80,7 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
         message = _convert_dict_to_message(choice["Message"])
         generations.append(ChatGeneration(message=message))
 
-    token_usage = response["Usage"]
-    llm_output = {"token_usage": token_usage}
+    llm_output = {"request_id": response.get('Id',''),"token_usage": response.get('Usage','')}
     return ChatResult(generations=generations, llm_output=llm_output)
 
 
