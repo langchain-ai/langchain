@@ -471,13 +471,34 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     conn.close()
 
 
+def test_that_rows_with_duplicate_custom_id_cannot_be_entered(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
+    """Test that if a row is specified with existing ID in the table,
+    `add_texts` fails."""
+    metadatas = [
+        {"id": 1, "summary": "Good Quality Dog Food"},
+        {"id": 2, "summary": "Nasty No flavor"},
+        {"id": 2, "summary": "stale product"},
+        {"id": 4, "summary": "Great value and convenient ramen"},
+        {"id": 5, "summary": "Great for the kids!"},
+    ]
+    with pytest.raises(Exception):
+        store.add_texts(texts, metadatas)
+
+
 # We need to mock this so that actual connection is not attempted
 # after mocking _provide_token.
 @mock.patch("sqlalchemy.dialects.mssql.dialect.initialize")
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._prepare_json_data_type"
+)
 def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_is_used(
+    prep_data_type: Mock,
     provide_token: Mock,
     dialect_initialize: Mock,
 ) -> None:
@@ -507,7 +528,11 @@ def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_i
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._prepare_json_data_type"
+)
 def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_used(
+    prep_data_type: Mock,
     provide_token: Mock,
     dialect_initialize: Mock,
 ) -> None:
@@ -536,7 +561,11 @@ def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_us
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._prepare_json_data_type"
+)
 def test_that_connection_string_with_trusted_connection_yes_does_not_use_entra_id_auth(
+    prep_data_type: Mock,
     provide_token: Mock,
     dialect_initialize: Mock,
 ) -> None:
