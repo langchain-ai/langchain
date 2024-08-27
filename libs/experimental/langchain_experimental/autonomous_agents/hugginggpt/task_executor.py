@@ -3,7 +3,7 @@ import uuid
 from typing import Dict, List
 
 import numpy as np
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 
 from langchain_experimental.autonomous_agents.hugginggpt.task_planner import Plan
 

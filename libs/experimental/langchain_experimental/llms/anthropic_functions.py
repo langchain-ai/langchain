@@ -127,7 +127,7 @@ def _destrip(tool_input: Any) -> Any:
 
 @deprecated(
     since="0.0.54",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_anthropic.experimental.ChatAnthropicTools",
 )
 class AnthropicFunctions(BaseChatModel):

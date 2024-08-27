@@ -1,7 +1,6 @@
+# RAG - Pinecone
 
-# rag-pinecone
-
-This template performs RAG using Pinecone and OpenAI.
+This template performs RAG using `Pinecone` and `OpenAI`.
 
 ## Environment Setup
 

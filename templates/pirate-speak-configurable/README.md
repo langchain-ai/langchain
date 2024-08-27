@@ -1,4 +1,4 @@
-# pirate-speak-configurable
+# Pirate speak configurable
 
 This template converts user input into pirate speak. It shows how you can allow
 `configurable_alternatives` in the Runnable, allowing you to select from 

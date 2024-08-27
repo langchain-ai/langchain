@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 DEFAULT_MODEL_ID = "sentence-transformers/clip-ViT-B-32"
@@ -55,9 +55,7 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
     """Batch size for embedding requests."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:

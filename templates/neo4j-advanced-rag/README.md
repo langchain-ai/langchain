@@ -1,6 +1,7 @@
-# neo4j-advanced-rag
+# Neo4j - advanced RAG
 
-This template allows you to balance precise embeddings and context retention by implementing advanced retrieval strategies.
+This template allows you to balance precise embeddings and context retention 
+by implementing advanced retrieval strategies.
 
 ## Strategies
 

@@ -23,7 +23,7 @@ T = TypeVar("T")
 
 @deprecated(
     since="0.1.30",
-    removal="0.3",
+    removal="1.0",
     message=(
         "Using the hwchase17/langchain-hub "
         "repo for prompts is deprecated. Please use "

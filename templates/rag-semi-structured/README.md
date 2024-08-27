@@ -1,6 +1,8 @@
-# rag-semi-structured
+# RAG - Unstructured - semi-structured
 
-This template performs RAG on semi-structured data, such as a PDF with text and tables.
+This template performs RAG on `semi-structured data`, such as a PDF with text and tables.
+
+It uses the `unstructured` parser to extract the text and tables from the PDF and then uses the LLM to generate queries based on the user input. 
 
 See [this cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/Semi_Structured_RAG.ipynb) as a reference.
 

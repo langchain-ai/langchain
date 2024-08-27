@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "gigachain-mongodb"
 version = "0.1.8"
-description = "An integration package connecting MongoDB and GigaChain"
+description = "An integration package connecting MongoDB and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/ai-forever/gigachain"
@@ -79,6 +79,7 @@ ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
+simsimd = "^5.0.0"
 
 [tool.poetry.group.test.dependencies.gigachain]
 path = "../../langchain"

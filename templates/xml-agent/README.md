@@ -1,7 +1,9 @@
+# XML - agent
 
-# xml-agent
-
-This package creates an agent that uses XML syntax to communicate its decisions of what actions to take. It uses Anthropic's Claude models for writing XML syntax and can optionally look up things on the internet using DuckDuckGo.
+This package creates an agent that uses `XML` syntax to communicate 
+its decisions of what actions to take. 
+It uses `Anthropic's Claude` models for writing XML syntax and 
+optionally looks up things on the internet using `DuckDuckGo`.
 
 ## Environment Setup
 

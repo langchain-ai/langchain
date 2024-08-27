@@ -1,9 +1,12 @@
+# Neo4j - hybrid parent-child retrieval
 
-# neo4j-parent
+This template allows you to balance precise embeddings and context retention 
+by splitting documents into smaller chunks and retrieving their original 
+or larger text information. 
 
-This template allows you to balance precise embeddings and context retention by splitting documents into smaller chunks and retrieving their original or larger text information. 
-
-Using a Neo4j vector index, the package queries child nodes using vector similarity search and retrieves the corresponding parent's text by defining an appropriate `retrieval_query` parameter.
+Using a `Neo4j` vector index, the package queries child nodes using 
+vector similarity search and retrieves the corresponding parent's text 
+by defining an appropriate `retrieval_query` parameter.
 
 ## Environment Setup
 

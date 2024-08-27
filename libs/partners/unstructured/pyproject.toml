@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "gigachain-unstructured"
-version = "0.1.1"
-description = "An integration package connecting Unstructured and GigaChain"
+version = "0.1.2"
+description = "An integration package connecting Unstructured and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/ai-forever/gigachain"
@@ -17,8 +17,8 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 gigachain-core = "^0.2.23"
-unstructured-client = { version = "^0.24.1" }
-unstructured = { version = "^0.15.0", optional = true, python = "<3.13", extras = [
+unstructured-client = { version = "^0.25.0" }
+unstructured = { version = "^0.15.7", optional = true, python = "<3.13", extras = [
   "all-docs",
 ] }
 
@@ -49,11 +49,11 @@ optional = true
 optional = true
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.8"
+ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.7.1"
-unstructured = { version = "^0.15.0", python = "<3.13", extras = ["all-docs"] }
+unstructured = { version = "^0.15.7", python = "<3.13", extras = ["all-docs"] }
 gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]

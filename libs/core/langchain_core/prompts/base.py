@@ -152,7 +152,7 @@ class BasePromptTemplate(
             },
         )
 
-    def _validate_input(self, inner_input: Dict) -> Dict:
+    def _validate_input(self, inner_input: Any) -> Dict:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]

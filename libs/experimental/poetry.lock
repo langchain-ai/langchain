@@ -795,7 +795,7 @@ files = [
 
 [[package]]
 name = "gigachain"
-version = "0.2.12"
+version = "0.2.14"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -805,9 +805,9 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-gigachain-core = "^0.2.27"
+gigachain-core = "^0.2.32"
 gigachain-text-splitters = "^0.2.0"
-gigachat = "^0.1.33"
+gigachat = "^0.1.35"
 langsmith = "^0.1.17"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
@@ -825,8 +825,8 @@ url = "../langchain"
 
 [[package]]
 name = "gigachain-community"
-version = "0.2.11"
-description = "Community contributed GigaChain integrations."
+version = "0.2.12"
+description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = []
@@ -835,9 +835,9 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain = "^0.2.12"
-gigachain-core = "^0.2.27"
-gigachat = "^0.1.33"
+gigachain = "^0.2.13"
+gigachain-core = "^0.2.30"
+gigachat = "^0.1.35"
 langsmith = "^0.1.0"
 numpy = [
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
@@ -854,7 +854,7 @@ url = "../community"
 
 [[package]]
 name = "gigachain-core"
-version = "0.2.29"
+version = "0.2.35"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -880,15 +880,15 @@ url = "../core"
 
 [[package]]
 name = "gigachain-openai"
-version = "0.1.21rc2"
-description = "An integration package connecting OpenAI and GigaChain"
+version = "0.1.22"
+description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = []
 develop = true
 
 [package.dependencies]
-gigachain-core = "^0.2.29"
+gigachain-core = "^0.2.33"
 openai = "^1.40.0"
 tiktoken = ">=0.7,<1"
 
@@ -914,13 +914,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "gigachat"
-version = "0.1.33"
+version = "0.1.35"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "gigachat-0.1.33-py3-none-any.whl", hash = "sha256:cc2a00c8216e539c89eb37b77420a0d99234b68675c2d87799e37ad4a695e5da"},
-    {file = "gigachat-0.1.33.tar.gz", hash = "sha256:edbb6adffd9186ade131772260a08436c7e0cc95dafac4f66700932a78540dbc"},
+    {file = "gigachat-0.1.35-py3-none-any.whl", hash = "sha256:4e142b1f10807a3655d7c54740103571aca073f2fc91aad2eefbff378121f5a1"},
+    {file = "gigachat-0.1.35.tar.gz", hash = "sha256:508de76d99659c96bb5345d33242095c7b358c453eaa645c5379b06691cfb454"},
 ]
 
 [package.dependencies]

@@ -43,7 +43,7 @@ def _get_docs(response: Any) -> List[Document]:
 
 @deprecated(
     since="0.0.30",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_cohere.CohereRagRetriever",
 )
 class CohereRagRetriever(BaseRetriever):
@@ -62,10 +62,7 @@ class CohereRagRetriever(BaseRetriever):
     """Cohere ChatModel to use."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
-        """Allow arbitrary types."""
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any

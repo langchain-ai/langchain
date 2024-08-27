@@ -1,7 +1,6 @@
+# RAG - Chroma
 
-# rag-chroma
-
-This template performs RAG using Chroma and OpenAI.
+This template performs RAG using `Chroma` and `OpenAI`.
 
 The vectorstore is created in `chain.py` and by default indexes a [popular blog posts on Agents](https://lilianweng.github.io/posts/2023-06-23-agent/) for question-answering.
 

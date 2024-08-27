@@ -1,7 +1,6 @@
+# RAG - Redis
 
-# rag-redis
-
-This template performs RAG using Redis (vector database) and OpenAI (LLM) on financial 10k filings docs for Nike.
+This template performs RAG using `Redis` (vector database) and `OpenAI` (LLM) on financial 10k filings docs for Nike.
 
 It relies on the sentence transformer `all-MiniLM-L6-v2` for embedding chunks of the pdf and user questions.
 
