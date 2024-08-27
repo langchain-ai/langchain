@@ -9,7 +9,6 @@ from .utils import load, prepare
 def create_chat_prompt(
     path: str,
     input_name_agent_scratchpad: str = "agent_scratchpad",
-    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string",
 ) -> Runnable[Dict[str, Any], ChatPromptTemplate]:
     """Create a chat prompt from a Langchain schema."""
 
@@ -28,6 +27,7 @@ def create_chat_prompt(
         lc_p = ChatPromptTemplate.from_messages(
             lc_messages, template_format=template_format
         )
+        lc_p = ChatPromptTemplate.from_messages(lc_messages)
         lc_p = lc_p.partial(**p.inputs)
         return lc_p
 
