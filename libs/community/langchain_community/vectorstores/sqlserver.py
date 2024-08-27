@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Iterable, List, MutableMapping, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
 
 from azure.identity import DefaultAzureCredential
@@ -9,6 +9,7 @@ from langchain_core.vectorstores import VST, VectorStore
 from sqlalchemy import (
     CheckConstraint,
     Column,
+    Dialect,
     Uuid,
     asc,
     bindparam,
@@ -21,6 +22,7 @@ from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.orm import Session
+from sqlalchemy.pool import ConnectionPoolEntry
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -514,7 +516,13 @@ class SQLServer_VectorStore(VectorStore):
             logging.error(e.__cause__)
         return result
 
-    def _provide_token(self, dialect, conn_rec, cargs, cparams) -> None:
+    def _provide_token(
+        self,
+        dialect: Dialect,
+        conn_rec: Optional[ConnectionPoolEntry],
+        cargs: List[str],
+        cparams: MutableMapping[str, Any],
+    ) -> None:
         """Get token for SQLServer connection from token URL,
         and use the token to connect to the database."""
         credential = DefaultAzureCredential()
