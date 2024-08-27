@@ -605,15 +605,15 @@ def test_invalid_filters(
         store.similarity_search("meow", k=5, filter=invalid_filter)
 
 
+# We need to mock this so that actual connection is not attempted
+# after mocking _provide_token.
+@mock.patch("sqlalchemy.dialects.mssql.dialect.initialize")
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
-@mock.patch(
-    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_table_if_not_exists"
-)
 def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_is_used(
-    create_table: Mock,
     provide_token: Mock,
+    dialect_initialize: Mock,
 ) -> None:
     """Test that if a valid entra_id connection string is passed in
     to SQLServer_VectorStore object, entra id authentication is used
@@ -635,15 +635,15 @@ def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_i
     provide_token.assert_called()
 
 
-@mock.patch(
-    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_table_if_not_exists"
-)
+# We need to mock this so that actual connection is not attempted
+# after mocking _provide_token.
+@mock.patch("sqlalchemy.dialects.mssql.dialect.initialize")
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
 def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_used(
     provide_token: Mock,
-    create_table: Mock,
+    dialect_initialize: Mock,
 ) -> None:
     """Test that if a connection string is provided to SQLServer_VectorStore object,
     and connection string has username and password, entra id authentication is not
@@ -664,15 +664,15 @@ def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_us
     provide_token.assert_not_called()
 
 
+# We need to mock this so that actual connection is not attempted
+# after mocking _provide_token.
+@mock.patch("sqlalchemy.dialects.mssql.dialect.initialize")
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
-@mock.patch(
-    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_table_if_not_exists"
-)
 def test_that_connection_string_with_trusted_connection_yes_does_not_use_entra_id_auth(
-    create_table: Mock,
     provide_token: Mock,
+    dialect_initialize: Mock,
 ) -> None:
     """Test that if a connection string is provided to SQLServer_VectorStore object,
     and connection string has `trusted_connection` set to `yes`, entra id
