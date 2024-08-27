@@ -49,9 +49,9 @@ def test_initialization__when_custom_parameters_to_init() -> None:
         top_p=0.5,
         top_k_return=0,
         stop_sequences=["\n"],
-        frequency_penalty=Penalty(scale=0.2, apply_to_numbers=True),
-        presence_penalty=Penalty(scale=0.2, apply_to_stopwords=True),
-        count_penalty=Penalty(
+        frequency_penalty=Penalty(scale=0.2, apply_to_numbers=True),  # type: ignore[call-arg]
+        presence_penalty=Penalty(scale=0.2, apply_to_stopwords=True),  # type: ignore[call-arg]
+        count_penalty=Penalty(  # type: ignore[call-arg]
             scale=0.2, apply_to_punctuation=True, apply_to_emojis=True
         ),
         custom_model="test_model",
