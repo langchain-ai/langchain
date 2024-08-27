@@ -1100,7 +1100,11 @@ For a full list of model providers that support tool calling, [see this table](/
 
 ### Few-shot prompting
 
-One of the most effective ways to improve model performance is to give a model examples of what you want it to do. The technique of adding example inputs and expected outputs to a model prompt is known as "few-shot prompting". There are a few things to think about when doing few-shot prompting:
+One of the most effective ways to improve model performance is to give a model examples of 
+what you want it to do. The technique of adding example inputs and expected outputs 
+to a model prompt is known as "few-shot prompting". The technique is based on the
+[Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165) paper.
+There are a few things to think about when doing few-shot prompting:
 
 1. How are examples generated?
 2. How many examples are in each prompt?
