@@ -331,7 +331,7 @@ class PebbloRetrievalQA(Chain):
             plugin_version=PLUGIN_VERSION,
             client_version=Framework(
                 name="langchain_community",
-                version=version("langchain_community"),
+                version=version("gigachain_community"),
             ),
         )
         return app
