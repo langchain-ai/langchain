@@ -60,8 +60,6 @@ from langchain_community.vectorstores.azure_cosmos_db import (
 )
 from langchain_community.vectorstores.utils import DistanceStrategy
 
-# from libs.community.langchain_community.vectorstores.azure_cosmos_db_no_sql import AzureCosmosDBNoSqlVectorSearch
-
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
@@ -2371,7 +2369,6 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear semantic cache for a given llm_string."""
         database = self.cosmos_client.get_database_client(self.database_name)
-        container = database.get_container_client(self.container_name)
         database.delete_container(self.container_name)
 
 
