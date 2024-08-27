@@ -1,6 +1,6 @@
 import base64
 import re
-from typing import List, Union
+from typing import List, Union, Dict, Type
 
 from langchain_core.messages import (
     AIMessage,
@@ -15,7 +15,7 @@ from .core import Invoker, Prompty, SimpleModel
 
 
 class RoleMap:
-    _ROLE_MAP: dict[str, type[BaseMessage]] = {
+    _ROLE_MAP: Dict[str, Type[BaseMessage]] = {
         "system": SystemMessage,
         "user": HumanMessage,
         "human": HumanMessage,
@@ -26,8 +26,8 @@ class RoleMap:
     ROLES = _ROLE_MAP.keys()
 
     @classmethod
-    def get_message_class(cls, role: str) -> type[BaseMessage]:
-        return cls._ROLE_MAP.get(role)
+    def get_message_class(cls, role: str) -> Type[BaseMessage]:
+        return cls._ROLE_MAP[role]
 
 
 class PromptyChatParser(Invoker):
