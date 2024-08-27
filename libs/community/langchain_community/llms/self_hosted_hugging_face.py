@@ -3,7 +3,6 @@ import logging
 from typing import Any, Callable, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.llms.self_hosted import SelfHostedPipeline
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -170,9 +169,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     """Inference function to send to the remote hardware."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def __init__(self, **kwargs: Any):
         """Construct the pipeline remotely using an auxiliary function.

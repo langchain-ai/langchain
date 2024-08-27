@@ -2180,7 +2180,7 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {},
+                    "metadata": {"ls_model_type": "llm", "ls_provider": "fakelist"},
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
@@ -2384,7 +2384,10 @@ async def test_prompt_with_llm_parser(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {},
+                    "metadata": {
+                        "ls_model_type": "llm",
+                        "ls_provider": "fakestreaminglist",
+                    },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
@@ -3130,7 +3133,7 @@ def test_map_stream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -3188,7 +3191,7 @@ def test_map_stream() -> None:
 
     assert streamed_chunks[0] in [
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(llm_res) + len(chat_res)
 
@@ -3231,7 +3234,7 @@ def test_map_stream_iterator_input() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": "i"},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": _AnyIdAIMessageChunk(content="i")},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
@@ -5124,8 +5127,7 @@ async def test_runnable_gen_transform() -> None:
     """Test that a generator can be used as a runnable."""
 
     def gen_indexes(length_iter: Iterator[int]) -> Iterator[int]:
-        for i in range(next(length_iter)):
-            yield i
+        yield from range(next(length_iter))
 
     async def agen_indexes(length_iter: AsyncIterator[int]) -> AsyncIterator[int]:
         async for length in length_iter:
