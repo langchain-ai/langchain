@@ -89,5 +89,5 @@ def test_tablestore() -> None:
     """
         6. similarity_search
     """
-    search_result = store.similarity_search(query="hello world", k=2)
+    search_result = store.similarity_search_with_score(query="hello world", k=2)
     assert len(search_result) == 2

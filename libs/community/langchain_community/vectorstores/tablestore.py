@@ -134,6 +134,8 @@ class TablestoreVectorStore(VectorStore):
                 self.__metadata_mappings.append(mapping)
 
     def create_table_if_not_exist(self) -> None:
+        """Create table if not exist."""
+
         try:
             import tablestore
         except ImportError:
@@ -181,6 +183,8 @@ class TablestoreVectorStore(VectorStore):
             )
 
     def create_search_index_if_not_exist(self) -> None:
+        """Create search index if not exist."""
+
         try:
             import tablestore
         except ImportError:
@@ -202,7 +206,9 @@ class TablestoreVectorStore(VectorStore):
             "Tablestore create system index[%s] successfully.", self.__index_name
         )
 
-    def delete_table_if_exist(self):
+    def delete_table_if_exists(self):
+        """Delete table if exists."""
+
         search_index_list = self.__tablestore_client.list_search_index(
             table_name=self.__table_name
         )
@@ -211,6 +217,8 @@ class TablestoreVectorStore(VectorStore):
         self.__tablestore_client.delete_table(self.__table_name)
 
     def delete_search_index(self, table_name, index_name) -> None:
+        """Delete search index."""
+
         self.__tablestore_client.delete_search_index(table_name, index_name)
 
     def __write_row(
@@ -274,9 +282,8 @@ class TablestoreVectorStore(VectorStore):
                 "Please install it with `pip install tablestore`."
             )
         primary_key = [("id", row_id)]
-        row = tablestore.Row(primary_key)
         try:
-            self.__tablestore_client.delete_row(self.__table_name, row, None)
+            self.__tablestore_client.delete_row(self.__table_name, primary_key, None)
             logger.info("Tablestore delete row successfully. id:%s", row_id)
         except tablestore.OTSClientError as e:
             logger.exception(
@@ -341,7 +348,7 @@ class TablestoreVectorStore(VectorStore):
                 e.get_request_id(),
             )
 
-    def tablestore_search(
+    def _tablestore_search(
         self,
         query_embedding: List[float],
         k: int = 5,
@@ -409,7 +416,9 @@ class TablestoreVectorStore(VectorStore):
         self, search_response
     ) -> List[Tuple[Document, float]]:
         tuple_list = []
-        for row in search_response.rows:
+        for hit in search_response.search_hits:
+            row = hit.row
+            score = hit.score
             document_id = row[0][0][1]
             meta_data = {}
             text = None
@@ -427,7 +436,7 @@ class TablestoreVectorStore(VectorStore):
                 page_content=text,
                 metadata=meta_data,
             )
-            tuple_list.append((doc, -1))
+            tuple_list.append((doc, score))
         return tuple_list
 
     def add_texts(
@@ -487,7 +496,7 @@ class TablestoreVectorStore(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         query_embedding = self.__embedding.embed_query(query)
-        return self.tablestore_search(
+        return self._tablestore_search(
             query_embedding,
             k=k,
             tablestore_filter_query=tablestore_filter_query,
@@ -503,7 +512,7 @@ class TablestoreVectorStore(VectorStore):
     ) -> List[Document]:
         return [
             doc
-            for (doc, score) in self.tablestore_search(
+            for (doc, score) in self._tablestore_search(
                 embedding,
                 k=k,
                 tablestore_filter_query=tablestore_filter_query,
