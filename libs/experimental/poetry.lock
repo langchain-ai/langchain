@@ -805,7 +805,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-gigachain-core = "^0.2.32"
+gigachain-core = ">=0.2.29,<=0.2.35"
 gigachain-text-splitters = "^0.2.0"
 gigachat = "^0.1.35"
 langsmith = "^0.1.17"
