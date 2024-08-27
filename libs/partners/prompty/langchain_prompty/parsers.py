@@ -5,6 +5,28 @@ from typing import List, Union
 from pydantic import BaseModel
 
 from .core import Invoker, Prompty, SimpleModel
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+)
+
+class RoleMap:
+    _ROLE_MAP: dict[str, type[BaseMessage]] = {
+        "system": SystemMessage,
+        "user": HumanMessage,
+        "human": HumanMessage,
+        "assistant": AIMessage,
+        "ai": AIMessage,
+        "function": FunctionMessage,
+    }
+    ROLES = _ROLE_MAP.keys()
+
+    @classmethod
+    def get_message_class(cls, role: str) -> type[BaseMessage]:
+        return cls._ROLE_MAP.get(role)
 
 
 class PromptyChatParser(Invoker):
@@ -12,7 +34,7 @@ class PromptyChatParser(Invoker):
 
     def __init__(self, prompty: Prompty) -> None:
         self.prompty = prompty
-        self.roles = ["assistant", "function", "system", "user", "human", "ai"]
+        self.roles = RoleMap.ROLES
         self.path = self.prompty.file.parent
 
     def inline_image(self, image_item: str) -> str:
