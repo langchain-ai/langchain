@@ -1051,7 +1051,8 @@ class Neo4jVector(VectorStore):
                     f"RETURN relationship.`{self.text_node_property}` AS text, score, "
                     f"relationship {{.*, `{self.text_node_property}`: Null, "
                     f"`{self.embedding_node_property}`: Null, id: Null, "
-                    f"_embedding_: relationship.`{self.embedding_node_property}`}} AS metadata"
+                    f"_embedding_: relationship.`{self.embedding_node_property}`}} "
+                    "AS metadata"
                 )
             else:
                 default_retrieval = (
