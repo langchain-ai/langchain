@@ -14,9 +14,9 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
-    SystemMessage,
     HumanMessage,
     HumanMessageChunk,
+    SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
@@ -78,10 +78,10 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
     generations = []
     for choice in response["Choices"]:
         message = _convert_dict_to_message(choice["Message"])
-        message.id = response.get('Id','')
+        message.id = response.get("Id", "")
         generations.append(ChatGeneration(message=message))
 
-    llm_output = {"token_usage": response.get('Usage','')}
+    llm_output = {"token_usage": response.get("Usage", "")}
     return ChatResult(generations=generations, llm_output=llm_output)
 
 
@@ -236,7 +236,7 @@ class ChatHunyuan(BaseChatModel):
                 chunk = _convert_delta_to_message_chunk(
                     choice["Delta"], default_chunk_class
                 )
-                chunk.id = response.get('Id', '')
+                chunk.id = response.get("Id", "")
                 default_chunk_class = chunk.__class__
                 cg_chunk = ChatGenerationChunk(message=chunk)
                 if run_manager:
