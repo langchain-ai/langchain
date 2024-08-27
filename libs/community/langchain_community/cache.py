@@ -2289,8 +2289,8 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         database_name: str = "CosmosNoSqlCacheDB",
         container_name: str = "CosmosNoSqlCacheContainer",
         *,
-        vector_embedding_policy: Dict[str, Any] = None,
-        indexing_policy: Dict[str, Any] = None,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
         cosmos_database_properties: Dict[str, Any],
     ):
