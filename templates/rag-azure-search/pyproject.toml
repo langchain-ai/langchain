@@ -7,8 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.5"
-langchain-openai = ">=0.0.1"
+gigachain-core = ">=0.1.5"
+gigachain-openai = ">=0.0.1"
 azure-search-documents = ">=11.4.0"
 
 [tool.poetry.group.dev.dependencies]

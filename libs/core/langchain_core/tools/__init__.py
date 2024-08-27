@@ -39,6 +39,9 @@ from langchain_core.tools.base import (
     _get_runnable_config_param as _get_runnable_config_param,
 )
 from langchain_core.tools.base import (
+    create_return_schema_from_function as create_return_schema_from_function,
+)
+from langchain_core.tools.base import (
     create_schema_from_function as create_schema_from_function,
 )
 from langchain_core.tools.convert import (

@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "langchain-box"
+name = "gigachain-box"
 version = "0.1.0"
-description = "An integration package connecting Box and LangChain"
+description = "An integration package connecting Box and GigaChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
@@ -13,7 +13,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9.0,<3.13"
-langchain-core = "^0.2.0"
+gigachain-core = "^0.2.0"
 box-sdk-gen = {extras = ["jwt"], version = "^1.1.0"}
 
 [tool.poetry.group.test]
@@ -24,7 +24,7 @@ pytest = "^7.4.3"
 pytest_mock = "^3.14.0"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
@@ -46,14 +46,14 @@ ruff = "^0.1.8"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.7.1"
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 types-requests = "^2.32.0.20240712"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.ruff.lint]
 select = [
