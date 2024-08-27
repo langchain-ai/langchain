@@ -1,8 +1,16 @@
 from enum import Enum
-from typing import Any, Iterable, List, MutableMapping, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Iterable,
+    List,
+    MutableMapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 from urllib.parse import urlparse
 
-from azure.identity import DefaultAzureCredential
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
@@ -525,6 +533,8 @@ class SQLServer_VectorStore(VectorStore):
     ) -> None:
         """Get token for SQLServer connection from token URL,
         and use the token to connect to the database."""
+        from azure.identity import DefaultAzureCredential
+
         credential = DefaultAzureCredential()
 
         # Remove Trusted_Connection param that SQLAlchemy adds to
