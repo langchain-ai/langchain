@@ -319,7 +319,7 @@ def multiply(a: int, b: int) -> int:
 
 ### Binding tool schemas with our LLM
 
-We will now use the `bind_tools` method to convert our above functions to a "tool" and binding it with the model. This means we are going to pass these tool informations everytime we invoke the model. 
+We will now use the `bind_tools` method to convert our above functions to a "tool" and binding it with the model. This means we are going to pass these tool information everytime we invoke the model. 
 
 ```python
 tools = [add, multiply]

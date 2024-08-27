@@ -17,9 +17,9 @@ _EXAMPLE_EMBEDDING_2 = [7.0, 8.0, 9.0]
 
 _EXAMPLE_EMBEDDING_RESPONSE = EmbedResponse(
     results=[
-        EmbedResult(_EXAMPLE_EMBEDDING_0),
-        EmbedResult(_EXAMPLE_EMBEDDING_1),
-        EmbedResult(_EXAMPLE_EMBEDDING_2),
+        EmbedResult(embedding=_EXAMPLE_EMBEDDING_0),
+        EmbedResult(embedding=_EXAMPLE_EMBEDDING_1),
+        EmbedResult(embedding=_EXAMPLE_EMBEDDING_2),
     ],
     id="test_id",
 )

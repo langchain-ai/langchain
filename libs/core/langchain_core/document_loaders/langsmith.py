@@ -73,7 +73,7 @@ class LangSmithLoader(BaseLoader):
             inline_s3_urls: Whether to inline S3 URLs. Defaults to True.
             offset: The offset to start from. Defaults to 0.
             limit: The maximum number of examples to return.
-            filter: A structured fileter string to apply to the examples.
+            filter: A structured filter string to apply to the examples.
             client: LangSmith Client. If not provided will be initialized from below args.
             client_kwargs: Keyword args to pass to LangSmith client init. Should only be
                 specified if ``client`` isn't.

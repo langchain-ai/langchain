@@ -1,11 +1,23 @@
 import asyncio
 from functools import partial
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -16,6 +28,9 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_ai21.ai21_base import AI21Base
 from langchain_ai21.chat.chat_adapter import ChatAdapter
@@ -48,14 +63,14 @@ class ChatAI21(BaseChatModel, AI21Base):
     stop: Optional[List[str]] = None
     """Default stop sequences."""
 
-    max_tokens: int = 16
+    max_tokens: int = 512
     """The maximum number of tokens to generate for each response."""
 
     min_tokens: int = 0
     """The minimum number of tokens to generate for each response.
     _Not supported for all models._"""
 
-    temperature: float = 0.7
+    temperature: float = 0.4
     """A value controlling the "creativity" of the model's responses."""
 
     top_p: float = 1
@@ -246,3 +261,11 @@ class ChatAI21(BaseChatModel, AI21Base):
             )
 
         return message.content
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)
