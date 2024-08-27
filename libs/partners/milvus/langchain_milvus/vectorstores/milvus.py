@@ -351,6 +351,7 @@ class Milvus(VectorStore):
         address: str = connection_args.get("address", None)
         uri: str = connection_args.get("uri", None)
         user = connection_args.get("user", None)
+        db_name = connection_args.get("db_name", "default")
 
         # Order of use is host/port, uri, address
         if host is not None and port is not None:
@@ -384,6 +385,7 @@ class Milvus(VectorStore):
                     and (addr["address"] == given_address)
                     and ("user" in addr)
                     and (addr["user"] == tmp_user)
+                    and (addr["db_name"] == db_name)
                 ):
                     logger.debug("Using previous connection: %s", con[0])
                     return con[0]
