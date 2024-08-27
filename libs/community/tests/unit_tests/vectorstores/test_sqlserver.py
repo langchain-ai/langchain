@@ -526,8 +526,8 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._create_table_if_not_exists"
 )
 def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_is_used(
-    provide_token: Mock,
     create_table: Mock,
+    provide_token: Mock,
 ) -> None:
     """Test that if a valid entra_id connection string is passed in
     to SQLServer_VectorStore object, entra id authentication is used
