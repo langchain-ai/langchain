@@ -2315,8 +2315,6 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         if cache_name in self._cache_dict:
             return self._cache_dict[cache_name]
 
-
-
         # create new vectorstore client to create the cache
         if self.cosmos_client:
             self._cache_dict[cache_name] = AzureCosmosDBNoSqlVectorSearch(
