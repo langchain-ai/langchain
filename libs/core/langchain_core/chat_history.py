@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Union, Optional
+from typing import List, Optional, Sequence, Union
 from uuid import UUID
 
 from langchain_core.messages import (
@@ -224,7 +224,7 @@ class BaseHistoryManager(ABC):
 class InMemManager(BaseHistoryManager):
     """"""
 
-    def __init__(self, sessions: Optional[dict]=None) -> None:
+    def __init__(self, sessions: Optional[dict] = None) -> None:
         self.sessions = sessions or {}
 
     def get_session(self, session_id: Union[str, UUID]) -> InMemoryChatMessageHistory:

@@ -4,11 +4,10 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.document_loaders import Blob, BlobLoader
 
 if TYPE_CHECKING:
+    from langchain_core.blob_loaders.file_system import FileSystemBlobLoader
+
     from langchain_community.document_loaders.blob_loaders.cloud_blob_loader import (
         CloudBlobLoader,
-    )
-    from langchain_community.document_loaders.blob_loaders.file_system import (
-        FileSystemBlobLoader,
     )
     from langchain_community.document_loaders.blob_loaders.youtube_audio import (
         YoutubeAudioLoader,
@@ -39,6 +38,5 @@ __all__ = [
     "BlobLoader",
     "Blob",
     "CloudBlobLoader",
-    "FileSystemBlobLoader",
     "YoutubeAudioLoader",
 ]

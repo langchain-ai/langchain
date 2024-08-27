@@ -74,7 +74,6 @@ if TYPE_CHECKING:
         FacebookChatLoader,
         FaunaLoader,
         FigmaFileLoader,
-        FileSystemBlobLoader,
         GCSDirectoryLoader,
         GCSFileLoader,
         GeoDataFrameLoader,
@@ -188,6 +187,7 @@ if TYPE_CHECKING:
         YoutubeLoader,
         YuqueLoader,
     )
+    from langchain_core.blob_loaders.file_system import FileSystemBlobLoader
 
 from langchain_core.document_loaders import Blob, BlobLoader
 
@@ -437,7 +437,6 @@ __all__ = [
     "FacebookChatLoader",
     "FaunaLoader",
     "FigmaFileLoader",
-    "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",

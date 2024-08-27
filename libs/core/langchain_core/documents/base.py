@@ -293,3 +293,6 @@ class Document(BaseMedia):
             return f"page_content='{self.page_content}' metadata={self.metadata}"
         else:
             return f"page_content='{self.page_content}'"
+
+    def __len__(self) -> int:
+        return len(self.page_content)

@@ -5,8 +5,14 @@ import warnings
 from importlib import metadata
 from typing import Any, Optional
 
-from langchain.chat_models import init_chat_model
 from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
+from langchain_core.chat_history import InMemManager
+from langchain_core.document_loaders.generic import GenericLoader
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
+
+from langchain.chat_models import init_chat_model as chat_model
 
 try:
     __version__ = metadata.version(__package__)
@@ -437,5 +443,13 @@ __all__ = [
     "QAWithSourcesChain",
     "LlamaCpp",
     "HuggingFaceTextGenInference",
-    "init_chat_model",
+    "chat_model",
+    "InMemManager",
+    "GenericLoader",
+    "ChatPromptTemplate",
+    "tool",
+    "AnyMessage",
+    "AIMessage",
+    "SystemMessage",
+    "HumanMessage",
 ]

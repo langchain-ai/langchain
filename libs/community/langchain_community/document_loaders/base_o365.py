@@ -10,6 +10,7 @@ from enum import Enum
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
+from langchain_core.blob_loaders.file_system import FileSystemBlobLoader
 from langchain_core.pydantic_v1 import (
     BaseModel,
     BaseSettings,
@@ -19,9 +20,6 @@ from langchain_core.pydantic_v1 import (
 )
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_community.document_loaders.blob_loaders.file_system import (
-    FileSystemBlobLoader,
-)
 from langchain_community.document_loaders.blob_loaders.schema import Blob
 
 if TYPE_CHECKING:

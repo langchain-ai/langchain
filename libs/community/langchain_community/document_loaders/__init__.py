@@ -19,6 +19,8 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_core.blob_loaders.file_system import FileSystemBlobLoader
+
     from langchain_community.document_loaders.acreom import (
         AcreomLoader,
     )
@@ -87,7 +89,6 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.blob_loaders import (
         Blob,
         BlobLoader,
-        FileSystemBlobLoader,
         YoutubeAudioLoader,
     )
     from langchain_community.document_loaders.blockchain import (
@@ -800,7 +801,6 @@ __all__ = [
     "FaunaLoader",
     "FigmaFileLoader",
     "FireCrawlLoader",
-    "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GlueCatalogLoader",
     "GCSFileLoader",

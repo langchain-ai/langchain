@@ -35,8 +35,8 @@ from langchain_core.utils import get_pydantic_field_names
 if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
     from langchain_core.callbacks import Callbacks
-    from langchain_core.outputs import LLMResult
     from langchain_core.chat_history import BaseHistoryManager
+    from langchain_core.outputs import LLMResult
     from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
@@ -365,7 +365,9 @@ class BaseLanguageModel(
         """
         return len(self.get_token_ids(text))
 
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(
+        self, messages: List[MessageLikeRepresentation]
+    ) -> int:
         """Get the number of tokens in the messages.
 
         Useful for checking if an input fits in a model's context window.
@@ -376,6 +378,7 @@ class BaseLanguageModel(
         Returns:
             The sum of the number of tokens across the messages.
         """
+        messages = convert_to_messages(messages)
         return sum([self.get_num_tokens(get_buffer_string([m])) for m in messages])
 
     @classmethod
@@ -386,7 +389,9 @@ class BaseLanguageModel(
         """
         return get_pydantic_field_names(cls)
 
-    def with_history(self, get_session_history: Union[Callable, BaseHistoryManager]) -> RunnableWithMessageHistory:
+    def with_history(
+        self, get_session_history: Union[Callable, BaseHistoryManager]
+    ) -> RunnableWithMessageHistory:
         from langchain_core.chat_history import BaseHistoryManager
         from langchain_core.runnables.history import RunnableWithMessageHistory
 
@@ -394,4 +399,3 @@ class BaseLanguageModel(
             get_session_history = get_session_history.get_session
 
         return RunnableWithMessageHistory(self, get_session_history)
-

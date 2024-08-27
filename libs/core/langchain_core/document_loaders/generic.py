@@ -12,14 +12,10 @@ from typing import (
     Union,
 )
 
+from langchain_core.blob_loaders import FileSystemBlobLoader
+from langchain_core.document_loaders.base import BaseBlobParser, BaseLoader
+from langchain_core.document_loaders.blob_loaders import BlobLoader
 from langchain_core.documents import Document
-
-from langchain_community.document_loaders.base import BaseBlobParser, BaseLoader
-from langchain_community.document_loaders.blob_loaders import (
-    BlobLoader,
-    FileSystemBlobLoader,
-)
-from langchain_community.document_loaders.parsers.registry import get_parser
 
 if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
@@ -172,10 +168,24 @@ class GenericLoader(BaseLoader):
                     # If there is an implementation of get_parser on the class, use it.
                     blob_parser = cls.get_parser(**(parser_kwargs or {}))
                 except NotImplementedError:
-                    # if not then use the global registry.
-                    blob_parser = get_parser(parser)
+                    # if not then try to use the global registry.
+                    try:
+                        from langchain_community.document_loaders.parsers.registry import (
+                            get_parser,
+                        )
+                    except ImportError as e:
+                        raise ValueError("") from e
+                    else:
+                        blob_parser = get_parser(parser)
             else:
-                blob_parser = get_parser(parser)
+                try:
+                    from langchain_community.document_loaders.parsers.registry import (
+                        get_parser,
+                    )
+                except ImportError as e:
+                    raise ValueError("") from e
+                else:
+                    blob_parser = get_parser(parser)
         else:
             blob_parser = parser
         return cls(blob_loader, blob_parser)

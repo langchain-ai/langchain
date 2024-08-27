@@ -4,12 +4,12 @@ import concurrent.futures
 from pathlib import Path
 from typing import Iterator, Literal, Optional, Sequence, Union
 
+from langchain_core.blob_loaders.file_system import FileSystemBlobLoader
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import (
     BlobLoader,
-    FileSystemBlobLoader,
 )
 from langchain_community.document_loaders.generic import GenericLoader
 from langchain_community.document_loaders.parsers.registry import get_parser

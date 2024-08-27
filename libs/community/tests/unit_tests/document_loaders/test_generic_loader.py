@@ -6,12 +6,12 @@ from pathlib import Path
 from typing import Any, Generator, Iterator
 
 import pytest
+from langchain_core.blob_parsers.txt import TextParser
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob, FileSystemBlobLoader
 from langchain_community.document_loaders.generic import GenericLoader
-from langchain_community.document_loaders.parsers.txt import TextParser
 
 
 @pytest.fixture

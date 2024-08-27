@@ -61,6 +61,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    convert_to_messages,
 )
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk
@@ -878,7 +879,7 @@ class BaseChatOpenAI(BaseChatModel):
         return encoding_model.encode(text)
 
     # TODO: Count bound tools as part of input.
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
+    def get_num_tokens_from_messages(self, messages: List[MessageLikeRepresentation]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
 
         **Requirements**: You must have the ``pillow`` installed if you want to count
@@ -891,6 +892,7 @@ class BaseChatOpenAI(BaseChatModel):
         main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
+        messages = convert_to_messages(messages)
         model, encoding = self._get_encoding_model()
         if model.startswith("gpt-3.5-turbo-0301"):
             # every message follows <im_start>{role/name}\n{content}<im_end>\n

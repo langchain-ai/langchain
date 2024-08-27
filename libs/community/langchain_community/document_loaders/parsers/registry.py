@@ -1,10 +1,11 @@
 """Module includes a registry of default parser configurations."""
 
-from langchain_community.document_loaders.base import BaseBlobParser
-from langchain_community.document_loaders.parsers.generic import MimeTypeBasedParser
+from langchain_core.blob_parsers.mime_type import MimeTypeBasedParser
+from langchain_core.blob_parsers.txt import TextParser
+from langchain_core.document_loaders.base import BaseBlobParser
+
 from langchain_community.document_loaders.parsers.msword import MsWordParser
 from langchain_community.document_loaders.parsers.pdf import PyMuPDFParser
-from langchain_community.document_loaders.parsers.txt import TextParser
 
 
 def _get_default_parser() -> BaseBlobParser:
@@ -17,6 +18,7 @@ def _get_default_parser() -> BaseBlobParser:
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (
                 MsWordParser()
             ),
+            "text/x-python": TextParser(),
         },
         fallback_parser=None,
     )
