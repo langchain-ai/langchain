@@ -677,7 +677,10 @@ def test_get_num_tokens_from_messages() -> None:
         AIMessage(
             "",
             additional_kwargs={
-                "function_call": json.dumps({"arguments": "old", "name": "fun"})
+                "function_call": {
+                    "arguments": json.dumps({"arg1": "arg1"}),
+                    "name": "fun",
+                }
             },
         ),
         AIMessage(
@@ -688,6 +691,6 @@ def test_get_num_tokens_from_messages() -> None:
         ),
         ToolMessage("foobar", tool_call_id="foo"),
     ]
-    expected = 170
+    expected = 176
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual

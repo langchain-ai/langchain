@@ -947,7 +947,7 @@ class BaseChatOpenAI(BaseChatModel):
                 else:
                     # Cast str(value) in case the message value is not a string
                     # This occurs with function messages
-                    num_tokens += len(encoding.encode(value))
+                    num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
