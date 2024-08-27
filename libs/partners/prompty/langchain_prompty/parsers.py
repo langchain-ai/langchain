@@ -2,9 +2,6 @@ import base64
 import re
 from typing import List, Union
 
-from pydantic import BaseModel
-
-from .core import Invoker, Prompty, SimpleModel
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -12,6 +9,10 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from pydantic import BaseModel
+
+from .core import Invoker, Prompty, SimpleModel
+
 
 class RoleMap:
     _ROLE_MAP: dict[str, type[BaseMessage]] = {
