@@ -1,10 +1,6 @@
 from enum import Enum
-<<<<<<< HEAD
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
-=======
-from typing import Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Iterable, List, MutableMapping, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
->>>>>>> c7894f1c6 (use entra id or normal sql connection auth)
 
 from azure.identity import DefaultAzureCredential
 from langchain_core.documents import Document
@@ -16,16 +12,13 @@ from sqlalchemy import (
     ColumnElement,
     Numeric,
     SQLColumnExpression,
+    Dialect,
     Uuid,
     asc,
     bindparam,
     cast,
     create_engine,
-<<<<<<< HEAD
-    func,
-=======
     event,
->>>>>>> c7894f1c6 (use entra id or normal sql connection auth)
     label,
     text,
 )
@@ -34,6 +27,7 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import operators
+from sqlalchemy.pool import ConnectionPoolEntry
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -109,7 +103,6 @@ INVALID_FILTER_INPUT_EXPECTED_AND_OR = "Invalid filter condition."
 
 =======
 SQL_COPT_SS_ACCESS_TOKEN = 1256  # Connection option defined by microsoft in msodbcsql.h
->>>>>>> c7894f1c6 (use entra id or normal sql connection auth)
 
 # Query Constants
 #
@@ -383,7 +376,6 @@ class SQLServer_VectorStore(VectorStore):
                 session.commit()
 
             logging.info(f"Vector store `{self.table_name}` dropped successfully.")
-
         except ProgrammingError as e:
             logging.error(f"Unable to drop vector store.\n {e.__cause__}.")
 
@@ -775,7 +767,13 @@ class SQLServer_VectorStore(VectorStore):
             logging.error(e.__cause__)
         return result
 
-    def _provide_token(self, dialect, conn_rec, cargs, cparams) -> None:
+    def _provide_token(
+        self,
+        dialect: Dialect,
+        conn_rec: Optional[ConnectionPoolEntry],
+        cargs: List[str],
+        cparams: MutableMapping[str, Any],
+    ) -> None:
         """Get token for SQLServer connection from token URL,
         and use the token to connect to the database."""
         credential = DefaultAzureCredential()
