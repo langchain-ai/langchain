@@ -36,7 +36,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.2.32"
+gigachain-core = ">=0.2.29,<=0.2.35"
 gigachain-text-splitters = "^0.2.0"
 langsmith = "^0.1.17"
 pydantic = ">=1,<3"
