@@ -48,6 +48,7 @@ from typing import (
     cast,
 )
 
+from azure.cosmos import CosmosClient
 from sqlalchemy import Column, Integer, String, create_engine, delete, select
 from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
@@ -2284,12 +2285,12 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
     def __init__(
         self,
         embedding: Embeddings,
-        cosmos_client: Optional[Any] = None,
+        cosmos_client: CosmosClient,
         database_name: str = "CosmosNoSqlCacheDB",
         container_name: str = "CosmosNoSqlCacheContainer",
         *,
-        vector_embedding_policy: Optional[Dict[str, Any]] = None,
-        indexing_policy: Optional[Dict[str, Any]] = None,
+        vector_embedding_policy: Dict[str, Any] = None,
+        indexing_policy: Dict[str, Any] = None,
         cosmos_container_properties: Dict[str, Any],
         cosmos_database_properties: Dict[str, Any],
     ):
@@ -2341,8 +2342,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
                         "older format. Please recreate your cache to avoid this "
                         "error."
                     )
-                    # In a previous life we stored the raw text directly
-                    # in the table, so assume it's in that format.
+
                     generations.extend(
                         _load_generations_from_json(document.metadata["return_val"])
                     )

@@ -48,7 +48,6 @@ cosmos_container_properties_test = {"partition_key": partition_key}
 cosmos_database_properties_test = {}
 
 
-# @pytest.fixture(scope="session")
 def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
