@@ -2302,12 +2302,24 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         self.indexing_policy = indexing_policy
         self.cosmos_container_properties = cosmos_container_properties
         self.cosmos_database_properties = cosmos_database_properties
-        self._cache_: Optional[AzureCosmosDBNoSqlVectorSearch] = None
+        self._cache_dict: Dict[str, AzureCosmosDBNoSqlVectorSearch] = {}
 
-    def _create_llm_cache(self, llm_string: str) -> AzureCosmosDBNoSqlVectorSearch:
+    def _cache_name(self, llm_string: str) -> str:
+        hashed_index = _hash(llm_string)
+        return f"cache:{hashed_index}"
+
+    def _get_llm_cache(self, llm_string: str) -> AzureCosmosDBNoSqlVectorSearch:
+        cache_name = self._cache_name(llm_string)
+
+        # return vectorstore client for the specific llm string
+        if cache_name in self._cache_dict:
+            return self._cache_dict[cache_name]
+
+
+
         # create new vectorstore client to create the cache
         if self.cosmos_client:
-            self._cache_ = AzureCosmosDBNoSqlVectorSearch(
+            self._cache_dict[cache_name] = AzureCosmosDBNoSqlVectorSearch(
                 cosmos_client=self.cosmos_client,
                 embedding=self.embedding,
                 vector_embedding_policy=self.vector_embedding_policy,
@@ -2318,13 +2330,11 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
                 container_name=self.container_name,
             )
 
-        return self._cache_
+        return self._cache_dict[cache_name]
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt."""
-        if not self._cache_:
-            self._cache_ = self._create_llm_cache(llm_string)
-        llm_cache = self._cache_
+        llm_cache = self._get_llm_cache(llm_string)
         generations: List = []
         # Read from a Hash
         results = llm_cache.similarity_search(
@@ -2356,9 +2366,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
                     "CosmosDBNoSqlSemanticCache only supports caching of "
                     f"normal LLM generations, got {type(gen)}"
                 )
-        if not self._cache_:
-            self._cache_ = self._create_llm_cache(llm_string)
-        llm_cache = self._cache_
+        llm_cache = self._get_llm_cache(llm_string)
         metadata = {
             "llm_string": llm_string,
             "prompt": prompt,
