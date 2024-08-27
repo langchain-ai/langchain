@@ -1,5 +1,6 @@
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+import uuid
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain.prompts.chat import ChatPromptTemplate,SystemMessagePromptTemplate,HumanMessagePromptTemplate
 from operator import itemgetter
 from langchain_community.chat_models.hunyuan import ChatHunyuan
@@ -12,6 +13,8 @@ def test_chat_hunyuan() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+    assert len(response.id) > 0, "request_id 不为空"
+    assert uuid.UUID(response.id), "无效的UUID"
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -21,6 +24,8 @@ def test_chat_hunyuan_with_temperature() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+    assert len(response.id) > 0, "request_id 不为空"
+    assert uuid.UUID(response.id), "无效的UUID"
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -30,6 +35,8 @@ def test_chat_hunyuan_with_model_name() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+    assert len(response.id) > 0, "request_id 不为空"
+    assert uuid.UUID(response.id), "无效的UUID"
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -39,6 +46,8 @@ def test_chat_hunyuan_with_stream() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+    assert len(response.id) > 0, "request_id 不为空"
+    assert uuid.UUID(response.id), "无效的UUID"
 
 @pytest.mark.requires("tencentcloud-sdk-python")
 def test_chat_hunyuan_with_prompt_template() -> None:
@@ -49,6 +58,8 @@ def test_chat_hunyuan_with_prompt_template() -> None:
     response=chat.invoke({'query':'Hello','name':'Tom'})
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
+    assert len(response.id) > 0, "request_id 不为空"
+    assert uuid.UUID(response.id), "无效的UUID"
 
 def test_extra_kwargs() -> None:
     chat = ChatHunyuan(temperature=0.88, top_p=0.7)
