@@ -18,6 +18,8 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     Dialect,
+    Index,
+    PrimaryKeyConstraint,
     Uuid,
     asc,
     bindparam,
@@ -29,6 +31,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import ConnectionPoolEntry
 
@@ -173,9 +176,15 @@ class SQLServer_VectorStore(VectorStore):
             """This is the base model for SQL vector store."""
 
             __tablename__ = name
-            __table_args__ = {"schema": schema}
+            __table_args__ = (
+                PrimaryKeyConstraint("id", mssql_clustered=False),
+                Index("idx_custom_id", "custom_id", mssql_clustered=False, unique=True),
+                {"schema": schema},
+            )
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
-            custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
+            custom_id = Column(
+                VARCHAR(1000), nullable=True
+            )  # column for user defined ids.
             content_metadata = Column(JSON, nullable=True)
             content = Column(NVARCHAR, nullable=False)  # defaults to NVARCHAR(MAX)
 
@@ -193,6 +202,10 @@ class SQLServer_VectorStore(VectorStore):
             )
 
         return EmbeddingStore
+
+    @compiles(JSON, "mssql")
+    def compile_json(element, compiler, **kw):
+        return "json"
 
     @property
     def embeddings(self) -> Embeddings:
