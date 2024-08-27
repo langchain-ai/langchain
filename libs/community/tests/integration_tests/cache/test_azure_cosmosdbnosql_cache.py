@@ -1,5 +1,5 @@
-"""Test Azure CosmosDB NoSql cache functionality.
-"""
+"""Test Azure CosmosDB NoSql cache functionality."""
+
 import os
 import uuid
 
@@ -7,21 +7,20 @@ import pytest
 from azure.cosmos import CosmosClient, PartitionKey
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
-
-from langchain_community.cache import AzureCosmosDBNoSqlSemanticCache
-from langchain_community.vectorstores import AzureCosmosDBNoSqlVectorSearch
-
 from libs.community.tests.integration_tests.cache.fake_embeddings import (
     FakeEmbeddings,
 )
 from libs.community.tests.unit_tests.llms.fake_llm import FakeLLM
 
+from langchain_community.cache import AzureCosmosDBNoSqlSemanticCache
+from langchain_community.vectorstores import AzureCosmosDBNoSqlVectorSearch
 
-URI = 'COSMOS_DB_URI'
-KEY = 'COSMOS_DB_KEY'
+URI = "COSMOS_DB_URI"
+KEY = "COSMOS_DB_KEY"
 test_client = CosmosClient(URI, credential=KEY)
 
-#cosine, euclidean, innerproduct
+
+# cosine, euclidean, innerproduct
 def indexing_policy(index_type: str):
     return {
         "indexingMode": "consistent",
@@ -29,6 +28,7 @@ def indexing_policy(index_type: str):
         "excludedPaths": [{"path": '/"_etag"/?'}],
         "vectorIndexes": [{"path": "/embedding", "type": index_type}],
     }
+
 
 def vector_embedding_policy(distance_function: str):
     return {
@@ -42,9 +42,11 @@ def vector_embedding_policy(distance_function: str):
         ]
     }
 
+
 partition_key = PartitionKey(path="/id")
 cosmos_container_properties_test = {"partition_key": partition_key}
 cosmos_database_properties_test = {}
+
 
 # @pytest.fixture(scope="session")
 def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
@@ -127,7 +129,6 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat() -> None
     get_llm_cache().clear(llm_string=llm_string)
 
 
-
 def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
@@ -156,7 +157,6 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat() -> None:
     get_llm_cache().clear(llm_string=llm_string)
 
 
-
 def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
@@ -183,7 +183,6 @@ def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat() -> None:
     get_llm_cache().clear(llm_string=llm_string)
 
 
-
 def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
@@ -208,7 +207,3 @@ def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat() -> None:
 
     # clear the cache
     get_llm_cache().clear(llm_string=llm_string)
-
-
-
-

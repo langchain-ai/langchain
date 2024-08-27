@@ -60,7 +60,6 @@ from langchain_community.vectorstores.azure_cosmos_db import (
 )
 from langchain_community.vectorstores.utils import DistanceStrategy
 
-
 # from libs.community.langchain_community.vectorstores.azure_cosmos_db_no_sql import AzureCosmosDBNoSqlVectorSearch
 
 try:
@@ -83,7 +82,10 @@ from langchain_community.utilities.astradb import (
 from langchain_community.utilities.astradb import (
     _AstraDBCollectionEnvironment,
 )
-from langchain_community.vectorstores import AzureCosmosDBVectorSearch, AzureCosmosDBNoSqlVectorSearch
+from langchain_community.vectorstores import (
+    AzureCosmosDBNoSqlVectorSearch,
+    AzureCosmosDBVectorSearch,
+)
 from langchain_community.vectorstores import (
     OpenSearchVectorSearch as OpenSearchVectorStore,
 )
@@ -2276,20 +2278,22 @@ class AzureCosmosDBSemanticCache(BaseCache):
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
         if not isinstance(value, enum_type):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
+
+
 class AzureCosmosDBNoSqlSemanticCache(BaseCache):
     """Cache that uses Cosmos DB NoSQL backend"""
 
     def __init__(
-            self,
-            embedding: Embeddings,
-            cosmos_client: Optional[Any] = None,
-            database_name: str = "CosmosNoSqlCacheDB",
-            container_name: str = "CosmosNoSqlCacheContainer",
-            *,
-            vector_embedding_policy: Optional[Dict[str, Any]] = None,
-            indexing_policy: Optional[Dict[str, Any]] = None,
-            cosmos_container_properties: Dict[str, Any],
-            cosmos_database_properties: Dict[str, Any]
+        self,
+        embedding: Embeddings,
+        cosmos_client: Optional[Any] = None,
+        database_name: str = "CosmosNoSqlCacheDB",
+        container_name: str = "CosmosNoSqlCacheContainer",
+        *,
+        vector_embedding_policy: Optional[Dict[str, Any]] = None,
+        indexing_policy: Optional[Dict[str, Any]] = None,
+        cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Dict[str, Any],
     ):
         self.cosmos_client = cosmos_client
         self.database_name = database_name
@@ -2302,8 +2306,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         self._cache_: Optional[AzureCosmosDBNoSqlVectorSearch] = None
 
     def _create_llm_cache(self, llm_string: str) -> AzureCosmosDBNoSqlVectorSearch:
-
-        #create new vectorstore client to create the cache
+        # create new vectorstore client to create the cache
         if self.cosmos_client:
             self._cache_ = AzureCosmosDBNoSqlVectorSearch(
                 cosmos_client=self.cosmos_client,
@@ -2313,7 +2316,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
                 cosmos_container_properties=self.cosmos_container_properties,
                 cosmos_database_properties=self.cosmos_database_properties,
                 database_name=self.database_name,
-                container_name=self.container_name
+                container_name=self.container_name,
             )
 
         return self._cache_
@@ -2370,6 +2373,7 @@ class AzureCosmosDBNoSqlSemanticCache(BaseCache):
         database = self.cosmos_client.get_database_client(self.database_name)
         container = database.get_container_client(self.container_name)
         database.delete_container(self.container_name)
+
 
 class OpenSearchSemanticCache(BaseCache):
     """Cache that uses OpenSearch vector store backend"""
