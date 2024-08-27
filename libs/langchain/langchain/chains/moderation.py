@@ -68,6 +68,8 @@ class OpenAIModerationChain(Chain):
             else:
                 values["client"] = openai.OpenAI()
                 values["async_client"] = openai.AsyncOpenAI()
+
+            cls._openai_pre_1_0 = values["_openai_pre_1_0"]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
