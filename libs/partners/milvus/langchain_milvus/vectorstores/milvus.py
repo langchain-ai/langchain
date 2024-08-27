@@ -472,16 +472,15 @@ class Milvus(VectorStore):
                         )
                         raise ValueError(f"Metadata key {key} is reserved.")
                     # Infer the corresponding datatype of the metadata
-                    field_type = "dtype"
                     if (
                         key in self.metadata_schema  # type: ignore
-                        and field_type in self.metadata_schema[key]  # type: ignore
+                        and "dtype" in self.metadata_schema[key]  # type: ignore
                     ):
-                        kwargs = self.metadata_schema[key]["kwargs"]  # type: ignore
+                        kwargs = self.metadata_schema[key].get("kwargs", {})  # type: ignore
                         fields.append(
                             FieldSchema(
                                 name=key,
-                                dtype=self.metadata_schema[key][field_type],  # type: ignore
+                                dtype=self.metadata_schema[key]["dtype"],  # type: ignore
                                 **kwargs,
                             )
                         )
@@ -497,11 +496,16 @@ class Milvus(VectorStore):
                                 key,
                             )
                             raise ValueError(f"Unrecognized datatype for {key}.")
-                        # Dataype is a string/varchar equivalent
+                        # Datatype is a string/varchar equivalent
                         elif dtype == DataType.VARCHAR:
                             fields.append(
                                 FieldSchema(key, DataType.VARCHAR, max_length=65_535)
                             )
+                        # infer_dtype_bydata currently can't recognize array type,
+                        # so this line can not be accessed.
+                        # This line may need to be modified in the future when
+                        # infer_dtype_bydata can recognize array type.
+                        # https://github.com/milvus-io/pymilvus/issues/2165
                         elif dtype == DataType.ARRAY:
                             kwargs = self.metadata_schema[key]["kwargs"]  # type: ignore
                             fields.append(
