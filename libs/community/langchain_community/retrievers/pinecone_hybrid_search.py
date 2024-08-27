@@ -173,7 +173,10 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         for res in result["matches"]:
             context = res["metadata"].pop("context")
             final_result.append(
-                Document(page_content=context, metadata=res["metadata"])
+                Document(
+                    page_content=context,
+                    metadata=res["metadata"] | {"score": res["score"]},
+                )
             )
         # return search results as json
         return final_result
