@@ -192,10 +192,10 @@ class ChatHunyuan(BaseChatModel):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Hunyuan API."""
         normal_params = {
-            "Model": self.model,
-            "Stream": self.streaming,
             "Temperature": self.temperature,
             "TopP": self.top_p,
+            "Model": self.model,
+            "Stream": self.streaming,
             "StreamModeration": self.stream_moderation,
             "EnableEnhancement": self.enable_enhancement,
         }
