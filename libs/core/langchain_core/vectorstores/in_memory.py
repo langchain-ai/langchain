@@ -28,10 +28,122 @@ if TYPE_CHECKING:
 
 
 class InMemoryVectorStore(VectorStore):
-    """In-memory implementation of VectorStore using a dictionary.
+    """In-memory vector store implementation.
 
-    Uses numpy to compute cosine similarity for search.
-    """
+    Uses a dictionary, and computes cosine similarity for search using numpy.
+
+    Setup:
+        Install ``langchain-core``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-core
+
+    Key init args — indexing params:
+        embedding_function: Embeddings
+            Embedding function to use.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_core.vectorstores import InMemoryVectorStore
+            from langchain_openai import OpenAIEmbeddings
+
+            vector_store = InMemoryVectorStore(OpenAIEmbeddings())
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(id="1", page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(id="2", page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(id="3", page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            vector_store.add_documents(documents=documents)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: none
+
+            * thud [{'bar': 'baz'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            def _filter_function(doc: Document) -> bool:
+                return doc.metadata.get("bar") == "baz"
+
+            results = vector_store.similarity_search(
+                query="thud", k=1, filter=_filter_function
+            )
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: none
+
+            * thud [{'bar': 'baz'}]
+
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(
+                query="qux", k=1
+            )
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: none
+
+            * [SIM=0.832268] foo [{'baz': 'bar'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud", k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: none
+
+            * [SIM=0.832268] foo [{'baz': 'bar'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: none
+
+            [Document(id='2', metadata={'bar': 'baz'}, page_content='thud')]
+
+    """  # noqa: E501
 
     def __init__(self, embedding: Embeddings) -> None:
         """Initialize with the given embedding function.
