@@ -29,6 +29,9 @@ from langchain_core.tools.base import (
     BaseToolkit as BaseToolkit,
 )
 from langchain_core.tools.base import (
+    FewShotExamples as FewShotExamples,
+)
+from langchain_core.tools.base import (
     InjectedToolArg as InjectedToolArg,
 )
 from langchain_core.tools.base import SchemaAnnotationError as SchemaAnnotationError
