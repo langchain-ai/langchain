@@ -81,7 +81,8 @@ def _create_chat_result(response: Mapping[str, Any]) -> ChatResult:
         message.id = response.get("Id", "")
         generations.append(ChatGeneration(message=message))
 
-    llm_output = {"token_usage": response.get("Usage", "")}
+    token_usage = response["Usage"]
+    llm_output = {"token_usage": token_usage}
     return ChatResult(generations=generations, llm_output=llm_output)
 
 
@@ -117,7 +118,7 @@ class ChatHunyuan(BaseChatModel):
     """What sampling temperature to use."""
     top_p: float = 1.0
     """What probability mass to use."""
-    model: str = "hunyuan-pro"
+    model: str = "hunyuan-lite"
     """What Model to use.
      Optional model:
     - hunyuan-lite
@@ -193,6 +194,8 @@ class ChatHunyuan(BaseChatModel):
         normal_params = {
             "Model": self.model,
             "Stream": self.streaming,
+            "Temperature": self.temperature,
+            "TopP": self.top_p,
             "StreamModeration": self.stream_moderation,
             "EnableEnhancement": self.enable_enhancement,
         }

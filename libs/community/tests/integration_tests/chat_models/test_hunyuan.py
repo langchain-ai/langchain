@@ -19,8 +19,8 @@ def test_chat_hunyuan() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id 不为空"
-    assert uuid.UUID(response.id), "无效的UUID"
+    assert len(response.id) > 0, "request_id is empty"
+    assert uuid.UUID(response.id), "Invalid UUID"
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -30,8 +30,8 @@ def test_chat_hunyuan_with_temperature() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id 不为空"
-    assert uuid.UUID(response.id), "无效的UUID"
+    assert len(response.id) > 0, "request_id is empty"
+    assert uuid.UUID(response.id), "Invalid UUID"
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -41,8 +41,8 @@ def test_chat_hunyuan_with_model_name() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id 不为空"
-    assert uuid.UUID(response.id), "无效的UUID"
+    assert len(response.id) > 0, "request_id is empty"
+    assert uuid.UUID(response.id), "Invalid UUID"
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -52,8 +52,8 @@ def test_chat_hunyuan_with_stream() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id 不为空"
-    assert uuid.UUID(response.id), "无效的UUID"
+    assert len(response.id) > 0, "request_id is empty"
+    assert uuid.UUID(response.id), "Invalid UUID"
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -71,8 +71,8 @@ def test_chat_hunyuan_with_prompt_template() -> None:
     response = chat.invoke({"query": "Hello", "name": "Tom"})
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id 不为空"
-    assert uuid.UUID(response.id), "无效的UUID"
+    assert len(response.id) > 0, "request_id is empty"
+    assert uuid.UUID(response.id), "Invalid UUID"
 
 
 def test_extra_kwargs() -> None:
