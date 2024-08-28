@@ -75,7 +75,7 @@ _EVALUATOR_MAP: Dict[
 ] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
-    EvaluatorType.CCOT_QA: CotQAEvalChain,
+    EvaluatorType.CCOT_QA: CcotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
     EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
     EvaluatorType.SCORE_STRING: ScoreStringEvalChain,
