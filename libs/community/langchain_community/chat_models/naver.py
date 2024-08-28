@@ -15,13 +15,6 @@ from typing import (
 )
 
 import httpx
-from httpx_sse import (
-    EventSource,
-    ServerSentEvent,
-    SSEError,
-    aconnect_sse,
-    connect_sse,
-)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -50,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 def _convert_chunk_to_message_chunk(
-    sse: ServerSentEvent, default_class: Type[BaseMessageChunk]
+    sse: Any, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     sse_data = sse.json()
     message = sse_data.get("message")
@@ -120,7 +113,7 @@ def _convert_naver_chat_message_to_message(
 
 
 async def _aiter_sse(
-    event_source_mgr: AsyncContextManager[EventSource],
+    event_source_mgr: AsyncContextManager[Any],
 ) -> AsyncIterator[Dict]:
     """Iterate over the server-sent events."""
     async with event_source_mgr as event_source:
@@ -364,6 +357,11 @@ class ChatClovaX(BaseChatModel):
         return message_dicts, params
 
     def _completion_with_retry(self, **kwargs: Any) -> Any:
+        from httpx_sse import (
+            ServerSentEvent,
+            SSEError,
+            connect_sse,
+        )
         if "stream" not in kwargs:
             kwargs["stream"] = False
 
@@ -399,6 +397,7 @@ class ChatClovaX(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Any:
+        from httpx_sse import aconnect_sse
         """Use tenacity to retry the async completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 

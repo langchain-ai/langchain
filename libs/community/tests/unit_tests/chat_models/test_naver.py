@@ -5,7 +5,6 @@ from typing import Any, AsyncGenerator, Generator, cast
 from unittest.mock import patch
 
 import pytest
-from httpx_sse import ServerSentEvent
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import (
     AIMessage,
@@ -131,7 +130,8 @@ async def test_naver_ainvoke(mock_chat_completion_response: dict) -> None:
     assert completed
 
 
-def _make_completion_response_from_token(token: str) -> ServerSentEvent:
+def _make_completion_response_from_token(token: str):
+    from httpx_sse import ServerSentEvent
     return ServerSentEvent(
         event="token",
         data=json.dumps(
@@ -175,6 +175,7 @@ class MyCustomHandler(BaseCallbackHandler):
     "langchain_community.chat_models.ChatClovaX._completion_with_retry",
     new=mock_chat_stream,
 )
+@pytest.mark.requires("httpx_sse")
 def test_stream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatClovaX(callbacks=[callback])
@@ -186,6 +187,7 @@ def test_stream_with_callback() -> None:
     "langchain_community.chat_models.ChatClovaX._acompletion_with_retry",
     new=mock_chat_astream,
 )
+@pytest.mark.requires("httpx_sse")
 async def test_astream_with_callback() -> None:
     callback = MyCustomHandler()
     chat = ChatClovaX(callbacks=[callback])
