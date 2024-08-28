@@ -42,6 +42,7 @@ def create_index(
         sparse_encoder: Sparse encoder to use.
         ids: List of ids to use for the documents.
         metadatas: List of metadata to use for the documents.
+        namespace: Namespace value for index partition.
     """
     batch_size = 32
     _iterator = range(0, len(contexts), batch_size)
