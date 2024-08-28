@@ -1,9 +1,8 @@
+# Gemini functions - agent
 
-# gemini-functions-agent
+This template creates an agent that uses `Google Gemini function calling` to communicate its decisions on what actions to take. 
 
-This template creates an agent that uses Google Gemini function calling to communicate its decisions on what actions to take. 
-
-This example creates an agent that can optionally look up information on the internet using Tavily's search engine.
+This example creates an agent that optionally looks up information on the internet using `Tavily's` search engine.
 
 [See an example LangSmith trace here](https://smith.langchain.com/public/0ebf1bd6-b048-4019-b4de-25efe8d3d18c/r)
 

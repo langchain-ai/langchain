@@ -1,9 +1,8 @@
-
-# self-query-qdrant
+# Self-query - Qdrant
 
 This template performs [self-querying](https://python.langchain.com/docs/modules/data_connection/retrievers/self_query/) 
-using Qdrant and OpenAI. By default, it uses an artificial dataset of 10 documents, but you can replace it with your own dataset.
-
+``using `Qdrant` and OpenAI. By default, it uses an artificial dataset of 10 documents, but you can replace it with your own dataset.
+``
 ## Environment Setup
 
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.

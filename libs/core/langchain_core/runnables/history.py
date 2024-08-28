@@ -433,7 +433,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             # This occurs for chat models - since we batch inputs
             if isinstance(input_val[0], list):
                 if len(input_val) != 1:
-                    raise ValueError()
+                    raise ValueError(
+                        f"Expected a single list of messages. Got {input_val}."
+                    )
                 return input_val[0]
             return list(input_val)
         else:
