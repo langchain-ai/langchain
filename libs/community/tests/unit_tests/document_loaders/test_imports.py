@@ -197,6 +197,7 @@ EXPECTED_ALL = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "YuqueLoader",
+    "ApacheOpendalS3FileLoader",
 ]
 
 
