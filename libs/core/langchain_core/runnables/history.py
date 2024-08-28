@@ -77,7 +77,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         input_messages_key: Must be specified if the base runnable accepts a dict
             as input. The key in the input dict that contains the messages.
         extra_input_keys: Must be specified if the base runnable accepts a dict
-            as input. The key in the input dict that contains the extra prompt input keys.
+            as input. The key in the input dict that contains the extra prompt input
+            keys.
         output_messages_key: Must be specified if the base Runnable returns a dict
             as output. The key in the output dict that contains the messages.
         history_messages_key: Must be specified if the base runnable accepts a dict
@@ -393,14 +394,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 fields[self.input_messages_key] = (Sequence[BaseMessage], ...)
             else:
                 fields["__root__"] = (Sequence[BaseMessage], ...)
-            
+
             if self.extra_input_keys:
                 for key in self.extra_input_keys:
                     fields[key] = (
                         Union[str, Sequence[str]],
                         ...,
                     )
-                    
+
             return create_model(  # type: ignore[call-overload]
                 "RunnableWithChatHistoryInput",
                 **fields,
