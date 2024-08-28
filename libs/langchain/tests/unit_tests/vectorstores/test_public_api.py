@@ -56,7 +56,6 @@ _EXPECTED = [
     "SemaDB",
     "SingleStoreDB",
     "SKLearnVectorStore",
-    "SQLiteVec",
     "SQLiteVSS",
     "StarRocks",
     "SupabaseVectorStore",
