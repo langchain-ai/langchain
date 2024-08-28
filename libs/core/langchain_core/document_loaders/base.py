@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 from langchain_core.documents.base import Blob
 
 
-class BaseLoader(ABC):
+class BaseLoader(ABC):  # noqa: B024
     """Interface for Document Loader.
 
     Implementations should implement the lazy-loading method using generators
