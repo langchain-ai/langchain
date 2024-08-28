@@ -69,9 +69,6 @@ class Routes(str, Enum):
 
     loader_doc = "/v1/loader/doc"
     loader_app_discover = "/v1/app/discover"
-    retrieval_app_discover = "/v1/app/discover"
-    prompt = "/v1/prompt"
-    prompt_governance = "/v1/prompt/governance"
 
 
 class IndexedDocument(Document):
@@ -132,6 +129,8 @@ class App(BaseModel):
     """Framework details of the app."""
     plugin_version: str
     """Plugin version used for the app."""
+    client_version: Framework
+    """Client version used for the app."""
 
 
 class Doc(BaseModel):
@@ -452,7 +451,9 @@ class PebbloLoaderAPIWrapper(BaseModel):
         if self.classifier_location == "local":
             # Send app details to local classifier
             headers = self._make_headers()
-            app_discover_url = f"{self.classifier_url}{Routes.loader_app_discover}"
+            app_discover_url = (
+                f"{self.classifier_url}{Routes.loader_app_discover.value}"
+            )
             pebblo_resp = self.make_request("POST", app_discover_url, headers, payload)
 
         if self.api_key:
@@ -465,7 +466,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
                 payload.update({"pebblo_server_version": pebblo_server_version})
 
             payload.update({"pebblo_client_version": PLUGIN_VERSION})
-            pebblo_cloud_url = f"{self.cloud_url}{Routes.loader_app_discover}"
+            pebblo_cloud_url = f"{self.cloud_url}{Routes.loader_app_discover.value}"
             _ = self.make_request("POST", pebblo_cloud_url, headers, payload)
 
     def classify_documents(
@@ -489,7 +490,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
         source_owner = get_file_owner_from_path(source_path)
         # Prepare docs for classification
         docs, source_aggregate_size = self.prepare_docs_for_classification(
-            docs_with_id, source_path
+            docs_with_id, source_path, loader_details
         )
         # Build payload for classification
         payload = self.build_classification_payload(
@@ -500,7 +501,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
         if self.classifier_location == "local":
             # Send docs to local classifier
             headers = self._make_headers()
-            load_doc_url = f"{self.classifier_url}{Routes.loader_doc}"
+            load_doc_url = f"{self.classifier_url}{Routes.loader_doc.value}"
             try:
                 pebblo_resp = self.make_request(
                     "POST", load_doc_url, headers, payload, 300
@@ -536,7 +537,7 @@ class PebbloLoaderAPIWrapper(BaseModel):
             payload (dict): The payload containing documents to be sent.
         """
         headers = self._make_headers(cloud_request=True)
-        pebblo_cloud_url = f"{self.cloud_url}{Routes.loader_doc}"
+        pebblo_cloud_url = f"{self.cloud_url}{Routes.loader_doc.value}"
         try:
             _ = self.make_request("POST", pebblo_cloud_url, headers, payload)
         except Exception as e:
@@ -660,7 +661,9 @@ class PebbloLoaderAPIWrapper(BaseModel):
 
     @staticmethod
     def prepare_docs_for_classification(
-        docs_with_id: List[IndexedDocument], source_path: str
+        docs_with_id: List[IndexedDocument],
+        source_path: str,
+        loader_details: dict,
     ) -> Tuple[List[dict], int]:
         """
         Prepare documents for classification.
@@ -668,22 +671,30 @@ class PebbloLoaderAPIWrapper(BaseModel):
         Args:
             docs_with_id (List[IndexedDocument]): List of documents to be classified.
             source_path (str): Source path of the documents.
+            loader_details (dict): Contains loader info.
 
         Returns:
-            Tuple[List[dict], int]: Documents and the aggregate size of the source.
+            Tuple[List[dict], int]: Documents and the aggregate size
+            of the source.
         """
         docs = []
         source_aggregate_size = 0
         doc_content = [doc.dict() for doc in docs_with_id]
+        source_path_update = False
         for doc in doc_content:
             doc_metadata = doc.get("metadata", {})
             doc_authorized_identities = doc_metadata.get("authorized_identities", [])
-            doc_source_path = get_full_path(
-                doc_metadata.get(
-                    "full_path",
-                    doc_metadata.get("source", source_path),
+            if loader_details["loader"] == "SharePointLoader":
+                doc_source_path = get_full_path(
+                    doc_metadata.get("source", loader_details["source_path"])
                 )
-            )
+            else:
+                doc_source_path = get_full_path(
+                    doc_metadata.get(
+                        "full_path",
+                        doc_metadata.get("source", source_path),
+                    )
+                )
             doc_source_owner = doc_metadata.get(
                 "owner", get_file_owner_from_path(doc_source_path)
             )
@@ -711,6 +722,12 @@ class PebbloLoaderAPIWrapper(BaseModel):
                     ),
                 }
             )
+            if (
+                loader_details["loader"] == "SharePointLoader"
+                and not source_path_update
+            ):
+                loader_details["source_path"] = doc_metadata.get("source_full_url")
+                source_path_update = True
         return docs, source_aggregate_size
 
     @staticmethod
