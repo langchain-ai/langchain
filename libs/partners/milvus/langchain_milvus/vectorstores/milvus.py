@@ -831,7 +831,7 @@ class Milvus(VectorStore):
         timeout = self.timeout or timeout
         # Perform the search.
         res = self.col.search(
-            data=[embedding],
+            data=embedding,
             anns_field=self._vector_field,
             param=param,
             limit=k,
