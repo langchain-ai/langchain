@@ -16,7 +16,7 @@ from langchain.memory.buffer import ConversationBufferMemory
     since="0.2.7",
     alternative=(
         "RunnableWithMessageHistory: "
-        "https://api.python.langchain.com/en/latest/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html"  # noqa: E501
+        "https://python.langchain.com/v0.2/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html"  # noqa: E501
     ),
     removal="1.0",
 )

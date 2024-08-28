@@ -1,7 +1,7 @@
 """Standard LangChain interface tests"""
 
 import time
-from typing import Type
+from typing import Optional, Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -28,6 +28,8 @@ class BaseTestAI21(ChatModelIntegrationTests):
 
 
 class TestAI21J2(BaseTestAI21):
+    has_tool_calling = False
+
     @property
     def chat_model_params(self) -> dict:
         return {
@@ -49,8 +51,39 @@ class TestAI21J2(BaseTestAI21):
 
 
 class TestAI21Jamba(BaseTestAI21):
+    has_tool_calling = False
+
     @property
     def chat_model_params(self) -> dict:
         return {
             "model": "jamba-instruct-preview",
         }
+
+
+class TestAI21Jamba1_5(BaseTestAI21):
+    @property
+    def tool_choice_value(self) -> Optional[str]:
+        """Value to use for tool choice when used in tests."""
+        return "any"
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {
+            "model": "jamba-1.5-mini",
+        }
+
+    @pytest.mark.xfail(reason="Prompt doesn't generate tool calls for Jamba 1.5.")
+    def test_tool_calling(self, model: BaseChatModel) -> None:
+        super().test_tool_calling(model)
+
+    @pytest.mark.xfail(reason="Prompt doesn't generate tool calls for Jamba 1.5.")
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        super().test_tool_calling_with_no_arguments(model)
+
+    @pytest.mark.xfail(reason="Requires tool calling & stream - still WIP")
+    def test_structured_output(self, model: BaseChatModel) -> None:
+        super().test_structured_output(model)
+
+    @pytest.mark.xfail(reason="Requires tool calling & stream - still WIP")
+    def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
+        super().test_structured_output_pydantic_2_v1(model)

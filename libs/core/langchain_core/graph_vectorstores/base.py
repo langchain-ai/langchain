@@ -32,6 +32,7 @@ def _has_next(iterator: Iterator) -> bool:
     return next(iterator, sentinel) is not sentinel
 
 
+@beta()
 class Node(Serializable):
     """Node in the GraphVectorStore.
 
@@ -79,12 +80,12 @@ def _texts_to_nodes(
     for text in texts:
         try:
             _metadata = next(metadatas_it).copy() if metadatas_it else {}
-        except StopIteration:
-            raise ValueError("texts iterable longer than metadatas")
+        except StopIteration as e:
+            raise ValueError("texts iterable longer than metadatas") from e
         try:
             _id = next(ids_it) if ids_it else None
-        except StopIteration:
-            raise ValueError("texts iterable longer than ids")
+        except StopIteration as e:
+            raise ValueError("texts iterable longer than ids") from e
 
         links = _metadata.pop(METADATA_LINKS_KEY, [])
         if not isinstance(links, list):
@@ -115,6 +116,7 @@ def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
         )
 
 
+@beta()
 def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
     for node in nodes:
         metadata = node.metadata.copy()
@@ -588,7 +590,7 @@ class GraphVectorStore(VectorStore):
                 "'mmr' or 'traversal'."
             )
 
-    def as_retriever(self, **kwargs: Any) -> "GraphVectorStoreRetriever":
+    def as_retriever(self, **kwargs: Any) -> GraphVectorStoreRetriever:
         """Return GraphVectorStoreRetriever initialized from this GraphVectorStore.
 
         Args:

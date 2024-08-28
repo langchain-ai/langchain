@@ -894,7 +894,7 @@ class Chroma(VectorStore):
         Args:
             ids: List of ids to delete.
         """
-        self._collection.delete(ids=ids)
+        self._collection.delete(ids=ids, **kwargs)
 
     def __len__(self) -> int:
         """Count the number of documents in the collection."""

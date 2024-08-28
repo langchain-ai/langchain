@@ -195,11 +195,6 @@ const config = {
                 label: "Contributing",
               },
               {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
-              },
-              {
                 label: "Cookbooks",
                 href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
@@ -246,14 +241,6 @@ const config = {
               {
                 href: "https://docs.smith.langchain.com/",
                 label: "LangSmith Docs",
-              },
-              {
-                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
-                label: "Templates GitHub",
-              },
-              {
-                label: "Templates Hub",
-                href: "https://templates.langchain.com",
               },
               {
                 href: "https://smith.langchain.com/hub",

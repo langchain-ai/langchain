@@ -45,9 +45,9 @@ def test_initialization__when_custom_parameters_in_init() -> None:
     temperature = 0.1
     top_p = 0.1
     top_k_return = 0
-    frequency_penalty = Penalty(scale=0.2, apply_to_numbers=True)
-    presence_penalty = Penalty(scale=0.2, apply_to_stopwords=True)
-    count_penalty = Penalty(scale=0.2, apply_to_punctuation=True, apply_to_emojis=True)
+    frequency_penalty = Penalty(scale=0.2, apply_to_numbers=True)  # type: ignore[call-arg]
+    presence_penalty = Penalty(scale=0.2, apply_to_stopwords=True)  # type: ignore[call-arg]
+    count_penalty = Penalty(scale=0.2, apply_to_punctuation=True, apply_to_emojis=True)  # type: ignore[call-arg]
 
     llm = ChatAI21(  # type: ignore[call-arg]
         api_key=DUMMY_API_KEY,  # type: ignore[arg-type]

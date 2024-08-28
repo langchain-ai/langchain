@@ -19,6 +19,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
 )
 
 import yaml
@@ -629,7 +630,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 
 @deprecated(
     "0.1.0",
-    alternative=(
+    message=(
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
@@ -720,7 +721,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 
 @deprecated(
     "0.1.0",
-    alternative=(
+    message=(
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
@@ -1042,12 +1043,13 @@ class ExceptionTool(BaseTool):
 
 
 NextStepOutput = List[Union[AgentFinish, AgentAction, AgentStep]]
+RunnableAgentType = Union[RunnableAgent, RunnableMultiActionAgent]
 
 
 class AgentExecutor(Chain):
     """Agent that is using tools."""
 
-    agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
+    agent: Union[BaseSingleActionAgent, BaseMultiActionAgent, Runnable]
     """The agent to run for creating a plan and determining actions
     to take at each step of the execution loop."""
     tools: Sequence[BaseTool]
@@ -1095,7 +1097,7 @@ class AgentExecutor(Chain):
     @classmethod
     def from_agent_and_tools(
         cls,
-        agent: Union[BaseSingleActionAgent, BaseMultiActionAgent],
+        agent: Union[BaseSingleActionAgent, BaseMultiActionAgent, Runnable],
         tools: Sequence[BaseTool],
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -1172,6 +1174,21 @@ class AgentExecutor(Chain):
                 )
         return values
 
+    @property
+    def _action_agent(self) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+        """Type cast self.agent.
+
+        The .agent attribute type includes Runnable, but is converted to one of
+        RunnableAgentType in the validate_runnable_agent root_validator.
+
+        To support instantiating with a Runnable, here we explicitly cast the type
+        to reflect the changes made in the root_validator.
+        """
+        if isinstance(self.agent, Runnable):
+            return cast(RunnableAgentType, self.agent)
+        else:
+            return self.agent
+
     def save(self, file_path: Union[Path, str]) -> None:
         """Raise error - saving not supported for Agent Executors.
 
@@ -1193,7 +1210,7 @@ class AgentExecutor(Chain):
         Args:
             file_path: Path to save to.
         """
-        return self.agent.save(file_path)
+        return self._action_agent.save(file_path)
 
     def iter(
         self,
@@ -1228,7 +1245,7 @@ class AgentExecutor(Chain):
 
         :meta private:
         """
-        return self.agent.input_keys
+        return self._action_agent.input_keys
 
     @property
     def output_keys(self) -> List[str]:
@@ -1237,9 +1254,9 @@ class AgentExecutor(Chain):
         :meta private:
         """
         if self.return_intermediate_steps:
-            return self.agent.return_values + ["intermediate_steps"]
+            return self._action_agent.return_values + ["intermediate_steps"]
         else:
-            return self.agent.return_values
+            return self._action_agent.return_values
 
     def lookup_tool(self, name: str) -> BaseTool:
         """Lookup tool by name.
@@ -1344,7 +1361,7 @@ class AgentExecutor(Chain):
             intermediate_steps = self._prepare_intermediate_steps(intermediate_steps)
 
             # Call the LLM to see what to do.
-            output = self.agent.plan(
+            output = self._action_agent.plan(
                 intermediate_steps,
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
@@ -1377,7 +1394,7 @@ class AgentExecutor(Chain):
             output = AgentAction("_Exception", observation, text)
             if run_manager:
                 run_manager.on_agent_action(output, color="green")
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = ExceptionTool().run(
                 output.tool_input,
                 verbose=self.verbose,
@@ -1419,7 +1436,7 @@ class AgentExecutor(Chain):
             tool = name_to_tool_map[agent_action.tool]
             return_direct = tool.return_direct
             color = color_mapping[agent_action.tool]
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             if return_direct:
                 tool_run_kwargs["llm_prefix"] = ""
             # We then call the tool on the tool input to get an observation
@@ -1431,7 +1448,7 @@ class AgentExecutor(Chain):
                 **tool_run_kwargs,
             )
         else:
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = InvalidTool().run(
                 {
                     "requested_tool_name": agent_action.tool,
@@ -1481,7 +1498,7 @@ class AgentExecutor(Chain):
             intermediate_steps = self._prepare_intermediate_steps(intermediate_steps)
 
             # Call the LLM to see what to do.
-            output = await self.agent.aplan(
+            output = await self._action_agent.aplan(
                 intermediate_steps,
                 callbacks=run_manager.get_child() if run_manager else None,
                 **inputs,
@@ -1512,7 +1529,7 @@ class AgentExecutor(Chain):
             else:
                 raise ValueError("Got unexpected type of `handle_parsing_errors`")
             output = AgentAction("_Exception", observation, text)
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(
                 output.tool_input,
                 verbose=self.verbose,
@@ -1566,7 +1583,7 @@ class AgentExecutor(Chain):
             tool = name_to_tool_map[agent_action.tool]
             return_direct = tool.return_direct
             color = color_mapping[agent_action.tool]
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             if return_direct:
                 tool_run_kwargs["llm_prefix"] = ""
             # We then call the tool on the tool input to get an observation
@@ -1578,7 +1595,7 @@ class AgentExecutor(Chain):
                 **tool_run_kwargs,
             )
         else:
-            tool_run_kwargs = self.agent.tool_run_logging_kwargs()
+            tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await InvalidTool().arun(
                 {
                     "requested_tool_name": agent_action.tool,
@@ -1633,7 +1650,7 @@ class AgentExecutor(Chain):
                     )
             iterations += 1
             time_elapsed = time.time() - start_time
-        output = self.agent.return_stopped_response(
+        output = self._action_agent.return_stopped_response(
             self.early_stopping_method, intermediate_steps, **inputs
         )
         return self._return(output, intermediate_steps, run_manager=run_manager)
@@ -1685,7 +1702,7 @@ class AgentExecutor(Chain):
 
                     iterations += 1
                     time_elapsed = time.time() - start_time
-                output = self.agent.return_stopped_response(
+                output = self._action_agent.return_stopped_response(
                     self.early_stopping_method, intermediate_steps, **inputs
                 )
                 return await self._areturn(
@@ -1693,7 +1710,7 @@ class AgentExecutor(Chain):
                 )
         except (TimeoutError, asyncio.TimeoutError):
             # stop early when interrupted by the async timeout
-            output = self.agent.return_stopped_response(
+            output = self._action_agent.return_stopped_response(
                 self.early_stopping_method, intermediate_steps, **inputs
             )
             return await self._areturn(
@@ -1707,8 +1724,8 @@ class AgentExecutor(Chain):
         agent_action, observation = next_step_output
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         return_value_key = "output"
-        if len(self.agent.return_values) > 0:
-            return_value_key = self.agent.return_values[0]
+        if len(self._action_agent.return_values) > 0:
+            return_value_key = self._action_agent.return_values[0]
         # Invalid tools won't be in the map, so we return False.
         if agent_action.tool in name_to_tool_map:
             if name_to_tool_map[agent_action.tool].return_direct:

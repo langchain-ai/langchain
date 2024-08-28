@@ -7,6 +7,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseLLM, FakeListLLM, FakeStreamingListLLM
+from langchain_core.language_models.fake import FakeListLLMError
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
@@ -108,7 +109,7 @@ async def test_stream_error_callback() -> None:
             responses=[message],
             error_on_chunk_number=i,
         )
-        with pytest.raises(Exception):
+        with pytest.raises(FakeListLLMError):
             cb_async = FakeAsyncCallbackHandler()
             async for _ in llm.astream("Dummy message", callbacks=[cb_async]):
                 pass
