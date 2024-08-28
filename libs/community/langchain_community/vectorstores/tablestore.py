@@ -24,8 +24,11 @@ class TablestoreVectorStore(VectorStore):
 
     Example:
         .. code-block:: python
-            import tablestore
+
             import os
+
+            from langchain_community.vectorstores import TablestoreVectorStore
+            import tablestore
 
             store = TablestoreVectorStore(
                 embedding=embeddings,
