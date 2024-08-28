@@ -727,7 +727,8 @@ _module_lookup = {
     "YoutubeAudioLoader": "langchain_community.document_loaders.blob_loaders",
     "YoutubeLoader": "langchain_community.document_loaders.youtube",
     "YuqueLoader": "langchain_community.document_loaders.yuque",
-    "ApacheOpendalS3FileLoader": "langchain_community.document_loaders.apache_opendal_s3",
+    "ApacheOpendalS3FileLoader": "langchain_community"
+    ".document_loaders.apache_opendal_s3",
 }
 
 
