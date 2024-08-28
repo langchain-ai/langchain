@@ -3,6 +3,7 @@ from typing import Any, AsyncIterator, Iterator, Tuple
 
 import pytest
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
 )
@@ -531,7 +532,7 @@ async def test_partial_text_json_output_parser_diff_async() -> None:
 
 def test_raises_error() -> None:
     parser = SimpleJsonOutputParser()
-    with pytest.raises(Exception):
+    with pytest.raises(OutputParserException):
         parser.invoke("hi")
 
 

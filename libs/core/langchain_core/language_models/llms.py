@@ -114,7 +114,6 @@ def create_base_retry_decorator(
                     _log_error_once(f"Error in on_retry: {e}")
             else:
                 run_manager.on_retry(retry_state)
-        return None
 
     min_seconds = 4
     max_seconds = 10
@@ -311,6 +310,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
+                stacklevel=5,
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
