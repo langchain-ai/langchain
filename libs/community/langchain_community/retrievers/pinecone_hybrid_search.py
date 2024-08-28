@@ -42,6 +42,7 @@ def create_index(
         sparse_encoder: Sparse encoder to use.
         ids: List of ids to use for the documents.
         metadatas: List of metadata to use for the documents.
+        namespace: Namespace value for index partition.
     """
     batch_size = 32
     _iterator = range(0, len(contexts), batch_size)
@@ -172,8 +173,9 @@ class PineconeHybridSearchRetriever(BaseRetriever):
         final_result = []
         for res in result["matches"]:
             context = res["metadata"].pop("context")
-            final_result.append(
-                Document(page_content=context, metadata=res["metadata"])
-            )
+            metadata = res["metadata"]
+            if "score" not in metadata and "score" in res:
+                metadata["score"] = res["score"]
+            final_result.append(Document(page_content=context, metadata=metadata))
         # return search results as json
         return final_result
