@@ -12,6 +12,7 @@ from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.qa.eval_chain import (
     ContextQAEvalChain,
     CotQAEvalChain,
+    CcotQAEvalChain,
     QAEvalChain,
     _parse_string_eval_output,
 )
@@ -37,7 +38,9 @@ def test_eval_chain() -> None:
 @pytest.mark.skipif(
     sys.platform.startswith("win"), reason="Test not supported on Windows"
 )
-@pytest.mark.parametrize("chain_cls", [ContextQAEvalChain, CotQAEvalChain])
+@pytest.mark.parametrize(
+    "chain_cls", [ContextQAEvalChain, CotQAEvalChain, CcotQAEvalChain]
+)
 def test_context_eval_chain(chain_cls: Type[ContextQAEvalChain]) -> None:
     """Test a simple eval chain."""
     example = {
@@ -65,14 +68,18 @@ def test_load_criteria_evaluator() -> None:
         load_evaluator("criteria")  # type: ignore
 
 
-@pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
+@pytest.mark.parametrize(
+    "chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain, CcotQAEvalChain]
+)
 def test_implements_string_evaluator_protocol(
     chain_cls: Type[LLMChain],
 ) -> None:
     assert issubclass(chain_cls, StringEvaluator)
 
 
-@pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
+@pytest.mark.parametrize(
+    "chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain, CcotQAEvalChain]
+)
 def test_returns_expected_results(
     chain_cls: Type[LLMChain],
 ) -> None:

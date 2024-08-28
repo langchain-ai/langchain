@@ -8,6 +8,7 @@ EXPECTED_ALL = [
     "LabeledPairwiseStringEvalChain",
     "QAEvalChain",
     "CotQAEvalChain",
+    "CcotQAEvalChain",
     "ContextQAEvalChain",
     "StringEvaluator",
     "PairwiseStringEvaluator",
