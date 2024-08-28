@@ -23,7 +23,7 @@ from langchain.evaluation.parsing.base import (
 )
 from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
 from langchain.evaluation.parsing.json_schema import JsonSchemaEvaluator
-from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
+from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, CcotQAEvalChain, QAEvalChain
 from langchain.evaluation.regex_match.base import RegexMatchStringEvaluator
 from langchain.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
 from langchain.evaluation.scoring.eval_chain import (
@@ -75,6 +75,7 @@ _EVALUATOR_MAP: Dict[
 ] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
+    EvaluatorType.CCOT_QA: CotQAEvalChain,
     EvaluatorType.CONTEXT_QA: ContextQAEvalChain,
     EvaluatorType.PAIRWISE_STRING: PairwiseStringEvalChain,
     EvaluatorType.SCORE_STRING: ScoreStringEvalChain,

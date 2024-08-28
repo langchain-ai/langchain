@@ -27,6 +27,10 @@ class EvaluatorType(str, Enum):
     """Chain of thought question answering evaluator, which grades
     answers to questions using
     chain of thought 'reasoning'."""
+    CCOT_QA = "ccot_qa"
+    """Constrained chain of thought question answering evaluator, which grades
+    answers to questions using
+    constrained chain of thought 'reasoning'."""
     CONTEXT_QA = "context_qa"
     """Question answering evaluator that incorporates 'context' in the response."""
     PAIRWISE_STRING = "pairwise_string"
