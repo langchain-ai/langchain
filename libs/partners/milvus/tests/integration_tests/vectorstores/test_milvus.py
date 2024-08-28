@@ -392,4 +392,6 @@ def test_milvus_array_field() -> None:
 #     test_milvus_enable_dynamic_field()
 #     test_milvus_disable_dynamic_field()
 #     test_milvus_metadata_field()
+#     test_milvus_enable_dynamic_field_with_partition_key()
+#     test_milvus_sparse_embeddings()
 #     test_milvus_array_field()
