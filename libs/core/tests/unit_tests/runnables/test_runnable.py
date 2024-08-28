@@ -1516,7 +1516,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     ) == [5, 7]
 
     assert len(spy.call_args_list) == 2
-    for i, call in enumerate(spy.call_args_list):
+    for call in spy.call_args_list:
         call_arg = call.args[0]
 
         if call_arg == "hello":
@@ -1533,7 +1533,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
     assert fake.batch(["hello", "wooorld"], dict(tags=["a-tag"])) == [5, 7]
     assert len(spy.call_args_list) == 2
     assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
-    for i, call in enumerate(spy.call_args_list):
+    for call in spy.call_args_list:
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {}
     spy.reset_mock()
@@ -5205,7 +5205,7 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel<urls>"
 
     tracer = FakeTracer()
-    for item in chain.stream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+    for _ in chain.stream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
         pass
 
     assert tracer.runs[0].name == "RunnableAssign<urls>"
@@ -5225,7 +5225,7 @@ async def test_ainvoke_astream_passthrough_assign_trace() -> None:
     assert tracer.runs[0].child_runs[0].name == "RunnableParallel<urls>"
 
     tracer = FakeTracer()
-    async for item in chain.astream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
+    async for _ in chain.astream({"example": [1, 2, 3]}, dict(callbacks=[tracer])):
         pass
 
     assert tracer.runs[0].name == "RunnableAssign<urls>"

@@ -973,7 +973,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "InMemoryVectorStore",
-                link: "in_memory",
+                link: "https://python.langchain.com/v0.2/api_reference/core/vectorstores/langchain_core.vectorstores.in_memory.InMemoryVectorStore.html",
                 deleteById: true,
                 filtering: true,
                 searchByVector: false,
