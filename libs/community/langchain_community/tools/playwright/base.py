@@ -38,7 +38,7 @@ class BaseBrowserTool(BaseTool):
     sync_browser: Optional["SyncBrowser"] = None
     async_browser: Optional["AsyncBrowser"] = None
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_browser_provided(cls, values: dict) -> dict:
         """Check that the arguments are valid."""
         lazy_import_playwright_browsers()

@@ -141,9 +141,8 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
-                message=BaseMessage(
+                message=AIMessage(
                     content=choice.strip(),
-                    type="assistant",
                 ),
                 generation_info=None,
             )
@@ -158,7 +157,9 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
-                message=BaseMessage(
+                message=AIMessage(content=choice["message"]["content"].strip())
+                if choice["message"]["role"] == "assistant"
+                else BaseMessage(
                     content=choice["message"]["content"].strip(),
                     type=choice["message"]["role"],
                 ),

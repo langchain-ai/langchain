@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core._api.deprecation import deprecated
@@ -9,8 +10,11 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.utils import (
+    get_pydantic_field_names,
+    pre_init,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +28,7 @@ VALID_TASKS = (
 
 @deprecated(
     since="0.0.37",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_huggingface.HuggingFaceEndpoint",
 )
 class HuggingFaceEndpoint(LLM):
@@ -123,9 +127,7 @@ class HuggingFaceEndpoint(LLM):
     Should be a task that returns `generated_text` or `summary_text`."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -162,7 +164,7 @@ class HuggingFaceEndpoint(LLM):
         values["model"] = values.get("endpoint_url") or values.get("repo_id")
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that package is installed and that the API token is valid."""
         try:
@@ -173,16 +175,17 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        try:
-            huggingfacehub_api_token = get_from_dict_or_env(
-                values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
-            )
-            login(token=huggingfacehub_api_token)
-        except Exception as e:
-            raise ValueError(
-                "Could not authenticate with huggingface_hub. "
-                "Please check your API token."
-            ) from e
+        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv(
+            "HUGGINGFACEHUB_API_TOKEN"
+        )
+        if huggingfacehub_api_token is not None:
+            try:
+                login(token=huggingfacehub_api_token)
+            except Exception as e:
+                raise ValueError(
+                    "Could not authenticate with huggingface_hub. "
+                    "Please check your API token."
+                ) from e
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 

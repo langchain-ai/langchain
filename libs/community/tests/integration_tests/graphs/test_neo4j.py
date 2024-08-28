@@ -25,6 +25,20 @@ test_data = [
     )
 ]
 
+test_data_backticks = [
+    GraphDocument(
+        nodes=[Node(id="foo", type="foo`"), Node(id="bar", type="`bar")],
+        relationships=[
+            Relationship(
+                source=Node(id="foo", type="f`oo"),
+                target=Node(id="bar", type="ba`r"),
+                type="`REL`",
+            )
+        ],
+        source=Document(page_content="source document"),
+    )
+]
+
 
 def test_cypher_return_correct_schema() -> None:
     """Test that chain returns direct results."""
@@ -363,3 +377,24 @@ def test_enhanced_schema_exception() -> None:
     # remove metadata portion of schema
     del graph.structured_schema["metadata"]
     assert graph.structured_schema == expected_output
+
+
+def test_backticks() -> None:
+    """Test that backticks are correctly removed."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(url=url, username=username, password=password)
+    graph.query("MATCH (n) DETACH DELETE n")
+    graph.add_graph_documents(test_data_backticks)
+    nodes = graph.query("MATCH (n) RETURN labels(n) AS labels ORDER BY n.id")
+    rels = graph.query("MATCH ()-[r]->() RETURN type(r) AS type")
+    expected_nodes = [{"labels": ["bar"]}, {"labels": ["foo"]}]
+    expected_rels = [{"type": "REL"}]
+
+    assert nodes == expected_nodes
+    assert rels == expected_rels

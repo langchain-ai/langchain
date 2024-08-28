@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Mapping, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from requests import ConnectTimeout, ReadTimeout, RequestException
 from tenacity import (
     before_sleep_log,
@@ -61,11 +61,9 @@ class Nebula(LLM):
     max_retries: Optional[int] = 10
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         nebula_service_url = get_from_dict_or_env(

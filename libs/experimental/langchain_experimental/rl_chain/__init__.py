@@ -7,6 +7,7 @@ the prompt before the LLM call.
 and flexible online machine learning techniques for reinforcement learning,
 supervised learning, and more.
 """
+
 import logging
 
 from langchain_experimental.rl_chain.base import (
@@ -18,9 +19,8 @@ from langchain_experimental.rl_chain.base import (
     SelectionScorer,
     ToSelectFrom,
     VwPolicy,
-    embed,
-    stringify_embedding,
 )
+from langchain_experimental.rl_chain.helpers import embed, stringify_embedding
 from langchain_experimental.rl_chain.pick_best_chain import (
     PickBest,
     PickBestEvent,
