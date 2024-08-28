@@ -64,12 +64,12 @@ def get_tokenizer() -> Any:
     """
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import]
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
-        )
+        ) from e
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 

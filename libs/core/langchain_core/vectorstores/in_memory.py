@@ -435,11 +435,11 @@ class InMemoryVectorStore(VectorStore):
 
         try:
             import numpy as np
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "numpy must be installed to use max_marginal_relevance_search "
                 "pip install numpy"
-            )
+            ) from e
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),

@@ -218,6 +218,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
         def pending(iterable: List[U]) -> List[U]:
             return [item for idx, item in enumerate(iterable) if idx not in results_map]
 
+        not_set: List[Output] = []
+        result = not_set
         try:
             for attempt in self._sync_retrying():
                 with attempt:
@@ -247,9 +249,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 ):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
-            try:
-                result
-            except UnboundLocalError:
+            if result is not_set:
                 result = cast(List[Output], [e] * len(inputs))
 
         outputs: List[Union[Output, Exception]] = []
@@ -284,6 +284,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
         def pending(iterable: List[U]) -> List[U]:
             return [item for idx, item in enumerate(iterable) if idx not in results_map]
 
+        not_set: List[Output] = []
+        result = not_set
         try:
             async for attempt in self._async_retrying():
                 with attempt:
@@ -313,9 +315,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 ):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
-            try:
-                result
-            except UnboundLocalError:
+            if result is not_set:
                 result = cast(List[Output], [e] * len(inputs))
 
         outputs: List[Union[Output, Exception]] = []

@@ -20,7 +20,7 @@ def draw_mermaid(
     last_node: Optional[str] = None,
     with_styles: bool = True,
     curve_style: CurveStyle = CurveStyle.LINEAR,
-    node_styles: NodeStyles = NodeStyles(),
+    node_styles: Optional[NodeStyles] = None,
     wrap_label_n_words: int = 9,
 ) -> str:
     """Draws a Mermaid graph using the provided graph data.
@@ -153,7 +153,7 @@ def draw_mermaid(
 
     # Add custom styles for nodes
     if with_styles:
-        mermaid_graph += _generate_mermaid_graph_styles(node_styles)
+        mermaid_graph += _generate_mermaid_graph_styles(node_styles or NodeStyles())
     return mermaid_graph
 
 
