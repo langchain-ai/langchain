@@ -320,9 +320,8 @@ def test_milvus_sparse_embeddings() -> None:
     ]
     sparse_embedding_func = BM25SparseEmbedding(corpus=texts)
     docsearch = Milvus.from_texts(
-        embedding=FakeEmbeddings(),
+        embedding=sparse_embedding_func,
         texts=texts,
-        sparse_embedding_function=sparse_embedding_func,
         connection_args={"uri": "./milvus_demo.db"},
         drop_old=True,
     )
