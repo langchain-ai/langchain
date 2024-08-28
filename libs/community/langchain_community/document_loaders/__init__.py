@@ -38,6 +38,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.airtable import (
         AirtableLoader,
     )
+    from langchain_community.document_loaders.apache_opendal_s3 import (
+        ApacheOpendalS3FileLoader,
+    )
     from langchain_community.document_loaders.apify_dataset import (
         ApifyDatasetLoader,
     )
@@ -526,9 +529,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.yuque import (
         YuqueLoader,
-    )
-    from langchain_community.document_loaders.apache_opendal_s3 import (
-        ApacheOpendalS3FileLoader,
     )
 
 
