@@ -106,8 +106,10 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         self.history_key = history_key
         self.history_size = history_size
 
-        if mongo_client:
-            self.client = mongo_client
+        if client:
+            if connection_string:
+                raise ValueError("Must provide connection_string or client, not both")
+            self.client = client
         elif connection_string:
             try:
                 self.client = MongoClient(connection_string)
@@ -115,7 +117,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
                 logger.error(error)
         else:
             raise ValueError(
-                "Either connection_string or mongo_client must be provided"
+                "Either connection_string or client must be provided"
             )
 
         self.db = self.client[database_name]
