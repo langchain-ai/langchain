@@ -36,8 +36,8 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.2.30"
-gigachain = "^0.2.13"
+gigachain-core = ">=0.2.29"
+gigachain = ">=0.2.12"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"

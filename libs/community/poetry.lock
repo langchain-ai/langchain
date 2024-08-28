@@ -1074,7 +1074,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-gigachain-core = "^0.2.32"
+gigachain-core = ">=0.2.29,<=0.2.35"
 gigachain-text-splitters = "^0.2.0"
 gigachat = "^0.1.35"
 langsmith = "^0.1.17"
@@ -4461,4 +4461,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "91d2647c06deed77562bbac69d31cbbded802111cfcd411334550a914a34444c"
+content-hash = "b4f856b7204964056f5c957e48d2dc54c2d7dbca2f6c510f272cfee16d5be35e"
