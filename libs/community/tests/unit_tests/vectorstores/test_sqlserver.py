@@ -48,7 +48,7 @@ select object_id from sys.tables where name = '%s'
 and schema_name(schema_id) = '%s'"""
 
 
-FILTERING_TEST_CASES = [
+FILTERING_TEST_CASES: List[Any] = [
     filters
     for filterList in [
         TYPE_1_FILTERING_TEST_CASES,
