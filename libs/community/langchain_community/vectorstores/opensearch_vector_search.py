@@ -825,7 +825,7 @@ class OpenSearchVectorSearch(VectorStore):
 
         Optional Args for Hybrid Search:
             hybrid_search_weights: a tuple for the weighting of the keyword search and the KNN search respectively; default: (0.7, 0.3)
-        """
+        """  # noqa: E501
         docs_with_scores = self.similarity_search_with_score(
             query, k, score_threshold, **kwargs
         )
@@ -1102,7 +1102,7 @@ class OpenSearchVectorSearch(VectorStore):
                             double keyword_score = _score;
                             double vector_score = cosineSimilarity(params.query_vector, doc[params.vector_field]) + 1.0;
                             return params.keyword_weight * keyword_score + params.vector_weight * vector_score;
-                            """,
+                            """,  # noqa: E501
                             "params": {
                                 "query_vector": embedding,
                                 "vector_field": vector_field,
