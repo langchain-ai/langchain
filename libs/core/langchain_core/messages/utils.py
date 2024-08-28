@@ -910,7 +910,7 @@ def trim_messages(
 
 
 @_runnable_support(supports_single=True)
-def format_content_as(
+def format_messages_as(
     messages: Union[MessageLikeRepresentation, Iterable[MessageLikeRepresentation]],
     *,
     format: Literal["openai", "anthropic"],
@@ -940,7 +940,7 @@ def format_content_as(
 
         .. code-block:: python
 
-            from langchain_core.messages import format_content_as
+            from langchain_core.messages import format_messages_as
 
             messages = [
                 SystemMessage,
@@ -949,18 +949,18 @@ def format_content_as(
                 AIMessage(),
                 ToolMessage(),
             ]
-            oai_strings = format_content_as(messages, format="openai", text="string")
-            anthropic_blocks = format_content_as(messages, format="anthropic", text="block")
+            oai_strings = format_messages_as(messages, format="openai", text="string")
+            anthropic_blocks = format_messages_as(messages, format="anthropic", text="block")
 
     .. dropdown::  Chain usage
         :open:
 
         .. code-block:: python
 
-            from langchain_core.messages import format_content_as
+            from langchain_core.messages import format_messages_as
             from langchain.chat_models import init_chat_model
 
-            formatter = format_content_as(format="openai", text="block")
+            formatter = format_messages_as(format="openai", text="block")
             llm = init_chat_model() | formatter
 
             llm.invoke(
@@ -985,10 +985,10 @@ def format_content_as(
 
         .. code-block:: python
 
-            from langchain_core.messages import format_content_as
+            from langchain_core.messages import format_messages_as
             from langchain.chat_models import init_chat_model
 
-            formatter = format_content_as(format="openai", text="block")
+            formatter = format_messages_as(format="openai", text="block")
             llm = init_chat_model() | formatter
 
             # Will contain a single, completed chunk.
@@ -1470,6 +1470,24 @@ def _format_contents_as_anthropic(
                             f"content block:\n\n{block}"
                         )
                 message.content = content  # type: ignore[assignment]
+
+        if isinstance(message, AIMessage) and message.tool_calls:
+            if isinstance(message.content, str):
+                message.content = [{"type": "text", "text": message.content}]
+            for tool_call in message.tool_calls:
+                if not any(
+                    block.get("type") == "tool_use"
+                    and block.get("id") == tool_call["id"]
+                    for block in cast(List[dict], message.content)
+                ):
+                    message.content.append(
+                        {
+                            "type": "tool_use",
+                            "input": tool_call["args"],
+                            "id": tool_call["id"],
+                            "name": tool_call["name"],
+                        }
+                    )
         updated_messages.append(message)
     return merge_message_runs(updated_messages)
 
