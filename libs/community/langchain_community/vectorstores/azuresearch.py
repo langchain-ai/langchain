@@ -265,7 +265,6 @@ class AzureSearch(VectorStore):
         self,
         azure_search_endpoint: str,
         azure_search_key: str,
-        azure_ad_access_token: Optional[str],
         index_name: str,
         embedding_function: Union[Callable, Embeddings],
         search_type: str = "hybrid",
@@ -281,6 +280,7 @@ class AzureSearch(VectorStore):
         *,
         vector_search_dimensions: Optional[int] = None,
         additional_search_client_options: Optional[Dict[str, Any]] = None,
+        azure_ad_access_token: Optional[str] = None,
         **kwargs: Any,
     ):
         try:
