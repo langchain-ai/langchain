@@ -10,9 +10,9 @@ import pytest
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.loading import load_evaluator
 from langchain.evaluation.qa.eval_chain import (
+    CcotQAEvalChain,
     ContextQAEvalChain,
     CotQAEvalChain,
-    CcotQAEvalChain,
     QAEvalChain,
     _parse_string_eval_output,
 )
