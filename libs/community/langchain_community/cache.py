@@ -2279,7 +2279,8 @@ class OpenSearchSemanticCache(BaseCache):
     """Cache that uses OpenSearch vector store backend"""
 
     def __init__(
-        self, opensearch_url: str, embedding: Embeddings, score_threshold: float = 0.2, **kwargs: Any
+        self, opensearch_url: str, embedding: Embeddings, score_threshold: float = 0.2,
+            **kwargs: Any
     ):
         """
         Args:
