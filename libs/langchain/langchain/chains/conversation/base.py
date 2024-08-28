@@ -5,7 +5,7 @@ from typing import Dict, List
 from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
@@ -16,7 +16,7 @@ from langchain.memory.buffer import ConversationBufferMemory
     since="0.2.7",
     alternative=(
         "RunnableWithMessageHistory: "
-        "https://api.python.langchain.com/en/latest/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html"  # noqa: E501
+        "https://python.langchain.com/v0.2/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html"  # noqa: E501
     ),
     removal="1.0",
 )
@@ -111,10 +111,8 @@ class ConversationChain(LLMChain):
     output_key: str = "response"  #: :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

@@ -5,12 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
-from langchain_core.messages.tool import (
-    invalid_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call as create_tool_call,
-)
+from langchain_core.messages.tool import invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import ValidationError
@@ -59,7 +55,7 @@ def parse_tool_call(
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"
                 f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
-            )
+            ) from e
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},

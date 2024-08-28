@@ -55,7 +55,7 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     chunk_size: int = 16
     """Chunk size when multiple texts are input"""
 
-    model: str = "Embedding-V1"
+    model: Optional[str] = Field(default=None)
     """Model name
     you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
     

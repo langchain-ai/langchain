@@ -1,6 +1,7 @@
 from typing import List, Type
 
 from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.utils.pydantic import get_fields
 
 import langchain_community.tools
 from langchain_community.tools import _DEPRECATED_TOOLS
@@ -22,7 +23,7 @@ def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseT
         if isinstance(tool_class, type) and issubclass(tool_class, BaseTool):
             if tool_class in _EXCLUDE:
                 continue
-            if skip_tools_without_default_names and tool_class.__fields__[
+            if skip_tools_without_default_names and get_fields(tool_class)[
                 "name"
             ].default in [  # type: ignore
                 None,
@@ -36,6 +37,6 @@ def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseT
 def test_tool_names_unique() -> None:
     """Test that the default names for our core tools are unique."""
     tool_classes = _get_tool_classes(skip_tools_without_default_names=True)
-    names = sorted([tool_cls.__fields__["name"].default for tool_cls in tool_classes])
+    names = sorted([get_fields(tool_cls)["name"].default for tool_cls in tool_classes])
     duplicated_names = [name for name in names if names.count(name) > 1]
     assert not duplicated_names

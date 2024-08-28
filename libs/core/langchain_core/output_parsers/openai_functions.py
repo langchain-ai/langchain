@@ -42,7 +42,9 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
         try:
             func_call = copy.deepcopy(message.additional_kwargs["function_call"])
         except KeyError as exc:
-            raise OutputParserException(f"Could not parse function call: {exc}")
+            raise OutputParserException(
+                f"Could not parse function call: {exc}"
+            ) from exc
 
         if self.args_only:
             return func_call["arguments"]
@@ -100,7 +102,9 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             if partial:
                 return None
             else:
-                raise OutputParserException(f"Could not parse function call: {exc}")
+                raise OutputParserException(
+                    f"Could not parse function call: {exc}"
+                ) from exc
         try:
             if partial:
                 try:
@@ -126,7 +130,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"
-                        )
+                        ) from exc
                 else:
                     try:
                         return {
@@ -138,7 +142,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"
-                        )
+                        ) from exc
         except KeyError:
             return None
 
