@@ -48,8 +48,6 @@ class BaseMemory(Serializable, ABC):
     """  # noqa: E501
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @property

@@ -1,36 +1,31 @@
 """Test Moonshot Chat Model."""
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from typing import Type, cast
+
+import pytest
+from langchain_core.language_models import BaseChatModel
+from langchain_core.pydantic_v1 import SecretStr
+from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_community.chat_models.moonshot import MoonshotChat
 
 
-def test_default_call() -> None:
-    """Test default model call."""
-    chat = MoonshotChat()  # type: ignore[call-arg]
-    response = chat.invoke([HumanMessage(content="How are you?")])
-    assert isinstance(response, BaseMessage)
-    assert isinstance(response.content, str)
+class TestMoonshotChat(ChatModelIntegrationTests):
+    @property
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        return MoonshotChat
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "moonshot-v1-8k"}
+
+    @pytest.mark.xfail(reason="Not yet implemented.")
+    def test_usage_metadata(self, model: BaseChatModel) -> None:
+        super().test_usage_metadata(model)
 
 
-def test_model() -> None:
-    """Test model kwarg works."""
-    chat = MoonshotChat(model="moonshot-v1-32k")  # type: ignore[call-arg]
-    response = chat.invoke([HumanMessage(content="How are you?")])
-    assert isinstance(response, BaseMessage)
-    assert isinstance(response.content, str)
-
-
-def test_multiple_history() -> None:
-    """Tests multiple history works."""
-    chat = MoonshotChat()  # type: ignore[call-arg]
-
-    response = chat.invoke(
-        [
-            HumanMessage(content="How are you?"),
-            AIMessage(content="I'm fine, and you?"),
-            HumanMessage(content="Not bad!"),
-        ]
-    )
-    assert isinstance(response, BaseMessage)
-    assert isinstance(response.content, str)
+def test_chat_moonshot_instantiate_with_alias() -> None:
+    """Test MoonshotChat instantiate when using alias."""
+    api_key = "your-api-key"
+    chat = MoonshotChat(api_key=api_key)  # type: ignore[call-arg]
+    assert cast(SecretStr, chat.moonshot_api_key).get_secret_value() == api_key

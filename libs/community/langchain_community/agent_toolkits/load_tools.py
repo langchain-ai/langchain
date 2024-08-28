@@ -101,8 +101,7 @@ from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.tools import BaseTool
-from langchain_core.tools import Tool
+from langchain_core.tools import BaseTool, Tool
 
 
 def _get_tools_requests_get() -> BaseTool:
@@ -590,7 +589,7 @@ def load_huggingface_tool(
         model_repo_id: Optional model repo id. Defaults to None.
         token: Optional token. Defaults to None.
         remote: Optional remote. Defaults to False.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Returns:
         A tool.
@@ -686,7 +685,7 @@ def load_tools(
             It is your responsibility to understand which tools
             you're using and the risks associated with them.
             Defaults to False.
-        **kwargs: Additional keyword arguments.
+        kwargs: Additional keyword arguments.
 
     Returns:
         List of tools.
