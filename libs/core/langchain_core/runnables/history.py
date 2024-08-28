@@ -16,7 +16,6 @@ from typing import (
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables import RunnableBranch
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
@@ -320,17 +319,22 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             history_chain = RunnablePassthrough.assign(
                 **{messages_key: history_chain}
             ).with_config(run_name="insert_history")
+
+        runnable_sync: Runnable = runnable.with_listeners(on_end=self._exit_history)
+        runnable_async: Runnable = runnable.with_alisteners(on_end=self._aexit_history)
+
+        def _call_runnable_sync(_input: Any) -> Runnable:
+            return runnable_sync
+
+        async def _call_runnable_async(_input: Any) -> Runnable:
+            return runnable_async
+
         bound: Runnable = (
             history_chain
-            | RunnableBranch(
-                (
-                    RunnableLambda(
-                        self._is_not_async, afunc=self._is_async
-                    ).with_config(run_name="RunnableWithMessageHistoryInAsyncMode"),
-                    runnable.with_alisteners(on_end=self._aexit_history),
-                ),
-                runnable.with_listeners(on_end=self._exit_history),
-            )
+            | RunnableLambda(
+                _call_runnable_sync,
+                _call_runnable_async,
+            ).with_config(run_name="check_sync_or_async")
         ).with_config(run_name="RunnableWithMessageHistory")
 
         if history_factory_config:
@@ -429,7 +433,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             # This occurs for chat models - since we batch inputs
             if isinstance(input_val[0], list):
                 if len(input_val) != 1:
-                    raise ValueError()
+                    raise ValueError(
+                        f"Expected a single list of messages. Got {input_val}."
+                    )
                 return input_val[0]
             return list(input_val)
         else:
@@ -468,7 +474,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         elif isinstance(output_val, (list, tuple)):
             return list(output_val)
         else:
-            raise ValueError()
+            raise ValueError(
+                f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
+                f"Got {output_val}."
+            )
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
@@ -537,8 +546,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         configurable = config.get("configurable", {})
 
         missing_keys = set(expected_keys) - set(configurable.keys())
+        parameter_names = _get_parameter_names(self.get_session_history)
 
-        if missing_keys:
+        if missing_keys and parameter_names:
             example_input = {self.input_messages_key: "foo"}
             example_configurable = {
                 missing_key: "[your-value-here]" for missing_key in missing_keys
@@ -551,11 +561,16 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 f"e.g., chain.invoke({example_input}, {example_config})"
             )
 
-        parameter_names = _get_parameter_names(self.get_session_history)
-
         if len(expected_keys) == 1:
-            # If arity = 1, then invoke function by positional arguments
-            message_history = self.get_session_history(configurable[expected_keys[0]])
+            if parameter_names:
+                # If arity = 1, then invoke function by positional arguments
+                message_history = self.get_session_history(
+                    configurable[expected_keys[0]]
+                )
+            else:
+                if not config:
+                    config["configurable"] = {}
+                message_history = self.get_session_history()
         else:
             # otherwise verify that names of keys patch and invoke by named arguments
             if set(expected_keys) != set(parameter_names):

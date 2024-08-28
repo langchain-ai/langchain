@@ -49,7 +49,6 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     SecretStr,
 )
@@ -57,6 +56,7 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 
 from langchain_community.utilities.requests import Requests
 
@@ -121,8 +121,8 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
     system = None
     formatted_messages = []
 
-    human_messages = filter(lambda msg: isinstance(msg, HumanMessage), messages)
-    last_human_message = list(human_messages)[-1] if human_messages else ""
+    human_messages = list(filter(lambda msg: isinstance(msg, HumanMessage), messages))
+    last_human_message = human_messages[-1] if human_messages else ""
 
     tool_results, other_messages = _extract_edenai_tool_results_from_messages(messages)
     for i, message in enumerate(other_messages):
@@ -297,9 +297,7 @@ class ChatEdenAI(BaseChatModel):
     edenai_api_key: Optional[SecretStr] = Field(None, description="EdenAI API Token")
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
@@ -443,7 +441,7 @@ class ChatEdenAI(BaseChatModel):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         llm = self.bind_tools([schema], tool_choice="required")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
