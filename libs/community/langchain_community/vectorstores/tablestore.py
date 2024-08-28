@@ -27,11 +27,13 @@ class TablestoreVectorStore(VectorStore):
 
             import os
 
+            from langchain_openai import OpenAIEmbeddings
             from langchain_community.vectorstores import TablestoreVectorStore
             import tablestore
 
+            embeddings = OpenAIEmbeddings()
             store = TablestoreVectorStore(
-                embedding=embeddings,
+                embeddings,
                 endpoint=os.getenv("end_point"),
                 instance_name=os.getenv("instance_name"),
                 access_key_id=os.getenv("access_key_id"),
@@ -58,6 +60,7 @@ class TablestoreVectorStore(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
+        *,
         endpoint: str = None,
         instance_name: str = None,
         access_key_id: str = None,
