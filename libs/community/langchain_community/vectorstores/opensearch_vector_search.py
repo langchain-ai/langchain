@@ -20,7 +20,7 @@ Could not import AsyncOpenSearch.
 Please install it with `pip install opensearch-py`."""
 
 SCRIPT_SCORING_SEARCH = "script_scoring"
-HYBRID_SEARCH = 'hybrid_search'
+HYBRID_SEARCH = "hybrid_search"
 PAINLESS_SCRIPTING_SEARCH = "painless_scripting"
 MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
 
@@ -925,7 +925,7 @@ class OpenSearchVectorSearch(VectorStore):
         metadata_field = kwargs.get("metadata_field", "metadata")
 
         hits = self._raw_similarity_search_with_score_by_vector(
-          embedding=embedding, k=k, query_text=kwargs.get("query_text", ""), **kwargs
+            embedding=embedding, k=k, query_text=kwargs.get("query_text", ""), **kwargs
         )
 
         documents_with_scores = [
@@ -1088,19 +1088,12 @@ class OpenSearchVectorSearch(VectorStore):
                         "query": {
                             "bool": {
                                 "should": [
-                                    {
-                                        "match": {
-                                            "text": query_text
-                                        }
-                                    },
+                                    {"match": {"text": query_text}},
                                     {
                                         "knn": {
-                                            vector_field: {
-                                                "vector": embedding,
-                                                "k": k
-                                            }
+                                            vector_field: {"vector": embedding, "k": k}
                                         }
-                                    }
+                                    },
                                 ]
                             }
                         },
@@ -1114,11 +1107,11 @@ class OpenSearchVectorSearch(VectorStore):
                                 "query_vector": embedding,
                                 "vector_field": vector_field,
                                 "keyword_weight": keyword_weight,
-                                "vector_weight": vector_weight
-                            }
-                        }
+                                "vector_weight": vector_weight,
+                            },
+                        },
                     }
-                }
+                },
             }
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
