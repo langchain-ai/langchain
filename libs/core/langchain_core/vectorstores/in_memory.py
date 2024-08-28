@@ -21,9 +21,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
-from langchain_core.vectorstores.utils import (
-    _maximal_marginal_relevance as maximal_marginal_relevance,
-)
+from langchain_core.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from langchain_core.indexing import UpsertResponse
@@ -154,7 +152,7 @@ class InMemoryVectorStore(VectorStore):
             "It'll be removed in 0.3.0."
         ),
         since="0.2.29",
-        removal="0.3.0",
+        removal="1.0",
     )
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         vectors = self.embedding.embed_documents([item.page_content for item in items])
@@ -180,7 +178,7 @@ class InMemoryVectorStore(VectorStore):
             "It'll be removed in 0.3.0."
         ),
         since="0.2.29",
-        removal="0.3.0",
+        removal="1.0",
     )
     async def aupsert(
         self, items: Sequence[Document], /, **kwargs: Any
@@ -380,7 +378,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         store = cls(
             embedding=embedding,
         )
@@ -394,7 +392,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         store = cls(
             embedding=embedding,
         )
@@ -404,7 +402,7 @@ class InMemoryVectorStore(VectorStore):
     @classmethod
     def load(
         cls, path: str, embedding: Embeddings, **kwargs: Any
-    ) -> "InMemoryVectorStore":
+    ) -> InMemoryVectorStore:
         """Load a vector store from a file.
 
         Args:

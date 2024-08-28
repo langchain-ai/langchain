@@ -69,30 +69,26 @@ class QianfanLLMEndpoint(LLM):
     Invoke:
         .. code-block:: python
 
-            messages = [
-                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
-                ("human", "我喜欢编程。"),
-            ]
-            llm.invoke(messages)
+            input_text = "用50个字左右阐述，生命的意义在于"
+            llm.invoke(input_text)
 
         .. code-block:: python
 
-            'I like programming.'
+            '生命的意义在于体验、成长、爱与被爱、贡献与传承，以及对未知的勇敢探索与自我超越。'
 
     Stream:
         .. code-block:: python
 
-            for chunk in llm.stream(messages):
+            for chunk in llm.stream(input_text):
                 print(chunk)
 
         .. code-block:: python
 
-            I like
-            programming.
+            生命的意义 | 在于不断探索 | 与成长 | ，实现 | 自我价值，| 给予爱 | 并接受 | 爱， | 在经历 | 中感悟 | ，让 | 短暂的存在 | 绽放出无限 | 的光彩 | 与温暖 | 。
 
         .. code-block:: python
 
-            stream = llm.stream(messages)
+            stream = llm.stream(input_text)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -100,23 +96,23 @@ class QianfanLLMEndpoint(LLM):
 
         .. code-block::
 
-            'I like programming.'
+            '生命的意义在于探索、成长、爱与被爱、贡献价值、体验世界之美，以及在有限的时间里追求内心的平和与幸福。'
 
     Async:
         .. code-block:: python
 
-            await llm.ainvoke(messages)
+            await llm.ainvoke(input_text)
 
             # stream:
-            # async for chunk in llm.astream(messages):
+            # async for chunk in llm.astream(input_text):
             #    print(chunk)
 
             # batch:
-            # await llm.abatch([messages])
+            # await llm.abatch([input_text])
 
         .. code-block:: python
 
-            'I like programming.'
+            '生命的意义在于探索、成长、爱与被爱、贡献社会，在有限的时间里追寻无限的可能，实现自我价值，让生活充满色彩与意义。'
 
     """  # noqa: E501
 
