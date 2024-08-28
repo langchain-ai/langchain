@@ -28,7 +28,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
 
 from langchain.chains.llm import LLMChain
@@ -157,9 +157,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     """DEPRECATED. Reasoning always returned."""
 
     class Config:
-        """Configuration for the QAEvalChain."""
-
-        extra = Extra.ignore
+        extra = "ignore"
 
     @property
     def requires_reference(self) -> bool:

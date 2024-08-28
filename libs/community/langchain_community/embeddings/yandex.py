@@ -72,8 +72,6 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     _grpc_metadata: Sequence
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @pre_init

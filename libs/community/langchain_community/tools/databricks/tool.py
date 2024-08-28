@@ -5,7 +5,8 @@ from hashlib import md5
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
-from langchain_core.tools import BaseTool, BaseToolkit, StructuredTool
+from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.tools.base import BaseToolkit
 from typing_extensions import Self
 
 if TYPE_CHECKING:

@@ -1,5 +1,4 @@
-
-# anthropic-iterative-search
+# Anthropic - iterative search
 
 This template will create a virtual research assistant with the ability to search Wikipedia to find answers to your questions.
 

@@ -1,10 +1,10 @@
-# basic-critique-revise
+# Basic critique revise
 
 Iteratively generate schema candidates and revise them based on errors.
 
 ## Environment Setup
 
-This template uses OpenAI function calling, so you will need to set the `OPENAI_API_KEY` environment variable in order to use this template.
+This template uses `OpenAI function calling`, so you will need to set the `OPENAI_API_KEY` environment variable in order to use this template.
 
 ## Usage
 

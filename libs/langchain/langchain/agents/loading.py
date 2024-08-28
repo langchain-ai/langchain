@@ -31,7 +31,7 @@ def _load_agent_from_tools(
     return agent_cls.from_llm_and_tools(llm, tools, **combined_config)
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 def load_agent_from_config(
     config: dict,
     llm: Optional[BaseLanguageModel] = None,
@@ -90,7 +90,7 @@ def load_agent_from_config(
     return agent_cls(**combined_config)  # type: ignore
 
 
-@deprecated("0.1.0", removal="0.3.0")
+@deprecated("0.1.0", removal="1.0")
 def load_agent(
     path: Union[str, Path], **kwargs: Any
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:

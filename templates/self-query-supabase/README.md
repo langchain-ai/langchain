@@ -1,9 +1,8 @@
+# Self-query - Supabase
 
-# self-query-supabase
+This template allows natural language structured querying of `Supabase`. 
 
-This templates allows natural language structured quering of Supabase. 
-
-[Supabase](https://supabase.com/docs) is an open-source alternative to Firebase, built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL). 
+[Supabase](https://supabase.com/docs) is an open-source alternative to `Firebase`, built on top of [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL). 
 
 It uses [pgvector](https://github.com/pgvector/pgvector) to store embeddings within your tables.
 

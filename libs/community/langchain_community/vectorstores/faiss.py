@@ -1288,7 +1288,7 @@ class FAISS(VectorStore):
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
-                "normalize_score_fn must be provided to"
+                "relevance_score_fn must be provided to"
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(
@@ -1317,7 +1317,7 @@ class FAISS(VectorStore):
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
-                "normalize_score_fn must be provided to"
+                "relevance_score_fn must be provided to"
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = await self.asimilarity_search_with_score(

@@ -14,7 +14,7 @@ import traceback
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 
 if TYPE_CHECKING:
     from oracledb import Connection
@@ -38,9 +38,7 @@ class OracleEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     """
     1 - user needs to have create procedure, 

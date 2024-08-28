@@ -1,5 +1,4 @@
-
-# rag-timescale-conversation
+# RAG - Timescale - conversation
 
 This template is used for [conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/), which is one of the most popular LLM use-cases.
 
@@ -7,7 +6,7 @@ It passes both a conversation history and retrieved documents into an LLM for sy
 
 ## Environment Setup
 
-This template uses Timescale Vector as a vectorstore and requires that `TIMESCALES_SERVICE_URL`. Signup for a 90-day trial [here](https://console.cloud.timescale.com/signup?utm_campaign=vectorlaunch&utm_source=langchain&utm_medium=referral) if you don't yet have an account.
+This template uses `Timescale Vector` as a vectorstore and requires that `TIMESCALES_SERVICE_URL`. Signup for a 90-day trial [here](https://console.cloud.timescale.com/signup?utm_campaign=vectorlaunch&utm_source=langchain&utm_medium=referral) if you don't yet have an account.
 
 To load the sample dataset, set `LOAD_SAMPLE_DATA=1`. To load your own dataset see the section below.
 
