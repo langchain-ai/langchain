@@ -95,7 +95,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
                 count of (most recent) messages to fetch from MongoDB.
             index_kwargs: Optional[Dict]
                 additional keyword arguments to pass to the index creation.
-            mongo_client: Optional[MongoClient]
+            client: Optional[MongoClient]
                 an existing MongoClient instance.
                 If provided, connection_string is ignored.
         """
