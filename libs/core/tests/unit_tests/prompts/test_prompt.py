@@ -705,7 +705,7 @@ def test_prompt_falsy_vars(
 
 
 def test_prompt_missing_vars_error() -> None:
-    prompt = PromptTemplate(template="This is a {foo} {goingtobemissing} test.")
+    prompt = PromptTemplate.from_template("This is a {foo} {goingtobemissing} test.")
     with pytest.raises(KeyError) as e:
         prompt.invoke({"foo": "bar"})
 
