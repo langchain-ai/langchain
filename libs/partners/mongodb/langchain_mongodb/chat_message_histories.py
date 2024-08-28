@@ -116,9 +116,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             except errors.ConnectionFailure as error:
                 logger.error(error)
         else:
-            raise ValueError(
-                "Either connection_string or client must be provided"
-            )
+            raise ValueError("Either connection_string or client must be provided")
 
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
