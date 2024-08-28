@@ -70,7 +70,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         create_index: bool = True,
         history_size: Optional[int] = None,
         index_kwargs: Optional[Dict] = None,
-        mongo_client: Optional[MongoClient] = None,
+        client: Optional[MongoClient] = None,
     ):
         """Initialize with a MongoDBChatMessageHistory instance.
 
