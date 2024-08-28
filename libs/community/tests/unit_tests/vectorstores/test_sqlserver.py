@@ -65,16 +65,18 @@ _SYS_TABLE_QUERY = """
 select object_id from sys.tables where name = '%s'
 and schema_name(schema_id) = '%s'"""
 
-# Query Strings
-#
-_CREATE_COLLATION_DB_QUERY = (
-    f"create database {_COLLATION_DB_NAME} collate SQL_Latin1_General_CP1_CS_AS;"
-)
-_COLLATION_QUERY = "select name, collation_name from sys.databases where name = N'%s';"
-_DROP_COLLATION_DB_QUERY = f"drop database {_COLLATION_DB_NAME}"
-_SYS_TABLE_QUERY = """
-select object_id from sys.tables where name = '%s'
-and schema_name(schema_id) = '%s'"""
+
+FILTERING_TEST_CASES = [
+    filters
+    for filterList in [
+        TYPE_1_FILTERING_TEST_CASES,
+        TYPE_2_FILTERING_TEST_CASES,
+        TYPE_3_FILTERING_TEST_CASES,
+        TYPE_4_FILTERING_TEST_CASES,
+        TYPE_5_FILTERING_TEST_CASES,
+    ]
+    for filters in filterList
+]
 
 
 # Combine all test cases into one list with additional debugging
@@ -569,8 +571,8 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     conn.close()
 
 
-@pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
-def test_sqlserver_with_with_metadata_filters_1(
+@pytest.mark.parametrize("test_filter, expected_ids", FILTERING_TEST_CASES)
+def test_sqlserver_with_metadata_filters(
     store: SQLServer_VectorStore,
     test_filter: Dict[str, Any],
     expected_ids: List[int],
@@ -579,64 +581,6 @@ def test_sqlserver_with_with_metadata_filters_1(
 
     docs = store.similarity_search("meow", k=5, filter=test_filter)
     store.delete(["1", "2", "3"])
-    returned_ids = [doc.metadata["id"] for doc in docs]
-    assert sorted(returned_ids) == sorted(expected_ids), test_filter
-
-
-@pytest.mark.parametrize("test_filter, expected_ids", TYPE_2_FILTERING_TEST_CASES)
-def test_sqlserver_with_with_metadata_filters_2(
-    store: SQLServer_VectorStore,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
-) -> None:
-    store.add_texts(filter_texts, filter_metadatas, filter_ids)
-
-    docs = store.similarity_search("meow", k=5, filter=test_filter)
-    store.delete(["1", "2", "3"])
-    returned_ids = [doc.metadata["id"] for doc in docs]
-    assert sorted(returned_ids) == sorted(expected_ids), test_filter
-
-
-@pytest.mark.parametrize("test_filter, expected_ids", TYPE_3_FILTERING_TEST_CASES)
-def test_sqlserver_with_with_metadata_filters_3(
-    store: SQLServer_VectorStore,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
-) -> None:
-    store.add_texts(filter_texts, filter_metadatas, filter_ids)
-
-    docs = store.similarity_search("meow", k=5, filter=test_filter)
-    store.delete(["1", "2", "3"])
-    returned_ids = [doc.metadata["id"] for doc in docs]
-    assert sorted(returned_ids) == sorted(expected_ids), test_filter
-
-
-@pytest.mark.parametrize("test_filter, expected_ids", TYPE_4_FILTERING_TEST_CASES)
-def test_sqlserver_with_with_metadata_filters_4(
-    store: SQLServer_VectorStore,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
-) -> None:
-    store.add_texts(filter_texts, filter_metadatas, filter_ids)
-
-    docs = store.similarity_search("meow", k=5, filter=test_filter)
-    store.delete(["1", "2", "3"])
-
-    returned_ids = [doc.metadata["id"] for doc in docs]
-    assert sorted(returned_ids) == sorted(expected_ids), test_filter
-
-
-@pytest.mark.parametrize("test_filter, expected_ids", TYPE_5_FILTERING_TEST_CASES)
-def test_sqlserver_with_with_metadata_filters_5(
-    store: SQLServer_VectorStore,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
-) -> None:
-    store.add_texts(filter_texts, filter_metadatas, filter_ids)
-
-    docs = store.similarity_search("meow", k=5, filter=test_filter)
-    store.delete(["1", "2", "3"])
-
     returned_ids = [doc.metadata["id"] for doc in docs]
     assert sorted(returned_ids) == sorted(expected_ids), test_filter
 
@@ -659,8 +603,10 @@ def test_invalid_filters(
     store: SQLServer_VectorStore, invalid_filter: Dict[str, Any]
 ) -> None:
     """Verify that invalid filters raise an error."""
+    store.add_texts(filter_texts, filter_metadatas, filter_ids)
+    store.delete(["1", "2", "3"])
     with pytest.raises(ValueError):
-        store._create_filter_clause(invalid_filter)
+        store.similarity_search("meow", k=5, filter=invalid_filter)
     
 
 def test_that_case_sensitivity_does_not_affect_distance_strategy(

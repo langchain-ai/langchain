@@ -104,13 +104,11 @@ EMPTY_IDS_ERROR_MESSAGE = "Empty list of ids provided"
 EXTRA_PARAMS = ";Trusted_Connection=Yes"
 INVALID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
 INVALID_INPUT_ERROR_MESSAGE = "Input is not valid."
-<<<<<<< HEAD
 INVALID_FILTER_INPUT_EXPECTED_DICT = "Invalid filter condition. Expected a dictionary "
 "but got an empty dictionary"
 INVALID_FILTER_INPUT_EXPECTED_AND_OR = "Invalid filter condition."
 "Expected $and or $or but got: {}"
 
-=======
 SQL_COPT_SS_ACCESS_TOKEN = 1256  # Connection option defined by microsoft in msodbcsql.h
 
 # Query Constants
@@ -227,7 +225,6 @@ class SQLServer_VectorStore(VectorStore):
             """This is the base model for SQL vector store."""
 
             __tablename__ = name
-            __table_args__ = {"schema": schema}
             __table_args__ = {"schema": schema}
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
             custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
