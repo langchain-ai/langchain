@@ -48,17 +48,19 @@ select object_id from sys.tables where name = '%s'
 and schema_name(schema_id) = '%s'"""
 
 
-FILTERING_TEST_CASES: List[Any] = [
-    filters
-    for filterList in [
-        TYPE_1_FILTERING_TEST_CASES,
-        TYPE_2_FILTERING_TEST_CASES,
-        TYPE_3_FILTERING_TEST_CASES,
-        TYPE_4_FILTERING_TEST_CASES,
-        TYPE_5_FILTERING_TEST_CASES,
-    ]
-    for filters in filterList
-]
+# Combine all test cases into one list with additional debugging
+FILTERING_TEST_CASES: List[Any] = []
+for filterList in [
+    TYPE_1_FILTERING_TEST_CASES,
+    TYPE_2_FILTERING_TEST_CASES,
+    TYPE_3_FILTERING_TEST_CASES,
+    TYPE_4_FILTERING_TEST_CASES,
+    TYPE_5_FILTERING_TEST_CASES,
+]:
+    if isinstance(filterList, list):
+        for filters in filterList:
+            if isinstance(filters, tuple):
+                FILTERING_TEST_CASES.append(filters)
 
 
 @pytest.fixture
