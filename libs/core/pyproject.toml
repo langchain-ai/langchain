@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gigachain-core"
-version = "0.2.35"
+version = "0.2.35post1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
