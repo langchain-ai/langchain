@@ -55,7 +55,7 @@ llm = OpenAI(temperature=0, streaming=True)
 tools = load_tools(["ddg-search"])
 prompt = hub.pull("hwchase17/react")
 agent = create_react_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True,handle_parsing_errors=True,max_iterations=100)
 
 if prompt := st.chat_input():
     st.chat_message("user").write(prompt)
