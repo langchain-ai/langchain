@@ -1,11 +1,20 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Literal, Union, cast, overload
+from typing import Any, Dict, Iterator, List, Literal, Optional, Union, cast, overload
 
 from ai21.models import ChatMessage as J2ChatMessage
 from ai21.models import RoleType
-from ai21.models.chat import ChatCompletionChunk, ChatMessage
+from ai21.models.chat import (
+    AssistantMessage as AI21AssistantMessage,
+)
+from ai21.models.chat import ChatCompletionChunk, ChatMessageParam
+from ai21.models.chat import ChatMessage as AI21ChatMessage
+from ai21.models.chat import SystemMessage as AI21SystemMessage
+from ai21.models.chat import ToolCall as AI21ToolCall
+from ai21.models.chat import ToolFunction as AI21ToolFunction
+from ai21.models.chat import ToolMessage as AI21ToolMessage
+from ai21.models.chat import UserMessage as AI21UserMessage
 from ai21.stream.stream import Stream as AI21Stream
 from langchain_core.messages import (
     AIMessage,
@@ -13,11 +22,15 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    SystemMessage,
+    ToolCall,
+    ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.output_parsers.openai_tools import parse_tool_call
 from langchain_core.outputs import ChatGenerationChunk
 
-_ChatMessageTypes = Union[ChatMessage, J2ChatMessage]
+_ChatMessageTypes = Union[AI21ChatMessage, J2ChatMessage]
 _SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."
 _ROLE_TYPE = Union[str, RoleType]
 
@@ -40,19 +53,23 @@ class ChatAdapter(ABC):
         self,
         message: BaseMessage,
     ) -> _ChatMessageTypes:
-        content = cast(str, message.content)
         role = self._parse_role(message)
-
-        return self._chat_message(role=role, content=content)
+        return self._chat_message(role=role, message=message)
 
     def _parse_role(self, message: BaseMessage) -> _ROLE_TYPE:
         role = None
+
+        if isinstance(message, SystemMessage):
+            return RoleType.SYSTEM
 
         if isinstance(message, HumanMessage):
             return RoleType.USER
 
         if isinstance(message, AIMessage):
             return RoleType.ASSISTANT
+
+        if isinstance(message, ToolMessage):
+            return RoleType.TOOL
 
         if isinstance(self, J2ChatAdapter):
             if not role:
@@ -68,7 +85,7 @@ class ChatAdapter(ABC):
     def _chat_message(
         self,
         role: _ROLE_TYPE,
-        content: str,
+        message: BaseMessage,
     ) -> _ChatMessageTypes:
         pass
 
@@ -130,9 +147,9 @@ class J2ChatAdapter(ChatAdapter):
     def _chat_message(
         self,
         role: _ROLE_TYPE,
-        content: str,
+        message: BaseMessage,
     ) -> J2ChatMessage:
-        return J2ChatMessage(role=RoleType(role), text=content)
+        return J2ChatMessage(role=RoleType(role), text=cast(str, message.content))
 
     @overload
     def call(
@@ -174,12 +191,65 @@ class JambaChatCompletionsAdapter(ChatAdapter):
             ],
         }
 
+    def _convert_lc_tool_calls_to_ai21_tool_calls(
+        self, tool_calls: List[ToolCall]
+    ) -> Optional[List[AI21ToolCall]]:
+        """
+        Convert Langchain ToolCalls to AI21 ToolCalls.
+        """
+        ai21_tool_calls: List[AI21ToolCall] = []
+        for lc_tool_call in tool_calls:
+            if "id" not in lc_tool_call or not lc_tool_call["id"]:
+                raise ValueError("Tool call ID is missing or empty.")
+
+            ai21_tool_call = AI21ToolCall(
+                id=lc_tool_call["id"],
+                type="function",
+                function=AI21ToolFunction(
+                    name=lc_tool_call["name"],
+                    arguments=str(lc_tool_call["args"]),
+                ),
+            )
+            ai21_tool_calls.append(ai21_tool_call)
+
+        return ai21_tool_calls
+
+    def _get_content_as_string(self, base_message: BaseMessage) -> str:
+        if isinstance(base_message.content, str):
+            return base_message.content
+        elif isinstance(base_message.content, list):
+            return "\n".join(str(item) for item in base_message.content)
+        else:
+            raise ValueError("Unsupported content type")
+
     def _chat_message(
         self,
         role: _ROLE_TYPE,
-        content: str,
-    ) -> ChatMessage:
-        return ChatMessage(
+        message: BaseMessage,
+    ) -> ChatMessageParam:
+        content = self._get_content_as_string(message)
+
+        if isinstance(message, AIMessage):
+            return AI21AssistantMessage(
+                tool_calls=self._convert_lc_tool_calls_to_ai21_tool_calls(
+                    message.tool_calls
+                ),
+                content=content or None,
+            )
+        if isinstance(message, ToolMessage):
+            return AI21ToolMessage(
+                tool_call_id=message.tool_call_id,
+                content=content,
+            )
+        if isinstance(message, HumanMessage):
+            return AI21UserMessage(
+                content=content,
+            )
+        if isinstance(message, SystemMessage):
+            return AI21SystemMessage(
+                content=content,
+            )
+        return AI21ChatMessage(
             role=role.value if isinstance(role, RoleType) else role,
             content=content,
         )
@@ -211,7 +281,18 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         if stream:
             return self._stream_response(response)
 
-        return [AIMessage(choice.message.content) for choice in response.choices]
+        ai_messages: List[BaseMessage] = []
+        for message in response.choices:
+            if message.message.tool_calls:
+                tool_calls = [
+                    parse_tool_call(tool_call.model_dump(), return_id=True)
+                    for tool_call in message.message.tool_calls
+                ]
+                ai_messages.append(AIMessage("", tool_calls=tool_calls))
+            else:
+                ai_messages.append(AIMessage(message.message.content))
+
+        return ai_messages
 
     def _stream_response(
         self,

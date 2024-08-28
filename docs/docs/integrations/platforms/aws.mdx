@@ -204,7 +204,7 @@ AWS offers services for computing, databases, storage, analytics, and other func
 See a [usage example](/docs/integrations/vectorstores/documentdb).
 
 ```python
-from langchain.vectorstores import DocumentDBVectorSearch
+from langchain_community.vectorstores import DocumentDBVectorSearch
 ```
 ### Amazon MemoryDB 
 [Amazon MemoryDB](https://aws.amazon.com/memorydb/) is a durable, in-memory database service that delivers ultra-fast performance. MemoryDB is compatible with Redis OSS, a popular open source data store, 
@@ -305,7 +305,7 @@ pip install boto3
 See a [usage example](/docs/integrations/memory/aws_dynamodb).
 
 ```python
-from langchain.memory import DynamoDBChatMessageHistory
+from langchain_community.chat_message_histories import DynamoDBChatMessageHistory
 ```
 
 ## Graphs
@@ -333,6 +333,12 @@ from langchain_community.chains.graph_qa.neptune_sparql import NeptuneSparqlQACh
 
 ## Callbacks
 
+### Bedrock token usage
+
+```python
+from langchain_community.callbacks.bedrock_anthropic_callback import BedrockAnthropicTokenUsageCallbackHandler
+```
+
 ### SageMaker Tracking
 
 >[Amazon SageMaker](https://aws.amazon.com/sagemaker/) is a fully managed service that is used to quickly 
@@ -351,7 +357,7 @@ pip install google-search-results sagemaker
 See a [usage example](/docs/integrations/callbacks/sagemaker_tracking).
 
 ```python
-from langchain.callbacks import SageMakerCallbackHandler
+from langchain_community.callbacks import SageMakerCallbackHandler
 ```
 
 ## Chains
