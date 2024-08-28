@@ -7,6 +7,7 @@ import pytest
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel, FakeListChatModel
+from langchain_core.language_models.fake_chat_models import FakeListChatModelError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -110,7 +111,7 @@ async def test_stream_error_callback() -> None:
             responses=[message],
             error_on_chunk_number=i,
         )
-        with pytest.raises(Exception):
+        with pytest.raises(FakeListChatModelError):
             cb_async = FakeAsyncCallbackHandler()
             async for _ in llm.astream("Dummy message", callbacks=[cb_async]):
                 pass
