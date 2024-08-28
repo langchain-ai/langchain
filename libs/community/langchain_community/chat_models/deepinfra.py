@@ -201,7 +201,7 @@ class ChatDeepInfra(BaseChatModel):
     """A chat model that uses the DeepInfra API."""
 
     # client: Any  #: :meta private:
-    model_name: str = Field(alias="model")
+    model_name: str = Field(default="meta-llama/Llama-2-70b-chat-hf", alias="model")
     """Model name to use."""
     deepinfra_api_token: Optional[str] = None
     request_timeout: Optional[float] = Field(default=None, alias="timeout")
@@ -222,8 +222,10 @@ class ChatDeepInfra(BaseChatModel):
     streaming: bool = False
     max_retries: int = 1
 
-    def __init__(self, model_name: str, **kwargs: Any):
-        super().__init__(model=model_name, **kwargs)
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @property
     def _default_params(self) -> Dict[str, Any]:
