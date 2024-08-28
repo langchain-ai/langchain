@@ -36,10 +36,6 @@ import uuid
 
 import sqlalchemy
 
-_embedding_store: Any = None  # One vector store used for the entirety of the program.
-
-Base = declarative_base()  # type: Any
-
 COMPARISONS_TO_NATIVE: Dict[str, Callable[[ColumnElement, object], ColumnElement]] = {
     "$eq": operators.eq,
     "$ne": operators.ne,
@@ -60,7 +56,6 @@ SPECIAL_CASED_OPERATORS = {
 
 TEXT_OPERATORS = {
     "$like",
-    "$ilike",
 }
 
 LOGICAL_OPERATORS = {"$and", "$or"}
@@ -95,6 +90,11 @@ EMBEDDING_VALUES = "embeddingvalues"
 EMPTY_IDS_ERROR_MESSAGE = "Empty list of ids provided"
 INVALID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
 INVALID_INPUT_ERROR_MESSAGE = "Input is not valid."
+INVALID_FILTER_INPUT_EXPECTED_DICT = "Invalid filter condition. Expected a dictionary "
+"but got an empty dictionary"
+INVALID_FILTER_INPUT_EXPECTED_AND_OR = "Invalid filter condition."
+"Expected $and or $or but got: {}"
+
 
 # Query Constants
 #
@@ -178,7 +178,6 @@ class SQLServer_VectorStore(VectorStore):
             """This is the base model for SQL vector store."""
 
             __tablename__ = name
-            __table_args__ = {"schema": schema}
             __table_args__ = {"schema": schema}
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
             custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
@@ -404,7 +403,6 @@ class SQLServer_VectorStore(VectorStore):
             SQLAlchemy clause to apply to the query.
         """
         if filters is not None:
-            # Here we want a list of filters instead of dict
             if not isinstance(filters, dict):
                 raise ValueError(
                     f"Expected a dict, but got {type(filters)} for value: {filter}"
@@ -415,10 +413,9 @@ class SQLServer_VectorStore(VectorStore):
                 key, value = list(filters.items())[0]
                 if key.startswith("$"):
                     # Then it's an operator
-                    if key.lower() not in ["$and", "$or"]:
+                    if key.lower() not in LOGICAL_OPERATORS:
                         raise ValueError(
-                            f"Invalid filter condition. Expected $and or $or "
-                            f"but got: {key}"
+                            INVALID_FILTER_INPUT_EXPECTED_AND_OR.format(key)
                         )
                 else:
                     # Then it's a field
@@ -436,10 +433,7 @@ class SQLServer_VectorStore(VectorStore):
                     elif len(and_) == 1:
                         return and_[0]
                     else:
-                        raise ValueError(
-                            "Invalid filter condition. Expected a dictionary "
-                            "but got an empty dictionary"
-                        )
+                        raise ValueError(INVALID_FILTER_INPUT_EXPECTED_DICT)
                 elif key.lower() == "$or":
                     or_ = [self._create_filter_clause(el) for el in value]
                     if len(or_) > 1:
@@ -447,16 +441,7 @@ class SQLServer_VectorStore(VectorStore):
                     elif len(or_) == 1:
                         return or_[0]
                     else:
-                        raise ValueError(
-                            "Invalid filter condition. Expected a dictionary "
-                            "but got an empty dictionary"
-                        )
-
-                else:
-                    raise ValueError(
-                        f"Invalid filter condition. Expected $and or $or "
-                        f"but got: {key}"
-                    )
+                        raise ValueError(INVALID_FILTER_INPUT_EXPECTED_DICT)
 
             elif len(filters) > 1:
                 # Then all keys have to be fields (they cannot be operators)
@@ -472,10 +457,7 @@ class SQLServer_VectorStore(VectorStore):
                 elif len(and_) == 1:
                     return and_[0]
                 else:
-                    raise ValueError(
-                        "Invalid filter condition. Expected a dictionary "
-                        "but got an empty dictionary"
-                    )
+                    raise ValueError(INVALID_FILTER_INPUT_EXPECTED_DICT)
             else:
                 raise ValueError("Got an empty dictionary for filters.")
         else:
@@ -500,10 +482,10 @@ class SQLServer_VectorStore(VectorStore):
             sqlalchemy expression
         """
 
-        if not isinstance(field, str):
-            raise ValueError(
-                f"field should be a string but got: {type(field)} with value: {field}"
-            )
+        # if not isinstance(field, str):
+        #     raise ValueError(
+        #         f"field should be a string but got: {type(field)} with value: {field}"
+        #     )
 
         if field.startswith("$"):
             raise ValueError(
@@ -587,7 +569,7 @@ class SQLServer_VectorStore(VectorStore):
 
             return sqlalchemy.and_(lower_bound, upper_bound)
 
-        elif operator in {"$in", "$nin", "$like", "$ilike"}:
+        elif operator in {"$in", "$nin", "$like"}:
             # We'll do force coercion to text
             if operator in {"$in", "$nin"}:
                 for val in filter_value:
@@ -606,10 +588,8 @@ class SQLServer_VectorStore(VectorStore):
                 return queried_field.nin_([str(val) for val in filter_value])
             elif operator in {"$like"}:
                 return queried_field.like(str(filter_value))
-            elif operator in {"$ilike"}:
-                return queried_field.ilike(filter_value)
             else:
-                raise NotImplementedError()
+                raise NotImplementedError(f"Operator is not implemnted: {operator}. ")
         else:
             raise NotImplementedError()
 
