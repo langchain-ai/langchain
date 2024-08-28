@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from langchain_community.llms.utils import enforce_stop_tokens
-from langchain_community.llms.yandex import _BaseYandexGPT
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -21,6 +19,9 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+from langchain_community.llms.utils import enforce_stop_tokens
+from langchain_community.llms.yandex import _BaseYandexGPT
 
 logger = logging.getLogger(__name__)
 
@@ -130,27 +131,27 @@ def _make_request(
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
 
         try:
-            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (  # noqa: E501
                 CompletionOptions,
                 Message,
             )
-            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
                 CompletionRequest,
-            )  # noqa: E501
-            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
                 TextGenerationServiceStub,
-            )  # noqa: E501
+            )
         except ModuleNotFoundError:
             from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
                 CompletionOptions,
                 Message,
             )
-            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
                 CompletionRequest,
-            )  # noqa: E501
-            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
                 TextGenerationServiceStub,
-            )  # noqa: E501
+            )
     except ImportError as e:
         raise ImportError(
             "Please install YandexCloud SDK  with `pip install yandexcloud` \
@@ -189,7 +190,7 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
 
         try:
-            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (  # noqa: E501
                 CompletionOptions,
                 Message,
             )
@@ -197,9 +198,9 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
                 CompletionRequest,
                 CompletionResponse,
             )
-            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
                 TextGenerationAsyncServiceStub,
-            )  # noqa: E501
+            )
         except ModuleNotFoundError:
             from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
                 CompletionOptions,
