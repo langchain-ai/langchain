@@ -658,7 +658,7 @@ def test_incremental_indexing_with_batch_size(
     )
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
         assert index(
             loader,
@@ -674,6 +674,9 @@ def test_incremental_indexing_with_batch_size(
             "num_updated": 0,
         }
 
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
         assert index(
             loader,
             record_manager,
@@ -722,7 +725,7 @@ def test_incremental_delete_with_batch_size(
     )
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
         assert index(
             loader,
@@ -794,7 +797,7 @@ def test_incremental_delete_with_batch_size(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2023, 1, 3).timestamp()
+        record_manager, "get_time", return_value=datetime(2023, 1, 4).timestamp()
     ):
         # Docs with same content
         docs = [
@@ -823,7 +826,7 @@ def test_incremental_delete_with_batch_size(
 
     # Try to index with changed docs now
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2024, 1, 3).timestamp()
+        record_manager, "get_time", return_value=datetime(2024, 1, 5).timestamp()
     ):
         # Docs with same content
         docs = [
