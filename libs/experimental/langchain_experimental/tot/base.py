@@ -10,7 +10,6 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForChainRun,
 )
 
-from langchain_experimental.pydantic_v1 import Extra
 from langchain_experimental.tot.checker import ToTChecker
 from langchain_experimental.tot.controller import ToTController
 from langchain_experimental.tot.memory import ToTDFSMemory
@@ -44,10 +43,8 @@ class ToTChain(Chain):
     verbose_llm: bool = False
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @classmethod
     def from_llm(cls, llm: BaseLanguageModel, **kwargs: Any) -> ToTChain:

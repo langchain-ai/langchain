@@ -1,5 +1,4 @@
-
-# guardrails-output-parser
+# Guardrails - output parser
 
 This template uses [guardrails-ai](https://github.com/guardrails-ai/guardrails) to validate LLM output. 
 

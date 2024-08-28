@@ -1,7 +1,6 @@
+# RAG - Pinecone - multi-query
 
-# rag-pinecone-multi-query
-
-This template performs RAG using Pinecone and OpenAI with a multi-query retriever. 
+This template performs RAG using `Pinecone` and `OpenAI` with a multi-query retriever. 
 
 It uses an LLM to generate multiple queries from different perspectives based on the user's input query. 
 

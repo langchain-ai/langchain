@@ -5,6 +5,7 @@ from __future__ import annotations
 import collections
 import inspect
 import logging
+import types
 import typing
 import uuid
 from typing import (
@@ -89,7 +90,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_pydantic_to_openai_function(
     model: Type[BaseModel],
@@ -178,7 +179,7 @@ def convert_pydantic_to_gigachat_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_pydantic_to_openai_tool(
     model: Type[BaseModel],
@@ -247,7 +248,7 @@ def convert_python_function_to_gigachat_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def convert_python_function_to_openai_function(
     function: Callable,
@@ -264,10 +265,10 @@ def convert_python_function_to_openai_function(
     Returns:
         The OpenAI function description.
     """
-    from langchain_core import tools
+    from langchain_core.tools.base import create_schema_from_function
 
     func_name = _get_python_function_name(function)
-    model = tools.create_schema_from_function(
+    model = create_schema_from_function(
         func_name,
         function,
         filter_args=(),
@@ -393,7 +394,7 @@ def format_tool_to_gigachat_function(tool: BaseTool) -> GigaFunctionDescription:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API.
@@ -430,7 +431,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.3.0",
+    removal="1.0",
 )
 def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
     """Format tool into the OpenAI function API.
@@ -513,9 +514,13 @@ def convert_to_openai_function(
 
     if strict is not None:
         oai_function["strict"] = strict
-        # As of 08/06/24, OpenAI requires that additionalProperties be supplied and set
-        # to False if strict is True.
-        oai_function["parameters"]["additionalProperties"] = False
+        if strict:
+            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
+            # set to False if strict is True.
+            # All properties layer needs 'additionalProperties=False'
+            oai_function["parameters"] = _recursive_set_additional_properties_false(
+                oai_function["parameters"]
+            )
     return oai_function
 
 
@@ -779,6 +784,10 @@ def _parse_google_docstring(
 
 
 def _py_38_safe_origin(origin: Type) -> Type:
+    origin_union_type_map: Dict[Type, Any] = (
+        {types.UnionType: Union} if hasattr(types, "UnionType") else {}
+    )
+
     origin_map: Dict[Type, Any] = {
         dict: Dict,
         list: List,
@@ -788,5 +797,23 @@ def _py_38_safe_origin(origin: Type) -> Type:
         collections.abc.Mapping: typing.Mapping,
         collections.abc.Sequence: typing.Sequence,
         collections.abc.MutableMapping: typing.MutableMapping,
+        **origin_union_type_map,
     }
     return cast(Type, origin_map.get(origin, origin))
+
+
+def _recursive_set_additional_properties_false(
+    schema: Dict[str, Any],
+) -> Dict[str, Any]:
+    if isinstance(schema, dict):
+        # Check if 'required' is a key at the current level
+        if "required" in schema:
+            schema["additionalProperties"] = False
+        # Recursively check 'properties' and 'items' if they exist
+        if "properties" in schema:
+            for value in schema["properties"].values():
+                _recursive_set_additional_properties_false(value)
+        if "items" in schema:
+            _recursive_set_additional_properties_false(schema["items"])
+
+    return schema

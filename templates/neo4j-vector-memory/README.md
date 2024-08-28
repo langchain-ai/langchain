@@ -1,9 +1,14 @@
+# Neo4j - vector memory
 
-# neo4j-vector-memory
+This template allows you to integrate an LLM with a vector-based 
+retrieval system using `Neo4j` as the vector store.
 
-This template allows you to integrate an LLM with a vector-based retrieval system using Neo4j as the vector store.
-Additionally, it uses the graph capabilities of the Neo4j database to store and retrieve the dialogue history of a specific user's session.
-Having the dialogue history stored as a graph allows for seamless conversational flows but also gives you the ability to analyze user behavior and text chunk retrieval through graph analytics.
+Additionally, it uses the graph capabilities of the `Neo4j` database to 
+store and retrieve the dialogue history of a specific user's session.
+
+Having the dialogue history stored as a graph allows for 
+seamless conversational flows but also gives you the ability 
+to analyze user behavior and text chunk retrieval through graph analytics.
 
 
 ## Environment Setup

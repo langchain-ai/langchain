@@ -9,6 +9,10 @@ from pymongo.collection import Collection
 
 from langchain_mongodb import index
 
+DB_NAME = "langchain_test_index_db"
+COLLECTION_NAME = "test_index"
+VECTOR_INDEX_NAME = "vector_index"
+
 TIMEOUT = 120
 DIMENSIONS = 10
 
@@ -18,14 +22,14 @@ def collection() -> Generator:
     """Depending on uri, this could point to any type of cluster."""
     uri = os.environ.get("MONGODB_ATLAS_URI")
     client: MongoClient = MongoClient(uri)
-    clxn = client["db"]["collection"]
+    clxn = client[DB_NAME][COLLECTION_NAME]
     clxn.insert_one({"foo": "bar"})
     yield clxn
     clxn.drop()
 
 
 def test_search_index_commands(collection: Collection) -> None:
-    index_name = "vector_index"
+    index_name = VECTOR_INDEX_NAME
     dimensions = DIMENSIONS
     path = "embedding"
     similarity = "cosine"

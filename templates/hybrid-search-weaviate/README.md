@@ -1,7 +1,10 @@
-# Hybrid Search in Weaviate
-This template shows you how to use the hybrid search feature in Weaviate. Hybrid search combines multiple search algorithms to improve the accuracy and relevance of search results. 
+# Hybrid search - Weaviate
 
-Weaviate uses both sparse and dense vectors to represent the meaning and context of search queries and documents. The results use a combination of `bm25` and vector search ranking to return the top results. 
+This template shows you how to use the hybrid search feature in `Weaviate` vector store.
+Hybrid search combines multiple search algorithms to improve the accuracy and relevance of search results. 
+
+`Weaviate` uses both sparse and dense vectors to represent the meaning and context of search queries and documents. 
+The results use a combination of `bm25` and `vector search ranking` to return the top results. 
 
 ##  Configurations
 Connect to your hosted Weaviate Vectorstore by setting a few env variables in `chain.py`:

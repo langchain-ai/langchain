@@ -1,5 +1,4 @@
-
-# rag-conversation
+# RAG - Pinecone - conversation
 
 This template is used for [conversational](https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain) [retrieval](https://python.langchain.com/docs/use_cases/question_answering/), which is one of the most popular LLM use-cases. 
 

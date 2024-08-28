@@ -1,9 +1,8 @@
+# RAG - Pinecone - rerank
 
-# rag-pinecone-rerank
+This template performs RAG using `Pinecone` and `OpenAI` along with [Cohere to perform re-ranking](https://txt.cohere.com/rerank/) on returned documents. 
 
-This template performs RAG using Pinecone and OpenAI along with [Cohere to perform re-ranking](https://txt.cohere.com/rerank/) on returned documents. 
-
-Re-ranking provides a way to rank retrieved documents using specified filters or criteria.
+`Re-ranking` provides a way to rank retrieved documents using specified filters or criteria.
 
 ## Environment Setup
 

@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "gigachain-core"
-version = "0.2.29"
+version = "0.2.35"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -45,7 +45,8 @@ python = ">=3.12.4"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "E", "F", "I", "T201",]
+select = [ "E", "F", "I", "T201", "UP",]
+ignore = [ "UP006", "UP007",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
@@ -84,6 +85,7 @@ mypy = ">=1.10,<1.11"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
+simsimd = "^5.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

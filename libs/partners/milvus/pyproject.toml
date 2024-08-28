@@ -60,6 +60,7 @@ ruff = "^0.1.5"
 mypy = "^0.991"
 gigachain-core = { path = "../../core", develop = true }
 types-requests = "^2"
+simsimd = "^5.0.0"
 
 [tool.poetry.group.dev]
 optional = true

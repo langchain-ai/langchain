@@ -11,7 +11,7 @@ from langchain_community.llms.solar import SOLAR_SERVICE_URL_BASE, SolarCommon
 
 
 @deprecated(  # type: ignore[arg-type]
-    since="0.0.34", removal="0.3.0", alternative_import="langchain_upstage.ChatUpstage"
+    since="0.0.34", removal="1.0", alternative_import="langchain_upstage.ChatUpstage"
 )
 class SolarChat(SolarCommon, ChatOpenAI):
     """Wrapper around Solar large language models.
@@ -31,8 +31,6 @@ class SolarChat(SolarCommon, ChatOpenAI):
 
     # this is needed to match ChatOpenAI superclass
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
         extra = "ignore"

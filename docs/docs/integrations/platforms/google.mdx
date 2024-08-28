@@ -72,6 +72,14 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 from langchain_google_vertexai import ChatVertexAI
 ```
 
+### Chat Anthropic on Vertex AI
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
+
+```python
+from langchain_google_vertexai.model_garden import ChatAnthropicVertex
+```
+
 ## LLMs
 
 ### Google Generative AI
@@ -267,6 +275,18 @@ See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_f
 
 ```python
 from langchain_google_community import GCSFileLoader
+```
+
+### Cloud Vision loader
+
+Install the python package:
+
+```bash
+pip install langchain-google-community[vision]
+```
+
+```python
+from langchain_google_community.vision import CloudVisionLoader
 ```
 
 ### El Carro for Oracle Workloads
@@ -625,6 +645,7 @@ from langchain.retrievers import GoogleVertexAISearchRetriever
 > from Google Cloud allows enterprises to search, store, govern, and manage documents and their AI-extracted
 > data and metadata in a single platform.
 
+Note: `GoogleDocumentAIWarehouseRetriever` is deprecated, use `DocumentAIWarehouseRetriever` (see below).
 ```python
 from langchain.retrievers import GoogleDocumentAIWarehouseRetriever
 docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(
@@ -636,129 +657,8 @@ documents = docai_wh_retriever.invoke(
 )
 ```
 
-## Document Loaders
-
-### BigQuery
-
-> [BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data in Google Cloud.
-
-We need to install `google-cloud-bigquery` python package.
-
-```bash
-pip install google-cloud-bigquery
-```
-
-See a [usage example](/docs/integrations/document_loaders/google_bigquery).
-
 ```python
-from langchain_community.document_loaders import BigQueryLoader
-```
-
-### Cloud Storage
-
->[Cloud Storage](https://en.wikipedia.org/wiki/Google_Cloud_Storage) is a managed service for storing unstructured data in Google Cloud.
-
-We need to install `google-cloud-storage` python package.
-
-```bash
-pip install google-cloud-storage
-```
-
-There are two loaders for the `Google Cloud Storage`: the `Directory` and the `File` loaders.
-
-See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_directory).
-
-```python
-from langchain_community.document_loaders import GCSDirectoryLoader
-```
-See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_file).
-
-```python
-from langchain_community.document_loaders import GCSFileLoader
-```
-
-### Google Drive
-
->[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
-
-Currently, only `Google Docs` are supported.
-
-We need to install several python packages.
-
-```bash
-pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
-```
-
-See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
-
-```python
-from langchain_community.document_loaders import GoogleDriveLoader
-```
-
-### Speech-to-Text
-
-> [Speech-to-Text](https://cloud.google.com/speech-to-text) is an audio transcription API powered by Google's speech recognition models in Google Cloud.
-
-This document loader transcribes audio files and outputs the text results as Documents.
-
-First, we need to install the python package.
-
-```bash
-pip install google-cloud-speech
-```
-
-See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
-
-```python
-from langchain_community.document_loaders import GoogleSpeechToTextLoader
-```
-
-## Document Transformers
-
-### Document AI
-
->[Document AI](https://cloud.google.com/document-ai/docs/overview) is a Google Cloud
-> service that transforms unstructured data from documents into structured data, making it easier
-> to understand, analyze, and consume.
-
-We need to set up a [`GCS` bucket and create your own OCR processor](https://cloud.google.com/document-ai/docs/create-processor)
-The `GCS_OUTPUT_PATH` should be a path to a folder on GCS (starting with `gs://`)
-and a processor name should look like `projects/PROJECT_NUMBER/locations/LOCATION/processors/PROCESSOR_ID`.
-We can get it either programmatically or copy from the `Prediction endpoint` section of the `Processor details`
-tab in the Google Cloud Console.
-
-```bash
-pip install google-cloud-documentai
-pip install google-cloud-documentai-toolbox
-```
-
-See a [usage example](/docs/integrations/document_transformers/docai).
-
-```python
-from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers import DocAIParser
-```
-
-### Google Translate
-
-> [Google Translate](https://translate.google.com/) is a multilingual neural machine
-> translation service developed by Google to translate text, documents and websites
-> from one language into another.
-
-The `GoogleTranslateTransformer` allows you to translate text and HTML with the [Google Cloud Translation API](https://cloud.google.com/translate).
-
-To use it, you should have the `google-cloud-translate` python package installed, and a Google Cloud project with the [Translation API enabled](https://cloud.google.com/translate/docs/setup). This transformer uses the [Advanced edition (v3)](https://cloud.google.com/translate/docs/intro-to-v3).
-
-First, we need to install the python package.
-
-```bash
-pip install google-cloud-translate
-```
-
-See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
-
-```python
-from langchain_community.document_transformers import GoogleTranslateTransformer
+from langchain_google_community.documentai_warehouse import DocumentAIWarehouseRetriever
 ```
 
 ## Tools
@@ -912,7 +812,7 @@ We need to install `langchain-google-community` with required dependencies:
 pip install langchain-google-community[gmail]
 ```
 
-See a [usage example and authorization instructions](/docs/integrations/toolkits/gmail).
+See a [usage example and authorization instructions](/docs/integrations/tools/gmail).
 
 ```python
 from langchain_google_community import GmailToolkit
