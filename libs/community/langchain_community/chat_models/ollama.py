@@ -48,6 +48,7 @@ def _chat_stream_response_to_chat_generation_chunk(
     )
 
 
+@deprecated("0.2.36", alternative="langchain_ollama.chat_models.ChatOllama")
 class ChatOllama(BaseChatModel, _OllamaCommon):
     """Ollama locally runs large language models.
 
