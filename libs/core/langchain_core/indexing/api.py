@@ -91,7 +91,7 @@ class _HashedDocument(Document):
             raise ValueError(
                 f"Failed to hash metadata: {e}. "
                 f"Please use a dict that can be serialized using json."
-            )
+            ) from e
 
         values["content_hash"] = content_hash
         values["metadata_hash"] = metadata_hash
