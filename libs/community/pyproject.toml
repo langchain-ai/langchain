@@ -1,10 +1,10 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = [ "poetry-core>=1.0.0",]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-community"
-version = "0.2.12"
+version = "0.2.13"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -12,15 +12,12 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [tool.ruff]
-exclude = [
-    "tests/examples/non-utf8-encoding.py",
-    "tests/integration_tests/examples/non-utf8-encoding.py",
-]
+exclude = [ "tests/examples/non-utf8-encoding.py", "tests/integration_tests/examples/non-utf8-encoding.py",]
 
 [tool.mypy]
 ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
-exclude = ["notebooks", "examples", "example_data"]
+exclude = [ "notebooks", "examples", "example_data",]
 
 [tool.codespell]
 skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
@@ -33,8 +30,8 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.30"
-langchain = "^0.2.13"
+langchain-core = "^0.2.35"
+langchain = "^0.2.15"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -42,7 +39,6 @@ aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
 dataclasses-json = ">= 0.5.7, < 0.7"
 langsmith = "^0.1.0"
-
 [[tool.poetry.dependencies.numpy]]
 version = "^1"
 python = "<3.12"
@@ -52,18 +48,14 @@ version = "^1.26.0"
 python = ">=3.12"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = [ "E", "F", "I", "T201",]
 
 [tool.coverage.run]
-omit = ["tests/*"]
+omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
-markers = [
-    "requires: mark tests as requiring a specific library",
-    "scheduled: mark tests to run in scheduled testing",
-    "compile: mark placeholder test used to compile integration tests without running them",
-]
+markers = [ "requires: mark tests as requiring a specific library", "scheduled: mark tests to run in scheduled testing", "compile: mark placeholder test used to compile integration tests without running them",]
 asyncio_mode = "auto"
 
 [tool.poetry.group.test]
