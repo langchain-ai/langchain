@@ -8,8 +8,6 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 
-from .utils import get_model
-
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = (
@@ -83,12 +81,11 @@ class HuggingFacePipeline(BaseLLM):
         batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> HuggingFacePipeline:
-        """Construct the pipeline object from model_id and task.
-        backend: str = "default"
-            optimization backend chose from ["default", "ipex", "openvino"]
-        """
+        """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (  # type: ignore[import]
+                AutoModelForCausalLM,
+                AutoModelForSeq2SeqLM,
                 AutoTokenizer,
             )
             from transformers import pipeline as hf_pipeline  # type: ignore[import]
@@ -102,7 +99,70 @@ class HuggingFacePipeline(BaseLLM):
         _model_kwargs = model_kwargs or {}
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
-        model = get_model(task, backend, model_id, **_model_kwargs)
+        try:
+            if task == "text-generation":
+                if backend == "openvino":
+                    try:
+                        from optimum.intel.openvino import (  # type: ignore[import]
+                            OVModelForCausalLM,
+                        )
+
+                    except ImportError:
+                        raise ValueError(
+                            "Could not import optimum-intel python package. "
+                            "Please install it with: "
+                            "pip install 'optimum[openvino,nncf]' "
+                        )
+                    try:
+                        # use local model
+                        model = OVModelForCausalLM.from_pretrained(
+                            model_id, **_model_kwargs
+                        )
+
+                    except Exception:
+                        # use remote model
+                        model = OVModelForCausalLM.from_pretrained(
+                            model_id, export=True, **_model_kwargs
+                        )
+                else:
+                    model = AutoModelForCausalLM.from_pretrained(
+                        model_id, **_model_kwargs
+                    )
+            elif task in ("text2text-generation", "summarization", "translation"):
+                if backend == "openvino":
+                    try:
+                        from optimum.intel.openvino import OVModelForSeq2SeqLM
+
+                    except ImportError:
+                        raise ValueError(
+                            "Could not import optimum-intel python package. "
+                            "Please install it with: "
+                            "pip install 'optimum[openvino,nncf]' "
+                        )
+                    try:
+                        # use local model
+                        model = OVModelForSeq2SeqLM.from_pretrained(
+                            model_id, **_model_kwargs
+                        )
+
+                    except Exception:
+                        # use remote model
+                        model = OVModelForSeq2SeqLM.from_pretrained(
+                            model_id, export=True, **_model_kwargs
+                        )
+                else:
+                    model = AutoModelForSeq2SeqLM.from_pretrained(
+                        model_id, **_model_kwargs
+                    )
+            else:
+                raise ValueError(
+                    f"Got invalid task {task}, "
+                    f"currently only {VALID_TASKS} are supported"
+                )
+        except ImportError as e:
+            raise ValueError(
+                f"Could not load the {task} model due to missing dependencies."
+            ) from e
 
         if tokenizer.pad_token is None:
             tokenizer.pad_token_id = model.config.eos_token_id
