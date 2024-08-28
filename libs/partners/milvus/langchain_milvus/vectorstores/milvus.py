@@ -221,7 +221,7 @@ class Milvus(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Embeddings,
+        embedding_function: Union[Embeddings, BaseSparseEmbedding],  # type: ignore
         collection_name: str = "LangChainCollection",
         collection_description: str = "",
         collection_properties: Optional[dict[str, Any]] = None,
@@ -242,7 +242,7 @@ class Milvus(VectorStore):
         replica_number: int = 1,
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
-        sparse_embedding_function: Optional[BaseSparseEmbedding] = None,
+        metadata_schema: Optional[dict[str, Any]] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -319,6 +319,7 @@ class Milvus(VectorStore):
         self.replica_number = replica_number
         self.timeout = timeout
         self.num_shards = num_shards
+        self.metadata_schema = metadata_schema
 
         # Create the connection to the server
         if connection_args is None:
@@ -481,24 +482,47 @@ class Milvus(VectorStore):
                         )
                         raise ValueError(f"Metadata key {key} is reserved.")
                     # Infer the corresponding datatype of the metadata
-                    dtype = infer_dtype_bydata(value)
-                    # Datatype isn't compatible
-                    if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
-                        logger.error(
-                            (
-                                "Failure to create collection, "
-                                "unrecognized dtype for key: %s"
-                            ),
-                            key,
-                        )
-                        raise ValueError(f"Unrecognized datatype for {key}.")
-                    # Datatype is a string/varchar equivalent
-                    elif dtype == DataType.VARCHAR:
+                    if (
+                        key in self.metadata_schema  # type: ignore
+                        and "dtype" in self.metadata_schema[key]  # type: ignore
+                    ):
+                        kwargs = self.metadata_schema[key].get("kwargs", {})  # type: ignore
                         fields.append(
-                            FieldSchema(key, DataType.VARCHAR, max_length=65_535)
+                            FieldSchema(
+                                name=key,
+                                dtype=self.metadata_schema[key]["dtype"],  # type: ignore
+                                **kwargs,
+                            )
                         )
                     else:
-                        fields.append(FieldSchema(key, dtype))
+                        dtype = infer_dtype_bydata(value)
+                        # Datatype isn't compatible
+                        if dtype == DataType.UNKNOWN or dtype == DataType.NONE:
+                            logger.error(
+                                (
+                                    "Failure to create collection, "
+                                    "unrecognized dtype for key: %s"
+                                ),
+                                key,
+                            )
+                            raise ValueError(f"Unrecognized datatype for {key}.")
+                        # Datatype is a string/varchar equivalent
+                        elif dtype == DataType.VARCHAR:
+                            fields.append(
+                                FieldSchema(key, DataType.VARCHAR, max_length=65_535)
+                            )
+                        # infer_dtype_bydata currently can't recognize array type,
+                        # so this line can not be accessed.
+                        # This line may need to be modified in the future when
+                        # infer_dtype_bydata can recognize array type.
+                        # https://github.com/milvus-io/pymilvus/issues/2165
+                        elif dtype == DataType.ARRAY:
+                            kwargs = self.metadata_schema[key]["kwargs"]  # type: ignore
+                            fields.append(
+                                FieldSchema(name=key, dtype=DataType.ARRAY, **kwargs)
+                            )
+                        else:
+                            fields.append(FieldSchema(key, dtype))
 
         # Create the text field
         fields.append(

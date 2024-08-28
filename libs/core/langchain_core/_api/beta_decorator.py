@@ -270,7 +270,7 @@ def warn_beta(
             message += f" {addendum}"
 
     warning = LangChainBetaWarning(message)
-    warnings.warn(warning, category=LangChainBetaWarning, stacklevel=2)
+    warnings.warn(warning, category=LangChainBetaWarning, stacklevel=4)
 
 
 def surface_langchain_beta_warnings() -> None:

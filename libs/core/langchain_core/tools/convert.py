@@ -244,7 +244,7 @@ def _get_schema_from_runnable_and_arg_types(
                 "Tool input must be str or dict. If dict, dict arguments must be "
                 "typed. Either annotate types (e.g., with TypedDict) or pass "
                 f"arg_types into `.as_tool` to specify. {str(e)}"
-            )
+            ) from e
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
     return create_model(name, **fields)  # type: ignore
 
