@@ -290,10 +290,10 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 msg_type = msg_kwargs.pop("type")
             # None msg content is not allowed
             msg_content = msg_kwargs.pop("content") or ""
-        except KeyError:
+        except KeyError as e:
             raise ValueError(
                 f"Message dict must contain 'role' and 'content' keys, got {message}"
-            )
+            ) from e
         _message = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
@@ -344,9 +344,7 @@ def _runnable_support(func: Callable) -> Callable:
         if messages is not None:
             return func(messages, **kwargs)
         else:
-            return RunnableLambda(
-                partial(func, **kwargs), name=getattr(func, "__name__")
-            )
+            return RunnableLambda(partial(func, **kwargs), name=func.__name__)
 
     wrapped.__doc__ = func.__doc__
     return wrapped
@@ -791,7 +789,7 @@ def trim_messages(
         raise ValueError
     messages = convert_to_messages(messages)
     if hasattr(token_counter, "get_num_tokens_from_messages"):
-        list_token_counter = getattr(token_counter, "get_num_tokens_from_messages")
+        list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
         if (
             list(inspect.signature(token_counter).parameters.values())[0].annotation

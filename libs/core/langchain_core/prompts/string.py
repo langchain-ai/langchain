@@ -40,14 +40,14 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
     """
     try:
         from jinja2.sandbox import SandboxedEnvironment
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
             "Please be cautious when using jinja2 templates. "
             "Do not expand jinja2 templates using unverified or user-controlled "
             "inputs as that can result in arbitrary Python code execution."
-        )
+        ) from e
 
     # This uses a sandboxed environment to prevent arbitrary code execution.
     # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
@@ -81,17 +81,17 @@ def validate_jinja2(template: str, input_variables: List[str]) -> None:
         warning_message += f"Extra variables: {extra_variables}"
 
     if warning_message:
-        warnings.warn(warning_message.strip())
+        warnings.warn(warning_message.strip(), stacklevel=7)
 
 
 def _get_jinja2_variables_from_template(template: str) -> Set[str]:
     try:
         from jinja2 import Environment, meta
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
-        )
+        ) from e
     env = Environment()
     ast = env.parse(template)
     variables = meta.find_undeclared_variables(ast)
