@@ -444,7 +444,7 @@ def warn_deprecated(
         LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
     )
     warning = warning_cls(message)
-    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=2)
+    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=4)
 
 
 def surface_langchain_deprecation_warnings() -> None:
