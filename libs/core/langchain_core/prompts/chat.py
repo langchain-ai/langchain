@@ -551,13 +551,13 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                             input_variables=input_variables, template=img_template
                         )
                     else:
-                        raise ValueError()
+                        raise ValueError(f"Invalid image template: {tmpl}")
                     prompt.append(img_template_obj)
                 else:
-                    raise ValueError()
+                    raise ValueError(f"Invalid template: {tmpl}")
             return cls(prompt=prompt, **kwargs)
         else:
-            raise ValueError()
+            raise ValueError(f"Invalid template: {template}")
 
     @classmethod
     def from_template_file(
@@ -576,7 +576,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             A new instance of this class.
         """
-        with open(str(template_file), "r") as f:
+        with open(str(template_file)) as f:
             template = f.read()
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 

@@ -39,7 +39,7 @@ class OutputParserException(ValueError, LangChainException):
         llm_output: Optional[str] = None,
         send_to_llm: bool = False,
     ):
-        super(OutputParserException, self).__init__(error)
+        super().__init__(error)
         if send_to_llm:
             if observation is None or llm_output is None:
                 raise ValueError(

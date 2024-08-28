@@ -494,8 +494,7 @@ EXPECTED_STREAMED_JSON_DIFF = [
 
 def test_partial_text_json_output_parser() -> None:
     def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
+        yield from STREAMED_TOKENS
 
     chain = input_iter | SimpleJsonOutputParser()
 
@@ -504,8 +503,7 @@ def test_partial_text_json_output_parser() -> None:
 
 def test_partial_text_json_output_parser_diff() -> None:
     def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
+        yield from STREAMED_TOKENS
 
     chain = input_iter | SimpleJsonOutputParser(diff=True)
 
@@ -577,8 +575,7 @@ def test_partial_text_json_output_parser_with_json_code_block() -> None:
     """Test json parser works correctly when the response contains a json code-block."""
 
     def input_iter(_: Any) -> Iterator[str]:
-        for token in TOKENS_WITH_JSON_CODE_BLOCK:
-            yield token
+        yield from TOKENS_WITH_JSON_CODE_BLOCK
 
     chain = input_iter | SimpleJsonOutputParser()
 
