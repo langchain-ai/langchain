@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 import pytest
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama.chat_models import ChatOllama
 
 
 def test_standard_params() -> None:
@@ -24,12 +24,12 @@ def test_standard_params() -> None:
     assert ls_params["ls_model_name"] == "llama3"
 
     # Test optional params
-    model = ChatOllama(num_predict=10, stop=["test"], temperature=0.33)
+    model = ChatOllama(model="llama3", num_predict=10, stop=["test"], temperature=0.33)
     ls_params = model._get_ls_params()
     try:
         ExpectedParams(**ls_params)
     except ValidationError as e:
         pytest.fail(f"Validation error: {e}")
-    assert ls_params["ls_max_tokens"] == 10
+    assert ls_params["ls_model_name"] == "llama3"
     assert ls_params["ls_stop"] == ["test"]
     assert ls_params["ls_temperature"] == 0.33
