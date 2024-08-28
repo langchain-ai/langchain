@@ -12,9 +12,9 @@ from langchain_core.prompts import PromptTemplate
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.eval_prompt import (
+    CCOT_PROMPT,
     CONTEXT_PROMPT,
     COT_PROMPT,
-    CCOT_PROMPT,
     PROMPT,
 )
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
