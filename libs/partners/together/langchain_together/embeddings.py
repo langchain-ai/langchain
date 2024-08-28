@@ -1,7 +1,6 @@
 """Wrapper around Together AI's Embeddings API."""
 
 import logging
-import os
 import warnings
 from typing import (
     Any,
@@ -20,15 +19,14 @@ import openai
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     SecretStr,
     root_validator,
 )
 from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
+    from_env,
     get_pydantic_field_names,
+    secret_from_env,
 )
 
 logger = logging.getLogger(__name__)
@@ -108,7 +106,7 @@ class TogetherEmbeddings(BaseModel, Embeddings):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "togethercomputer/m2-bert-80M-8k-retrieval"
-    """Embeddings model name to use. 
+    """Embeddings model name to use.
     Instead, use 'togethercomputer/m2-bert-80M-8k-retrieval' for example.
     """
     dimensions: Optional[int] = None
@@ -116,10 +114,19 @@ class TogetherEmbeddings(BaseModel, Embeddings):
 
     Not yet supported.
     """
-    together_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """API Key for Solar API."""
+    together_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env("TOGETHER_API_KEY", default=None),
+    )
+    """Together AI API key.
+
+    Automatically read from env variable `TOGETHER_API_KEY` if not provided.
+    """
     together_api_base: str = Field(
-        default="https://api.together.ai/v1/", alias="base_url"
+        default_factory=from_env(
+            "TOGETHER_API_BASE", default="https://api.together.xyz/v1/"
+        ),
+        alias="base_url",
     )
     """Endpoint URL to use."""
     embedding_ctx_length: int = 4096
@@ -170,7 +177,7 @@ class TogetherEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = "forbid"
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -199,18 +206,9 @@ class TogetherEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        together_api_key = get_from_dict_or_env(
-            values, "together_api_key", "TOGETHER_API_KEY"
-        )
-        values["together_api_key"] = (
-            convert_to_secret_str(together_api_key) if together_api_key else None
-        )
-        values["together_api_base"] = values["together_api_base"] or os.getenv(
-            "TOGETHER_API_BASE"
-        )
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        """Logic that will post Pydantic initialization."""
         client_params = {
             "api_key": (
                 values["together_api_key"].get_secret_value()

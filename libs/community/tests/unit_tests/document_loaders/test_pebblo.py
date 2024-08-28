@@ -144,4 +144,5 @@ def test_pebblo_safe_loader_api_key() -> None:
     )
 
     # Assert
-    assert loader.api_key == api_key
+    assert loader.pb_client.api_key == api_key
+    assert loader.pb_client.classifier_location == "local"

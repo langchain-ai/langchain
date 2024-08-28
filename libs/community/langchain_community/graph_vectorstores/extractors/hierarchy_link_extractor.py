@@ -1,5 +1,6 @@
 from typing import Callable, List, Set
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 from langchain_core.graph_vectorstores.links import Link
 
@@ -18,6 +19,7 @@ _CHILD: str = "c:"
 _SIBLING: str = "s:"
 
 
+@beta()
 class HierarchyLinkExtractor(LinkExtractor[HierarchyInput]):
     def __init__(
         self,

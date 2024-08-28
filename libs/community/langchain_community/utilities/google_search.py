@@ -9,7 +9,7 @@ from langchain_core.utils import get_from_dict_or_env
 
 @deprecated(
     since="0.0.33",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_google_community.GoogleSearchAPIWrapper",
 )
 class GoogleSearchAPIWrapper(BaseModel):

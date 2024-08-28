@@ -62,7 +62,7 @@ class ExampleLinksDirective(SphinxDirective):
             item_node.append(para_node)
             list_node.append(item_node)
         if list_node.children:
-            title_node = nodes.title()
+            title_node = nodes.rubric()
             title_node.append(nodes.Text(f"Examples using {class_or_func_name}"))
             return [title_node, list_node]
         return [list_node]
@@ -75,7 +75,10 @@ class Beta(BaseAdmonition):
     def run(self):
         self.content = self.content or StringList(
             [
-                "This feature is in beta. It is actively being worked on, so the API may change."
+                (
+                    "This feature is in beta. It is actively being worked on, so the "
+                    "API may change."
+                )
             ]
         )
         self.arguments = self.arguments or ["Beta"]
@@ -90,13 +93,10 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, LangChain, Inc."
-author = "LangChain, Inc."
+copyright = "2023, LangChain Inc"
+author = "LangChain, Inc"
 
-version = data["tool"]["poetry"]["version"]
-release = version
-
-html_title = project + " " + version
+html_favicon = "_static/img/brand/favicon.png"
 html_last_updated_fmt = "%b %d, %Y"
 
 
@@ -112,11 +112,13 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
-    "sphinx_copybutton",
-    "sphinx_panels",
     "IPython.sphinxext.ipython_console_highlighting",
+    "myst_parser",
+    "_extensions.gallery_directive",
+    "sphinx_design",
+    "sphinx_copybutton",
 ]
-source_suffix = [".rst"]
+source_suffix = [".rst", ".md"]
 
 # some autodoc pydantic options are repeated in the actual template.
 # potentially user error, but there may be bugs in the sphinx extension
@@ -148,23 +150,84 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "scikit-learn-modern"
-html_theme_path = ["themes"]
+# The theme to use for HTML and HTML Help pages.
+html_theme = "pydata_sphinx_theme"
 
-# redirects dictionary maps from old links to new links
-html_additional_pages = {}
-redirects = {
-    "index": "langchain_api_reference",
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+html_theme_options = {
+    #     # -- General configuration ------------------------------------------------
+    "sidebar_includehidden": True,
+    "use_edit_page_button": False,
+    #     # "analytics": {
+    #     #     "plausible_analytics_domain": "scikit-learn.org",
+    #     #     "plausible_analytics_url": "https://views.scientific-python.org/js/script.js",
+    #     # },
+    #     # If "prev-next" is included in article_footer_items, then setting show_prev_next
+    #     # to True would repeat prev and next links. See
+    #     # https://github.com/pydata/pydata-sphinx-theme/blob/b731dc230bc26a3d1d1bb039c56c977a9b3d25d8/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/layout.html#L118-L129
+    "show_prev_next": False,
+    "search_bar_text": "Search",
+    "navigation_with_keys": True,
+    "collapse_navigation": True,
+    "navigation_depth": 3,
+    "show_nav_level": 1,
+    "show_toc_level": 3,
+    "navbar_align": "left",
+    "header_links_before_dropdown": 5,
+    "header_dropdown_text": "Integrations",
+    "logo": {
+        "image_light": "_static/wordmark-api.svg",
+        "image_dark": "_static/wordmark-api-dark.svg",
+    },
+    "surface_warnings": True,
+    #     # -- Template placement in theme layouts ----------------------------------
+    "navbar_start": ["navbar-logo"],
+    #     # Note that the alignment of navbar_center is controlled by navbar_align
+    "navbar_center": ["navbar-nav"],
+    "navbar_end": ["langchain_docs", "theme-switcher", "navbar-icon-links"],
+    #     # navbar_persistent is persistent right (even when on mobiles)
+    "navbar_persistent": ["search-field"],
+    "article_header_start": ["breadcrumbs"],
+    "article_header_end": [],
+    "article_footer_items": [],
+    "content_footer_items": [],
+    #     # Use html_sidebars that map page patterns to list of sidebar templates
+    #     "primary_sidebar_end": [],
+    "footer_start": ["copyright"],
+    "footer_center": [],
+    "footer_end": [],
+    #     # When specified as a dictionary, the keys should follow glob-style patterns, as in
+    #     # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-exclude_patterns
+    #     # In particular, "**" specifies the default for all pages
+    #     # Use :html_theme.sidebar_secondary.remove: for file-wide removal
+    #     "secondary_sidebar_items": {"**": ["page-toc", "sourcelink"]},
+    #     "show_version_warning_banner": True,
+    #     "announcement": None,
+    "icon_links": [
+        {
+            # Label for this link
+            "name": "GitHub",
+            # URL where the link will redirect
+            "url": "https://github.com/langchain-ai/langchain",  # required
+            # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
+            "icon": "fa-brands fa-square-github",
+            # The type of image to be used (see below for details)
+            "type": "fontawesome",
+        },
+        {
+            "name": "X / Twitter",
+            "url": "https://twitter.com/langchainai",
+            "icon": "fab fa-twitter-square",
+        },
+    ],
+    "icon_links_label": "Quick Links",
+    "external_links": [
+        {"name": "Legacy reference", "url": "https://api.python.langchain.com/"},
+    ],
 }
-for old_link in redirects:
-    html_additional_pages[old_link] = "redirects.html"
 
-partners_dir = Path(__file__).parent.parent.parent / "libs/partners"
-partners = [
-    (p.name, p.name.replace("-", "_") + "_api_reference")
-    for p in partners_dir.iterdir()
-]
-partners = sorted(partners)
 
 html_context = {
     "display_github": True,  # Integrate GitHub
@@ -172,8 +235,6 @@ html_context = {
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
-    "redirects": redirects,
-    "partners": partners,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -183,9 +244,7 @@ html_static_path = ["_static"]
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (e.g. https://...)
-html_css_files = [
-    "css/custom.css",
-]
+html_css_files = ["css/custom.css"]
 html_use_index = False
 
 myst_enable_extensions = ["colon_fence"]
@@ -202,3 +261,5 @@ html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 # Tell Jinja2 templates the build is running on Read the Docs
 if os.environ.get("READTHEDOCS", "") == "True":
     html_context["READTHEDOCS"] = True
+
+master_doc = "index"
