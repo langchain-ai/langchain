@@ -59,18 +59,18 @@ class UpsertionRecord(Base):  # type: ignore[valid-type,misc]
     __tablename__ = "upsertion_record"
 
     uuid = Column(
-        String,
+        String(36),
         index=True,
         default=lambda: str(uuid.uuid4()),
         primary_key=True,
         nullable=False,
     )
-    key = Column(String, index=True)
+    key = Column(String(100), index=True)
     # Using a non-normalized representation to handle `namespace` attribute.
     # If the need arises, this attribute can be pulled into a separate Collection
     # table at some time later.
-    namespace = Column(String, index=True, nullable=False)
-    group_id = Column(String, index=True, nullable=True)
+    namespace = Column(String(100), index=True, nullable=False)
+    group_id = Column(String(100), index=True, nullable=True)
 
     # The timestamp associated with the last record upsertion.
     updated_at = Column(Float, index=True)
@@ -204,6 +204,8 @@ class SQLRecordManager(RecordManager):
                 query = text("SELECT (julianday('now') - 2440587.5) * 86400.0;")
             elif self.dialect == "postgresql":
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
+            elif self.dialect == "mysql":
+                query = text("SELECT UNIX_TIMESTAMP(NOW(6));")
             else:
                 raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
 
@@ -234,6 +236,8 @@ class SQLRecordManager(RecordManager):
                 query = text("SELECT (julianday('now') - 2440587.5) * 86400.0;")
             elif self.dialect == "postgresql":
                 query = text("SELECT EXTRACT (EPOCH FROM CURRENT_TIMESTAMP);")
+            elif self.dialect == "mysql":
+                query = text("SELECT UNIX_TIMESTAMP(NOW(6));")
             else:
                 raise NotImplementedError(f"Not implemented for dialect {self.dialect}")
 
@@ -318,6 +322,17 @@ class SQLRecordManager(RecordManager):
                         group_id=pg_insert_stmt.excluded.group_id,
                     ),
                 )
+            elif self.dialect == "mysql":
+                from sqlalchemy.dialects.mysql import Insert as MysqlInsertType
+                from sqlalchemy.dialects.mysql import insert as mysql_insert
+
+                mysql_insert_stmt: MysqlInsertType = mysql_insert(UpsertionRecord).values(
+                    records_to_upsert
+                )
+                stmt = mysql_insert_stmt.on_duplicate_key_update(
+                    updated_at=mysql_insert_stmt.inserted.updated_at,
+                    group_id=mysql_insert_stmt.inserted.group_id,
+                )
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
 
@@ -396,6 +411,17 @@ class SQLRecordManager(RecordManager):
                         updated_at=pg_insert_stmt.excluded.updated_at,
                         group_id=pg_insert_stmt.excluded.group_id,
                     ),
+                )
+            elif self.dialect == "mysql":
+                from sqlalchemy.dialects.mysql import Insert as MysqlInsertType
+                from sqlalchemy.dialects.mysql import insert as mysql_insert
+
+                mysql_insert_stmt: MysqlInsertType = mysql_insert(UpsertionRecord).values(
+                    records_to_upsert
+                )
+                stmt = mysql_insert_stmt.on_duplicate_key_update(
+                    updated_at=mysql_insert_stmt.inserted.updated_at,
+                    group_id=mysql_insert_stmt.inserted.group_id,
                 )
             else:
                 raise NotImplementedError(f"Unsupported dialect {self.dialect}")
