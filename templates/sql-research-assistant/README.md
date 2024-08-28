@@ -1,4 +1,4 @@
-# sql-research-assistant
+# SQL - Research assistant
 
 This package does research over a SQL database
 

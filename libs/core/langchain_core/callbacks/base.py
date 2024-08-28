@@ -953,11 +953,6 @@ class BaseCallbackManager(CallbackManagerMixin):
                     #    ['tag2', 'tag1']
 
         """  # noqa: E501
-        if self.parent_run_id != other.parent_run_id:
-            _LOGGER.warning(
-                f"{self.__class__.__name__}.merge(): Parent run IDs do not match."
-                " Using the parent run ID of the first callback manager."
-            )
         manager = self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,
             handlers=[],
