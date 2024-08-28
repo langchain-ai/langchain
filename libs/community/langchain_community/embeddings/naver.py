@@ -69,13 +69,13 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
     base_url: Optional[str] = Field(
-        default=DEFAULT_BASE_URL, alias="ncp_clovastudio_api_base_url"
+        default=None, alias="clovastudio_api_base_url"
     )
     """
     Automatically inferred from env are  `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
     """
 
-    app_id: Optional[str] = Field(default=None, alias="ncp_clovastudio_app_id")
+    app_id: Optional[str] = Field(default=None, alias="clovastudio_app_id")
     service_app: bool = Field(
         default=False,
         description="false: use testapp, true: use service app on NCP Clova Studio",
@@ -125,7 +125,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY")
         )
         values["base_url"] = get_from_dict_or_env(
-            values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL"
+            values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
         )
 
         values["app_id"] = get_from_dict_or_env(
@@ -169,13 +169,13 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
         payload = {"text": text}
         response = self.client.post(url=self._api_url, json=payload)
         _raise_on_error(response)
-        return response.json()
+        return response.json()["result"]["embedding"]
 
     async def _aembed_text(self, text: str) -> List[float]:
         payload = {"text": text}
         response = await self.async_client.post(url=self._api_url, json=payload)
         await _araise_on_error(response)
-        return response.json()
+        return response.json()["result"]["embedding"]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
@@ -189,8 +189,9 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
         for text in texts:
-            embeddings.append(self._aembed_text(text))
+            embedding = await self._aembed_text(text)
+            embeddings.append(embedding)
         return embeddings
 
     async def aembed_query(self, text: str) -> List[float]:
-        return self._aembed_text(text)
+        return await self._aembed_text(text)

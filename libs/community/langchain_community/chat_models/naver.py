@@ -129,6 +129,8 @@ async def _aiter_sse(
             event_data = sse.json()
             if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
                 return
+            if sse.event == "result":
+                return
             yield sse
 
 
@@ -197,7 +199,7 @@ class ChatClovaX(BaseChatModel):
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
     base_url: Optional[str] = Field(
-        default=DEFAULT_BASE_URL, alias="ncp_clovastudio_api_base_url"
+        default=None, alias="clovastudio_api_base_url"
     )
     """
     Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
@@ -213,7 +215,7 @@ class ChatClovaX(BaseChatModel):
     seed: Optional[int] = None
 
     timeout: int = 90
-    max_retries: int = 3
+    max_retries: int = 2
 
     class Config:
         """Configuration for this pydantic object."""
@@ -274,7 +276,7 @@ class ChatClovaX(BaseChatModel):
 
         if self.task_id:
             return (
-                f"{self.base_url}/{app_type}/v2/tasks/{self.task_id}/chat-completions"
+                f"{self.base_url}/{app_type}/v1/tasks/{self.task_id}/chat-completions"
             )
         else:
             return f"{self.base_url}/{app_type}/v1/chat-completions/{self.model_name}"
@@ -315,7 +317,7 @@ class ChatClovaX(BaseChatModel):
             get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY")
         )
         values["base_url"] = get_from_dict_or_env(
-            values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL"
+            values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
         )
 
         if not values.get("client"):
@@ -379,6 +381,8 @@ class ChatClovaX(BaseChatModel):
                             sse.event == "signal"
                             and event_data.get("data", {}) == "[DONE]"
                         ):
+                            return
+                        if sse.event == "result":
                             return
                         if sse.event == "error":
                             raise SSEError(message=sse.data)
