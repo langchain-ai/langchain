@@ -139,8 +139,20 @@ def test__merge_messages() -> None:
                 },
             ]
         ),
-        ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
-        ToolMessage("blah output", tool_call_id="2"),  # type: ignore[misc]
+        ToolMessage("buz output", tool_call_id="1", status="error"),  # type: ignore[misc]
+        ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": "fake_image_data",
+                    },
+                },
+            ],
+            tool_call_id="2",
+        ),  # type: ignore[misc]
         HumanMessage("next thing"),  # type: ignore[misc]
     ]
     expected = [
@@ -168,11 +180,56 @@ def test__merge_messages() -> None:
         ),
         HumanMessage(  # type: ignore[misc]
             [
-                {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
-                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
+                {
+                    "type": "tool_result",
+                    "content": "buz output",
+                    "tool_use_id": "1",
+                    "is_error": True,
+                },
+                {
+                    "type": "tool_result",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": "fake_image_data",
+                            },
+                        },
+                    ],
+                    "tool_use_id": "2",
+                    "is_error": False,
+                },
                 {"type": "text", "text": "next thing"},
             ]
         ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test tool message case
+    messages = [
+        ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
+        ToolMessage(  # type: ignore[misc]
+            content=[
+                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"}
+            ],
+            tool_call_id="2",
+        ),
+    ]
+    expected = [
+        HumanMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_result",
+                    "content": "buz output",
+                    "tool_use_id": "1",
+                    "is_error": False,
+                },
+                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
+            ]
+        )
     ]
     actual = _merge_messages(messages)
     assert expected == actual
@@ -336,7 +393,12 @@ def test__format_messages_with_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
@@ -375,7 +437,12 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
@@ -409,7 +476,12 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
@@ -456,13 +528,52 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
             {
                 "role": "user",
                 "content": [
-                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                    {
+                        "type": "tool_result",
+                        "content": "blurb",
+                        "tool_use_id": "1",
+                        "is_error": False,
+                    }
                 ],
             },
         ],
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+
+def test__format_messages_with_cache_control() -> None:
+    messages = [
+        SystemMessage(
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ]
+        ),
+        HumanMessage(
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+                {
+                    "type": "text",
+                    "text": "foo",
+                },
+            ]
+        ),
+    ]
+    expected_system = [
+        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
+    ]
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": "foo"},
+            ],
+        }
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert expected_system == actual_system
+    assert expected_messages == actual_messages
 
 
 def test_anthropic_api_key_is_secret_string() -> None:

@@ -1,4 +1,5 @@
 """Test Baichuan Text Embedding."""
+
 from langchain_community.embeddings.baichuan import BaichuanTextEmbeddings
 
 
@@ -17,3 +18,13 @@ def test_baichuan_embedding_query() -> None:
     embedding = BaichuanTextEmbeddings()  # type: ignore[call-arg]
     output = embedding.embed_query(document)
     assert len(output) == 1024  # type: ignore[arg-type]
+
+
+def test_baichuan_embeddings_multi_documents() -> None:
+    """Test Baichuan Text Embedding for documents with multi texts."""
+    document = "午餐吃了螺蛳粉"
+    doc_amount = 35
+    embeddings = BaichuanTextEmbeddings()  # type: ignore[call-arg]
+    output = embeddings.embed_documents([document] * doc_amount)
+    assert len(output) == doc_amount  # type: ignore[arg-type]
+    assert len(output[0]) == 1024  # type: ignore[index]

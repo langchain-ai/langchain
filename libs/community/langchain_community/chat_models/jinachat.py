@@ -1,4 +1,5 @@
 """JinaChat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -44,6 +45,7 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
 from tenacity import (
     before_sleep_log,
@@ -187,8 +189,6 @@ class JinaChat(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -217,7 +217,7 @@ class JinaChat(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["jinachat_api_key"] = convert_to_secret_str(

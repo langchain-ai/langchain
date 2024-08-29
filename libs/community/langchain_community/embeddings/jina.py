@@ -12,6 +12,14 @@ JINA_API_URL: str = "https://api.jina.ai/v1/embeddings"
 
 
 def is_local(url: str) -> bool:
+    """Check if a URL is a local file.
+
+    Args:
+        url (str): The URL to check.
+
+    Returns:
+        bool: True if the URL is a local file, False otherwise.
+    """
     url_parsed = urlparse(url)
     if url_parsed.scheme in ("file", ""):  # Possibly a local file
         return exists(url_parsed.path)
@@ -19,6 +27,14 @@ def is_local(url: str) -> bool:
 
 
 def get_bytes_str(file_path: str) -> str:
+    """Get the bytes string of a file.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Returns:
+        str: The bytes string of the file.
+    """
     with open(file_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 

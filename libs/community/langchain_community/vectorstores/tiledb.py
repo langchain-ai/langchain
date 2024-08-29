@@ -188,7 +188,7 @@ class TileDB(VectorStore):
             pickled_metadata = doc.get("metadata")
             result_doc = Document(page_content=str(doc["text"][0]))
             if pickled_metadata is not None:
-                metadata = pickle.loads(
+                metadata = pickle.loads(  # ignore[pickle]: explicit-opt-in
                     np.array(pickled_metadata.tolist()).astype(np.uint8).tobytes()
                 )
                 result_doc.metadata = metadata

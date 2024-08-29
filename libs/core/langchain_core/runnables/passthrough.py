@@ -53,25 +53,46 @@ if TYPE_CHECKING:
 
 
 def identity(x: Other) -> Other:
-    """Identity function"""
+    """Identity function.
+
+    Args:
+        x (Other): input.
+
+    Returns:
+        Other: output.
+    """
     return x
 
 
 async def aidentity(x: Other) -> Other:
-    """Async identity function"""
+    """Async identity function.
+
+    Args:
+        x (Other): input.
+
+    Returns:
+        Other: output.
+    """
     return x
 
 
 class RunnablePassthrough(RunnableSerializable[Other, Other]):
     """Runnable to passthrough inputs unchanged or with additional keys.
 
-    This runnable behaves almost like the identity function, except that it
+    This Runnable behaves almost like the identity function, except that it
     can be configured to add additional keys to the output, if the input is a
     dict.
 
     The examples below demonstrate this Runnable works using a few simple
     chains. The chains rely on simple lambdas to make the examples easy to execute
     and experiment with.
+
+    Parameters:
+        func (Callable[[Other], None], optional): Function to be called with the input.
+        afunc (Callable[[Other], Awaitable[None]], optional): Async function to
+            be called with the input.
+        input_type (Optional[Type[Other]], optional): Type of the input.
+        **kwargs (Any): Additional keyword arguments.
 
     Examples:
 
@@ -195,14 +216,15 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                 Union[Runnable[Dict[str, Any], Any], Callable[[Dict[str, Any]], Any]],
             ],
         ],
-    ) -> "RunnableAssign":
+    ) -> RunnableAssign:
         """Merge the Dict input with the output produced by the mapping argument.
 
         Args:
-            mapping: A mapping from keys to runnables or callables.
+            **kwargs: Runnable, Callable or a Mapping from keys to Runnables
+                or Callables.
 
         Returns:
-            A runnable that merges the Dict input with the output produced by the
+            A Runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
         return RunnableAssign(RunnableParallel(kwargs))
@@ -335,6 +357,10 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     `RunnableParallel` instance, applies transformations, then combines
     these with the original data, introducing new key-value pairs based
     on the mapper's logic.
+
+    Parameters:
+        mapper (RunnableParallel[Dict[str, Any]]): A `RunnableParallel` instance
+            that will be used to transform the input dictionary.
 
     Examples:
         .. code-block:: python
@@ -627,10 +653,14 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """Runnable that picks keys from Dict[str, Any] inputs.
 
-    RunnablePick class represents a runnable that selectively picks keys from a
+    RunnablePick class represents a Runnable that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract
     from the input dictionary. It returns a new dictionary containing only
     the selected keys.
+
+    Parameters:
+        keys (Union[str, List[str]]): A single key or a list of keys to pick from
+            the input dictionary.
 
     Example :
         .. code-block:: python

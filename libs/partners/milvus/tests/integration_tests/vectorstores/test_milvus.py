@@ -1,6 +1,8 @@
 """Test Milvus functionality."""
+
 from typing import Any, List, Optional
 
+import pytest
 from langchain_core.documents import Document
 
 from langchain_milvus.vectorstores import Milvus
@@ -27,6 +29,7 @@ def _milvus_from_texts(
     metadatas: Optional[List[dict]] = None,
     ids: Optional[List[str]] = None,
     drop: bool = True,
+    **kwargs: Any,
 ) -> Milvus:
     return Milvus.from_texts(
         fake_texts,
@@ -36,6 +39,8 @@ def _milvus_from_texts(
         # connection_args={"uri": "http://127.0.0.1:19530"},
         connection_args={"uri": "./milvus_demo.db"},
         drop_old=drop,
+        consistency_level="Strong",
+        **kwargs,
     )
 
 
@@ -47,6 +52,15 @@ def test_milvus() -> None:
     """Test end to end construction and search."""
     docsearch = _milvus_from_texts()
     output = docsearch.similarity_search("foo", k=1)
+    assert_docs_equal_without_pk(output, [Document(page_content="foo")])
+
+
+def test_milvus_vector_search() -> None:
+    """Test end to end construction and search by vector."""
+    docsearch = _milvus_from_texts()
+    output = docsearch.similarity_search_by_vector(
+        FakeEmbeddings().embed_query("foo"), k=1
+    )
     assert_docs_equal_without_pk(output, [Document(page_content="foo")])
 
 
@@ -110,6 +124,21 @@ def test_milvus_max_marginal_relevance_search() -> None:
     )
 
 
+def test_milvus_max_marginal_relevance_search_with_dynamic_field() -> None:
+    """Test end to end construction and MRR search with enabling dynamic field."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": i} for i in range(len(texts))]
+    docsearch = _milvus_from_texts(metadatas=metadatas, enable_dynamic_field=True)
+    output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
+    assert_docs_equal_without_pk(
+        output,
+        [
+            Document(page_content="foo", metadata={"page": 0}),
+            Document(page_content="baz", metadata={"page": 2}),
+        ],
+    )
+
+
 def test_milvus_add_extra() -> None:
     """Test end to end construction and MRR search."""
     texts = ["foo", "bar", "baz"]
@@ -123,7 +152,7 @@ def test_milvus_add_extra() -> None:
 
 
 def test_milvus_no_drop() -> None:
-    """Test end to end construction and MRR search."""
+    """Test construction without dropping old data."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = _milvus_from_texts(metadatas=metadatas)
@@ -171,14 +200,169 @@ def test_milvus_upsert_entities() -> None:
     assert len(ids) == 2  # type: ignore[arg-type]
 
 
+def test_milvus_enable_dynamic_field() -> None:
+    """Test end to end construction and enable dynamic field"""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i} for i in range(len(texts))]
+    docsearch = _milvus_from_texts(metadatas=metadatas, enable_dynamic_field=True)
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 3
+
+    # When enable dynamic field, any new field data will be added to the collection.
+    new_metadatas = [{"id_new": i} for i in range(len(texts))]
+    docsearch.add_texts(texts, new_metadatas)
+
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 6
+
+    assert set(docsearch.fields) == {
+        docsearch._primary_field,
+        docsearch._text_field,
+        docsearch._vector_field,
+    }
+
+
+def test_milvus_disable_dynamic_field() -> None:
+    """Test end to end construction and disable dynamic field"""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i} for i in range(len(texts))]
+    docsearch = _milvus_from_texts(metadatas=metadatas, enable_dynamic_field=False)
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 3
+    # ["pk", "text", "vector", "id"]
+    assert set(docsearch.fields) == {
+        docsearch._primary_field,
+        docsearch._text_field,
+        docsearch._vector_field,
+        "id",
+    }
+
+    # Try to add new fields "id_new", but since dynamic field is disabled,
+    # all fields in the collection is specified as ["pk", "text", "vector", "id"],
+    # new field information "id_new" will not be added.
+    new_metadatas = [{"id": i, "id_new": i} for i in range(len(texts))]
+    docsearch.add_texts(texts, new_metadatas)
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 6
+    for doc in output:
+        assert set(doc.metadata.keys()) == {"id", "pk"}  # `id_new` is not added.
+
+    # When disable dynamic field,
+    # missing data of the created fields "id", will raise an exception.
+    with pytest.raises(Exception):
+        new_metadatas = [{"id_new": i} for i in range(len(texts))]
+        docsearch.add_texts(texts, new_metadatas)
+
+
+def test_milvus_metadata_field() -> None:
+    """Test end to end construction and use metadata field"""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i} for i in range(len(texts))]
+    docsearch = _milvus_from_texts(metadatas=metadatas, metadata_field="metadata")
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 3
+
+    new_metadatas = [{"id_new": i} for i in range(len(texts))]
+    docsearch.add_texts(texts, new_metadatas)
+
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 6
+
+    assert set(docsearch.fields) == {
+        docsearch._primary_field,
+        docsearch._text_field,
+        docsearch._vector_field,
+        docsearch._metadata_field,
+    }
+
+
+def test_milvus_enable_dynamic_field_with_partition_key() -> None:
+    """
+    Test end to end construction and enable dynamic field
+    with partition_key_field
+    """
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i, "namespace": f"name_{i}"} for i in range(len(texts))]
+
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas, enable_dynamic_field=True, partition_key_field="namespace"
+    )
+
+    # filter on a single namespace
+    output = docsearch.similarity_search("foo", k=10, expr="namespace == 'name_2'")
+    assert len(output) == 1
+
+    # without namespace filter
+    output = docsearch.similarity_search("foo", k=10)
+    assert len(output) == 3
+
+    assert set(docsearch.fields) == {
+        docsearch._primary_field,
+        docsearch._text_field,
+        docsearch._vector_field,
+        docsearch._partition_key_field,
+    }
+
+
+def test_milvus_array_field() -> None:
+    """Manually specify metadata schema, including an array_field.
+    For more information about array data type and filtering, please refer to
+    https://milvus.io/docs/array_data_type.md
+    """
+    from pymilvus import DataType
+
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i, "array_field": [i, i + 1, i + 2]} for i in range(len(texts))]
+
+    # Manually specify metadata schema, including an array_field.
+    # If some fields are not specified, Milvus will automatically infer their schemas.
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas,
+        metadata_schema={
+            "array_field": {
+                "dtype": DataType.ARRAY,
+                "kwargs": {"element_type": DataType.INT64, "max_capacity": 50},
+            },
+            # "id": {
+            #     "dtype": DataType.INT64,
+            # }
+        },
+    )
+    output = docsearch.similarity_search("foo", k=10, expr="array_field[0] < 2")
+    assert len(output) == 2
+    output = docsearch.similarity_search(
+        "foo", k=10, expr="ARRAY_CONTAINS(array_field, 3)"
+    )
+    assert len(output) == 2
+
+    # If we use enable_dynamic_field,
+    # there is no need to manually specify metadata schema.
+    docsearch = _milvus_from_texts(
+        enable_dynamic_field=True,
+        metadatas=metadatas,
+    )
+    output = docsearch.similarity_search("foo", k=10, expr="array_field[0] < 2")
+    assert len(output) == 2
+    output = docsearch.similarity_search(
+        "foo", k=10, expr="ARRAY_CONTAINS(array_field, 3)"
+    )
+    assert len(output) == 2
+
+
 # if __name__ == "__main__":
 #     test_milvus()
+#     test_milvus_vector_search()
 #     test_milvus_with_metadata()
 #     test_milvus_with_id()
 #     test_milvus_with_score()
 #     test_milvus_max_marginal_relevance_search()
+#     test_milvus_max_marginal_relevance_search_with_dynamic_field()
 #     test_milvus_add_extra()
 #     test_milvus_no_drop()
 #     test_milvus_get_pks()
 #     test_milvus_delete_entities()
 #     test_milvus_upsert_entities()
+#     test_milvus_enable_dynamic_field()
+#     test_milvus_disable_dynamic_field()
+#     test_milvus_metadata_field()
+#     test_milvus_array_field()
