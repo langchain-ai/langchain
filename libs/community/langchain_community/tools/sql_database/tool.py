@@ -2,7 +2,7 @@
 """Tools for interacting with a SQL database."""
 
 import json
-from typing import Any, Dict, Optional, Sequence, Type, Union, List
+from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from sqlalchemy.engine import Result
 
@@ -17,6 +17,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.tools import BaseTool
 from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
+from langchain_core.utils.json import parse_partial_json
 
 
 class BaseSQLDatabaseTool(BaseModel):
@@ -53,7 +54,7 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
 
 
 class _InfoSQLDatabaseToolInput(BaseModel):
-    table_names: List[str] = Field(
+    table_names: str = Field(
         ...,
         description=(
             "Список имён таблиц, для которых нужно вернуть схему, разделённый запятыми. "
@@ -75,9 +76,10 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the schema for tables in a comma-separated list."""
-        tables = self.db.get_table_info_list(json.loads(table_names))
-        tables = [table.replace("\t", "").replace("\n", "") for table in tables]
-        return "\n".join(tables)
+        try:
+            return self.db.get_table_info_no_throw(parse_partial_json(table_names))
+        except json.JSONDecodeError:
+            return "Не валидный JSON!"
 
 
 class _ListSQLDataBaseToolInput(BaseModel):
@@ -88,7 +90,10 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting tables names."""
 
     name: str = "sql_db_list_tables"
-    description: str = "Входные данные — пустая строка, выходные данные — список таблиц в базе данных, разделённый запятыми."  # noqa
+    description: str = (
+        "Входные данные — пустая строка, "
+        "выходные данные — список таблиц в базе данных, разделённый запятыми."
+    )
     args_schema: Type[BaseModel] = _ListSQLDataBaseToolInput
 
     def _run(
@@ -97,7 +102,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get a comma-separated list of table names."""
-        return str(self.db.get_usable_table_names())
+        return json.dumps(self.db.get_usable_table_names(), ensure_ascii=False)
 
 
 class _QuerySQLCheckerToolInput(BaseModel):
