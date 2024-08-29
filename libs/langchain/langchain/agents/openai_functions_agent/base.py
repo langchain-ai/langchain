@@ -361,7 +361,7 @@ def create_openai_functions_agent(
         )
     llm_with_tools = llm.bind(
         functions=[convert_to_openai_function(t, strict=strict) for t in tools]
-        )
+    )
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_function_messages(
