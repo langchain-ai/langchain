@@ -20,6 +20,7 @@ DEFAULT_MILVUS_CONNECTION = {
     "user": "",
     "password": "",
     "secure": False,
+    "using": "default"
 }
 
 
@@ -240,6 +241,7 @@ class Milvus(VectorStore):
         address: str = connection_args.get("address", None)
         uri: str = connection_args.get("uri", None)
         user = connection_args.get("user", None)
+        using = connection_args.get("using", None)
 
         # Order of use is host/port, uri, address
         if host is not None and port is not None:
@@ -279,7 +281,7 @@ class Milvus(VectorStore):
                     return con[0]
 
         # Generate a new connection if one doesn't exist
-        alias = uuid4().hex
+        alias = uuid4().hex if not using else using
         try:
             connections.connect(alias=alias, **connection_args)
             logger.debug("Created new connection using: %s", alias)
