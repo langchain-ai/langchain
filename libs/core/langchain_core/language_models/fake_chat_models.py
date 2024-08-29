@@ -24,8 +24,9 @@ class FakeMessagesListChatModel(BaseChatModel):
 
     """List of responses to **cycle** through in order."""
     responses: Union[
-        List[Union[BaseMessage, BaseMessageChunk, str]],
-        List[List[Union[BaseMessage, BaseMessageChunk, str]]],
+        List[BaseMessage],
+        List[List[BaseMessageChunk]],
+        List[List[str]],
     ]
     sleep: Optional[float] = None
     """Sleep time in seconds between responses."""
@@ -99,6 +100,11 @@ class FakeMessagesListChatModel(BaseChatModel):
             self.i += 1
         else:
             self.i = 0
+        if not (isinstance(response, list)):
+            yield ChatGenerationChunk(message=response)
+            return
+
+        # if it's a list, we stream
         for c in response:
             if self.sleep is not None:
                 time.sleep(self.sleep)
@@ -107,7 +113,7 @@ class FakeMessagesListChatModel(BaseChatModel):
             elif isinstance(c, str):
                 chunk = AIMessageChunk(content=c)
             else:
-                raise TypeError(f"Unexpected type for response chunk: {type(c)}")
+                raise TypeError(f"Unexpected type for response chunk: {c}, {type(c)}")
             yield ChatGenerationChunk(message=chunk)
 
     async def _astream(

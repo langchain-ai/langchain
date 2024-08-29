@@ -227,7 +227,7 @@ def test_chat_model_inputs() -> None:
     "responses, expected_contents",
     [
         (
-            [AIMessage(content="Hello"), AIMessage(content="Bye")],
+            [AIMessageChunk(content="Hello"), AIMessageChunk(content="Bye")],
             ["Hello", "Bye", "Hello"],
         ),
         (["Hello", "Bye"], ["Hello", "Bye", "Hello"]),
@@ -255,17 +255,23 @@ async def test_fake_messages_list_chat_model_invoke(
     # stream
     for expected in expected_contents:
         chunks = list(model.stream("Test input"))
-        assert len(chunks) == 1
         assert isinstance(chunks[0], AIMessageChunk)
-        assert chunks[0].content == expected
+        assert len(chunks) > 1
+        full = chunks[0]
+        for chunk in chunks[1:]:
+            full += chunk
+        assert full.content == expected
     # reset the model
     model.i = 0
     # astream
     for expected in expected_contents:
         chunks = [chunk async for chunk in model.astream("Test input")]
-        assert len(chunks) == 1
         assert isinstance(chunks[0], AIMessageChunk)
-        assert chunks[0].content == expected
+        assert len(chunks) > 1
+        full = chunks[0]
+        for chunk in chunks[1:]:
+            full += chunk
+        assert full.content == expected
 
 
 @pytest.mark.parametrize(
