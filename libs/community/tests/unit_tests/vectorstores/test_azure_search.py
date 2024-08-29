@@ -197,11 +197,13 @@ def test_ids_used_correctly() -> None:
     from azure.search.documents.indexes import SearchIndexClient
     from langchain_core.documents import Document
 
-    def mock_upload_documents(self, documents):
+    class Response:
+        def __init__(self):
+            self.succeeded: bool = True
+
+    def mock_upload_documents(self, documents: List[object]) -> List[Response]:
         # assume all documents uploaded successfuly
-        response = [
-            type("Response", (object,), {"succeeded": True})() for _ in documents
-        ]
+        response = [Response() for _ in documents]
         return response
 
     documents = [
@@ -220,6 +222,6 @@ def test_ids_used_correctly() -> None:
         SearchClient, "upload_documents", mock_upload_documents
     ), patch.object(SearchIndexClient, "get_index", mock_default_index):
         vector_store = create_vector_store()
-        ids_used_at_upload = vector_store.add_texts(documents, ids=ids_provided)
+        ids_used_at_upload = vector_store.add_documents(documents, ids=ids_provided)
         assert len(ids_provided) == len(ids_used_at_upload)
         assert ids_provided == ids_used_at_upload
