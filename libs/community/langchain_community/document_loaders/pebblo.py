@@ -1,10 +1,12 @@
 """Pebblo's safe dataloader is a wrapper for document loaders"""
 
+import ast
 import logging
 import os
+import re
 import uuid
 from importlib.metadata import version
-from typing import Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from langchain_core.documents import Document
 
@@ -45,6 +47,7 @@ class PebbloSafeLoader(BaseLoader):
         classifier_url: Optional[str] = None,
         *,
         classifier_location: str = "local",
+        **kwargs: Any,
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -57,6 +60,7 @@ class PebbloSafeLoader(BaseLoader):
         self.source_path = get_loader_full_path(self.loader)
         self.docs: List[Document] = []
         self.docs_with_id: List[IndexedDocument] = []
+        self.kwargs = kwargs.get("kwargs")
         loader_name = str(type(self.loader)).split(".")[-1].split("'")[0]
         self.source_type = get_loader_type(loader_name)
         self.source_path_size = get_source_size(self.source_path)
@@ -162,6 +166,136 @@ class PebbloSafeLoader(BaseLoader):
     def set_discover_sent(cls) -> None:
         cls._discover_sent = True
 
+    def _get_authfield_from_md(self, doc: Document, auth_field_name: str) -> None:
+        """
+        Extracts the AUTH_FIELD from the metadata and adds it to the document.
+
+        Args:
+            doc (Document): Document object.
+            auth_field_name (str): Name of the AUTH_FIELD.
+        """
+        auth_field_list: List[str] = []
+        # Extract the AUTH_FIELD block
+        auth_field_str = doc.metadata.get(auth_field_name, "")
+        if auth_field_str:
+            # Convert the string representation of the list to an actual list
+            # using ast.literal_eval
+            auth_field_list = ast.literal_eval(auth_field_str)
+
+            # Remove the AUTH_FIELD part from the original string]
+            # TODO: check if regexe eats the text after the last match
+            auth_field_match = re.search(
+                rf"{auth_field_name}: \[.*\][\n]", doc.page_content, re.DOTALL
+            )
+            if auth_field_match:
+                doc.page_content = doc.page_content.replace(
+                    auth_field_match.group(0), ""
+                ).strip()
+            # logger.info(f'AUTH_FIELD: {auth_field_list}')
+            doc.metadata["authorized_identities"] = auth_field_list
+        else:
+            # logger.info("AUTH_FIELD not found")
+            pass
+
+    def _get_sourcefield_from_md(self, doc: Document, source_field_name: str) -> None:
+        """
+        Extracts the SOURCE_FIELD from the metadata and adds it to the document.
+
+        Args:
+            doc (Document): Document object.
+            source_field_name (str): Name of the SOURCE_FIELD.
+        """
+        auth_field_str = doc.metadata.get(source_field_name, "")
+        if auth_field_str:
+            # Remove the AUTH_FIELD part from the original string
+            # TODO: check if regexe eats the text after the last match
+            auth_field_match = re.search(
+                rf"{source_field_name}: .*", doc.page_content, re.DOTALL
+            )
+            if auth_field_match:
+                doc.page_content = doc.page_content.replace(
+                    auth_field_match.group(0), ""
+                ).strip()
+            # logger.info(f'SOURCE_FIELD: {auth_field_str}')
+            doc.metadata["full_path"] = auth_field_str
+        else:
+            # logger.info("SOURCE_FIELD not found")
+            pass
+
+    def _get_auth_field(
+        self, auth_field_name: str, page_content: str
+    ) -> Tuple[List[str], str]:
+        """
+        Extracts the AUTH_FIELD from the page content and returns the list of authorized
+        identities.
+
+        Args:
+            auth_field_name (str): Name of the AUTH_FIELD.
+            page_content (str): Page content.
+
+        Returns:
+            Tuple[List[str], str]: A tuple containing the list of authorized identities
+            and the page content.
+        """
+
+        result_list: List[str] = []
+        # Extract the AUTH_FIELD block
+        auth_field_match = re.search(
+            rf"{auth_field_name}: \[.*\]", page_content, re.DOTALL
+        )
+        if auth_field_match:
+            auth_field_str = auth_field_match.group(0).replace(
+                f"{auth_field_name}: ", ""
+            )
+            # Convert the string representation of the list to an actual list
+            # using ast.literal_eval
+            auth_field_list = ast.literal_eval(auth_field_str)
+
+            # Create the dictionary
+            result_list = auth_field_list
+
+            # Remove the AUTH_FIELD part from the original string
+            page_content = page_content.replace(auth_field_match.group(0), "").strip()
+
+            logger.info(f"AUTH_FIELD: {result_list}")
+        else:
+            logger.info("AUTH_FIELD not found")
+        return result_list, page_content
+
+    def _get_auth_field_v0(
+        self, auth_field_name: str, page_content: str
+    ) -> Tuple[List[str], str]:
+        """
+        Extracts the AUTH_FIELD from the page content and returns the list of authorized
+        identities.
+
+        Args:
+            auth_field_name (str): Name of the AUTH_FIELD.
+            page_content (str): Page content.
+
+        Returns:
+            Tuple[List[str], str]: A tuple containing the list of authorized identities
+        """
+        result_list: List[str] = []
+        # Extract the AUTH_FIELD block
+        auth_field_match = re.search(r"AUTH_FIELD: \[.*\]", page_content, re.DOTALL)
+        if auth_field_match:
+            auth_field_str = auth_field_match.group(0).replace("AUTH_FIELD: ", "")
+            # Convert the string representation of the list to an actual list using
+            # ast.literal_eval
+            auth_field_list = ast.literal_eval(auth_field_str)
+
+            # Create the dictionary
+            result_list = auth_field_list
+
+            # Remove the AUTH_FIELD part from the original string
+            page_content = page_content.replace(auth_field_match.group(0), "").strip()
+
+            logger.info(f"AUTH_FIELD: {result_list}")
+        else:
+            logger.info("AUTH_FIELD not found")
+        return result_list, page_content
+
     def _get_app_details(self) -> App:
         """Fetch app details. Internal method.
 
@@ -258,6 +392,20 @@ class PebbloSafeLoader(BaseLoader):
         """Add Pebblo specific metadata to documents."""
         for doc in self.docs_with_id:
             doc_metadata = doc.metadata
+            if (
+                self.loader.__class__.__name__ == "SnowflakeLoader"
+                and self.kwargs is not None
+            ):
+                if self.kwargs.get("auth_identities") is not None:
+                    # Snowflake Table column name for authorized_identities
+                    # e.g. values [joe@acme.com, hr-exec-group@acme.com]
+                    column_name = self.kwargs.get("auth_identities")
+                    self._get_authfield_from_md(doc, column_name)
+                if self.kwargs.get("source") is not None:
+                    # Snowflake Table column name for authorized_identities
+                    # e.g. values [joe@acme.com, hr-exec-group@acme.com]
+                    column_name = self.kwargs.get("source")
+                    self._get_sourcefield_from_md(doc, column_name)
             if self.loader.__class__.__name__ == "SharePointLoader":
                 doc_metadata["full_path"] = get_full_path(
                     doc_metadata.get("source", self.source_path)

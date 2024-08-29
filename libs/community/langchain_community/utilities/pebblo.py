@@ -54,6 +54,7 @@ cloud_folder = [
     "NotionDBLoader",
     "GoogleDriveLoader",
     "SharePointLoader",
+    "SnowflakeLoader",
 ]
 
 LOADER_TYPE_MAPPING = {
