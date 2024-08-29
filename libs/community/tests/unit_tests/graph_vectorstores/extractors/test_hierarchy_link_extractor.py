@@ -1,4 +1,4 @@
-from langchain_core.graph_vectorstores.links import Link
+from langchain_community.graph_vectorstores.links import Link
 
 from langchain_community.graph_vectorstores.extractors import HierarchyLinkExtractor
 

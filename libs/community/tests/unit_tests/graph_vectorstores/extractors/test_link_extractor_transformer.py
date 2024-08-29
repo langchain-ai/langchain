@@ -1,7 +1,7 @@
 from typing import Set
 
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.links import Link, get_links
+from langchain_community.graph_vectorstores.links import Link, get_links
 
 from langchain_community.graph_vectorstores.extractors import (
     LinkExtractor,

@@ -2,7 +2,7 @@ from typing import Callable, List, Set
 
 from langchain_core._api import beta
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.links import Link
+from langchain_community.graph_vectorstores.links import Link
 
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
