@@ -702,3 +702,15 @@ def test_prompt_falsy_vars(
         expected if not isinstance(expected, dict) else expected[template_format]
     )
     assert result.to_string() == expected_output
+
+
+def test_prompt_missing_vars_error() -> None:
+    prompt = PromptTemplate.from_template("This is a {foo} {goingtobemissing} test.")
+    with pytest.raises(KeyError) as e:
+        prompt.invoke({"foo": "bar"})
+
+    # Check that the error message contains the missing variable
+    assert "{'goingtobemissing'}" in str(e.value.args[0])
+
+    # Check helper text has right number of braces
+    assert "'{{goingtobemissing}}'" in str(e.value.args[0])
