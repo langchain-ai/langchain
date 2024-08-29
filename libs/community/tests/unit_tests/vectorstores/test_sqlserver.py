@@ -15,6 +15,9 @@ from langchain_community.vectorstores.sqlserver import (
     SQLServer_VectorStore,
 )
 
+# Connection String values should be provided in the
+# environment running this test suite.
+#
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
 _CONNECTION_STRING_WITH_UID_AND_PWD = str(
     os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING_WITH_UID")

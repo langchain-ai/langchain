@@ -102,6 +102,8 @@ class SQLServer_VectorStore(VectorStore):
             connection_string: SQLServer connection string.
                 If the connection string does not contain a username & password
                 or `Trusted_Connection=yes`, Entra ID authentication is used.
+                Sample connection string format:
+                "mssql+pyodbc://username:password@servername/dbname?other_params"
             db_schema: The schema in which the vector store will be created.
                 This schema must exist and the user must have permissions to the schema.
             distance_strategy: The distance strategy to use for comparing embeddings.
@@ -131,6 +133,13 @@ class SQLServer_VectorStore(VectorStore):
         self._create_table_if_not_exists()
 
     def _can_connect_with_entra_id(self) -> bool:
+        """Check the components of the connection string to determine
+        if connection via Entra ID authentication is possible or not.
+
+        The connection string is of expected to be of the form:
+            "mssql+pyodbc://username:password@servername/dbname?other_params"
+        which gets parsed into -> <scheme>://<netloc>/<path>?<query>
+        """
         parsed_url = urlparse(self.connection_string)
 
         if parsed_url is None:
