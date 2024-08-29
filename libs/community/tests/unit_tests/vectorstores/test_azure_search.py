@@ -32,6 +32,7 @@ class FakeEmbeddingsWithDimension(FakeEmbeddings):
 DEFAULT_INDEX_NAME = "langchain-index"
 DEFAULT_ENDPOINT = "https://my-search-service.search.windows.net"
 DEFAULT_KEY = "mykey"
+DEFAULT_ACCESS_TOKEN = "myaccesstoken1"
 DEFAULT_EMBEDDING_MODEL = FakeEmbeddingsWithDimension()
 
 
@@ -127,6 +128,7 @@ def create_vector_store(
     return AzureSearch(
         azure_search_endpoint=DEFAULT_ENDPOINT,
         azure_search_key=DEFAULT_KEY,
+        azure_ad_access_token=DEFAULT_ACCESS_TOKEN,
         index_name=DEFAULT_INDEX_NAME,
         embedding_function=DEFAULT_EMBEDDING_MODEL,
         additional_search_client_options=additional_search_client_options,
