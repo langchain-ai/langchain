@@ -235,7 +235,7 @@ def test_chat_model_inputs() -> None:
 )
 async def test_fake_messages_list_chat_model_invoke(
     responses: List[Union[BaseMessage, BaseMessageChunk, str]],
-    expected_contents: list[str],
+    expected_contents: List[str],
 ) -> None:
     model = FakeMessagesListChatModel(responses=responses)
     # invoke
