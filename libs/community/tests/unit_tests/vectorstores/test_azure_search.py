@@ -201,7 +201,7 @@ def test_ids_used_correctly() -> None:
         def __init__(self) -> None:
             self.succeeded: bool = True
 
-    def mock_upload_documents(self, documents: List[object]) -> List[Response]: # type: ignore[no-untyped-def]
+    def mock_upload_documents(self, documents: List[object]) -> List[Response]:  # type: ignore[no-untyped-def]
         # assume all documents uploaded successfuly
         response = [Response() for _ in documents]
         return response
