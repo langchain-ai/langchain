@@ -91,3 +91,4 @@ xata>=1.0.0a7,<2
 xmltodict>=0.13.0,<0.14
 nanopq==0.2.1
 mlflow[genai]>=2.14.0
+databricks-sdk>=0.30.0
