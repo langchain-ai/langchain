@@ -1015,6 +1015,7 @@ class BaseChatOpenAI(BaseChatModel):
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
         ] = None,
         strict: Optional[bool] = None,
+        response_format: Optional[_DictOrPydanticClass] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -1087,6 +1088,8 @@ class BaseChatOpenAI(BaseChatModel):
                     f"Received: {tool_choice}"
                 )
             kwargs["tool_choice"] = tool_choice
+        if response_format:
+            kwargs["response_format"] = _convert_to_openai_response_format(response_format)
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(

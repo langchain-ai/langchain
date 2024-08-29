@@ -41,16 +41,19 @@ def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]
                     " but with a different type."
                 )
             elif isinstance(merged[right_k], str):
-                if right_k == "type":
-                    if merged[right_k] == right_v:
-                        continue
-                    else:
-                        raise ValueError(
-                            "Unable to merge. Two different values seen for special "
-                            f"key 'type': {merged[right_k]} and {right_v}. 'type' "
-                            "should either occur once or have the same value across "
-                            "all dicts."
-                        )
+                # TODO: Add below special handling for 'type' key in 0.3 and remove
+                # merge_lists 'type' logic.
+                #
+                # if right_k == "type":
+                #     if merged[right_k] == right_v:
+                #         continue
+                #     else:
+                #         raise ValueError(
+                #             "Unable to merge. Two different values seen for special "
+                #             f"key 'type': {merged[right_k]} and {right_v}. 'type' "
+                #             "should either occur once or have the same value across "
+                #             "all dicts."
+                #         )
                 merged[right_k] += right_v
             elif isinstance(merged[right_k], dict):
                 merged[right_k] = merge_dicts(merged[right_k], right_v)
@@ -91,6 +94,10 @@ def merge_lists(left: Optional[List], *others: Optional[List]) -> Optional[List]
                         if e_left["index"] == e["index"]
                     ]
                     if to_merge:
+                        # TODO: Remove this once merge_dict is updated with special
+                        # handling for 'type'.
+                        if "type" in e:
+                            e = {k: v for k, v in e.items() if k != "type"}
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], e)
                     else:
                         merged.append(e)

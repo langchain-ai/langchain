@@ -111,13 +111,6 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
-        # 'type' special key handling
-        ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
-        (
-            {"type": "foo"},
-            {"type": "bar"},
-            pytest.raises(ValueError, match="Unable to merge."),
-        ),
     ),
 )
 def test_merge_dicts(
@@ -137,6 +130,33 @@ def test_merge_dicts(
         assert left == left_copy
         assert right == right_copy
 
+
+@pytest.mark.parametrize(("left", "right", "expected"), (
+    # 'type' special key handling
+    ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
+    (
+            {"type": "foo"},
+            {"type": "bar"},
+            pytest.raises(ValueError, match="Unable to merge."),
+    ),
+))
+@pytest.mark.xfail(reason="Refactors to make in 0.3")
+def test_merge_dicts_0_3(
+    left: dict, right: dict, expected: Union[dict, AbstractContextManager]
+) -> None:
+    if isinstance(expected, AbstractContextManager):
+        err = expected
+    else:
+        err = nullcontext()
+
+    left_copy = deepcopy(left)
+    right_copy = deepcopy(right)
+    with err:
+        actual = merge_dicts(left, right)
+        assert actual == expected
+        # no mutation
+        assert left == left_copy
+        assert right == right_copy
 
 @pytest.mark.parametrize(
     ("module_name", "pip_name", "package", "expected"),
