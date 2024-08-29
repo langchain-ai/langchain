@@ -142,11 +142,18 @@ class BasePromptTemplate(
                 )
         missing = set(self.input_variables).difference(inner_input)
         if missing:
-            raise KeyError(
+            msg = (
                 f"Input to {self.__class__.__name__} is missing variables {missing}. "
                 f" Expected: {self.input_variables}"
                 f" Received: {list(inner_input.keys())}"
             )
+            example_key = missing.pop()
+            msg += (
+                f"\nNote: if you intended {{{example_key}}} to be part of the string"
+                " and not a variable, please escape it with double curly braces like: "
+                f"'{{{{{example_key}}}}}'."
+            )
+            raise KeyError(msg)
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:

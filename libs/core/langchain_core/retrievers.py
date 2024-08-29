@@ -155,6 +155,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 "Retrievers must implement abstract `_get_relevant_documents` method"
                 " instead of `get_relevant_documents`",
                 DeprecationWarning,
+                stacklevel=4,
             )
             swap = cls.get_relevant_documents
             cls.get_relevant_documents = (  # type: ignore[assignment]
@@ -169,6 +170,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 "Retrievers must implement abstract `_aget_relevant_documents` method"
                 " instead of `aget_relevant_documents`",
                 DeprecationWarning,
+                stacklevel=4,
             )
             aswap = cls.aget_relevant_documents
             cls.aget_relevant_documents = (  # type: ignore[assignment]

@@ -4,11 +4,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from langchain_community.llms.yandex import YandexGPT
+from langchain_community.chat_models.yandex import ChatYandexGPT
 
 
 def test_yandexgpt_initialization() -> None:
-    llm = YandexGPT(
+    llm = ChatYandexGPT(
         iam_token="your_iam_token",  # type: ignore[arg-type]
         api_key="your_api_key",  # type: ignore[arg-type]
         folder_id="your_folder_id",
@@ -18,7 +18,7 @@ def test_yandexgpt_initialization() -> None:
 
 
 def test_yandexgpt_model_params() -> None:
-    llm = YandexGPT(
+    llm = ChatYandexGPT(
         model_name="custom-model",
         model_version="v1",
         iam_token="your_iam_token",  # type: ignore[arg-type]
@@ -33,9 +33,9 @@ def test_yandexgpt_model_params() -> None:
 
 def test_yandexgpt_invalid_model_params() -> None:
     with pytest.raises(ValueError):
-        YandexGPT(model_uri="", iam_token="your_iam_token")  # type: ignore[arg-type]
+        ChatYandexGPT(model_uri="", iam_token="your_iam_token")  # type: ignore[arg-type]
     with pytest.raises(ValueError):
-        YandexGPT(
+        ChatYandexGPT(
             iam_token="",  # type: ignore[arg-type]
             api_key="your_api_key",  # type: ignore[arg-type]
             model_uri="",
@@ -70,7 +70,7 @@ def test_completion_call(api_key_or_token: dict, disable_logging: dict) -> None:
         request_stub = absent_yandex_module_stub.CompletionRequest
         msg_constructor_stub = absent_yandex_module_stub.Message
         args = {"folder_id": "fldr", **api_key_or_token, **disable_logging}
-        ygpt = YandexGPT(**args)
+        ygpt = ChatYandexGPT(**args)
         grpc_call_mock = stub.return_value.Completion
         msg_mock = mock.Mock()
         msg_mock.message.text = "cmpltn"
@@ -78,7 +78,7 @@ def test_completion_call(api_key_or_token: dict, disable_logging: dict) -> None:
         res_mock.alternatives = [msg_mock]
         grpc_call_mock.return_value = [res_mock]
         act_emb = ygpt.invoke("nomatter")
-        assert act_emb == "cmpltn"
+        assert act_emb.content == "cmpltn"
         assert len(grpc_call_mock.call_args_list) == 1
         once_called_args = grpc_call_mock.call_args_list[0]
         act_model_uri = request_stub.call_args_list[0].kwargs["model_uri"]

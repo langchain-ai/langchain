@@ -164,13 +164,9 @@ def test_pydantic_output_parser_fail() -> None:
         pydantic_object=TestModel
     )
 
-    try:
+    with pytest.raises(OutputParserException) as e:
         pydantic_parser.parse(DEF_RESULT_FAIL)
-    except OutputParserException as e:
-        print("parse_result:", e)  # noqa: T201
         assert "Failed to parse TestModel from completion" in str(e)
-    else:
-        assert False, "Expected OutputParserException"
 
 
 def test_pydantic_output_parser_type_inference() -> None:
