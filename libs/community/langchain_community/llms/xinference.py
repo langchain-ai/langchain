@@ -15,8 +15,8 @@ class Xinference(LLM):
 
     .. code-block:: bash
 
-       pip install "xinference[all]"    
-       
+       pip install "xinference[all]"
+
     If you're simply using the services provided by Xinference, you can utilize the xinference_client package:
 
     .. code-block:: bash
