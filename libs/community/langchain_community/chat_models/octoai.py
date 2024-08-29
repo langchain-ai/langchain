@@ -31,7 +31,7 @@ class ChatOctoAI(ChatOpenAI):
     """
 
     octoai_api_base: str = Field(default=DEFAULT_API_BASE)
-    octoai_api_token: SecretStr = Field(default=None, alias="octoai_api_token")
+    octoai_api_token: SecretStr = Field(default=None, alias="api_key")
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
 
     @property
