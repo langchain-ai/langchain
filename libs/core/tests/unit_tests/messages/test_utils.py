@@ -672,7 +672,7 @@ def test_format_messages_as_anthropic_image() -> None:
         HumanMessage(
             content=[
                 {"type": "text", "text": "Here's an image:"},
-                {"type": "image_url", "image_url": base64_image},
+                {"type": "image_url", "image_url": {"url": base64_image}},
             ]
         )
     ]

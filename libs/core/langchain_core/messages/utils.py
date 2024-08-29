@@ -940,17 +940,38 @@ def format_messages_as(
 
         .. code-block:: python
 
-            from langchain_core.messages import format_messages_as
+            from langchain_core.messages import (
+                format_messages_as,
+                AIMessage,
+                HumanMessage,
+                SystemMessage,
+                ToolMessage,
+            )
 
             messages = [
-                SystemMessage,
-                {},
-                (),
-                AIMessage(),
-                ToolMessage(),
+                SystemMessage([{"type": "text", "text": "foo"}]),
+                {"role": "user", "content": [{"type": "text", "text": "whats in this"}, {"type": "image_url", "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"}}]},
+                AIMessage("", tool_calls=[{"name": "analyze", "args": {"baz": "buz"}, "id": "1", "type": "tool_call"}]),
+                ToolMessage("foobar", tool_call_id="1", name="bar"),
+                {"role": "assistant", "content": "thats nice"},
             ]
             oai_strings = format_messages_as(messages, format="openai", text="string")
+            # -> [
+            #     SystemMessage(content='foo'),
+            #     HumanMessage(content=[{'type': 'text', 'text': 'whats in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]),
+            #     AIMessage(content='', tool_calls=[{'name': 'analyze', 'args': {'baz': 'buz'}, 'id': '1', 'type': 'tool_call'}]),
+            #     ToolMessage(content='foobar', name='bar', tool_call_id='1'),
+            #     AIMessage(content='thats nice')
+            # ]
+
             anthropic_blocks = format_messages_as(messages, format="anthropic", text="block")
+            # -> [
+            #     SystemMessage(content=[{'type': 'text', 'text': 'foo'}]),
+            #     HumanMessage(content=[{'type': 'text', 'text': 'whats in this'}, {'type': 'image', 'source': {'type': 'base64', 'media_type': 'image/png', 'data': "'/9j/4AAQSk'"}}]),
+            #     AIMessage(content=[{'type': 'tool_use', 'input': {'baz': 'buz'}, 'id': '1', 'name': 'analyze'}], tool_calls=[{'name': 'analyze', 'args': {'baz': 'buz'}, 'id': '1', 'type': 'tool_call'}]),
+            #     HumanMessage(content=[{'type': 'tool_result', 'content': 'foobar', 'tool_use_id': '1', 'is_error': False}]),
+            #     AIMessage(content=[{'type': 'text', 'text': 'thats nice'}])
+            # ]
 
     .. dropdown::  Chain usage
         :open:
@@ -1679,7 +1700,7 @@ def _openai_image_to_anthropic(image: dict) -> Dict:
     And throws an error if it's not a b64 image
     """
     regex = r"^data:(?P<media_type>image/.+);base64,(?P<data>.+)$"
-    match = re.match(regex, image["image_url"])
+    match = re.match(regex, image["image_url"]["url"])
     if match is None:
         raise ValueError(
             "Anthropic only supports base64-encoded images currently."
