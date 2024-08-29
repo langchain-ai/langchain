@@ -31,6 +31,9 @@ from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
     texts as filter_texts,
 )
 
+# Connection String values should be provided in the
+# environment running this test suite.
+#
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
 _CONNECTION_STRING_WITH_UID_AND_PWD = str(
     os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING_WITH_UID")
