@@ -16,7 +16,6 @@ cloudpickle>=2.0.0
 cohere>=4,<6
 databricks-vectorsearch>=0.21,<0.22
 datasets>=2.15.0,<3
-dedoc>=2.2.6,<3
 dgml-utils>=0.3.0,<0.4
 elasticsearch>=8.12.0,<9
 esprima>=4.0.1,<5
@@ -92,3 +91,4 @@ xata>=1.0.0a7,<2
 xmltodict>=0.13.0,<0.14
 nanopq==0.2.1
 mlflow[genai]>=2.14.0
+databricks-sdk>=0.30.0
