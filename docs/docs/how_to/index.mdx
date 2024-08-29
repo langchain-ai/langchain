@@ -170,20 +170,20 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 - [How to: generate multiple queries to retrieve data for](/docs/how_to/MultiQueryRetriever)
 - [How to: use contextual compression to compress the data retrieved](/docs/how_to/contextual_compression)
 - [How to: write a custom retriever class](/docs/how_to/custom_retriever)
-- [How to: add similarity scores to retriever results](/docs/how_to/add_scores_retriever)
+- [How to: add scores to retriever results](/docs/how_to/add_scores_retriever)
 - [How to: combine the results from multiple retrievers](/docs/how_to/ensemble_retriever)
 - [How to: reorder retrieved results to mitigate the "lost in the middle" effect](/docs/how_to/long_context_reorder)
-- [How to: generate multiple embeddings per document](/docs/how_to/multi_vector)
+- [How to: retrieve using multiple vectors per document](/docs/how_to/multi_vector)
 - [How to: retrieve the whole document for a chunk](/docs/how_to/parent_document_retriever)
-- [How to: generate metadata filters](/docs/how_to/self_query)
-- [How to: create a time-weighted retriever](/docs/how_to/time_weighted_vectorstore)
-- [How to: use hybrid vector and keyword retrieval](/docs/how_to/hybrid)
+- [How to: do "self-querying" retrieval](/docs/how_to/self_query)
+- [How to: use a time-weighted vector store retriever](/docs/how_to/time_weighted_vectorstore)
+- [How to: Hybrid Search](/docs/how_to/hybrid)
 
 ### Indexing
 
 Indexing is the process of keeping your vectorstore in-sync with the underlying data source.
 
-- [How to: reindex data to keep your vectorstore in-sync with the underlying data source](/docs/how_to/indexing)
+- [How to: use the LangChain indexing API](/docs/how_to/indexing)
 
 ### Tools
 
@@ -202,8 +202,8 @@ LangChain [Tools](/docs/concepts/#tools) contain a description of the tool (to p
 - [How to: stream events from a tool](/docs/how_to/tool_stream_events)
 - [How to: return artifacts from a tool](/docs/how_to/tool_artifacts/)
 - [How to: convert Runnables to tools](/docs/how_to/convert_runnable_to_tool)
-- [How to: add ad-hoc tool calling capability to models](/docs/how_to/tools_prompting)
-- [How to: pass in runtime secrets](/docs/how_to/runnable_runtime_secrets)
+- [How to: add ad-hoc tool calling capability to LLMs and Chat Models](/docs/how_to/tools_prompting)
+- [How to: pass runtime secrets to runnables](/docs/how_to/runnable_runtime_secrets)
 
 ### Multimodal
 
@@ -219,7 +219,7 @@ For in depth how-to guides for agents, please check out [LangGraph](https://lang
 
 :::
 
-- [How to: use legacy LangChain Agents (AgentExecutor)](/docs/how_to/agent_executor)
+- [How to: Build an Agent with AgentExecutor (Legacy)](/docs/how_to/agent_executor)
 - [How to: migrate from legacy LangChain agents to LangGraph](/docs/how_to/migrate_agent)
 
 ### Callbacks
@@ -227,8 +227,8 @@ For in depth how-to guides for agents, please check out [LangGraph](https://lang
 [Callbacks](/docs/concepts/#callbacks) allow you to hook into the various stages of your LLM application's execution.
 
 - [How to: pass in callbacks at runtime](/docs/how_to/callbacks_runtime)
-- [How to: attach callbacks to a module](/docs/how_to/callbacks_attach)
-- [How to: pass callbacks into a module constructor](/docs/how_to/callbacks_constructor)
+- [How to: attach callbacks to a runnable](/docs/how_to/callbacks_attach)
+- [How to: propagate callbacks constructor](/docs/how_to/callbacks_constructor)
 - [How to: create custom callback handlers](/docs/how_to/custom_callbacks)
 - [How to: use callbacks in async environments](/docs/how_to/callbacks_async)
 - [How to: dispatch custom callback events](/docs/how_to/callbacks_custom_events)
@@ -239,10 +239,10 @@ All of LangChain components can easily be extended to support your own versions.
 
 - [How to: create a custom chat model class](/docs/how_to/custom_chat_model)
 - [How to: create a custom LLM class](/docs/how_to/custom_llm)
-- [How to: write a custom retriever class](/docs/how_to/custom_retriever)
-- [How to: write a custom document loader](/docs/how_to/document_loader_custom)
-- [How to: write a custom output parser class](/docs/how_to/output_parser_custom)
-- [How to: create custom callback handlers](/docs/how_to/custom_callbacks)
+- [How to: create a custom Retriever](/docs/how_to/custom_retriever)
+- [How to: write a custom Document Loader](/docs/how_to/document_loader_custom)
+- [How to: write a custom Output Parser](/docs/how_to/output_parser_custom)
+- [How to: create tools](/docs/how_to/custom_callbacks)
 - [How to: define a custom tool](/docs/how_to/custom_tools)
 - [How to: dispatch custom callback events](/docs/how_to/callbacks_custom_events)
 
@@ -259,9 +259,9 @@ Retrieval Augmented Generation (RAG) is a way to connect LLMs to external source
 For a high-level tutorial on RAG, check out [this guide](/docs/tutorials/rag/).
 
 - [How to: add chat history](/docs/how_to/qa_chat_history_how_to/)
-- [How to: stream](/docs/how_to/qa_streaming/)
-- [How to: return sources](/docs/how_to/qa_sources/)
-- [How to: return citations](/docs/how_to/qa_citations/)
+- [How to: stream results from your RAG application](/docs/how_to/qa_streaming/)
+- [How to: get your RAG application to return sources](/docs/how_to/qa_sources/)
+- [How to: get a RAG application to add citations](/docs/how_to/qa_citations/)
 - [How to: do per-user retrieval](/docs/how_to/qa_per_user/)
 
 
@@ -270,41 +270,41 @@ For a high-level tutorial on RAG, check out [this guide](/docs/tutorials/rag/).
 Extraction is when you use LLMs to extract structured information from unstructured text.
 For a high level tutorial on extraction, check out [this guide](/docs/tutorials/extraction/).
 
-- [How to: use reference examples](/docs/how_to/extraction_examples/)
-- [How to: handle long text](/docs/how_to/extraction_long_text/)
-- [How to: do extraction without using function calling](/docs/how_to/extraction_parse)
+- [How to: use reference examples when doing extraction](/docs/how_to/extraction_examples/)
+- [How to: handle long text when doing extraction](/docs/how_to/extraction_long_text/)
+- [How to: use prompting alone (no tool calling) to do extraction](/docs/how_to/extraction_parse)
 
 ### Chatbots
 
 Chatbots involve using an LLM to have a conversation.
 For a high-level tutorial on building chatbots, check out [this guide](/docs/tutorials/chatbot/).
 
-- [How to: manage memory](/docs/how_to/chatbots_memory)
-- [How to: do retrieval](/docs/how_to/chatbots_retrieval)
-- [How to: use tools](/docs/how_to/chatbots_tools)
-- [How to: manage large chat history](/docs/how_to/trim_messages/)
+- [How to: add memory to chatbots](/docs/how_to/chatbots_memory)
+- [How to: add retrieval to chatbots](/docs/how_to/chatbots_retrieval)
+- [How to: add tools to chatbots](/docs/how_to/chatbots_tools)
+- [How to: trim messages](/docs/how_to/trim_messages/)
 
 ### Query analysis
 
 Query Analysis is the task of using an LLM to generate a query to send to a retriever.
 For a high-level tutorial on query analysis, check out [this guide](/docs/tutorials/query_analysis/).
 
-- [How to: add examples to the prompt](/docs/how_to/query_few_shot)
+- [How to: add examples to the prompt for query analysis](/docs/how_to/query_few_shot)
 - [How to: handle cases where no queries are generated](/docs/how_to/query_no_queries)
-- [How to: handle multiple queries](/docs/how_to/query_multiple_queries)
-- [How to: handle multiple retrievers](/docs/how_to/query_multiple_retrievers)
-- [How to: construct filters](/docs/how_to/query_constructing_filters)
-- [How to: deal with high cardinality categorical variables](/docs/how_to/query_high_cardinality)
+- [How to: handle multiple queries when doing query analysis](/docs/how_to/query_multiple_queries)
+- [How to: handle multiple retrievers when doing query analysis](/docs/how_to/query_multiple_retrievers)
+- [How to: construct filters for query analysis](/docs/how_to/query_constructing_filters)
+- [How to: deal with high cardinality categoricals when doing query analysis](/docs/how_to/query_high_cardinality)
 
 ### Q&A over SQL + CSV
 
 You can use LLMs to do question answering over tabular data.
 For a high-level tutorial, check out [this guide](/docs/tutorials/sql_qa/).
 
-- [How to: use prompting to improve results](/docs/how_to/sql_prompting)
-- [How to: do query validation](/docs/how_to/sql_query_checking)
-- [How to: deal with large databases](/docs/how_to/sql_large_db)
-- [How to: deal with CSV files](/docs/how_to/sql_csv)
+- [How to: better prompt when doing SQL question-answering](/docs/how_to/sql_prompting)
+- [How to: do query validation as part of SQL question-answering](/docs/how_to/sql_query_checking)
+- [How to: deal with large databases when doing SQL question-answering](/docs/how_to/sql_large_db)
+- [How to: do question answering over CSVs](/docs/how_to/sql_csv)
 
 ### Q&A over graph databases
 
@@ -312,8 +312,8 @@ You can use an LLM to do question answering over graph databases.
 For a high-level tutorial, check out [this guide](/docs/tutorials/graph/).
 
 - [How to: map values to a database](/docs/how_to/graph_mapping)
-- [How to: add a semantic layer over the database](/docs/how_to/graph_semantic)
-- [How to: improve results with prompting](/docs/how_to/graph_prompting)
+- [How to: add a semantic layer over graph database](/docs/how_to/graph_semantic)
+- [How to: best prompt for Graph-RAG](/docs/how_to/graph_prompting)
 - [How to: construct knowledge graphs](/docs/how_to/graph_constructing)
 
 ### Summarization
