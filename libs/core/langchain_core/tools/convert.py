@@ -175,16 +175,16 @@ def tool(
                 description = None
             if infer_schema or args_schema is not None:
                 return StructuredTool.from_function(
-                    func,
-                    coroutine,
-                    name=tool_name,
-                    description=description,
-                    return_direct=return_direct,
-                    args_schema=schema,
-                    infer_schema=infer_schema,
-                    response_format=response_format,
-                    parse_docstring=parse_docstring,
-                    error_on_invalid_docstring=error_on_invalid_docstring,
+                        func,
+                        coroutine,
+                        name=tool_name,
+                        description=description,
+                        return_direct=return_direct,
+                        args_schema=schema,
+                        infer_schema=infer_schema,
+                        response_format=response_format,
+                        parse_docstring=parse_docstring,
+                        error_on_invalid_docstring=error_on_invalid_docstring,
                 )
             if dec_func.__doc__ is None:
                 raise ValueError(
@@ -199,7 +199,7 @@ def tool(
                 coroutine=coroutine,
                 response_format=response_format,
             )
-
+            
         return _make_tool
 
     if len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], Runnable):
