@@ -5,6 +5,7 @@ import base64
 import itertools
 import json
 import logging
+import time
 import uuid
 from typing import (
     TYPE_CHECKING,
@@ -79,8 +80,9 @@ MAX_UPLOAD_BATCH_SIZE = 1000
 
 def _get_search_client(
     endpoint: str,
-    key: str,
     index_name: str,
+    key: Optional[str] = None,
+    azure_ad_access_token: Optional[str] = None,
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
@@ -95,7 +97,7 @@ def _get_search_client(
     async_: bool = False,
     additional_search_client_options: Optional[Dict[str, Any]] = None,
 ) -> Union[SearchClient, AsyncSearchClient]:
-    from azure.core.credentials import AzureKeyCredential
+    from azure.core.credentials import AccessToken, AzureKeyCredential, TokenCredential
     from azure.core.exceptions import ResourceNotFoundError
     from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
     from azure.search.documents import SearchClient
@@ -119,13 +121,23 @@ def _get_search_client(
 
     additional_search_client_options = additional_search_client_options or {}
     default_fields = default_fields or []
-    if key is None:
-        credential = DefaultAzureCredential()
-    elif key.upper() == "INTERACTIVE":
-        credential = InteractiveBrowserCredential()
-        credential.get_token("https://search.azure.com/.default")
+    credential: Union[AzureKeyCredential, TokenCredential, InteractiveBrowserCredential]
+
+    # Determine the appropriate credential to use
+    if key is not None:
+        if key.upper() == "INTERACTIVE":
+            credential = InteractiveBrowserCredential()
+            credential.get_token("https://search.azure.com/.default")
+        else:
+            credential = AzureKeyCredential(key)
+    elif azure_ad_access_token is not None:
+        credential = TokenCredential(
+            lambda *scopes, **kwargs: AccessToken(
+                azure_ad_access_token, int(time.time()) + 3600
+            )
+        )
     else:
-        credential = AzureKeyCredential(key)
+        credential = DefaultAzureCredential()
     index_client: SearchIndexClient = SearchIndexClient(
         endpoint=endpoint, credential=credential, user_agent=user_agent
     )
@@ -253,6 +265,7 @@ class AzureSearch(VectorStore):
         self,
         azure_search_endpoint: str,
         azure_search_key: str,
+        azure_ad_access_token: Optional[str],
         index_name: str,
         embedding_function: Union[Callable, Embeddings],
         search_type: str = "hybrid",
@@ -321,8 +334,9 @@ class AzureSearch(VectorStore):
             user_agent += " " + kwargs["user_agent"]
         self.client = _get_search_client(
             azure_search_endpoint,
-            azure_search_key,
             index_name,
+            azure_search_key,
+            azure_ad_access_token,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
             vector_search=vector_search,
@@ -336,8 +350,9 @@ class AzureSearch(VectorStore):
         )
         self.async_client = _get_search_client(
             azure_search_endpoint,
-            azure_search_key,
             index_name,
+            azure_search_key,
+            azure_ad_access_token,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
             vector_search=vector_search,
@@ -1269,6 +1284,11 @@ class AzureSearch(VectorStore):
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata={
                         **(
+                            {FIELDS_ID: result.pop(FIELDS_ID)}
+                            if FIELDS_ID in result
+                            else {}
+                        ),
+                        **(
                             json.loads(result[FIELDS_METADATA])
                             if FIELDS_METADATA in result
                             else {
@@ -1348,6 +1368,11 @@ class AzureSearch(VectorStore):
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata={
                         **(
+                            {FIELDS_ID: result.pop(FIELDS_ID)}
+                            if FIELDS_ID in result
+                            else {}
+                        ),
+                        **(
                             json.loads(result[FIELDS_METADATA])
                             if FIELDS_METADATA in result
                             else {
@@ -1387,6 +1412,7 @@ class AzureSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
+        azure_ad_access_token: Optional[str] = None,
         index_name: str = "langchain-index",
         fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
@@ -1395,6 +1421,7 @@ class AzureSearch(VectorStore):
         azure_search = cls(
             azure_search_endpoint,
             azure_search_key,
+            azure_ad_access_token,
             index_name,
             embedding,
             fields=fields,
@@ -1411,6 +1438,7 @@ class AzureSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
+        azure_ad_access_token: Optional[str] = None,
         index_name: str = "langchain-index",
         fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
@@ -1419,6 +1447,7 @@ class AzureSearch(VectorStore):
         azure_search = cls(
             azure_search_endpoint,
             azure_search_key,
+            azure_ad_access_token,
             index_name,
             embedding,
             fields=fields,
@@ -1733,16 +1762,26 @@ def _reorder_results_with_maximal_marginal_relevance(
 
 
 def _result_to_document(result: Dict) -> Document:
+    # Fields metadata
+    if FIELDS_METADATA in result:
+        if isinstance(result[FIELDS_METADATA], dict):
+            fields_metadata = result[FIELDS_METADATA]
+        else:
+            fields_metadata = json.loads(result[FIELDS_METADATA])
+    else:
+        fields_metadata = {
+            key: value for key, value in result.items() if key != FIELDS_CONTENT_VECTOR
+        }
+    # IDs
+    if FIELDS_ID in result:
+        fields_id = {FIELDS_ID: result.pop(FIELDS_ID)}
+    else:
+        fields_id = {}
     return Document(
         page_content=result.pop(FIELDS_CONTENT),
-        metadata=(
-            result[FIELDS_METADATA]
-            if isinstance(result[FIELDS_METADATA], dict)
-            else json.loads(result[FIELDS_METADATA])
-        )
-        if FIELDS_METADATA in result
-        else {
-            key: value for key, value in result.items() if key != FIELDS_CONTENT_VECTOR
+        metadata={
+            **fields_id,
+            **fields_metadata,
         },
     )
 

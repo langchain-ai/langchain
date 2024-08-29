@@ -135,6 +135,10 @@ class FakeMessagesListChatModel(BaseChatModel):
             yield ChatGenerationChunk(message=chunk)
 
 
+class FakeListChatModelError(Exception):
+    pass
+
+
 class FakeListChatModel(SimpleChatModel):
     """Fake ChatModel for testing purposes."""
 
@@ -184,7 +188,7 @@ class FakeListChatModel(SimpleChatModel):
                 self.error_on_chunk_number is not None
                 and i_c == self.error_on_chunk_number
             ):
-                raise Exception("Fake error")
+                raise FakeListChatModelError
 
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
@@ -207,7 +211,7 @@ class FakeListChatModel(SimpleChatModel):
                 self.error_on_chunk_number is not None
                 and i_c == self.error_on_chunk_number
             ):
-                raise Exception("Fake error")
+                raise FakeListChatModelError
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     @property

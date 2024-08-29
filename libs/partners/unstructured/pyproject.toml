@@ -14,7 +14,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 langchain-core = "^0.2.23"
-unstructured-client = { version = "^0.24.1" }
+unstructured-client = { version = "^0.25.0" }
 unstructured = { version = "^0.15.7", optional = true, python = "<3.13", extras = [
   "all-docs",
 ] }
@@ -46,7 +46,7 @@ optional = true
 optional = true
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.8"
+ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.7.1"

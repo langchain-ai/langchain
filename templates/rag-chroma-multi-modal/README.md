@@ -1,15 +1,14 @@
-
-# rag-chroma-multi-modal
+# RAG - Chroma multi-modal
 
 Multi-modal LLMs enable visual assistants that can perform question-answering about images. 
 
 This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
 
-It uses OpenCLIP embeddings to embed all of the slide images and stores them in Chroma.
+It uses `OpenCLIP` embeddings to embed all the slide images and stores them in `Chroma`.
  
-Given a question, relevant slides are retrieved and passed to GPT-4V for answer synthesis.
+Given a question, relevant slides are retrieved and passed to `GPT-4V` for answer synthesis.
 
-![Diagram illustrating the workflow of a multi-modal LLM visual assistant using OpenCLIP embeddings and GPT-4V for question-answering based on slide deck images.](https://github.com/langchain-ai/langchain/assets/122662504/b3bc8406-48ae-4707-9edf-d0b3a511b200 "Workflow Diagram for Multi-modal LLM Visual Assistant")
+![Diagram illustrating the workflow of a multi-modal LLM visual assistant using OpenCLIP embeddings and GPT-4V for question-answering based on slide deck images.](https://github.com/langchain-ai/langchain/assets/122662504/b3bc8406-48ae-4707-9edf-d0b3a511b200) "Workflow Diagram for Multi-modal LLM Visual Assistant"
 
 ## Input
 
