@@ -1,6 +1,7 @@
 import os
 import re
 from contextlib import AbstractContextManager, nullcontext
+from copy import deepcopy
 from typing import Any, Callable, Dict, Optional, Tuple, Type, Union
 from unittest.mock import patch
 
@@ -110,6 +111,13 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
+        # 'type' special key handling
+        ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
+        (
+            {"type": "foo"},
+            {"type": "bar"},
+            pytest.raises(ValueError, match="Unable to merge."),
+        ),
     ),
 )
 def test_merge_dicts(
@@ -120,9 +128,14 @@ def test_merge_dicts(
     else:
         err = nullcontext()
 
+    left_copy = deepcopy(left)
+    right_copy = deepcopy(right)
     with err:
         actual = merge_dicts(left, right)
         assert actual == expected
+        # no mutation
+        assert left == left_copy
+        assert right == right_copy
 
 
 @pytest.mark.parametrize(
