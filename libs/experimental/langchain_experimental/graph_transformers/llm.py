@@ -743,19 +743,23 @@ class LLMGraphTransformer:
             if isinstance(parsed_json, dict):
                 parsed_json = [parsed_json]
             for rel in parsed_json:
-                # Nodes need to be deduplicated using a set
-                nodes_set.add((rel["head"], rel["head_type"]))
-                nodes_set.add((rel["tail"], rel["tail_type"]))
+                try:
+                   # Nodes need to be deduplicated using a set
+                   nodes_set.add((rel["head"], rel["head_type"]))
+                   nodes_set.add((rel["tail"], rel["tail_type"]))
 
-                source_node = Node(id=rel["head"], type=rel["head_type"])
-                target_node = Node(id=rel["tail"], type=rel["tail_type"])
-                relationships.append(
-                    Relationship(
-                        source=source_node, target=target_node, type=rel["relation"]
-                    )
-                )
+                   source_node = Node(id=rel["head"], type=rel["head_type"])
+                   target_node = Node(id=rel["tail"], type=rel["tail_type"])
+                   relationships.append(
+                       Relationship(
+                           source=source_node, target=target_node, type=rel["relation"]
+                       )
+                   )
+                except Exception as e:
+                   print(e)
+  
             # Create nodes list
-            nodes = [Node(id=el[0], type=el[1]) for el in list(nodes_set)]
+            nodes = [Node(id=el[0], type=el[1]) for el in list(nodes_set) if el[0] != "none"]
 
         # Strict mode filtering
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
@@ -840,3 +844,8 @@ class LLMGraphTransformer:
         ]
         results = await asyncio.gather(*tasks)
         return results
+
+
+
+
+
