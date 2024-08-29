@@ -853,7 +853,7 @@ class Milvus(VectorStore):
         https://milvus.io/api-reference/pymilvus/v2.4.x/ORM/Collection/search.md
 
         Args:
-            embedding (List[float]): The embedding vector being searched.
+            embedding (List[float] | Dict[int, float]): The embedding vector being searched.
             k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
@@ -1014,7 +1014,7 @@ class Milvus(VectorStore):
         https://milvus.io/api-reference/pymilvus/v2.4.x/ORM/Collection/search.md
 
         Args:
-            embedding (List[float]): The embedding vector being searched.
+            embedding (List[float] | Dict[int, float]): The embedding vector being searched.
             k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
@@ -1104,7 +1104,7 @@ class Milvus(VectorStore):
         """Perform a search and return results that are reordered by MMR.
 
         Args:
-            embedding (str): The embedding vector being searched.
+            embedding (list[float] | dict[int, float]): The embedding vector being searched.
             k (int, optional): How many results to give. Defaults to 4.
             fetch_k (int, optional): Total results to select k from.
                 Defaults to 20.
@@ -1211,7 +1211,7 @@ class Milvus(VectorStore):
 
         Args:
             texts (List[str]): Text data.
-            embedding (Embeddings): Embedding function.
+            embedding (Union[Embeddings, BaseSparseEmbedding]): Embedding function.
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
             collection_name (str, optional): Collection name to use. Defaults to
