@@ -173,7 +173,7 @@ def _make_request(
         messages=[Message(**message) for message in message_history],
     )
     stub = TextGenerationServiceStub(channel)
-    res = stub.Completion(request, metadata=self._grpc_metadata)
+    res = stub.Completion(request, metadata=self.grpc_metadata)
     list_res = list(res)
     self.metadata["llm_output"] = {
         "token_usage": list_res[0].usage,
@@ -239,7 +239,7 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
             messages=[Message(**message) for message in message_history],
         )
         stub = TextGenerationAsyncServiceStub(channel)
-        operation = await stub.Completion(request, metadata=self._grpc_metadata)
+        operation = await stub.Completion(request, metadata=self.grpc_metadata)
         async with grpc.aio.secure_channel(
             operation_api_url, channel_credentials
         ) as operation_channel:
@@ -249,7 +249,7 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
                     operation_request,
-                    metadata=self._grpc_metadata,
+                    metadata=self.grpc_metadata,
                 )
 
         completion_response = CompletionResponse()
