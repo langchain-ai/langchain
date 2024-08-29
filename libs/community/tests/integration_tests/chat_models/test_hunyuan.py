@@ -1,5 +1,6 @@
 import uuid
 from operator import itemgetter
+from typing import Any
 
 import pytest
 from langchain.prompts.chat import (
@@ -10,6 +11,12 @@ from langchain.prompts.chat import (
 from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain_community.chat_models.hunyuan import ChatHunyuan
+from langchain_core.runnables.base import (
+    Other,
+    Runnable,
+    RunnableSequence,
+    RunnableSerializable,
+)
 
 
 @pytest.mark.requires("tencentcloud-sdk-python")
@@ -19,7 +26,7 @@ def test_chat_hunyuan() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id is empty"
+    assert response.id is not None, "request_id is empty"
     assert uuid.UUID(response.id), "Invalid UUID"
 
 
@@ -30,7 +37,7 @@ def test_chat_hunyuan_with_temperature() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id is empty"
+    assert response.id is not None, "request_id is empty"
     assert uuid.UUID(response.id), "Invalid UUID"
 
 
@@ -41,7 +48,7 @@ def test_chat_hunyuan_with_model_name() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id is empty"
+    assert response.id is not None, "request_id is empty"
     assert uuid.UUID(response.id), "Invalid UUID"
 
 
@@ -52,7 +59,7 @@ def test_chat_hunyuan_with_stream() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id is empty"
+    assert response.id is not None, "request_id is empty"
     assert uuid.UUID(response.id), "Invalid UUID"
 
 
@@ -63,7 +70,7 @@ def test_chat_hunyuan_with_prompt_template() -> None:
     )
     user_prompt = HumanMessagePromptTemplate.from_template("Question: {query}")
     chat_prompt = ChatPromptTemplate.from_messages([system_prompt, user_prompt])
-    chat = (
+    chat: RunnableSerializable[Any, Any] = (
         {"query": itemgetter("query"), "name": itemgetter("name")}
         | chat_prompt
         | ChatHunyuan()
@@ -71,7 +78,7 @@ def test_chat_hunyuan_with_prompt_template() -> None:
     response = chat.invoke({"query": "Hello", "name": "Tom"})
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
-    assert len(response.id) > 0, "request_id is empty"
+    assert response.id is not None, "request_id is empty"
     assert uuid.UUID(response.id), "Invalid UUID"
 
 
