@@ -1,4 +1,5 @@
 """Azure CosmosDB Memory History."""
+
 from __future__ import annotations
 
 import logging
@@ -62,7 +63,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
 
         self.messages: List[BaseMessage] = []
         try:
-            from azure.cosmos import (  # pylint: disable=import-outside-toplevel # noqa: E501
+            from azure.cosmos import (  # pylint: disable=import-outside-toplevel
                 CosmosClient,
             )
         except ImportError as exc:
@@ -91,7 +92,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         Use this function or the context manager to make sure your database is ready.
         """
         try:
-            from azure.cosmos import (  # pylint: disable=import-outside-toplevel # noqa: E501
+            from azure.cosmos import (  # pylint: disable=import-outside-toplevel
                 PartitionKey,
             )
         except ImportError as exc:
@@ -128,7 +129,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         if not self._container:
             raise ValueError("Container not initialized")
         try:
-            from azure.cosmos.exceptions import (  # pylint: disable=import-outside-toplevel # noqa: E501
+            from azure.cosmos.exceptions import (  # pylint: disable=import-outside-toplevel
                 CosmosHttpResponseError,
             )
         except ImportError as exc:

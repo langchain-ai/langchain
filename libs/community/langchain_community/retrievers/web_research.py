@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
@@ -75,6 +75,40 @@ class WebResearchRetriever(BaseRetriever):
     url_database: List[str] = Field(
         default_factory=list, description="List of processed URLs"
     )
+    trust_env: bool = Field(
+        False,
+        description="Whether to use the http_proxy/https_proxy env variables or "
+        "check .netrc for proxy configuration",
+    )
+
+    allow_dangerous_requests: bool = False
+    """A flag to force users to acknowledge the risks of SSRF attacks when using 
+    this retriever.
+    
+    Users should set this flag to `True` if they have taken the necessary precautions
+    to prevent SSRF attacks when using this retriever.
+    
+    For example, users can run the requests through a properly configured
+    proxy and prevent the crawler from accidentally crawling internal resources.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the retriever."""
+        allow_dangerous_requests = kwargs.get("allow_dangerous_requests", False)
+        if not allow_dangerous_requests:
+            raise ValueError(
+                "WebResearchRetriever crawls URLs surfaced through "
+                "the provided search engine. It is possible that some of those URLs "
+                "will end up pointing to machines residing on an internal network, "
+                "leading"
+                "to an SSRF (Server-Side Request Forgery) attack. "
+                "To protect yourself against that risk, you can run the requests "
+                "through a proxy and prevent the crawler from accidentally crawling "
+                "internal resources."
+                "If've taken the necessary precautions, you can set "
+                "`allow_dangerous_requests` to `True`."
+            )
+        super().__init__(**kwargs)
 
     @classmethod
     def from_llm(
@@ -87,6 +121,8 @@ class WebResearchRetriever(BaseRetriever):
         text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
             chunk_size=1500, chunk_overlap=150
         ),
+        trust_env: bool = False,
+        allow_dangerous_requests: bool = False,
     ) -> "WebResearchRetriever":
         """Initialize from llm using default template.
 
@@ -97,6 +133,8 @@ class WebResearchRetriever(BaseRetriever):
             prompt: prompt to generating search questions
             num_search_results: Number of pages per Google search
             text_splitter: Text splitter for splitting web pages into chunks
+            trust_env: Whether to use the http_proxy/https_proxy env variables
+                or check .netrc for proxy configuration
 
         Returns:
             WebResearchRetriever
@@ -124,6 +162,8 @@ class WebResearchRetriever(BaseRetriever):
             search=search,
             num_search_results=num_search_results,
             text_splitter=text_splitter,
+            trust_env=trust_env,
+            allow_dangerous_requests=allow_dangerous_requests,
         )
 
     def clean_search_query(self, query: str) -> str:
@@ -191,7 +231,9 @@ class WebResearchRetriever(BaseRetriever):
         logger.info(f"New URLs to load: {new_urls}")
         # Load, split, and add new urls to vectorstore
         if new_urls:
-            loader = AsyncHtmlLoader(new_urls, ignore_load_errors=True)
+            loader = AsyncHtmlLoader(
+                new_urls, ignore_load_errors=True, trust_env=self.trust_env
+            )
             html2text = Html2TextTransformer()
             logger.info("Indexing new urls...")
             docs = loader.load()

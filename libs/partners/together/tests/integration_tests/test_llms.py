@@ -5,14 +5,14 @@ A test key can be found at https://api.together.xyz/settings/api-keys
 You'll then need to set TOGETHER_API_KEY environment variable to your api key.
 """
 
-import pytest as pytest
+import pytest as pytest  # type: ignore[import-not-found]
 
 from langchain_together import Together
 
 
 def test_together_call() -> None:
     """Test simple call to together."""
-    llm = Together(
+    llm = Together(  # type: ignore[call-arg]
         model="togethercomputer/RedPajama-INCITE-7B-Base",
         temperature=0.2,
         max_tokens=250,
@@ -26,7 +26,7 @@ def test_together_call() -> None:
 
 async def test_together_acall() -> None:
     """Test simple call to together."""
-    llm = Together(
+    llm = Together(  # type: ignore[call-arg]
         model="togethercomputer/RedPajama-INCITE-7B-Base",
         temperature=0.2,
         max_tokens=250,

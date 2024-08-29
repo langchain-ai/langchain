@@ -1,4 +1,5 @@
 """Reorder documents"""
+
 from typing import Any, List, Sequence
 
 from langchain_core.documents import BaseDocumentTransformer, Document
@@ -29,8 +30,6 @@ class LongContextReorder(BaseDocumentTransformer, BaseModel):
     See: https://arxiv.org/abs//2307.03172"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def transform_documents(
@@ -42,4 +41,4 @@ class LongContextReorder(BaseDocumentTransformer, BaseModel):
     async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
-        raise NotImplementedError
+        return _litm_reordering(list(documents))

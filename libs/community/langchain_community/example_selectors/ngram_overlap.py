@@ -3,6 +3,7 @@
 https://www.nltk.org/_modules/nltk/translate/bleu_score.html
 https://aclanthology.org/P02-1040.pdf
 """
+
 from typing import Dict, List
 
 import numpy as np

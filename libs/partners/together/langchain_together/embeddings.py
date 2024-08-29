@@ -1,7 +1,6 @@
 """Wrapper around Together AI's Embeddings API."""
 
 import logging
-import os
 import warnings
 from typing import (
     Any,
@@ -20,38 +19,94 @@ import openai
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import (
     BaseModel,
-    Extra,
     Field,
     SecretStr,
     root_validator,
 )
 from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
+    from_env,
     get_pydantic_field_names,
+    secret_from_env,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class TogetherEmbeddings(BaseModel, Embeddings):
-    """TogetherEmbeddings embedding model.
+    """Together embedding model integration.
 
-    To use, set the environment variable `TOGETHER_API_KEY` with your API key or
-    pass it as a named parameter to the constructor.
+    Setup:
+        Install ``langchain_together`` and set environment variable
+        ``TOGETHER_API_KEY``.
 
-    Example:
+        .. code-block:: bash
+
+            pip install -U langchain_together
+            export TOGETHER_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Together model to use.
+
+    Key init args — client params:
+      api_key: Optional[SecretStr]
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
-            from langchain_together import TogetherEmbeddings
+            from __module_name__ import TogetherEmbeddings
 
-            model = TogetherEmbeddings()
+            embed = TogetherEmbeddings(
+                model="togethercomputer/m2-bert-80M-8k-retrieval",
+                # api_key="...",
+                # other params...
+            )
+
+    Embed single text:
+        .. code-block:: python
+
+            input_text = "The meaning of life is 42"
+            vector = embed.embed_query(input_text)
+            print(vector[:3])
+
+        .. code-block:: python
+
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+    Embed multiple texts:
+        .. code-block:: python
+
+             input_texts = ["Document 1...", "Document 2..."]
+            vectors = embed.embed_documents(input_texts)
+            print(len(vectors))
+            # The first 3 coordinates for the first vector
+            print(vectors[0][:3])
+
+        .. code-block:: python
+
+            2
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
+    Async:
+        .. code-block:: python
+
+            vector = await embed.aembed_query(input_text)
+           print(vector[:3])
+
+            # multiple:
+            # await embed.aembed_documents(input_texts)
+
+        .. code-block:: python
+
+            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "togethercomputer/m2-bert-80M-8k-retrieval"
-    """Embeddings model name to use. 
+    """Embeddings model name to use.
     Instead, use 'togethercomputer/m2-bert-80M-8k-retrieval' for example.
     """
     dimensions: Optional[int] = None
@@ -59,10 +114,19 @@ class TogetherEmbeddings(BaseModel, Embeddings):
 
     Not yet supported.
     """
-    together_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """API Key for Solar API."""
+    together_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env("TOGETHER_API_KEY", default=None),
+    )
+    """Together AI API key.
+
+    Automatically read from env variable `TOGETHER_API_KEY` if not provided.
+    """
     together_api_base: str = Field(
-        default="https://api.together.ai/v1/", alias="base_url"
+        default_factory=from_env(
+            "TOGETHER_API_BASE", default="https://api.together.xyz/v1/"
+        ),
+        alias="base_url",
     )
     """Endpoint URL to use."""
     embedding_ctx_length: int = 4096
@@ -111,7 +175,9 @@ class TogetherEmbeddings(BaseModel, Embeddings):
         http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
-        extra = Extra.forbid
+        """Configuration for this pydantic object."""
+
+        extra = "forbid"
         allow_population_by_field_name = True
 
     @root_validator(pre=True)
@@ -140,19 +206,9 @@ class TogetherEmbeddings(BaseModel, Embeddings):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-
-        together_api_key = get_from_dict_or_env(
-            values, "together_api_key", "TOGETHER_API_KEY"
-        )
-        values["together_api_key"] = (
-            convert_to_secret_str(together_api_key) if together_api_key else None
-        )
-        values["together_api_base"] = values["together_api_base"] or os.getenv(
-            "TOGETHER_API_BASE"
-        )
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        """Logic that will post Pydantic initialization."""
         client_params = {
             "api_key": (
                 values["together_api_key"].get_secret_value()

@@ -28,7 +28,7 @@ def _check_docarray_import() -> None:
     except ImportError:
         raise ImportError(
             "Could not import docarray python package. "
-            'Please install it with `pip install "langchain[docarray]"`.'
+            "Please install it with `pip install docarray`."
         )
 
 

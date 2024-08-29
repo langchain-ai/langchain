@@ -4,6 +4,7 @@ import asyncio
 import functools
 import json
 import logging
+from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
@@ -32,6 +33,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessage,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
@@ -39,7 +41,10 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
+from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
     make_invalid_tool_call,
     parse_tool_call,
 )
@@ -48,11 +53,16 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.runnables import Runnable
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+)
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -200,6 +210,13 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
             "role": "tool",
             "tool_call_id": message.tool_call_id,
             "content": message.content,
+            "name": message.name or message.additional_kwargs.get("name"),
+        }
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "tool",
+            "tool_call_id": "",
+            "content": message.content,
             "name": message.name,
         }
     else:
@@ -222,18 +239,195 @@ def _create_retry_decorator(llm: ChatTongyi) -> Callable[[Any], Any]:
 
 
 class ChatTongyi(BaseChatModel):
-    """Alibaba Tongyi Qwen chat models API.
+    """Alibaba Tongyi Qwen chat model integration.
 
-    To use, you should have the ``dashscope`` python package installed,
-    and set env ``DASHSCOPE_API_KEY`` with your API key, or pass
-    it as a named parameter to the constructor.
+    Setup:
+        Install ``dashscope`` and set environment variables ``DASHSCOPE_API_KEY``.
 
-    Example:
+        .. code-block:: bash
+
+            pip install dashscope
+            export DASHSCOPE_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Qianfan model to use.
+        top_p: float
+            Total probability mass of tokens to consider at each step.
+        streaming: bool
+            Whether to stream the results or not.
+
+    Key init args — client params:
+        api_key: Optional[str]
+            Dashscope API KEY. If not passed in will be read from env var DASHSCOPE_API_KEY.
+        max_retries: int
+            Maximum number of retries to make when generating.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatTongyi
-            Tongyi_chat = ChatTongyi()
-    """
+
+            tongyi_chat = ChatTongyi(
+                model="qwen-max",
+                # top_p="...",
+                # api_key="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            tongyi_chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'model_name': 'qwen-max',
+                    'finish_reason': 'stop',
+                    'request_id': '0bd14853-4abc-9593-8642-8dbb915bd4df',
+                    'token_usage': {
+                        'input_tokens': 30,
+                        'output_tokens': 4,
+                        'total_tokens': 34
+                    }
+                },
+                id='run-533b3688-d12b-40c6-a2f7-52f291f8fa0a-0'
+            )
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in tongyi_chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-8fbcce63-42fc-4208-9399-da46ac40c967'
+            content=' enjoy' id='run-8fbcce63-42fc-4208-9399-da46ac40c967'
+            content=' programming' id='run-8fbcce63-42fc-4208-9399-da46ac40c967'
+            content='.' response_metadata={'finish_reason': 'stop', 'request_id': '67aec2b5-72bf-96a4-ae29-5bfebd2e7305', 'token_usage': {'input_tokens': 30, 'output_tokens': 4, 'total_tokens': 34}} id='run-8fbcce63-42fc-4208-9399-da46ac40c967'
+
+    Async:
+        .. code-block:: python
+
+            await tongyi_chat.ainvoke(messages)
+
+            # stream:
+            # async for chunk in tongyi_chat.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await tongyi_chat.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'model_name': 'qwen-max',
+                    'finish_reason': 'stop',
+                    'request_id': 'a55a2d6c-a876-9789-9dd9-7b52bf8adde0',
+                    'token_usage': {
+                        'input_tokens': 30,
+                        'output_tokens': 4,
+                        'total_tokens': 34
+                    }
+                },
+                id='run-3bffa3ec-e8d9-4043-b57d-348e047d64de-0'
+            )
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+            chat_with_tools = tongyi_chat.bind_tools([GetWeather, GetPopulation])
+            ai_msg = chat_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': ''
+                }
+            ]
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+
+            structured_chat = tongyi_chat.with_structured_output(Joke)
+            structured_chat.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(
+                setup='Why did the cat join the band?',
+                punchline='Because it wanted to be a solo purr-sonality!',
+                rating=None
+            )
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = tongyi_chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {
+                'model_name': 'qwen-max',
+                'finish_reason': 'stop',
+                'request_id': '32a13e4c-370e-99cb-8f9b-4c999d98c57d',
+                'token_usage': {
+                    'input_tokens': 30,
+                    'output_tokens': 4,
+                    'total_tokens': 34
+                }
+            }
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -241,8 +435,14 @@ class ChatTongyi(BaseChatModel):
 
     client: Any  #: :meta private:
     model_name: str = Field(default="qwen-turbo", alias="model")
-
-    """Model name to use."""
+    """Model name to use.
+    callable multimodal model:
+    - qwen-vl-v1
+    - qwen-vl-chat-v1
+    - qwen-audio-turbo
+    - qwen-vl-plus
+    - qwen-vl-max
+    """
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     top_p: float = 0.8
@@ -258,8 +458,6 @@ class ChatTongyi(BaseChatModel):
     """Maximum number of retries to make when generating."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
     @property
@@ -267,7 +465,7 @@ class ChatTongyi(BaseChatModel):
         """Return type of llm."""
         return "tongyi"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["dashscope_api_key"] = convert_to_secret_str(
@@ -280,15 +478,34 @@ class ChatTongyi(BaseChatModel):
                 "Could not import dashscope python package. "
                 "Please install it with `pip install dashscope --upgrade`."
             )
-        try:
-            values["client"] = dashscope.Generation
-        except AttributeError:
-            raise ValueError(
-                "`dashscope` has no `Generation` attribute, this is likely "
-                "due to an old version of the dashscope package. Try upgrading it "
-                "with `pip install --upgrade dashscope`."
-            )
-
+        dashscope_multimodal_models = [
+            "qwen-vl-v1",
+            "qwen-vl-chat-v1",
+            "qwen-audio-turbo",
+            "qwen-vl-plus",
+            "qwen-vl-max",
+        ]
+        if (
+            values["model_name"] in dashscope_multimodal_models
+            or "vl" in values["model_name"]
+        ):
+            try:
+                values["client"] = dashscope.MultiModalConversation
+            except AttributeError:
+                raise ValueError(
+                    "`dashscope` has no `MultiModalConversation` attribute, this is "
+                    "likely due to an old version of the dashscope package. Try "
+                    "upgrading it with `pip install --upgrade dashscope`."
+                )
+        else:
+            try:
+                values["client"] = dashscope.Generation
+            except AttributeError:
+                raise ValueError(
+                    "`dashscope` has no `Generation` attribute, this is likely "
+                    "due to an old version of the dashscope package. Try upgrading it "
+                    "with `pip install --upgrade dashscope`."
+                )
         return values
 
     @property
@@ -608,3 +825,70 @@ class ChatTongyi(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]],
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If include_raw is True then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_DictOrPydantic]
+                    parsing_error: Optional[BaseException]
+
+                If include_raw is False then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
+
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
+                    class.
+
+                If schema is a dict then _DictOrPydantic is a dict.
+
+        """
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
+        llm = self.bind_tools([schema])
+        if is_pydantic_schema:
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema],  # type: ignore[list-item]
+                first_tool_only=True,  # type: ignore[list-item]
+            )
+        else:
+            key_name = convert_to_openai_tool(schema)["function"]["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser

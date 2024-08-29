@@ -463,7 +463,7 @@ class ScaNN(VectorStore):
         Args:
             folder_path: folder path to load index, docstore,
                 and index_to_docstore_id from.
-            embeddings: Embeddings to use when generating queries
+            embedding: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
             allow_dangerous_deserialization: whether to allow deserialization
                 of the data which involves loading a pickle file.
@@ -479,10 +479,10 @@ class ScaNN(VectorStore):
                 "You will need to set `allow_dangerous_deserialization` to `True` to "
                 "enable deserialization. If you do this, make sure that you "
                 "trust the source of the data. For example, if you are loading a "
-                "file that you created, and no that no one else has modified the file, "
-                "then this is safe to do. Do not set this to `True` if you are loading "
-                "a file from an untrusted source (e.g., some random site on the "
-                "internet.)."
+                "file that you created, and know that no one else has modified the "
+                "file, then this is safe to do. Do not set this to `True` if you are "
+                "loading a file from an untrusted source (e.g., some random site on "
+                "the internet.)."
             )
         path = Path(folder_path)
         scann_path = path / "{index_name}.scann".format(index_name=index_name)
@@ -493,7 +493,13 @@ class ScaNN(VectorStore):
 
         # load docstore and index_to_docstore_id
         with open(path / "{index_name}.pkl".format(index_name=index_name), "rb") as f:
-            docstore, index_to_docstore_id = pickle.load(f)
+            (
+                docstore,
+                index_to_docstore_id,
+            ) = pickle.load(  # ignore[pickle]: explicit-opt-in
+                f
+            )
+
         return cls(embedding, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:

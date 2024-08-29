@@ -52,6 +52,16 @@ include_docs_query = (
 
 
 def clean_string_values(text: str) -> str:
+    """Clean string values for schema.
+
+    Cleans the input text by replacing newline and carriage return characters.
+
+    Args:
+        text (str): The input text to clean.
+
+    Returns:
+        str: The cleaned text.
+    """
     return text.replace("\n", " ").replace("\r", " ")
 
 
@@ -63,6 +73,12 @@ def value_sanitize(d: Any) -> Any:
     generating answers in a LLM context. These properties, if left in
     results, can occupy significant context space and detract from
     the LLM's performance by introducing unnecessary noise and cost.
+
+    Args:
+        d (Any): The input dictionary or list to sanitize.
+
+    Returns:
+        Any: The sanitized dictionary or list.
     """
     if isinstance(d, dict):
         new_dict = {}
@@ -151,7 +167,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
             formatted_node_props.append(f"- **{node_type}**")
             for prop in properties:
                 example = ""
-                if prop["type"] == "STRING":
+                if prop["type"] == "STRING" and prop.get("values"):
                     if prop.get("distinct_count", 11) > DISTINCT_VALUE_LIMIT:
                         example = (
                             f'Example: "{clean_string_values(prop["values"][0])}"'
@@ -230,7 +246,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         )
                 elif prop["type"] == "LIST":
                     # Skip embeddings
-                    if prop["min_size"] > LIST_LIMIT:
+                    if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                         continue
                     example = (
                         f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
@@ -269,6 +285,10 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
             "\n".join(formatted_rels),
         ]
     )
+
+
+def _remove_backticks(text: str) -> str:
+    return text.replace("`", "")
 
 
 class Neo4jGraph(GraphStore):
@@ -382,7 +402,15 @@ class Neo4jGraph(GraphStore):
         return self.structured_schema
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
-        """Query Neo4j database."""
+        """Query Neo4j database.
+
+        Args:
+            query (str): The Cypher query to execute.
+            params (dict): The parameters to pass to the query.
+
+        Returns:
+            List[Dict[str, Any]]: The list of dictionaries containing the query results.
+        """
         from neo4j import Query
         from neo4j.exceptions import CypherSyntaxError
 
@@ -400,7 +428,7 @@ class Neo4jGraph(GraphStore):
         """
         Refreshes the Neo4j graph schema information.
         """
-        from neo4j.exceptions import ClientError
+        from neo4j.exceptions import ClientError, CypherTypeError
 
         node_properties = [
             el["output"]
@@ -461,10 +489,14 @@ class Neo4jGraph(GraphStore):
                 enhanced_cypher = self._enhanced_schema_cypher(
                     node["name"], node_props, node["count"] < EXHAUSTIVE_SEARCH_LIMIT
                 )
-                enhanced_info = self.query(enhanced_cypher)[0]["output"]
-                for prop in node_props:
-                    if prop["property"] in enhanced_info:
-                        prop.update(enhanced_info[prop["property"]])
+                # Due to schema-flexible nature of neo4j errors can happen
+                try:
+                    enhanced_info = self.query(enhanced_cypher)[0]["output"]
+                    for prop in node_props:
+                        if prop["property"] in enhanced_info:
+                            prop.update(enhanced_info[prop["property"]])
+                except CypherTypeError:
+                    continue
             # Update rel info
             for rel in schema_counts[0]["relationships"]:
                 # Skip bloom labels
@@ -479,10 +511,14 @@ class Neo4jGraph(GraphStore):
                     rel["count"] < EXHAUSTIVE_SEARCH_LIMIT,
                     is_relationship=True,
                 )
-                enhanced_info = self.query(enhanced_cypher)[0]["output"]
-                for prop in rel_props:
-                    if prop["property"] in enhanced_info:
-                        prop.update(enhanced_info[prop["property"]])
+                try:
+                    enhanced_info = self.query(enhanced_cypher)[0]["output"]
+                    for prop in rel_props:
+                        if prop["property"] in enhanced_info:
+                            prop.update(enhanced_info[prop["property"]])
+                # Due to schema-flexible nature of neo4j errors can happen
+                except CypherTypeError:
+                    continue
 
         schema = _format_schema(self.structured_schema, self._enhanced_schema)
 
@@ -519,10 +555,11 @@ class Neo4jGraph(GraphStore):
                     el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
                     and el["properties"] == ["id"]
                     for el in self.structured_schema.get("metadata", {}).get(
-                        "constraint"
+                        "constraint", []
                     )
                 ]
             )
+
             if not constraint_exists:
                 # Create constraint
                 self.query(
@@ -539,6 +576,9 @@ class Neo4jGraph(GraphStore):
                     document.source.page_content.encode("utf-8")
                 ).hexdigest()
 
+            # Remove backticks from node types
+            for node in document.nodes:
+                node.type = _remove_backticks(node.type)
             # Import nodes
             self.query(
                 node_import_query,
@@ -554,10 +594,12 @@ class Neo4jGraph(GraphStore):
                     "data": [
                         {
                             "source": el.source.id,
-                            "source_label": el.source.type,
+                            "source_label": _remove_backticks(el.source.type),
                             "target": el.target.id,
-                            "target_label": el.target.type,
-                            "type": el.type.replace(" ", "_").upper(),
+                            "target_label": _remove_backticks(el.target.type),
+                            "type": _remove_backticks(
+                                el.type.replace(" ", "_").upper()
+                            ),
                             "properties": el.properties,
                         }
                         for el in document.relationships
@@ -587,8 +629,8 @@ class Neo4jGraph(GraphStore):
                 if prop_type == "STRING":
                     with_clauses.append(
                         (
-                            f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
-                            f"AS `{prop_name}_values`"
+                            f"collect(distinct substring(toString(n.`{prop_name}`)"
+                            f", 0, 50)) AS `{prop_name}_values`"
                         )
                     )
                     return_clauses.append(
@@ -664,8 +706,8 @@ class Neo4jGraph(GraphStore):
                     else:
                         with_clauses.append(
                             (
-                                f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
-                                f"AS `{prop_name}_values`"
+                                f"collect(distinct substring(toString(n.`{prop_name}`)"
+                                f", 0, 50)) AS `{prop_name}_values`"
                             )
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")

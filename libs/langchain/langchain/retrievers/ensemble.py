@@ -2,6 +2,7 @@
 Ensemble retriever that ensemble the results of
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
+
 import asyncio
 from collections import defaultdict
 from collections.abc import Hashable
@@ -66,11 +67,14 @@ class EnsembleRetriever(BaseRetriever):
         c: A constant added to the rank, controlling the balance between the importance
             of high-ranked items and the consideration given to lower-ranked items.
             Default is 60.
+        id_key: The key in the document's metadata used to determine unique documents.
+            If not specified, page_content is used.
     """
 
     retrievers: List[RetrieverLike]
     weights: List[float]
     c: int = 60
+    id_key: Optional[str] = None
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -305,13 +309,24 @@ class EnsembleRetriever(BaseRetriever):
         rrf_score: Dict[str, float] = defaultdict(float)
         for doc_list, weight in zip(doc_lists, self.weights):
             for rank, doc in enumerate(doc_list, start=1):
-                rrf_score[doc.page_content] += weight / (rank + self.c)
+                rrf_score[
+                    doc.page_content
+                    if self.id_key is None
+                    else doc.metadata[self.id_key]
+                ] += weight / (rank + self.c)
 
         # Docs are deduplicated by their contents then sorted by their scores
         all_docs = chain.from_iterable(doc_lists)
         sorted_docs = sorted(
-            unique_by_key(all_docs, lambda doc: doc.page_content),
+            unique_by_key(
+                all_docs,
+                lambda doc: doc.page_content
+                if self.id_key is None
+                else doc.metadata[self.id_key],
+            ),
             reverse=True,
-            key=lambda doc: rrf_score[doc.page_content],
+            key=lambda doc: rrf_score[
+                doc.page_content if self.id_key is None else doc.metadata[self.id_key]
+            ],
         )
         return sorted_docs

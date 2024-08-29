@@ -1,6 +1,6 @@
 """Models for the PebbloRetrievalQA chain."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -60,3 +60,92 @@ class ChainInput(BaseModel):
         base_dict["auth_context"] = self.auth_context
         base_dict["semantic_context"] = self.semantic_context
         return base_dict
+
+
+class Runtime(BaseModel):
+    """
+    OS, language details
+    """
+
+    type: Optional[str] = ""
+    host: str
+    path: str
+    ip: Optional[str] = ""
+    platform: str
+    os: str
+    os_version: str
+    language: str
+    language_version: str
+    runtime: Optional[str] = ""
+
+
+class Framework(BaseModel):
+    """
+    Langchain framework details
+    """
+
+    name: str
+    version: str
+
+
+class Model(BaseModel):
+    vendor: Optional[str]
+    name: Optional[str]
+
+
+class PkgInfo(BaseModel):
+    project_home_page: Optional[str]
+    documentation_url: Optional[str]
+    pypi_url: Optional[str]
+    liscence_type: Optional[str]
+    installed_via: Optional[str]
+    location: Optional[str]
+
+
+class VectorDB(BaseModel):
+    name: Optional[str] = None
+    version: Optional[str] = None
+    location: Optional[str] = None
+    embedding_model: Optional[str] = None
+
+
+class ChainInfo(BaseModel):
+    name: str
+    model: Optional[Model]
+    vector_dbs: Optional[List[VectorDB]]
+
+
+class App(BaseModel):
+    name: str
+    owner: str
+    description: Optional[str]
+    runtime: Runtime
+    framework: Framework
+    chains: List[ChainInfo]
+    plugin_version: str
+    client_version: Framework
+
+
+class Context(BaseModel):
+    retrieved_from: Optional[str]
+    doc: Optional[str]
+    vector_db: str
+    pb_checksum: Optional[str]
+
+
+class Prompt(BaseModel):
+    data: Optional[Union[list, str]]
+    entityCount: Optional[int] = None
+    entities: Optional[dict] = None
+    prompt_gov_enabled: Optional[bool] = None
+
+
+class Qa(BaseModel):
+    name: str
+    context: Union[List[Optional[Context]], Optional[Context]]
+    prompt: Optional[Prompt]
+    response: Optional[Prompt]
+    prompt_time: str
+    user: str
+    user_identities: Optional[List[str]]
+    classifier_location: str

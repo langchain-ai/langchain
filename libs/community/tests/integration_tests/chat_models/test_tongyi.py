@@ -77,6 +77,25 @@ def test_model() -> None:
     assert isinstance(response.content, str)
 
 
+def test_vision_model() -> None:
+    """Test model kwarg works."""
+    chat = ChatTongyi(model="qwen-vl-max")  # type: ignore[call-arg]
+    response = chat.invoke(
+        [
+            HumanMessage(
+                content=[
+                    {
+                        "image": "https://python.langchain.com/v0.1/assets/images/run_details-806f6581cd382d4887a5bc3e8ac62569.png"
+                    },
+                    {"text": "Summarize the image"},
+                ]
+            )
+        ]
+    )
+    assert isinstance(response, BaseMessage)
+    assert isinstance(response.content, list)
+
+
 def test_functions_call_thoughts() -> None:
     chat = ChatTongyi(model="qwen-plus")  # type: ignore[call-arg]
 
@@ -216,3 +235,34 @@ def test_manual_tool_call_msg() -> None:
     assert output.content
     # Should not have called the tool again.
     assert not output.tool_calls and not output.invalid_tool_calls
+
+
+class AnswerWithJustification(BaseModel):
+    """An answer to the user question along with justification for the answer."""
+
+    answer: str
+    justification: str
+
+
+def test_chat_tongyi_with_structured_output() -> None:
+    """Test ChatTongyi with structured output."""
+    llm = ChatTongyi()  # type: ignore
+    structured_llm = llm.with_structured_output(AnswerWithJustification)
+    response = structured_llm.invoke(
+        "What weighs more a pound of bricks or a pound of feathers"
+    )
+    assert isinstance(response, AnswerWithJustification)
+
+
+def test_chat_tongyi_with_structured_output_include_raw() -> None:
+    """Test ChatTongyi with structured output."""
+    llm = ChatTongyi()  # type: ignore
+    structured_llm = llm.with_structured_output(
+        AnswerWithJustification, include_raw=True
+    )
+    response = structured_llm.invoke(
+        "What weighs more a pound of bricks or a pound of feathers"
+    )
+    assert isinstance(response, dict)
+    assert isinstance(response.get("raw"), AIMessage)
+    assert isinstance(response.get("parsed"), AnswerWithJustification)

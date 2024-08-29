@@ -11,7 +11,11 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langchain_core.vectorstores import (
+    InMemoryVectorStore,
+    VectorStore,
+    VectorStoreRetriever,
+)
 
 from langchain_community.chains import PebbloRetrievalQA
 from langchain_community.chains.pebblo_retrieval.models import (
@@ -19,7 +23,6 @@ from langchain_community.chains.pebblo_retrieval.models import (
     ChainInput,
     SemanticContext,
 )
-from langchain_community.vectorstores.chroma import Chroma
 from langchain_community.vectorstores.pinecone import Pinecone
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -49,8 +52,8 @@ def unsupported_retriever() -> FakeRetriever:
     """
     retriever = FakeRetriever()
     retriever.search_kwargs = {}
-    # Set the class of vectorstore to Chroma
-    retriever.vectorstore.__class__ = Chroma
+    # Set the class of vectorstore
+    retriever.vectorstore.__class__ = InMemoryVectorStore
     return retriever
 
 
@@ -72,7 +75,12 @@ def pebblo_retrieval_qa(retriever: FakeRetriever) -> PebbloRetrievalQA:
     Create a PebbloRetrievalQA instance
     """
     pebblo_retrieval_qa = PebbloRetrievalQA.from_chain_type(
-        llm=FakeLLM(), chain_type="stuff", retriever=retriever
+        llm=FakeLLM(),
+        chain_type="stuff",
+        retriever=retriever,
+        owner="owner",
+        description="description",
+        app_name="app_name",
     )
 
     return pebblo_retrieval_qa
@@ -114,6 +122,9 @@ def test_validate_vectorstore(
         llm=FakeLLM(),
         chain_type="stuff",
         retriever=retriever,
+        owner="owner",
+        description="description",
+        app_name="app_name",
     )
 
     # validate_vectorstore method should raise a ValueError for unsupported vectorstores
@@ -122,6 +133,9 @@ def test_validate_vectorstore(
             llm=FakeLLM(),
             chain_type="stuff",
             retriever=unsupported_retriever,
+            owner="owner",
+            description="description",
+            app_name="app_name",
         )
     assert (
         "Vectorstore must be an instance of one of the supported vectorstores"

@@ -8,10 +8,10 @@ from langchain.schema import (
     BaseChatMessageHistory,
     Document,
 )
-from langchain.tools.base import BaseTool
 from langchain_community.tools.human.tool import HumanInputRun
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.output_parser import (
@@ -59,7 +59,7 @@ class AutoGPT:
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
         chat_history_memory: Optional[BaseChatMessageHistory] = None,
     ) -> AutoGPT:
-        prompt = AutoGPTPrompt(
+        prompt = AutoGPTPrompt(  # type: ignore[call-arg, call-arg, call-arg, call-arg]
             ai_name=ai_name,
             ai_role=ai_role,
             tools=tools,

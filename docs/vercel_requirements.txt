@@ -1,3 +1,4 @@
+-e ../libs/core
 -e ../libs/langchain
 -e ../libs/community
 -e ../libs/experimental
@@ -6,7 +7,8 @@ langchain-cohere
 langchain-astradb
 langchain-nvidia-ai-endpoints
 langchain-elasticsearch
-langchain-postgres
-urllib3==1.26.18
+urllib3==1.26.19
 nbconvert==7.16.4
-langchain-core==0.1.52
+
+# temp fix, uv fails to install 3.10.7 
+orjson<=3.10.6

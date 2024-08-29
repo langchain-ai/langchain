@@ -28,38 +28,68 @@ In addition to Zep Open Source's memory management features, Zep Cloud offers:
 - **Dialog Classification**: Instantly and accurately classify chat dialog. Understand user intent and emotion, segment users, and more. Route chains based on semantic context, and trigger events.
 - **Structured Data Extraction**: Quickly extract business data from chat conversations using a schema you define. Understand what your Assistant should ask for next in order to complete its task.
 
-> Interested in Zep Cloud? See [Zep Cloud Installation Guide](https://help.getzep.com/sdks), [Zep Cloud Message History Example](https://help.getzep.com/langchain/examples/messagehistory-example), [Zep Cloud Vector Store Example](https://help.getzep.com/langchain/examples/vectorstore-example)
 
-## Open Source Installation and Setup
 
-> Zep Open Source project: [https://github.com/getzep/zep](https://github.com/getzep/zep)
->
-> Zep Open Source Docs: [https://docs.getzep.com/](https://docs.getzep.com/)
+## Zep Open Source
+Zep offers an open source version with a self-hosted option.
+Please refer to the [Zep Open Source](https://github.com/getzep/zep) repo for more information.
+You can also find Zep Open Source compatible [Retriever](/docs/integrations/retrievers/zep_memorystore), [Vector Store](/docs/integrations/vectorstores/zep) and [Memory](/docs/integrations/memory/zep_memory) examples
 
-1. Install the Zep service. See the [Zep Quick Start Guide](https://docs.getzep.com/deployment/quickstart/).
+## Zep Cloud Installation and Setup
 
-2. Install the Zep Python SDK:
+[Zep Cloud Docs](https://help.getzep.com)
+
+1. Install the Zep Cloud SDK:
 
 ```bash
-pip install zep_python
+pip install zep_cloud
+```
+or
+```bash
+poetry add zep_cloud
 ```
 
 ## Memory
 
-Zep's [Memory API](https://docs.getzep.com/sdk/chat_history/) persists your app's chat history and metadata to a Session, enriches the memory, automatically generates summaries, and enables vector similarity search over historical chat messages and summaries.
+Zep's Memory API persists your users' chat history and metadata to a [Session](https://help.getzep.com/chat-history-memory/sessions), enriches the memory, and
+enables vector similarity search over historical chat messages and dialog summaries.
 
-There are two approaches to populating your prompt with chat history:
+Zep offers several approaches to populating prompts with context from historical conversations.
 
-1. Retrieve the most recent N messages (and potentionally a summary) from a Session and use them to construct your prompt.
-2. Search over the Session's chat history for messages that are relevant and use them to construct your prompt.
+### Perpetual Memory
+This is the default memory type.
+Salient facts from the dialog are extracted and stored in a Fact Table.
+This is updated in real-time as new messages are added to the Session.
+Every time you call the Memory API to get a Memory, Zep returns the Fact Table, the most recent messages (per your Message Window setting), and a summary of the most recent messages prior to the Message Window.
+The combination of the Fact Table, summary, and the most recent messages in a prompts provides both factual context and nuance to the LLM.
 
-Both of these approaches may be useful, with the first providing the LLM with context as to the most recent interactions with a human. The second approach enables you to look back further in the chat history and retrieve messages that are relevant to the current conversation in a token-efficient manner. 
+### Summary Retriever Memory
+Returns the most recent messages and a summary of past messages relevant to the current conversation,
+enabling you to provide your Assistant with helpful context from past conversations
 
+### Message Window Buffer Memory
+Returns the most recent N messages from the current conversation.
+
+Additionally, Zep enables vector similarity searches for Messages or Summaries stored within its system.
+
+This feature lets you populate prompts with past conversations that are contextually similar to a specific query,
+organizing the results by a similarity Score.
+
+`ZepCloudChatMessageHistory` and `ZepCloudMemory` classes can be imported to interact with Zep Cloud APIs.
+
+`ZepCloudChatMessageHistory` is compatible with `RunnableWithMessageHistory`.
 ```python
-from langchain.memory import ZepMemory
+from langchain_community.chat_message_histories import ZepCloudChatMessageHistory
 ```
 
-See a [RAG App Example here](/docs/integrations/memory/zep_memory).
+See a [Perpetual Memory Example here](/docs/integrations/memory/zep_cloud_chat_message_history).
+
+You can use `ZepCloudMemory` together with agents that support Memory.
+```python
+from langchain_community.memory import ZepCloudMemory
+```
+
+See a [Memory RAG Example here](/docs/integrations/memory/zep_memory_cloud).
 
 ## Retriever
 
@@ -67,24 +97,24 @@ Zep's Memory Retriever is a LangChain Retriever that enables you to retrieve mes
 
 The Retriever supports searching over both individual messages and summaries of conversations. The latter is useful for providing rich, but succinct context to the LLM as to relevant past conversations.
 
-Zep's Memory Retriever supports both similarity search and [Maximum Marginal Relevance (MMR) reranking](https://docs.getzep.com/sdk/search_query/). MMR search is useful for ensuring that the retrieved messages are diverse and not too similar to each other
+Zep's Memory Retriever supports both similarity search and [Maximum Marginal Relevance (MMR) reranking](https://help.getzep.com/working-with-search#how-zeps-mmr-re-ranking-works). MMR search is useful for ensuring that the retrieved messages are diverse and not too similar to each other
 
-See a [usage example](/docs/integrations/retrievers/zep_memorystore).
+See a [usage example](/docs/integrations/retrievers/zep_cloud_memorystore).
 
 ```python
-from langchain_community.retrievers import ZepRetriever
+from langchain_community.retrievers import ZepCloudRetriever
 ```
 
 ## Vector store
 
-Zep's [Document VectorStore API](https://docs.getzep.com/sdk/documents/) enables you to store and retrieve documents using vector similarity search. Zep doesn't require you to understand 
+Zep's [Document VectorStore API](https://help.getzep.com/document-collections) enables you to store and retrieve documents using vector similarity search. Zep doesn't require you to understand
 distance functions, types of embeddings, or indexing best practices. You just pass in your chunked documents, and Zep handles the rest.
 
-Zep supports both similarity search and [Maximum Marginal Relevance (MMR) reranking](https://docs.getzep.com/sdk/search_query/). 
+Zep supports both similarity search and [Maximum Marginal Relevance (MMR) reranking](https://help.getzep.com/working-with-search#how-zeps-mmr-re-ranking-works).
 MMR search is useful for ensuring that the retrieved documents are diverse and not too similar to each other.
 
 ```python
-from langchain_community.vectorstores import ZepVectorStore
+from langchain_community.vectorstores import ZepCloudVectorStore
 ```
 
-See a [usage example](/docs/integrations/vectorstores/zep).
+See a [usage example](/docs/integrations/vectorstores/zep_cloud).
