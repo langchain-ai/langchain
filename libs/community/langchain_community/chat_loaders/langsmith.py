@@ -3,10 +3,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Union, cast
 
+from langchain_core.chat_loaders import BaseChatLoader
 from langchain_core.chat_sessions import ChatSession
 from langchain_core.load.load import load
-
-from langchain_community.chat_loaders.base import BaseChatLoader
 
 if TYPE_CHECKING:
     from langsmith.client import Client
@@ -39,7 +38,8 @@ class LangSmithRunChatLoader(BaseChatLoader):
         self.runs = runs
         self.client = client or Client()
 
-    def _load_single_chat_session(self, llm_run: "Run") -> ChatSession:
+    @staticmethod
+    def _load_single_chat_session(llm_run: "Run") -> ChatSession:
         """
         Convert an individual LangSmith LLM run to a ChatSession.
 
@@ -144,7 +144,7 @@ class LangSmithDatasetChatLoader(BaseChatLoader):
 
         :return: Iterator of chat sessions containing messages.
         """
-        from langchain_community.adapters import openai as oai_adapter  # noqa: E402
+        from langchain_community.adapters import openai as oai_adapter
 
         data = self.client.read_dataset_openai_finetuning(
             dataset_name=self.dataset_name

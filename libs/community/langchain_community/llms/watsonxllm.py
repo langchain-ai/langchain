@@ -6,14 +6,14 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.0.18", removal="0.2", alternative_import="langchain_ibm.WatsonxLLM"
+    since="0.0.18", removal="1.0", alternative_import="langchain_ibm.WatsonxLLM"
 )
 class WatsonxLLM(BaseLLM):
     """
@@ -96,9 +96,7 @@ class WatsonxLLM(BaseLLM):
     watsonx_model: Any
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -115,7 +113,7 @@ class WatsonxLLM(BaseLLM):
             "instance_id": "WATSONX_INSTANCE_ID",
         }
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that credentials and python package exists in environment."""
         values["url"] = convert_to_secret_str(
@@ -320,7 +318,7 @@ class WatsonxLLM(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = watsonx_llm("What is a molecule")
+                response = watsonx_llm.invoke("What is a molecule")
         """
         result = self._generate(
             prompts=[prompt], stop=stop, run_manager=run_manager, **kwargs

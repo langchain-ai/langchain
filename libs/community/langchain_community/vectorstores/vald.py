@@ -1,4 +1,5 @@
 """Wrapper around Vald vector database."""
+
 from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional, Tuple, Type
@@ -58,7 +59,7 @@ class Vald(VectorStore):
         try:
             import grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import grpcio python package. "
                 "Please install it with `pip install grpcio`."
             )
@@ -86,7 +87,7 @@ class Vald(VectorStore):
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import upsert_pb2_grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )
@@ -126,7 +127,7 @@ class Vald(VectorStore):
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import remove_pb2_grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )
@@ -221,7 +222,7 @@ class Vald(VectorStore):
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import search_pb2_grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )
@@ -289,7 +290,7 @@ class Vald(VectorStore):
             from vald.v1.payload import payload_pb2
             from vald.v1.vald import object_pb2_grpc
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import vald-client-python python package. "
                 "Please install it with `pip install vald-client-python`."
             )

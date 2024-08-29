@@ -37,7 +37,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     compress_to_size: Optional[int] = None
     """Should the returned embeddings come back as an original 5120-dim vector, 
     or should it be compressed to 128-dim."""
-    normalize: Optional[bool] = None
+    normalize: bool = False
     """Should returned embeddings be normalized"""
     contextual_control_threshold: Optional[int] = None
     """Attention control parameters only apply to those tokens that have 
@@ -80,7 +80,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     nice to other users
     by de-prioritizing your request below concurrent ones."""
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         aleph_alpha_api_key = get_from_dict_or_env(
@@ -98,7 +98,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
                 nice=values["nice"],
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
@@ -121,7 +121,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
                 SemanticRepresentation,
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
@@ -161,7 +161,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
                 SemanticRepresentation,
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
@@ -209,7 +209,7 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
                 SemanticRepresentation,
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )

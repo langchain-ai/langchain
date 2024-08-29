@@ -112,6 +112,24 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         ), f"delta_time: {delta_time}"
 
 
+def test_send_to_closed_stream() -> None:
+    """Test that sending to a closed stream doesn't raise an error.
+
+    We may want to handle this in a better way in the future.
+    """
+    event_loop = asyncio.get_event_loop()
+    channel = _MemoryStream[str](event_loop)
+    writer = channel.get_send_stream()
+    # send with an open even loop
+    writer.send_nowait("hello")
+    event_loop.close()
+    writer.send_nowait("hello")
+    # now close the loop
+    event_loop.close()
+    writer.close()
+    writer.send_nowait("hello")
+
+
 async def test_closed_stream() -> None:
     reader_loop = asyncio.get_event_loop()
     channel = _MemoryStream[str](reader_loop)

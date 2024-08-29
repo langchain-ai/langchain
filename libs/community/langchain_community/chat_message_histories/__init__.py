@@ -20,67 +20,73 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.chat_message_histories.astradb import (
-        AstraDBChatMessageHistory,  # noqa: F401
+        AstraDBChatMessageHistory,
     )
     from langchain_community.chat_message_histories.cassandra import (
-        CassandraChatMessageHistory,  # noqa: F401
+        CassandraChatMessageHistory,
     )
     from langchain_community.chat_message_histories.cosmos_db import (
-        CosmosDBChatMessageHistory,  # noqa: F401
+        CosmosDBChatMessageHistory,
     )
     from langchain_community.chat_message_histories.dynamodb import (
-        DynamoDBChatMessageHistory,  # noqa: F401
+        DynamoDBChatMessageHistory,
     )
     from langchain_community.chat_message_histories.elasticsearch import (
-        ElasticsearchChatMessageHistory,  # noqa: F401
+        ElasticsearchChatMessageHistory,
     )
     from langchain_community.chat_message_histories.file import (
-        FileChatMessageHistory,  # noqa: F401
+        FileChatMessageHistory,
     )
     from langchain_community.chat_message_histories.firestore import (
-        FirestoreChatMessageHistory,  # noqa: F401
+        FirestoreChatMessageHistory,
     )
     from langchain_community.chat_message_histories.in_memory import (
-        ChatMessageHistory,  # noqa: F401
+        ChatMessageHistory,
+    )
+    from langchain_community.chat_message_histories.kafka import (
+        KafkaChatMessageHistory,
     )
     from langchain_community.chat_message_histories.momento import (
-        MomentoChatMessageHistory,  # noqa: F401
+        MomentoChatMessageHistory,
     )
     from langchain_community.chat_message_histories.mongodb import (
-        MongoDBChatMessageHistory,  # noqa: F401
+        MongoDBChatMessageHistory,
     )
     from langchain_community.chat_message_histories.neo4j import (
-        Neo4jChatMessageHistory,  # noqa: F401
+        Neo4jChatMessageHistory,
     )
     from langchain_community.chat_message_histories.postgres import (
-        PostgresChatMessageHistory,  # noqa: F401
+        PostgresChatMessageHistory,
     )
     from langchain_community.chat_message_histories.redis import (
-        RedisChatMessageHistory,  # noqa: F401
+        RedisChatMessageHistory,
     )
     from langchain_community.chat_message_histories.rocksetdb import (
-        RocksetChatMessageHistory,  # noqa: F401
+        RocksetChatMessageHistory,
     )
     from langchain_community.chat_message_histories.singlestoredb import (
-        SingleStoreDBChatMessageHistory,  # noqa: F401
+        SingleStoreDBChatMessageHistory,
     )
     from langchain_community.chat_message_histories.sql import (
-        SQLChatMessageHistory,  # noqa: F401
+        SQLChatMessageHistory,
     )
     from langchain_community.chat_message_histories.streamlit import (
-        StreamlitChatMessageHistory,  # noqa: F401
+        StreamlitChatMessageHistory,
     )
     from langchain_community.chat_message_histories.tidb import (
-        TiDBChatMessageHistory,  # noqa: F401
+        TiDBChatMessageHistory,
     )
     from langchain_community.chat_message_histories.upstash_redis import (
-        UpstashRedisChatMessageHistory,  # noqa: F401
+        UpstashRedisChatMessageHistory,
     )
     from langchain_community.chat_message_histories.xata import (
-        XataChatMessageHistory,  # noqa: F401
+        XataChatMessageHistory,
     )
     from langchain_community.chat_message_histories.zep import (
-        ZepChatMessageHistory,  # noqa: F401
+        ZepChatMessageHistory,
+    )
+    from langchain_community.chat_message_histories.zep_cloud import (
+        ZepCloudChatMessageHistory,
     )
 
 __all__ = [
@@ -105,6 +111,8 @@ __all__ = [
     "UpstashRedisChatMessageHistory",
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
+    "ZepCloudChatMessageHistory",
+    "KafkaChatMessageHistory",
 ]
 
 _module_lookup = {
@@ -129,6 +137,8 @@ _module_lookup = {
     "UpstashRedisChatMessageHistory": "langchain_community.chat_message_histories.upstash_redis",  # noqa: E501
     "XataChatMessageHistory": "langchain_community.chat_message_histories.xata",
     "ZepChatMessageHistory": "langchain_community.chat_message_histories.zep",
+    "ZepCloudChatMessageHistory": "langchain_community.chat_message_histories.zep_cloud",  # noqa: E501
+    "KafkaChatMessageHistory": "langchain_community.chat_message_histories.kafka",
 }
 
 
@@ -137,6 +147,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())

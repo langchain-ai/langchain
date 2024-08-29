@@ -13,6 +13,7 @@ EXPECTED_ALL = [
     "NucliaTextTransformer",
     "OpenAIMetadataTagger",
     "Html2TextTransformer",
+    "MarkdownifyTransformer",
 ]
 
 

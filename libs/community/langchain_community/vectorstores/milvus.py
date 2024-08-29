@@ -5,6 +5,7 @@ from typing import Any, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -22,6 +23,11 @@ DEFAULT_MILVUS_CONNECTION = {
 }
 
 
+@deprecated(
+    since="0.2.0",
+    removal="1.0",
+    alternative_import="langchain_milvus.MilvusVectorStore",
+)
 class Milvus(VectorStore):
     """`Milvus` vector store.
 
@@ -62,7 +68,7 @@ class Milvus(VectorStore):
         primary_field (str): Name of the primary key field. Defaults to "pk".
         text_field (str): Name of the text field. Defaults to "text".
         vector_field (str): Name of the vector field. Defaults to "vector".
-        metadata_field (str): Name of the metadta field. Defaults to None.
+        metadata_field (str): Name of the metadata field. Defaults to None.
             When metadata_field is specified,
             the document's metadata will store as json.
 
@@ -133,12 +139,13 @@ class Milvus(VectorStore):
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
+        num_shards: Optional[int] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
             from pymilvus import Collection, utility
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pymilvus python package. "
                 "Please install it with `pip install pymilvus`."
             )
@@ -191,6 +198,7 @@ class Milvus(VectorStore):
         self.partition_names = partition_names
         self.replica_number = replica_number
         self.timeout = timeout
+        self.num_shards = num_shards
 
         # Create the connection to the server
         if connection_args is None:
@@ -376,12 +384,23 @@ class Milvus(VectorStore):
 
         # Create the collection
         try:
-            self.col = Collection(
-                name=self.collection_name,
-                schema=schema,
-                consistency_level=self.consistency_level,
-                using=self.alias,
-            )
+            if self.num_shards is not None:
+                # Issue with defaults:
+                # https://github.com/milvus-io/pymilvus/blob/59bf5e811ad56e20946559317fed855330758d9c/pymilvus/client/prepare.py#L82-L85
+                self.col = Collection(
+                    name=self.collection_name,
+                    schema=schema,
+                    consistency_level=self.consistency_level,
+                    using=self.alias,
+                    num_shards=self.num_shards,
+                )
+            else:
+                self.col = Collection(
+                    name=self.collection_name,
+                    schema=schema,
+                    consistency_level=self.consistency_level,
+                    using=self.alias,
+                )
             # Set the collection properties if they exist
             if self.collection_properties is not None:
                 self.col.set_properties(self.collection_properties)
@@ -1034,7 +1053,7 @@ class Milvus(VectorStore):
         pks = [item.get(self._primary_field) for item in query_result]
         return pks
 
-    def upsert(
+    def upsert(  # type: ignore[override]
         self,
         ids: Optional[List[str]] = None,
         documents: List[Document] | None = None,
@@ -1057,6 +1076,7 @@ class Milvus(VectorStore):
             return None
 
         if ids is not None and len(ids):
+            kwargs["ids"] = ids
             try:
                 self.delete(ids=ids)
             except MilvusException:

@@ -38,7 +38,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
         try:
             from optimum.intel.openvino import OVModelForSequenceClassification
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import optimum-intel python package. "
                 "Please install it with: "
                 "pip install -U 'optimum[openvino,nncf]'"
@@ -47,7 +47,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
         try:
             from huggingface_hub import HfApi
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with: "
                 "`pip install -U huggingface_hub`."
@@ -114,9 +114,19 @@ class OpenVINOReranker(BaseDocumentCompressor):
         passages = request.passages
 
         query_passage_pairs = [[query, passage["text"]] for passage in passages]
-        input_tensors = self.tokenizer(
-            query_passage_pairs, padding=True, truncation=True, return_tensors="pt"
-        )
+        length = self.ov_model.request.inputs[0].get_partial_shape()[1]
+        if length.is_dynamic:
+            input_tensors = self.tokenizer(
+                query_passage_pairs, padding=True, truncation=True, return_tensors="pt"
+            )
+        else:
+            input_tensors = self.tokenizer(
+                query_passage_pairs,
+                padding="max_length",
+                max_length=length.get_length(),
+                truncation=True,
+                return_tensors="pt",
+            )
 
         outputs = self.ov_model(**input_tensors, return_dict=True)
         if outputs[0].shape[1] > 1:
@@ -155,3 +165,12 @@ class OpenVINOReranker(BaseDocumentCompressor):
             )
             final_results.append(doc)
         return final_results
+
+    def save_model(
+        self,
+        model_path: str,
+    ) -> bool:
+        self.ov_model.half()
+        self.ov_model.save_pretrained(model_path)
+        self.tokenizer.save_pretrained(model_path)
+        return True

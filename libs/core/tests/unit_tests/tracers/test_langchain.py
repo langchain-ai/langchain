@@ -2,11 +2,13 @@ import threading
 import time
 import unittest
 import unittest.mock
+import uuid
 from typing import Any, Dict
 from uuid import UUID
 
 import pytest
 from langsmith import Client
+from langsmith.run_trees import RunTree
 
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer
@@ -57,6 +59,25 @@ def test_example_id_assignment_threadsafe() -> None:
         }
         tracer.wait_for_futures()
         assert example_ids == expected_example_ids
+
+
+def test_tracer_with_run_tree_parent() -> None:
+    mock_session = unittest.mock.MagicMock()
+    client = Client(session=mock_session, api_key="test")
+    parent = RunTree(name="parent", inputs={"input": "foo"}, client=client)
+    run_id = uuid.uuid4()
+    tracer = LangChainTracer(client=client)
+    tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
+    tracer.run_map[str(parent.id)] = parent  # type: ignore
+    tracer.on_chain_start(
+        {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
+    )
+    tracer.on_chain_end({}, run_id=run_id)
+    assert parent.child_runs
+    assert len(parent.child_runs) == 1
+    assert parent.child_runs[0].id == run_id
+    assert parent.child_runs[0].trace_id == parent.id
+    assert parent.child_runs[0].parent_run_id == parent.id
 
 
 def test_log_lock() -> None:
@@ -119,7 +140,7 @@ class LangChainProjectNameTest(unittest.TestCase):
                     projects = []
 
                     def mock_create_run(**kwargs: Any) -> Any:
-                        projects.append(kwargs.get("project_name"))
+                        projects.append(kwargs.get("project_name"))  # noqa: B023
                         return unittest.mock.MagicMock()
 
                     client.create_run = mock_create_run
@@ -130,6 +151,4 @@ class LangChainProjectNameTest(unittest.TestCase):
                         run_id=UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a"),
                     )
                     tracer.wait_for_futures()
-                    assert (
-                        len(projects) == 1 and projects[0] == case.expected_project_name
-                    )
+                    assert projects == [case.expected_project_name]

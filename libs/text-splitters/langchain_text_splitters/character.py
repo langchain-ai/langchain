@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional, Union
 
 from langchain_text_splitters.base import Language, TextSplitter
 
@@ -29,17 +29,25 @@ class CharacterTextSplitter(TextSplitter):
 
 
 def _split_text_with_regex(
-    text: str, separator: str, keep_separator: bool
+    text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
 ) -> List[str]:
     # Now that we have the separator, split the text
     if separator:
         if keep_separator:
             # The parentheses in the pattern keep the delimiters in the result.
             _splits = re.split(f"({separator})", text)
-            splits = [_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)]
+            splits = (
+                ([_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)])
+                if keep_separator == "end"
+                else ([_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)])
+            )
             if len(_splits) % 2 == 0:
                 splits += _splits[-1:]
-            splits = [_splits[0]] + splits
+            splits = (
+                (splits + [_splits[-1]])
+                if keep_separator == "end"
+                else ([_splits[0]] + splits)
+            )
         else:
             splits = re.split(separator, text)
     else:
@@ -57,7 +65,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(
         self,
         separators: Optional[List[str]] = None,
-        keep_separator: bool = True,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,
         is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -118,7 +126,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
-        if language == Language.CPP:
+        if language == Language.C or language == Language.CPP:
             return [
                 # Split along class definitions
                 "\nclass ",
@@ -329,6 +337,30 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\ndo ",
                 "\nbegin ",
                 "\nrescue ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.ELIXIR:
+            return [
+                # Split along method function and module definition
+                "\ndef ",
+                "\ndefp ",
+                "\ndefmodule ",
+                "\ndefprotocol ",
+                "\ndefmacro ",
+                "\ndefmacrop ",
+                # Split along control flow statements
+                "\nif ",
+                "\nunless ",
+                "\nwhile ",
+                "\ncase ",
+                "\ncond ",
+                "\nwith ",
+                "\nfor ",
+                "\ndo ",
                 # Split by the normal type of lines
                 "\n\n",
                 "\n",
@@ -627,6 +659,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.POWERSHELL:
+            return [
+                # Split along function definitions
+                "\nfunction ",
+                # Split along parameter declarations (escape parentheses)
+                "\nparam ",
+                # Split along control flow statements
+                "\nif ",
+                "\nforeach ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                # Split along class definitions (for PowerShell 5.0 and above)
+                "\nclass ",
+                # Split along try-catch-finally blocks
+                "\ntry ",
+                "\ncatch ",
+                "\nfinally ",
+                # Split by normal lines and empty spaces
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language in Language._value2member_map_:
+            raise ValueError(f"Language {language} is not implemented yet!")
         else:
             raise ValueError(
                 f"Language {language} is not supported! "

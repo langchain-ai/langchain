@@ -22,7 +22,7 @@ DEFAULT_CONNECTION_STRING = "postgresql://postgres:mypassword@localhost/chat_his
         "You can swap to using the `PostgresChatMessageHistory`"
         " implementation in `langchain_postgres`. "
         "Please do not submit further PRs to this class."
-        "See https://github.com/langchain-ai/langchain-postgres"
+        "See <https://github.com/langchain-ai/langchain-postgres>"
     ),
     alternative="from langchain_postgres import PostgresChatMessageHistory;",
     pending=True,

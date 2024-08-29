@@ -1,13 +1,14 @@
 """Wrapper around YandexGPT embedding models."""
+
 from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Sequence
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
     retry,
@@ -65,13 +66,15 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     """Maximum number of retries to make when generating."""
     sleep_interval: float = 0.0
     """Delay between API requests"""
+    disable_request_logging: bool = False
+    """YandexGPT API logs all request data by default. 
+    If you provide personal data, confidential information, disable logging."""
+    grpc_metadata: Sequence
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
@@ -88,28 +91,35 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         if api_key.get_secret_value() == "" and iam_token.get_secret_value() == "":
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
         if values["iam_token"]:
-            values["_grpc_metadata"] = [
+            values["grpc_metadata"] = [
                 ("authorization", f"Bearer {values['iam_token'].get_secret_value()}")
             ]
             if values["folder_id"]:
-                values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
+                values["grpc_metadata"].append(("x-folder-id", values["folder_id"]))
         else:
-            values["_grpc_metadata"] = (
+            values["grpc_metadata"] = [
                 ("authorization", f"Api-Key {values['api_key'].get_secret_value()}"),
-            )
+            ]
 
         if not values.get("doc_model_uri"):
             if values["folder_id"] == "":
                 raise ValueError("'doc_model_uri' or 'folder_id' must be provided.")
-            values[
-                "doc_model_uri"
-            ] = f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"  # noqa: E501
+            values["doc_model_uri"] = (
+                f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"
+            )
         if not values.get("model_uri"):
             if values["folder_id"] == "":
                 raise ValueError("'model_uri' or 'folder_id' must be provided.")
-            values[
-                "model_uri"
-            ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"  # noqa: E501
+            values["model_uri"] = (
+                f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            )
+        if values["disable_request_logging"]:
+            values["grpc_metadata"].append(
+                (
+                    "x-data-logging-enabled",
+                    "false",
+                )
+            )
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -196,7 +206,7 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str], **kwargs):  # typ
     for text in texts:
         request = TextEmbeddingRequest(model_uri=model_uri, text=text)
         stub = EmbeddingsServiceStub(channel)
-        res = stub.TextEmbedding(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
+        res = stub.TextEmbedding(request, metadata=self.grpc_metadata)  # type: ignore[attr-defined]
         result.append(list(res.embedding))
         time.sleep(self.sleep_interval)
 

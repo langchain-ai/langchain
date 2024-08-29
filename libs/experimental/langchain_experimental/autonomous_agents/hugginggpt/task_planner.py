@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Optional, Union
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
-from langchain.prompts.chat import (
+from langchain_core.callbacks.manager import Callbacks
+from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.tools.base import BaseTool
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.tools import BaseTool
 
 from langchain_experimental.pydantic_v1 import BaseModel
 

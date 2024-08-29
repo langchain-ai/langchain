@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
-from langchain.prompts.prompt import PromptTemplate
 from langchain.schema.language_model import BaseLanguageModel
 from langchain_core.callbacks.manager import (
     CallbackManagerForChainRun,
 )
+from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain_experimental.recommenders.amazon_personalize import AmazonPersonalize
 

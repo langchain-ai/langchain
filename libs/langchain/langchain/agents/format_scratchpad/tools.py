@@ -14,12 +14,16 @@ from langchain.agents.output_parsers.tools import ToolAgentAction
 def _create_tool_message(
     agent_action: ToolAgentAction, observation: str
 ) -> ToolMessage:
-    """Convert agent action and observation into a function message.
+    """Convert agent action and observation into a tool message.
+
     Args:
-        agent_action: the tool invocation request from the agent
-        observation: the result of the tool invocation
+        agent_action: the tool invocation request from the agent.
+        observation: the result of the tool invocation.
     Returns:
-        FunctionMessage that corresponds to the original tool invocation
+        ToolMessage that corresponds to the original tool invocation.
+
+    Raises:
+        ValueError: if the observation cannot be converted to a string.
     """
     if not isinstance(observation, str):
         try:
@@ -38,13 +42,13 @@ def _create_tool_message(
 def format_to_tool_messages(
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
 ) -> List[BaseMessage]:
-    """Convert (AgentAction, tool output) tuples into FunctionMessages.
+    """Convert (AgentAction, tool output) tuples into ToolMessages.
 
     Args:
-        intermediate_steps: Steps the LLM has taken to date, along with observations
+        intermediate_steps: Steps the LLM has taken to date, along with observations.
 
     Returns:
-        list of messages to send to the LLM for the next prediction
+        list of messages to send to the LLM for the next prediction.
 
     """
     messages = []

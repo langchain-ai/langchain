@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -274,10 +274,12 @@ def _default_approximate_search_query(
     query_vector: List[float],
     k: int = 4,
     vector_field: str = "vector_field",
+    score_threshold: Optional[float] = 0.0,
 ) -> Dict:
     """For Approximate k-NN Search, this is the default query."""
     return {
         "size": k,
+        "min_score": score_threshold,
         "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
     }
 
@@ -288,10 +290,12 @@ def _approximate_search_query_with_boolean_filter(
     k: int = 4,
     vector_field: str = "vector_field",
     subquery_clause: str = "must",
+    score_threshold: Optional[float] = 0.0,
 ) -> Dict:
     """For Approximate k-NN Search, with Boolean Filter."""
     return {
         "size": k,
+        "min_score": score_threshold,
         "query": {
             "bool": {
                 "filter": boolean_filter,
@@ -308,11 +312,12 @@ def _approximate_search_query_with_efficient_filter(
     efficient_filter: Dict,
     k: int = 4,
     vector_field: str = "vector_field",
+    score_threshold: Optional[float] = 0.0,
 ) -> Dict:
     """For Approximate k-NN Search, with Efficient Filter for Lucene and
     Faiss Engines."""
     search_query = _default_approximate_search_query(
-        query_vector, k=k, vector_field=vector_field
+        query_vector, k=k, vector_field=vector_field, score_threshold=score_threshold
     )
     search_query["query"]["knn"][vector_field]["filter"] = efficient_filter
     return search_query
@@ -324,6 +329,7 @@ def _default_script_query(
     space_type: str = "l2",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
+    score_threshold: Optional[float] = 0.0,
 ) -> Dict:
     """For Script Scoring Search, this is the default query."""
 
@@ -332,6 +338,7 @@ def _default_script_query(
 
     return {
         "size": k,
+        "min_score": score_threshold,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -368,6 +375,7 @@ def _default_painless_scripting_query(
     space_type: str = "l2Squared",
     pre_filter: Optional[Dict] = None,
     vector_field: str = "vector_field",
+    score_threshold: Optional[float] = 0.0,
 ) -> Dict:
     """For Painless Scripting Search, this is the default query."""
 
@@ -377,6 +385,7 @@ def _default_painless_scripting_query(
     source = __get_painless_scripting_source(space_type, vector_field=vector_field)
     return {
         "size": k,
+        "min_score": score_threshold,
         "query": {
             "script_score": {
                 "query": pre_filter,
@@ -508,6 +517,72 @@ class OpenSearchVectorSearch(VectorStore):
             max_chunk_bytes=max_chunk_bytes,
             is_aoss=self.is_aoss,
         )
+
+    def delete_index(self, index_name: Optional[str] = None) -> Optional[bool]:
+        """Deletes a given index from vectorstore."""
+        if index_name is None:
+            if self.index_name is None:
+                raise ValueError("index_name must be provided.")
+            index_name = self.index_name
+        try:
+            self.client.indices.delete(index=index_name)
+            return True
+        except Exception as e:
+            raise e
+
+    def index_exists(self, index_name: Optional[str] = None) -> Optional[bool]:
+        """If given index present in vectorstore, returns True else False."""
+        if index_name is None:
+            if self.index_name is None:
+                raise ValueError("index_name must be provided.")
+            index_name = self.index_name
+
+        return self.client.indices.exists(index=index_name)
+
+    def create_index(
+        self,
+        dimension: int,
+        index_name: Optional[str] = uuid.uuid4().hex,
+        **kwargs: Any,
+    ) -> Optional[str]:
+        """Create a new Index with given arguments"""
+        is_appx_search = kwargs.get("is_appx_search", True)
+        vector_field = kwargs.get("vector_field", "vector_field")
+        kwargs.get("text_field", "text")
+        http_auth = kwargs.get("http_auth")
+        is_aoss = _is_aoss_enabled(http_auth=http_auth)
+
+        if is_aoss and not is_appx_search:
+            raise ValueError(
+                "Amazon OpenSearch Service Serverless only "
+                "supports `approximate_search`"
+            )
+
+        if is_appx_search:
+            engine = kwargs.get("engine", "nmslib")
+            space_type = kwargs.get("space_type", "l2")
+            ef_search = kwargs.get("ef_search", 512)
+            ef_construction = kwargs.get("ef_construction", 512)
+            m = kwargs.get("m", 16)
+
+            _validate_aoss_with_engines(is_aoss, engine)
+
+            mapping = _default_text_mapping(
+                dimension,
+                engine,
+                space_type,
+                ef_search,
+                ef_construction,
+                m,
+                vector_field,
+            )
+        else:
+            mapping = _default_scripting_text_mapping(dimension)
+
+        if self.index_exists(index_name):
+            raise RuntimeError(f"The index, {index_name} already exists.")
+        self.client.indices.create(index=index_name, body=mapping)
+        return index_name
 
     def add_texts(
         self,
@@ -658,8 +733,29 @@ class OpenSearchVectorSearch(VectorStore):
             item.get("delete", {}).get("error") for item in response["items"]
         )
 
+    @staticmethod
+    def _identity_fn(score: float) -> float:
+        return score
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """
+        The 'correct' relevance function
+        may differ depending on a few things, including:
+        - the distance / similarity metric used by the VectorStore
+        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - embedding dimensionality
+        - etc.
+
+        Vectorstores should define their own selection based method of relevance.
+        """
+        return self._identity_fn
+
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -669,6 +765,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            score_threshold: Specify a score threshold to return only documents
+            above the threshold. Defaults to 0.0.
 
         Returns:
             List of Documents most similar to the query.
@@ -717,20 +815,30 @@ class OpenSearchVectorSearch(VectorStore):
             pre_filter: script_score query to pre-filter documents before identifying
             nearest neighbors; default: {"match_all": {}}
         """
-        docs_with_scores = self.similarity_search_with_score(query, k, **kwargs)
+        docs_with_scores = self.similarity_search_with_score(
+            query, k, score_threshold, **kwargs
+        )
         return [doc[0] for doc in docs_with_scores]
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to the embedding vector."""
         docs_with_scores = self.similarity_search_with_score_by_vector(
-            embedding, k, **kwargs
+            embedding, k, score_threshold, **kwargs
         )
         return [doc[0] for doc in docs_with_scores]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and it's scores most similar to query.
 
@@ -740,6 +848,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            score_threshold: Specify a score threshold to return only documents
+            above the threshold. Defaults to 0.0.
 
         Returns:
             List of Documents along with its scores most similar to the query.
@@ -748,10 +858,16 @@ class OpenSearchVectorSearch(VectorStore):
             same as `similarity_search`
         """
         embedding = self.embedding_function.embed_query(query)
-        return self.similarity_search_with_score_by_vector(embedding, k, **kwargs)
+        return self.similarity_search_with_score_by_vector(
+            embedding, k, score_threshold, **kwargs
+        )
 
     def similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and it's scores most similar to the embedding vector.
 
@@ -761,6 +877,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            score_threshold: Specify a score threshold to return only documents
+            above the threshold. Defaults to 0.0.
 
         Returns:
             List of Documents along with its scores most similar to the query.
@@ -772,7 +890,7 @@ class OpenSearchVectorSearch(VectorStore):
         metadata_field = kwargs.get("metadata_field", "metadata")
 
         hits = self._raw_similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, **kwargs
+            embedding=embedding, k=k, score_threshold=score_threshold, **kwargs
         )
 
         documents_with_scores = [
@@ -792,7 +910,11 @@ class OpenSearchVectorSearch(VectorStore):
         return documents_with_scores
 
     def _raw_similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
+        **kwargs: Any,
     ) -> List[dict]:
         """Return raw opensearch documents (dict) including vectors,
         scores most similar to the embedding vector.
@@ -803,6 +925,8 @@ class OpenSearchVectorSearch(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            score_threshold: Specify a score threshold to return only documents
+            above the threshold. Defaults to 0.0.
 
         Returns:
             List of dict with its scores most similar to the embedding.
@@ -868,10 +992,15 @@ class OpenSearchVectorSearch(VectorStore):
                     k=k,
                     vector_field=vector_field,
                     subquery_clause=subquery_clause,
+                    score_threshold=score_threshold,
                 )
             elif efficient_filter != {}:
                 search_query = _approximate_search_query_with_efficient_filter(
-                    embedding, efficient_filter, k=k, vector_field=vector_field
+                    embedding,
+                    efficient_filter,
+                    k=k,
+                    vector_field=vector_field,
+                    score_threshold=score_threshold,
                 )
             elif lucene_filter != {}:
                 warnings.warn(
@@ -879,23 +1008,40 @@ class OpenSearchVectorSearch(VectorStore):
                     " `efficient_filter`"
                 )
                 search_query = _approximate_search_query_with_efficient_filter(
-                    embedding, lucene_filter, k=k, vector_field=vector_field
+                    embedding,
+                    lucene_filter,
+                    k=k,
+                    vector_field=vector_field,
+                    score_threshold=score_threshold,
                 )
             else:
                 search_query = _default_approximate_search_query(
-                    embedding, k=k, vector_field=vector_field
+                    embedding,
+                    k=k,
+                    vector_field=vector_field,
+                    score_threshold=score_threshold,
                 )
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = kwargs.get("space_type", "l2")
             pre_filter = kwargs.get("pre_filter", MATCH_ALL_QUERY)
             search_query = _default_script_query(
-                embedding, k, space_type, pre_filter, vector_field
+                embedding,
+                k,
+                space_type,
+                pre_filter,
+                vector_field,
+                score_threshold=score_threshold,
             )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
             space_type = kwargs.get("space_type", "l2Squared")
             pre_filter = kwargs.get("pre_filter", MATCH_ALL_QUERY)
             search_query = _default_painless_scripting_query(
-                embedding, k, space_type, pre_filter, vector_field
+                embedding,
+                k,
+                space_type,
+                pre_filter,
+                vector_field,
+                score_threshold=score_threshold,
             )
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
