@@ -2,6 +2,8 @@
 
 import os
 from typing import Generator, List
+from unittest import mock
+from unittest.mock import Mock
 
 import pytest
 from langchain_core.documents import Document
@@ -13,7 +15,22 @@ from langchain_community.vectorstores.sqlserver import (
     SQLServer_VectorStore,
 )
 
+# Connection String values should be provided in the
+# environment running this test suite.
+#
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
+_CONNECTION_STRING_WITH_UID_AND_PWD = str(
+    os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING_WITH_UID")
+)
+_CONNECTION_STRING_WITH_TRUSTED_CONNECTION = str(
+    os.environ.get("TEST_AZURESQLSERVER_TRUSTED_CONNECTION")
+)
+_ENTRA_ID_CONNECTION_STRING_NO_PARAMS = str(
+    os.environ.get("TEST_ENTRA_ID_CONNECTION_STRING_NO_PARAMS")
+)
+_ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO = str(
+    os.environ.get("TEST_ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO")
+)
 _SCHEMA = "lc_test"
 _COLLATION_DB_NAME = "LangChainCollationTest"
 _TABLE_NAME = "langchain_vector_store_tests"
@@ -506,3 +523,100 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     conn.execute(text("use master"))
     conn.execute(text(_DROP_COLLATION_DB_QUERY))
     conn.close()
+
+
+def test_that_entra_id_authentication_connection_is_successful(
+    texts: List[str],
+) -> None:
+    """Test that given a valid entra id auth string, connection to DB is successful."""
+    vector_store = connect_to_vector_store(_ENTRA_ID_CONNECTION_STRING_NO_PARAMS)
+    vector_store.add_texts(texts)
+
+    # drop vector_store
+    vector_store.drop()
+
+
+# We need to mock this so that actual connection is not attempted
+# after mocking _provide_token.
+@mock.patch("sqlalchemy.dialects.mssql.dialect.initialize")
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
+)
+def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_is_used(
+    provide_token: Mock,
+    dialect_initialize: Mock,
+) -> None:
+    """Test that if a valid entra_id connection string is passed in
+    to SQLServer_VectorStore object, entra id authentication is used
+    and connection is successful."""
+
+    # Connection string is of the form below.
+    # "mssql+pyodbc://lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server"
+    connect_to_vector_store(_ENTRA_ID_CONNECTION_STRING_NO_PARAMS)
+    # _provide_token is called only during Entra ID authentication.
+    provide_token.assert_called()
+
+    # reset the mock so that it can be reused.
+    provide_token.reset_mock()
+
+    # "mssql+pyodbc://lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=no"
+    connect_to_vector_store(_ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO)
+    provide_token.assert_called()
+
+
+# We need to mock this so that actual connection is not attempted
+# after mocking _provide_token.
+@mock.patch("sqlalchemy.dialects.mssql.dialect.initialize")
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
+)
+def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_used(
+    provide_token: Mock,
+    dialect_initialize: Mock,
+) -> None:
+    """Test that if a connection string is provided to SQLServer_VectorStore object,
+    and connection string has username and password, entra id authentication is not
+    used and connection is successful."""
+
+    # Connection string contains username and password,
+    # mssql+pyodbc://username:password@lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server"
+    connect_to_vector_store(_CONNECTION_STRING_WITH_UID_AND_PWD)
+
+    # _provide_token is called only during Entra ID authentication.
+    provide_token.assert_not_called()
+
+
+# We need to mock this so that actual connection is not attempted
+# after mocking _provide_token.
+@mock.patch("sqlalchemy.dialects.mssql.dialect.initialize")
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
+)
+def test_that_connection_string_with_trusted_connection_yes_does_not_use_entra_id_auth(
+    provide_token: Mock,
+    dialect_initialize: Mock,
+) -> None:
+    """Test that if a connection string is provided to SQLServer_VectorStore object,
+    and connection string has `trusted_connection` set to `yes`, entra id
+    authentication is not used and connection is successful."""
+
+    # Connection string is of the form below.
+    # mssql+pyodbc://@lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+    connect_to_vector_store(_CONNECTION_STRING_WITH_TRUSTED_CONNECTION)
+
+    # _provide_token is called only during Entra ID authentication.
+    provide_token.assert_not_called()
+
+
+def connect_to_vector_store(conn_string: str) -> SQLServer_VectorStore:
+    return SQLServer_VectorStore(
+        connection_string=conn_string,
+        embedding_length=EMBEDDING_LENGTH,
+        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
+        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
+        table_name=_TABLE_NAME,
+    )

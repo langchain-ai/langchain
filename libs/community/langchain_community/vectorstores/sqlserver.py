@@ -1,5 +1,15 @@
 from enum import Enum
-from typing import Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Iterable,
+    List,
+    MutableMapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
+from urllib.parse import urlparse
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -7,10 +17,12 @@ from langchain_core.vectorstores import VST, VectorStore
 from sqlalchemy import (
     CheckConstraint,
     Column,
+    Dialect,
     Uuid,
     asc,
     bindparam,
     create_engine,
+    event,
     label,
     text,
 )
@@ -18,6 +30,7 @@ from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.orm import Session
+from sqlalchemy.pool import ConnectionPoolEntry
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -26,6 +39,7 @@ except ImportError:
 
 import json
 import logging
+import struct
 import uuid
 
 
@@ -41,6 +55,7 @@ class DistanceStrategy(str, Enum):
 
 # String Constants
 #
+AZURE_TOKEN_URL = "https://database.windows.net/.default"  # Token URL for Azure DBs.
 DISTANCE = "distance"
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
 DISTANCE_STRATEGY = "distancestrategy"
@@ -48,8 +63,10 @@ EMBEDDING = "embedding"
 EMBEDDING_LENGTH = "embedding_length"
 EMBEDDING_VALUES = "embeddingvalues"
 EMPTY_IDS_ERROR_MESSAGE = "Empty list of ids provided"
+EXTRA_PARAMS = ";Trusted_Connection=Yes"
 INVALID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
 INVALID_INPUT_ERROR_MESSAGE = "Input is not valid."
+SQL_COPT_SS_ACCESS_TOKEN = 1256  # Connection option defined by microsoft in msodbcsql.h
 
 # Query Constants
 #
@@ -83,6 +100,10 @@ class SQLServer_VectorStore(VectorStore):
         Args:
             connection: Optional SQLServer connection.
             connection_string: SQLServer connection string.
+                If the connection string does not contain a username & password
+                or `Trusted_Connection=yes`, Entra ID authentication is used.
+                Sample connection string format:
+                "mssql+pyodbc://username:password@servername/dbname?other_params"
             db_schema: The schema in which the vector store will be created.
                 This schema must exist and the user must have permissions to the schema.
             distance_strategy: The distance strategy to use for comparing embeddings.
@@ -111,7 +132,35 @@ class SQLServer_VectorStore(VectorStore):
         self._embedding_store = self._get_embedding_store(table_name, db_schema)
         self._create_table_if_not_exists()
 
+    def _can_connect_with_entra_id(self) -> bool:
+        """Check the components of the connection string to determine
+        if connection via Entra ID authentication is possible or not.
+
+        The connection string is of expected to be of the form:
+            "mssql+pyodbc://username:password@servername/dbname?other_params"
+        which gets parsed into -> <scheme>://<netloc>/<path>?<query>
+        """
+        parsed_url = urlparse(self.connection_string)
+
+        if parsed_url is None:
+            logging.error("Unable to parse connection string.")
+            return False
+
+        if (parsed_url.username and parsed_url.password) or (
+            "trusted_connection=yes" in parsed_url.query.lower()
+        ):
+            return False
+
+        return True
+
     def _create_engine(self) -> Engine:
+        if self._can_connect_with_entra_id():
+            # Use Entra ID auth. Listen for a connection event
+            # when `_create_engine` function from this class is called.
+            #
+            event.listen(Engine, "do_connect", self._provide_token)
+            logging.info("Using Entra ID Authentication.")
+
         return create_engine(url=self.connection_string)
 
     def _create_table_if_not_exists(self) -> None:
@@ -483,3 +532,29 @@ class SQLServer_VectorStore(VectorStore):
         except DBAPIError as e:
             logging.error(e.__cause__)
         return result
+
+    def _provide_token(
+        self,
+        dialect: Dialect,
+        conn_rec: Optional[ConnectionPoolEntry],
+        cargs: List[str],
+        cparams: MutableMapping[str, Any],
+    ) -> None:
+        """Get token for SQLServer connection from token URL,
+        and use the token to connect to the database."""
+        from azure.identity import DefaultAzureCredential
+
+        credential = DefaultAzureCredential()
+
+        # Remove Trusted_Connection param that SQLAlchemy adds to
+        # the connection string by default.
+        cargs[0] = cargs[0].replace(EXTRA_PARAMS, str())
+
+        # Create credential token
+        token_bytes = credential.get_token(AZURE_TOKEN_URL).token.encode("utf-16-le")
+        token_struct = struct.pack(
+            f"<I{len(token_bytes)}s", len(token_bytes), token_bytes
+        )
+
+        # Apply credential token to keyword argument
+        cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
