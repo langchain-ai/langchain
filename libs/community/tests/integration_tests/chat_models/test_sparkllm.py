@@ -28,7 +28,7 @@ _FUNCTIONS: Any = [
 
 
 def test_functions_call_thoughts() -> None:
-    chat = ChatSparkLLM()
+    chat = ChatSparkLLM(timeout=30)
 
     prompt_tmpl = "Use the given functions to answer following question: {input}"
     prompt_msgs = [
