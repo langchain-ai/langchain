@@ -184,15 +184,17 @@ class ChatClovaX(BaseChatModel):
     )
 
     ncp_clovastudio_api_key: Optional[SecretStr] = Field(
-        default=None, alias="clovastudio_api_key"
+        default=None, alias="api_key"
     )
     """Automatically inferred from env are `NCP_CLOVASTUDIO_API_KEY` if not provided."""
 
-    ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
+    ncp_apigw_api_key: Optional[SecretStr] = Field(
+        default=None, alias="apigw_api_key"
+    )
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
     base_url: Optional[str] = Field(
-        default=None, alias="clovastudio_api_base_url"
+        default=None, alias="base_url"
     )
     """
     Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
@@ -203,7 +205,9 @@ class ChatClovaX(BaseChatModel):
     top_p: Optional[float] = None
     repeat_penalty: Optional[float] = None
     max_tokens: Optional[int] = None
-    stop_before: Optional[str] = None
+    stop_before: Optional[str] = Field(
+        default=None, alias="stop"
+    )
     include_ai_filters: Optional[bool] = None
     seed: Optional[int] = None
 
@@ -307,7 +311,7 @@ class ChatClovaX(BaseChatModel):
             )
         )
         values["ncp_apigw_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY")
+            get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key")
         )
         values["base_url"] = get_from_dict_or_env(
             values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
@@ -423,6 +427,12 @@ class ChatClovaX(BaseChatModel):
         result = response.get("result", {})
         msg = result.get("message", {})
         message = _convert_naver_chat_message_to_message(msg)
+        message.usage_metadata = {
+            "input_tokens": result.get("inputLength"),
+            "output_tokens": result.get("outputLength"),
+            "total_tokens": result.get("inputLength") + result.get("outputLength"),
+        }
+        
         gen = ChatGeneration(
             message=message,
         )

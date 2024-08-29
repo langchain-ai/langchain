@@ -61,7 +61,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
 
     ncp_clovastudio_api_key: Optional[SecretStr] = Field(
-        default=None, alias="clovastudio_api_key"
+        default=None, alias="api_key"
     )
     """Automatically inferred from env are `NCP_CLOVASTUDIO_API_KEY` if not provided."""
 
@@ -69,7 +69,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
     """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
 
     base_url: Optional[str] = Field(
-        default=None, alias="clovastudio_api_base_url"
+        default=None, alias="base_url"
     )
     """
     Automatically inferred from env are  `NCP_CLOVASTUDIO_API_BASE_URL` if not provided.
@@ -122,7 +122,7 @@ class ClovaXEmbeddings(BaseModel, Embeddings):
             )
         )
         values["ncp_apigw_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY")
+            get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY", "ncp_apigw_api_key")
         )
         values["base_url"] = get_from_dict_or_env(
             values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL", DEFAULT_BASE_URL
