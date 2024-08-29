@@ -2283,7 +2283,7 @@ class OpenSearchSemanticCache(BaseCache):
         opensearch_url: str,
         embedding: Embeddings,
         score_threshold: float = 0.2,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """
         Args:
