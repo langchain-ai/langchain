@@ -131,15 +131,18 @@ def test_merge_dicts(
         assert right == right_copy
 
 
-@pytest.mark.parametrize(("left", "right", "expected"), (
-    # 'type' special key handling
-    ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
     (
+        # 'type' special key handling
+        ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
+        (
             {"type": "foo"},
             {"type": "bar"},
             pytest.raises(ValueError, match="Unable to merge."),
+        ),
     ),
-))
+)
 @pytest.mark.xfail(reason="Refactors to make in 0.3")
 def test_merge_dicts_0_3(
     left: dict, right: dict, expected: Union[dict, AbstractContextManager]
@@ -157,6 +160,7 @@ def test_merge_dicts_0_3(
         # no mutation
         assert left == left_copy
         assert right == right_copy
+
 
 @pytest.mark.parametrize(
     ("module_name", "pip_name", "package", "expected"),

@@ -240,12 +240,15 @@ def test_complex_ai_message_chunks() -> None:
         )
     ), "Concatenating when both content arrays are dicts with the same index and type should merge"  # noqa: E501
 
-    with pytest.raises(ValueError):
-        AIMessageChunk(
-            content=[{"index": 0, "text": "I am", "type": "text_block"}]
-        ) + AIMessageChunk(
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
             content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
         )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and different types should merge without updating type"  # noqa: E501
 
     assert (
         AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
