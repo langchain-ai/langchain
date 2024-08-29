@@ -345,6 +345,7 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.pdf import (
         AmazonTextractPDFLoader,
         DedocPDFLoader,
+        HuridocsPDFLoader,
         MathpixPDFLoader,
         OnlinePDFLoader,
         PagedPDFSplitter,
@@ -612,6 +613,7 @@ _module_lookup = {
     "HNLoader": "langchain_community.document_loaders.hn",
     "HuggingFaceDatasetLoader": "langchain_community.document_loaders.hugging_face_dataset",  # noqa: E501
     "HuggingFaceModelLoader": "langchain_community.document_loaders.hugging_face_model",
+    "HuridocsPDFLoader": "langchain_community.document_loaders.pdf",
     "IFixitLoader": "langchain_community.document_loaders.ifixit",
     "IMSDbLoader": "langchain_community.document_loaders.imsdb",
     "ImageCaptionLoader": "langchain_community.document_loaders.image_captions",
@@ -817,6 +819,7 @@ __all__ = [
     "HNLoader",
     "HuggingFaceDatasetLoader",
     "HuggingFaceModelLoader",
+    "HuridocsPDFLoader",
     "IFixitLoader",
     "ImageCaptionLoader",
     "IMSDbLoader",

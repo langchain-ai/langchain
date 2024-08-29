@@ -951,22 +951,27 @@ class HuridocsPDFLoader(BasePDFLoader):
     def __init__(
         self,
         file_path: str,
-        server_url: str,
+        server_url: str = "http://localhost:5060",
         fast: Optional[bool] = False,
     ) -> None:
         """
         Initialize the object for PDF file processing with
         Huridocs pdf-document-layout-analysis.
 
-        This constructor initializes a HuridocsPDFLoader object to be used
-        for parsing files using the pdf-document-layout-analysis API.
-        Loader uses VGT layout model.
+        This constructor initializes a HuridocsPDFLoader object to be used for
+        parsing files using the pdf-document-layout-analysis self-hosted service.
+        Loader uses VGT layout model as default.
+        Loader uses LightGBM models if fast=True passed.
+
         Parameters:
         -----------
         file_path : str
             The path to the file that needs to be parsed.
         server_url: str
-            The path to pdf-document-layout-analysis self-hosted API server.
+            The URL which the service runs on.
+        fast: Optional[bool]
+            Option to decide running visual or non-visual models.
+
 
         Types of the Segments:
         ---------
@@ -987,7 +992,7 @@ class HuridocsPDFLoader(BasePDFLoader):
         ---------
         >>> pdf_loader = HuridocsPDFLoader(
         ...     file_path="path/to/file",
-        ...     server_url="path/to/sef-hosted/api"
+        ...     server_url="url/of/sef-hosted/api"
         ... )
 
         pdf_analysis = pdf_loader.analyze_pdf()
@@ -1007,6 +1012,7 @@ class HuridocsPDFLoader(BasePDFLoader):
         super().__init__(file_path)
 
     def analyze_pdf(self) -> str:
+        """Analyze the PDF"""
         with open(self.file_path, "rb") as f:
             files = {"file": f}
             try:
@@ -1021,6 +1027,7 @@ class HuridocsPDFLoader(BasePDFLoader):
         return response_data
 
     def get_table_of_contents(self) -> str:
+        """Extract table of contents information"""
         with open(self.file_path, "rb") as f:
             files = {"file": f}
             try:
@@ -1037,6 +1044,7 @@ class HuridocsPDFLoader(BasePDFLoader):
         return response_data
 
     def get_visualization(self, output_destination_path: str):
+        """Save the visualization of the segmented PDF"""
         with open(self.file_path, "rb") as f:
             files = {"file": f}
             try:
@@ -1053,6 +1061,7 @@ class HuridocsPDFLoader(BasePDFLoader):
                 raise err
 
     def get_text(self, types: str = "all") -> str:
+        """Get all the content in a single string"""
         with open(self.file_path, "rb") as f:
             files = {"file": f}
             try:
