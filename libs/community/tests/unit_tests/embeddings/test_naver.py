@@ -13,6 +13,6 @@ os.environ["NCP_CLOVASTUDIO_APP_ID"] = "test_app_id"
 
 
 def test_initialization_api_key() -> None:
-    llm = ClovaXEmbeddings(clovastudio_api_key="foo", apigw_api_key="bar")
+    llm = ClovaXEmbeddings(api_key="foo", apigw_api_key="bar")
     assert cast(SecretStr, llm.ncp_clovastudio_api_key).get_secret_value() == "foo"
     assert cast(SecretStr, llm.ncp_apigw_api_key).get_secret_value() == "bar"
