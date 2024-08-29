@@ -270,5 +270,5 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
             if run_manager:
                 await run_manager.on_llm_new_token(content)
-            
+
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
