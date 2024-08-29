@@ -182,7 +182,7 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
     try:
         json_obj = parse_json_markdown(text)
     except json.JSONDecodeError as e:
-        raise OutputParserException(f"Got invalid JSON object. Error: {e}")
+        raise OutputParserException(f"Got invalid JSON object. Error: {e}") from e
     for key in expected_keys:
         if key not in json_obj:
             raise OutputParserException(

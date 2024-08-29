@@ -39,6 +39,7 @@ def _milvus_from_texts(
         # connection_args={"uri": "http://127.0.0.1:19530"},
         connection_args={"uri": "./milvus_demo.db"},
         drop_old=drop,
+        consistency_level="Strong",
         **kwargs,
     )
 
@@ -303,6 +304,51 @@ def test_milvus_enable_dynamic_field_with_partition_key() -> None:
     }
 
 
+def test_milvus_array_field() -> None:
+    """Manually specify metadata schema, including an array_field.
+    For more information about array data type and filtering, please refer to
+    https://milvus.io/docs/array_data_type.md
+    """
+    from pymilvus import DataType
+
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i, "array_field": [i, i + 1, i + 2]} for i in range(len(texts))]
+
+    # Manually specify metadata schema, including an array_field.
+    # If some fields are not specified, Milvus will automatically infer their schemas.
+    docsearch = _milvus_from_texts(
+        metadatas=metadatas,
+        metadata_schema={
+            "array_field": {
+                "dtype": DataType.ARRAY,
+                "kwargs": {"element_type": DataType.INT64, "max_capacity": 50},
+            },
+            # "id": {
+            #     "dtype": DataType.INT64,
+            # }
+        },
+    )
+    output = docsearch.similarity_search("foo", k=10, expr="array_field[0] < 2")
+    assert len(output) == 2
+    output = docsearch.similarity_search(
+        "foo", k=10, expr="ARRAY_CONTAINS(array_field, 3)"
+    )
+    assert len(output) == 2
+
+    # If we use enable_dynamic_field,
+    # there is no need to manually specify metadata schema.
+    docsearch = _milvus_from_texts(
+        enable_dynamic_field=True,
+        metadatas=metadatas,
+    )
+    output = docsearch.similarity_search("foo", k=10, expr="array_field[0] < 2")
+    assert len(output) == 2
+    output = docsearch.similarity_search(
+        "foo", k=10, expr="ARRAY_CONTAINS(array_field, 3)"
+    )
+    assert len(output) == 2
+
+
 # if __name__ == "__main__":
 #     test_milvus()
 #     test_milvus_vector_search()
@@ -319,3 +365,4 @@ def test_milvus_enable_dynamic_field_with_partition_key() -> None:
 #     test_milvus_enable_dynamic_field()
 #     test_milvus_disable_dynamic_field()
 #     test_milvus_metadata_field()
+#     test_milvus_array_field()

@@ -1889,6 +1889,25 @@ async def test_runnable_with_message_history() -> None:
         input_messages_key="question",
         history_messages_key="history",
     )
+
+    # patch with_message_history._get_output_messages to listen for errors
+    # so we can raise them in this main thread
+    raised_errors = []
+
+    def collect_errors(fn):  # type: ignore
+        nonlocal raised_errors
+
+        def _get_output_messages(*args, **kwargs):  # type: ignore
+            try:
+                return fn(*args, **kwargs)
+            except Exception as e:
+                raised_errors.append(e)
+                raise e
+
+        return _get_output_messages
+
+    old_ref = with_message_history._get_output_messages
+    with_message_history.__dict__["_get_output_messages"] = collect_errors(old_ref)
     await with_message_history.with_config(
         {"configurable": {"session_id": "session-123"}}
     ).ainvoke({"question": "hello"})
@@ -1911,6 +1930,7 @@ async def test_runnable_with_message_history() -> None:
             AIMessage(content="world", id="ai4"),
         ]
     }
+    assert not raised_errors
 
 
 EXPECTED_EVENTS = [
