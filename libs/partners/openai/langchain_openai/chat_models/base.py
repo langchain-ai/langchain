@@ -1100,7 +1100,9 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             kwargs["tool_choice"] = tool_choice
         if response_format is not None:
-            kwargs["response_format"] = _convert_to_openai_response_format(response_format, strict=strict if strict is not None else True)
+            kwargs["response_format"] = _convert_to_openai_response_format(
+                response_format, strict=strict if strict is not None else True
+            )
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
