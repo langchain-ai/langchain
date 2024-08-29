@@ -3882,6 +3882,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         atransform: Optional[
             Callable[[AsyncIterator[Input]], AsyncIterator[Output]]
         ] = None,
+        name: Optional[str] = None,
     ) -> None:
         """Initialize a RunnableGenerator.
 
@@ -3909,7 +3910,10 @@ class RunnableGenerator(Runnable[Input, Output]):
             )
 
         try:
-            self.name = func_for_name.__name__
+            if name:
+                self.name = name
+            else:
+                self.name = func_for_name.__name__
         except AttributeError:
             pass
 

@@ -1210,12 +1210,12 @@ def _make_message_chunk_from_anthropic_event(
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
             content_block["type"] = "tool_use"
-            tool_call_chunk = {
+            tool_call_chunk = create_tool_call_chunk(**{
                 "index": event.index,
                 "id": None,
                 "name": None,
                 "args": event.delta.partial_json,
-            }
+            })
             message_chunk = AIMessageChunk(
                 content=[content_block],
                 tool_call_chunks=[tool_call_chunk],  # type: ignore
