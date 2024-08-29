@@ -47,7 +47,7 @@ def merge_dicts(left: Dict[str, Any], *others: Dict[str, Any]) -> Dict[str, Any]
                     else:
                         raise ValueError(
                             "Unable to merge. Two different values seen for special "
-                            "key 'type': {merged[right_k]} and {right_v}. 'type' "
+                            f"key 'type': {merged[right_k]} and {right_v}. 'type' "
                             "should either occur once or have the same value across "
                             "all dicts."
                         )
