@@ -387,8 +387,7 @@ def convert_to_openai_function(
             " 'title' and 'description' keys."
         )
 
-     # Only include the strict parameter if the function is being converted to a tool
-     if isinstance(function, BaseTool) and strict is not None:
+    if strict is not None:
         oai_function["strict"] = strict
         if strict:
             # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
