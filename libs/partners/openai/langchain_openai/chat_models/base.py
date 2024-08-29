@@ -2101,7 +2101,6 @@ def _convert_to_openai_response_format(
     schema: Union[Dict[str, Any], Type], strict: bool
 ) -> Union[Dict, TypeBaseModel]:
     if isinstance(schema, type) and is_basemodel_subclass(schema):
-        print("BOTH")
         return schema
     else:
         function = convert_to_openai_function(schema, strict=strict)
