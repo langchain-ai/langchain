@@ -638,6 +638,7 @@ class PGVector(VectorStore):
         docs = [
             (
                 Document(
+                    id=result.EmbeddingStore.id if result.EmbeddingStore.id else None,
                     page_content=result.EmbeddingStore.document,
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
