@@ -550,9 +550,7 @@ class Milvus(VectorStore):
             )
         # Create the vector field, supports binary or float vectors
         if self._is_sparse_embedding:
-            fields.append(
-                FieldSchema(self._vector_field, DataType.SPARSE_FLOAT_VECTOR)
-            )
+            fields.append(FieldSchema(self._vector_field, DataType.SPARSE_FLOAT_VECTOR))
         else:
             fields.append(
                 FieldSchema(
