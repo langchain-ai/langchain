@@ -951,33 +951,33 @@ def format_messages(
         messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         format: Output message format:
-        
-                - "langchain-openai": 
+
+                - "langchain-openai":
                     BaseMessages with OpenAI-style contents.
-                - "langchain-anthropic": 
+                - "langchain-anthropic":
                     BaseMessages with Anthropic-style contents.
         text_format: How to format string or text block contents:
-        
-                - "string": 
+
+                - "string":
                     If a message has a string content, this is left as a string. If
                     a message has content blocks that are all of type 'text', these are
                     joined with a newline to make a single string. If a message has
                     content blocks and at least one isn't of type 'text', then
                     all blocks are left as dicts.
-                - "block": 
+                - "block":
                     If a message has a string content, this is turned into a list
                     with a single content block of type 'text'. If a message has content
                     blocks these are left as is.
 
     Returns:
         The return type depends on the input type:
-            - BaseMessage: 
+            - BaseMessage:
                 If a single message-like object is passed in, a BaseMessage is
                 returned.
-            - List[BaseMessage]: 
+            - List[BaseMessage]:
                 If a sequence of message-like objects are passed in, a list
                 of BaseMessages are returned.
-            - Runnable: 
+            - Runnable:
                 If no messages are passed in, a Runnable is generated that formats
                 messages (per the above) when invoked.
 
@@ -1044,14 +1044,14 @@ def format_messages(
 
     .. dropdown:: Streaming
         :open:
-        
+
         .. code-block:: python
 
             from langchain_core.messages import format_messages
             from langchain.chat_models import init_chat_model
 
             formatter = format_messages(format="langchain-openai", text_format="string")
-            
+
             def multiply(a: int, b: int) -> int:
                 '''Return product of a and b.'''
                 return a * b
