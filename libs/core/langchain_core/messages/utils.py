@@ -934,30 +934,52 @@ def _runnable_generator(func: Callable) -> Callable:
 
 
 @_runnable_generator
-def format_messages_as(
+def format_messages(
     messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
     *,
-    format: Literal["openai", "anthropic"],
+    format: Literal["langchain-openai", "langchain-anthropic"],
     text_format: Literal["string", "block"],
 ) -> Union[BaseMessage, List[BaseMessage]]:
     """Convert message contents into a standard format.
 
-    .. versionadded:: 0.2.36
+    Can be used imperatively (pass in messages, get out messages) or can be used
+    declaratively (call without messages, use resulting Runnable in a chain).
+
+    .. versionadded:: 0.2.37
 
     Args:
-        messages: Message-like object or iterable of objects whose contents are already
+        messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
-        format: Format to convert message contents to.
-        text_format: How to format text contents. If ``text='string'``  then any string
-            contents are left as strings. If a message has content blocks that are all
-            of type 'text', these are joined with a newline to make a single string. If
-            a message has content blocks and at least one isn't of type 'text', then
-            all blocks are left as dicts. If ``text='block'`` then all contents are
-            turned into a list of dicts.
+        format: Output message format:
+        
+                - "langchain-openai": 
+                    BaseMessages with OpenAI-style contents.
+                - "langchain-anthropic": 
+                    BaseMessages with Anthropic-style contents.
+        text_format: How to format string or text block contents:
+        
+                - "string": 
+                    If a message has a string content, this is left as a string. If
+                    a message has content blocks that are all of type 'text', these are
+                    joined with a newline to make a single string. If a message has
+                    content blocks and at least one isn't of type 'text', then
+                    all blocks are left as dicts.
+                - "block": 
+                    If a message has a string content, this is turned into a list
+                    with a single content block of type 'text'. If a message has content
+                    blocks these are left as is.
 
     Returns:
-        A single BaseMessage is a single message-like object was passed in, else list
-        of BaseMessages.
+        The return type depends on the input type:
+            - BaseMessage: 
+                If a single message-like object is passed in, a BaseMessage is
+                returned.
+            - List[BaseMessage]: 
+                If a sequence of message-like objects are passed in, a list
+                of BaseMessages are returned.
+            - Runnable: 
+                If no messages are passed in, a Runnable is generated that formats
+                messages (per the above) when invoked.
 
     .. dropdown::  Basic usage
         :open:
@@ -965,7 +987,7 @@ def format_messages_as(
         .. code-block:: python
 
             from langchain_core.messages import (
-                format_messages_as,
+                format_messages,
                 AIMessage,
                 HumanMessage,
                 SystemMessage,
@@ -979,7 +1001,7 @@ def format_messages_as(
                 ToolMessage("foobar", tool_call_id="1", name="bar"),
                 {"role": "assistant", "content": "thats nice"},
             ]
-            oai_strings = format_messages_as(messages, format="openai", text="string")
+            oai_strings = format_messages(messages, format="langchain-openai", text="string")
             # -> [
             #     SystemMessage(content='foo'),
             #     HumanMessage(content=[{'type': 'text', 'text': 'whats in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]),
@@ -988,7 +1010,7 @@ def format_messages_as(
             #     AIMessage(content='thats nice')
             # ]
 
-            anthropic_blocks = format_messages_as(messages, format="anthropic", text="block")
+            anthropic_blocks = format_messages(messages, format="langchain-anthropic", text="block")
             # -> [
             #     SystemMessage(content=[{'type': 'text', 'text': 'foo'}]),
             #     HumanMessage(content=[{'type': 'text', 'text': 'whats in this'}, {'type': 'image', 'source': {'type': 'base64', 'media_type': 'image/png', 'data': "'/9j/4AAQSk'"}}]),
@@ -997,15 +1019,15 @@ def format_messages_as(
             #     AIMessage(content=[{'type': 'text', 'text': 'thats nice'}])
             # ]
 
-    .. dropdown::  Chain usage
+    .. dropdown::  Chaining
         :open:
 
         .. code-block:: python
 
-            from langchain_core.messages import format_messages_as
+            from langchain_core.messages import format_messages
             from langchain.chat_models import init_chat_model
 
-            formatter = format_messages_as(format="openai", text="string")
+            formatter = format_messages(format="langchain-openai", text="string")
             llm = init_chat_model() | formatter
 
             llm.invoke(
@@ -1020,7 +1042,16 @@ def format_messages_as(
             )
             # -> AIMessage(["My name is...], ...)
 
+    .. dropdown:: Streaming
+        :open:
+        
+        .. code-block:: python
 
+            from langchain_core.messages import format_messages
+            from langchain.chat_models import init_chat_model
+
+            formatter = format_messages(format="langchain-openai", text="string")
+            
             def multiply(a: int, b: int) -> int:
                 '''Return product of a and b.'''
                 return a * b
@@ -1031,40 +1062,41 @@ def format_messages_as(
                     "what's 5 times 2", config={"model": "claude-3-5-sonnet-20240620"}
                 ):
                 print(chunk)
-            # -> AIMessageChunk(content='', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75', usage_metadata={'input_tokens': 370, 'output_tokens': 0, 'total_tokens': 370}),
-            # AIMessageChunk(content='Certainly', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content='! To', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' calculate', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' 5 times ', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content='2, we can use', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' the "', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content='multiply" function that', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content="'s", id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' available to', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' us.', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' Let', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content="'s use", id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' this tool', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' to', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' get', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content=' the result.', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75'),
-            # AIMessageChunk(content='', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75', tool_calls=[{'name': 'multiply', 'args': {}, 'id': 'toolu_01PW8o6BkATCecjsJX8QgG6z', 'type': 'tool_call'}], tool_call_chunks=[{'name': 'multiply', 'args': '', 'id': 'toolu_01PW8o6BkATCecjsJX8QgG6z', 'index': 1, 'type': 'tool_call_chunk'}]),
-            # AIMessageChunk(content='', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75', tool_calls=[{'name': '', 'args': {}, 'id': None, 'type': 'tool_call'}], tool_call_chunks=[{'name': None, 'args': '', 'id': None, 'index': 1, 'type': 'tool_call_chunk'}]),
-            # AIMessageChunk(content='', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75', tool_calls=[{'name': '', 'args': {'a': 5}, 'id': None, 'type': 'tool_call'}], tool_call_chunks=[{'name': None, 'args': '{"a": 5', 'id': None, 'index': 1, 'type': 'tool_call_chunk'}]),
-            # AIMessageChunk(content='', id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75', invalid_tool_calls=[{'name': None, 'args': ', "b": 2}', 'id': None, 'error': None, 'type': 'invalid_tool_call'}], tool_call_chunks=[{'name': None, 'args': ', "b": 2}', 'id': None, 'index': 1, 'type': 'tool_call_chunk'}]),
-            # AIMessageChunk(content='', response_metadata={'stop_reason': 'tool_use', 'stop_sequence': None}, id='run-64757cb2-b85f-4d51-8f34-5a6c1d40ad75', usage_metadata={'input_tokens': 0, 'output_tokens': 104, 'total_tokens': 104})
+            # -> AIMessageChunk(content='', id='run-6...', usage_metadata={'input_tokens': 370, 'output_tokens': 0, 'total_tokens': 370}),
+            # AIMessageChunk(content='Certainly', id='run-6...'),
+            # AIMessageChunk(content='! To', id='run-6...'),
+            # AIMessageChunk(content=' calculate', id='run-6...'),
+            # AIMessageChunk(content=' 5 times ', id='run-6...'),
+            # AIMessageChunk(content='2, we can use', id='run-6...'),
+            # AIMessageChunk(content=' the "', id='run-6...'),
+            # AIMessageChunk(content='multiply" function that', id='run-6...'),
+            # AIMessageChunk(content="'s", id='run-6...'),
+            # AIMessageChunk(content=' available to', id='run-6...'),
+            # AIMessageChunk(content=' us.', id='run-6...'),
+            # AIMessageChunk(content=' Let', id='run-6...'),
+            # AIMessageChunk(content="'s use", id='run-6...'),
+            # AIMessageChunk(content=' this tool', id='run-6...'),
+            # AIMessageChunk(content=' to', id='run-6...'),
+            # AIMessageChunk(content=' get', id='run-6...'),
+            # AIMessageChunk(content=' the result.', id='run-6...'),
+            # AIMessageChunk(content='', id='run-6...', tool_calls=[{'name': 'multiply', 'args': {}, 'id': 'toolu_0...', 'type': 'tool_call'}], tool_call_chunks=[{'name': 'multiply', 'args': '', 'id': 'toolu_0...', 'index': 1, 'type': 'tool_call_chunk'}]),
+            # AIMessageChunk(content='', id='run-6...', tool_calls=[{'name': '', 'args': {}, 'id': None, 'type': 'tool_call'}], tool_call_chunks=[{'name': None, 'args': '', 'id': None, 'index': 1, 'type': 'tool_call_chunk'}]),
+            # AIMessageChunk(content='', id='run-6...', tool_calls=[{'name': '', 'args': {'a': 5}, 'id': None, 'type': 'tool_call'}], tool_call_chunks=[{'name': None, 'args': '{"a": 5', 'id': None, 'index': 1, 'type': 'tool_call_chunk'}]),
+            # AIMessageChunk(content='', id='run-6...', invalid_tool_calls=[{'name': None, 'args': ', "b": 2}', 'id': None, 'error': None, 'type': 'invalid_tool_call'}], tool_call_chunks=[{'name': None, 'args': ', "b": 2}', 'id': None, 'index': 1, 'type': 'tool_call_chunk'}]),
+            # AIMessageChunk(content='', response_metadata={'stop_reason': 'tool_use', 'stop_sequence': None}, id='run-6...', usage_metadata={'input_tokens': 0, 'output_tokens': 104, 'total_tokens': 104})
 
     """  # noqa: E501
     if is_single := isinstance(messages, (BaseMessage, dict)):
         messages = [messages]
     messages = convert_to_messages(messages, copy=True)
-    if format.lower() == "openai":
-        formatted = _format_messages_as_openai(messages, text_format=text_format)
-    elif format.lower() == "anthropic":
-        formatted = _format_messages_as_anthropic(messages, text_format=text_format)
+    if format.lower().replace("_", "-") == "langchain-openai":
+        formatted = _format_messages_openai(messages, text_format=text_format)
+    elif format.lower().replace("_", "-") == "langchain-anthropic":
+        formatted = _format_messages_anthropic(messages, text_format=text_format)
     else:
         raise ValueError(
-            f"Unrecognized {format=}. Expected one of ('openai', 'anthropic')."
+            f"Unrecognized {format=}. Expected one of ('langchain-openai', "
+            f"'langchain-anthropic')."
         )
     if is_single:
         return formatted[0]
@@ -1072,7 +1104,7 @@ def format_messages_as(
         return formatted
 
 
-def _format_messages_as_openai(
+def _format_messages_openai(
     messages: Sequence[BaseMessage], *, text_format: Literal["string", "block"]
 ) -> List[BaseMessage]:
     """Mutates messages so their contents match OpenAI messages API."""
@@ -1226,7 +1258,7 @@ def _format_messages_as_openai(
                         )
                         # Recurse to make sure tool message contents are OpenAI format.
                         tool_messages.extend(
-                            _format_messages_as_openai(
+                            _format_messages_openai(
                                 [tool_message], text_format=text_format
                             )
                         )
@@ -1307,7 +1339,7 @@ def _format_messages_as_openai(
 _OPTIONAL_ANTHROPIC_KEYS = ("cache_control", "is_error", "index")
 
 
-def _format_messages_as_anthropic(
+def _format_messages_anthropic(
     messages: Sequence[BaseMessage], *, text_format: Literal["string", "block"]
 ) -> List[BaseMessage]:
     """Mutates messages so their contents match Anthropic messages API."""
