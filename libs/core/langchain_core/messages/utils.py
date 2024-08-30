@@ -938,7 +938,7 @@ def format_messages_as(
     messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
     *,
     format: Literal["openai", "anthropic"],
-    text: Literal["string", "block"],
+    text_format: Literal["string", "block"],
 ) -> Union[BaseMessage, List[BaseMessage]]:
     """Convert message contents into a standard format.
 
@@ -948,7 +948,7 @@ def format_messages_as(
         messages: Message-like object or iterable of objects whose contents are already
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         format: Format to convert message contents to.
-        text: How to format text contents. If ``text='string'``  then any string
+        text_format: How to format text contents. If ``text='string'``  then any string
             contents are left as strings. If a message has content blocks that are all
             of type 'text', these are joined with a newline to make a single string. If
             a message has content blocks and at least one isn't of type 'text', then
@@ -1059,9 +1059,9 @@ def format_messages_as(
         messages = [messages]
     messages = convert_to_messages(messages, copy=True)
     if format.lower() == "openai":
-        formatted = _format_messages_as_openai(messages, text=text)
+        formatted = _format_messages_as_openai(messages, text_format=text_format)
     elif format.lower() == "anthropic":
-        formatted = _format_messages_as_anthropic(messages, text=text)
+        formatted = _format_messages_as_anthropic(messages, text_format=text_format)
     else:
         raise ValueError(
             f"Unrecognized {format=}. Expected one of ('openai', 'anthropic')."
@@ -1073,21 +1073,21 @@ def format_messages_as(
 
 
 def _format_messages_as_openai(
-    messages: Sequence[BaseMessage], *, text: Literal["string", "block"]
+    messages: Sequence[BaseMessage], *, text_format: Literal["string", "block"]
 ) -> List[BaseMessage]:
     """Mutates messages so their contents match OpenAI messages API."""
     updated_messages: list = []
     for i, message in enumerate(messages):
         tool_messages: list = []
         if not message.content:
-            message.content = "" if text == "string" else []
+            message.content = "" if text_format == "string" else []
         elif isinstance(message.content, str):
-            if text == "string":
+            if text_format == "string":
                 pass
             else:
                 message.content = [{"type": "text", "text": message.content}]
         else:
-            if text == "string" and all(
+            if text_format == "string" and all(
                 isinstance(block, str) or block.get("type") == "text"
                 for block in message.content
             ):
@@ -1226,7 +1226,9 @@ def _format_messages_as_openai(
                         )
                         # Recurse to make sure tool message contents are OpenAI format.
                         tool_messages.extend(
-                            _format_messages_as_openai([tool_message], text=text)
+                            _format_messages_as_openai(
+                                [tool_message], text_format=text_format
+                            )
                         )
                     elif (block.get("type") == "json") or "json" in block:
                         if "json" not in block:
@@ -1292,7 +1294,7 @@ def _format_messages_as_openai(
                             f"Anthropic, Bedrock Converse, or VertexAI format. Full "
                             f"content block:\n\n{block}"
                         )
-                if text == "string" and not any(
+                if text_format == "string" and not any(
                     block["type"] != "text" for block in content
                 ):
                     message.content = "\n".join(block["text"] for block in content)
@@ -1306,7 +1308,7 @@ _OPTIONAL_ANTHROPIC_KEYS = ("cache_control", "is_error", "index")
 
 
 def _format_messages_as_anthropic(
-    messages: Sequence[BaseMessage], *, text: Literal["string", "block"]
+    messages: Sequence[BaseMessage], *, text_format: Literal["string", "block"]
 ) -> List[BaseMessage]:
     """Mutates messages so their contents match Anthropic messages API."""
     updated_messages: List = []
@@ -1328,9 +1330,9 @@ def _format_messages_as_anthropic(
                 updated_messages.append(HumanMessage([tool_result_block]))
             continue
         elif not message.content:
-            message.content = "" if text == "string" else []
+            message.content = "" if text_format == "string" else []
         elif isinstance(message.content, str):
-            if text == "string":
+            if text_format == "string":
                 pass
             else:
                 text_block: dict = {"type": "text", "text": message.content}
@@ -1338,7 +1340,7 @@ def _format_messages_as_anthropic(
                     text_block["index"] = 0
                 message.content = [text_block]
         else:
-            if text == "string" and all(
+            if text_format == "string" and all(
                 isinstance(block, str)
                 or (block.get("type") == "text" and "cache_control" not in block)
                 for block in message.content
