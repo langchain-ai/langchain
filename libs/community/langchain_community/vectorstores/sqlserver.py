@@ -107,6 +107,8 @@ class SQLServer_VectorStore(VectorStore):
             connection_string: SQLServer connection string.
                 If the connection string does not contain a username & password
                 or `Trusted_Connection=yes`, Entra ID authentication is used.
+                Sample connection string format:
+                "mssql+pyodbc://username:password@servername/dbname?other_params"
             db_schema: The schema in which the vector store will be created.
                 This schema must exist and the user must have permissions to the schema.
             distance_strategy: The distance strategy to use for comparing embeddings.
@@ -132,9 +134,18 @@ class SQLServer_VectorStore(VectorStore):
         self._bind: Union[Connection, Engine] = (
             connection if connection else self._create_engine()
         )
-        self._post_connection()
+        self._prepare_json_data_type()
+        self._embedding_store = self._get_embedding_store(self.table_name, self.schema)
+        self._create_table_if_not_exists()
 
     def _can_connect_with_entra_id(self) -> bool:
+        """Check the components of the connection string to determine
+        if connection via Entra ID authentication is possible or not.
+
+        The connection string is of expected to be of the form:
+            "mssql+pyodbc://username:password@servername/dbname?other_params"
+        which gets parsed into -> <scheme>://<netloc>/<path>?<query>
+        """
         parsed_url = urlparse(self.connection_string)
 
         if parsed_url is None:
@@ -157,11 +168,6 @@ class SQLServer_VectorStore(VectorStore):
             logging.info("Using Entra ID Authentication.")
 
         return create_engine(url=self.connection_string)
-
-    def _post_connection(self) -> None:
-        self._prepare_json_data_type()
-        self._embedding_store = self._get_embedding_store(self.table_name, self.schema)
-        self._create_table_if_not_exists()
 
     def _create_table_if_not_exists(self) -> None:
         logging.info(f"Creating table {self.table_name}.")

@@ -15,6 +15,9 @@ from langchain_community.vectorstores.sqlserver import (
     SQLServer_VectorStore,
 )
 
+# Connection String values should be provided in the
+# environment running this test suite.
+#
 _CONNECTION_STRING = str(os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING"))
 _CONNECTION_STRING_WITH_UID_AND_PWD = str(
     os.environ.get("TEST_AZURESQLSERVER_CONNECTION_STRING_WITH_UID")
@@ -22,8 +25,11 @@ _CONNECTION_STRING_WITH_UID_AND_PWD = str(
 _CONNECTION_STRING_WITH_TRUSTED_CONNECTION = str(
     os.environ.get("TEST_AZURESQLSERVER_TRUSTED_CONNECTION")
 )
-_ENTRA_ID_CONNECTION_STRING = str(
-    os.environ.get("TEST_AZURESQLSERVER_ENTRA_ID_CONNECTION_STRING")
+_ENTRA_ID_CONNECTION_STRING_NO_PARAMS = str(
+    os.environ.get("TEST_ENTRA_ID_CONNECTION_STRING_NO_PARAMS")
+)
+_ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO = str(
+    os.environ.get("TEST_ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO")
 )
 _SCHEMA = "lc_test"
 _COLLATION_DB_NAME = "LangChainCollationTest"
@@ -488,6 +494,17 @@ def test_that_rows_with_duplicate_custom_id_cannot_be_entered(
         store.add_texts(texts, metadatas)
 
 
+def test_that_entra_id_authentication_connection_is_successful(
+    texts: List[str],
+) -> None:
+    """Test that given a valid entra id auth string, connection to DB is successful."""
+    vector_store = connect_to_vector_store(_ENTRA_ID_CONNECTION_STRING_NO_PARAMS)
+    vector_store.add_texts(texts)
+
+    # drop vector_store
+    vector_store.drop()
+
+
 # We need to mock this so that actual connection is not attempted
 # after mocking _provide_token.
 @mock.patch("sqlalchemy.dialects.mssql.dialect.initialize")
@@ -506,19 +523,19 @@ def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_i
     to SQLServer_VectorStore object, entra id authentication is used
     and connection is successful."""
 
-    # Connection string does not contain username and password,
-    # and Trusted_connection is set to `no`.
-    # mssql+pyodbc://lc-test.database.windows.net,1433/lcvectorstore
-    # ?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=no"
-    SQLServer_VectorStore(
-        connection_string=_ENTRA_ID_CONNECTION_STRING,
-        embedding_length=EMBEDDING_LENGTH,
-        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
-        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
-        table_name=_TABLE_NAME,
-    )
-
+    # Connection string is of the form below.
+    # "mssql+pyodbc://lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server"
+    connect_to_vector_store(_ENTRA_ID_CONNECTION_STRING_NO_PARAMS)
     # _provide_token is called only during Entra ID authentication.
+    provide_token.assert_called()
+
+    # reset the mock so that it can be reused.
+    provide_token.reset_mock()
+
+    # "mssql+pyodbc://lc-test.database.windows.net,1433/lcvectorstore
+    # ?driver=ODBC+Driver+17+for+SQL+Server&Trusted_Connection=no"
+    connect_to_vector_store(_ENTRA_ID_CONNECTION_STRING_TRUSTED_CONNECTION_NO)
     provide_token.assert_called()
 
 
@@ -543,13 +560,7 @@ def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_us
     # Connection string contains username and password,
     # mssql+pyodbc://username:password@lc-test.database.windows.net,1433/lcvectorstore
     # ?driver=ODBC+Driver+17+for+SQL+Server"
-    SQLServer_VectorStore(
-        connection_string=_CONNECTION_STRING_WITH_UID_AND_PWD,
-        embedding_length=EMBEDDING_LENGTH,
-        # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
-        embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
-        table_name=_TABLE_NAME,
-    )
+    connect_to_vector_store(_CONNECTION_STRING_WITH_UID_AND_PWD)
 
     # _provide_token is called only during Entra ID authentication.
     provide_token.assert_not_called()
@@ -573,17 +584,20 @@ def test_that_connection_string_with_trusted_connection_yes_does_not_use_entra_i
     and connection string has `trusted_connection` set to `yes`, entra id
     authentication is not used and connection is successful."""
 
-    # Connection string does not contain username and password,
-    # but has `trusted_connection=yes`
+    # Connection string is of the form below.
     # mssql+pyodbc://@lc-test.database.windows.net,1433/lcvectorstore
     # ?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
-    SQLServer_VectorStore(
-        connection_string=_CONNECTION_STRING_WITH_TRUSTED_CONNECTION,
+    connect_to_vector_store(_CONNECTION_STRING_WITH_TRUSTED_CONNECTION)
+
+    # _provide_token is called only during Entra ID authentication.
+    provide_token.assert_not_called()
+
+
+def connect_to_vector_store(conn_string: str) -> SQLServer_VectorStore:
+    return SQLServer_VectorStore(
+        connection_string=conn_string,
         embedding_length=EMBEDDING_LENGTH,
         # FakeEmbeddings returns embeddings of the same size as `embedding_length`.
         embedding_function=FakeEmbeddings(size=EMBEDDING_LENGTH),
         table_name=_TABLE_NAME,
     )
-
-    # _provide_token is called only during Entra ID authentication.
-    provide_token.assert_not_called()
