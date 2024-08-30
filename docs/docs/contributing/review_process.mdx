@@ -1,0 +1,93 @@
+# Review Process
+
+## Overview
+
+This document outlines the process and priorities used by the LangChain team for reviewing and managing pull requests (PRs). The primary objective of this process is to enhance the LangChain development experience for users. This is achieved by prioritizing PRs that positively impact the user experience. Below is the current process we follow.
+
+## Project Item Statuses
+
+We categorize PRs using three main statuses, which are marked as project item statuses in the right sidebar and can be viewed in detail [here](https://github.com/orgs/langchain-ai/projects/12/views/1).
+
+- **Triage**: 
+  - Initial status for all newly submitted PRs.
+  - Requires a maintainer to categorize it into one of the other statuses.
+
+- **Needs Support**:
+  - PRs that require community feedback or additional input before moving forward.
+  - Automatically promoted to the backlog if it receives 5 upvotes.
+  - An auto-comment is generated when this status is applied, explaining the flow and the upvote requirement.
+  - If the PR remains in this status for 25 days, it will be marked as “stale” via auto-comment.
+  - PRs will be auto-closed after 30 days if no further action is taken.
+
+- **In Review**:
+  - PRs that are actively under review by our team.
+  - These are regularly reviewed and monitored.
+
+**Note:** A PR may only have one status at a time.
+
+**Note:** You may notice 3 additional statuses of Done, Closed, and Internal that
+are external to this lifecycle. Done and Closed PRs have been merged or closed,
+respectively. Internal is for PRs submitted by core maintainers, and these PRs are owned
+by the submitter.
+
+## PR Lifecycle
+
+1. **Submission**:
+   - When a PR is submitted, it is automatically assigned the `Triage` status.
+   
+2. **Manual Triage**:
+   - Every PR is manually triaged within one business day.
+   - The `Triage` status is removed, and the PR is assigned either `In Review` or `Needs Support`, depending on its content and impact.
+
+3. **Core PRs**:
+   - PRs that directly impact core code and are likely to affect end users.
+   - **Response Goal**: Within 24 business hours.
+   - These are reviewed most aggressively, and may also be closed more aggressively if necessary.
+   - Any new feature requests should be discussed with the core maintainer team before submission. Large PRs submitted without prior discussion are likely to be closed without an in-depth review.
+
+4. **LangChain PRs**:
+   - High-impact PRs that are closely related to core PRs but slightly lower in priority.
+   - **Response Goal**: Within 24 business hours.
+   - These are reviewed and closed aggressively, similar to core PRs.
+   - New feature requests should be discussed with the core maintainer team beforehand.
+
+5. **Partner PRs**:
+   - PRs involving partner packages.
+   - The review may be conducted by our team or handed off to the partner's development team, depending on the PR's content.
+   - We maintain communication lines with most partner dev teams to facilitate this process.
+
+6. **Community PRs**:
+   - This category includes the largest number of outstanding PRs.
+   - **Priority**: Bug fixes are prioritized over new features or integrations.
+   - New features or integrations are deprioritized unless they gain popularity (measured by upvotes or comments).
+   - PRs may be tagged with `Needs Support` until they reach the current popularity criteria (5 upvotes).
+   - PRs in the `Needs Support` status for 20 days are marked as “stale” and will be closed after 30 days if no action is taken.
+
+7. **Documentation PRs**:
+   - We strive to standardize documentation formats to streamline the review process.
+   - CI jobs run against documentation to ensure adherence to standards, automating much of the review.
+
+## Review Prioritization
+
+Our goal is to provide the best possible development experience by focusing on:
+
+- Bug-free core abstractions.
+- Bug-free integrations and implementations.
+- New integrations and implementations that align with industry developments.
+
+We believe this process reflects our priorities and are open to feedback if you feel it does not.
+
+## SLAs
+
+Review SLAs for different types of PRs during weekdays are as follows:
+
+- **Core PRs**: 2 business days
+- **Other PRs**: 2 business days
+- **Partner PRs**: 2 business days (for monorepo, shared repo reviews are up to the partner)
+- **LangChain PRs**: 7 business days
+- **Documentation PRs**: 7 business days
+- **Community/Experimental PRs**: No specific SLA, follow the guidelines mentioned above
+
+---
+
+*To see the status of all open PRs, please visit the [LangChain Project Board](https://github.com/orgs/langchain-ai/projects/12/views/2).*
