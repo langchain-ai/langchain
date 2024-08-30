@@ -3,7 +3,6 @@
 import ast
 import logging
 import os
-import re
 import uuid
 from importlib.metadata import version
 from typing import Any, Dict, Iterator, List, Optional
@@ -181,17 +180,6 @@ class PebbloSafeLoader(BaseLoader):
             # Convert the string representation of the list to an actual list
             # using ast.literal_eval
             auth_field_list = ast.literal_eval(auth_field_str)
-
-            # Remove the AUTH_FIELD part from the original string]
-            # TODO: check if regexe eats the text after the last match
-            auth_field_match = re.search(
-                rf"{auth_field_name}: \[.*\][\n]", doc.page_content, re.DOTALL
-            )
-            if auth_field_match:
-                doc.page_content = doc.page_content.replace(
-                    auth_field_match.group(0), ""
-                ).strip()
-            # logger.info(f'AUTH_FIELD: {auth_field_list}')
             doc.metadata["authorized_identities"] = auth_field_list
         else:
             # logger.info("AUTH_FIELD not found")
@@ -207,16 +195,6 @@ class PebbloSafeLoader(BaseLoader):
         """
         auth_field_str = doc.metadata.pop(source_field_name, "")
         if auth_field_str:
-            # Remove the AUTH_FIELD part from the original string
-            # TODO: check if regexe eats the text after the last match
-            auth_field_match = re.search(
-                rf"{source_field_name}: .*", doc.page_content, re.DOTALL
-            )
-            if auth_field_match:
-                doc.page_content = doc.page_content.replace(
-                    auth_field_match.group(0), ""
-                ).strip()
-            # logger.info(f'SOURCE_FIELD: {auth_field_str}')
             doc.metadata["full_path"] = auth_field_str
         else:
             # logger.info("SOURCE_FIELD not found")
