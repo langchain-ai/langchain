@@ -569,6 +569,7 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     conn.execute(text(_DROP_COLLATION_DB_QUERY))
     conn.close()
 
+
 def test_sqlserver_with_no_metadata_filters(store: SQLServer_VectorStore) -> None:
     store.add_texts(filter_texts, None, filter_ids)
     try:
