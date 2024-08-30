@@ -55,6 +55,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_message_histories.neo4j import (
         Neo4jChatMessageHistory,
     )
+    from langchain_community.chat_message_histories.opensearch import (
+        OpenSearchChatMessageHistory,
+    )
     from langchain_community.chat_message_histories.postgres import (
         PostgresChatMessageHistory,
     )
@@ -101,6 +104,7 @@ __all__ = [
     "MomentoChatMessageHistory",
     "MongoDBChatMessageHistory",
     "Neo4jChatMessageHistory",
+    "OpenSearchChatMessageHistory",
     "PostgresChatMessageHistory",
     "RedisChatMessageHistory",
     "RocksetChatMessageHistory",
@@ -127,6 +131,7 @@ _module_lookup = {
     "MomentoChatMessageHistory": "langchain_community.chat_message_histories.momento",
     "MongoDBChatMessageHistory": "langchain_community.chat_message_histories.mongodb",
     "Neo4jChatMessageHistory": "langchain_community.chat_message_histories.neo4j",
+    "OpenSearchChatMessageHistory": "langchain_community.chat_message_histories.opensearch",
     "PostgresChatMessageHistory": "langchain_community.chat_message_histories.postgres",
     "RedisChatMessageHistory": "langchain_community.chat_message_histories.redis",
     "RocksetChatMessageHistory": "langchain_community.chat_message_histories.rocksetdb",
