@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-community"
-version = "0.2.14"
+version = "0.2.15"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
