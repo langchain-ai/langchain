@@ -540,6 +540,19 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     conn.close()
 
 
+def test_sqlserver_with_no_metadata_filters(store: SQLServer_VectorStore) -> None:
+    store.add_texts(filter_texts, None, filter_ids)
+    try:
+        test_filter = {"id": 1}
+        expected_ids = []
+        docs = store.similarity_search("meow", k=5, filter=test_filter)
+        returned_ids = [doc.metadata["id"] for doc in docs]
+        assert sorted(returned_ids) == sorted(expected_ids), test_filter
+
+    finally:
+        store.delete(["1", "2", "3"])
+
+
 @pytest.mark.parametrize("test_filter, expected_ids", FILTERING_TEST_CASES)
 def test_sqlserver_with_metadata_filters(
     store: SQLServer_VectorStore,
@@ -547,11 +560,13 @@ def test_sqlserver_with_metadata_filters(
     expected_ids: List[int],
 ) -> None:
     store.add_texts(filter_texts, filter_metadatas, filter_ids)
+    try:
+        docs = store.similarity_search("meow", k=5, filter=test_filter)
+        returned_ids = [doc.metadata["id"] for doc in docs]
+        assert sorted(returned_ids) == sorted(expected_ids), test_filter
 
-    docs = store.similarity_search("meow", k=5, filter=test_filter)
-    store.delete(["1", "2", "3"])
-    returned_ids = [doc.metadata["id"] for doc in docs]
-    assert sorted(returned_ids) == sorted(expected_ids), test_filter
+    finally:
+        store.delete(["1", "2", "3"])
 
 
 @pytest.mark.parametrize(
@@ -566,6 +581,7 @@ def test_sqlserver_with_metadata_filters(
         {"$and": {}},
         {"$between": {}},
         {"$eq": {}},
+        {"$or": None},
     ],
 )
 def test_invalid_filters(

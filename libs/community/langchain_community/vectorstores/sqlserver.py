@@ -51,12 +51,10 @@ NUMERIC_OPERATORS: Dict[str, Callable[[ColumnElement, object], ColumnElement]] =
 SPECIAL_CASED_OPERATORS = {
     "$in",
     "$nin",
-    "$between",
-}
-
-TEXT_OPERATORS = {
     "$like",
 }
+
+BETWEEN_OPERATOR = {"$between"}
 
 LOGICAL_OPERATORS = {"$and", "$or"}
 
@@ -64,7 +62,7 @@ SUPPORTED_OPERATORS = (
     set(COMPARISONS_TO_NATIVE)
     .union(NUMERIC_OPERATORS)
     .union(SPECIAL_CASED_OPERATORS)
-    .union(TEXT_OPERATORS)
+    .union(BETWEEN_OPERATOR)
     .union(LOGICAL_OPERATORS)
 )
 
@@ -401,6 +399,11 @@ class SQLServer_VectorStore(VectorStore):
 
         Returns:
             SQLAlchemy clause to apply to the query.
+
+        Ex: For a filter,  {"$or": [{"id": 1}, {"name": "bob"}]}, the result is
+            JSON_VALUE(langchain_vector_store_tests.content_metadata, :JSON_VALUE_1) =
+              :JSON_VALUE_2 OR JSON_VALUE(langchain_vector_store_tests.content_metadata,
+                :JSON_VALUE_3) = :JSON_VALUE_4
         """
         if filters is not None:
             if not isinstance(filters, dict):
@@ -480,12 +483,14 @@ class SQLServer_VectorStore(VectorStore):
 
         Returns:
             sqlalchemy expression
-        """
 
-        # if not isinstance(field, str):
-        #     raise ValueError(
-        #         f"field should be a string but got: {type(field)} with value: {field}"
-        #     )
+        Ex: For a filter,  {"$or": [{"id": 1}, {"name": "bob"}]}, the result is
+
+            JSON_VALUE(langchain_vector_store_tests.content_metadata, :JSON_VALUE_1) =
+              :JSON_VALUE_2
+            JSON_VALUE(langchain_vector_store_tests.content_metadata, :JSON_VALUE_1) =
+              :JSON_VALUE_2
+        """
 
         if field.startswith("$"):
             raise ValueError(
@@ -543,33 +548,29 @@ class SQLServer_VectorStore(VectorStore):
 
             return numeric_operation_result
 
-        elif operator == "$between":
+        elif operator in BETWEEN_OPERATOR:
             # Use AND with two comparisons
             low, high = filter_value
 
             # Assuming lower_bound_value is a ColumnElement
-            lower_bound_value = func.JSON_VALUE(
+            column_value = func.JSON_VALUE(
                 self._embedding_store.content_metadata, f"$.{field}"
             )
 
             greater_operation = NUMERIC_OPERATORS["$gte"]
             lesser_operation = NUMERIC_OPERATORS["$lte"]
 
-            lower_bound = greater_operation(lower_bound_value, low)
-            upper_bound = lesser_operation(lower_bound_value, high)
+            lower_bound = greater_operation(column_value, low)
+            upper_bound = lesser_operation(column_value, high)
 
             # Conditionally cast if filter_value is not a string
             if not isinstance(filter_value, str):
-                lower_bound = greater_operation(
-                    cast(lower_bound_value, Numeric(10, 2)), low
-                )
-                upper_bound = lesser_operation(
-                    cast(lower_bound_value, Numeric(10, 2)), high
-                )
+                lower_bound = greater_operation(cast(column_value, Numeric(10, 2)), low)
+                upper_bound = lesser_operation(cast(column_value, Numeric(10, 2)), high)
 
             return sqlalchemy.and_(lower_bound, upper_bound)
 
-        elif operator in {"$in", "$nin", "$like"}:
+        elif operator in SPECIAL_CASED_OPERATORS:
             # We'll do force coercion to text
             if operator in {"$in", "$nin"}:
                 for val in filter_value:
