@@ -479,7 +479,7 @@ def _parse_and_clean_json(
         nodes.append(
             Node(
                 id=node["id"],
-                type=node.get("type"),
+                type=node.get("type", "Node"),
                 properties=node_properties,
             )
         )
@@ -584,9 +584,20 @@ def _convert_to_graph_document(
                     ]
                 )
             except Exception:  # Google type response
-                argument_json = json.loads(
-                    raw_schema["raw"].additional_kwargs["function_call"]["arguments"]
-                )
+                try:
+                    argument_json = json.loads(
+                        raw_schema["raw"].additional_kwargs["function_call"][
+                            "arguments"
+                        ]
+                    )
+                except Exception:  # Ollama type response
+                    argument_json = raw_schema["raw"].tool_calls[0]["args"]
+                    if isinstance(argument_json["nodes"], str):
+                        argument_json["nodes"] = json.loads(argument_json["nodes"])
+                    if isinstance(argument_json["relationships"], str):
+                        argument_json["relationships"] = json.loads(
+                            argument_json["relationships"]
+                        )
 
             nodes, relationships = _parse_and_clean_json(argument_json)
         except Exception:  # If we can't parse JSON

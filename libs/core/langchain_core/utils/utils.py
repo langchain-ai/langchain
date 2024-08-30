@@ -131,12 +131,12 @@ def guard_import(
     """
     try:
         module = importlib.import_module(module_name, package)
-    except (ImportError, ModuleNotFoundError):
+    except (ImportError, ModuleNotFoundError) as e:
         pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
         raise ImportError(
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."
-        )
+        ) from e
     return module
 
 
@@ -235,7 +235,8 @@ def build_extra_kwargs(
             warnings.warn(
                 f"""WARNING! {field_name} is not default parameter.
                 {field_name} was transferred to model_kwargs.
-                Please confirm that {field_name} is what you intended."""
+                Please confirm that {field_name} is what you intended.""",
+                stacklevel=7,
             )
             extra_kwargs[field_name] = values.pop(field_name)
 

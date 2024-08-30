@@ -10,7 +10,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # Base URL for all class documentation
-_BASE_URL = "https://api.python.langchain.com/en/latest/"
+_BASE_URL = "https://python.langchain.com/v0.2/api_reference/"
 
 # Regular expression to match Python code blocks
 code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTILINE)
@@ -158,9 +158,13 @@ def replace_imports(file):
                     continue
                 if len(module_path.split(".")) < 2:
                     continue
+                pkg = module_path.split(".")[0].replace("langchain_", "")
+                top_level_mod = module_path.split(".")[1]
                 url = (
                     _BASE_URL
-                    + module_path.split(".")[1]
+                    + pkg
+                    + "/"
+                    + top_level_mod
                     + "/"
                     + module_path
                     + "."

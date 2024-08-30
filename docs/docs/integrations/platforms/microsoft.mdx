@@ -7,6 +7,7 @@ keywords: [azure]
 All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
 ## Chat Models
+
 ### Azure OpenAI
 
 >[Microsoft Azure](https://en.wikipedia.org/wiki/Microsoft_Azure), often referred to as `Azure` is a cloud computing platform run by `Microsoft`, which offers access, management, and development of applications and services through global data centers. It provides a range of capabilities, including software as a service (SaaS), platform as a service (PaaS), and infrastructure as a service (IaaS). `Microsoft Azure` supports many programming languages, tools, and frameworks, including Microsoft-specific and third-party software and systems.
@@ -32,6 +33,12 @@ See a [usage example](/docs/integrations/chat/azure_chat_openai)
 ```python
 from langchain_openai import AzureChatOpenAI
 ```
+
+### Azure ML Chat Online Endpoint
+
+See the documentation [here](/docs/integrations/chat/azureml_chat_endpoint) for accessing chat
+models hosted with [Azure Machine Learning](https://azure.microsoft.com/en-us/products/machine-learning/).
+
 
 ## LLMs
 
@@ -337,7 +344,19 @@ See a [usage example](/docs/integrations/memory/postgres_chat_message_history/).
 
 Since Azure Database for PostgreSQL is open-source Postgres, you can use the [LangChain's Postgres support](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL.
 
+
+### Azure AI Search
+
+[Azure AI Search](https://learn.microsoft.com/azure/search/search-what-is-azure-search) is a cloud search service
+that gives developers infrastructure, APIs, and tools for information retrieval of vector, keyword, and hybrid
+queries at scale. See [here](/docs/integrations/vectorstores/azuresearch) for usage examples.
+
+```python
+from langchain_community.vectorstores.azuresearch import AzureSearch
+```
+
 ## Retrievers
+
 ### Azure AI Search
 
 >[Azure AI Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search` or `Azure Cognitive Search` ) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
@@ -354,7 +373,7 @@ See [set up instructions](https://learn.microsoft.com/en-us/azure/search/search-
 See a [usage example](/docs/integrations/retrievers/azure_ai_search).
 
 ```python
-from langchain.retrievers import AzureAISearchRetriever
+from langchain_community.retrievers import AzureAISearchRetriever
 ```
 
 ## Vector Store
@@ -416,6 +435,15 @@ See a [usage example](/docs/integrations/tools/azure_ai_services).
 ```python
 from langchain_community.agent_toolkits import azure_ai_services
 ```
+
+The `azure_ai_services` toolkit includes the following tools:
+
+- Image Analysis: [AzureAiServicesImageAnalysisTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.image_analysis.AzureAiServicesImageAnalysisTool.html)
+- Document Intelligence: [AzureAiServicesDocumentIntelligenceTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.document_intelligence.AzureAiServicesDocumentIntelligenceTool.html)
+- Speech to Text: [AzureAiServicesSpeechToTextTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.speech_to_text.AzureAiServicesSpeechToTextTool.html)
+- Text to Speech: [AzureAiServicesTextToSpeechTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_to_speech.AzureAiServicesTextToSpeechTool.html)
+- Text Analytics for Health: [AzureAiServicesTextAnalyticsForHealthTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_analytics_for_health.AzureAiServicesTextAnalyticsForHealthTool.html)
+
 
 ### Microsoft Office 365 email and calendar
 
@@ -480,8 +508,6 @@ from langchain_community.tools.playwright import NavigateTool
 from langchain_community.tools.playwright import NavigateBackTool
 ```
 
-
-```python
 ## Graphs
 
 ### Azure Cosmos DB for Apache Gremlin

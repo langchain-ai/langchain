@@ -110,7 +110,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super(Tool, self).__init__(  # type: ignore[call-arg]
+        super().__init__(  # type: ignore[call-arg]
             name=name, func=func, description=description, **kwargs
         )
 
