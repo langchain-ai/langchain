@@ -89,7 +89,7 @@ def multiply(a: int, b: int) -> int:
 
 def test_tool_call() -> None:
     """Test tool calling by ChatZhipuAI"""
-    chat = ChatZhipuAI()  # type: ignore[call-arg]
+    chat = ChatZhipuAI(model="glm-4-long")  # type: ignore[call-arg]
     tools = [add, multiply]
     chat_with_tools = chat.bind_tools(tools)
 
