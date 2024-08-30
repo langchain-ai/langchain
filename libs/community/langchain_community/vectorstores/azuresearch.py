@@ -265,7 +265,6 @@ class AzureSearch(VectorStore):
         self,
         azure_search_endpoint: str,
         azure_search_key: str,
-        azure_ad_access_token: Optional[str],
         index_name: str,
         embedding_function: Union[Callable, Embeddings],
         search_type: str = "hybrid",
@@ -281,6 +280,7 @@ class AzureSearch(VectorStore):
         *,
         vector_search_dimensions: Optional[int] = None,
         additional_search_client_options: Optional[Dict[str, Any]] = None,
+        azure_ad_access_token: Optional[str] = None,
         **kwargs: Any,
     ):
         try:
@@ -1298,14 +1298,18 @@ class AzureSearch(VectorStore):
                             }
                         ),
                         **{
-                            "captions": {
-                                "text": result.get("@search.captions", [{}])[0].text,
-                                "highlights": result.get("@search.captions", [{}])[
-                                    0
-                                ].highlights,
-                            }
-                            if result.get("@search.captions")
-                            else {},
+                            "captions": (
+                                {
+                                    "text": result.get("@search.captions", [{}])[
+                                        0
+                                    ].text,
+                                    "highlights": result.get("@search.captions", [{}])[
+                                        0
+                                    ].highlights,
+                                }
+                                if result.get("@search.captions")
+                                else {}
+                            ),
                             "answers": semantic_answers_dict.get(
                                 result.get(FIELDS_ID, ""),
                                 "",
@@ -1382,14 +1386,18 @@ class AzureSearch(VectorStore):
                             }
                         ),
                         **{
-                            "captions": {
-                                "text": result.get("@search.captions", [{}])[0].text,
-                                "highlights": result.get("@search.captions", [{}])[
-                                    0
-                                ].highlights,
-                            }
-                            if result.get("@search.captions")
-                            else {},
+                            "captions": (
+                                {
+                                    "text": result.get("@search.captions", [{}])[
+                                        0
+                                    ].text,
+                                    "highlights": result.get("@search.captions", [{}])[
+                                        0
+                                    ].highlights,
+                                }
+                                if result.get("@search.captions")
+                                else {}
+                            ),
                             "answers": semantic_answers_dict.get(
                                 result.get(FIELDS_ID, ""),
                                 "",
@@ -1421,10 +1429,10 @@ class AzureSearch(VectorStore):
         azure_search = cls(
             azure_search_endpoint,
             azure_search_key,
-            azure_ad_access_token,
             index_name,
             embedding,
             fields=fields,
+            azure_ad_access_token=azure_ad_access_token,
             **kwargs,
         )
         azure_search.add_texts(texts, metadatas, **kwargs)
@@ -1447,10 +1455,10 @@ class AzureSearch(VectorStore):
         azure_search = cls(
             azure_search_endpoint,
             azure_search_key,
-            azure_ad_access_token,
             index_name,
             embedding,
             fields=fields,
+            azure_ad_access_token=azure_ad_access_token,
             **kwargs,
         )
         await azure_search.aadd_texts(texts, metadatas, **kwargs)
