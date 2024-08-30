@@ -297,16 +297,18 @@ def test_gigachat_build_payload_non_existing_parameter() -> None:
     assert getattr(payload, "fake_param", None) is None
 
 
-async def test_gigachat_bind_function_without_description() -> None:
+async def test_gigachat_bind_without_description() -> None:
     class Person(BaseModel):
         name: str = Field(..., title="Name", description="The person's name")
 
     llm = GigaChat()
     with pytest.raises(ValueError):
         llm.bind_functions(functions=[Person], function_call="Person")
+    with pytest.raises(ValueError):
+        llm.bind_tools(tools=[Person], tool_choice="Person")
 
 
-async def test_gigachat_bind_function_with_description() -> None:
+async def test_gigachat_bind_with_description() -> None:
     class Person(BaseModel):
         """Simple description"""
 
@@ -314,4 +316,5 @@ async def test_gigachat_bind_function_with_description() -> None:
 
     llm = GigaChat()
     llm.bind_functions(functions=[Person], function_call="Person")
-    assert True
+    llm.bind_tools(tools=[Person], tool_choice="Person")
+        
