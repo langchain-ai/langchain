@@ -317,4 +317,3 @@ async def test_gigachat_bind_with_description() -> None:
     llm = GigaChat()
     llm.bind_functions(functions=[Person], function_call="Person")
     llm.bind_tools(tools=[Person], tool_choice="Person")
-        
