@@ -1,12 +1,13 @@
 import json
 import sys
-from typing import Any, AsyncGenerator, Generator
+from typing import Any, AsyncGenerator, Callable, Generator, Tuple, TypeVar
 from unittest.mock import MagicMock, patch
 
 import pytest
 from langsmith import Client, traceable
 from langsmith.run_helpers import tracing_context
 
+from langchain_core.callbacks import manager as cm
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
 
@@ -253,26 +254,30 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
             return sequence.invoke(a)
 
     # Now run the chain and check the resulting posts
-    cb = [tracer]
-    if method == "invoke":
-        res: Any = parent.invoke(1, {"callbacks": cb})  # type: ignore
-    elif method == "ainvoke":
-        res = await parent.ainvoke(1, {"callbacks": cb})  # type: ignore
-    elif method == "stream":
-        results = list(parent.stream(1, {"callbacks": cb}))  # type: ignore
-        res = results[-1]
-    elif method == "astream":
-        results = [res async for res in parent.astream(1, {"callbacks": cb})]  # type: ignore
-        res = results[-1]
-    elif method == "batch":
-        res = parent.batch([1], {"callbacks": cb})[0]  # type: ignore
-    elif method == "abatch":
-        res = (await parent.abatch([1], {"callbacks": cb}))[0]  # type: ignore
-    else:
-        raise ValueError(f"Unknown method {method}")
-    assert res == 3
-    posts = _get_posts(mock_client_)
+    handlers = [tracer]
+    with cm.trace_as_chain_group(
+        "group_parent",
+        cm.CallbackManager(handlers=handlers, inheritable_handlers=handlers),
+    ) as cb:
+        if method == "invoke":
+            res: Any = parent.invoke(1, {"callbacks": cb})  # type: ignore
+        elif method == "ainvoke":
+            res = await parent.ainvoke(1, {"callbacks": cb})  # type: ignore
+        elif method == "stream":
+            results = list(parent.stream(1, {"callbacks": cb}))  # type: ignore
+            res = results[-1]
+        elif method == "astream":
+            results = [res async for res in parent.astream(1, {"callbacks": cb})]  # type: ignore
+            res = results[-1]
+        elif method == "batch":
+            res = parent.batch([1], {"callbacks": cb})[0]  # type: ignore
+        elif method == "abatch":
+            res = (await parent.abatch([1], {"callbacks": cb}))[0]  # type: ignore
+        else:
+            raise ValueError(f"Unknown method {method}")
+        assert res == 3
     name_order = [
+        "group_parent",
         "parent",
         "RunnableSequence",
         "before",
@@ -281,7 +286,8 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
         "after",
     ]
     expected_parents = {
-        "parent": None,
+        "group_parent": None,
+        "parent": "group_parent",
         "RunnableSequence": "parent",
         "before": "RunnableSequence",
         "RunnableParallel<chain_result,other_thing>": "RunnableSequence",
@@ -289,7 +295,10 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
         "other_thing": "RunnableParallel<chain_result,other_thing>",
         "after": "RunnableSequence",
     }
-    assert len(posts) == sum([1 if isinstance(n, str) else len(n) for n in name_order])
+    expected_num = sum([1 if isinstance(n, str) else len(n) for n in name_order])
+
+    posts = _get_posts(mock_client_)
+    assert len(posts) == expected_num
     prev_dotted_order = None
     dotted_order_map = {}
     id_map = {}
