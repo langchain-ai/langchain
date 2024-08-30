@@ -43,7 +43,7 @@ class Neo4jTranslator(Visitor):
         args = [arg.accept(self) for arg in operation.arguments]
         return {self._format_func(operation.operator): args}
 
-    def visit_comparison(self, comparison: Comparison) -> Dict:       
+    def visit_comparison(self, comparison: Comparison) -> Dict:
         return {
             comparison.attribute: {
                 self._format_func(comparison.comparator): comparison.value
