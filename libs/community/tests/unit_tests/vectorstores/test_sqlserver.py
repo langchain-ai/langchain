@@ -1,7 +1,11 @@
 """Test SQLServer_VectorStore functionality."""
 
 import os
+<<<<<<< HEAD
 from typing import Any, Dict, Generator, List
+=======
+from typing import Generator, List
+>>>>>>> sqlserver_vectorstore
 from unittest import mock
 from unittest.mock import Mock
 
@@ -569,6 +573,7 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     conn.execute(text(_DROP_COLLATION_DB_QUERY))
     conn.close()
 
+<<<<<<< HEAD
 def test_sqlserver_with_no_metadata_filters(store: SQLServer_VectorStore) -> None:
     store.add_texts(filter_texts, None, filter_ids)
     try:
@@ -622,6 +627,8 @@ def test_invalid_filters(
     with pytest.raises(ValueError):
         store.similarity_search("meow", k=5, filter=invalid_filter)
 
+=======
+>>>>>>> sqlserver_vectorstore
 
 def test_that_entra_id_authentication_connection_is_successful(
     texts: List[str],
