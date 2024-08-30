@@ -951,7 +951,7 @@ const FEATURE_TABLES = {
                 deleteById: true,
                 filtering: true,
                 searchByVector: true,
-                searchWithScore: false,
+                searchWithScore: true,
                 async: true,
                 passesStandardTests: false,
                 multiTenancy: false,
