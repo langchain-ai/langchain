@@ -1,11 +1,12 @@
 import json
-from typing import Dict, List, Type
+from typing import Any, Callable, Dict, Iterator, List, Type
 
 import pytest
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     HumanMessage,
     SystemMessage,
@@ -20,6 +21,7 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
+from langchain_core.runnables import RunnableLambda
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -810,3 +812,580 @@ def test_format_messages_as_declarative() -> None:
     result = formatter.invoke(messages)
     assert result[0].content[1]["type"] == "image_url"
     assert result[0].content[1]["image_url"]["url"] == base64_image
+
+
+def _stream_oai(input_: Any) -> Iterator:
+    chunks = [
+        AIMessageChunk(content=""),
+        AIMessageChunk(content="Certainly"),
+        AIMessageChunk(content="!"),
+        AIMessageChunk(
+            content="",
+            tool_calls=[
+                {
+                    "name": "multiply",
+                    "args": {},
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "type": "tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": "multiply",
+                    "args": "",
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "index": 0,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"',
+                    "id": None,
+                    "index": 0,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "index": 0,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "index": 0,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+        ),
+    ]
+    yield from chunks
+
+
+def _stream_anthropic(input_: Any) -> Iterator:
+    chunks = [
+        AIMessageChunk(content=[]),
+        AIMessageChunk(content=[{"text": "Certainly", "type": "text", "index": 0}]),
+        AIMessageChunk(content=[{"text": "!", "type": "text", "index": 0}]),
+        AIMessageChunk(
+            content=[
+                {
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "input": {},
+                    "name": "multiply",
+                    "type": "tool_use",
+                    "index": 1,
+                }
+            ],
+            tool_calls=[
+                {
+                    "name": "multiply",
+                    "args": {},
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "type": "tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": "multiply",
+                    "args": "",
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[{"partial_json": '{"', "type": "tool_use", "index": 1}],
+            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"',
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[{"partial_json": 'a": 5, "b": 2', "type": "tool_use", "index": 1}],
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[{"partial_json": "}", "type": "tool_use", "index": 1}],
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(content=""),
+    ]
+    yield from chunks
+
+
+@pytest.mark.parametrize("stream", [_stream_oai, _stream_anthropic])
+def test_format_messages_openai_string_stream(stream: Callable) -> None:
+    formatter = format_messages_as(format="openai", text="string")
+
+    chain = RunnableLambda(stream) | formatter
+    tool_call_idx = 1 if stream == _stream_anthropic else 0
+    expected = [
+        AIMessageChunk(content=""),
+        AIMessageChunk(content="Certainly"),
+        AIMessageChunk(content="!"),
+        AIMessageChunk(
+            content="",
+            tool_calls=[
+                {
+                    "name": "multiply",
+                    "args": {},
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "type": "tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": "multiply",
+                    "args": "",
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "index": tool_call_idx,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"',
+                    "id": None,
+                    "index": tool_call_idx,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "index": tool_call_idx,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "index": tool_call_idx,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+        ),
+    ]
+
+    actual = list(chain.stream({}))
+    assert expected == actual
+
+
+@pytest.mark.parametrize("stream", [_stream_oai, _stream_anthropic])
+def test_format_messages_openai_block_stream(stream: Callable) -> None:
+    formatter = format_messages_as(format="openai", text="block")
+
+    chain = RunnableLambda(stream) | formatter
+    tool_call_idx = 1 if stream == _stream_anthropic else 0
+    expected = [
+        AIMessageChunk(content=[]),
+        AIMessageChunk(content=[{"type": "text", "text": "Certainly"}]),
+        AIMessageChunk(content=[{"type": "text", "text": "!"}]),
+        AIMessageChunk(
+            content=[],
+            tool_calls=[
+                {
+                    "name": "multiply",
+                    "args": {},
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "type": "tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": "multiply",
+                    "args": "",
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "index": tool_call_idx,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[],
+            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"',
+                    "id": None,
+                    "index": tool_call_idx,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[],
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "index": tool_call_idx,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[],
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "index": tool_call_idx,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[],
+        ),
+    ]
+    actual = list(chain.stream({}))
+    assert expected == actual
+
+
+@pytest.mark.parametrize("stream", [_stream_oai, _stream_anthropic])
+def test_format_messages_anthropic_block_stream(stream: Callable) -> None:
+    formatter = format_messages_as(format="anthropic", text="block")
+
+    chain = RunnableLambda(stream) | formatter
+    expected = [
+        AIMessageChunk(content=[]),
+        AIMessageChunk(content=[{"text": "Certainly", "type": "text", "index": 0}]),
+        AIMessageChunk(content=[{"text": "!", "type": "text", "index": 0}]),
+        AIMessageChunk(
+            content=[
+                {
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "name": "multiply",
+                    "type": "tool_use",
+                    "index": 1,
+                    **(
+                        {"input": {}}
+                        if stream == _stream_anthropic
+                        else {"partial_json": ""}
+                    ),
+                }
+            ],
+            tool_calls=[
+                {
+                    "name": "multiply",
+                    "args": {},
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "type": "tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": "multiply",
+                    "args": "",
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[{"partial_json": '{"', "type": "tool_use", "index": 1}],
+            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"',
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[{"partial_json": 'a": 5, "b": 2', "type": "tool_use", "index": 1}],
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[{"partial_json": "}", "type": "tool_use", "index": 1}],
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(content=[]),
+    ]
+    actual = list(chain.stream({}))
+    assert expected == actual
+
+
+@pytest.mark.parametrize("stream", [_stream_oai, _stream_anthropic])
+def test_format_messages_anthropic_string_stream(stream: Callable) -> None:
+    formatter = format_messages_as(format="anthropic", text="string")
+
+    chain = RunnableLambda(stream) | formatter
+    expected = [
+        AIMessageChunk(content=""),
+        AIMessageChunk(content="Certainly"),
+        AIMessageChunk(content="!"),
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "tool_use",
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "name": "multiply",
+                    "index": 1,
+                    **(
+                        {"input": {}}
+                        if stream == _stream_anthropic
+                        else {"partial_json": ""}
+                    ),
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "multiply",
+                    "args": {},
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "type": "tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": "multiply",
+                    "args": "",
+                    "id": "call_hr4yN4ZN7zv9Vmc5Cuahp4K8",
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[
+                {"type": "tool_use", "partial_json": '{"', "index": 1},
+            ],
+            tool_calls=[{"name": "", "args": {}, "id": None, "type": "tool_call"}],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"',
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[
+                {"type": "tool_use", "partial_json": 'a": 5, "b": 2', "index": 1},
+            ],
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": 'a": 5, "b": 2',
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(
+            content=[
+                {"type": "tool_use", "partial_json": "}", "index": 1},
+            ],
+            invalid_tool_calls=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "error": None,
+                    "type": "invalid_tool_call",
+                }
+            ],
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": "}",
+                    "id": None,
+                    "index": 1,
+                    "type": "tool_call_chunk",
+                }
+            ],
+        ),
+        AIMessageChunk(content=""),
+    ]
+    actual = list(chain.stream({}))
+    assert expected == actual
