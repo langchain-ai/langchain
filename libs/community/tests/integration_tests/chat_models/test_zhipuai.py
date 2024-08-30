@@ -3,6 +3,8 @@
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.tools import tool
+from libs.core.langchain_core.prompts.chat import ChatPromptTemplate
 
 from langchain_community.chat_models.zhipuai import ChatZhipuAI
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -71,3 +73,39 @@ def test_multiple_messages() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+@tool
+def add(a: int, b: int) -> int:
+    """Adds a and b."""
+    return a + b
+
+
+@tool
+def multiply(a: int, b: int) -> int:
+    """Multiplies a and b."""
+    return a * b
+
+
+def test_tool_call() -> None:
+    """Test tool calling by ChatZhipuAI"""
+    chat = ChatZhipuAI()  # type: ignore[call-arg]
+    tools = [add, multiply]
+    chat_with_tools = chat.bind_tools(tools)
+
+    prompt = ChatPromptTemplate.from_messages([("human", "{query}")])
+    messages = prompt.invoke({"query": "What is 3 * 12?"}).to_messages()
+
+    ai_msg = chat_with_tools.invoke(messages)
+    assert isinstance(ai_msg, AIMessage)
+    assert isinstance(ai_msg.tool_calls, list)
+    assert len(ai_msg.tool_calls) == 1
+    tool_call = ai_msg.tool_calls[0]
+    assert "args" in tool_call
+    messages.append(ai_msg)  # type: ignore[arg-type]
+    for tool_call in ai_msg.tool_calls:
+        selected_tool = {"add": add, "multiply": multiply}[tool_call["name"].lower()]
+        tool_output = selected_tool.invoke(tool_call["args"])  # type: ignore[attr-defined]
+        messages.append(ToolMessage(tool_output, tool_call_id=tool_call["id"]))  # type: ignore[arg-type]
+    response = chat_with_tools.invoke(messages)
+    assert isinstance(response, AIMessage)
