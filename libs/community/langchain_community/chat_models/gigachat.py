@@ -372,21 +372,24 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
         return payload
 
+    def _check_finish_reason(self, finish_reason: str) -> None:
+        if finish_reason and finish_reason not in ["stop", "function_call"]:
+            logger.warning(
+                "Giga generation stopped with reason: %s",
+                finish_reason,
+            )
+
     def _create_chat_result(self, response: Any) -> ChatResult:
         generations = []
         for res in response.choices:
             message = _convert_dict_to_message(res.message)
             finish_reason = res.finish_reason
+            self._check_finish_reason(finish_reason)
             gen = ChatGeneration(
                 message=message,
                 generation_info={"finish_reason": finish_reason},
             )
             generations.append(gen)
-            if finish_reason not in ["stop", "function_call"]:
-                logger.warning(
-                    "Giga generation stopped with reason: %s",
-                    finish_reason,
-                )
             if self.verbose:
                 logger.warning("Giga response: %s", message.content)
         llm_output = {"token_usage": response.usage, "model_name": response.model}
@@ -473,6 +476,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             chunk_m = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
 
             finish_reason = choice.get("finish_reason")
+            self._check_finish_reason(finish_reason)
 
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
@@ -510,6 +514,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             chunk_m = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
 
             finish_reason = choice.get("finish_reason")
+            self._check_finish_reason(finish_reason)
 
             generation_info = (
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
