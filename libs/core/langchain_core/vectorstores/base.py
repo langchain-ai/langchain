@@ -558,7 +558,8 @@ class VectorStore(ABC):
         ):
             warnings.warn(
                 "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
+                f" 0 and 1, got {docs_and_similarities}",
+                stacklevel=2,
             )
 
         if score_threshold is not None:
@@ -568,7 +569,7 @@ class VectorStore(ABC):
                 if similarity >= score_threshold
             ]
             if len(docs_and_similarities) == 0:
-                warnings.warn(
+                logger.warning(
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )
@@ -605,7 +606,8 @@ class VectorStore(ABC):
         ):
             warnings.warn(
                 "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
+                f" 0 and 1, got {docs_and_similarities}",
+                stacklevel=2,
             )
 
         if score_threshold is not None:
@@ -615,7 +617,7 @@ class VectorStore(ABC):
                 if similarity >= score_threshold
             ]
             if len(docs_and_similarities) == 0:
-                warnings.warn(
+                logger.warning(
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )

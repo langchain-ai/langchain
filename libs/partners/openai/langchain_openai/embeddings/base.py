@@ -302,19 +302,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["openai_proxy"] = get_from_dict_or_env(
             values, "openai_proxy", "OPENAI_PROXY", default=""
         )
-        if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
-            default_api_version = "2023-05-15"
-            # Azure OpenAI embedding models allow a maximum of 16 texts
-            # at a time in each batch
-            # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-            values["chunk_size"] = min(values["chunk_size"], 16)
-        else:
-            default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
-            values,
-            "openai_api_version",
-            "OPENAI_API_VERSION",
-            default=default_api_version,
+            values, "openai_api_version", "OPENAI_API_VERSION", default=""
         )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
