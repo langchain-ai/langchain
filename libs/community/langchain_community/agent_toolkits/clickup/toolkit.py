@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from langchain_core.tools import BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 
-from langchain_community.tools import BaseTool
 from langchain_community.tools.clickup.prompt import (
     CLICKUP_FOLDER_CREATE_PROMPT,
     CLICKUP_GET_ALL_TEAMS_PROMPT,
@@ -28,6 +28,9 @@ class ClickupToolkit(BaseToolkit):
         data associated with this service.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
     """
 
     tools: List[BaseTool] = []
@@ -36,6 +39,14 @@ class ClickupToolkit(BaseToolkit):
     def from_clickup_api_wrapper(
         cls, clickup_api_wrapper: ClickupAPIWrapper
     ) -> "ClickupToolkit":
+        """Create a ClickupToolkit from a ClickupAPIWrapper.
+
+        Args:
+            clickup_api_wrapper: ClickupAPIWrapper. The Clickup API wrapper.
+
+        Returns:
+            ClickupToolkit. The Clickup toolkit.
+        """
         operations: List[Dict] = [
             {
                 "mode": "get_task",
@@ -102,7 +113,7 @@ class ClickupToolkit(BaseToolkit):
             )
             for action in operations
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

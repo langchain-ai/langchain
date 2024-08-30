@@ -1,0 +1,36 @@
+cluster:
+
+  # Unique identifier for this cluster.
+  cluster-name: aerospike-vector
+
+# The Proximus service listening ports, TLS and network interface.
+service:
+  ports:
+    5002: {}
+  # Uncomment for local debugging
+  advertised-listeners:
+    default:
+      address: 127.0.0.1
+      port: 5002
+
+# Management API listening ports, TLS and network interface.
+manage:
+  ports:
+    5040: {}
+
+# Intra cluster interconnect listening ports, TLS and network interface.
+interconnect:
+  ports:
+    5001: {}
+
+# Target Aerospike cluster
+aerospike:
+  seeds:
+    - aerospike:
+        port: 3000
+
+# The logging properties.
+logging:
+  enable-console-logging: true
+  levels:
+    metrics-ticker: off

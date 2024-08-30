@@ -5,6 +5,7 @@ import os
 from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import openai
+from langchain_core.language_models import LangSmithParams
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
@@ -54,7 +55,7 @@ class AzureOpenAI(BaseOpenAI):
 
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
@@ -117,10 +118,7 @@ class AzureOpenAI(BaseOpenAI):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         values["openai_organization"] = (
             values["openai_organization"]
@@ -197,6 +195,17 @@ class AzureOpenAI(BaseOpenAI):
     def _invocation_params(self) -> Dict[str, Any]:
         openai_params = {"model": self.deployment_name}
         return {**openai_params, **super()._invocation_params}
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        invocation_params = self._invocation_params
+        params["ls_provider"] = "azure"
+        if model_name := invocation_params.get("model"):
+            params["ls_model_name"] = model_name
+        return params
 
     @property
     def _llm_type(self) -> str:

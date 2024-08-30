@@ -8,12 +8,13 @@ clicking on the 'sandbox' toggle.
 
 You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
+
 from langchain_community.tools.edenai import EdenAiParsingInvoiceTool
 
 
 def test_edenai_call() -> None:
     """Test simple call to edenai's invoice parser endpoint."""
-    invoice_parser = EdenAiParsingInvoiceTool(providers=["amazon"], language="en")
+    invoice_parser = EdenAiParsingInvoiceTool(providers=["amazon"], language="en")  # type: ignore[call-arg]
 
     output = invoice_parser.invoke(
         "https://app.edenai.run/assets/img/data_1.72e3bdcc.png"

@@ -7,7 +7,7 @@ from langchain.callbacks.manager import (
 
 # Import things that are needed generically
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools import BaseTool
+from langchain_core.tools import BaseTool
 
 from neo4j_semantic_layer.utils import get_candidates, get_user_id, graph
 
@@ -34,7 +34,7 @@ def store_movie_rating(movie: str, rating: int):
     try:
         return response[0]["response"]
     except Exception as e:
-        print(e)  # noqa: T201
+        print(e)
         return "Something went wrong"
 
 

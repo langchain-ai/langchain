@@ -14,7 +14,7 @@ if __name__ == "__main__":
             "chat_history": [],
         }
     )
-    print(response)  # noqa: T201
+    print(response)
 
     follow_up_question = "What are their objectives?"
 
@@ -30,4 +30,4 @@ if __name__ == "__main__":
         }
     )
 
-    print(response)  # noqa: T201
+    print(response)

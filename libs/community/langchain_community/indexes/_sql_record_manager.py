@@ -13,6 +13,7 @@ allow it to work with a variety of SQL as a backend.
 * Keys can be listed based on the updated at field.
 * Keys can be deleted.
 """
+
 import contextlib
 import decimal
 import uuid
@@ -29,9 +30,7 @@ from typing import (
 )
 
 from sqlalchemy import (
-    URL,
     Column,
-    Engine,
     Float,
     Index,
     String,
@@ -42,14 +41,20 @@ from sqlalchemy import (
     select,
     text,
 )
+from sqlalchemy.engine import URL, Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
     create_async_engine,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
+
+try:
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+except ImportError:
+    # dummy for sqlalchemy < 2
+    async_sessionmaker = type("async_sessionmaker", (type,), {})  # type: ignore
 
 from langchain_community.indexes.base import RecordManager
 
@@ -312,7 +317,7 @@ class SQLRecordManager(RecordManager):
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
-                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
+                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)  # type: ignore[assignment]
                 stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
@@ -387,7 +392,7 @@ class SQLRecordManager(RecordManager):
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
-                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
+                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)  # type: ignore[assignment]
                 stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
@@ -470,7 +475,7 @@ class SQLRecordManager(RecordManager):
             if limit:
                 query = query.limit(limit)  # type: ignore[attr-defined]
             records = query.all()  # type: ignore[attr-defined]
-        return [r.key for r in records]
+        return [r.key for r in records]  # type: ignore[misc]
 
     async def alist_keys(
         self,

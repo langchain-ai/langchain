@@ -93,9 +93,9 @@ class OpenLLM(LLM):
     """Keyword arguments to be passed to openllm.LLM"""
 
     _runner: Optional[openllm.LLMRunner] = PrivateAttr(default=None)
-    _client: Union[
-        openllm.client.HTTPClient, openllm.client.GrpcClient, None
-    ] = PrivateAttr(default=None)
+    _client: Union[openllm.client.HTTPClient, openllm.client.GrpcClient, None] = (
+        PrivateAttr(default=None)
+    )
 
     class Config:
         extra = "forbid"
@@ -108,8 +108,7 @@ class OpenLLM(LLM):
         model_id: Optional[str] = ...,
         embedded: Literal[True, False] = ...,
         **llm_kwargs: Any,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -118,8 +117,7 @@ class OpenLLM(LLM):
         server_url: str = ...,
         server_type: Literal["grpc", "http"] = ...,
         **llm_kwargs: Any,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(
         self,
@@ -155,7 +153,7 @@ class OpenLLM(LLM):
             client = client_cls(server_url, timeout)
 
             super().__init__(
-                **{
+                **{  # type: ignore[arg-type]
                     "server_url": server_url,
                     "timeout": timeout,
                     "server_type": server_type,
@@ -180,7 +178,7 @@ class OpenLLM(LLM):
                 **llm_kwargs,
             )
             super().__init__(
-                **{
+                **{  # type: ignore[arg-type]
                     "model_name": model_name,
                     "model_id": model_id,
                     "embedded": embedded,

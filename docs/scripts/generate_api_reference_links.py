@@ -10,7 +10,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # Base URL for all class documentation
-_BASE_URL = "https://api.python.langchain.com/en/latest/"
+_BASE_URL = "https://python.langchain.com/v0.2/api_reference/"
 
 # Regular expression to match Python code blocks
 code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTILINE)
@@ -24,19 +24,24 @@ _IMPORT_RE = re.compile(
 
 _CURRENT_PATH = Path(__file__).parent.absolute()
 # Directory where generated markdown files are stored
-_DOCS_DIR = _CURRENT_PATH / "docs"
+_DOCS_DIR = _CURRENT_PATH.parent.parent / "docs"
 
 
 def find_files(path):
     """Find all MDX files in the given path"""
     # Check if is file first
+    if ".ipynb_checkpoints" in str(path):
+        return
     if os.path.isfile(path):
         yield path
         return
     for root, _, files in os.walk(path):
         for file in files:
             if file.endswith(".mdx") or file.endswith(".md"):
-                yield os.path.join(root, file)
+                full = os.path.join(root, file)
+                if ".ipynb_checkpoints" in str(full):
+                    continue
+                yield full
 
 
 def get_full_module_name(module_path, class_name):
@@ -70,6 +75,7 @@ def main():
 
     for file in find_files(args.docs_dir):
         file_imports = replace_imports(file)
+        print(file)
 
         if file_imports:
             # Use relative file path as key
@@ -79,7 +85,7 @@ def main():
                 .replace(".md", "/")
             )
 
-            doc_url = f"https://python.langchain.com/docs/{relative_path}"
+            doc_url = f"https://python.langchain.com/v0.2/docs/{relative_path}"
             for import_info in file_imports:
                 doc_title = import_info["title"]
                 class_name = import_info["imported"]
@@ -97,7 +103,7 @@ def main():
 
 def _get_doc_title(data: str, file_name: str) -> str:
     try:
-        return re.findall(r"^#\s+(.*)", data, re.MULTILINE)[0]
+        return re.findall(r"^#\s*(.*)", data, re.MULTILINE)[0]
     except IndexError:
         pass
     # Parse the rst-style titles
@@ -152,9 +158,13 @@ def replace_imports(file):
                     continue
                 if len(module_path.split(".")) < 2:
                     continue
+                pkg = module_path.split(".")[0].replace("langchain_", "")
+                top_level_mod = module_path.split(".")[1]
                 url = (
                     _BASE_URL
-                    + module_path.split(".")[1]
+                    + pkg
+                    + "/"
+                    + top_level_mod
                     + "/"
                     + module_path
                     + "."
@@ -186,7 +196,7 @@ def replace_imports(file):
     data = code_block_re.sub(replacer, data)
 
     # if all_imports:
-    #     print(f"Adding {len(all_imports)} links for imports in {file}")  # noqa: T201
+    #     print(f"Adding {len(all_imports)} links for imports in {file}")
     with open(file, "w") as f:
         f.write(data)
     return all_imports

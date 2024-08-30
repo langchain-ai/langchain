@@ -73,7 +73,7 @@ class WhatsAppChatLoader(BaseChatLoader):
                 timestamp, sender, text = result.groups()
                 if not self._ignore_lines.match(text.strip()):
                     results.append(
-                        HumanMessage(
+                        HumanMessage(  # type: ignore[call-arg]
                             role=sender,
                             content=text,
                             additional_kwargs={
@@ -86,7 +86,8 @@ class WhatsAppChatLoader(BaseChatLoader):
                 logger.debug(f"Could not parse line: {line}")
         return ChatSession(messages=results)
 
-    def _iterate_files(self, path: str) -> Iterator[str]:
+    @staticmethod
+    def _iterate_files(path: str) -> Iterator[str]:
         """Iterate over the files in a directory or zip file.
 
         Args:

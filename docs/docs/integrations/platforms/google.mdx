@@ -2,45 +2,10 @@
 
 All functionality related to [Google Cloud Platform](https://cloud.google.com/) and other `Google` products.
 
-## LLMs
+## Chat models
 
 We recommend individual developers to start with Gemini API (`langchain-google-genai`) and move to Vertex AI (`langchain-google-vertexai`) when they need access to commercial support and higher rate limits. If you’re already Cloud-friendly or Cloud-native, then you can get started in Vertex AI straight away.
-Please, find more information [here](https://ai.google.dev/gemini-api/docs/migrate-to-cloud).
-
-### Google Generative AI
-
-Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
-
-Install python package.
-
-```bash
-pip install langchain-google-genai
-```
-
-See a [usage example](/docs/integrations/llms/google_ai).
-
-```python
-from langchain_google_genai import GoogleGenerativeAI
-```
-
-### Vertex AI Model Garden
-
-Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
-
-We need to install `langchain-google-vertexai` python package.
-
-```bash
-pip install langchain-google-vertexai
-```
-
-See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
-
-```python
-from langchain_google_vertexai import VertexAIModelGarden
-```
-
-
-## Chat models
+Please see [here](https://ai.google.dev/gemini-api/docs/migrate-to-cloud) for more information.
 
 ### Google Generative AI
 
@@ -107,6 +72,48 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 from langchain_google_vertexai import ChatVertexAI
 ```
 
+### Chat Anthropic on Vertex AI
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
+
+```python
+from langchain_google_vertexai.model_garden import ChatAnthropicVertex
+```
+
+## LLMs
+
+### Google Generative AI
+
+Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
+
+Install python package.
+
+```bash
+pip install langchain-google-genai
+```
+
+See a [usage example](/docs/integrations/llms/google_ai).
+
+```python
+from langchain_google_genai import GoogleGenerativeAI
+```
+
+### Vertex AI Model Garden
+
+Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
+
+```python
+from langchain_google_vertexai import VertexAIModelGarden
+```
+
 ## Embedding models
 
 ### Google Generative AI Embeddings
@@ -139,6 +146,18 @@ See a [usage example](/docs/integrations/text_embedding/google_vertex_ai_palm).
 
 ```python
 from langchain_google_vertexai import VertexAIEmbeddings
+```
+
+### Palm Embedding
+
+We need to install `langchain-community` python package.
+
+```bash
+pip install langchain-community
+```
+
+```python
+from langchain_community.embeddings.google_palm import GooglePalmEmbeddings
 ```
 
 ## Document Loaders
@@ -256,6 +275,18 @@ See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_f
 
 ```python
 from langchain_google_community import GCSFileLoader
+```
+
+### Cloud Vision loader
+
+Install the python package:
+
+```bash
+pip install langchain-google-community[vision]
+```
+
+```python
+from langchain_google_community.vision import CloudVisionLoader
 ```
 
 ### El Carro for Oracle Workloads
@@ -614,6 +645,7 @@ from langchain.retrievers import GoogleVertexAISearchRetriever
 > from Google Cloud allows enterprises to search, store, govern, and manage documents and their AI-extracted
 > data and metadata in a single platform.
 
+Note: `GoogleDocumentAIWarehouseRetriever` is deprecated, use `DocumentAIWarehouseRetriever` (see below).
 ```python
 from langchain.retrievers import GoogleDocumentAIWarehouseRetriever
 docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(
@@ -623,6 +655,10 @@ query = ...
 documents = docai_wh_retriever.invoke(
     query, user_ldap=...
 )
+```
+
+```python
+from langchain_google_community.documentai_warehouse import DocumentAIWarehouseRetriever
 ```
 
 ## Tools
@@ -776,7 +812,7 @@ We need to install `langchain-google-community` with required dependencies:
 pip install langchain-google-community[gmail]
 ```
 
-See a [usage example and authorization instructions](/docs/integrations/toolkits/gmail).
+See a [usage example and authorization instructions](/docs/integrations/tools/gmail).
 
 ```python
 from langchain_google_community import GmailToolkit

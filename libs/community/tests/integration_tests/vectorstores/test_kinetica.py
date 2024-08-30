@@ -46,7 +46,8 @@ def test_kinetica(create_config: KineticaSettings) -> None:
         texts=texts,
         metadatas=metadatas,
         embedding=FakeEmbeddingsWithAdaDimension(),
-        collection_name="test_kinetica",
+        collection_name="1test_kinetica",
+        schema_name="1test",
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)

@@ -13,6 +13,14 @@ if TYPE_CHECKING:
 
 
 def nanoseconds_from_2001_to_datetime(nanoseconds: int) -> datetime:
+    """Convert nanoseconds since 2001 to a datetime object.
+
+    Args:
+        nanoseconds (int): Nanoseconds since January 1, 2001.
+
+    Returns:
+        datetime: Datetime object.
+    """
     # Convert nanoseconds to seconds (1 second = 1e9 nanoseconds)
     timestamp_in_seconds = nanoseconds / 1e9
 
@@ -60,7 +68,8 @@ class IMessageChatLoader(BaseChatLoader):
                 "Please install it with `pip install pysqlite3`"
             ) from e
 
-    def _parse_attributedBody(self, attributedBody: bytes) -> str:
+    @staticmethod
+    def _parse_attributed_body(attributed_body: bytes) -> str:
         """
         Parse the attributedBody field of the message table
         for the text content of the message.
@@ -80,17 +89,18 @@ class IMessageChatLoader(BaseChatLoader):
           that byte.
 
         Args:
-            attributedBody (bytes): attributedBody field of the message table.
+            attributed_body (bytes): attributedBody field of the message table.
         Return:
             str: Text content of the message.
         """
-        content = attributedBody.split(b"NSString")[1][5:]
+        content = attributed_body.split(b"NSString")[1][5:]
         length, start = content[0], 1
         if content[0] == 129:
             length, start = int.from_bytes(content[1:3], "little"), 3
         return content[start : start + length].decode("utf-8", errors="ignore")
 
-    def _get_session_query(self, use_chat_handle_table: bool) -> str:
+    @staticmethod
+    def _get_session_query(use_chat_handle_table: bool) -> str:
         # Messages sent pre OSX 12 require a join through the chat_handle_join table
         # However, the table doesn't exist if database created with OSX 12 or above.
 
@@ -143,12 +153,12 @@ class IMessageChatLoader(BaseChatLoader):
             if text:
                 content = text
             elif attributedBody:
-                content = self._parse_attributedBody(attributedBody)
+                content = self._parse_attributed_body(attributedBody)
             else:  # Skip messages with no content
                 continue
 
             results.append(
-                HumanMessage(
+                HumanMessage(  # type: ignore[call-arg]
                     role=sender,
                     content=content,
                     additional_kwargs={

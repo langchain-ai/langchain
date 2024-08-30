@@ -4,8 +4,9 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.utils.pydantic import get_fields
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -40,14 +41,12 @@ class CerebriumAI(LLM):
     cerebriumai_api_key: Optional[SecretStr] = None
 
     class Config:
-        """Configuration for this pydantic config."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = {field.alias for field in cls.__fields__.values()}
+        all_required_field_names = {field.alias for field in get_fields(cls).values()}
 
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
@@ -62,7 +61,7 @@ class CerebriumAI(LLM):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         cerebriumai_api_key = convert_to_secret_str(

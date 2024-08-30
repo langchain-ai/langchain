@@ -58,7 +58,7 @@
                   "base",
                   "RunnableLambda"
                 ],
-                "name": "RunnableLambda"
+                "name": "Lambda"
               }
             }
           ],
@@ -458,7 +458,7 @@
                   "runnable",
                   "RunnableWithFallbacks"
                 ],
-                "name": "RunnableWithFallbacks"
+                "name": "WithFallbacks"
               }
             },
             {
@@ -498,7 +498,7 @@
               "base",
               "RunnableLambda"
             ],
-            "name": "RunnableLambda"
+            "name": "Lambda"
           }
         },
         {
@@ -511,7 +511,7 @@
               "runnable",
               "RunnableWithFallbacks"
             ],
-            "name": "RunnableWithFallbacks"
+            "name": "WithFallbacks"
           }
         },
         {
@@ -589,7 +589,7 @@
                         "runnable",
                         "RunnablePassthrough"
                       ],
-                      "name": "RunnablePassthrough"
+                      "name": "Passthrough"
                     }
                   },
                   {
@@ -635,7 +635,7 @@
                   "runnable",
                   "RunnablePassthrough"
                 ],
-                "name": "RunnablePassthrough"
+                "name": "Passthrough"
               }
             }
           ],
@@ -716,7 +716,7 @@
                   "runnable",
                   "RunnableWithFallbacks"
                 ],
-                "name": "RunnableWithFallbacks"
+                "name": "WithFallbacks"
               }
             },
             {
@@ -756,7 +756,7 @@
               "runnable",
               "RunnablePassthrough"
             ],
-            "name": "RunnablePassthrough"
+            "name": "Passthrough"
           }
         },
         {
@@ -769,7 +769,7 @@
               "runnable",
               "RunnableWithFallbacks"
             ],
-            "name": "RunnableWithFallbacks"
+            "name": "WithFallbacks"
           }
         },
         {
@@ -938,7 +938,7 @@
               "runnable",
               "RunnableWithFallbacks"
             ],
-            "name": "RunnableWithFallbacks"
+            "name": "WithFallbacks"
           }
         },
         {
@@ -1152,7 +1152,7 @@
               "runnable",
               "RunnableWithFallbacks"
             ],
-            "name": "RunnableWithFallbacks"
+            "name": "WithFallbacks"
           }
         },
         {
