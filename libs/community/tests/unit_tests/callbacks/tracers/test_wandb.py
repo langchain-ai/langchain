@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from documents import Document
+from langchain_core.documents.base import Document
 from langchain_community.callbacks.tracers.wandb import _serialize_io
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.prompt_values import StringPromptValue
