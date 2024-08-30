@@ -6,7 +6,7 @@ import os
 import re
 import uuid
 from importlib.metadata import version
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -176,7 +176,7 @@ class PebbloSafeLoader(BaseLoader):
         """
         auth_field_list: List[str] = []
         # Extract the AUTH_FIELD block
-        auth_field_str = doc.metadata.get(auth_field_name, "")
+        auth_field_str = doc.metadata.pop(auth_field_name, "")
         if auth_field_str:
             # Convert the string representation of the list to an actual list
             # using ast.literal_eval
@@ -205,7 +205,7 @@ class PebbloSafeLoader(BaseLoader):
             doc (Document): Document object.
             source_field_name (str): Name of the SOURCE_FIELD.
         """
-        auth_field_str = doc.metadata.get(source_field_name, "")
+        auth_field_str = doc.metadata.pop(source_field_name, "")
         if auth_field_str:
             # Remove the AUTH_FIELD part from the original string
             # TODO: check if regexe eats the text after the last match
@@ -221,80 +221,6 @@ class PebbloSafeLoader(BaseLoader):
         else:
             # logger.info("SOURCE_FIELD not found")
             pass
-
-    def _get_auth_field(
-        self, auth_field_name: str, page_content: str
-    ) -> Tuple[List[str], str]:
-        """
-        Extracts the AUTH_FIELD from the page content and returns the list of authorized
-        identities.
-
-        Args:
-            auth_field_name (str): Name of the AUTH_FIELD.
-            page_content (str): Page content.
-
-        Returns:
-            Tuple[List[str], str]: A tuple containing the list of authorized identities
-            and the page content.
-        """
-
-        result_list: List[str] = []
-        # Extract the AUTH_FIELD block
-        auth_field_match = re.search(
-            rf"{auth_field_name}: \[.*\]", page_content, re.DOTALL
-        )
-        if auth_field_match:
-            auth_field_str = auth_field_match.group(0).replace(
-                f"{auth_field_name}: ", ""
-            )
-            # Convert the string representation of the list to an actual list
-            # using ast.literal_eval
-            auth_field_list = ast.literal_eval(auth_field_str)
-
-            # Create the dictionary
-            result_list = auth_field_list
-
-            # Remove the AUTH_FIELD part from the original string
-            page_content = page_content.replace(auth_field_match.group(0), "").strip()
-
-            logger.info(f"AUTH_FIELD: {result_list}")
-        else:
-            logger.info("AUTH_FIELD not found")
-        return result_list, page_content
-
-    def _get_auth_field_v0(
-        self, auth_field_name: str, page_content: str
-    ) -> Tuple[List[str], str]:
-        """
-        Extracts the AUTH_FIELD from the page content and returns the list of authorized
-        identities.
-
-        Args:
-            auth_field_name (str): Name of the AUTH_FIELD.
-            page_content (str): Page content.
-
-        Returns:
-            Tuple[List[str], str]: A tuple containing the list of authorized identities
-        """
-        result_list: List[str] = []
-        # Extract the AUTH_FIELD block
-        auth_field_match = re.search(r"AUTH_FIELD: \[.*\]", page_content, re.DOTALL)
-        if auth_field_match:
-            auth_field_str = auth_field_match.group(0).replace("AUTH_FIELD: ", "")
-            # Convert the string representation of the list to an actual list using
-            # ast.literal_eval
-            auth_field_list = ast.literal_eval(auth_field_str)
-
-            # Create the dictionary
-            result_list = auth_field_list
-
-            # Remove the AUTH_FIELD part from the original string
-            page_content = page_content.replace(auth_field_match.group(0), "").strip()
-
-            logger.info(f"AUTH_FIELD: {result_list}")
-        else:
-            logger.info("AUTH_FIELD not found")
-        return result_list, page_content
 
     def _get_app_details(self) -> App:
         """Fetch app details. Internal method.
