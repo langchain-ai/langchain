@@ -1298,18 +1298,14 @@ class AzureSearch(VectorStore):
                             }
                         ),
                         **{
-                            "captions": (
-                                {
-                                    "text": result.get("@search.captions", [{}])[
-                                        0
-                                    ].text,
-                                    "highlights": result.get("@search.captions", [{}])[
-                                        0
-                                    ].highlights,
-                                }
-                                if result.get("@search.captions")
-                                else {}
-                            ),
+                            "captions": {
+                                "text": result.get("@search.captions", [{}])[0].text,
+                                "highlights": result.get("@search.captions", [{}])[
+                                    0
+                                ].highlights,
+                            }
+                            if result.get("@search.captions")
+                            else {},
                             "answers": semantic_answers_dict.get(
                                 result.get(FIELDS_ID, ""),
                                 "",
@@ -1386,18 +1382,14 @@ class AzureSearch(VectorStore):
                             }
                         ),
                         **{
-                            "captions": (
-                                {
-                                    "text": result.get("@search.captions", [{}])[
-                                        0
-                                    ].text,
-                                    "highlights": result.get("@search.captions", [{}])[
-                                        0
-                                    ].highlights,
-                                }
-                                if result.get("@search.captions")
-                                else {}
-                            ),
+                            "captions": {
+                                "text": result.get("@search.captions", [{}])[0].text,
+                                "highlights": result.get("@search.captions", [{}])[
+                                    0
+                                ].highlights,
+                            }
+                            if result.get("@search.captions")
+                            else {},
                             "answers": semantic_answers_dict.get(
                                 result.get(FIELDS_ID, ""),
                                 "",
