@@ -92,7 +92,7 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain.chat_models.gigachat import GigaChat
+from langchain_community.chat_models.gigachat import GigaChat
 from langchain_community.embeddings.gigachat import GigaChatEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 ```
@@ -383,7 +383,7 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 Объединим полученный код в цепочку, которая принимает вопрос, извлекает соответствующие документы, создает промпт, передает его модели, а затем анализирует выходные данные.
 
 ```python
-from langchain.chat_models.gigachat import GigaChat
+from langchain_community.chat_models.gigachat import GigaChat
 
 llm = GigaChat(credentials="<авторизационные_данные>", verify_ssl_certs=False)
 ```

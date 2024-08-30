@@ -23,9 +23,9 @@ Fill out [this form](https://www.langchain.com/contact-sales) to speak with our 
 
 ## Quick Install
 
-`pip install gigachain`
+`pip install gigachain_community`
 or
-`pip install langsmith && conda install gigachain -c conda-forge`
+`pip install langsmith && conda install gigachain_community -c conda-forge`
 
 ## 🤔 What is this?
 
