@@ -1,7 +1,9 @@
+# XML - agent
 
-# xml-agent
-
-This package creates an agent that uses XML syntax to communicate its decisions of what actions to take. It uses Anthropic's Claude models for writing XML syntax and can optionally look up things on the internet using DuckDuckGo.
+This package creates an agent that uses `XML` syntax to communicate 
+its decisions of what actions to take. 
+It uses `Anthropic's Claude` models for writing XML syntax and 
+optionally looks up things on the internet using `DuckDuckGo`.
 
 ## Environment Setup
 
@@ -38,7 +40,7 @@ add_routes(app, xml_agent_chain, path="/xml-agent")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

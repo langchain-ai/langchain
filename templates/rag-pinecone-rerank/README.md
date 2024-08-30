@@ -1,9 +1,8 @@
+# RAG - Pinecone - rerank
 
-# rag-pinecone-rerank
+This template performs RAG using `Pinecone` and `OpenAI` along with [Cohere to perform re-ranking](https://txt.cohere.com/rerank/) on returned documents. 
 
-This template performs RAG using Pinecone and OpenAI along with [Cohere to perform re-ranking](https://txt.cohere.com/rerank/) on returned documents. 
-
-Re-ranking provides a way to rank retrieved documents using specified filters or criteria.
+`Re-ranking` provides a way to rank retrieved documents using specified filters or criteria.
 
 ## Environment Setup
 
@@ -42,7 +41,7 @@ add_routes(app, rag_pinecone_rerank_chain, path="/rag-pinecone-rerank")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

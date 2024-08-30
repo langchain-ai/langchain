@@ -1,47 +1,28 @@
-"""Graph Index Creator."""
-from typing import Optional, Type
+"""**Graphs** provide a natural language interface to graph databases."""
 
-from langchain_community.graphs.networkx_graph import NetworkxEntityGraph, parse_triples
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from typing import TYPE_CHECKING, Any
 
-from langchain.chains.llm import LLMChain
-from langchain.indexes.prompts.knowledge_triplet_extraction import (
-    KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
-)
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.graphs.index_creator import GraphIndexCreator
+    from langchain_community.graphs.networkx_graph import NetworkxEntityGraph
 
 
-class GraphIndexCreator(BaseModel):
-    """Functionality to create graph index."""
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "GraphIndexCreator": "langchain_community.graphs.index_creator",
+    "NetworkxEntityGraph": "langchain_community.graphs.networkx_graph",
+}
 
-    llm: Optional[BaseLanguageModel] = None
-    graph_type: Type[NetworkxEntityGraph] = NetworkxEntityGraph
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
-    def from_text(
-        self, text: str, prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
-    ) -> NetworkxEntityGraph:
-        """Create graph index from text."""
-        if self.llm is None:
-            raise ValueError("llm should not be None")
-        graph = self.graph_type()
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        output = chain.predict(text=text)
-        knowledge = parse_triples(output)
-        for triple in knowledge:
-            graph.add_triple(triple)
-        return graph
 
-    async def afrom_text(
-        self, text: str, prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
-    ) -> NetworkxEntityGraph:
-        """Create graph index from text asynchronously."""
-        if self.llm is None:
-            raise ValueError("llm should not be None")
-        graph = self.graph_type()
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        output = await chain.apredict(text=text)
-        knowledge = parse_triples(output)
-        for triple in knowledge:
-            graph.add_triple(triple)
-        return graph
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = ["GraphIndexCreator", "NetworkxEntityGraph"]

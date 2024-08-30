@@ -1,4 +1,5 @@
 """Test Bedrock chat model."""
+
 from typing import Any, cast
 
 import pytest
@@ -17,7 +18,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 @pytest.fixture
 def chat() -> BedrockChat:
-    return BedrockChat(model_id="anthropic.claude-v2", model_kwargs={"temperature": 0})
+    return BedrockChat(model_id="anthropic.claude-v2", model_kwargs={"temperature": 0})  # type: ignore[call-arg]
 
 
 @pytest.mark.scheduled
@@ -25,7 +26,7 @@ def test_chat_bedrock(chat: BedrockChat) -> None:
     """Test BedrockChat wrapper."""
     system = SystemMessage(content="You are a helpful assistant.")
     human = HumanMessage(content="Hello")
-    response = chat([system, human])
+    response = chat.invoke([system, human])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -63,14 +64,14 @@ def test_chat_bedrock_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = BedrockChat(
+    chat = BedrockChat(  # type: ignore[call-arg]
         model_id="anthropic.claude-v2",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 
@@ -92,7 +93,7 @@ def test_chat_bedrock_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = BedrockChat(
+    chat = BedrockChat(  # type: ignore[call-arg]
         model_id="anthropic.claude-v2",
         callback_manager=callback_manager,
     )
@@ -108,7 +109,7 @@ def test_bedrock_streaming(chat: BedrockChat) -> None:
 
     full = None
     for token in chat.stream("I'm Pickle Rick"):
-        full = token if full is None else full + token
+        full = token if full is None else full + token  # type: ignore[operator]
         assert isinstance(token.content, str)
     assert isinstance(cast(AIMessageChunk, full).content, str)
 

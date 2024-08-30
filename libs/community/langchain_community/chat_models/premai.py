@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -11,6 +12,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -19,6 +21,7 @@ from typing import (
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
@@ -32,10 +35,18 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+)
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     from premai.api.chat_completions.v1_chat_completions_create import (
@@ -44,6 +55,19 @@ if TYPE_CHECKING:
     from premai.models.chat_completion_response import ChatCompletionResponse
 
 logger = logging.getLogger(__name__)
+
+TOOL_PROMPT_HEADER = """
+Given the set of tools you used and the response, provide the final answer\n
+"""
+
+INTERMEDIATE_TOOL_RESULT_TEMPLATE = """
+{json}
+"""
+
+SINGLE_TOOL_PROMPT_TEMPLATE = """
+tool id: {tool_id}
+tool_response: {tool_response}
+"""
 
 
 class ChatPremAPIError(Exception):
@@ -85,8 +109,22 @@ def _response_to_result(
             raise ChatPremAPIError(f"ChatResponse must have a content: {content}")
 
         if role == "assistant":
+            tool_calls = choice.message["tool_calls"]
+            if tool_calls is None:
+                tools = []
+            else:
+                tools = [
+                    {
+                        "id": tool_call["id"],
+                        "name": tool_call["function"]["name"],
+                        "args": tool_call["function"]["arguments"],
+                    }
+                    for tool_call in tool_calls
+                ]
             generations.append(
-                ChatGeneration(text=content, message=AIMessage(content=content))
+                ChatGeneration(
+                    text=content, message=AIMessage(content=content, tool_calls=tools)
+                )
             )
         elif role == "user":
             generations.append(
@@ -98,7 +136,18 @@ def _response_to_result(
                     text=content, message=ChatMessage(role=role, content=content)
                 )
             )
-    return ChatResult(generations=generations)
+
+    if response.document_chunks is not None:
+        return ChatResult(
+            generations=generations,
+            llm_output={
+                "document_chunks": [
+                    chunk.to_dict() for chunk in response.document_chunks
+                ]
+            },
+        )
+    else:
+        return ChatResult(generations=generations, llm_output={"document_chunks": None})
 
 
 def _convert_delta_response_to_message_chunk(
@@ -112,10 +161,6 @@ def _convert_delta_response_to_message_chunk(
     role = _delta.get("role", "")  # type: ignore
     content = _delta.get("content", "")  # type: ignore
     additional_kwargs: Dict = {}
-
-    if role is None or role == "":
-        raise ChatPremAPIError("Role can not be None. Please check the response")
-
     finish_reasons: Optional[str] = response.choices[0].finish_reason
 
     if role == "user" or default_class == HumanMessageChunk:
@@ -130,36 +175,83 @@ def _convert_delta_response_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role), finish_reasons
     else:
-        return default_class(content=content), finish_reasons
+        return default_class(content=content), finish_reasons  # type: ignore[call-arg]
 
 
 def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
-) -> Tuple[Optional[str], List[Dict[str, str]]]:
+    template_id: Optional[str] = None,
+) -> Tuple[Optional[str], List[Dict[str, Any]]]:
     """Converts a list of LangChain Messages into a simple dict
     which is the message structure in Prem"""
 
     system_prompt: Optional[str] = None
-    examples_and_messages: List[Dict[str, str]] = []
+    examples_and_messages: List[Dict[str, Any]] = []
 
     for input_msg in input_messages:
         if isinstance(input_msg, SystemMessage):
             system_prompt = str(input_msg.content)
+
         elif isinstance(input_msg, HumanMessage):
-            examples_and_messages.append(
-                {"role": "user", "content": str(input_msg.content)}
-            )
+            if template_id is None:
+                examples_and_messages.append(
+                    {"role": "user", "content": str(input_msg.content)}
+                )
+            else:
+                params: Dict[str, str] = {}
+                assert (input_msg.id is not None) and (input_msg.id != ""), ValueError(
+                    "When using prompt template there should be id associated ",
+                    "with each HumanMessage",
+                )
+                params[str(input_msg.id)] = str(input_msg.content)
+                examples_and_messages.append(
+                    {"role": "user", "template_id": template_id, "params": params}
+                )
         elif isinstance(input_msg, AIMessage):
-            examples_and_messages.append(
-                {"role": "assistant", "content": str(input_msg.content)}
-            )
+            if input_msg.tool_calls is None or len(input_msg.tool_calls) == 0:
+                examples_and_messages.append(
+                    {"role": "assistant", "content": str(input_msg.content)}
+                )
+            else:
+                ai_msg_to_json = {
+                    "id": input_msg.id,
+                    "content": input_msg.content,
+                    "response_metadata": input_msg.response_metadata,
+                    "tool_calls": input_msg.tool_calls,
+                }
+                examples_and_messages.append(
+                    {
+                        "role": "assistant",
+                        "content": INTERMEDIATE_TOOL_RESULT_TEMPLATE.format(
+                            json=ai_msg_to_json,
+                        ),
+                    }
+                )
+        elif isinstance(input_msg, ToolMessage):
+            pass
+
         else:
             raise ChatPremAPIError("No such role explicitly exists")
+
+    # do a seperate search for tool calls
+    tool_prompt = ""
+    for input_msg in input_messages:
+        if isinstance(input_msg, ToolMessage):
+            tool_id = input_msg.tool_call_id
+            tool_result = input_msg.content
+            tool_prompt += SINGLE_TOOL_PROMPT_TEMPLATE.format(
+                tool_id=tool_id, tool_response=tool_result
+            )
+    if tool_prompt != "":
+        prompt = TOOL_PROMPT_HEADER
+        prompt += tool_prompt
+        examples_and_messages.append({"role": "user", "content": prompt})
+
     return system_prompt, examples_and_messages
 
 
 class ChatPremAI(BaseChatModel, BaseModel):
-    """Use any LLM provider with Prem and Langchain.
+    """PremAI Chat models.
 
     To use, you will need to have an API key. You can find your existing API Key
     or generate a new one here: https://app.premai.io/api_keys/
@@ -170,10 +262,10 @@ class ChatPremAI(BaseChatModel, BaseModel):
     project_id: int
     """The project ID in which the experiments or deployments are carried out. 
     You can find all your projects here: https://app.premai.io/projects/"""
-    premai_api_key: Optional[SecretStr] = None
+    premai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
-    model: Optional[str] = None
+    model: Optional[str] = Field(default=None, alias="model_name")
     """Name of the model. This is an optional parameter. 
     The default model is the one deployed from Prem's LaunchPad: https://app.premai.io/projects/8/launchpad
     If model name is other than default model then it will override the calls 
@@ -182,7 +274,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
     session_id: Optional[str] = None
     """The ID of the session to use. It helps to track the chat history."""
 
-    temperature: Optional[float] = None
+    temperature: Optional[float] = Field(default=None)
     """Model temperature. Value should be >= 0 and <= 1.0"""
 
     top_p: Optional[float] = None
@@ -190,10 +282,11 @@ class ChatPremAI(BaseChatModel, BaseModel):
         cumulative probabilities. Value should be ranging between 0.0 and 1.0. 
     """
 
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = Field(default=None)
+
     """The maximum number of tokens to generate"""
 
-    max_retries: int = 1
+    max_retries: int = Field(default=1)
     """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
@@ -203,38 +296,22 @@ class ChatPremAI(BaseChatModel, BaseModel):
     Changing the system prompt would override the default system prompt.
     """
 
+    repositories: Optional[dict] = None
+    """Add valid repository ids. This will be overriding existing connected 
+    repositories (if any) and will use RAG with the connected repos. 
+    """
+
     streaming: Optional[bool] = False
     """Whether to stream the responses or not."""
-
-    tools: Optional[Dict[str, Any]] = None
-    """A list of tools the model may call. Currently, only functions are 
-    supported as a tool"""
-
-    frequency_penalty: Optional[float] = None
-    """Number between -2.0 and 2.0. Positive values penalize new tokens based"""
-
-    presence_penalty: Optional[float] = None
-    """Number between -2.0 and 2.0. Positive values penalize new tokens based 
-    on whether they appear in the text so far."""
-
-    logit_bias: Optional[dict] = None
-    """JSON object that maps tokens to an associated bias value from -100 to 100."""
-
-    stop: Optional[Union[str, List[str]]] = None
-    """Up to 4 sequences where the API will stop generating further tokens."""
-
-    seed: Optional[int] = None
-    """This feature is in Beta. If specified, our system will make a best effort 
-    to sample deterministically."""
 
     client: Any
 
     class Config:
-        """Configuration for this pydantic object."""
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate that the package is installed and that the API token is valid"""
         try:
@@ -246,10 +323,14 @@ class ChatPremAI(BaseChatModel, BaseModel):
             ) from error
 
         try:
-            premai_api_key = get_from_dict_or_env(
+            premai_api_key: Union[str, SecretStr] = get_from_dict_or_env(
                 values, "premai_api_key", "PREMAI_API_KEY"
             )
-            values["client"] = Prem(api_key=premai_api_key)
+            values["client"] = Prem(
+                api_key=premai_api_key
+                if isinstance(premai_api_key, str)
+                else premai_api_key._secret_value
+            )
         except Exception as error:
             raise ValueError("Your API Key is incorrect. Please try again.") from error
         return values
@@ -260,21 +341,33 @@ class ChatPremAI(BaseChatModel, BaseModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        # FIXME: n and stop is not supported, so hardcoding to current default value
         return {
             "model": self.model,
             "system_prompt": self.system_prompt,
-            "top_p": self.top_p,
             "temperature": self.temperature,
-            "logit_bias": self.logit_bias,
             "max_tokens": self.max_tokens,
-            "presence_penalty": self.presence_penalty,
-            "frequency_penalty": self.frequency_penalty,
-            "seed": self.seed,
-            "stop": None,
+            "repositories": self.repositories,
         }
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        kwargs_to_ignore = [
+            "top_p",
+            "frequency_penalty",
+            "presence_penalty",
+            "logit_bias",
+            "stop",
+            "seed",
+        ]
+        keys_to_remove = []
+
+        for key in kwargs:
+            if key in kwargs_to_ignore:
+                warnings.warn(f"WARNING: Parameter {key} is not supported in kwargs.")
+                keys_to_remove.append(key)
+
+        for key in keys_to_remove:
+            kwargs.pop(key)
+
         all_kwargs = {**self._default_params, **kwargs}
         for key in list(self._default_params.keys()):
             if all_kwargs.get(key) is None or all_kwargs.get(key) == "":
@@ -288,9 +381,13 @@ class ChatPremAI(BaseChatModel, BaseModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)  # type: ignore
+        if "template_id" in kwargs:
+            system_prompt, messages_to_pass = _messages_to_prompt_dict(
+                messages, template_id=kwargs["template_id"]
+            )
+        else:
+            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)  # type: ignore
 
-        kwargs["stop"] = stop
         if system_prompt is not None and system_prompt != "":
             kwargs["system_prompt"] = system_prompt
 
@@ -313,8 +410,15 @@ class ChatPremAI(BaseChatModel, BaseModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)
-        kwargs["stop"] = stop
+        if "template_id" in kwargs:
+            system_prompt, messages_to_pass = _messages_to_prompt_dict(
+                messages, template_id=kwargs["template_id"]
+            )  # type: ignore
+        else:
+            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)  # type: ignore
+
+        if stop is not None:
+            logger.warning("stop is not supported in langchain streaming")
 
         if "system_prompt" not in kwargs:
             if system_prompt is not None and system_prompt != "":
@@ -350,6 +454,14 @@ class ChatPremAI(BaseChatModel, BaseModel):
             except Exception as _:
                 continue
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)
+
 
 def create_prem_retry_decorator(
     llm: ChatPremAI,
@@ -357,6 +469,7 @@ def create_prem_retry_decorator(
     max_retries: int = 1,
     run_manager: Optional[Union[CallbackManagerForLLMRun]] = None,
 ) -> Callable[[Any], Any]:
+    """Create a retry decorator for PremAI API errors."""
     import premai.models
 
     errors = [

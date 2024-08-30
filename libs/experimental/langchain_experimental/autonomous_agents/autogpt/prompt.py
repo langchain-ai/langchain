@@ -1,11 +1,11 @@
 import time
 from typing import Any, Callable, List, cast
 
-from langchain.prompts.chat import (
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.prompts.chat import (
     BaseChatPromptTemplate,
 )
-from langchain.tools.base import BaseTool
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
@@ -73,7 +73,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
         ) + self.token_counter(cast(str, time_prompt.content))
         memory: VectorStoreRetriever = kwargs["memory"]
         previous_messages = kwargs["messages"]
-        relevant_docs = memory.get_relevant_documents(str(previous_messages[-10:]))
+        relevant_docs = memory.invoke(str(previous_messages[-10:]))
         relevant_memory = [d.page_content for d in relevant_docs]
         relevant_memory_tokens = sum(
             [self.token_counter(doc) for doc in relevant_memory]

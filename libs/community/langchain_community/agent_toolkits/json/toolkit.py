@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import List
 
-from langchain_community.agent_toolkits.base import BaseToolkit
-from langchain_community.tools import BaseTool
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
+
 from langchain_community.tools.json.tool import (
     JsonGetValueTool,
     JsonListKeysTool,
@@ -12,7 +13,11 @@ from langchain_community.tools.json.tool import (
 
 
 class JsonToolkit(BaseToolkit):
-    """Toolkit for interacting with a JSON spec."""
+    """Toolkit for interacting with a JSON spec.
+
+    Parameters:
+        spec: The JSON spec.
+    """
 
     spec: JsonSpec
 

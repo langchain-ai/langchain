@@ -6,11 +6,11 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.tools.render import ToolsRenderer, render_text_description
 
 from langchain.agents import AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
-from langchain.tools.render import ToolsRenderer, render_text_description
 
 
 def create_react_agent(
@@ -23,6 +23,9 @@ def create_react_agent(
     stop_sequence: Union[bool, List[str]] = True,
 ) -> Runnable:
     """Create an agent that uses ReAct prompting.
+
+    Based on paper "ReAct: Synergizing Reasoning and Acting in Language Models"
+    (https://arxiv.org/abs/2210.03629)
 
     Args:
         llm: LLM to use as the agent.
@@ -68,7 +71,7 @@ def create_react_agent(
                     "input": "what's my name?",
                     # Notice that chat_history is a string
                     # since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
+                    "chat_history": "Human: My name is Bob\\nAI: Hello Bob!",
                 }
             )
 
@@ -108,7 +111,7 @@ def create_react_agent(
             prompt = PromptTemplate.from_template(template)
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables
+        prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")

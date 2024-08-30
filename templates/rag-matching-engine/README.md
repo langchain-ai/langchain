@@ -1,9 +1,8 @@
+# RAG - Google Cloud Matching Engine
 
-# rag-matching-engine
+This template performs RAG using [Google Cloud Vertex Matching Engine](https://cloud.google.com/blog/products/ai-machine-learning/vertex-matching-engine-blazing-fast-and-massively-scalable-nearest-neighbor-search).
 
-This template performs RAG using Google Cloud Platform's Vertex AI with the matching engine.
-
-It will utilize a previously created index to retrieve relevant documents or contexts based on user-provided questions. 
+It utilizes a previously created index to retrieve relevant documents or contexts based on user-provided questions. 
 
 ## Environment Setup
 
@@ -49,7 +48,7 @@ add_routes(app, rag_matching_engine_chain, path="/rag-matching-engine")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

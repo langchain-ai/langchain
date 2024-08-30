@@ -1,7 +1,6 @@
+# Summarize - Anthropic
 
-# summarize-anthropic
-
-This template uses Anthropic's `claude-3-sonnet-20240229` to summarize long documents. 
+This template uses `Anthropic`'s `claude-3-sonnet-20240229` to summarize long documents. 
 
 It leverages a large context window of 100k tokens, allowing for summarization of documents over 100 pages. 
 
@@ -40,7 +39,7 @@ add_routes(app, summarize_anthropic_chain, path="/summarize-anthropic")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

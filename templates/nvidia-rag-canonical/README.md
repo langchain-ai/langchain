@@ -1,7 +1,7 @@
+# Nvidia, Milvus - canonical RAG
 
-# nvidia-rag-canonical
-
-This template performs RAG using Milvus Vector Store and NVIDIA Models (Embedding and Chat).
+This template performs RAG using `Milvus` Vector Store 
+and `NVIDIA` Models (Embedding and Chat).
 
 ## Environment Setup
 
@@ -60,7 +60,7 @@ Note that for files ingested by the ingestion API, the server will need to be re
 
 (Optional) Let's now configure LangSmith.
 LangSmith will help us trace, monitor and debug LangChain applications.
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/).
+You can sign up for LangSmith [here](https://smith.langchain.com/).
 If you don't have access, you can skip this section
 
 

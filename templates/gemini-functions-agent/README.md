@@ -1,9 +1,8 @@
+# Gemini functions - agent
 
-# gemini-functions-agent
+This template creates an agent that uses `Google Gemini function calling` to communicate its decisions on what actions to take. 
 
-This template creates an agent that uses Google Gemini function calling to communicate its decisions on what actions to take. 
-
-This example creates an agent that can optionally look up information on the internet using Tavily's search engine.
+This example creates an agent that optionally looks up information on the internet using `Tavily's` search engine.
 
 [See an example LangSmith trace here](https://smith.langchain.com/public/0ebf1bd6-b048-4019-b4de-25efe8d3d18c/r)
 
@@ -44,7 +43,7 @@ add_routes(app, gemini_functions_agent_chain, path="/openai-functions-agent")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

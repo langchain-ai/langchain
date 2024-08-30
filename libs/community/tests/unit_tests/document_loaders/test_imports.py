@@ -1,4 +1,4 @@
-from langchain_community.document_loaders import __all__
+from langchain_community.document_loaders import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "AcreomLoader",
@@ -38,6 +38,7 @@ EXPECTED_ALL = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserbaseLoader",
     "BrowserlessLoader",
     "CassandraLoader",
     "CSVLoader",
@@ -50,6 +51,9 @@ EXPECTED_ALL = [
     "CubeSemanticLoader",
     "DataFrameLoader",
     "DatadogLogsLoader",
+    "DedocAPIFileLoader",
+    "DedocFileLoader",
+    "DedocPDFLoader",
     "PebbloSafeLoader",
     "DiffbotLoader",
     "DirectoryLoader",
@@ -65,10 +69,12 @@ EXPECTED_ALL = [
     "FaunaLoader",
     "FigmaFileLoader",
     "FileSystemBlobLoader",
+    "FireCrawlLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
     "GithubFileLoader",
+    "GlueCatalogLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
@@ -86,6 +92,7 @@ EXPECTED_ALL = [
     "IuguLoader",
     "JSONLoader",
     "JoplinLoader",
+    "KineticaLoader",
     "LLMSherpaFileLoader",
     "LarkSuiteDocLoader",
     "LakeFSLoader",
@@ -109,6 +116,8 @@ EXPECTED_ALL = [
     "OnlinePDFLoader",
     "OpenCityDataLoader",
     "OracleAutonomousDatabaseLoader",
+    "OracleDocLoader",
+    "OracleTextSplitter",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
@@ -132,6 +141,8 @@ EXPECTED_ALL = [
     "RocksetLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
+    "ScrapflyLoader",
+    "ScrapingAntLoader",
     "SQLDatabaseLoader",
     "SRTLoader",
     "SeleniumURLLoader",
@@ -139,6 +150,7 @@ EXPECTED_ALL = [
     "SitemapLoader",
     "SlackDirectoryLoader",
     "SnowflakeLoader",
+    "SpiderLoader",
     "SpreedlyLoader",
     "StripeLoader",
     "SurrealDBLoader",
@@ -190,3 +202,4 @@ EXPECTED_ALL = [
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())

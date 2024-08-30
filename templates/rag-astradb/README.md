@@ -1,7 +1,6 @@
+# RAG - AstraDB
 
-# rag-astradb
-
-This template will perform RAG using Astra DB (`AstraDB` vector store class)
+This template will perform RAG using `AstraDB` (`AstraDB` vector store class)
 
 ## Environment Setup
 
@@ -43,7 +42,7 @@ add_routes(app, astradb_entomology_rag_chain, path="/rag-astradb")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

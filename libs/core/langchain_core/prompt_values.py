@@ -3,6 +3,7 @@
 Prompt values are used to represent different pieces of prompts.
 They can be used to represent text, images, or chat message pieces.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -23,17 +24,20 @@ class PromptValue(Serializable, ABC):
     """Base abstract class for inputs to any language model.
 
     PromptValues can be converted to both LLM (pure text-generation) inputs and
-        ChatModel inputs.
+    ChatModel inputs.
     """
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return whether this class is serializable. Defaults to True."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        This is used to determine the namespace of the object when serializing.
+        Defaults to ["langchain", "schema", "prompt"].
+        """
         return ["langchain", "schema", "prompt"]
 
     @abstractmethod
@@ -54,7 +58,10 @@ class StringPromptValue(PromptValue):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        This is used to determine the namespace of the object when serializing.
+        Defaults to ["langchain", "prompts", "base"].
+        """
         return ["langchain", "prompts", "base"]
 
     def to_string(self) -> str:
@@ -85,13 +92,19 @@ class ChatPromptValue(PromptValue):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        This is used to determine the namespace of the object when serializing.
+        Defaults to ["langchain", "prompts", "chat"].
+        """
         return ["langchain", "prompts", "chat"]
 
 
 class ImageURL(TypedDict, total=False):
+    """Image URL."""
+
     detail: Literal["auto", "low", "high"]
-    """Specifies the detail level of the image."""
+    """Specifies the detail level of the image. Defaults to "auto".
+    Can be "auto", "low", or "high"."""
 
     url: str
     """Either a URL of the image or the base64 encoded image data."""
@@ -101,15 +114,15 @@ class ImagePromptValue(PromptValue):
     """Image prompt value."""
 
     image_url: ImageURL
-    """Prompt image."""
+    """Image URL."""
     type: Literal["ImagePromptValue"] = "ImagePromptValue"
 
     def to_string(self) -> str:
-        """Return prompt as string."""
+        """Return prompt (image URL) as string."""
         return self.image_url["url"]
 
     def to_messages(self) -> List[BaseMessage]:
-        """Return prompt as messages."""
+        """Return prompt (image URL) as messages."""
         return [HumanMessage(content=[cast(dict, self.image_url)])]
 
 
@@ -118,10 +131,14 @@ class ChatPromptValueConcrete(ChatPromptValue):
     For use in external schemas."""
 
     messages: Sequence[AnyMessage]
+    """Sequence of messages."""
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        This is used to determine the namespace of the object when serializing.
+        Defaults to ["langchain", "prompts", "chat"].
+        """
         return ["langchain", "prompts", "chat"]

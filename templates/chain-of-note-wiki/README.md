@@ -1,6 +1,8 @@
-# Chain-of-Note (Wikipedia)
+# Chain-of-Note - Wikipedia
 
-Implements Chain-of-Note as described in https://arxiv.org/pdf/2311.09210.pdf by Yu, et al. Uses Wikipedia for retrieval.
+Implements `Chain-of-Note` as described in [CHAIN-OF-NOTE: ENHANCING ROBUSTNESS IN
+RETRIEVAL-AUGMENTED LANGUAGE MODELS](https://arxiv.org/pdf/2311.09210.pdf) paper
+by Yu, et al. Uses `Wikipedia` for retrieval.
 
 Check out the prompt being used here https://smith.langchain.com/hub/bagatur/chain-of-note-wiki.
 
@@ -40,7 +42,7 @@ add_routes(app, chain_of_note_wiki_chain, path="/chain-of-note-wiki")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

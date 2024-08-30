@@ -1,9 +1,12 @@
+# RAG - Pinecone - fusion
 
-# rag-fusion
+This template enables `RAG fusion` using a re-implementation of 
+the project found [here](https://github.com/Raudaschl/rag-fusion). 
 
-This template enables RAG fusion using a re-implementation of the project found [here](https://github.com/Raudaschl/rag-fusion). 
+It performs multiple query generation and `Reciprocal Rank Fusion` 
+to re-rank search results.
 
-It performs multiple query generation and Reciprocal Rank Fusion to re-rank search results.
+It uses the `Pinecone` vectorstore and the `OpenAI` chat and embedding models.
 
 ## Environment Setup
 
@@ -38,7 +41,7 @@ add_routes(app, rag_fusion_chain, path="/rag-fusion")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

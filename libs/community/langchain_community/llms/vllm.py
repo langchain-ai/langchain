@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.openai import BaseOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -73,7 +74,7 @@ class VLLM(BaseLLM):
 
     client: Any  #: :meta private:
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
 

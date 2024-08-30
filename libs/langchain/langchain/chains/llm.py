@@ -1,9 +1,11 @@
 """Chain that just formats a prompt and calls an LLM."""
+
 from __future__ import annotations
 
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
@@ -21,7 +23,7 @@ from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import (
     Runnable,
     RunnableBinding,
@@ -34,8 +36,31 @@ from langchain_core.utils.input import get_colored_text
 from langchain.chains.base import Chain
 
 
+@deprecated(
+    since="0.1.17",
+    alternative="RunnableSequence, e.g., `prompt | llm`",
+    removal="1.0",
+)
 class LLMChain(Chain):
     """Chain to run queries against LLMs.
+
+    This class is deprecated. See below for an example implementation using
+    LangChain runnables:
+
+        .. code-block:: python
+
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import PromptTemplate
+            from langchain_openai import OpenAI
+
+            prompt_template = "Tell me a {adjective} joke"
+            prompt = PromptTemplate(
+                input_variables=["adjective"], template=prompt_template
+            )
+            llm = OpenAI()
+            chain = prompt | llm | StrOutputParser()
+
+            chain.invoke("your adjective here")
 
     Example:
         .. code-block:: python
@@ -71,10 +96,8 @@ class LLMChain(Chain):
     llm_kwargs: dict = Field(default_factory=dict)
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def input_keys(self) -> List[str]:

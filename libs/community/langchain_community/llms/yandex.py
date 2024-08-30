@@ -9,8 +9,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from tenacity import (
     before_sleep_log,
     retry,
@@ -54,7 +54,10 @@ class _BaseYandexGPT(Serializable):
     """Maximum number of retries to make when generating."""
     sleep_interval: float = 1.0
     """Delay between API requests"""
-    _grpc_metadata: Sequence
+    disable_request_logging: bool = False
+    """YandexGPT API logs all request data by default. 
+    If you provide personal data, confidential information, disable logging."""
+    grpc_metadata: Optional[Sequence] = None
 
     @property
     def _llm_type(self) -> str:
@@ -71,7 +74,7 @@ class _BaseYandexGPT(Serializable):
             "max_retries": self.max_retries,
         }
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that iam token exists in environment."""
 
@@ -89,21 +92,28 @@ class _BaseYandexGPT(Serializable):
             raise ValueError("Either 'YC_API_KEY' or 'YC_IAM_TOKEN' must be provided.")
 
         if values["iam_token"]:
-            values["_grpc_metadata"] = [
+            values["grpc_metadata"] = [
                 ("authorization", f"Bearer {values['iam_token'].get_secret_value()}")
             ]
             if values["folder_id"]:
-                values["_grpc_metadata"].append(("x-folder-id", values["folder_id"]))
+                values["grpc_metadata"].append(("x-folder-id", values["folder_id"]))
         else:
-            values["_grpc_metadata"] = (
+            values["grpc_metadata"] = [
                 ("authorization", f"Api-Key {values['api_key'].get_secret_value()}"),
-            )
+            ]
         if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
         if not values["model_uri"]:
-            values[
-                "model_uri"
-            ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            values["model_uri"] = (
+                f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            )
+        if values["disable_request_logging"]:
+            values["grpc_metadata"].append(
+                (
+                    "x-data-logging-enabled",
+                    "false",
+                )
+            )
         return values
 
 
@@ -225,7 +235,7 @@ def _make_request(
         messages=[Message(role="user", text=prompt)],
     )
     stub = TextGenerationServiceStub(channel)
-    res = stub.Completion(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
+    res = stub.Completion(request, metadata=self.grpc_metadata)  # type: ignore[attr-defined]
     return list(res)[0].alternatives[0].message.text
 
 
@@ -281,7 +291,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
             messages=[Message(role="user", text=prompt)],
         )
         stub = TextGenerationAsyncServiceStub(channel)
-        operation = await stub.Completion(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
+        operation = await stub.Completion(request, metadata=self.grpc_metadata)  # type: ignore[attr-defined]
         async with grpc.aio.secure_channel(
             operation_api_url, channel_credentials
         ) as operation_channel:
@@ -291,7 +301,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
                     operation_request,
-                    metadata=self._grpc_metadata,  # type: ignore[attr-defined]
+                    metadata=self.grpc_metadata,  # type: ignore[attr-defined]
                 )
 
         completion_response = CompletionResponse()

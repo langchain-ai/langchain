@@ -17,13 +17,14 @@ access to the large language model (**LLM**) APIs and services.
     CallbackManager, AsyncCallbackManager,
     AIMessage, BaseMessage
 """  # noqa: E501
+
 import warnings
 from typing import Any, Callable, Dict, Type
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.language_models.llms import BaseLLM
 
-from langchain.utils.interactive_env import is_interactive_env
+from langchain._api.interactive_env import is_interactive_env
 
 
 def _import_ai21() -> Any:
@@ -177,7 +178,7 @@ def _import_edenai() -> Any:
 
 
 def _import_fake() -> Any:
-    from langchain_community.llms.fake import FakeListLLM
+    from langchain_core.language_models import FakeListLLM
 
     return FakeListLLM
 
@@ -469,9 +470,9 @@ def _import_titan_takeoff() -> Any:
 
 
 def _import_titan_takeoff_pro() -> Any:
-    from langchain_community.llms.titan_takeoff_pro import TitanTakeoffPro
+    from langchain_community.llms.titan_takeoff import TitanTakeoff
 
-    return TitanTakeoffPro
+    return TitanTakeoff
 
 
 def _import_together() -> Any:

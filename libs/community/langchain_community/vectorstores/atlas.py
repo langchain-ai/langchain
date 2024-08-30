@@ -29,7 +29,7 @@ class AtlasDB(VectorStore):
                 vectorstore = AtlasDB("my_project", embeddings.embed_query)
     """
 
-    _ATLAS_DEFAULT_ID_FIELD = "atlas_id"
+    _ATLAS_DEFAULT_ID_FIELD: str = "atlas_id"
 
     def __init__(
         self,
@@ -119,7 +119,7 @@ class AtlasDB(VectorStore):
 
         texts = list(texts)
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         # Embedding upload case
         if self._embedding_function is not None:

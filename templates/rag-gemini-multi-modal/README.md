@@ -1,21 +1,20 @@
-
-# rag-gemini-multi-modal
+# RAG - Gemini multi-modal
 
 Multi-modal LLMs enable visual assistants that can perform question-answering about images. 
 
 This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
 
-It uses OpenCLIP embeddings to embed all of the slide images and stores them in Chroma.
+It uses `OpenCLIP` embeddings to embed all the slide images and stores them in Chroma.
  
-Given a question, relevat slides are retrieved and passed to [Google Gemini](https://deepmind.google/technologies/gemini/#introduction) for answer synthesis.
+Given a question, relevant slides are retrieved and passed to [Google Gemini](https://deepmind.google/technologies/gemini/#introduction) for answer synthesis.
  
-![Diagram illustrating the process of a visual assistant using multi-modal LLM, from slide deck images to OpenCLIP embedding, retrieval, and synthesis with Google Gemini, resulting in an answer.](https://github.com/langchain-ai/langchain/assets/122662504/b9e69bef-d687-4ecf-a599-937e559d5184 "Workflow Diagram for Visual Assistant Using Multi-modal LLM")
+![Diagram illustrating the process of a visual assistant using multi-modal LLM, from slide deck images to OpenCLIP embedding, retrieval, and synthesis with Google Gemini, resulting in an answer.](https://github.com/langchain-ai/langchain/assets/122662504/b9e69bef-d687-4ecf-a599-937e559d5184) "Workflow Diagram for Visual Assistant Using Multi-modal LLM"
 
 ## Input
 
 Supply a slide deck as pdf in the `/docs` directory. 
 
-By default, this template has a slide deck about Q3 earnings from DataDog, a public techologyy company.
+By default, this template has a slide deck about Q3 earnings from DataDog, a public technology company.
 
 Example questions to ask can be:
 ```
@@ -37,7 +36,7 @@ You can select different embedding model options (see results [here](https://git
 
 The first time you run the app, it will automatically download the multimodal embedding model.
 
-By default, LangChain will use an embedding model with moderate performance but lower memory requirments, `ViT-H-14`.
+By default, LangChain will use an embedding model with moderate performance but lower memory requirements, `ViT-H-14`.
 
 You can choose alternative `OpenCLIPEmbeddings` models in `rag_chroma_multi_modal/ingest.py`:
 ```
@@ -87,7 +86,7 @@ add_routes(app, rag_gemini_multi_modal_chain, path="/rag-gemini-multi-modal")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

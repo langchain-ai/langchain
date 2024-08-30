@@ -47,14 +47,6 @@ def test_neuraldb_retriever_from_checkpoint(test_csv):  # type: ignore[no-untype
 
 
 @pytest.mark.requires("thirdai[neural_db]")
-def test_neuraldb_retriever_from_bazaar(test_csv):  # type: ignore[no-untyped-def]
-    retriever = NeuralDBVectorStore.from_bazaar("General QnA")
-    retriever.insert([test_csv])
-    documents = retriever.similarity_search("column")
-    assert_result_correctness(documents)
-
-
-@pytest.mark.requires("thirdai[neural_db]")
 def test_neuraldb_retriever_other_methods(test_csv):  # type: ignore[no-untyped-def]
     retriever = NeuralDBVectorStore.from_scratch()
     retriever.insert([test_csv])

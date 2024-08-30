@@ -8,6 +8,7 @@ You'll then need to set:
 - `GRADIENT_WORKSPACE_ID` environment variable to your workspace id.
 - `GRADIENT_MODEL` environment variable to your workspace id.
 """
+
 import os
 
 from langchain_community.llms import GradientLLM
@@ -23,7 +24,7 @@ def test_gradient_acall() -> None:
         gradient_access_token=gradient_access_token,
         gradient_workspace_id=gradient_workspace_id,
     )
-    output = llm("Say hello:", temperature=0.2, max_tokens=250)
+    output = llm.invoke("Say hello:", temperature=0.2, max_tokens=250)
 
     assert llm._llm_type == "gradient"
 

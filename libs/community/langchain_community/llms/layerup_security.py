@@ -9,6 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 def default_guardrail_violation_handler(violation: dict) -> str:
+    """Default guardrail violation handler.
+
+    Args:
+        violation (dict): The violation dictionary.
+
+    Returns:
+        str: The canned response.
+    """
     if violation.get("canned_response"):
         return violation["canned_response"]
     guardrail_name = (
@@ -22,6 +30,8 @@ def default_guardrail_violation_handler(violation: dict) -> str:
 
 
 class LayerupSecurity(LLM):
+    """Layerup Security LLM service."""
+
     llm: LLM
     layerup_api_key: str
     layerup_api_base_url: str = "https://api.uselayerup.com/v1"
@@ -29,12 +39,12 @@ class LayerupSecurity(LLM):
     response_guardrails: Optional[List[str]] = []
     mask: bool = False
     metadata: Optional[Dict[str, Any]] = {}
-    handle_prompt_guardrail_violation: Callable[
-        [dict], str
-    ] = default_guardrail_violation_handler
-    handle_response_guardrail_violation: Callable[
-        [dict], str
-    ] = default_guardrail_violation_handler
+    handle_prompt_guardrail_violation: Callable[[dict], str] = (
+        default_guardrail_violation_handler
+    )
+    handle_response_guardrail_violation: Callable[[dict], str] = (
+        default_guardrail_violation_handler
+    )
     client: Any  #: :meta private:
 
     @root_validator(pre=True)
@@ -72,7 +82,7 @@ class LayerupSecurity(LLM):
 
         if self.prompt_guardrails:
             security_response = self.client.execute_guardrails(
-                self.prompt_guardrails, messages, self.metadata
+                self.prompt_guardrails, messages, prompt, self.metadata
             )
             if not security_response["all_safe"]:
                 return self.handle_prompt_guardrail_violation(security_response)
@@ -88,7 +98,7 @@ class LayerupSecurity(LLM):
 
         if self.response_guardrails:
             security_response = self.client.execute_guardrails(
-                self.response_guardrails, messages, self.metadata
+                self.response_guardrails, messages, result, self.metadata
             )
             if not security_response["all_safe"]:
                 return self.handle_response_guardrail_violation(security_response)

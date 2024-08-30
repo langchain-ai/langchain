@@ -1,7 +1,7 @@
+# Rewrite-Retrieve-Read
 
-# rewrite_retrieve_read
-
-This template implemenets a method for query transformation (re-writing) in the paper [Query Rewriting for Retrieval-Augmented Large Language Models](https://arxiv.org/pdf/2305.14283.pdf) to optimize for RAG. 
+This template implements a method for query transformation (re-writing)
+in the paper [Query Rewriting for Retrieval-Augmented Large Language Models](https://arxiv.org/pdf/2305.14283.pdf) to optimize for RAG. 
 
 ## Environment Setup
 
@@ -36,7 +36,7 @@ add_routes(app, rewrite_retrieve_read_chain, path="/rewrite-retrieve-read")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

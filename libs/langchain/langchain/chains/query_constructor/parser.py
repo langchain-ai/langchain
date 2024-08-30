@@ -17,7 +17,7 @@ except ImportError:
     Transformer = object  # type: ignore
     Lark = object  # type: ignore
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     FilterDirective,
@@ -35,6 +35,7 @@ GRAMMAR = r"""
     ?value: SIGNED_INT -> int
         | SIGNED_FLOAT -> float
         | DATE -> date
+        | DATETIME -> datetime
         | list
         | string
         | ("false" | "False" | "FALSE") -> false
@@ -42,6 +43,7 @@ GRAMMAR = r"""
 
     args: expr ("," expr)*
     DATE.2: /["']?(\d{4}-[01]\d-[0-3]\d)["']?/
+    DATETIME.2: /["']?\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d[Zz]?["']?/
     string: /'[^']*'/ | ESCAPED_STRING
     list: "[" [args] "]"
 
@@ -61,9 +63,16 @@ class ISO8601Date(TypedDict):
     type: Literal["date"]
 
 
+class ISO8601DateTime(TypedDict):
+    """A datetime in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)."""
+
+    datetime: str
+    type: Literal["datetime"]
+
+
 @v_args(inline=True)
 class QueryTransformer(Transformer):
-    """Transforms a query string into an intermediate representation."""
+    """Transform a query string into an intermediate representation."""
 
     def __init__(
         self,
@@ -149,6 +158,20 @@ class QueryTransformer(Transformer):
             )
         return {"date": item, "type": "date"}
 
+    def datetime(self, item: Any) -> ISO8601DateTime:
+        item = str(item).strip("\"'")
+        try:
+            # Parse full ISO 8601 datetime format
+            datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S%z")
+        except ValueError:
+            try:
+                datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S")
+            except ValueError:
+                raise ValueError(
+                    "Datetime values are expected to be in ISO 8601 format."
+                )
+        return {"datetime": item, "type": "datetime"}
+
     def string(self, item: Any) -> str:
         # Remove escaped quotes
         return str(item).strip("\"'")
@@ -159,8 +182,7 @@ def get_parser(
     allowed_operators: Optional[Sequence[Operator]] = None,
     allowed_attributes: Optional[Sequence[str]] = None,
 ) -> Lark:
-    """
-    Returns a parser for the query language.
+    """Return a parser for the query language.
 
     Args:
         allowed_comparators: Optional[Sequence[Comparator]]

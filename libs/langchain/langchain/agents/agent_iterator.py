@@ -14,6 +14,7 @@ from typing import (
     Tuple,
     Union,
 )
+from uuid import UUID
 
 from langchain_core.agents import (
     AgentAction,
@@ -54,12 +55,29 @@ class AgentExecutorIterator:
         tags: Optional[list[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[UUID] = None,
         include_run_info: bool = False,
         yield_actions: bool = False,
     ):
         """
         Initialize the AgentExecutorIterator with the given AgentExecutor,
         inputs, and optional callbacks.
+
+        Args:
+            agent_executor (AgentExecutor): The AgentExecutor to iterate over.
+            inputs (Any): The inputs to the AgentExecutor.
+            callbacks (Callbacks, optional): The callbacks to use during iteration.
+                Defaults to None.
+            tags (Optional[list[str]], optional): The tags to use during iteration.
+                Defaults to None.
+            metadata (Optional[Dict[str, Any]], optional): The metadata to use
+                during iteration. Defaults to None.
+            run_name (Optional[str], optional): The name of the run. Defaults to None.
+            run_id (Optional[UUID], optional): The ID of the run. Defaults to None.
+            include_run_info (bool, optional): Whether to include run info
+                in the output. Defaults to False.
+            yield_actions (bool, optional): Whether to yield actions as they
+                are generated. Defaults to False.
         """
         self._agent_executor = agent_executor
         self.inputs = inputs
@@ -67,6 +85,7 @@ class AgentExecutorIterator:
         self.tags = tags
         self.metadata = metadata
         self.run_name = run_name
+        self.run_id = run_id
         self.include_run_info = include_run_info
         self.yield_actions = yield_actions
         self.reset()
@@ -76,11 +95,13 @@ class AgentExecutorIterator:
     tags: Optional[list[str]]
     metadata: Optional[Dict[str, Any]]
     run_name: Optional[str]
+    run_id: Optional[UUID]
     include_run_info: bool
     yield_actions: bool
 
     @property
     def inputs(self) -> Dict[str, str]:
+        """The inputs to the AgentExecutor."""
         return self._inputs
 
     @inputs.setter
@@ -89,6 +110,7 @@ class AgentExecutorIterator:
 
     @property
     def agent_executor(self) -> AgentExecutor:
+        """The AgentExecutor to iterate over."""
         return self._agent_executor
 
     @agent_executor.setter
@@ -99,10 +121,12 @@ class AgentExecutorIterator:
 
     @property
     def name_to_tool_map(self) -> Dict[str, BaseTool]:
+        """A mapping of tool names to tools."""
         return {tool.name: tool for tool in self.agent_executor.tools}
 
     @property
     def color_mapping(self) -> Dict[str, str]:
+        """A mapping of tool names to colors."""
         return get_color_mapping(
             [tool.name for tool in self.agent_executor.tools],
             excluded_colors=["green", "red"],
@@ -162,6 +186,7 @@ class AgentExecutorIterator:
         run_manager = callback_manager.on_chain_start(
             dumpd(self.agent_executor),
             self.inputs,
+            self.run_id,
             name=self.run_name,
         )
         try:
@@ -227,6 +252,7 @@ class AgentExecutorIterator:
         run_manager = await callback_manager.on_chain_start(
             dumpd(self.agent_executor),
             self.inputs,
+            self.run_id,
             name=self.run_name,
         )
         try:
@@ -345,7 +371,7 @@ class AgentExecutorIterator:
         """
         logger.warning("Stopping agent prematurely due to triggering stop condition")
         # this manually constructs agent finish with output key
-        output = self.agent_executor.agent.return_stopped_response(
+        output = self.agent_executor._action_agent.return_stopped_response(
             self.agent_executor.early_stopping_method,
             self.intermediate_steps,
             **self.inputs,
@@ -358,7 +384,7 @@ class AgentExecutorIterator:
         the stopped response.
         """
         logger.warning("Stopping agent prematurely due to triggering stop condition")
-        output = self.agent_executor.agent.return_stopped_response(
+        output = self.agent_executor._action_agent.return_stopped_response(
             self.agent_executor.early_stopping_method,
             self.intermediate_steps,
             **self.inputs,

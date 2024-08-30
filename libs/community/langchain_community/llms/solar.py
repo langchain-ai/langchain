@@ -4,7 +4,7 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -32,14 +32,16 @@ class _SolarClient(BaseModel):
 
 
 class SolarCommon(BaseModel):
+    """Common configuration for Solar LLMs."""
+
     _client: _SolarClient
     base_url: str = SOLAR_SERVICE_URL_BASE
     solar_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Solar API key. Get it here: https://console.upstage.ai/services/solar"""
     model_name: str = Field(default="solar-1-mini-chat", alias="model")
     """Model name. Available models listed here: https://console.upstage.ai/services/solar"""
-    max_tokens: int = Field(default=1024, alias="max context")
-    temperature = 0.3
+    max_tokens: int = Field(default=1024)
+    temperature: float = 0.3
 
     class Config:
         allow_population_by_field_name = True
@@ -66,7 +68,7 @@ class SolarCommon(BaseModel):
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         api_key = get_from_dict_or_env(values, "solar_api_key", "SOLAR_API_KEY")
         if api_key is None or len(api_key) == 0:
@@ -92,6 +94,7 @@ class SolarCommon(BaseModel):
 
 class Solar(SolarCommon, LLM):
     """Solar large language models.
+
     To use, you should have the environment variable
     ``SOLAR_API_KEY`` set with your API key.
     Referenced from https://console.upstage.ai/services/solar

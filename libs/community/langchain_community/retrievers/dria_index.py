@@ -23,7 +23,7 @@ class DriaRetriever(BaseRetriever):
             contract_id: The contract ID of the knowledge base to interact with.
         """
         api_wrapper = DriaAPIWrapper(api_key=api_key, contract_id=contract_id)
-        super().__init__(api_wrapper=api_wrapper, **kwargs)
+        super().__init__(api_wrapper=api_wrapper, **kwargs)  # type: ignore[call-arg]
 
     def create_knowledge_base(
         self,

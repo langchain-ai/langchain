@@ -1,7 +1,7 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
-from typing import Any, AsyncGenerator, Dict, Generator, cast
+from typing import Any, AsyncGenerator, Dict, Generator, List, cast
 from unittest.mock import patch
 
 import pytest
@@ -11,20 +11,25 @@ from langchain_core.messages import (
     BaseMessage,
     ChatMessage,
     HumanMessage,
+    InvalidToolCall,
     SystemMessage,
+    ToolCall,
 )
 from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
     _convert_message_to_mistral_chat_message,
+    _convert_mistral_chat_message_to_message,
+    _convert_tool_call_id_to_mistral_compatible,
+    _is_valid_mistral_tool_call_id,
 )
 
 os.environ["MISTRAL_API_KEY"] = "foo"
 
 
 def test_mistralai_model_param() -> None:
-    llm = ChatMistralAI(model="foo")
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
     assert llm.model == "foo"
 
 
@@ -33,8 +38,8 @@ def test_mistralai_initialization() -> None:
     # Verify that ChatMistralAI can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
     for model in [
-        ChatMistralAI(model="test", mistral_api_key="test"),
-        ChatMistralAI(model="test", api_key="test"),
+        ChatMistralAI(model="test", mistral_api_key="test"),  # type: ignore[call-arg, call-arg]
+        ChatMistralAI(model="test", api_key="test"),  # type: ignore[call-arg, arg-type]
     ]:
         assert cast(SecretStr, model.mistral_api_key).get_secret_value() == "test"
 
@@ -52,7 +57,7 @@ def test_mistralai_initialization() -> None:
         ),
         (
             AIMessage(content="Hello"),
-            dict(role="assistant", content="Hello", tool_calls=None),
+            dict(role="assistant", content="Hello"),
         ),
         (
             ChatMessage(role="assistant", content="Hello"),
@@ -121,3 +126,95 @@ async def test_astream_with_callback() -> None:
     chat = ChatMistralAI(callbacks=[callback])
     async for token in chat.astream("Hello"):
         assert callback.last_token == token.content
+
+
+def test__convert_dict_to_message_tool_call() -> None:
+    raw_tool_call = {
+        "id": "ssAbar4Dr",
+        "function": {
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
+            "name": "GenerateUsername",
+        },
+    }
+    message = {"role": "assistant", "content": "", "tool_calls": [raw_tool_call]}
+    result = _convert_mistral_chat_message_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"tool_calls": [raw_tool_call]},
+        tool_calls=[
+            ToolCall(
+                name="GenerateUsername",
+                args={"name": "Sally", "hair_color": "green"},
+                id="ssAbar4Dr",
+                type="tool_call",
+            )
+        ],
+    )
+    assert result == expected_output
+    assert _convert_message_to_mistral_chat_message(expected_output) == message
+
+    # Test malformed tool call
+    raw_tool_calls = [
+        {
+            "id": "pL5rEGzxe",
+            "function": {
+                "arguments": '{"name": "Sally", "hair_color": "green"}',
+                "name": "GenerateUsername",
+            },
+        },
+        {
+            "id": "ssAbar4Dr",
+            "function": {
+                "arguments": "oops",
+                "name": "GenerateUsername",
+            },
+        },
+    ]
+    message = {"role": "assistant", "content": "", "tool_calls": raw_tool_calls}
+    result = _convert_mistral_chat_message_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"tool_calls": raw_tool_calls},
+        invalid_tool_calls=[
+            InvalidToolCall(
+                name="GenerateUsername",
+                args="oops",
+                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
+                id="ssAbar4Dr",
+                type="invalid_tool_call",
+            ),
+        ],
+        tool_calls=[
+            ToolCall(
+                name="GenerateUsername",
+                args={"name": "Sally", "hair_color": "green"},
+                id="pL5rEGzxe",
+                type="tool_call",
+            ),
+        ],
+    )
+    assert result == expected_output
+    assert _convert_message_to_mistral_chat_message(expected_output) == message
+
+
+def test_custom_token_counting() -> None:
+    def token_encoder(text: str) -> List[int]:
+        return [1, 2, 3]
+
+    llm = ChatMistralAI(custom_get_token_ids=token_encoder)
+    assert llm.get_token_ids("foo") == [1, 2, 3]
+
+
+def test_tool_id_conversion() -> None:
+    assert _is_valid_mistral_tool_call_id("ssAbar4Dr")
+    assert not _is_valid_mistral_tool_call_id("abc123")
+    assert not _is_valid_mistral_tool_call_id("call_JIIjI55tTipFFzpcP8re3BpM")
+
+    result_map = {
+        "ssAbar4Dr": "ssAbar4Dr",
+        "abc123": "pL5rEGzxe",
+        "call_JIIjI55tTipFFzpcP8re3BpM": "8kxAQvoED",
+    }
+    for input_id, expected_output in result_map.items():
+        assert _convert_tool_call_id_to_mistral_compatible(input_id) == expected_output
+        assert _is_valid_mistral_tool_call_id(expected_output)

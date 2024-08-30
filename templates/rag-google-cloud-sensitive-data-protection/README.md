@@ -1,9 +1,9 @@
-# rag-google-cloud-sensitive-data-protection
+# RAG - Google Cloud Sensitive Data Protection
 
-This template is an application that utilizes Google Vertex AI Search, a machine learning powered search service, and
+This template is an application that utilizes `Google Vertex AI Search`, a machine learning powered search service, and
 PaLM 2 for Chat (chat-bison). The application uses a Retrieval chain to answer questions based on your documents.
 
-This template is an application that utilizes Google Sensitive Data Protection, a service for detecting and redacting
+This template is an application that utilizes `Google Sensitive Data Protection`, a service for detecting and redacting
 sensitive data in text, and PaLM 2 for Chat (chat-bison), although you can use any model.
 
 For more context on using Sensitive Data Protection,
@@ -53,7 +53,7 @@ add_routes(app, rag_google_cloud_sensitive_data_protection_chain, path="/rag-goo
 
 (Optional) Let's now configure LangSmith.
 LangSmith will help us trace, monitor and debug LangChain applications.
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/).
+You can sign up for LangSmith [here](https://smith.langchain.com/).
 If you don't have access, you can skip this section
 
 ```shell

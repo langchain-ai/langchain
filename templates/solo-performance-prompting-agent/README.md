@@ -1,7 +1,14 @@
-# solo-performance-prompting-agent
+# Solo performance prompting agent
 
-This template creates an agent that transforms a single LLM into a cognitive synergist  by engaging in multi-turn self-collaboration with multiple personas.
-A cognitive synergist refers to an intelligent agent that collaborates with multiple minds, combining their individual strengths and knowledge, to enhance problem-solving and overall performance in complex tasks. By dynamically identifying and simulating different personas based on task inputs, SPP unleashes the potential of cognitive synergy in LLMs. 
+This template creates an agent that transforms a single LLM 
+into a cognitive synergist by engaging in multi-turn self-collaboration 
+with multiple personas.
+
+A `cognitive synergist` refers to an intelligent agent that collaborates 
+with multiple minds, combining their individual strengths and knowledge, 
+to enhance problem-solving and overall performance in complex tasks. 
+By dynamically identifying and simulating different personas based 
+on task inputs, SPP unleashes the potential of cognitive synergy in LLMs. 
 
 This template will use the `DuckDuckGo` search API. 
 
@@ -39,7 +46,7 @@ add_routes(app, solo_performance_prompting_agent_chain, path="/solo-performance-
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

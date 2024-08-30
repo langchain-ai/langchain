@@ -9,7 +9,7 @@ from langchain_core.tracers.context import collect_runs
 def test_collect_runs() -> None:
     llm = FakeListLLM(responses=["hello"])
     with collect_runs() as cb:
-        llm.predict("hi")
+        llm.invoke("hi")
         assert cb.traced_runs
         assert len(cb.traced_runs) == 1
         assert isinstance(cb.traced_runs[0].id, uuid.UUID)

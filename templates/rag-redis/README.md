@@ -1,7 +1,6 @@
+# RAG - Redis
 
-# rag-redis
-
-This template performs RAG using Redis (vector database) and OpenAI (LLM) on financial 10k filings docs for Nike.
+This template performs RAG using `Redis` (vector database) and `OpenAI` (LLM) on financial 10k filings docs for Nike.
 
 It relies on the sentence transformer `all-MiniLM-L6-v2` for embedding chunks of the pdf and user questions.
 
@@ -63,7 +62,7 @@ add_routes(app, rag_redis_chain, path="/rag-redis")
 
 (Optional) Let's now configure LangSmith.
 LangSmith will help us trace, monitor and debug LangChain applications.
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/).
+You can sign up for LangSmith [here](https://smith.langchain.com/).
 If you don't have access, you can skip this section
 
 

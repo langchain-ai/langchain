@@ -1,10 +1,10 @@
-# stepback-qa-prompting
+# Step-Back Question-Answering
 
 This template replicates the "Step-Back" prompting technique that improves performance on complex questions by first asking a "step back" question. 
 
 This technique can be combined with regular question-answering applications by doing retrieval on both the original and step-back question.
 
-Read more about this in the paper [here](https://arxiv.org/abs/2310.06117) and an excellent blog post by Cobus Greyling [here](https://cobusgreyling.medium.com/a-new-prompt-engineering-technique-has-been-introduced-called-step-back-prompting-b00e8954cacb)
+Read more about this in the [Take a Step Back: Evoking Reasoning via Abstraction in Large Language Models](https://arxiv.org/abs/2310.06117) paper and an excellent blog post by Cobus Greyling [here](https://cobusgreyling.medium.com/a-new-prompt-engineering-technique-has-been-introduced-called-step-back-prompting-b00e8954cacb)
 
 We will modify the prompts slightly to work better with chat models in this template.
 
@@ -41,7 +41,7 @@ add_routes(app, stepback_qa_prompting_chain, path="/stepback-qa-prompting")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

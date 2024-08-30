@@ -3,7 +3,7 @@ import uuid
 from typing import Dict, List
 
 import numpy as np
-from langchain.tools.base import BaseTool
+from langchain_core.tools import BaseTool
 
 from langchain_experimental.autonomous_agents.hugginggpt.task_planner import Plan
 
@@ -69,6 +69,8 @@ class Task:
         except Exception as e:
             self.status = "failed"
             self.message = str(e)
+            return self.message
+
         self.status = "completed"
         self.save_product()
 

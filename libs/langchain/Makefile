@@ -33,9 +33,6 @@ test_watch_extended:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
-scheduled_tests:
-	poetry run pytest -m scheduled tests/integration_tests
-
 docker_tests:
 	docker build -t my-langchain-image:test .
 	docker run --rm my-langchain-image:test
@@ -59,14 +56,13 @@ lint_tests: MYPY_CACHE=.mypy_cache_test
 lint lint_diff lint_package lint_tests:
 	./scripts/check_pydantic.sh .
 	./scripts/lint_imports.sh
-	poetry run ruff .
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || poetry run ruff check --select I --fix $(PYTHON_FILES)
 
 spell_check:
 	poetry run codespell --toml pyproject.toml

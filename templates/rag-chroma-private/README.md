@@ -1,9 +1,8 @@
-
-# rag-chroma-private
+# RAG - Chroma, Ollama, Gpt4all - private
 
 This template performs RAG with no reliance on external APIs. 
 
-It utilizes Ollama the LLM, GPT4All for embeddings, and Chroma for the vectorstore.
+It utilizes `Ollama` the LLM, `GPT4All` for embeddings, and `Chroma` for the vectorstore.
 
 The vectorstore is created in `chain.py` and by default indexes a [popular blog posts on Agents](https://lilianweng.github.io/posts/2023-06-23-agent/) for question-answering. 
 
@@ -48,7 +47,7 @@ from rag_chroma_private import chain as rag_chroma_private_chain
 add_routes(app, rag_chroma_private_chain, path="/rag-chroma-private")
 ```
 
-(Optional) Let's now configure LangSmith. LangSmith will help us trace, monitor and debug LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
+(Optional) Let's now configure LangSmith. LangSmith will help us trace, monitor and debug LangChain applications. You can sign up for LangSmith [here](https://smith.langchain.com/). If you don't have access, you can skip this section
 
 ```shell
 export LANGCHAIN_TRACING_V2=true

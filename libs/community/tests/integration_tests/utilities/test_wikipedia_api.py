@@ -1,4 +1,5 @@
 """Integration test for Wikipedia API Wrapper."""
+
 from typing import List
 
 import pytest
@@ -9,7 +10,7 @@ from langchain_community.utilities import WikipediaAPIWrapper
 
 @pytest.fixture
 def api_client() -> WikipediaAPIWrapper:
-    return WikipediaAPIWrapper()
+    return WikipediaAPIWrapper()  # type: ignore[call-arg]
 
 
 def test_run_success(api_client: WikipediaAPIWrapper) -> None:
@@ -53,7 +54,7 @@ def test_load_success_all_meta(api_client: WikipediaAPIWrapper) -> None:
 
 def test_load_more_docs_success(api_client: WikipediaAPIWrapper) -> None:
     top_k_results = 20
-    api_client = WikipediaAPIWrapper(top_k_results=top_k_results)
+    api_client = WikipediaAPIWrapper(top_k_results=top_k_results)  # type: ignore[call-arg]
     docs = api_client.load("HUNTER X HUNTER")
     assert len(docs) > 10
     assert len(docs) <= top_k_results

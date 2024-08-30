@@ -5,7 +5,7 @@ from logging import getLogger
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 __all__ = ["InfinityEmbeddingsLocal"]
 
@@ -13,7 +13,9 @@ logger = getLogger(__name__)
 
 
 class InfinityEmbeddingsLocal(BaseModel, Embeddings):
-    """Optimized Embedding models https://github.com/michaelfeil/infinity
+    """Optimized Infinity embedding models.
+
+    https://github.com/michaelfeil/infinity
     This class deploys a local Infinity instance to embed text.
     The class requires async usage.
 
@@ -56,11 +58,9 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
 
     # LLM call kwargs
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 

@@ -48,6 +48,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     If no condition evaluates to True, the default branch is run on the input.
 
+    Parameters:
+        branches: A list of (condition, Runnable) pairs.
+        default: A Runnable to run if no condition is met.
+
     Examples:
 
         .. code-block:: python
@@ -82,7 +86,18 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             RunnableLike,  # To accommodate the default branch
         ],
     ) -> None:
-        """A Runnable that runs one of two branches based on a condition."""
+        """A Runnable that runs one of two branches based on a condition.
+
+        Args:
+            *branches: A list of (condition, Runnable) pairs.
+                Defaults a Runnable to run if no condition is met.
+
+        Raises:
+            ValueError: If the number of branches is less than 2.
+            TypeError: If the default branch is not Runnable, Callable or Mapping.
+            TypeError: If a branch is not a tuple or list.
+            ValueError: If a branch is not of length 2.
+        """
         if len(branches) < 2:
             raise ValueError("RunnableBranch requires at least two branches")
 
@@ -93,7 +108,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             (Runnable, Callable, Mapping),  # type: ignore[arg-type]
         ):
             raise TypeError(
-                "RunnableBranch default must be runnable, callable or mapping."
+                "RunnableBranch default must be Runnable, callable or mapping."
             )
 
         default_ = cast(
@@ -176,7 +191,19 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        """First evaluates the condition, then delegate to true or false branch."""
+        """First evaluates the condition, then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Returns:
+            The output of the branch that was run.
+
+        Raises:
+
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
@@ -277,7 +304,19 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         """First evaluates the condition,
-        then delegate to true or false branch."""
+        then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Yields:
+            The output of the branch that was run.
+
+        Raises:
+            BaseException: If an error occurs during the execution of the Runnable.
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
@@ -352,7 +391,19 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         """First evaluates the condition,
-        then delegate to true or false branch."""
+        then delegate to true or false branch.
+
+        Args:
+            input: The input to the Runnable.
+            config: The configuration for the Runnable. Defaults to None.
+            kwargs: Additional keyword arguments to pass to the Runnable.
+
+        Yields:
+            The output of the branch that was run.
+
+        Raises:
+            BaseException: If an error occurs during the execution of the Runnable.
+        """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
