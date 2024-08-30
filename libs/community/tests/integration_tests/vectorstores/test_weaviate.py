@@ -1,4 +1,5 @@
 """Test Weaviate functionality."""
+
 import logging
 import os
 import uuid
@@ -26,7 +27,7 @@ class TestWeaviate:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
 
     @pytest.fixture(scope="class", autouse=True)
-    def weaviate_url(self) -> Union[str, Generator[str, None, None]]:
+    def weaviate_url(self) -> Union[str, Generator[str, None, None]]:  # type: ignore[return]
         """Return the weaviate url."""
         from weaviate import Client
 

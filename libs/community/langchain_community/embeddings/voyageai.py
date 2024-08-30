@@ -16,7 +16,7 @@ from typing import (
 import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
@@ -61,7 +61,7 @@ def embed_with_retry(embeddings: VoyageEmbeddings, **kwargs: Any) -> Any:
 
 @deprecated(
     since="0.0.29",
-    removal="0.2",
+    removal="1.0",
     alternative_import="langchain_voyageai.VoyageAIEmbeddings",
 )
 class VoyageEmbeddings(BaseModel, Embeddings):
@@ -100,9 +100,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         raised if any given text exceeds the context length."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

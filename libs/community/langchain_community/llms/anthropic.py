@@ -25,6 +25,7 @@ from langchain_core.utils import (
     check_package_version,
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
 from langchain_core.utils.utils import build_extra_kwargs, convert_to_secret_str
 
@@ -74,7 +75,7 @@ class _AnthropicCommon(BaseLanguageModel):
         )
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["anthropic_api_key"] = convert_to_secret_str(
@@ -150,7 +151,7 @@ class _AnthropicCommon(BaseLanguageModel):
 
 @deprecated(
     since="0.0.28",
-    removal="0.2",
+    removal="1.0",
     alternative_import="langchain_anthropic.AnthropicLLM",
 )
 class Anthropic(LLM, _AnthropicCommon):
@@ -180,12 +181,10 @@ class Anthropic(LLM, _AnthropicCommon):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @pre_init
     def raise_warning(cls, values: Dict) -> Dict:
         """Raise warning that this class is deprecated."""
         warnings.warn(

@@ -51,7 +51,7 @@ class DashVector(VectorStore):
         try:
             import dashvector
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import dashvector python package. "
                 "Please install it with `pip install dashvector`."
             )
@@ -366,7 +366,7 @@ class DashVector(VectorStore):
         try:
             import dashvector
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import dashvector python package. "
                 "Please install it with `pip install dashvector`."
             )

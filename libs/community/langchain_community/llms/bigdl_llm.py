@@ -53,7 +53,7 @@ class BigdlLLM(IpexLLM):
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import bigdl-llm or transformers. "
                 "Please install it with `pip install --pre --upgrade bigdl-llm[all]`."
             )
@@ -136,7 +136,7 @@ class BigdlLLM(IpexLLM):
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import bigdl-llm or transformers. "
                 "Please install it with `pip install --pre --upgrade bigdl-llm[all]`."
             )

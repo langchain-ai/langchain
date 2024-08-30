@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from langchain_community.utilities.openapi import OpenAPISpec
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
@@ -17,9 +17,9 @@ from requests import Response
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.tools import APIOperation
 
 if TYPE_CHECKING:
+    from langchain_community.utilities.openapi import OpenAPISpec
     from openapi_pydantic import Parameter
 
 
@@ -77,7 +77,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
         if p.param_schema:
             schema = spec.get_schema(p.param_schema)
         else:
-            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore  # noqa: E501
+            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
@@ -100,6 +100,14 @@ def openapi_spec_to_openai_fn(
         Tuple of the OpenAI functions JSON schema and a default function for executing
             a request based on the OpenAI function schema.
     """
+    try:
+        from langchain_community.tools import APIOperation
+    except ImportError:
+        raise ImportError(
+            "Could not import langchain_community.tools. "
+            "Please install it with `pip install langchain-community`."
+        )
+
     if not spec.paths:
         return [], lambda: None
     functions = []
@@ -230,11 +238,20 @@ class SimpleRequestChain(Chain):
         else:
             try:
                 response = api_response.json()
-            except Exception:  # noqa: E722
+            except Exception:
                 response = api_response.text
         return {self.output_key: response}
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "This function is deprecated and will be removed in langchain 1.0. "
+        "See API reference for replacement: "
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.openapi.get_openapi_chain.html"  # noqa: E501
+    ),
+    removal="1.0",
+)
 def get_openapi_chain(
     spec: Union[OpenAPISpec, str],
     llm: Optional[BaseLanguageModel] = None,
@@ -248,13 +265,97 @@ def get_openapi_chain(
 ) -> SequentialChain:
     """Create a chain for querying an API from a OpenAPI spec.
 
+    Note: this class is deprecated. See below for a replacement implementation.
+        The benefits of this implementation are:
+
+        - Uses LLM tool calling features to encourage properly-formatted API requests;
+        - Includes async support.
+
+        .. code-block:: python
+
+            from typing import Any
+
+            from langchain.chains.openai_functions.openapi import openapi_spec_to_openai_fn
+            from langchain_community.utilities.openapi import OpenAPISpec
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_openai import ChatOpenAI
+
+            # Define API spec. Can be JSON or YAML
+            api_spec = \"\"\"
+            {
+            "openapi": "3.1.0",
+            "info": {
+                "title": "JSONPlaceholder API",
+                "version": "1.0.0"
+            },
+            "servers": [
+                {
+                "url": "https://jsonplaceholder.typicode.com"
+                }
+            ],
+            "paths": {
+                "/posts": {
+                "get": {
+                    "summary": "Get posts",
+                    "parameters": [
+                    {
+                        "name": "_limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                        "type": "integer",
+                        "example": 2
+                        },
+                        "description": "Limit the number of results"
+                    }
+                    ]
+                }
+                }
+            }
+            }
+            \"\"\"
+
+            parsed_spec = OpenAPISpec.from_text(api_spec)
+            openai_fns, call_api_fn = openapi_spec_to_openai_fn(parsed_spec)
+            tools = [
+                {"type": "function", "function": fn}
+                for fn in openai_fns
+            ]
+
+            prompt = ChatPromptTemplate.from_template(
+                "Use the provided APIs to respond to this user query:\\n\\n{query}"
+            )
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(tools)
+
+            def _execute_tool(message) -> Any:
+                if tool_calls := message.tool_calls:
+                    tool_call = message.tool_calls[0]
+                    response = call_api_fn(name=tool_call["name"], fn_args=tool_call["args"])
+                    response.raise_for_status()
+                    return response.json()
+                else:
+                    return message.content
+
+            chain = prompt | llm | _execute_tool
+
+        .. code-block:: python
+
+            response = chain.invoke({"query": "Get me top two posts."})
+
     Args:
         spec: OpenAPISpec or url/file/text string corresponding to one.
         llm: language model, should be an OpenAI function-calling model, e.g.
             `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
-    """
+    """  # noqa: E501
+    try:
+        from langchain_community.utilities.openapi import OpenAPISpec
+    except ImportError as e:
+        raise ImportError(
+            "Could not import langchain_community.utilities.openapi. "
+            "Please install it with `pip install langchain-community`."
+        ) from e
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
@@ -266,7 +367,7 @@ def get_openapi_chain(
                 break
             except ImportError as e:
                 raise e
-            except Exception:  # noqa: E722
+            except Exception:
                 pass
         if isinstance(spec, str):
             raise ValueError(f"Unable to parse spec from source {spec}")

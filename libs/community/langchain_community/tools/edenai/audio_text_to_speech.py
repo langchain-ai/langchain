@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Type
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field, root_validator, validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
+
+
+class TextToSpeechInput(BaseModel):
+    query: str = Field(description="text to generate audio from")
 
 
 class EdenAiTextToSpeechTool(EdenaiTool):
@@ -23,13 +27,14 @@ class EdenAiTextToSpeechTool(EdenaiTool):
 
     """
 
-    name = "edenai_text_to_speech"
+    name: str = "edenai_text_to_speech"
     description = (
         "A wrapper around edenai Services text to speech."
         "Useful for when you need to convert text to speech."
         """the output is a string representing the URL of the audio file,
         or the path to the downloaded wav file """
     )
+    args_schema: Type[BaseModel] = TextToSpeechInput
 
     language: Optional[str] = "en"
     """
@@ -65,7 +70,7 @@ class EdenAiTextToSpeechTool(EdenaiTool):
             )
         return v
 
-    @root_validator
+    @root_validator(pre=True)
     def check_voice_models_key_is_provider_name(cls, values: dict) -> dict:
         for key in values.get("voice_models", {}).keys():
             if key not in values.get("providers", []):

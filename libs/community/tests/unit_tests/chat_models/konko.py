@@ -1,4 +1,5 @@
 """Evaluate ChatKonko Interface."""
+
 from typing import Any
 
 import pytest
@@ -149,15 +150,15 @@ def test_konko_streaming_param_validation_test() -> None:
 
 def test_konko_additional_args_test() -> None:
     """Evaluate extra arguments for ChatKonko."""
-    chat_instance = ChatKonko(extra=3, max_tokens=10)
+    chat_instance = ChatKonko(extra=3, max_tokens=10)  # type: ignore[call-arg]
     assert chat_instance.max_tokens == 10
     assert chat_instance.model_kwargs == {"extra": 3}
 
-    chat_instance = ChatKonko(extra=3, model_kwargs={"addition": 2})
+    chat_instance = ChatKonko(extra=3, model_kwargs={"addition": 2})  # type: ignore[call-arg]
     assert chat_instance.model_kwargs == {"extra": 3, "addition": 2}
 
     with pytest.raises(ValueError):
-        ChatKonko(extra=3, model_kwargs={"extra": 2})
+        ChatKonko(extra=3, model_kwargs={"extra": 2})  # type: ignore[call-arg]
 
     with pytest.raises(ValueError):
         ChatKonko(model_kwargs={"temperature": 0.2})

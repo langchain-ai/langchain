@@ -58,7 +58,7 @@ def _convert_delta_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def convert_dict_to_message(_dict: Any) -> BaseMessage:
@@ -81,7 +81,7 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
 
 @deprecated(
     since="0.0.26",
-    removal="0.2",
+    removal="1.0",
     alternative_import="langchain_fireworks.ChatFireworks",
 )
 class ChatFireworks(BaseChatModel):
@@ -112,7 +112,7 @@ class ChatFireworks(BaseChatModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "fireworks"]
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
         try:

@@ -1,18 +1,18 @@
-# openai-functions-tool-retrieval-agent
+# OpenAI functions - tool retrieval agent
 
 The novel idea introduced in this template is the idea of using retrieval to select the set of tools to use to answer an agent query. This is useful when you have many many tools to select from. You cannot put the description of all the tools in the prompt (because of context length issues) so instead you dynamically select the N tools you do want to consider using at run time.
 
 In this template we will create a somewhat contrived example. We will have one legitimate tool (search) and then 99 fake tools which are just nonsense. We will then add a step in the prompt template that takes the user input and retrieves tool relevant to the query.
 
-This template is based on [this Agent How-To](https://python.langchain.com/docs/modules/agents/how_to/custom_agent_with_tool_retrieval).
+This template is based on [this Agent How-To](https://python.langchain.com/v0.2/docs/templates/openai-functions-agent/).
 
 ## Environment Setup
 
 The following environment variables need to be set:
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+Set the `OPENAI_API_KEY` environment variable to access the `OpenAI` models.
 
-Set the `TAVILY_API_KEY` environment variable to access Tavily.
+Set the `TAVILY_API_KEY` environment variable to access `Tavily`.
 
 ## Usage
 

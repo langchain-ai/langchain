@@ -3,7 +3,6 @@ from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -73,9 +72,7 @@ class WeightOnlyQuantPipeline(LLM):
     """Key word arguments passed to the pipeline."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.allow
+        extra = "allow"
 
     @classmethod
     def from_model_id(
@@ -108,7 +105,7 @@ class WeightOnlyQuantPipeline(LLM):
             from transformers import AutoTokenizer
             from transformers import pipeline as hf_pipeline
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers` "
                 "and `pip install intel-extension-for-transformers`."
@@ -154,7 +151,7 @@ class WeightOnlyQuantPipeline(LLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 

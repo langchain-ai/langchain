@@ -1,10 +1,12 @@
+from langchain_core.utils.function_calling import convert_to_openai_function
+
 from langchain.chains.openai_functions.base import (
-    convert_to_openai_function,
     create_openai_fn_chain,
     create_structured_output_chain,
 )
 from langchain.chains.openai_functions.citation_fuzzy_match import (
     create_citation_fuzzy_match_chain,
+    create_citation_fuzzy_match_runnable,
 )
 from langchain.chains.openai_functions.extraction import (
     create_extraction_chain,
@@ -31,6 +33,7 @@ __all__ = [
     "create_extraction_chain_pydantic",
     "create_extraction_chain",
     "create_citation_fuzzy_match_chain",
+    "create_citation_fuzzy_match_runnable",
     "create_qa_with_structure_chain",
     "create_qa_with_sources_chain",
     "create_structured_output_chain",

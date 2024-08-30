@@ -1,10 +1,12 @@
 """Test Chroma functionality."""
 
 import uuid
+from typing import Generator
 
 import chromadb
-import pytest
+import pytest  # type: ignore[import-not-found]
 import requests
+from chromadb.api.client import SharedSystemClient
 from langchain_core.documents import Document
 from langchain_core.embeddings.fake import FakeEmbeddings as Fak
 
@@ -13,6 +15,13 @@ from tests.integration_tests.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
 )
+
+
+@pytest.fixture()
+def client() -> Generator[chromadb.ClientAPI, None, None]:
+    SharedSystemClient.clear_system_cache()
+    client = chromadb.Client(chromadb.config.Settings())
+    yield client
 
 
 def test_chroma() -> None:
@@ -271,10 +280,7 @@ def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
     ]
 
 
-def test_init_from_client() -> None:
-    import chromadb
-
-    client = chromadb.Client(chromadb.config.Settings())
+def test_init_from_client(client: chromadb.ClientAPI) -> None:
     Chroma(client=client)
 
 
@@ -340,7 +346,7 @@ def test_chroma_large_batch() -> None:
         "my_collection",
         embedding_function=embedding_function.embed_documents,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore
     db = Chroma.from_texts(
         client=client,
         collection_name=col.name,
@@ -368,7 +374,7 @@ def test_chroma_large_batch_update() -> None:
         "my_collection",
         embedding_function=embedding_function.embed_documents,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
     db = Chroma.from_texts(
         client=client,
@@ -414,3 +420,111 @@ def test_chroma_legacy_batching() -> None:
     )
 
     db.delete_collection()
+
+
+def test_create_collection_if_not_exist_default() -> None:
+    """Tests existing behaviour without the new create_collection_if_not_exists flag."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
+    )
+    assert docsearch._client.get_collection("test_collection") is not None
+    docsearch.delete_collection()
+
+
+def test_create_collection_if_not_exist_true_existing(
+    client: chromadb.ClientAPI,
+) -> None:
+    """Tests create_collection_if_not_exists=True and collection already existing."""
+    client.create_collection("test_collection")
+    vectorstore = Chroma(
+        client=client,
+        collection_name="test_collection",
+        embedding_function=FakeEmbeddings(),
+        create_collection_if_not_exists=True,
+    )
+    assert vectorstore._client.get_collection("test_collection") is not None
+    vectorstore.delete_collection()
+
+
+def test_create_collection_if_not_exist_false_existing(
+    client: chromadb.ClientAPI,
+) -> None:
+    """Tests create_collection_if_not_exists=False and collection already existing."""
+    client.create_collection("test_collection")
+    vectorstore = Chroma(
+        client=client,
+        collection_name="test_collection",
+        embedding_function=FakeEmbeddings(),
+        create_collection_if_not_exists=False,
+    )
+    assert vectorstore._client.get_collection("test_collection") is not None
+    vectorstore.delete_collection()
+
+
+def test_create_collection_if_not_exist_false_non_existing(
+    client: chromadb.ClientAPI,
+) -> None:
+    """Tests create_collection_if_not_exists=False and collection not-existing,
+    should raise."""
+    with pytest.raises(Exception, match="does not exist"):
+        Chroma(
+            client=client,
+            collection_name="test_collection",
+            embedding_function=FakeEmbeddings(),
+            create_collection_if_not_exists=False,
+        )
+
+
+def test_create_collection_if_not_exist_true_non_existing(
+    client: chromadb.ClientAPI,
+) -> None:
+    """Tests create_collection_if_not_exists=True and collection non-existing. ."""
+    vectorstore = Chroma(
+        client=client,
+        collection_name="test_collection",
+        embedding_function=FakeEmbeddings(),
+        create_collection_if_not_exists=True,
+    )
+
+    assert vectorstore._client.get_collection("test_collection") is not None
+    vectorstore.delete_collection()
+
+
+def test_collection_none_after_delete(
+    client: chromadb.ClientAPI,
+) -> None:
+    """Tests create_collection_if_not_exists=True and collection non-existing. ."""
+    vectorstore = Chroma(
+        client=client,
+        collection_name="test_collection",
+        embedding_function=FakeEmbeddings(),
+    )
+
+    assert vectorstore._client.get_collection("test_collection") is not None
+    vectorstore.delete_collection()
+    assert vectorstore._chroma_collection is None
+    with pytest.raises(Exception, match="Chroma collection not initialized"):
+        _ = vectorstore._collection
+    with pytest.raises(Exception, match="does not exist"):
+        vectorstore._client.get_collection("test_collection")
+    with pytest.raises(Exception):
+        vectorstore.similarity_search("foo")
+
+
+def test_reset_collection(client: chromadb.ClientAPI) -> None:
+    """Tests ensure_collection method."""
+    vectorstore = Chroma(
+        client=client,
+        collection_name="test_collection",
+        embedding_function=FakeEmbeddings(),
+    )
+    vectorstore.add_documents([Document(page_content="foo")])
+    assert vectorstore._collection.count() == 1
+    vectorstore.reset_collection()
+    assert vectorstore._chroma_collection is not None
+    assert vectorstore._client.get_collection("test_collection") is not None
+    assert vectorstore._collection.name == "test_collection"
+    assert vectorstore._collection.count() == 0
+    # Clean up
+    vectorstore.delete_collection()

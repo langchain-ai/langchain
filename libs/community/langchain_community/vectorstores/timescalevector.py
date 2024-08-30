@@ -1,4 +1,5 @@
 """VectorStore wrapper around a Postgres-TimescaleVector database."""
+
 from __future__ import annotations
 
 import enum
@@ -66,7 +67,7 @@ class TimescaleVector(VectorStore):
                 collection_name=COLLECTION_NAME,
                 service_url=SERVICE_URL,
             )
-    """  # noqa: E501
+    """
 
     def __init__(
         self,

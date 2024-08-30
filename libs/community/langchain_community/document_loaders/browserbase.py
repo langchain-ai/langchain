@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Iterator, Optional, Sequence
 
 from langchain_core.documents import Document
 
@@ -14,13 +14,17 @@ class BrowserbaseLoader(BaseLoader):
 
     def __init__(
         self,
-        urls: Union[List[str], Tuple[str, ...]],
-        *,
-        api_key: Optional[str] = None,
+        urls: Sequence[str],
         text_content: bool = False,
+        api_key: Optional[str] = None,
+        project_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        proxy: Optional[bool] = None,
     ):
         self.urls = urls
         self.text_content = text_content
+        self.session_id = session_id
+        self.proxy = proxy
 
         try:
             from browserbase import Browserbase
@@ -32,11 +36,13 @@ class BrowserbaseLoader(BaseLoader):
                 "to use the Browserbase loader."
             )
 
-        self.browserbase = Browserbase(api_key=api_key)
+        self.browserbase = Browserbase(api_key, project_id)
 
     def lazy_load(self) -> Iterator[Document]:
         """Load pages from URLs"""
-        pages = self.browserbase.load_urls(self.urls, self.text_content)
+        pages = self.browserbase.load_urls(
+            self.urls, self.text_content, self.session_id, self.proxy
+        )
 
         for i, page in enumerate(pages):
             yield Document(

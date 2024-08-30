@@ -26,8 +26,6 @@ class TFIDFRetriever(BaseRetriever):
     """Number of documents to return."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @classmethod
@@ -141,7 +139,7 @@ class TFIDFRetriever(BaseRetriever):
                 "results in execution of arbitrary code on your machine."
                 "You will need to set `allow_dangerous_deserialization` to `True` to "
                 "load this retriever. If you do this, make sure you trust the source "
-                "of the file, and you are responsible for validating the the file "
+                "of the file, and you are responsible for validating the file "
                 "came from a trusted source."
             )
 
@@ -152,6 +150,8 @@ class TFIDFRetriever(BaseRetriever):
 
         # Load docs and tfidf array as pickle.
         with open(path / f"{file_name}.pkl", "rb") as f:
-            docs, tfidf_array = pickle.load(f)
+            # This code path can only be triggered if the user
+            # passed allow_dangerous_deserialization=True
+            docs, tfidf_array = pickle.load(f)  # ignore[pickle]: explicit-opt-in
 
         return cls(vectorizer=vectorizer, docs=docs, tfidf_array=tfidf_array)

@@ -120,10 +120,10 @@ def test_mime_type_inference(
 def test_blob_initialization_validator() -> None:
     """Test that blob initialization validates the arguments."""
     with pytest.raises(ValueError, match="Either data or path must be provided"):
-        Blob()
+        Blob()  # type: ignore[call-arg]
 
     assert Blob(data=b"Hello, World!") is not None
-    assert Blob(path="some_path") is not None
+    assert Blob(path="some_path") is not None  # type: ignore[call-arg]
 
 
 def test_blob_loader() -> None:

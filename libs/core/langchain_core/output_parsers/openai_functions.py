@@ -21,6 +21,18 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     """Whether to only return the arguments to the function call."""
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a JSON object.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects. Default is False.
+
+        Returns:
+            The parsed JSON object.
+
+        Raises:
+            OutputParserException: If the output is not valid JSON.
+        """
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             raise OutputParserException(
@@ -30,7 +42,9 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
         try:
             func_call = copy.deepcopy(message.additional_kwargs["function_call"])
         except KeyError as exc:
-            raise OutputParserException(f"Could not parse function call: {exc}")
+            raise OutputParserException(
+                f"Could not parse function call: {exc}"
+            ) from exc
 
         if self.args_only:
             return func_call["arguments"]
@@ -59,6 +73,19 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         return jsonpatch.make_patch(prev, next).patch
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a JSON object.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects. Default is False.
+
+        Returns:
+            The parsed JSON object.
+
+        Raises:
+            OutputParserException: If the output is not valid JSON.
+        """
+
         if len(result) != 1:
             raise OutputParserException(
                 f"Expected exactly one result, but got {len(result)}"
@@ -75,7 +102,9 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             if partial:
                 return None
             else:
-                raise OutputParserException(f"Could not parse function call: {exc}")
+                raise OutputParserException(
+                    f"Could not parse function call: {exc}"
+                ) from exc
         try:
             if partial:
                 try:
@@ -101,7 +130,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"
-                        )
+                        ) from exc
                 else:
                     try:
                         return {
@@ -113,13 +142,21 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"
-                        )
+                        ) from exc
         except KeyError:
             return None
 
     # This method would be called by the default implementation of `parse_result`
     # but we're overriding that method so it's not needed.
     def parse(self, text: str) -> Any:
+        """Parse the output of an LLM call to a JSON object.
+
+        Args:
+            text: The output of the LLM call.
+
+        Returns:
+            The parsed JSON object.
+        """
         raise NotImplementedError()
 
 
@@ -130,6 +167,15 @@ class JsonKeyOutputFunctionsParser(JsonOutputFunctionsParser):
     """The name of the key to return."""
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a JSON object.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects. Default is False.
+
+        Returns:
+            The parsed JSON object.
+        """
         res = super().parse_result(result, partial=partial)
         if partial and res is None:
             return None
@@ -186,6 +232,17 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
     @root_validator(pre=True)
     def validate_schema(cls, values: Dict) -> Dict:
+        """Validate the pydantic schema.
+
+        Args:
+            values: The values to validate.
+
+        Returns:
+            The validated values.
+
+        Raises:
+            ValueError: If the schema is not a pydantic schema.
+        """
         schema = values["pydantic_schema"]
         if "args_only" not in values:
             values["args_only"] = isinstance(schema, type) and issubclass(
@@ -199,13 +256,22 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         return values
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a JSON object.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects. Default is False.
+
+        Returns:
+            The parsed JSON object.
+        """
         _result = super().parse_result(result)
         if self.args_only:
             pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
         else:
             fn_name = _result["name"]
             _args = _result["arguments"]
-            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore  # noqa: E501
+            pydantic_args = self.pydantic_schema[fn_name].parse_raw(_args)  # type: ignore
         return pydantic_args
 
 
@@ -216,5 +282,14 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     """The name of the attribute to return."""
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
+        """Parse the result of an LLM call to a JSON object.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects. Default is False.
+
+        Returns:
+            The parsed JSON object.
+        """
         result = super().parse_result(result)
         return getattr(result, self.attr_name)

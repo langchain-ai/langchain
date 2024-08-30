@@ -19,6 +19,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 
     BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -52,17 +53,19 @@ from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
+from langchain_community.utilities.cassandra import SetupMode as CassandraSetupMode
 from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
 )
+from langchain_community.vectorstores.utils import DistanceStrategy
 
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from langchain_core._api.deprecation import deprecated
+from langchain_core._api.deprecation import deprecated, warn_deprecated
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM, aget_prompts, get_prompts
@@ -72,11 +75,17 @@ from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
 
 from langchain_community.utilities.astradb import (
-    SetupMode,
+    SetupMode as AstraSetupMode,
+)
+from langchain_community.utilities.astradb import (
     _AstraDBCollectionEnvironment,
 )
 from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+from langchain_community.vectorstores import (
+    OpenSearchVectorSearch as OpenSearchVectorStore,
+)
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
+from langchain_community.vectorstores.singlestoredb import SingleStoreDB
 
 logger = logging.getLogger(__file__)
 
@@ -319,7 +328,7 @@ class UpstashRedisCache(BaseCache):
         try:
             from upstash_redis import Redis
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import upstash_redis python package. "
                 "Please install it with `pip install upstash_redis`."
             )
@@ -413,7 +422,7 @@ class _RedisCacheBase(BaseCache, ABC):
                     )
                     # In a previous life we stored the raw text directly
                     # in the table, so assume it's in that format.
-                    generations.append(Generation(text=text))
+                    generations.append(Generation(text=text))  # type: ignore[arg-type]
         return generations if generations else None
 
     @staticmethod
@@ -457,7 +466,7 @@ class RedisCache(_RedisCacheBase):
         try:
             from redis import Redis
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import `redis` python package. "
                 "Please install it with `pip install redis`."
             )
@@ -524,7 +533,7 @@ class AsyncRedisCache(_RedisCacheBase):
         try:
             from redis.asyncio import Redis
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import `redis.asyncio` python package. "
                 "Please install it with `pip install redis`."
             )
@@ -1038,11 +1047,43 @@ class CassandraCache(BaseCache):
     """
     Cache that uses Cassandra / Astra DB as a backend.
 
+    Example:
+
+        .. code-block:: python
+
+            import cassio
+
+            from langchain_community.cache import CassandraCache
+            from langchain_core.globals import set_llm_cache
+
+            cassio.init(auto=True)  # Requires env. variables, see CassIO docs
+
+            set_llm_cache(CassandraCache())
+
     It uses a single Cassandra table.
     The lookup keys (which get to form the primary key) are:
         - prompt, a string
         - llm_string, a deterministic str representation of the model parameters.
-          (needed to prevent collisions same-prompt-different-model collisions)
+          (needed to prevent same-prompt-different-model collisions)
+
+    Args:
+        session: an open Cassandra session.
+            Leave unspecified to use the global cassio init (see below)
+        keyspace: the keyspace to use for storing the cache.
+            Leave unspecified to use the global cassio init (see below)
+        table_name: name of the Cassandra table to use as cache
+        ttl_seconds: time-to-live for cache entries
+            (default: None, i.e. forever)
+        setup_mode: a value in langchain_community.utilities.cassandra.SetupMode.
+            Choose between SYNC, ASYNC and OFF - the latter if the Cassandra
+            table is guaranteed to exist already, for a faster initialization.
+
+    Note:
+        The session and keyspace parameters, when left out (or passed as None),
+        fall back to the globally-available cassio settings if any are available.
+        In other words, if a previously-run 'cassio.init(...)' has been
+        executed previously anywhere in the code, Cassandra-based objects
+        need not specify the connection parameters at all.
     """
 
     def __init__(
@@ -1052,28 +1093,33 @@ class CassandraCache(BaseCache):
         table_name: str = CASSANDRA_CACHE_DEFAULT_TABLE_NAME,
         ttl_seconds: Optional[int] = CASSANDRA_CACHE_DEFAULT_TTL_SECONDS,
         skip_provisioning: bool = False,
+        setup_mode: CassandraSetupMode = CassandraSetupMode.SYNC,
     ):
-        """
-        Initialize with a ready session and a keyspace name.
-        Args:
-            session (cassandra.cluster.Session): an open Cassandra session
-            keyspace (str): the keyspace to use for storing the cache
-            table_name (str): name of the Cassandra table to use as cache
-            ttl_seconds (optional int): time-to-live for cache entries
-                (default: None, i.e. forever)
-        """
+        if skip_provisioning:
+            warn_deprecated(
+                "0.0.33",
+                name="skip_provisioning",
+                alternative=(
+                    "setup_mode=langchain_community.utilities.cassandra.SetupMode.OFF"
+                ),
+                pending=True,
+            )
         try:
             from cassio.table import ElasticCassandraTable
         except (ImportError, ModuleNotFoundError):
-            raise ValueError(
+            raise ImportError(
                 "Could not import cassio python package. "
-                "Please install it with `pip install cassio`."
+                "Please install it with `pip install -U cassio`."
             )
 
         self.session = session
         self.keyspace = keyspace
         self.table_name = table_name
         self.ttl_seconds = ttl_seconds
+
+        kwargs = {}
+        if setup_mode == CassandraSetupMode.ASYNC:
+            kwargs["async_setup"] = True
 
         self.kv_cache = ElasticCassandraTable(
             session=self.session,
@@ -1082,29 +1128,43 @@ class CassandraCache(BaseCache):
             keys=["llm_string", "prompt"],
             primary_key_type=["TEXT", "TEXT"],
             ttl_seconds=self.ttl_seconds,
-            skip_provisioning=skip_provisioning,
+            skip_provisioning=skip_provisioning or setup_mode == CassandraSetupMode.OFF,
+            **kwargs,
         )
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         item = self.kv_cache.get(
             llm_string=_hash(llm_string),
             prompt=_hash(prompt),
         )
         if item is not None:
-            generations = _loads_generations(item["body_blob"])
-            # this protects against malformed cached items:
-            if generations is not None:
-                return generations
-            else:
-                return None
+            return _loads_generations(item["body_blob"])
+        else:
+            return None
+
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        item = await self.kv_cache.aget(
+            llm_string=_hash(llm_string),
+            prompt=_hash(prompt),
+        )
+        if item is not None:
+            return _loads_generations(item["body_blob"])
         else:
             return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
         blob = _dumps_generations(return_val)
         self.kv_cache.put(
+            llm_string=_hash(llm_string),
+            prompt=_hash(prompt),
+            body_blob=blob,
+        )
+
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
+        blob = _dumps_generations(return_val)
+        await self.kv_cache.aput(
             llm_string=_hash(llm_string),
             prompt=_hash(prompt),
             body_blob=blob,
@@ -1135,7 +1195,12 @@ class CassandraCache(BaseCache):
         """Clear cache. This is for all LLMs at once."""
         self.kv_cache.clear()
 
+    async def aclear(self, **kwargs: Any) -> None:
+        """Clear cache. This is for all LLMs at once."""
+        await self.kv_cache.aclear()
 
+
+# This constant is in fact a similarity - the 'distance' name is kept for compatibility:
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC = "dot"
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD = 0.85
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME = "langchain_llm_semantic_cache"
@@ -1148,55 +1213,117 @@ class CassandraSemanticCache(BaseCache):
     Cache that uses Cassandra as a vector-store backend for semantic
     (i.e. similarity-based) lookup.
 
+    Example:
+
+        .. code-block:: python
+
+            import cassio
+
+            from langchain_community.cache import CassandraSemanticCache
+            from langchain_core.globals import set_llm_cache
+
+            cassio.init(auto=True)  # Requires env. variables, see CassIO docs
+
+            my_embedding = ...
+
+            set_llm_cache(CassandraSemanticCache(
+                embedding=my_embedding,
+                table_name="my_semantic_cache",
+            ))
+
     It uses a single (vector) Cassandra table and stores, in principle,
     cached values from several LLMs, so the LLM's llm_string is part
     of the rows' primary keys.
 
-    The similarity is based on one of several distance metrics (default: "dot").
-    If choosing another metric, the default threshold is to be re-tuned accordingly.
+    One can choose a similarity measure (default: "dot" for dot-product).
+    Choosing another one ("cos", "l2") almost certainly requires threshold tuning.
+    (which may be in order nevertheless, even if sticking to "dot").
+
+    Args:
+        session: an open Cassandra session.
+            Leave unspecified to use the global cassio init (see below)
+        keyspace: the keyspace to use for storing the cache.
+            Leave unspecified to use the global cassio init (see below)
+        embedding: Embedding provider for semantic
+            encoding and search.
+        table_name: name of the Cassandra (vector) table
+            to use as cache. There is a default for "simple" usage, but
+            remember to explicitly specify different tables if several embedding
+            models coexist in your app (they cannot share one cache table).
+        distance_metric: an alias for the 'similarity_measure' parameter (see below).
+            As the "distance" terminology is misleading, please prefer
+            'similarity_measure' for clarity.
+        score_threshold: numeric value to use as
+            cutoff for the similarity searches
+        ttl_seconds: time-to-live for cache entries
+            (default: None, i.e. forever)
+        similarity_measure: which measure to adopt for similarity searches.
+            Note: this parameter is aliased by 'distance_metric' - however,
+            it is suggested to use the "similarity" terminology since this value
+            is in fact a similarity (i.e. higher means closer).
+            Note that at most one of the two parameters 'distance_metric'
+            and 'similarity_measure' can be provided.
+        setup_mode: a value in langchain_community.utilities.cassandra.SetupMode.
+            Choose between SYNC, ASYNC and OFF - the latter if the Cassandra
+            table is guaranteed to exist already, for a faster initialization.
+
+    Note:
+        The session and keyspace parameters, when left out (or passed as None),
+        fall back to the globally-available cassio settings if any are available.
+        In other words, if a previously-run 'cassio.init(...)' has been
+        executed previously anywhere in the code, Cassandra-based objects
+        need not specify the connection parameters at all.
     """
 
     def __init__(
         self,
-        session: Optional[CassandraSession],
-        keyspace: Optional[str],
-        embedding: Embeddings,
+        session: Optional[CassandraSession] = None,
+        keyspace: Optional[str] = None,
+        embedding: Optional[Embeddings] = None,
         table_name: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME,
-        distance_metric: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
+        distance_metric: Optional[str] = None,
         score_threshold: float = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD,
         ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
         skip_provisioning: bool = False,
+        similarity_measure: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
+        setup_mode: CassandraSetupMode = CassandraSetupMode.SYNC,
     ):
-        """
-        Initialize the cache with all relevant parameters.
-        Args:
-            session (cassandra.cluster.Session): an open Cassandra session
-            keyspace (str): the keyspace to use for storing the cache
-            embedding (Embedding): Embedding provider for semantic
-                encoding and search.
-            table_name (str): name of the Cassandra (vector) table
-                to use as cache
-            distance_metric (str, 'dot'): which measure to adopt for
-                similarity searches
-            score_threshold (optional float): numeric value to use as
-                cutoff for the similarity searches
-            ttl_seconds (optional int): time-to-live for cache entries
-                (default: None, i.e. forever)
-        The default score threshold is tuned to the default metric.
-        Tune it carefully yourself if switching to another distance metric.
-        """
+        if skip_provisioning:
+            warn_deprecated(
+                "0.0.33",
+                name="skip_provisioning",
+                alternative=(
+                    "setup_mode=langchain_community.utilities.cassandra.SetupMode.OFF"
+                ),
+                pending=True,
+            )
         try:
             from cassio.table import MetadataVectorCassandraTable
         except (ImportError, ModuleNotFoundError):
-            raise ValueError(
+            raise ImportError(
                 "Could not import cassio python package. "
-                "Please install it with `pip install cassio`."
+                "Please install it with `pip install -U cassio`."
             )
+
+        if not embedding:
+            raise ValueError("Missing required parameter 'embedding'.")
+
+        # detect if legacy 'distance_metric' parameter used
+        if distance_metric is not None:
+            # if passed, takes precedence over 'similarity_measure', but we warn:
+            warn_deprecated(
+                "0.0.33",
+                name="distance_metric",
+                alternative="similarity_measure",
+                pending=True,
+            )
+            similarity_measure = distance_metric
+
         self.session = session
         self.keyspace = keyspace
         self.embedding = embedding
         self.table_name = table_name
-        self.distance_metric = distance_metric
+        self.similarity_measure = similarity_measure
         self.score_threshold = score_threshold
         self.ttl_seconds = ttl_seconds
 
@@ -1210,24 +1337,42 @@ class CassandraSemanticCache(BaseCache):
             return self.embedding.embed_query(text=text)
 
         self._get_embedding = _cache_embedding
-        self.embedding_dimension = self._get_embedding_dimension()
+
+        @_async_lru_cache(maxsize=CASSANDRA_SEMANTIC_CACHE_EMBEDDING_CACHE_SIZE)
+        async def _acache_embedding(text: str) -> List[float]:
+            return await self.embedding.aembed_query(text=text)
+
+        self._aget_embedding = _acache_embedding
+
+        embedding_dimension: Union[int, Awaitable[int], None] = None
+        if setup_mode == CassandraSetupMode.ASYNC:
+            embedding_dimension = self._aget_embedding_dimension()
+        elif setup_mode == CassandraSetupMode.SYNC:
+            embedding_dimension = self._get_embedding_dimension()
+
+        kwargs = {}
+        if setup_mode == CassandraSetupMode.ASYNC:
+            kwargs["async_setup"] = True
 
         self.table = MetadataVectorCassandraTable(
             session=self.session,
             keyspace=self.keyspace,
             table=self.table_name,
             primary_key_type=["TEXT"],
-            vector_dimension=self.embedding_dimension,
+            vector_dimension=embedding_dimension,
             ttl_seconds=self.ttl_seconds,
             metadata_indexing=("allow", {"_llm_string_hash"}),
-            skip_provisioning=skip_provisioning,
+            skip_provisioning=skip_provisioning or setup_mode == CassandraSetupMode.OFF,
+            **kwargs,
         )
 
     def _get_embedding_dimension(self) -> int:
         return len(self._get_embedding(text="This is a sample sentence."))
 
+    async def _aget_embedding_dimension(self) -> int:
+        return len(await self._aget_embedding(text="This is a sample sentence."))
+
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
         embedding_vector = self._get_embedding(text=prompt)
         llm_string_hash = _hash(llm_string)
         body = _dumps_generations(return_val)
@@ -1236,7 +1381,7 @@ class CassandraSemanticCache(BaseCache):
             "_llm_string_hash": llm_string_hash,
         }
         row_id = f"{_hash(prompt)}-{llm_string_hash}"
-        #
+
         self.table.put(
             body_blob=body,
             vector=embedding_vector,
@@ -1244,9 +1389,34 @@ class CassandraSemanticCache(BaseCache):
             metadata=metadata,
         )
 
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
+        embedding_vector = await self._aget_embedding(text=prompt)
+        llm_string_hash = _hash(llm_string)
+        body = _dumps_generations(return_val)
+        metadata = {
+            "_prompt": prompt,
+            "_llm_string_hash": llm_string_hash,
+        }
+        row_id = f"{_hash(prompt)}-{llm_string_hash}"
+
+        await self.table.aput(
+            body_blob=body,
+            vector=embedding_vector,
+            row_id=row_id,
+            metadata=metadata,
+        )
+
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         hit_with_id = self.lookup_with_id(prompt, llm_string)
+        if hit_with_id is not None:
+            return hit_with_id[1]
+        else:
+            return None
+
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        hit_with_id = await self.alookup_with_id(prompt, llm_string)
         if hit_with_id is not None:
             return hit_with_id[1]
         else:
@@ -1265,7 +1435,38 @@ class CassandraSemanticCache(BaseCache):
                 vector=prompt_embedding,
                 metadata={"_llm_string_hash": _hash(llm_string)},
                 n=1,
-                metric=self.distance_metric,
+                metric=self.similarity_measure,
+                metric_threshold=self.score_threshold,
+            )
+        )
+        if hits:
+            hit = hits[0]
+            generations = _loads_generations(hit["body_blob"])
+            if generations is not None:
+                # this protects against malformed cached items:
+                return (
+                    hit["row_id"],
+                    generations,
+                )
+            else:
+                return None
+        else:
+            return None
+
+    async def alookup_with_id(
+        self, prompt: str, llm_string: str
+    ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
+        """
+        Look up based on prompt and llm_string.
+        If there are hits, return (document_id, cached_entry)
+        """
+        prompt_embedding: List[float] = await self._aget_embedding(text=prompt)
+        hits = list(
+            await self.table.ametric_ann_search(
+                vector=prompt_embedding,
+                metadata={"_llm_string_hash": _hash(llm_string)},
+                n=1,
+                metric=self.similarity_measure,
                 metric_threshold=self.score_threshold,
             )
         )
@@ -1292,6 +1493,17 @@ class CassandraSemanticCache(BaseCache):
         )[1]
         return self.lookup_with_id(prompt, llm_string=llm_string)
 
+    async def alookup_with_id_through_llm(
+        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
+    ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
+        llm_string = (
+            await aget_prompts(
+                {**llm.dict(), **{"stop": stop}},
+                [],
+            )
+        )[1]
+        return await self.alookup_with_id(prompt, llm_string=llm_string)
+
     def delete_by_document_id(self, document_id: str) -> None:
         """
         Given this is a "similarity search" cache, an invalidation pattern
@@ -1300,9 +1512,21 @@ class CassandraSemanticCache(BaseCache):
         """
         self.table.delete(row_id=document_id)
 
+    async def adelete_by_document_id(self, document_id: str) -> None:
+        """
+        Given this is a "similarity search" cache, an invalidation pattern
+        that makes sense is first a lookup to get an ID, and then deleting
+        with that ID. This is for the second step.
+        """
+        await self.table.adelete(row_id=document_id)
+
     def clear(self, **kwargs: Any) -> None:
         """Clear the *whole* semantic cache."""
         self.table.clear()
+
+    async def aclear(self, **kwargs: Any) -> None:
+        """Clear the *whole* semantic cache."""
+        await self.table.aclear()
 
 
 class FullMd5LLMCache(Base):  # type: ignore
@@ -1390,7 +1614,7 @@ ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 @deprecated(
     since="0.0.28",
-    removal="0.2.0",
+    removal="1.0",
     alternative_import="langchain_astradb.AstraDBCache",
 )
 class AstraDBCache(BaseCache):
@@ -1408,7 +1632,7 @@ class AstraDBCache(BaseCache):
         async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
         pre_delete_collection: bool = False,
-        setup_mode: SetupMode = SetupMode.SYNC,
+        setup_mode: AstraSetupMode = AstraSetupMode.SYNC,
     ):
         """
         Cache that uses Astra DB as a backend.
@@ -1570,7 +1794,7 @@ class _CachedAwaitable:
     def __await__(self) -> Generator:
         if self.result is _unset:
             self.result = yield from self.awaitable.__await__()
-        return self.result
+        return self.result  # type: ignore
 
 
 def _reawaitable(func: Callable) -> Callable:
@@ -1595,7 +1819,7 @@ def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
 
 @deprecated(
     since="0.0.28",
-    removal="0.2.0",
+    removal="1.0",
     alternative_import="langchain_astradb.AstraDBSemanticCache",
 )
 class AstraDBSemanticCache(BaseCache):
@@ -1608,7 +1832,7 @@ class AstraDBSemanticCache(BaseCache):
         astra_db_client: Optional[AstraDB] = None,
         async_astra_db_client: Optional[AsyncAstraDB] = None,
         namespace: Optional[str] = None,
-        setup_mode: SetupMode = SetupMode.SYNC,
+        setup_mode: AstraSetupMode = AstraSetupMode.SYNC,
         pre_delete_collection: bool = False,
         embedding: Embeddings,
         metric: Optional[str] = None,
@@ -1671,9 +1895,9 @@ class AstraDBSemanticCache(BaseCache):
         self._aget_embedding = _acache_embedding
 
         embedding_dimension: Union[int, Awaitable[int], None] = None
-        if setup_mode == SetupMode.ASYNC:
+        if setup_mode == AstraSetupMode.ASYNC:
             embedding_dimension = self._aget_embedding_dimension()
-        elif setup_mode == SetupMode.SYNC:
+        elif setup_mode == AstraSetupMode.SYNC:
             embedding_dimension = self._get_embedding_dimension()
 
         self.astra_env = _AstraDBCollectionEnvironment(
@@ -1967,14 +2191,14 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 index_name=index_name,
             )
         else:
-            self._cache_dict[
-                index_name
-            ] = AzureCosmosDBVectorSearch.from_connection_string(
-                connection_string=self.cosmosdb_connection_string,
-                namespace=namespace,
-                embedding=self.embedding,
-                index_name=index_name,
-                application_name=self.application_name,
+            self._cache_dict[index_name] = (
+                AzureCosmosDBVectorSearch.from_connection_string(
+                    connection_string=self.cosmosdb_connection_string,
+                    namespace=namespace,
+                    embedding=self.embedding,
+                    index_name=index_name,
+                    application_name=self.application_name,
+                )
             )
 
         # create index for the vectorstore
@@ -2049,3 +2273,329 @@ class AzureCosmosDBSemanticCache(BaseCache):
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
         if not isinstance(value, enum_type):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
+
+
+class OpenSearchSemanticCache(BaseCache):
+    """Cache that uses OpenSearch vector store backend"""
+
+    def __init__(
+        self,
+        opensearch_url: str,
+        embedding: Embeddings,
+        score_threshold: float = 0.2,
+        **kwargs: Any,
+    ):
+        """
+        Args:
+            opensearch_url (str): URL to connect to OpenSearch.
+            embedding (Embedding): Embedding provider for semantic encoding and search.
+            score_threshold (float, 0.2):
+        Example:
+        .. code-block:: python
+            import langchain
+            from langchain.cache import OpenSearchSemanticCache
+            from langchain.embeddings import OpenAIEmbeddings
+            langchain.llm_cache = OpenSearchSemanticCache(
+                opensearch_url="http//localhost:9200",
+                embedding=OpenAIEmbeddings()
+            )
+        """
+        self._cache_dict: Dict[str, OpenSearchVectorStore] = {}
+        self.opensearch_url = opensearch_url
+        self.embedding = embedding
+        self.score_threshold = score_threshold
+        self.connection_kwargs = kwargs
+
+    def _index_name(self, llm_string: str) -> str:
+        hashed_index = _hash(llm_string)
+        return f"cache_{hashed_index}"
+
+    def _get_llm_cache(self, llm_string: str) -> OpenSearchVectorStore:
+        index_name = self._index_name(llm_string)
+
+        # return vectorstore client for the specific llm string
+        if index_name in self._cache_dict:
+            return self._cache_dict[index_name]
+
+        # create new vectorstore client for the specific llm string
+        self._cache_dict[index_name] = OpenSearchVectorStore(
+            opensearch_url=self.opensearch_url,
+            index_name=index_name,
+            embedding_function=self.embedding,
+            **self.connection_kwargs,
+        )
+
+        # create index for the vectorstore
+        vectorstore = self._cache_dict[index_name]
+        if not vectorstore.index_exists():
+            _embedding = self.embedding.embed_query(text="test")
+            vectorstore.create_index(len(_embedding), index_name)
+        return vectorstore
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        llm_cache = self._get_llm_cache(llm_string)
+        generations: List = []
+        # Read from a Hash
+        results = llm_cache.similarity_search(
+            query=prompt,
+            k=1,
+            score_threshold=self.score_threshold,
+        )
+        if results:
+            for document in results:
+                try:
+                    generations.extend(loads(document.metadata["return_val"]))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+
+                    generations.extend(
+                        _load_generations_from_json(document.metadata["return_val"])
+                    )
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "OpenSearchSemanticCache only supports caching of "
+                    f"normal LLM generations, got {type(gen)}"
+                )
+        llm_cache = self._get_llm_cache(llm_string)
+        metadata = {
+            "llm_string": llm_string,
+            "prompt": prompt,
+            "return_val": dumps([g for g in return_val]),
+        }
+        llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear semantic cache for a given llm_string."""
+        index_name = self._index_name(kwargs["llm_string"])
+        if index_name in self._cache_dict:
+            self._cache_dict[index_name].delete_index(index_name=index_name)
+            del self._cache_dict[index_name]
+
+
+class SingleStoreDBSemanticCache(BaseCache):
+    """Cache that uses SingleStore DB as a backend"""
+
+    def __init__(
+        self,
+        embedding: Embeddings,
+        *,
+        cache_table_prefix: str = "cache_",
+        search_threshold: float = 0.2,
+        **kwargs: Any,
+    ):
+        """Initialize with necessary components.
+
+        Args:
+            embedding (Embeddings): A text embedding model.
+            cache_table_prefix (str, optional): Prefix for the cache table name.
+                Defaults to "cache_".
+            search_threshold (float, optional): The minimum similarity score for
+                a search result to be considered a match. Defaults to 0.2.
+
+            Following arguments pertrain to the SingleStoreDB vector store:
+
+            distance_strategy (DistanceStrategy, optional):
+                Determines the strategy employed for calculating
+                the distance between vectors in the embedding space.
+                Defaults to DOT_PRODUCT.
+                Available options are:
+                - DOT_PRODUCT: Computes the scalar product of two vectors.
+                    This is the default behavior
+                - EUCLIDEAN_DISTANCE: Computes the Euclidean distance between
+                    two vectors. This metric considers the geometric distance in
+                    the vector space, and might be more suitable for embeddings
+                    that rely on spatial relationships. This metric is not
+                    compatible with the WEIGHTED_SUM search strategy.
+
+            content_field (str, optional): Specifies the field to store the content.
+                Defaults to "content".
+            metadata_field (str, optional): Specifies the field to store metadata.
+                Defaults to "metadata".
+            vector_field (str, optional): Specifies the field to store the vector.
+                Defaults to "vector".
+            id_field (str, optional): Specifies the field to store the id.
+                Defaults to "id".
+
+            use_vector_index (bool, optional): Toggles the use of a vector index.
+                Works only with SingleStoreDB 8.5 or later. Defaults to False.
+                If set to True, vector_size parameter is required to be set to
+                a proper value.
+
+            vector_index_name (str, optional): Specifies the name of the vector index.
+                Defaults to empty. Will be ignored if use_vector_index is set to False.
+
+            vector_index_options (dict, optional): Specifies the options for
+                the vector index. Defaults to {}.
+                Will be ignored if use_vector_index is set to False. The options are:
+                index_type (str, optional): Specifies the type of the index.
+                    Defaults to IVF_PQFS.
+                For more options, please refer to the SingleStoreDB documentation:
+                https://docs.singlestore.com/cloud/reference/sql-reference/vector-functions/vector-indexing/
+
+            vector_size (int, optional): Specifies the size of the vector.
+                Defaults to 1536. Required if use_vector_index is set to True.
+                Should be set to the same value as the size of the vectors
+                stored in the vector_field.
+
+            Following arguments pertain to the connection pool:
+
+            pool_size (int, optional): Determines the number of active connections in
+                the pool. Defaults to 5.
+            max_overflow (int, optional): Determines the maximum number of connections
+                allowed beyond the pool_size. Defaults to 10.
+            timeout (float, optional): Specifies the maximum wait time in seconds for
+                establishing a connection. Defaults to 30.
+
+            Following arguments pertain to the database connection:
+
+            host (str, optional): Specifies the hostname, IP address, or URL for the
+                database connection. The default scheme is "mysql".
+            user (str, optional): Database username.
+            password (str, optional): Database password.
+            port (int, optional): Database port. Defaults to 3306 for non-HTTP
+                connections, 80 for HTTP connections, and 443 for HTTPS connections.
+            database (str, optional): Database name.
+
+            Additional optional arguments provide further customization over the
+            database connection:
+
+            pure_python (bool, optional): Toggles the connector mode. If True,
+                operates in pure Python mode.
+            local_infile (bool, optional): Allows local file uploads.
+            charset (str, optional): Specifies the character set for string values.
+            ssl_key (str, optional): Specifies the path of the file containing the SSL
+                key.
+            ssl_cert (str, optional): Specifies the path of the file containing the SSL
+                certificate.
+            ssl_ca (str, optional): Specifies the path of the file containing the SSL
+                certificate authority.
+            ssl_cipher (str, optional): Sets the SSL cipher list.
+            ssl_disabled (bool, optional): Disables SSL usage.
+            ssl_verify_cert (bool, optional): Verifies the server's certificate.
+                Automatically enabled if ``ssl_ca`` is specified.
+            ssl_verify_identity (bool, optional): Verifies the server's identity.
+            conv (dict[int, Callable], optional): A dictionary of data conversion
+                functions.
+            credential_type (str, optional): Specifies the type of authentication to
+                use: auth.PASSWORD, auth.JWT, or auth.BROWSER_SSO.
+            autocommit (bool, optional): Enables autocommits.
+            results_type (str, optional): Determines the structure of the query results:
+                tuples, namedtuples, dicts.
+            results_format (str, optional): Deprecated. This option has been renamed to
+                results_type.
+
+        Examples:
+            Basic Usage:
+
+            .. code-block:: python
+
+                import langchain
+                from langchain.cache import SingleStoreDBSemanticCache
+                from langchain.embeddings import OpenAIEmbeddings
+
+                langchain.llm_cache = SingleStoreDBSemanticCache(
+                    embedding=OpenAIEmbeddings(),
+                    host="https://user:password@127.0.0.1:3306/database"
+                )
+
+            Advanced Usage:
+
+            .. code-block:: python
+
+                import langchain
+                from langchain.cache import SingleStoreDBSemanticCache
+                from langchain.embeddings import OpenAIEmbeddings
+
+                langchain.llm_cache = = SingleStoreDBSemanticCache(
+                    embeddings=OpenAIEmbeddings(),
+                    use_vector_index=True,
+                    host="127.0.0.1",
+                    port=3306,
+                    user="user",
+                    password="password",
+                    database="db",
+                    table_name="my_custom_table",
+                    pool_size=10,
+                    timeout=60,
+                )
+        """
+
+        self._cache_dict: Dict[str, SingleStoreDB] = {}
+        self.embedding = embedding
+        self.cache_table_prefix = cache_table_prefix
+        self.search_threshold = search_threshold
+
+        # Pass the rest of the kwargs to the connection.
+        self.connection_kwargs = kwargs
+
+    def _index_name(self, llm_string: str) -> str:
+        hashed_index = _hash(llm_string)
+        return f"{self.cache_table_prefix}{hashed_index}"
+
+    def _get_llm_cache(self, llm_string: str) -> SingleStoreDB:
+        index_name = self._index_name(llm_string)
+
+        # return vectorstore client for the specific llm string
+        if index_name not in self._cache_dict:
+            self._cache_dict[index_name] = SingleStoreDB(
+                embedding=self.embedding,
+                table_name=index_name,
+                **self.connection_kwargs,
+            )
+        return self._cache_dict[index_name]
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        llm_cache = self._get_llm_cache(llm_string)
+        generations: List = []
+        # Read from a Hash
+        results = llm_cache.similarity_search_with_score(
+            query=prompt,
+            k=1,
+        )
+        if results:
+            for document_score in results:
+                if (
+                    document_score[1] > self.search_threshold
+                    and llm_cache.distance_strategy == DistanceStrategy.DOT_PRODUCT
+                ) or (
+                    document_score[1] < self.search_threshold
+                    and llm_cache.distance_strategy
+                    == DistanceStrategy.EUCLIDEAN_DISTANCE
+                ):
+                    generations.extend(loads(document_score[0].metadata["return_val"]))
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "SingleStoreDBSemanticCache only supports caching of "
+                    f"normal LLM generations, got {type(gen)}"
+                )
+        llm_cache = self._get_llm_cache(llm_string)
+        metadata = {
+            "llm_string": llm_string,
+            "prompt": prompt,
+            "return_val": dumps([g for g in return_val]),
+        }
+        llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear semantic cache for a given llm_string."""
+        index_name = self._index_name(kwargs["llm_string"])
+        if index_name in self._cache_dict:
+            self._cache_dict[index_name].drop()
+            del self._cache_dict[index_name]

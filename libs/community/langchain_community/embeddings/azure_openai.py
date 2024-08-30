@@ -16,7 +16,7 @@ from langchain_community.utils.openai import is_openai_v1
 
 @deprecated(
     since="0.0.9",
-    removal="0.2.0",
+    removal="1.0",
     alternative_import="langchain_openai.AzureOpenAIEmbeddings",
 )
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):
@@ -44,7 +44,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
@@ -54,28 +54,28 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     validate_base_url: bool = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         # Check OPENAI_KEY for backwards compatibility.
         # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
         # other forms of azure credentials.
         values["openai_api_key"] = (
-            values["openai_api_key"]
+            values.get("openai_api_key")
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values.get("openai_api_base") or os.getenv(
             "OPENAI_API_BASE"
         )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
+        values["openai_api_version"] = values.get("openai_api_version") or os.getenv(
             "OPENAI_API_VERSION", default="2023-05-15"
         )
         values["openai_api_type"] = get_from_dict_or_env(
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
         )
         values["openai_organization"] = (
-            values["openai_organization"]
+            values.get("openai_organization")
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
@@ -85,19 +85,18 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "OPENAI_PROXY",
             default="",
         )
-        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
+        values["azure_endpoint"] = values.get("azure_endpoint") or os.getenv(
             "AZURE_OPENAI_ENDPOINT"
         )
-        values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
+        values["azure_ad_token"] = values.get("azure_ad_token") or os.getenv(
             "AZURE_OPENAI_AD_TOKEN"
         )
-        # Azure OpenAI embedding models allow a maximum of 16 texts
+        # Azure OpenAI embedding models allow a maximum of 2048 texts
         # at a time in each batch
         # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-        values["chunk_size"] = min(values["chunk_size"], 16)
+        values["chunk_size"] = min(values["chunk_size"], 2048)
         try:
-            import openai
-
+            import openai  # noqa: F401
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -137,6 +136,14 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                             "/deployments/" + values["deployment"]
                         )
                     values["deployment"] = None
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init_validator(cls, values: Dict) -> Dict:
+        """Validate that the base url is set."""
+        import openai
+
+        if is_openai_v1():
             client_params = {
                 "api_version": values["openai_api_version"],
                 "azure_endpoint": values["azure_endpoint"],

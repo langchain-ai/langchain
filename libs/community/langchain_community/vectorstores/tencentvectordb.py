@@ -1,4 +1,5 @@
 """Wrapper around the Tencent vector database."""
+
 from __future__ import annotations
 
 import json
@@ -109,6 +110,15 @@ class MetaField(BaseModel):
 def translate_filter(
     lc_filter: str, allowed_fields: Optional[Sequence[str]] = None
 ) -> str:
+    """Translate LangChain filter to Tencent VectorDB filter.
+
+    Args:
+        lc_filter (str): LangChain filter.
+        allowed_fields (Optional[Sequence[str]]): Allowed fields for filter.
+
+    Returns:
+        str: Translated filter.
+    """
     from langchain.chains.query_constructor.base import fix_filter_directive
     from langchain.chains.query_constructor.parser import get_parser
     from langchain.retrievers.self_query.tencentvectordb import (
@@ -365,8 +375,7 @@ class TencentVectorDB(VectorStore):
                 }
                 if embeddings:
                     doc_attrs["vector"] = embeddings[id]
-                else:
-                    doc_attrs["text"] = texts[id]
+                doc_attrs["text"] = texts[id]
                 doc_attrs.update(metadata)
                 doc = self.document.Document(**doc_attrs)
                 docs.append(doc)

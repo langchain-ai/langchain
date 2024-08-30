@@ -3,7 +3,6 @@ from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
 
@@ -33,9 +32,7 @@ class IpexLLM(LLM):
     """Whether to stream the results, token by token."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @classmethod
     def from_model_id(
@@ -132,7 +129,7 @@ class IpexLLM(LLM):
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import ipex-llm. "
                 "Please install `ipex-llm` properly following installation guides: "
                 "https://github.com/intel-analytics/ipex-llm?tab=readme-ov-file#install-ipex-llm."

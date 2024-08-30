@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 
 class LlamaCppEmbeddings(BaseModel, Embeddings):
@@ -58,11 +58,9 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
     """Print verbose output to stderr."""
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
@@ -88,7 +86,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
             values["client"] = Llama(model_path, embedding=True, **model_params)
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import llama-cpp-python library. "
                 "Please install the llama-cpp-python library to "
                 "use this embedding model: pip install llama-cpp-python"

@@ -1,5 +1,5 @@
-from langchain_community.llms.fake import FakeListLLM
 from langchain_core.documents import Document
+from langchain_core.language_models import FakeListLLM
 from langchain_core.prompts import PromptTemplate
 
 from langchain.chains import create_history_aware_retriever

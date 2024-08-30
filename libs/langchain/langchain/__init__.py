@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 """Main entrypoint into package."""
+
 import warnings
 from importlib import metadata
 from typing import Any, Optional
@@ -16,7 +17,7 @@ del metadata  # optional, avoids polluting the results of dir(__package__)
 
 def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     """Warn on import of deprecated module."""
-    from langchain.utils.interactive_env import is_interactive_env
+    from langchain._api.interactive_env import is_interactive_env
 
     if is_interactive_env():
         # No warnings for interactive environments.
