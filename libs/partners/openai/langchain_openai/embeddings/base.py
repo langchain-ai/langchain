@@ -177,9 +177,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "text-embedding-ada-002"
-    dimensions: Optional[int] = None
+    dimensions: Optional[int] = 1536
     """The number of dimensions the resulting output embeddings should have.
-
+    By deafult equals of number of dimensions of "text-embedding-ada-002" default model
     Only supported in `text-embedding-3` and later models.
     """
     # to support Azure OpenAI Service custom deployment names
