@@ -206,7 +206,7 @@ class ChatBaichuan(BaseChatModel):
 
     Key init args — client params:
         api_key: Optional[str]
-            MiniMax API key. If not passed in will be read from env var BAICHUAN_API_KEY.
+            Baichuan API key. If not passed in will be read from env var BAICHUAN_API_KEY.
         base_url: Optional[str]
             Base URL for API requests.
 

@@ -6,11 +6,63 @@ from langchain_core.utils import get_from_env
 
 
 class FireCrawlLoader(BaseLoader):
-    """Load web pages as Documents using FireCrawl.
-
-    Must have Python package `firecrawl` installed and a FireCrawl API key. See
-        https://www.firecrawl.dev/ for more.
     """
+    FireCrawlLoader document loader integration
+
+    Setup:
+        Install ``firecrawl-py``,``langchain_community`` and set environment variable ``FIRECRAWL_API_KEY``.
+
+        .. code-block:: bash
+
+            pip install -U firecrawl-py langchain_community
+            export FIRECRAWL_API_KEY="your-api-key"
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import FireCrawlLoader
+
+            loader = FireCrawlLoader(
+                url = "https://firecrawl.dev",
+                mode = "crawl"
+                # other params = ...
+            )
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Introducing [Smart Crawl!](https://www.firecrawl.dev/smart-crawl)
+             Join the waitlist to turn any web
+            {'ogUrl': 'https://www.firecrawl.dev/', 'title': 'Home - Firecrawl', 'robots': 'follow, index', 'ogImage': 'https://www.firecrawl.dev/og.png?123', 'ogTitle': 'Firecrawl', 'sitemap': {'lastmod': '2024-08-12T00:28:16.681Z', 'changefreq': 'weekly'}, 'keywords': 'Firecrawl,Markdown,Data,Mendable,Langchain', 'sourceURL': 'https://www.firecrawl.dev/', 'ogSiteName': 'Firecrawl', 'description': 'Firecrawl crawls and converts any website into clean markdown.', 'ogDescription': 'Turn any website into LLM-ready data.', 'pageStatusCode': 200, 'ogLocaleAlternate': []}
+
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Introducing [Smart Crawl!](https://www.firecrawl.dev/smart-crawl)
+             Join the waitlist to turn any web
+            {'ogUrl': 'https://www.firecrawl.dev/', 'title': 'Home - Firecrawl', 'robots': 'follow, index', 'ogImage': 'https://www.firecrawl.dev/og.png?123', 'ogTitle': 'Firecrawl', 'sitemap': {'lastmod': '2024-08-12T00:28:16.681Z', 'changefreq': 'weekly'}, 'keywords': 'Firecrawl,Markdown,Data,Mendable,Langchain', 'sourceURL': 'https://www.firecrawl.dev/', 'ogSiteName': 'Firecrawl', 'description': 'Firecrawl crawls and converts any website into clean markdown.', 'ogDescription': 'Turn any website into LLM-ready data.', 'pageStatusCode': 200, 'ogLocaleAlternate': []}
+
+    """  # noqa: E501
 
     def __init__(
         self,

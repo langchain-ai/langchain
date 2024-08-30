@@ -1,11 +1,11 @@
 import time
 from typing import Any, Callable, List, cast
 
-from langchain.tools.base import BaseTool
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.prompts.chat import (
     BaseChatPromptTemplate,
 )
+from langchain_core.tools import BaseTool
 from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
