@@ -1,17 +1,21 @@
 import uuid
 
-from google.protobuf.json_format import MessageToJson
+import pytest
 
 from documents import Document
 from langchain_community.callbacks.tracers.wandb import _serialize_io
-from langchain_core.messages import HumanMessage
-from messages import SystemMessage
-from tests.unit_tests.callbacks.tracers._human_message_protobuf_pb2 import (
-    HumanMessage as ProtobufHumanMessage,
-)
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.prompt_values import StringPromptValue
 
 
-def test_input_google_protobuf_message():
+# installed by `pip install protobuf`
+@pytest.mark.requires("google.protobuf")
+def test_serialization_google_protobuf_message():
+    from google.protobuf.json_format import MessageToJson
+    from tests.unit_tests.callbacks.tracers._human_message_protobuf_pb2 import (
+        HumanMessage as ProtobufHumanMessage,
+    )
+
     pb_human_message = ProtobufHumanMessage()
     pb_human_message.content = "Hello, world!"
     pb_human_message.type = "human"
@@ -23,7 +27,15 @@ def test_input_google_protobuf_message():
     assert expected == serialized
 
 
-def test_input_message():
+def test_serialization_prompt():
+    prompt_value = StringPromptValue(text="Hello, world!")
+    run_io = {'input': prompt_value}
+    serialized = _serialize_io(run_io)
+    expected = {'input': prompt_value.json()}
+    assert expected == serialized
+
+
+def test_serialization_message():
     message = HumanMessage(content="Hello, world!")
     run_io = {'input': message}
     serialized = _serialize_io(run_io)
@@ -31,7 +43,7 @@ def test_input_message():
     assert expected == serialized
 
 
-def test_input_list_of_messages():
+def test_serialization_list_of_messages():
     messages = [
         SystemMessage(content="You are a helpful AI assistant"),
         HumanMessage(content="Hello, world!")
@@ -42,7 +54,7 @@ def test_input_list_of_messages():
     assert expected == serialized
 
 
-def test_input_documents():
+def test_serialization_documents():
     documents = [
         Document(page_content="Hello, world!", metadata={"id": "doc0"}),
         Document(page_content="Let's go!", metadata={"id": "doc1"})
