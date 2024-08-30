@@ -287,7 +287,7 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
                     f"Infinity returned an unexpected response with status "
                     f"{response.status}: {response.text}"
                 )
-            embedding = (await response.json())["embeddings"]
+            embedding = (await response.json())["data"]
             return [e["embedding"] for e in embedding]
 
     async def aembed(self, model: str, texts: List[str]) -> List[List[float]]:
@@ -313,7 +313,7 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
                 *[
                     self._async_request(
                         session=session,
-                        **self._kwargs_post_request(model=model, texts=t),
+                        kwargs=self._kwargs_post_request(model=model, texts=t),
                     )
                     for t in perm_texts_batched
                 ]
