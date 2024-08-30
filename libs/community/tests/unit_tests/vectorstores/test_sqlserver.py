@@ -560,8 +560,8 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
 def test_sqlserver_with_no_metadata_filters(store: SQLServer_VectorStore) -> None:
     store.add_texts(filter_texts, None, filter_ids)
     try:
-        test_filter = {"id": 1}
-        expected_ids = []
+        test_filter: Dict[str, Any] = {"id": 1}
+        expected_ids: List[int] = []
         docs = store.similarity_search("meow", k=5, filter=test_filter)
         returned_ids = [doc.metadata["id"] for doc in docs]
         assert sorted(returned_ids) == sorted(expected_ids), test_filter
