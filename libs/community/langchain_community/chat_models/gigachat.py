@@ -373,7 +373,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         return payload
 
     def _check_finish_reason(self, finish_reason: str) -> None:
-        if finish_reason and finish_reason not in ["stop", "function_call"]:
+        if finish_reason and finish_reason not in {"stop", "function_call"}:
             logger.warning(
                 "Giga generation stopped with reason: %s",
                 finish_reason,
