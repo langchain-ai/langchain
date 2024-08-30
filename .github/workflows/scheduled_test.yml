@@ -22,7 +22,6 @@ jobs:
         working-directory:
           - "libs/partners/openai"
           - "libs/partners/anthropic"
-          - "libs/partners/ai21"
           - "libs/partners/fireworks"
           - "libs/partners/groq"
           - "libs/partners/mistralai"
@@ -90,7 +89,6 @@ jobs:
           AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
           AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
           AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
-          AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}

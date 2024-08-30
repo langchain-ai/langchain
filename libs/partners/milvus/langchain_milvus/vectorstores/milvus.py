@@ -475,7 +475,8 @@ class Milvus(VectorStore):
                         raise ValueError(f"Metadata key {key} is reserved.")
                     # Infer the corresponding datatype of the metadata
                     if (
-                        key in self.metadata_schema  # type: ignore
+                        self.metadata_schema
+                        and key in self.metadata_schema  # type: ignore
                         and "dtype" in self.metadata_schema[key]  # type: ignore
                     ):
                         kwargs = self.metadata_schema[key].get("kwargs", {})  # type: ignore
