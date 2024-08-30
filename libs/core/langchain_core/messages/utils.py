@@ -1001,7 +1001,7 @@ def format_messages(
                 ToolMessage("foobar", tool_call_id="1", name="bar"),
                 {"role": "assistant", "content": "thats nice"},
             ]
-            oai_strings = format_messages(messages, format="langchain-openai", text="string")
+            oai_strings = format_messages(messages, format="langchain-openai", text_format="string")
             # -> [
             #     SystemMessage(content='foo'),
             #     HumanMessage(content=[{'type': 'text', 'text': 'whats in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]),
@@ -1010,7 +1010,7 @@ def format_messages(
             #     AIMessage(content='thats nice')
             # ]
 
-            anthropic_blocks = format_messages(messages, format="langchain-anthropic", text="block")
+            anthropic_blocks = format_messages(messages, format="langchain-anthropic", text_format="block")
             # -> [
             #     SystemMessage(content=[{'type': 'text', 'text': 'foo'}]),
             #     HumanMessage(content=[{'type': 'text', 'text': 'whats in this'}, {'type': 'image', 'source': {'type': 'base64', 'media_type': 'image/png', 'data': "'/9j/4AAQSk'"}}]),
@@ -1027,7 +1027,7 @@ def format_messages(
             from langchain_core.messages import format_messages
             from langchain.chat_models import init_chat_model
 
-            formatter = format_messages(format="langchain-openai", text="string")
+            formatter = format_messages(format="langchain-openai", text_format="string")
             llm = init_chat_model() | formatter
 
             llm.invoke(
@@ -1050,7 +1050,7 @@ def format_messages(
             from langchain_core.messages import format_messages
             from langchain.chat_models import init_chat_model
 
-            formatter = format_messages(format="langchain-openai", text="string")
+            formatter = format_messages(format="langchain-openai", text_format="string")
             
             def multiply(a: int, b: int) -> int:
                 '''Return product of a and b.'''
