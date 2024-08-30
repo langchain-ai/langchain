@@ -35,33 +35,39 @@ def _serialize_io(run_io: Optional[dict]) -> dict:
 
     :param run_io: The inputs and outputs of the run.
     :return: The serialized inputs and outputs.
-
-
     """
+
     if not run_io:
         return {}
+
     from google.protobuf.json_format import MessageToJson
     from google.protobuf.message import Message
 
-    serialized_inputs = {}
-    for key, value in run_io.items():
-        if isinstance(value, Message):
-            serialized_inputs[key] = MessageToJson(value)
-
-        elif isinstance(value, PydanticBaseModel):
-            serialized_inputs[key] = (
-                value.model_dump_json()
-                if hasattr(value, "model_dump_json")
-                else value.json()
-            )
-
-        elif key == "input_documents":
-            serialized_inputs.update(
-                {f"input_document_{i}": doc.json() for i, doc in enumerate(value)}
+    def _serialize_io_internal(obj: Any) -> Any:
+        if isinstance(obj, dict):
+            serialized_obj = {}
+            for key, value in obj.items():
+                if key == "input_documents":
+                    for i, doc in enumerate(value):
+                        k = f"input_document_{i}"
+                        serialized_obj[k] = _serialize_io_internal(doc)
+                else:
+                    serialized_obj[key] = _serialize_io_internal(value)
+            return serialized_obj
+        elif isinstance(obj, (list, tuple)):
+            return [_serialize_io_internal(e) for e in obj]
+        elif isinstance(obj, Message):
+            return MessageToJson(obj)
+        elif isinstance(obj, PydanticBaseModel):
+            return (
+                obj.model_dump_json()
+                if hasattr(obj, "model_dump_json")
+                else obj.json()
             )
         else:
-            serialized_inputs[key] = value
-    return serialized_inputs
+            return obj
+
+    return _serialize_io_internal(run_io)
 
 
 def flatten_run(run: Dict[str, Any]) -> List[Dict[str, Any]]:
