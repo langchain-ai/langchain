@@ -26,7 +26,6 @@ def test_all_imports() -> None:
     "langchain_openai",
     "langchain_anthropic",
     "langchain_fireworks",
-    "langchain_together",
     "langchain_mistralai",
     "langchain_groq",
 )
@@ -36,7 +35,6 @@ def test_all_imports() -> None:
         ("gpt-4o", "openai"),
         ("claude-3-opus-20240229", "anthropic"),
         ("accounts/fireworks/models/mixtral-8x7b-instruct", "fireworks"),
-        ("meta-llama/Llama-3-8b-chat-hf", "together"),
         ("mixtral-8x7b-32768", "groq"),
     ],
 )
