@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+
+from langchain_milvus.utils.sparse import BaseSparseEmbedding
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +112,7 @@ class Milvus(VectorStore):
             Name of the collection.
         collection_description: str
             Description of the collection.
-        embedding_function: Embeddings
+        embedding_function: Union[Embeddings, BaseSparseEmbedding]
             Embedding function to use.
 
     Key init args — client params:
@@ -219,7 +221,7 @@ class Milvus(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Embeddings,
+        embedding_function: Union[Embeddings, BaseSparseEmbedding],  # type: ignore
         collection_name: str = "LangChainCollection",
         collection_description: str = "",
         collection_properties: Optional[dict[str, Any]] = None,
@@ -276,6 +278,11 @@ class Milvus(VectorStore):
             },
             "GPU_IVF_FLAT": {"metric_type": "L2", "params": {"nprobe": 10}},
             "GPU_IVF_PQ": {"metric_type": "L2", "params": {"nprobe": 10}},
+            "SPARSE_INVERTED_INDEX": {
+                "metric_type": "IP",
+                "params": {"drop_ratio_build": 0.2},
+            },
+            "SPARSE_WAND": {"metric_type": "IP", "params": {"drop_ratio_build": 0.2}},
         }
 
         self.embedding_func = embedding_function
@@ -340,7 +347,7 @@ class Milvus(VectorStore):
         )
 
     @property
-    def embeddings(self) -> Embeddings:
+    def embeddings(self) -> Union[Embeddings, BaseSparseEmbedding]:  # type: ignore
         return self.embedding_func
 
     def _create_connection_alias(self, connection_args: dict) -> str:
@@ -401,6 +408,10 @@ class Milvus(VectorStore):
         except MilvusException as e:
             logger.error("Failed to create new connection using: %s", alias)
             raise e
+
+    @property
+    def _is_sparse_embedding(self) -> bool:
+        return isinstance(self.embedding_func, BaseSparseEmbedding)
 
     def _init(
         self,
@@ -539,9 +550,14 @@ class Milvus(VectorStore):
                 )
             )
         # Create the vector field, supports binary or float vectors
-        fields.append(
-            FieldSchema(self._vector_field, infer_dtype_bydata(embeddings[0]), dim=dim)
-        )
+        if self._is_sparse_embedding:
+            fields.append(FieldSchema(self._vector_field, DataType.SPARSE_FLOAT_VECTOR))
+        else:
+            fields.append(
+                FieldSchema(
+                    self._vector_field, infer_dtype_bydata(embeddings[0]), dim=dim
+                )
+            )
 
         # Create the schema for the collection
         schema = CollectionSchema(
@@ -606,11 +622,18 @@ class Milvus(VectorStore):
             try:
                 # If no index params, use a default HNSW based one
                 if self.index_params is None:
-                    self.index_params = {
-                        "metric_type": "L2",
-                        "index_type": "HNSW",
-                        "params": {"M": 8, "efConstruction": 64},
-                    }
+                    if self._is_sparse_embedding:
+                        self.index_params = {
+                            "metric_type": "IP",
+                            "index_type": "SPARSE_INVERTED_INDEX",
+                            "params": {"drop_ratio_build": 0.2},
+                        }
+                    else:
+                        self.index_params = {
+                            "metric_type": "L2",
+                            "index_type": "HNSW",
+                            "params": {"M": 8, "efConstruction": 64},
+                        }
 
                 try:
                     self.col.create_index(
@@ -740,7 +763,7 @@ class Milvus(VectorStore):
                 )
 
         try:
-            embeddings = self.embedding_func.embed_documents(texts)
+            embeddings: list = self.embedding_func.embed_documents(texts)
         except NotImplementedError:
             embeddings = [self.embedding_func.embed_query(x) for x in texts]
 
@@ -815,7 +838,7 @@ class Milvus(VectorStore):
 
     def _collection_search(
         self,
-        embedding: List[float],
+        embedding: List[float] | Dict[int, float],
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
@@ -829,7 +852,8 @@ class Milvus(VectorStore):
         https://milvus.io/api-reference/pymilvus/v2.4.x/ORM/Collection/search.md
 
         Args:
-            embedding (List[float]): The embedding vector being searched.
+            embedding (List[float] | Dict[int, float]): The embedding vector being
+                searched.
             k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
@@ -976,7 +1000,7 @@ class Milvus(VectorStore):
 
     def similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: List[float] | Dict[int, float],
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
@@ -990,7 +1014,8 @@ class Milvus(VectorStore):
         https://milvus.io/api-reference/pymilvus/v2.4.x/ORM/Collection/search.md
 
         Args:
-            embedding (List[float]): The embedding vector being searched.
+            embedding (List[float] | Dict[int, float]): The embedding vector being
+                searched.
             k (int, optional): The amount of results to return. Defaults to 4.
             param (dict): The search params for the specified index.
                 Defaults to None.
@@ -1068,7 +1093,7 @@ class Milvus(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: list[float],
+        embedding: list[float] | dict[int, float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -1080,7 +1105,8 @@ class Milvus(VectorStore):
         """Perform a search and return results that are reordered by MMR.
 
         Args:
-            embedding (str): The embedding vector being searched.
+            embedding (list[float] | dict[int, float]): The embedding vector being
+                searched.
             k (int, optional): How many results to give. Defaults to 4.
             fetch_k (int, optional): Total results to select k from.
                 Defaults to 20.
@@ -1171,7 +1197,7 @@ class Milvus(VectorStore):
     def from_texts(
         cls,
         texts: List[str],
-        embedding: Embeddings,
+        embedding: Union[Embeddings, BaseSparseEmbedding],  # type: ignore
         metadatas: Optional[List[dict]] = None,
         collection_name: str = "LangChainCollection",
         connection_args: dict[str, Any] = DEFAULT_MILVUS_CONNECTION,
@@ -1187,7 +1213,7 @@ class Milvus(VectorStore):
 
         Args:
             texts (List[str]): Text data.
-            embedding (Embeddings): Embedding function.
+            embedding (Union[Embeddings, BaseSparseEmbedding]): Embedding function.
             metadatas (Optional[List[dict]]): Metadata for each text if it exists.
                 Defaults to None.
             collection_name (str, optional): Collection name to use. Defaults to
