@@ -108,7 +108,7 @@ INVALID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
 INVALID_INPUT_ERROR_MESSAGE = "Input is not valid."
 INVALID_FILTER_INPUT_EXPECTED_DICT = """Invalid filter condition. Expected a dictionary
 but got an empty dictionary"""
-INVALID_FILTER_INPUT_EXPECTED_AND_OR = """Invalid filter condition
+INVALID_FILTER_INPUT_EXPECTED_AND_OR = """Invalid filter condition.
 Expected $and or $or but got: {}"""
 
 SQL_COPT_SS_ACCESS_TOKEN = 1256  # Connection option defined by microsoft in msodbcsql.h
