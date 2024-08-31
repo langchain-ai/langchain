@@ -21,7 +21,9 @@ from sqlalchemy import (
     Column,
     ColumnElement,
     Dialect,
+    Index,
     Numeric,
+    PrimaryKeyConstraint,
     SQLColumnExpression,
     Uuid,
     asc,
@@ -34,8 +36,10 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY, VARCHAR
+from sqlalchemy.dialects.mssql.base import MSTypeCompiler
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError, ProgrammingError
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import ConnectionPoolEntry
 from sqlalchemy.sql import operators
@@ -117,6 +121,7 @@ SQL_COPT_SS_ACCESS_TOKEN = 1256  # Connection option defined by microsoft in mso
 #
 EMBEDDING_LENGTH_CONSTRAINT = f"ISVECTOR(embeddings, :{EMBEDDING_LENGTH}) = 1"
 JSON_TO_ARRAY_QUERY = f"select JSON_ARRAY_TO_VECTOR (:{EMBEDDING_VALUES})"
+SERVER_JSON_CHECK_QUERY = "select name from sys.types where system_type_id = 244"
 VECTOR_DISTANCE_QUERY = f"""
 VECTOR_DISTANCE(:{DISTANCE_STRATEGY}, JSON_ARRAY_TO_VECTOR(:{EMBEDDING}), embeddings)"""
 
@@ -174,7 +179,8 @@ class SQLServer_VectorStore(VectorStore):
         self._bind: Union[Connection, Engine] = (
             connection if connection else self._create_engine()
         )
-        self._embedding_store = self._get_embedding_store(table_name, db_schema)
+        self._prepare_json_data_type()
+        self._embedding_store = self._get_embedding_store(self.table_name, self.schema)
         self._create_table_if_not_exists()
 
     def _can_connect_with_entra_id(self) -> bool:
@@ -227,9 +233,15 @@ class SQLServer_VectorStore(VectorStore):
             """This is the base model for SQL vector store."""
 
             __tablename__ = name
-            __table_args__ = {"schema": schema}
+            __table_args__ = (
+                PrimaryKeyConstraint("id", mssql_clustered=False),
+                Index("idx_custom_id", "custom_id", mssql_clustered=False, unique=True),
+                {"schema": schema},
+            )
             id = Column(Uuid, primary_key=True, default=uuid.uuid4)
-            custom_id = Column(VARCHAR, nullable=True)  # column for user defined ids.
+            custom_id = Column(
+                VARCHAR(1000), nullable=True
+            )  # column for user defined ids.
             content_metadata = Column(JSON, nullable=True)
             content = Column(NVARCHAR, nullable=False)  # defaults to NVARCHAR(MAX)
 
@@ -247,6 +259,27 @@ class SQLServer_VectorStore(VectorStore):
             )
 
         return EmbeddingStore
+
+    def _prepare_json_data_type(self) -> None:
+        """Check if the server has the JSON data type available. If it does,
+        we compile JSON data type as JSON instead of NVARCHAR(max) used by
+        sqlalchemy. If it doesn't, this defaults to NVARCHAR(max) as specified
+        by sqlalchemy."""
+        try:
+            with Session(self._bind) as session:
+                result = session.scalar(text(SERVER_JSON_CHECK_QUERY))
+                session.close()
+
+                if result is not None:
+
+                    @compiles(JSON, "mssql")
+                    def compile_json(
+                        element: JSON, compiler: MSTypeCompiler, **kw: Any
+                    ) -> str:
+                        # return JSON when JSON data type is specified in this class.
+                        return result  # json data type name in sql server
+        except ProgrammingError as e:
+            logging.error(f"Unable to get data types.\n {e.__cause__}\n")
 
     @property
     def embeddings(self) -> Embeddings:

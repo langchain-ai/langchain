@@ -265,26 +265,14 @@ def test_that_add_text_fails_if_text_embedding_length_is_not_equal_to_embedding_
 
 def test_sqlserver_delete_text_by_id_valid_ids_provided(
     store: SQLServer_VectorStore,
+    texts: List[str],
+    metadatas: List[dict],
 ) -> None:
     """Test that delete API deletes texts by id."""
-    texts = [
-        "Good review",
-        "new books",
-        "table",
-        "Sunglasses are a form of protective eyewear.",
-        "It's a new year.",
-    ]
 
-    metadatas = [
-        {"id": 100, "source": "book review", "length": 11},
-        {"id": 200, "source": "random texts", "length": 9},
-        {"id": 200, "source": "household list", "length": 5},
-        {"id": 600, "source": "newspaper page", "length": 44},
-        {"id": 300, "source": "random texts", "length": 16},
-    ]
     store.add_texts(texts, metadatas)
 
-    result = store.delete(["100", "200", "600"])
+    result = store.delete(["1", "2", "5"])
     # Should return true since valid ids are given
     if result:
         pass
@@ -292,26 +280,14 @@ def test_sqlserver_delete_text_by_id_valid_ids_provided(
 
 def test_sqlserver_delete_text_by_id_valid_id_and_invalid_ids_provided(
     store: SQLServer_VectorStore,
+    texts: List[str],
+    metadatas: List[dict],
 ) -> None:
     """Test that delete API deletes texts by id."""
-    texts = [
-        "Good review",
-        "new books",
-        "table",
-        "Sunglasses are a form of protective eyewear.",
-        "It's a new year.",
-    ]
 
-    metadatas = [
-        {"id": 100, "source": "book review", "length": 11},
-        {"id": 200, "source": "random texts", "length": 9},
-        {"id": 200, "source": "household list", "length": 5},
-        {"id": 600, "source": "newspaper page", "length": 44},
-        {"id": 300, "source": "random texts", "length": 16},
-    ]
     store.add_texts(texts, metadatas)
 
-    result = store.delete(["100", "200", "600", "900"])
+    result = store.delete(["1", "2", "6", "9"])
     # Should return true since valid ids are given
     if result:
         pass
@@ -319,23 +295,11 @@ def test_sqlserver_delete_text_by_id_valid_id_and_invalid_ids_provided(
 
 def test_sqlserver_delete_text_by_id_invalid_ids_provided(
     store: SQLServer_VectorStore,
+    texts: List[str],
+    metadatas: List[dict],
 ) -> None:
     """Test that delete API deletes texts by id."""
-    texts = [
-        "Good review",
-        "new books",
-        "table",
-        "Sunglasses are a form of protective eyewear.",
-        "It's a new year.",
-    ]
 
-    metadatas = [
-        {"id": 100, "source": "book review", "length": 11},
-        {"id": 200, "source": "random texts", "length": 9},
-        {"id": 200, "source": "household list", "length": 5},
-        {"id": 600, "source": "newspaper page", "length": 44},
-        {"id": 300, "source": "random texts", "length": 16},
-    ]
     store.add_texts(texts, metadatas)
 
     result = store.delete(["100000"])
@@ -346,23 +310,11 @@ def test_sqlserver_delete_text_by_id_invalid_ids_provided(
 
 def test_sqlserver_delete_text_by_id_no_ids_provided(
     store: SQLServer_VectorStore,
+    texts: List[str],
+    metadatas: List[dict],
 ) -> None:
     """Test that delete API deletes texts by id."""
-    texts = [
-        "Good review",
-        "new books",
-        "table",
-        "Sunglasses are a form of protective eyewear.",
-        "It's a new year.",
-    ]
 
-    metadatas = [
-        {"id": 100, "source": "book review", "length": 11},
-        {"id": 200, "source": "random texts", "length": 9},
-        {"id": 200, "source": "household list", "length": 5},
-        {"id": 600, "source": "newspaper page", "length": 44},
-        {"id": 300, "source": "random texts", "length": 16},
-    ]
     store.add_texts(texts, metadatas)
 
     result = store.delete(None)
@@ -611,6 +563,23 @@ def test_invalid_filters(
         store.similarity_search("meow", k=5, filter=invalid_filter)
 
 
+def test_that_rows_with_duplicate_custom_id_cannot_be_entered(
+    store: SQLServer_VectorStore,
+    texts: List[str],
+) -> None:
+    """Test that if a row is specified with existing ID in the table,
+    `add_texts` fails."""
+    metadatas = [
+        {"id": 1, "summary": "Good Quality Dog Food"},
+        {"id": 2, "summary": "Nasty No flavor"},
+        {"id": 2, "summary": "stale product"},
+        {"id": 4, "summary": "Great value and convenient ramen"},
+        {"id": 5, "summary": "Great for the kids!"},
+    ]
+    with pytest.raises(Exception):
+        store.add_texts(texts, metadatas)
+
+
 def test_that_entra_id_authentication_connection_is_successful(
     texts: List[str],
 ) -> None:
@@ -628,7 +597,11 @@ def test_that_entra_id_authentication_connection_is_successful(
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._prepare_json_data_type"
+)
 def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_is_used(
+    prep_data_type: Mock,
     provide_token: Mock,
     dialect_initialize: Mock,
 ) -> None:
@@ -658,7 +631,11 @@ def test_that_given_a_valid_entra_id_connection_string_entra_id_authentication_i
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._prepare_json_data_type"
+)
 def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_used(
+    prep_data_type: Mock,
     provide_token: Mock,
     dialect_initialize: Mock,
 ) -> None:
@@ -681,7 +658,11 @@ def test_that_given_a_connection_string_with_uid_and_pwd_entra_id_auth_is_not_us
 @mock.patch(
     "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._provide_token"
 )
+@mock.patch(
+    "langchain_community.vectorstores.sqlserver.SQLServer_VectorStore._prepare_json_data_type"
+)
 def test_that_connection_string_with_trusted_connection_yes_does_not_use_entra_id_auth(
+    prep_data_type: Mock,
     provide_token: Mock,
     dialect_initialize: Mock,
 ) -> None:
