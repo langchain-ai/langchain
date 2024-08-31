@@ -1,8 +1,11 @@
 import asyncio
 import logging
-from typing import Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
+
+if TYPE_CHECKING:
+    from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorCursor
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -20,6 +23,10 @@ class MongodbLoader(BaseLoader):
         *,
         filter_criteria: Optional[Dict] = None,
         field_names: Optional[Sequence[str]] = None,
+        cursor_builder: Optional[Callable] = None,
+        page_content_mapper: Optional[Callable[..., str]] = None,
+        metadata_mapper: Optional[Callable[..., Dict[str, Any]]] = None,
+        enable_total_count_check: bool = True,
     ) -> None:
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
@@ -36,7 +43,7 @@ class MongodbLoader(BaseLoader):
         if not collection_name:
             raise ValueError("collection_name must be provided.")
 
-        self.client = AsyncIOMotorClient(connection_string)
+        self.client: AsyncIOMotorClient = AsyncIOMotorClient(connection_string)
         self.db_name = db_name
         self.collection_name = collection_name
         self.field_names = field_names
@@ -44,6 +51,13 @@ class MongodbLoader(BaseLoader):
 
         self.db = self.client.get_database(db_name)
         self.collection = self.db.get_collection(collection_name)
+
+        self.cursor_builder = cursor_builder or self.default_cursor_builder
+        self.metadata_mapper = metadata_mapper or self.metadata_default_mapper
+        self.page_content_mapper = (
+            page_content_mapper or self.page_content_default_mapper
+        )
+        self.enable_total_count_check = enable_total_count_check
 
     def load(self) -> List[Document]:
         """Load data into Document objects.
@@ -59,48 +73,77 @@ class MongodbLoader(BaseLoader):
         """
         return asyncio.run(self.aload())
 
+    @staticmethod
+    def default_cursor_builder(
+        collection: "AsyncIOMotorCollection",
+        filter_criteria: Optional[Dict] = None,
+        projection: Optional[Dict[str, Any]] = None,
+    ) -> "AsyncIOMotorCursor":
+        return collection.find(filter_criteria, projection)
+
+    @staticmethod
+    def metadata_default_mapper(
+        db_name: str,
+        collection_name: str,
+        doc: Dict,
+    ) -> Dict[str, Any]:
+        """
+        A reasonable default function to convert a doc into a "metadata" dictionary.
+        """
+        return {
+            "database": db_name,
+            "collection": collection_name,
+        }
+
+    @staticmethod
+    def page_content_default_mapper(
+        doc: Dict, field_names: Optional[Sequence[str]] = None
+    ) -> str:
+        """
+        A reasonable default function to convert a record into a "page content" string.
+        """
+        # Extract text content from filtered fields or use the entire document
+        if field_names is not None:
+            fields = {}
+            for name in field_names:
+                # Split the field names to handle nested fields
+                keys = name.split(".")
+                value: Union[Dict, str] = doc
+                for key in keys:
+                    if key in doc:
+                        value = doc[key]
+                    else:
+                        value = ""
+                        break
+                fields[name] = value
+
+            texts = [str(value) for value in fields.values()]
+            text = " ".join(texts)
+        else:
+            text = str(doc)
+        return text
+
     async def aload(self) -> List[Document]:
         """Load data into Document objects."""
         result = []
-        total_docs = await self.collection.count_documents(self.filter_criteria)
+        if self.enable_total_count_check:
+            total_docs = await self.collection.count_documents(self.filter_criteria)
 
         # Construct the projection dictionary if field_names are specified
         projection = (
             {field: 1 for field in self.field_names} if self.field_names else None
         )
 
-        async for doc in self.collection.find(self.filter_criteria, projection):
-            metadata = {
-                "database": self.db_name,
-                "collection": self.collection_name,
-            }
+        async for doc in self.cursor_builder(
+            self.collection, self.filter_criteria, projection
+        ):
+            metadata = self.metadata_mapper(self.db_name, self.collection_name, doc)
+            page_content = self.page_content_mapper(doc, self.field_names)
+            result.append(Document(page_content=page_content, metadata=metadata))
 
-            # Extract text content from filtered fields or use the entire document
-            if self.field_names is not None:
-                fields = {}
-                for name in self.field_names:
-                    # Split the field names to handle nested fields
-                    keys = name.split(".")
-                    value = doc
-                    for key in keys:
-                        if key in value:
-                            value = value[key]
-                        else:
-                            value = ""
-                            break
-                    fields[name] = value
-
-                texts = [str(value) for value in fields.values()]
-                text = " ".join(texts)
-            else:
-                text = str(doc)
-
-            result.append(Document(page_content=text, metadata=metadata))
-
-        if len(result) != total_docs:
+        if self.enable_total_count_check and len(result) != total_docs:
             logger.warning(
                 f"Only partial collection of documents returned. "
                 f"Loaded {len(result)} docs, expected {total_docs}."
             )
-
         return result
