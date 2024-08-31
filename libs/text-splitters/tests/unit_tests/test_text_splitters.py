@@ -17,7 +17,11 @@ from langchain_text_splitters import (
 )
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
-from langchain_text_splitters.html import HTMLHeaderTextSplitter, HTMLSectionSplitter
+from langchain_text_splitters.html import (
+    HTMLHeaderTextSplitter,
+    HTMLSectionSplitter,
+    HTMLSemanticPreservingSplitter,
+)
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.markdown import (
     ExperimentalMarkdownSyntaxTextSplitter,
@@ -2051,3 +2055,192 @@ $csvContent | ForEach-Object {
         "$csvContent | ForEach-Object {\n    $_.ProcessName\n}",
         "# End of script",
     ]
+
+def custom_iframe_extractor(iframe_tag):
+    iframe_src = iframe_tag.get('src', '')
+    return f"[iframe:{iframe_src}]({iframe_src})"
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_custom_extractor():
+    """Test HTML splitting with a custom extractor."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is an iframe:</p>
+    <iframe src="http://example.com"></iframe>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        custom_handlers={"iframe": custom_iframe_extractor},
+        max_chunk_size=1000
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is an iframe: [iframe:http://example.com](http://example.com)",
+            metadata={"Header 1": "Section 1"}
+        ),
+    ]
+
+    assert documents == expected   
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_href_links():
+    """Test HTML splitting with href links."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is a link to <a href="http://example.com">example.com</a></p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        preserve_links=True,
+        max_chunk_size=1000
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is a link to [example.com](http://example.com)",
+            metadata={"Header 1": "Section 1"}
+        ),
+    ]
+
+    assert documents == expected
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_nested_elements():
+    """Test HTML splitting with nested elements."""
+    html_content = """
+    <h1>Main Section</h1>
+    <div>
+        <p>Some text here.</p>
+        <div>
+            <p>Nested content.</p>
+        </div>
+    </div>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=1000
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Some text here. Nested content.",
+            metadata={"Header 1": "Main Section"}
+        ),
+    ]
+
+    assert documents == expected
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_preserved_elements():
+    """Test HTML splitting with preserved elements like <table>, <ul> with low chunk 
+    size."""
+    html_content = """
+    <h1>Section 1</h1>
+    <table>
+        <tr><td>Row 1</td></tr>
+        <tr><td>Row 2</td></tr>
+    </table>
+    <ul>
+        <li>Item 1</li>
+        <li>Item 2</li>
+    </ul>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        elements_to_preserve=["table", "ul"],
+        max_chunk_size=50  # Deliberately low to test preservation
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Row 1 Row 2  Item 1 Item 2 ",
+            metadata={"Header 1": "Section 1"}
+        ),
+    ]
+
+    assert documents == expected  # Shouldn't split the table or ul
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_no_further_splits():
+    """Test HTML splitting that requires no further splits beyond sections."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>Some content here.</p>
+    <h1>Section 2</h1>
+    <p>More content here.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=1000
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Some content here.",
+            metadata={"Header 1": "Section 1"}
+        ),
+        Document(
+            page_content="More content here.",
+            metadata={"Header 1": "Section 2"}
+        ),
+    ]
+
+    assert documents == expected  # No further splits, just sections
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_small_chunk_size():
+    """Test HTML splitting with a very small chunk size to validate chunking."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some long text that should be split into multiple chunks due to the 
+    small chunk size.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=20,
+        chunk_overlap=5
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some long",
+            metadata={"Header 1": "Section 1"}
+        ),
+        Document(
+            page_content="long text that",
+            metadata={"Header 1": "Section 1"}
+        ),
+        Document(
+            page_content="that should be",
+            metadata={"Header 1": "Section 1"}
+        ),
+        Document(
+            page_content="be split into",
+            metadata={"Header 1": "Section 1"}
+        ),
+        Document(
+            page_content="into multiple",
+            metadata={"Header 1": "Section 1"}
+        ),
+        Document(
+            page_content="chunks due to the",
+            metadata={"Header 1": "Section 1"}
+        ),
+        Document(
+            page_content="the small chunk",
+            metadata={"Header 1": "Section 1"}
+        ),
+        Document(
+            page_content="size.",
+            metadata={"Header 1": "Section 1"}
+        ),
+    ]
+
+    assert documents == expected  # Should split into multiple chunks
