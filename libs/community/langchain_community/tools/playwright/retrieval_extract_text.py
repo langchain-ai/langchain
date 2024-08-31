@@ -8,7 +8,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -26,13 +26,13 @@ class RetrievalExtractTextTool(BaseBrowserTool):
     name: str = "retrieval_extract_text"
     description: str = "Extract relevant text on the current webpage"
     args_schema: Type[BaseModel] = BaseModel
-    prompt: ChatPromptTemplate
+    prompt: ChatPromptTemplate | None = Field(init=False)
 
     def _run(self, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         """Use the tool."""
         if self._validate_prompt():
             retriever_message: HumanMessage | None = next(
-                (msg for msg in self.prompt.messages if isinstance(msg, HumanMessage)),
+                (msg for msg in self.prompt.messages if isinstance(msg, HumanMessage)),  # type: ignore
                 None,
             )
 
@@ -75,9 +75,9 @@ class RetrievalExtractTextTool(BaseBrowserTool):
         self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
-        if self._validate_prompt():
+        if self._validate_prompt() and isinstance(self.prompt, ChatPromptTemplate):
             retriever_message: HumanMessage | None = next(
-                (msg for msg in self.prompt.messages if isinstance(msg, HumanMessage)),
+                (msg for msg in self.prompt.messages if isinstance(msg, HumanMessage)),  # type: ignore
                 None,
             )
 
@@ -110,8 +110,8 @@ class RetrievalExtractTextTool(BaseBrowserTool):
                 return " ".join(doc.page_content for doc in docs)
         else:
             raise ValueError(
-                "RetrievalExtractTextTool does not have attribute 'prompt'. "
-                ""
+                "RetrievalExtractTextTool does not have attribute 'prompt', "
+                "or the prompt is not type 'ChatPromptTemplate'"
                 "Please use the injector in "
                 "'langchain_core.prompts.injector' "
                 "to inject prompt to the tool. "
