@@ -536,10 +536,8 @@ class SQLServer_VectorStore(VectorStore):
         Returns:
             sqlalchemy expression
 
-        Ex: For a filter,  {"$or": [{"id": 1}, {"name": "bob"}]}, the result is
+        Ex: For a filter,  {"id": 1}, the result is
 
-            JSON_VALUE(langchain_vector_store_tests.content_metadata, :JSON_VALUE_1) =
-              :JSON_VALUE_2
             JSON_VALUE(langchain_vector_store_tests.content_metadata, :JSON_VALUE_1) =
               :JSON_VALUE_2
         """
