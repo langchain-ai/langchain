@@ -58,7 +58,7 @@ The value of image_url can be any of the following:
 
 ### Vertex AI
 
-Access PaLM chat models like `chat-bison` and `codechat-bison` via Google Cloud.
+Access chat models like `Gemini` via Google Cloud.
 
 We need to install `langchain-google-vertexai` python package.
 
@@ -72,12 +72,120 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 from langchain_google_vertexai import ChatVertexAI
 ```
 
-### Chat Anthropic on Vertex AI
+### Chat Anthropic on Vertex AI Model Garden
 
 See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
 
 ```python
 from langchain_google_vertexai.model_garden import ChatAnthropicVertex
+```
+
+### Chat Llama on Vertex AI Model Garden
+
+```python
+from langchain_google_vertexai.model_garden_maas.llama import VertexModelGardenLlama
+```
+
+### Chat Mistral on Vertex AI Model Garden
+
+```python
+from langchain_google_vertexai.model_garden_maas.mistral import VertexModelGardenMistral
+```
+
+### Chat Gemma local from Hugging Face
+
+>Local `Gemma` model loaded from `HuggingFace`.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaChatLocalHF
+```
+
+### Chat Gemma local from Kaggle
+
+>Local `Gemma` model loaded from `Kaggle`.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaChatLocalKaggle
+```
+
+### Chat Gemma on Vertex AI Model Garden
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaChatVertexAIModelGarden
+```
+
+### Vertex AI image captioning chat
+
+>Implementation of the `Image Captioning model` as a chat.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIImageCaptioningChat
+```
+
+### Vertex AI image editor chat
+
+>Given an image and a prompt, edit the image. Currently only supports mask-free editing.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIImageEditorChat
+```
+
+### Vertex AI image generator chat
+
+>Generates an image from a prompt.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIImageGeneratorChat
+```
+
+### Vertex AI visual QnA chat
+
+>Chat implementation of a visual QnA model
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIVisualQnAChat
 ```
 
 ## LLMs
@@ -112,6 +220,60 @@ See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model
 
 ```python
 from langchain_google_vertexai import VertexAIModelGarden
+```
+
+### Gemma local from Hugging Face
+
+>Local `Gemma` model loaded from `HuggingFace`.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaLocalHF
+```
+
+### Gemma local from Kaggle
+
+>Local `Gemma` model loaded from `Kaggle`.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaLocalKaggle
+```
+
+### Gemma on Vertex AI Model Garden
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.gemma import GemmaVertexAIModelGarden
+```
+
+### Vertex AI image captioning
+
+>Implementation of the `Image Captioning model` as an LLM.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.vision_models import VertexAIImageCaptioning
 ```
 
 ## Embedding models
@@ -581,6 +743,37 @@ See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_se
 from langchain_google_vertexai import VectorSearchVectorStore
 ```
 
+### Vertex AI Vector Search with DataStore
+
+> VectorSearch with DatasTore document storage.
+
+Install the python package:
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_search/#optional--you-can-also-create-vectore-and-store-chunks-in-a-datastore).
+
+```python
+from langchain_google_vertexai import VectorSearchVectorStoreDatastore
+```
+
+### VectorSearchVectorStoreGCS 
+
+> Alias of `VectorSearchVectorStore` for consistency 
+> with the rest of vector stores with different document storage backends.
+
+Install the python package:
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai import VectorSearchVectorStoreGCS
+```
+
 ### ScaNN
 
 >[Google ScaNN](https://github.com/google-research/google-research/tree/master/scann)
@@ -613,7 +806,7 @@ from langchain_community.vectorstores import ScaNN
 We need to install several python packages.
 
 ```bash
-pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib langchain-googledrive
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/retrievers/google_drive).
@@ -627,16 +820,38 @@ from langchain_googledrive.retrievers import GoogleDriveRetriever
 > [Vertex AI Search](https://cloud.google.com/generative-ai-app-builder/docs/introduction)
 > from Google Cloud allows developers to quickly build generative AI powered search engines for customers and employees.
 
+See a [usage example](/docs/integrations/retrievers/google_vertex_ai_search).
+
+Note: `GoogleVertexAISearchRetriever` is deprecated, use `VertexAIMultiTurnSearchRetriever`,
+`VertexAISearchSummaryTool`, and `VertexAISearchRetriever` (see below).
+
+#### GoogleVertexAISearchRetriever
+
 We need to install the `google-cloud-discoveryengine` python package.
 
 ```bash
 pip install google-cloud-discoveryengine
 ```
 
-See a [usage example](/docs/integrations/retrievers/google_vertex_ai_search).
+```python
+from langchain_community.retrievers import GoogleVertexAISearchRetriever
+```
+
+#### VertexAIMultiTurnSearchRetriever
 
 ```python
-from langchain.retrievers import GoogleVertexAISearchRetriever
+from langchain_google_community import VertexAIMultiTurnSearchRetriever
+```
+#### VertexAISearchRetriever
+
+```python
+from langchain_google_community import VertexAIMultiTurnSearchRetriever
+```
+
+#### VertexAISearchSummaryTool
+
+```python
+from langchain_google_community import VertexAISearchSummaryTool
 ```
 
 ### Document AI Warehouse
@@ -784,6 +999,23 @@ from langchain.agents import load_tools
 tools = load_tools(["google-search"])
 ```
 
+#### GoogleSearchResults
+
+Tool that queries the `Google Search` API (via `GoogleSearchAPIWrapper`) and gets back JSON.
+
+```python
+from langchain_community.tools import GoogleSearchResults
+```
+
+#### GoogleSearchRun
+
+Tool that queries the `Google Search` API (via `GoogleSearchAPIWrapper`).
+
+```python
+from langchain_community.tools import GoogleSearchRun
+```
+
+
 ### Google Trends
 
 We need to install a python package.
@@ -816,6 +1048,18 @@ See a [usage example and authorization instructions](/docs/integrations/tools/gm
 
 ```python
 from langchain_google_community import GmailToolkit
+```
+
+#### GMail individual tools
+
+You can use individual tools from GMail Toolkit.
+
+```python
+from langchain_google_community.gmail.create_draft import GmailCreateDraft
+from langchain_google_community.gmail.get_message import GmailGetMessage
+from langchain_google_community.gmail.get_thread import GmailGetThread
+from langchain_google_community.gmail.search import GmailSearch
+from langchain_google_community.gmail.send_message import GmailSendMessage
 ```
 
 ## Memory
@@ -974,6 +1218,22 @@ See [usage example](/docs/integrations/memory/google_el_carro).
 from langchain_google_el_carro import ElCarroChatMessageHistory
 ```
 
+## Callbacks
+
+### Vertex AI callback handler
+
+>Callback Handler that tracks `VertexAI` info.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+```python
+from langchain_google_vertexai.callbacks import VertexAICallbackHandler
+```
+
 ## Chat Loaders
 
 ### GMail
@@ -991,6 +1251,30 @@ See a [usage example and authorization instructions](/docs/integrations/chat_loa
 
 ```python
 from langchain_google_community import GMailLoader
+```
+
+## Evaluators
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+### VertexPairWiseStringEvaluator
+
+>Pair-wise evaluation of the perplexity of a predicted string.
+
+```python
+from langchain_google_vertexai.evaluators.evaluation import VertexPairWiseStringEvaluator
+```
+
+### VertexStringEvaluator
+
+>Evaluate the perplexity of a predicted string.
+
+```python
+from langchain_google_vertexai.evaluators.evaluation import VertexPairWiseStringEvaluator
 ```
 
 ## 3rd Party Integrations
