@@ -371,7 +371,7 @@ class AgentExecutorIterator:
         """
         logger.warning("Stopping agent prematurely due to triggering stop condition")
         # this manually constructs agent finish with output key
-        output = self.agent_executor.agent.return_stopped_response(
+        output = self.agent_executor._action_agent.return_stopped_response(
             self.agent_executor.early_stopping_method,
             self.intermediate_steps,
             **self.inputs,
@@ -384,7 +384,7 @@ class AgentExecutorIterator:
         the stopped response.
         """
         logger.warning("Stopping agent prematurely due to triggering stop condition")
-        output = self.agent_executor.agent.return_stopped_response(
+        output = self.agent_executor._action_agent.return_stopped_response(
             self.agent_executor.early_stopping_method,
             self.intermediate_steps,
             **self.inputs,
