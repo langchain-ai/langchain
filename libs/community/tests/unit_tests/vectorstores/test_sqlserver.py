@@ -1,7 +1,7 @@
 """Test SQLServer_VectorStore functionality."""
 
 import os
-from typing import Generator, List
+from typing import Any, Dict, Generator, List
 from unittest import mock
 from unittest.mock import Mock
 
@@ -13,6 +13,22 @@ from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores.sqlserver import (
     DistanceStrategy,
     SQLServer_VectorStore,
+)
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    IDS as filter_ids,
+)
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    TYPE_1_FILTERING_TEST_CASES,
+    TYPE_2_FILTERING_TEST_CASES,
+    TYPE_3_FILTERING_TEST_CASES,
+    TYPE_4_FILTERING_TEST_CASES,
+    TYPE_5_FILTERING_TEST_CASES,
+)
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    metadatas as filter_metadatas,
+)
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    texts as filter_texts,
 )
 
 # Connection String values should be provided in the
@@ -47,6 +63,21 @@ _DROP_COLLATION_DB_QUERY = f"drop database {_COLLATION_DB_NAME}"
 _SYS_TABLE_QUERY = """
 select object_id from sys.tables where name = '%s'
 and schema_name(schema_id) = '%s'"""
+
+
+# Combine all test cases into one list with additional debugging
+FILTERING_TEST_CASES: List[Any] = []
+for filterList in [
+    TYPE_1_FILTERING_TEST_CASES,
+    TYPE_2_FILTERING_TEST_CASES,
+    TYPE_3_FILTERING_TEST_CASES,
+    TYPE_4_FILTERING_TEST_CASES,
+    TYPE_5_FILTERING_TEST_CASES,
+]:
+    if isinstance(filterList, list):
+        for filters in filterList:
+            if isinstance(filters, tuple):
+                FILTERING_TEST_CASES.append(filters)
 
 
 @pytest.fixture
@@ -332,8 +363,9 @@ def test_sqlserver_delete_text_by_id_no_ids_provided(
         {"id": 600, "source": "newspaper page", "length": 44},
         {"id": 300, "source": "random texts", "length": 16},
     ]
-    result = store.add_texts(texts, metadatas)
+    store.add_texts(texts, metadatas)
 
+    result = store.delete(None)
     # Should return False, since empty list of ids given
     if not result:
         pass
@@ -523,6 +555,60 @@ def test_that_case_sensitivity_does_not_affect_distance_strategy(
     conn.execute(text("use master"))
     conn.execute(text(_DROP_COLLATION_DB_QUERY))
     conn.close()
+
+
+def test_sqlserver_with_no_metadata_filters(store: SQLServer_VectorStore) -> None:
+    store.add_texts(filter_texts, None, filter_ids)
+    try:
+        test_filter: Dict[str, Any] = {"id": 1}
+        expected_ids: List[int] = []
+        docs = store.similarity_search("meow", k=5, filter=test_filter)
+        returned_ids = [doc.metadata["id"] for doc in docs]
+        assert sorted(returned_ids) == sorted(expected_ids), test_filter
+
+    finally:
+        store.delete(["1", "2", "3"])
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", FILTERING_TEST_CASES)
+def test_sqlserver_with_metadata_filters(
+    store: SQLServer_VectorStore,
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    store.add_texts(filter_texts, filter_metadatas, filter_ids)
+    try:
+        docs = store.similarity_search("meow", k=5, filter=test_filter)
+        returned_ids = [doc.metadata["id"] for doc in docs]
+        assert sorted(returned_ids) == sorted(expected_ids), test_filter
+
+    finally:
+        store.delete(["1", "2", "3"])
+
+
+@pytest.mark.parametrize(
+    "invalid_filter",
+    [
+        ["hello"],
+        {
+            "id": 2,
+            "$name": "foo",
+        },
+        {"$or": {}},
+        {"$and": {}},
+        {"$between": {}},
+        {"$eq": {}},
+        {"$or": None},
+    ],
+)
+def test_invalid_filters(
+    store: SQLServer_VectorStore, invalid_filter: Dict[str, Any]
+) -> None:
+    """Verify that invalid filters raise an error."""
+    store.add_texts(filter_texts, filter_metadatas, filter_ids)
+    store.delete(["1", "2", "3"])
+    with pytest.raises(ValueError):
+        store.similarity_search("meow", k=5, filter=invalid_filter)
 
 
 def test_that_entra_id_authentication_connection_is_successful(
