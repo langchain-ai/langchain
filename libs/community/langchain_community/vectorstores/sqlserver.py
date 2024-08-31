@@ -106,7 +106,7 @@ EMPTY_IDS_ERROR_MESSAGE = "Empty list of ids provided"
 EXTRA_PARAMS = ";Trusted_Connection=Yes"
 INVALID_IDS_ERROR_MESSAGE = "Invalid list of ids provided"
 INVALID_INPUT_ERROR_MESSAGE = "Input is not valid."
-INVALID_FILTER_INPUT_EXPECTED_DICT = """Invalid filter condition. Expected a dictionary "
+INVALID_FILTER_INPUT_EXPECTED_DICT = """Invalid filter condition. Expected a dictionary
 but got an empty dictionary"""
 INVALID_FILTER_INPUT_EXPECTED_AND_OR = """Invalid filter condition."
 Expected $and or $or but got: {}"""
@@ -442,7 +442,7 @@ class SQLServer_VectorStore(VectorStore):
         """Convert LangChain Information Retrieval filter representation to matching
         SQLAlchemy clauses.
 
-        At the top level,we still don't know if we're working with a field
+        At the top level, we still don't know if we're working with a field
         or an operator for the keys. After we've determined that we can
         call the appropriate logic to handle filter creation.
 
@@ -640,7 +640,7 @@ class SQLServer_VectorStore(VectorStore):
             elif operator in {"$like"}:
                 return queried_field.like(str(filter_value))
             else:
-                raise NotImplementedError(f"Operator is not implemnted: {operator}. ")
+                raise NotImplementedError(f"Operator is not implemented: {operator}. ")
         else:
             raise NotImplementedError()
 
