@@ -17,10 +17,12 @@ from langchain_community.tools.playwright.extract_hyperlinks import (
     ExtractHyperlinksTool,
 )
 from langchain_community.tools.playwright.extract_text import ExtractTextTool
-from langchain_community.tools.playwright.retrieval_extract_text import RetrievalExtractTextTool
 from langchain_community.tools.playwright.get_elements import GetElementsTool
 from langchain_community.tools.playwright.navigate import NavigateTool
 from langchain_community.tools.playwright.navigate_back import NavigateBackTool
+from langchain_community.tools.playwright.retrieval_extract_text import (
+    RetrievalExtractTextTool,
+)
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser as AsyncBrowser
@@ -153,7 +155,7 @@ class RetrievalPlayWrightBrowserToolkit(PlayWrightBrowserToolkit):
         Parameters:
             sync_browser: Optional. The sync browser. Default is None.
             async_browser: Optional. The async browser. Default is None.
-        """
+    """
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

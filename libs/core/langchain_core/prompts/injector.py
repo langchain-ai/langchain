@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from langchain_core.prompt_values import PromptValue
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
 
 InputOutputType = TypeVar("InputOutputType")
@@ -10,7 +10,7 @@ InputOutputType = TypeVar("InputOutputType")
 class BaseInjector(
     RunnableSerializable[InputOutputType, InputOutputType], Generic[InputOutputType]
 ):
-    inject_objects: List[Any]
+    inject_objects: List[Any] = Field(init=False)
     """Objects which will be injected with an additional 
     attribute of 'attr_name'"""
     attr_name: str
@@ -19,26 +19,31 @@ class BaseInjector(
     """Whether the injection will be skipped in the injection 
     failed or raise exceptions on injection failure"""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_attr_name(cls, values: Dict) -> Dict:
-        for obj in values["inject_objects"]:
+    def __init__(
+            self, inject_objects: List[Any],
+            attr_name: str,
+            pass_on_injection_fail: bool = False
+    ):
+        for obj in inject_objects:
             if (
-                not hasattr(obj, values["attr_name"])
-                and not values["pass_on_injection_fail"]
+                    not hasattr(obj, attr_name)
+                    and not pass_on_injection_fail
             ):
                 raise ValueError(
-                    f"Cannot inject '{values['attr_name']}' "
+                    f"Cannot inject '{attr_name}' "
                     f"to instances of class '{type(obj).__name__}'"
-                    f" since the field {values['attr_name']} is not defined. "
-                    f"Either add field '{values['attr_name']}' "
+                    f" since the field {attr_name} is not defined. "
+                    f"Either add field '{attr_name}' "
                     f"in class '{type(obj).__name__}'"
                     f" or set 'pass_on_injection_fail=True' "
                     f"as argument of the constructor of injector. "
                 )
-        return values
+        super().__init__(inject_objects=inject_objects,
+                         attr_name=attr_name,
+                         pass_on_injection_fail=pass_on_injection_fail)
 
     def invoke(
-        self, input: InputOutputType, config: Optional[RunnableConfig] = None
+            self, input: InputOutputType, config: Optional[RunnableConfig] = None
     ) -> InputOutputType:
         config = ensure_config(config)
         return self._call_with_config(
@@ -54,7 +59,7 @@ class BaseInjector(
             if isinstance(obj, BaseModel):
                 try:
                     setattr(obj, self.attr_name, input)
-                except ValueError:
+                except ValueError as value_err:
                     if self.pass_on_injection_fail:
                         pass
                     else:
@@ -64,8 +69,8 @@ class BaseInjector(
                             f"Either the class {obj.__class__.__name__} "
                             f"has no field '{self.attr_name}' defined"
                             f" or {obj.__class__.__name__} is immutable"
-                        )
-                except TypeError:
+                        ) from value_err
+                except TypeError as type_err:
                     if self.pass_on_injection_fail:
                         pass
                     else:
@@ -74,7 +79,7 @@ class BaseInjector(
                             f"into instance of class '{obj.__class__.__name__}'. "
                             f"Field '{self.attr_name}' "
                             f"of class {obj.__class__.__name__} is final. "
-                        )
+                        ) from type_err
             else:
                 setattr(obj, self.attr_name, input)
         return input
