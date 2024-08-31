@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Type
+from typing import Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -27,16 +27,6 @@ class RetrievalExtractTextTool(BaseBrowserTool):
     description: str = "Extract relevant text on the current webpage"
     args_schema: Type[BaseModel] = BaseModel
     prompt: ChatPromptTemplate
-
-    def __init__(self, /, **kwargs: Any) -> None:
-        try:
-            from bs4 import BeautifulSoup  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "The 'beautifulsoup4' package is required to use this tool."
-                " Please install it with 'pip install beautifulsoup4'."
-            )
-        super().__init__(**kwargs)
 
     def _run(self, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         """Use the tool."""
