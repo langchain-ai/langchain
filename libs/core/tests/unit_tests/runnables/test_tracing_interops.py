@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Any, AsyncGenerator, Callable, Generator, Tuple, TypeVar
+from typing import Any, AsyncGenerator, Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -254,7 +254,7 @@ async def test_runnable_sequence_parallel_trace_nesting(method: str) -> None:
             return sequence.invoke(a)
 
     # Now run the chain and check the resulting posts
-    handlers = [tracer]
+    handlers: list = [tracer]
     with cm.trace_as_chain_group(
         "group_parent",
         cm.CallbackManager(handlers=handlers, inheritable_handlers=handlers),
