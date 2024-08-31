@@ -439,7 +439,7 @@ class SQLServer_VectorStore(VectorStore):
         return results
 
     def _create_filter_clause(self, filters: Any) -> Any:
-        """Convert LangChain Information Retrieval filter representation to matching 
+        """Convert LangChain Information Retrieval filter representation to matching
         SQLAlchemy clauses.
 
         At the top level,we still don't know if we're working with a field
