@@ -78,7 +78,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             "n_threads",
             "n_batch",
             "verbose",
-            "device"
+            "device",
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.
@@ -113,7 +113,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         embeddings = self.client.create_embedding(texts)
-        return [list(map(float, e['embedding'])) for e in embeddings['data']]
+        return [list(map(float, e["embedding"])) for e in embeddings["data"]]
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the Llama model.
