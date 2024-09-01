@@ -44,7 +44,7 @@ from typing import (
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.retrievers import BaseRetriever
+from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
@@ -558,7 +558,8 @@ class VectorStore(ABC):
         ):
             warnings.warn(
                 "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
+                f" 0 and 1, got {docs_and_similarities}",
+                stacklevel=2,
             )
 
         if score_threshold is not None:
@@ -568,7 +569,7 @@ class VectorStore(ABC):
                 if similarity >= score_threshold
             ]
             if len(docs_and_similarities) == 0:
-                warnings.warn(
+                logger.warning(
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )
@@ -605,7 +606,8 @@ class VectorStore(ABC):
         ):
             warnings.warn(
                 "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
+                f" 0 and 1, got {docs_and_similarities}",
+                stacklevel=2,
             )
 
         if score_threshold is not None:
@@ -615,7 +617,7 @@ class VectorStore(ABC):
                 if similarity >= score_threshold
             ]
             if len(docs_and_similarities) == 0:
-                warnings.warn(
+                logger.warning(
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )
@@ -1013,6 +1015,25 @@ class VectorStoreRetriever(BaseRetriever):
                     "in `search_kwargs`."
                 )
         return values
+
+    def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
+        """Get standard params for tracing."""
+
+        ls_params = super()._get_ls_params(**kwargs)
+        ls_params["ls_vector_store_provider"] = self.vectorstore.__class__.__name__
+
+        if self.vectorstore.embeddings:
+            ls_params["ls_embedding_provider"] = (
+                self.vectorstore.embeddings.__class__.__name__
+            )
+        elif hasattr(self.vectorstore, "embedding") and isinstance(
+            self.vectorstore.embedding, Embeddings
+        ):
+            ls_params["ls_embedding_provider"] = (
+                self.vectorstore.embedding.__class__.__name__
+            )
+
+        return ls_params
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from typing import Iterable, List, Literal, Union
 
+from langchain_core._api import beta
 from langchain_core.documents import Document
 
 
+@beta()
 @dataclass(frozen=True)
 class Link:
     """A link to/from a tag of a given tag.
@@ -38,8 +40,10 @@ class Link:
 METADATA_LINKS_KEY = "links"
 
 
+@beta()
 def get_links(doc: Document) -> List[Link]:
     """Get the links from a document.
+
     Args:
         doc: The document to get the link tags from.
     Returns:
@@ -54,8 +58,10 @@ def get_links(doc: Document) -> List[Link]:
     return links
 
 
+@beta()
 def add_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> None:
     """Add links to the given metadata.
+
     Args:
         doc: The document to add the links to.
         *links: The links to add to the document.
@@ -68,6 +74,7 @@ def add_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> None:
             links_in_metadata.append(link)
 
 
+@beta()
 def copy_with_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> Document:
     """Return a document with the given links added.
 

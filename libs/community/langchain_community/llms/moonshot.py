@@ -33,7 +33,7 @@ class _MoonshotClient(BaseModel):
 class MoonshotCommon(BaseModel):
     """Common parameters for Moonshot LLMs."""
 
-    _client: _MoonshotClient
+    client: _MoonshotClient
     base_url: str = MOONSHOT_SERVICE_URL_BASE
     moonshot_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Moonshot API key. Get it here: https://platform.moonshot.cn/console/api-keys"""
@@ -84,7 +84,7 @@ class MoonshotCommon(BaseModel):
             get_from_dict_or_env(values, "moonshot_api_key", "MOONSHOT_API_KEY")
         )
 
-        values["_client"] = _MoonshotClient(
+        values["client"] = _MoonshotClient(
             api_key=values["moonshot_api_key"],
             base_url=values["base_url"]
             if "base_url" in values
@@ -125,7 +125,7 @@ class Moonshot(MoonshotCommon, LLM):
         request = self._invocation_params
         request["messages"] = [{"role": "user", "content": prompt}]
         request.update(kwargs)
-        text = self._client.completion(request)
+        text = self.client.completion(request)
         if stop is not None:
             # This is required since the stop tokens
             # are not enforced by the model parameters

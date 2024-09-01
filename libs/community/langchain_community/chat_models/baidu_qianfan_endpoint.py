@@ -200,7 +200,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
                 ("human", "我喜欢编程。"),
             ]
-            qianfan_chat.invoke(message)
+            qianfan_chat.invoke(messages)
 
         .. code-block:: python
 
@@ -219,6 +219,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
         .. code-block:: python
 
+            stream = chat.stream(messages)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -511,6 +512,7 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             chat_generation_info: Dict = {}
+            usage_metadata: Optional[UsageMetadata] = None
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
                     chunk.generation_info
@@ -518,7 +520,14 @@ class QianfanChatEndpoint(BaseChatModel):
                     else chat_generation_info
                 )
                 completion += chunk.text
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+                if isinstance(chunk.message, AIMessageChunk):
+                    usage_metadata = chunk.message.usage_metadata
+
+            lc_msg = AIMessage(
+                content=completion,
+                additional_kwargs={},
+                usage_metadata=usage_metadata,
+            )
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -526,7 +535,7 @@ class QianfanChatEndpoint(BaseChatModel):
             return ChatResult(
                 generations=[gen],
                 llm_output={
-                    "token_usage": chat_generation_info.get("usage", {}),
+                    "token_usage": usage_metadata or {},
                     "model_name": self.model,
                 },
             )
@@ -555,6 +564,7 @@ class QianfanChatEndpoint(BaseChatModel):
         if self.streaming:
             completion = ""
             chat_generation_info: Dict = {}
+            usage_metadata: Optional[UsageMetadata] = None
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
                     chunk.generation_info
@@ -563,7 +573,14 @@ class QianfanChatEndpoint(BaseChatModel):
                 )
                 completion += chunk.text
 
-            lc_msg = AIMessage(content=completion, additional_kwargs={})
+                if isinstance(chunk.message, AIMessageChunk):
+                    usage_metadata = chunk.message.usage_metadata
+
+            lc_msg = AIMessage(
+                content=completion,
+                additional_kwargs={},
+                usage_metadata=usage_metadata,
+            )
             gen = ChatGeneration(
                 message=lc_msg,
                 generation_info=dict(finish_reason="stop"),
@@ -571,7 +588,7 @@ class QianfanChatEndpoint(BaseChatModel):
             return ChatResult(
                 generations=[gen],
                 llm_output={
-                    "token_usage": chat_generation_info.get("usage", {}),
+                    "token_usage": usage_metadata or {},
                     "model_name": self.model,
                 },
             )
