@@ -423,9 +423,17 @@ async def test_output_dict_async() -> None:
 def test_get_input_schema_input_dict() -> None:
     class RunnableWithChatHistoryInput(BaseModel):
         input: Union[str, BaseMessage, Sequence[BaseMessage]]
+        input_key_1: str
+        input_key_2: str
 
-    runnable = RunnableLambda(
-        lambda input: {
+    class RunnableInput(BaseModel):
+        input: Union[str, BaseMessage, Sequence[BaseMessage]]
+        history: Union[str, BaseMessage, Sequence[BaseMessage]]
+        input_key_1: str
+        input_key_2: str
+
+    def _callable(input: RunnableInput) -> dict[str, Any]:
+        return {
             "output": [
                 AIMessage(
                     content="you said: "
@@ -440,7 +448,9 @@ def test_get_input_schema_input_dict() -> None:
                 )
             ]
         }
-    )
+
+    runnable = RunnableLambda(_callable)
+
     get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(
         runnable,
