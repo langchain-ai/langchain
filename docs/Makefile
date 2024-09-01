@@ -73,6 +73,8 @@ append-related:
 generate-references:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)
 
+update-md: generate-files md-sync
+
 build: install-py-deps generate-files copy-infra render md-sync append-related
 
 vercel-build: install-vercel-deps build generate-references
