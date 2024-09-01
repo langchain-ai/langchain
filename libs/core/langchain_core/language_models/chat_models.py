@@ -219,7 +219,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """
 
     cache_text_only: Optional[bool] = Field(default=None, exclude=True)
-    """An optional parameter which is used to store only text content in cache rather than entire message"""
+    """An optional parameter which is used to store only text content in cache rather
+    than entire message"""
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
