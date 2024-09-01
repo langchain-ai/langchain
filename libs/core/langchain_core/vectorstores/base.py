@@ -1036,7 +1036,11 @@ class VectorStoreRetriever(BaseRetriever):
         return ls_params
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, search_kwargs: Optional[dict] = None
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        search_kwargs: Optional[dict] = None,
     ) -> List[Document]:
         search_kwargs = search_kwargs or self.search_kwargs
         if self.search_type == "similarity":
@@ -1057,7 +1061,11 @@ class VectorStoreRetriever(BaseRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun, search_kwargs: Optional[dict] = None
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        search_kwargs: Optional[dict] = None,
     ) -> List[Document]:
         search_kwargs = search_kwargs or self.search_kwargs
         if self.search_type == "similarity":
