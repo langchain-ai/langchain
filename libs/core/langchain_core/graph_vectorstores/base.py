@@ -38,10 +38,11 @@ class Node(Serializable):
 
     Edges exist from nodes with an outgoing link to nodes with a matching incoming link.
 
-    For instance two nodes `a` and `b` connected over a hyperlink `https://some-url`
+    For instance two nodes `a` and `b` connected over a hyperlink ``https://some-url``
     would look like:
 
     .. code-block:: python
+
         [
             Node(
                 id="a",
@@ -118,6 +119,13 @@ def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
 
 @beta()
 def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
+    """Convert nodes to documents.
+
+    Args:
+        nodes: The nodes to convert to documents.
+    Returns:
+        The documents generated from the nodes.
+    """
     for node in nodes:
         metadata = node.metadata.copy()
         metadata[METADATA_LINKS_KEY] = [
@@ -594,19 +602,24 @@ class GraphVectorStore(VectorStore):
         """Return GraphVectorStoreRetriever initialized from this GraphVectorStore.
 
         Args:
-            search_type (Optional[str]): Defines the type of search that
-                the Retriever should perform.
-                Can be "traversal" (default), "similarity", "mmr", or
-                "similarity_score_threshold".
-            search_kwargs (Optional[Dict]): Keyword arguments to pass to the
-                search function. Can include things like:
-                    k: Amount of documents to return (Default: 4)
-                    depth: The maximum depth of edges to traverse (Default: 1)
-                    score_threshold: Minimum relevance threshold
-                        for similarity_score_threshold
-                    fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
-                    lambda_mult: Diversity of results returned by MMR;
-                        1 for minimum diversity and 0 for maximum. (Default: 0.5)
+            **kwargs: Keyword arguments to pass to the search function.
+                Can include:
+
+                - search_type (Optional[str]): Defines the type of search that
+                  the Retriever should perform.
+                  Can be ``traversal`` (default), ``similarity``, ``mmr``, or
+                  ``similarity_score_threshold``.
+                - search_kwargs (Optional[Dict]): Keyword arguments to pass to the
+                  search function. Can include things like:
+
+                  - k(int): Amount of documents to return (Default: 4).
+                  - depth(int): The maximum depth of edges to traverse (Default: 1).
+                  - score_threshold(float): Minimum relevance threshold
+                    for similarity_score_threshold.
+                  - fetch_k(int): Amount of documents to pass to MMR algorithm
+                    (Default: 20).
+                  - lambda_mult(float): Diversity of results returned by MMR;
+                    1 for minimum diversity and 0 for maximum. (Default: 0.5).
         Returns:
             Retriever for this GraphVectorStore.
 
