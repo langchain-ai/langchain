@@ -406,14 +406,13 @@ def test_cleanup_serialized() -> None:
 
 def test_cache_text_only() -> None:
     """Test that the llm representation of a serializable chat model is correct."""
-        
+
     global_cache = InMemoryCache()
     local_cache = InMemoryCache()
     try:
         set_llm_cache(global_cache)
         chat_model = FakeListChatModel(
-            cache=local_cache, responses=["hello", "goodbye"],
-            cache_text_only = True
+            cache=local_cache, responses=["hello", "goodbye"], cache_text_only=True
         )
         assert chat_model.invoke("How are you?").content == "hello"
         # If the cache works we should get the same response since
