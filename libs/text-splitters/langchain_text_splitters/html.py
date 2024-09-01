@@ -433,10 +433,6 @@ class HTMLSemanticPreservingSplitter:
         """
         soup = self._BeautifulSoup(text, 'html.parser')
 
-        find_body = soup.find('body')
-        if find_body:
-            soup = find_body
-
         if self._preserve_links:
             for a_tag in soup.find_all('a'):
                 link_text = a_tag.get_text(strip=True)
@@ -473,34 +469,84 @@ class HTMLSemanticPreservingSplitter:
 
         elements = soup.find_all(recursive=False)
 
-        for element in elements:
-            if element.name in [h[0] for h in self._headers_to_split_on]:
-                if current_content:
-                    documents.extend(
-                        self._create_documents(
-                            current_headers, 
-                            " ".join(current_content), 
-                            preserved_elements)
+        def _process_element(element,
+                            documents,
+                            current_headers,
+                            current_content,
+                            preserved_elements,
+                            placeholder_count):
+            
+            for elem in element:
+                if elem.name.lower() in ['html', 'body', 'div']:
+                    children = elem.find_all(recursive=False)
+                    (
+                        documents, 
+                        current_headers, 
+                        current_content, 
+                        preserved_elements, 
+                        placeholder_count
+                    ) = _process_element(
+                        children,
+                        documents,
+                        current_headers,
+                        current_content,
+                        preserved_elements,
+                        placeholder_count
                     )
-                    current_content = []
-                    preserved_elements = {}
-                header_name = element.get_text(strip=True)
-                current_headers = {
-                    dict(self._headers_to_split_on)[element.name]: header_name
-                }
-            elif element.name in self._elements_to_preserve:
-                placeholder = f"PRESERVED_{placeholder_count}"
-                preserved_elements[placeholder] = _get_element_text(element)
-                current_content.append(placeholder)
-                placeholder_count += 1
-            else:
-                current_content.append(_get_element_text(element))
+                    continue
 
+                if elem.name in [h[0] for h in self._headers_to_split_on]:
+                    if current_content:
+                        documents.extend(
+                            self._create_documents(
+                                current_headers, 
+                                " ".join(current_content), 
+                                preserved_elements
+                            )
+                        )
+                        current_content.clear()
+                        preserved_elements.clear()
+                    header_name = elem.get_text(strip=True)  
+                    current_headers = {
+                        dict(self._headers_to_split_on)[elem.name]: header_name
+                    }
+                elif elem.name in self._elements_to_preserve:
+                    placeholder = f"PRESERVED_{placeholder_count}"
+                    preserved_elements[placeholder] = _get_element_text(elem)
+                    current_content.append(placeholder)
+                    placeholder_count += 1
+                else:
+                    current_content.append(_get_element_text(elem))
+
+            return documents, \
+                current_headers, \
+                    current_content, \
+                        preserved_elements, \
+                            placeholder_count
+
+        # Process the elements
+        (
+            documents, 
+            current_headers, 
+            current_content, 
+            preserved_elements, 
+            placeholder_count
+        ) = _process_element(
+            elements,
+            documents,
+            current_headers,
+            current_content,
+            preserved_elements,
+            placeholder_count
+        )
+
+        # Handle any remaining content
         if current_content:
             documents.extend(self._create_documents(
                 current_headers, 
                 " ".join(current_content), 
-                preserved_elements))
+                preserved_elements
+            ))
 
         return documents
 
@@ -524,7 +570,6 @@ class HTMLSemanticPreservingSplitter:
         content = re.sub(r'\s+', ' ', content).strip()
 
         if len(content) <= self._max_chunk_size:
-            print(content, preserved_elements)
             page_content = self._reinsert_preserved_elements(content, 
                                                              preserved_elements)
             return [
@@ -533,7 +578,6 @@ class HTMLSemanticPreservingSplitter:
                     metadata=headers)
                 ]
         else:
-            print('\ncontent\n', content, '\npreserved\n', preserved_elements)
             return self._further_split_chunk(content, headers, preserved_elements)
 
     def _further_split_chunk(self, 
