@@ -321,41 +321,42 @@ class HTMLSectionSplitter:
             for section in sections
         ]
 
+
 class HTMLSemanticPreservingSplitter:
     """
-    Splits HTML content by headers into generalized chunks, preserving semantic 
-    structure. If chunks exceed the maximum chunk size, 
+    Splits HTML content by headers into generalized chunks, preserving semantic
+    structure. If chunks exceed the maximum chunk size,
     uses RecursiveCharacterTextSplitter for further splitting.
 
     The splitter preserves full HTML elements (e.g., <table>, <ul>) and converts links,
-    to Markdown-like links. 
+    to Markdown-like links.
     Note that some chunks may exceed the maximum size to maintain semantic integrity.
 
     Attributes:
-        headers_to_split_on (List[Tuple[str, str]]): HTML headers (e.g., "h1", "h2") 
+        headers_to_split_on (List[Tuple[str, str]]): HTML headers (e.g., "h1", "h2")
         that define content sections.
-        max_chunk_size (int): Maximum size for each chunk, with allowance for exceeding 
+        max_chunk_size (int): Maximum size for each chunk, with allowance for exceeding
         this limit to preserve semantics.
-        chunk_overlap (int): Number of characters to overlap between chunks to ensure 
+        chunk_overlap (int): Number of characters to overlap between chunks to ensure
         contextual continuity.
-        separators (List[str]): Delimiters used by RecursiveCharacterTextSplitter for 
+        separators (List[str]): Delimiters used by RecursiveCharacterTextSplitter for
         further splitting.
-        elements_to_preserve (List[str]): HTML tags (e.g., <table>, <ul>) to remain 
+        elements_to_preserve (List[str]): HTML tags (e.g., <table>, <ul>) to remain
         intact during splitting.
         preserve_links (bool): Converts <a> tags to Markdown links ([text](url)).
-        custom_handlers (Dict[str, Callable[[Any], str]]): Optional custom handlers for 
+        custom_handlers (Dict[str, Callable[[Any], str]]): Optional custom handlers for
         specific HTML tags, allowing tailored extraction or processing.
 
     Example:
 
-        def custom_iframe_extractor(iframe_tag):       
+        def custom_iframe_extractor(iframe_tag):
             ```
             Custom handler function to extract the 'src' attribute from an <iframe> tag.
             Converts the iframe to a Markdown-like link: [iframe:<src>](src).
-            
+
             Args:
                 iframe_tag (bs4.element.Tag): The <iframe> tag to be processed.
-                
+
             Returns:
                 str: A formatted string representing the iframe in Markdown-like format.
             ```
@@ -363,7 +364,7 @@ class HTMLSemanticPreservingSplitter:
             return f"[iframe:{iframe_src}]({iframe_src})"
 
         text_splitter = HTMLSemanticPreservingSplitter(
-            headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")], 
+            headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
             max_chunk_size=500,
             preserve_links=True,
             custom_handlers={"iframe": custom_iframe_extractor}
@@ -381,28 +382,31 @@ class HTMLSemanticPreservingSplitter:
         custom_handlers: Optional[Dict[str, Callable[[Any], str]]] = None,
     ):
         """
-        Initializes the HTMLSemanticPreservingSplitter with the provided configuration 
+        Initializes the HTMLSemanticPreservingSplitter with the provided configuration
         to handle complex HTML splitting scenarios.
 
         Args:
-            headers_to_split_on (List[Tuple[str, str]]): Headers to guide content 
+            headers_to_split_on (List[Tuple[str, str]]): Headers to guide content
             splitting.
             max_chunk_size (int): Upper limit for each content chunk.
             chunk_overlap (int): Amount of overlap between chunks to maintain context.
             separators (Optional[List[str]]): Delimiters RecursiveCharacterTextSplitter.
             elements_to_preserve (List[str]): HTML tags to preserve during splitting.
             preserve_links (bool): Converts links to Markdown format.
-            custom_handlers (Optional[Dict[str, Callable[[Any], str]]]): Handlers for 
-                custom processing of specific HTML tags, 
+            custom_handlers (Optional[Dict[str, Callable[[Any], str]]]): Handlers for
+                custom processing of specific HTML tags,
                 where the key is the tag name and the value is the processing function.
         """
         try:
             from bs4 import BeautifulSoup, Tag
+
             self._BeautifulSoup = BeautifulSoup
             self._Tag = Tag
         except ImportError:
-            raise ImportError("Could not import BeautifulSoup. \
-                              Please install it with 'pip install bs4'.")
+            raise ImportError(
+                "Could not import BeautifulSoup. \
+                              Please install it with 'pip install bs4'."
+            )
 
         self._headers_to_split_on = sorted(headers_to_split_on)
         self._max_chunk_size = max_chunk_size
@@ -413,12 +417,11 @@ class HTMLSemanticPreservingSplitter:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
                 separators=separators,
                 chunk_size=max_chunk_size,
-                chunk_overlap=chunk_overlap
+                chunk_overlap=chunk_overlap,
             )
         else:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=max_chunk_size,
-                chunk_overlap=chunk_overlap
+                chunk_size=max_chunk_size, chunk_overlap=chunk_overlap
             )
 
     def split_text(self, text: str) -> List[Document]:
@@ -431,21 +434,20 @@ class HTMLSemanticPreservingSplitter:
         Returns:
             List[Document]: A list of Document objects containing the split content.
         """
-        soup = self._BeautifulSoup(text, 'html.parser')
+        soup = self._BeautifulSoup(text, "html.parser")
 
         if self._preserve_links:
-            for a_tag in soup.find_all('a'):
+            for a_tag in soup.find_all("a"):
                 link_text = a_tag.get_text(strip=True)
-                link_href = a_tag.get('href', '')
+                link_href = a_tag.get("href", "")
                 markdown_link = f"[{link_text}]({link_href})"
                 a_tag.replace_with(markdown_link)
 
         return self._process_html(soup)
 
-
     def _process_html(self, soup: Any) -> List[Document]:
         """
-        Processes the HTML content using BeautifulSoup and splits it 
+        Processes the HTML content using BeautifulSoup and splits it
         based on the headers.
 
         Args:
@@ -454,13 +456,13 @@ class HTMLSemanticPreservingSplitter:
         Returns:
             List[Document]: A list of Document objects containing the split content.
         """
-        documents = []
-        current_headers = {}
-        current_content = []
-        preserved_elements = {}
-        placeholder_count = 0
+        documents: List[Document] = []
+        current_headers: Dict[str, str] = {}
+        current_content: List[str] = []
+        preserved_elements: Dict[str, str] = {}
+        placeholder_count: int = 0
 
-        def _get_element_text(element):
+        def _get_element_text(element: Any) -> str:
             if self._custom_handlers:
                 handler = self._custom_handlers.get(element.name)
                 if handler:
@@ -469,29 +471,30 @@ class HTMLSemanticPreservingSplitter:
 
         elements = soup.find_all(recursive=False)
 
-        def _process_element(element,
-                            documents,
-                            current_headers,
-                            current_content,
-                            preserved_elements,
-                            placeholder_count):
-            
+        def _process_element(
+            element: List[Any],
+            documents: List[Document],
+            current_headers: Dict[str, str],
+            current_content: List[str],
+            preserved_elements: Dict[str, str],
+            placeholder_count: int,
+        ) -> Tuple[List[Document], Dict[str, str], List[str], Dict[str, str], int]:
             for elem in element:
-                if elem.name.lower() in ['html', 'body', 'div']:
+                if elem.name.lower() in ["html", "body", "div"]:
                     children = elem.find_all(recursive=False)
                     (
-                        documents, 
-                        current_headers, 
-                        current_content, 
-                        preserved_elements, 
-                        placeholder_count
+                        documents,
+                        current_headers,
+                        current_content,
+                        preserved_elements,
+                        placeholder_count,
                     ) = _process_element(
                         children,
                         documents,
                         current_headers,
                         current_content,
                         preserved_elements,
-                        placeholder_count
+                        placeholder_count,
                     )
                     continue
 
@@ -499,14 +502,14 @@ class HTMLSemanticPreservingSplitter:
                     if current_content:
                         documents.extend(
                             self._create_documents(
-                                current_headers, 
-                                " ".join(current_content), 
-                                preserved_elements
+                                current_headers,
+                                " ".join(current_content),
+                                preserved_elements,
                             )
                         )
                         current_content.clear()
                         preserved_elements.clear()
-                    header_name = elem.get_text(strip=True)  
+                    header_name = elem.get_text(strip=True)
                     current_headers = {
                         dict(self._headers_to_split_on)[elem.name]: header_name
                     }
@@ -518,80 +521,77 @@ class HTMLSemanticPreservingSplitter:
                 else:
                     current_content.append(_get_element_text(elem))
 
-            return documents, \
-                current_headers, \
-                    current_content, \
-                        preserved_elements, \
-                            placeholder_count
+            return (
+                documents,
+                current_headers,
+                current_content,
+                preserved_elements,
+                placeholder_count,
+            )
 
         # Process the elements
         (
-            documents, 
-            current_headers, 
-            current_content, 
-            preserved_elements, 
-            placeholder_count
+            documents,
+            current_headers,
+            current_content,
+            preserved_elements,
+            placeholder_count,
         ) = _process_element(
             elements,
             documents,
             current_headers,
             current_content,
             preserved_elements,
-            placeholder_count
+            placeholder_count,
         )
 
         # Handle any remaining content
         if current_content:
-            documents.extend(self._create_documents(
-                current_headers, 
-                " ".join(current_content), 
-                preserved_elements
-            ))
+            documents.extend(
+                self._create_documents(
+                    current_headers, " ".join(current_content), preserved_elements
+                )
+            )
 
         return documents
 
-    def _create_documents(self, 
-                          headers: dict, 
-                          content: str, 
-                          preserved_elements: dict) -> List[Document]:
+    def _create_documents(
+        self, headers: dict, content: str, preserved_elements: dict
+    ) -> List[Document]:
         """
-        Creates Document objects from the provided headers, content, 
+        Creates Document objects from the provided headers, content,
         and preserved elements.
 
         Args:
             headers (dict): The headers to attach as metadata to the Document.
             content (str): The content of the Document.
-            preserved_elements (dict): Preserved elements to be reinserted 
+            preserved_elements (dict): Preserved elements to be reinserted
             into the content.
 
         Returns:
             List[Document]: A list of Document objects.
         """
-        content = re.sub(r'\s+', ' ', content).strip()
+        content = re.sub(r"\s+", " ", content).strip()
 
         if len(content) <= self._max_chunk_size:
-            page_content = self._reinsert_preserved_elements(content, 
-                                                             preserved_elements)
-            return [
-                Document(
-                    page_content=page_content, 
-                    metadata=headers)
-                ]
+            page_content = self._reinsert_preserved_elements(
+                content, preserved_elements
+            )
+            return [Document(page_content=page_content, metadata=headers)]
         else:
             return self._further_split_chunk(content, headers, preserved_elements)
 
-    def _further_split_chunk(self, 
-                             content: str, 
-                             metadata: dict, 
-                             preserved_elements: dict) -> List[Document]:
+    def _further_split_chunk(
+        self, content: str, metadata: dict, preserved_elements: dict
+    ) -> List[Document]:
         """
-        Further splits the content into smaller chunks 
+        Further splits the content into smaller chunks
         if it exceeds the maximum chunk size.
 
         Args:
             content (str): The content to be split.
             metadata (dict): Metadata to attach to each chunk.
-            preserved_elements (dict): Preserved elements 
+            preserved_elements (dict): Preserved elements
             to be reinserted into each chunk.
 
         Returns:
@@ -601,17 +601,21 @@ class HTMLSemanticPreservingSplitter:
         result = []
 
         for split in splits:
-            split_with_preserved = self._reinsert_preserved_elements(split, 
-                                                                     preserved_elements)
+            split_with_preserved = self._reinsert_preserved_elements(
+                split, preserved_elements
+            )
             if split_with_preserved.strip():
-                result.append(Document(page_content=split_with_preserved.strip(), 
-                                       metadata=metadata))
+                result.append(
+                    Document(
+                        page_content=split_with_preserved.strip(), metadata=metadata
+                    )
+                )
 
         return result
 
-    def _reinsert_preserved_elements(self, 
-                                     content: str, 
-                                     preserved_elements: dict) -> str:
+    def _reinsert_preserved_elements(
+        self, content: str, preserved_elements: dict
+    ) -> str:
         """
         Reinserts preserved elements into the content into their original positions.
 
