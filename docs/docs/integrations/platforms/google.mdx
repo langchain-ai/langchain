@@ -278,7 +278,7 @@ from langchain_google_vertexai.vision_models import VertexAIImageCaptioning
 
 ## Embedding models
 
-### Google Generative AI Embedding
+### Google Generative AI embedding
 
 See a [usage example](/docs/integrations/text_embedding/google_generative_ai).
 
@@ -296,7 +296,7 @@ export GOOGLE_API_KEY=your-api-key
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 ```
 
-### Google GenerativeAI server-side embeddings 
+### Google Generative AI server-side embedding
 
 Install the python package:
 
@@ -322,7 +322,7 @@ See a [usage example](/docs/integrations/text_embedding/google_vertex_ai_palm).
 from langchain_google_vertexai import VertexAIEmbeddings
 ```
 
-### Palm Embedding
+### Palm embedding
 
 We need to install `langchain-community` python package.
 
@@ -714,7 +714,7 @@ pip install langchain-google-firestore
 See [usage example](/docs/integrations/vectorstores/google_firestore).
 
 ```python
-from langchain_google_firestore import FirestoreVectorstore
+from langchain_google_firestore import FirestoreVectorStore
 ```
 
 ### Cloud SQL for MySQL
@@ -799,7 +799,7 @@ pip install langchain-google-vertexai
 from langchain_google_vertexai import VectorSearchVectorStoreGCS
 ```
 
-### Google GenerativeAI Vector Store 
+### Google Generative AI Vector Store 
 
 > Currently, it computes the embedding vectors on the server side.
 > For more information visit [Guide](https://developers.generativeai.google/guide).
@@ -943,13 +943,14 @@ We need to install several python packages.
 
 ```bash
 pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+pip install langchain-googledrive
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/tools/google_drive).
 
 ```python
-from langchain_community.utilities.google_drive import GoogleDriveAPIWrapper
-from langchain_community.tools.google_drive.tool import GoogleDriveSearchTool
+from langchain_googledrive.utilities.google_drive import GoogleDriveAPIWrapper
+from langchain_googledrive.tools.google_drive.tool import GoogleDriveSearchTool
 ```
 
 ### Google Finance
