@@ -250,6 +250,11 @@ class HuggingFacePipeline(BaseLLM):
     def _llm_type(self) -> str:
         return "huggingface_pipeline"
 
+    @property
+    def model_id(self) -> str:
+        """Get the model ID dynamically from the pipeline."""
+        return self.pipeline.model.name_or_path if self.pipeline else DEFAULT_MODEL_ID
+
     def _generate(
         self,
         prompts: List[str],
