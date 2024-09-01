@@ -278,7 +278,7 @@ from langchain_google_vertexai.vision_models import VertexAIImageCaptioning
 
 ## Embedding models
 
-### Google Generative AI Embeddings
+### Google Generative AI Embedding
 
 See a [usage example](/docs/integrations/text_embedding/google_generative_ai).
 
@@ -294,6 +294,18 @@ export GOOGLE_API_KEY=your-api-key
 
 ```python
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+```
+
+### Google GenerativeAI server-side embeddings 
+
+Install the python package:
+
+```bash
+pip install langchain-google-genai
+```
+
+```python
+from langchain_google_genai.google_vector_store import ServerSideEmbedding
 ```
 
 ### Vertex AI
@@ -359,6 +371,7 @@ from langchain_google_community import BigQueryLoader
 ### Bigtable
 
 > [Google Cloud Bigtable](https://cloud.google.com/bigtable/docs) is Google's fully managed NoSQL Big Data database service in Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -374,6 +387,7 @@ from langchain_google_bigtable import BigtableLoader
 ### Cloud SQL for MySQL
 
 > [Google Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -383,12 +397,13 @@ pip install langchain-google-cloud-sql-mysql
 See [usage example](/docs/integrations/document_loaders/google_cloud_sql_mysql).
 
 ```python
-from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLDocumentLoader
+from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLLoader
 ```
 
 ### Cloud SQL for SQL Server
 
 > [Google Cloud SQL for SQL Server](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your SQL Server databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -404,6 +419,7 @@ from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLLoader
 ### Cloud SQL for PostgreSQL
 
 > [Google Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -488,6 +504,7 @@ from langchain_google_community import GoogleDriveLoader
 ### Firestore (Native Mode)
 
 > [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+
 Install the python package:
 
 ```bash
@@ -504,6 +521,7 @@ from langchain_google_firestore import FirestoreLoader
 
 > [Google Cloud Firestore in Datastore mode](https://cloud.google.com/datastore/docs) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
 > Firestore is the newest version of Datastore and introduces several improvements over Datastore.
+
 Install the python package:
 
 ```bash
@@ -519,6 +537,7 @@ from langchain_google_datastore import DatastoreLoader
 ### Memorystore for Redis
 
 > [Google Cloud Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
 Install the python package:
 
 ```bash
@@ -528,12 +547,13 @@ pip install langchain-google-memorystore-redis
 See [usage example](/docs/integrations/document_loaders/google_memorystore_redis).
 
 ```python
-from langchain_google_memorystore_redis import MemorystoreLoader
+from langchain_google_memorystore_redis import MemorystoreDocumentLoader
 ```
 
 ### Spanner
 
 > [Google Cloud Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
 Install the python package:
 
 ```bash
@@ -652,6 +672,7 @@ from langchain.vectorstores import BigQueryVectorSearch
 ### Memorystore for Redis
 
 > [Google Cloud Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
 Install the python package:
 
 ```bash
@@ -667,6 +688,7 @@ from langchain_google_memorystore_redis import RedisVectorStore
 ### Spanner
 
 > [Google Cloud Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
 Install the python package:
 
 ```bash
@@ -682,6 +704,7 @@ from langchain_google_spanner import SpannerVectorStore
 ### Firestore (Native Mode)
 
 > [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+
 Install the python package:
 
 ```bash
@@ -697,6 +720,7 @@ from langchain_google_firestore import FirestoreVectorstore
 ### Cloud SQL for MySQL
 
 > [Google Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -712,6 +736,7 @@ from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLVectorStore
 ### Cloud SQL for PostgreSQL
 
 > [Google Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -772,6 +797,21 @@ pip install langchain-google-vertexai
 
 ```python
 from langchain_google_vertexai import VectorSearchVectorStoreGCS
+```
+
+### Google GenerativeAI Vector Store 
+
+> Currently, it computes the embedding vectors on the server side.
+> For more information visit [Guide](https://developers.generativeai.google/guide).
+
+Install the python package:
+
+```bash
+pip install langchain-google-genai
+```
+
+```python
+from langchain_google_genai.google_vector_store import GoogleVectorStore
 ```
 
 ### ScaNN
@@ -885,10 +925,10 @@ from langchain_google_community.documentai_warehouse import DocumentAIWarehouseR
 > It applies DeepMind’s groundbreaking research in WaveNet and Google’s powerful neural networks
 > to deliver the highest fidelity possible.
 
-We need to install a python package.
+We need to install python packages.
 
 ```bash
-pip install google-cloud-text-to-speech
+pip install google-cloud-text-to-speech langchain-google-community
 ```
 
 See a [usage example and authorization instructions](/docs/integrations/tools/google_cloud_texttospeech).
@@ -1083,6 +1123,7 @@ from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBChatMessageHistory
 ### Cloud SQL for PostgreSQL
 
 > [Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -1099,6 +1140,7 @@ from langchain_google_cloud_sql_pg import PostgresEngine, PostgresChatMessageHis
 ### Cloud SQL for MySQL
 
 > [Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -1114,6 +1156,7 @@ from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLChatMessageHistor
 ### Cloud SQL for SQL Server
 
 > [Cloud SQL for SQL Server](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your SQL Server databases on Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -1129,6 +1172,7 @@ from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLChatMessageHistor
 ### Spanner
 
 > [Google Cloud Spanner](https://cloud.google.com/spanner/docs) is a fully managed, mission-critical, relational database service on Google Cloud that offers transactional consistency at global scale, automatic, synchronous replication for high availability, and support for two SQL dialects: GoogleSQL (ANSI 2011 with extensions) and PostgreSQL.
+
 Install the python package:
 
 ```bash
@@ -1144,6 +1188,7 @@ from langchain_google_spanner import SpannerChatMessageHistory
 ### Memorystore for Redis
 
 > [Google Cloud Memorystore for Redis](https://cloud.google.com/memorystore/docs/redis) is a fully managed Redis service for Google Cloud. Applications running on Google Cloud can achieve extreme performance by leveraging the highly scalable, available, secure Redis service without the burden of managing complex Redis deployments.
+
 Install the python package:
 
 ```bash
@@ -1159,6 +1204,7 @@ from langchain_google_memorystore_redis import MemorystoreChatMessageHistory
 ### Bigtable
 
 > [Google Cloud Bigtable](https://cloud.google.com/bigtable/docs) is Google's fully managed NoSQL Big Data database service in Google Cloud.
+
 Install the python package:
 
 ```bash
@@ -1174,6 +1220,7 @@ from langchain_google_bigtable import BigtableChatMessageHistory
 ### Firestore (Native Mode)
 
 > [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+
 Install the python package:
 
 ```bash
@@ -1190,6 +1237,7 @@ from langchain_google_firestore import FirestoreChatMessageHistory
 
 > [Google Cloud Firestore in Datastore mode](https://cloud.google.com/datastore/docs) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
 > Firestore is the newest version of Datastore and introduces several improvements over Datastore.
+
 Install the python package:
 
 ```bash
