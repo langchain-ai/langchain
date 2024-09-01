@@ -234,6 +234,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     output_messages_key: Optional[str] = None
     history_messages_key: Optional[str] = None
     history_factory_config: Sequence[ConfigurableFieldSpec]
+    runnable_schema: Type[BaseModel]
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -352,6 +353,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 ),
             ]
 
+        runnable_schema = runnable.get_input_schema()
+
         super().__init__(
             get_session_history=get_session_history,
             input_messages_key=input_messages_key,
@@ -359,6 +362,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             bound=bound,
             history_messages_key=history_messages_key,
             history_factory_config=_config_specs,
+            runnable_schema=runnable_schema,
             **kwargs,
         )
 
@@ -389,13 +393,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             else:
                 fields["__root__"] = (Sequence[BaseMessage], ...)
 
-            if self.bound.get_prompts():
-                for input_variable in self.bound.get_prompts()[0].input_variables:
+            if "properties" in self.runnable_schema.schema():
+                for key in self.runnable_schema.schema()["properties"]:
                     if (
-                        input_variable != self.input_messages_key
-                        and input_variable != self.history_messages_key
+                        key != self.input_messages_key
+                        and key != self.history_messages_key
                     ):
-                        fields[input_variable] = (
+                        fields[key] = (
                             Union[str],
                             ...,
                         )
