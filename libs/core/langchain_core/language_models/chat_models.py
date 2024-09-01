@@ -218,6 +218,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     - If False (default), will always use streaming case if available.
     """
 
+    cache_text_only: Optional[bool] = Field(default=None, exclude=True)
+    """An optional parameter which is used to store only text content in cache rather than entire message"""
+
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used.
@@ -806,7 +809,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(messages)
+                if self.cache_text_only:
+                    prompt = "\n".join(
+                        list(map(lambda x: f"{x.type}:{x.content}", messages))
+                    )
+                else:
+                    prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     return ChatResult(generations=cache_val)
