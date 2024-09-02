@@ -62,6 +62,11 @@ SEARCH_TOOL_FEAT_TABLE = {
         "available_data": "Answer",
         "link": "/docs/integrations/tools/serpapi",
     },
+    "Jina Search": {
+        "pricing": "1M Response Tokens Free",
+        "available_data": "URL, Snippet, Title, Page Content",
+        "link": "/docs/integrations/tools/jina_search/",
+    },
 }
 
 CODE_INTERPRETER_TOOL_FEAT_TABLE = {
