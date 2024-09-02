@@ -8,9 +8,8 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
 
 import pydantic  # pydantic: ignore
-from pydantic import BaseModel, root_validator  # pydantic: ignore
+from pydantic import BaseModel, FieldInfo, root_validator  # pydantic: ignore
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue  # pydantic: ignore
-from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic_core import core_schema  # pydantic: ignore
 
 
@@ -325,29 +324,19 @@ def _create_subset_model(
 
 
 @overload
-def get_fields(model: Type[BaseModelV2]) -> Dict[str, FieldInfoV2]: ...
+def get_fields(model: Type[BaseModel]) -> Dict[str, FieldInfo]: ...
 
 
 @overload
-def get_fields(model: BaseModelV2) -> Dict[str, FieldInfoV2]: ...
-
-
-@overload
-def get_fields(model: Type[BaseModelV1]) -> Dict[str, FieldInfoV1]: ...
-
-
-@overload
-def get_fields(model: BaseModelV1) -> Dict[str, FieldInfoV1]: ...
+def get_fields(model: BaseModel) -> Dict[str, FieldInfo]: ...
 
 
 def get_fields(
     model: Union[
-        BaseModelV2,
-        BaseModelV1,
-        Type[BaseModelV2],
-        Type[BaseModelV1],
+        BaseModel,
+        Type[BaseModel],
     ],
-) -> Union[Dict[str, FieldInfoV2], Dict[str, FieldInfoV1]]:
+) -> Union[Dict[str, FieldInfo], Dict[str, FieldInfoV1]]:
     """Get the field names of a Pydantic model."""
     if hasattr(model, "model_fields"):
         return model.model_fields  # type: ignore

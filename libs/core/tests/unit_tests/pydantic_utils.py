@@ -61,7 +61,7 @@ def _remove_enum_description(obj: Any) -> None:
         if "enum" in obj:
             if "description" in obj and obj["description"] == "An enumeration.":
                 del obj["description"]
-        for key, value in obj.items():
+        for _, value in obj.items():
             _remove_enum_description(value)
     elif isinstance(obj, list):
         for item in obj:
