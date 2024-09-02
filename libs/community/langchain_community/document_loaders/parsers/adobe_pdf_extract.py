@@ -83,14 +83,14 @@ class AdobePDFExtractParser(BaseBlobParser):
     def _generate_docs_chunks(
         self, json_data: dict, data: zipfile.ZipFile
     ) -> Iterator[Document]:
-        headers = []
-        current_paragraphs = []
+        headers: list = []
+        current_paragraphs: list = []
         header_page = None
         paragraph_page = None
         last_header_level = None
-        figures = {}
+        figures: dict = {}
 
-        def yield_chunk():
+        def yield_chunk() -> Iterator[Document]:
             if current_paragraphs:
                 merged_paragraphs = "".join([p for p in current_paragraphs]).strip()
                 yield Document(
