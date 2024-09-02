@@ -20,6 +20,7 @@ class SpacyTextSplitter(TextSplitter):
         separator: str = "\n\n",
         pipeline: str = "en_core_web_sm",
         max_length: int = 1_000_000,
+        *,
         strip_whitespace: bool = True,
         **kwargs: Any,
     ) -> None:
