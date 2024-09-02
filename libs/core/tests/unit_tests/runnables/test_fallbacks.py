@@ -307,7 +307,7 @@ async def test_fallbacks_astream() -> None:
         runnable = RunnableGenerator(_agenerate_delayed_error).with_fallbacks(
             [RunnableGenerator(_agenerate)]
         )
-        async for c in runnable.astream({}):
+        async for _ in runnable.astream({}):
             pass
 
 
@@ -334,7 +334,7 @@ class FakeStructuredOutputModel(BaseChatModel):
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        return self | (lambda x: {"foo": self.foo})
+        return RunnableLambda(lambda x: {"foo": self.foo})
 
     @property
     def _llm_type(self) -> str:
@@ -373,7 +373,7 @@ def test_fallbacks_getattr() -> None:
     assert llm_with_fallbacks.foo == 3
 
     with pytest.raises(AttributeError):
-        llm_with_fallbacks.bar
+        assert llm_with_fallbacks.bar == 4
 
 
 def test_fallbacks_getattr_runnable_output() -> None:
@@ -388,6 +388,3 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
-
-    with pytest.raises(NotImplementedError):
-        llm_with_fallbacks.with_structured_output({})

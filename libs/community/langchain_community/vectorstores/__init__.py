@@ -43,6 +43,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.apache_doris import (
         ApacheDoris,
     )
+    from langchain_community.vectorstores.aperturedb import (
+        ApertureDB,
+    )
     from langchain_community.vectorstores.astradb import (
         AstraDB,
     )
@@ -311,6 +314,7 @@ __all__ = [
     "AnalyticDB",
     "Annoy",
     "ApacheDoris",
+    "ApertureDB",
     "AstraDB",
     "AtlasDB",
     "AwaDB",
@@ -413,6 +417,7 @@ _module_lookup = {
     "AnalyticDB": "langchain_community.vectorstores.analyticdb",
     "Annoy": "langchain_community.vectorstores.annoy",
     "ApacheDoris": "langchain_community.vectorstores.apache_doris",
+    "ApertureDB": "langchain_community.vectorstores.aperturedb",
     "AstraDB": "langchain_community.vectorstores.astradb",
     "AtlasDB": "langchain_community.vectorstores.atlas",
     "AwaDB": "langchain_community.vectorstores.awadb",

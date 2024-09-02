@@ -1,5 +1,3 @@
-import json
-import os
 import re
 import warnings
 from operator import itemgetter
@@ -44,8 +42,19 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
+from langchain_core.output_parsers import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
+from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.runnables import (
     Runnable,
     RunnableMap,
@@ -54,12 +63,15 @@ from langchain_core.runnables import (
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     build_extra_kwargs,
-    convert_to_secret_str,
+    from_env,
     get_pydantic_field_names,
+    secret_from_env,
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import is_basemodel_subclass
+from typing_extensions import NotRequired
 
-from langchain_anthropic.output_parsers import ToolsOutputParser, extract_tool_calls
+from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
     "human": "user",
@@ -104,18 +116,22 @@ def _merge_messages(
     for curr in messages:
         curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
-            if isinstance(curr.content, str):
+            if isinstance(curr.content, list) and all(
+                isinstance(block, dict) and block.get("type") == "tool_result"
+                for block in curr.content
+            ):
+                curr = HumanMessage(curr.content)  # type: ignore[misc]
+            else:
                 curr = HumanMessage(  # type: ignore[misc]
                     [
                         {
                             "type": "tool_result",
                             "content": curr.content,
                             "tool_use_id": curr.tool_call_id,
+                            "is_error": curr.status == "error",
                         }
                     ]
                 )
-            else:
-                curr = HumanMessage(curr.content)  # type: ignore[misc]
         last = merged[-1] if merged else None
         if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
             if isinstance(last.content, str):
@@ -132,19 +148,21 @@ def _merge_messages(
     return merged
 
 
-def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[Dict]]:
+def _format_messages(
+    messages: List[BaseMessage],
+) -> Tuple[Union[str, List[Dict], None], List[Dict]]:
     """Format messages for anthropic."""
 
     """
     [
                 {
                     "role": _message_type_lookups[m.type],
-                    "content": [_AnthropicMessageContent(text=m.content).dict()],
+                    "content": [_AnthropicMessageContent(text=m.content).model_dump()],
                 }
                 for m in messages
             ]
     """
-    system: Optional[str] = None
+    system: Union[str, List[Dict], None] = None
     formatted_messages: List[Dict] = []
 
     merged_messages = _merge_messages(messages)
@@ -152,12 +170,15 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
         if message.type == "system":
             if i != 0:
                 raise ValueError("System message must be at beginning of message list.")
-            if not isinstance(message.content, str):
-                raise ValueError(
-                    "System message must be a string, "
-                    f"instead was: {type(message.content)}"
-                )
-            system = message.content
+            if isinstance(message.content, list):
+                system = [
+                    block
+                    if isinstance(block, dict)
+                    else {"type": "text", "text": "block"}
+                    for block in message.content
+                ]
+            else:
+                system = message.content
             continue
 
         role = _message_type_lookups[message.type]
@@ -204,7 +225,13 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
-                            content.append({"type": "text", "text": text})
+                            content.append(
+                                {
+                                    k: v
+                                    for k, v in item.items()
+                                    if k in ("type", "text", "cache_control")
+                                }
+                            )
                     else:
                         content.append(item)
                 else:
@@ -229,7 +256,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
 
 
 class ChatAnthropic(BaseChatModel):
-    """Anthropic chat model integration.
+    """Anthropic chat models.
 
     See https://docs.anthropic.com/en/docs/models-overview for a list of the latest models.
 
@@ -514,14 +541,26 @@ class ChatAnthropic(BaseChatModel):
     stop_sequences: Optional[List[str]] = Field(None, alias="stop")
     """Default stop sequences."""
 
-    anthropic_api_url: Optional[str] = Field(None, alias="base_url")
+    anthropic_api_url: Optional[str] = Field(
+        alias="base_url",
+        default_factory=from_env(
+            ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+            default="https://api.anthropic.com",
+        ),
+    )
     """Base URL for API requests. Only specify if using a proxy or service emulator.
-    
-    If a value isn't passed in and environment variable ANTHROPIC_BASE_URL is set, value
-    will be read from there.
+
+    If a value isn't passed in, will attempt to read the value first from
+    ANTHROPIC_API_URL and if that is not set, ANTHROPIC_BASE_URL.
+    If neither are set, the default value of 'https://api.anthropic.com' will
+    be used.
     """
 
-    anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
+    anthropic_api_key: SecretStr = Field(
+        alias="api_key",
+        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
+    )
+
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     default_headers: Optional[Mapping[str, str]] = None
@@ -596,20 +635,10 @@ class ChatAnthropic(BaseChatModel):
         )
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        anthropic_api_key = convert_to_secret_str(
-            values.get("anthropic_api_key") or os.environ.get("ANTHROPIC_API_KEY") or ""
-        )
-        values["anthropic_api_key"] = anthropic_api_key
-        api_key = anthropic_api_key.get_secret_value()
-        api_url = (
-            values.get("anthropic_api_url")
-            or os.environ.get("ANTHROPIC_API_URL")
-            or os.environ.get("ANTHROPIC_BASE_URL")
-            or "https://api.anthropic.com"
-        )
-        values["anthropic_api_url"] = api_url
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        api_key = values["anthropic_api_key"].get_secret_value()
+        api_url = values["anthropic_api_url"]
         client_params = {
             "api_key": api_key,
             "base_url": api_url,
@@ -629,31 +658,28 @@ class ChatAnthropic(BaseChatModel):
         values["_async_client"] = anthropic.AsyncClient(**client_params)
         return values
 
-    def _format_params(
+    def _get_request_payload(
         self,
+        input_: LanguageModelInput,
         *,
-        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         **kwargs: Dict,
     ) -> Dict:
-        # get system prompt if any
+        messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
-        stop_sequences = stop or self.stop_sequences
-        rtn = {
+        payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
             "messages": formatted_messages,
             "temperature": self.temperature,
             "top_k": self.top_k,
             "top_p": self.top_p,
-            "stop_sequences": stop_sequences,
+            "stop_sequences": stop or self.stop_sequences,
             "system": system,
             **self.model_kwargs,
             **kwargs,
         }
-        rtn = {k: v for k, v in rtn.items() if v is not None}
-
-        return rtn
+        return {k: v for k, v in payload.items() if v is not None}
 
     def _stream(
         self,
@@ -666,35 +692,15 @@ class ChatAnthropic(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         if stream_usage is None:
             stream_usage = self.stream_usage
-        params = self._format_params(messages=messages, stop=stop, **kwargs)
-        if _tools_in_params(params):
-            result = self._generate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            message = result.generations[0].message
-            if isinstance(message, AIMessage) and message.tool_calls is not None:
-                tool_call_chunks = [
-                    {
-                        "name": tool_call["name"],
-                        "args": json.dumps(tool_call["args"]),
-                        "id": tool_call["id"],
-                        "index": idx,
-                    }
-                    for idx, tool_call in enumerate(message.tool_calls)
-                ]
-                message_chunk = AIMessageChunk(
-                    content=message.content,
-                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
-                    usage_metadata=message.usage_metadata,
-                )
-                yield ChatGenerationChunk(message=message_chunk)
-            else:
-                yield cast(ChatGenerationChunk, result.generations[0])
-            return
-        stream = self._client.messages.create(**params, stream=True)
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        stream = self._client.messages.create(**payload)
+        coerce_content_to_string = not _tools_in_params(payload)
         for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
-                event, stream_usage=stream_usage
+                event,
+                stream_usage=stream_usage,
+                coerce_content_to_string=coerce_content_to_string,
             )
             if msg is not None:
                 chunk = ChatGenerationChunk(message=msg)
@@ -713,36 +719,15 @@ class ChatAnthropic(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         if stream_usage is None:
             stream_usage = self.stream_usage
-        params = self._format_params(messages=messages, stop=stop, **kwargs)
-        if _tools_in_params(params):
-            warnings.warn("stream: Tool use is not yet supported in streaming mode.")
-            result = await self._agenerate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            message = result.generations[0].message
-            if isinstance(message, AIMessage) and message.tool_calls is not None:
-                tool_call_chunks = [
-                    {
-                        "name": tool_call["name"],
-                        "args": json.dumps(tool_call["args"]),
-                        "id": tool_call["id"],
-                        "index": idx,
-                    }
-                    for idx, tool_call in enumerate(message.tool_calls)
-                ]
-                message_chunk = AIMessageChunk(
-                    content=message.content,
-                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
-                    usage_metadata=message.usage_metadata,
-                )
-                yield ChatGenerationChunk(message=message_chunk)
-            else:
-                yield cast(ChatGenerationChunk, result.generations[0])
-            return
-        stream = await self._async_client.messages.create(**params, stream=True)
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        stream = await self._async_client.messages.create(**payload)
+        coerce_content_to_string = not _tools_in_params(payload)
         async for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
-                event, stream_usage=stream_usage
+                event,
+                stream_usage=stream_usage,
+                coerce_content_to_string=coerce_content_to_string,
             )
             if msg is not None:
                 chunk = ChatGenerationChunk(message=msg)
@@ -784,18 +769,13 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._format_params(messages=messages, stop=stop, **kwargs)
         if self.streaming:
-            if _tools_in_params(params):
-                warnings.warn(
-                    "stream: Tool use is not yet supported in streaming mode."
-                )
-            else:
-                stream_iter = self._stream(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-                return generate_from_stream(stream_iter)
-        data = self._client.messages.create(**params)
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        data = self._client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -805,23 +785,18 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._format_params(messages=messages, stop=stop, **kwargs)
         if self.streaming:
-            if _tools_in_params(params):
-                warnings.warn(
-                    "stream: Tool use is not yet supported in streaming mode."
-                )
-            else:
-                stream_iter = self._astream(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-                return await agenerate_from_stream(stream_iter)
-        data = await self._async_client.messages.create(**params)
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        data = await self._async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], Type, Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[Dict[str, str], Literal["any", "auto"], str]
@@ -832,19 +807,19 @@ class ChatAnthropic(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
+                Supports Anthropic format tool schemas and any tool definition handled
+                by :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Options are:
-                    name of the tool (str): calls corresponding tool;
-                    "auto" or None: automatically selects a tool (including no tool);
-                    "any": force at least one tool to be called;
-                    or a dict of the form:
-                        {"type": "tool", "name": "tool_name"},
-                        or {"type: "any"},
-                        or {"type: "auto"};
-            **kwargs: Any additional parameters to bind.
+                    - name of the tool (str): calls corresponding tool;
+                    - ``"auto"`` or None: automatically selects a tool (including no tool);
+                    - ``"any"``: force at least one tool to be called;
+                    - or a dict of the form:
+                        ``{"type": "tool", "name": "tool_name"}``,
+                        or ``{"type: "any"}``,
+                        or ``{"type: "auto"}``;
+            kwargs: Any additional parameters are passed directly to
+                ``self.bind(**kwargs)``.
 
         Example:
             .. code-block:: python
@@ -917,6 +892,51 @@ class ChatAnthropic(BaseChatModel):
                 llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
+
+        Example — cache specific tools:
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic, convert_to_anthropic_tool
+                from langchain_core.pydantic_v1 import BaseModel, Field
+
+                class GetWeather(BaseModel):
+                    '''Get the current weather in a given location'''
+
+                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+                class GetPrice(BaseModel):
+                    '''Get the price of a specific product.'''
+
+                    product: str = Field(..., description="The product to look up.")
+
+                # We'll convert our pydantic class to the anthropic tool format
+                # before passing to bind_tools so that we can set the 'cache_control'
+                # field on our tool.
+                cached_price_tool = convert_to_anthropic_tool(GetPrice)
+                # Currently the only supported "cache_control" value is
+                # {"type": "ephemeral"}.
+                cached_price_tool["cache_control"] = {"type": "ephemeral"}
+
+                # We need to pass in extra headers to enable use of the beta cache
+                # control API.
+                llm = ChatAnthropic(
+                    model="claude-3-opus-20240229",
+                    temperature=0,
+                    extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}
+                )
+                llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
+                llm_with_tools.invoke("what is the weather like in San Francisco",)
+
+            This outputs:
+            .. code-block:: pycon
+
+                AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
+
+            If we invoke the tool again, we can see that the "usage" information in the AIMessage.response_metadata shows that we had a cache hit:
+            .. code-block:: pycon
+
+                AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
+
         """  # noqa: E501
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
         if not tool_choice:
@@ -944,11 +964,26 @@ class ChatAnthropic(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
-                then the model output will be an object of that class. If a dict then
-                the model output will be a dict. With a Pydantic class the returned
-                attributes will be validated, whereas with a dict they will not be.
-            include_raw: If False then only the parsed structured output is returned. If
+            schema:
+                The output schema. Can be passed in as:
+                    - an Anthropic tool schema,
+                    - an OpenAI function/tool schema,
+                    - a JSON Schema,
+                    - a TypedDict class (support added in 0.1.22),
+                    - or a Pydantic class.
+                If ``schema`` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                for more on how to properly specify types and descriptions of
+                schema fields when specifying a Pydantic or TypedDict class.
+
+                .. versionchanged:: 0.1.22
+
+                        Added support for TypedDict class.
+
+            include_raw:
+                If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
@@ -956,17 +991,17 @@ class ChatAnthropic(BaseChatModel):
                 with keys "raw", "parsed", and "parsing_error".
 
         Returns:
-            A Runnable that takes any ChatModel input. The output type depends on
-            include_raw and schema.
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            If include_raw is True then output is a dict with keys:
-                raw: BaseMessage,
-                parsed: Optional[_DictOrPydantic],
-                parsing_error: Optional[BaseException],
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object).
 
-            If include_raw is False and schema is a Dict then the runnable outputs a Dict.
-            If include_raw is False and schema is a Type[BaseModel] then the runnable
-            outputs a BaseModel.
+            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+                - ``"raw"``: BaseMessage
+                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``"parsing_error"``: Optional[BaseException]
 
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
@@ -1037,13 +1072,17 @@ class ChatAnthropic(BaseChatModel):
                 # }
 
         """  # noqa: E501
-        llm = self.bind_tools([schema], tool_choice="any")
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
-            output_parser = ToolsOutputParser(
-                first_tool_only=True, pydantic_schemas=[schema]
+
+        tool_name = convert_to_anthropic_tool(schema)["name"]
+        llm = self.bind_tools([schema], tool_choice=tool_name)
+        if isinstance(schema, type) and is_basemodel_subclass(schema):
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
             )
         else:
-            output_parser = ToolsOutputParser(first_tool_only=True, args_only=True)
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=tool_name, first_tool_only=True
+            )
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
@@ -1059,26 +1098,31 @@ class ChatAnthropic(BaseChatModel):
 
 
 class AnthropicTool(TypedDict):
+    """Anthropic tool definition."""
+
     name: str
     description: str
     input_schema: Dict[str, Any]
+    cache_control: NotRequired[Dict[str, str]]
 
 
 def convert_to_anthropic_tool(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    tool: Union[Dict[str, Any], Type, Callable, BaseTool],
 ) -> AnthropicTool:
+    """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format
     if isinstance(tool, dict) and all(
         k in tool for k in ("name", "description", "input_schema")
     ):
-        return AnthropicTool(tool)  # type: ignore
+        anthropic_formatted = AnthropicTool(tool)  # type: ignore
     else:
-        formatted = convert_to_openai_tool(tool)["function"]
-        return AnthropicTool(
-            name=formatted["name"],
-            description=formatted["description"],
-            input_schema=formatted["parameters"],
+        oai_formatted = convert_to_openai_tool(tool)["function"]
+        anthropic_formatted = AnthropicTool(
+            name=oai_formatted["name"],
+            description=oai_formatted["description"],
+            input_schema=oai_formatted["parameters"],
         )
+    return anthropic_formatted
 
 
 def _tools_in_params(params: dict) -> bool:
@@ -1114,6 +1158,7 @@ def _make_message_chunk_from_anthropic_event(
     event: anthropic.types.RawMessageStreamEvent,
     *,
     stream_usage: bool = True,
+    coerce_content_to_string: bool,
 ) -> Optional[AIMessageChunk]:
     """Convert Anthropic event to AIMessageChunk.
 
@@ -1121,20 +1166,60 @@ def _make_message_chunk_from_anthropic_event(
     we return None.
     """
     message_chunk: Optional[AIMessageChunk] = None
+    # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
         input_tokens = event.message.usage.input_tokens
         message_chunk = AIMessageChunk(
-            content="",
+            content="" if coerce_content_to_string else [],
             usage_metadata=UsageMetadata(
                 input_tokens=input_tokens,
                 output_tokens=0,
                 total_tokens=input_tokens,
             ),
         )
-    # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
-    elif event.type == "content_block_delta" and event.delta.type == "text_delta":
-        text = event.delta.text
-        message_chunk = AIMessageChunk(content=text)
+    elif (
+        event.type == "content_block_start"
+        and event.content_block is not None
+        and event.content_block.type == "tool_use"
+    ):
+        if coerce_content_to_string:
+            warnings.warn("Received unexpected tool content block.")
+        content_block = event.content_block.model_dump()
+        content_block["index"] = event.index
+        tool_call_chunk = create_tool_call_chunk(
+            index=event.index,
+            id=event.content_block.id,
+            name=event.content_block.name,
+            args="",
+        )
+        message_chunk = AIMessageChunk(
+            content=[content_block],
+            tool_call_chunks=[tool_call_chunk],  # type: ignore
+        )
+    elif event.type == "content_block_delta":
+        if event.delta.type == "text_delta":
+            if coerce_content_to_string:
+                text = event.delta.text
+                message_chunk = AIMessageChunk(content=text)
+            else:
+                content_block = event.delta.model_dump()
+                content_block["index"] = event.index
+                content_block["type"] = "text"
+                message_chunk = AIMessageChunk(content=[content_block])
+        elif event.delta.type == "input_json_delta":
+            content_block = event.delta.model_dump()
+            content_block["index"] = event.index
+            content_block["type"] = "tool_use"
+            tool_call_chunk = {
+                "index": event.index,
+                "id": None,
+                "name": None,
+                "args": event.delta.partial_json,
+            }
+            message_chunk = AIMessageChunk(
+                content=[content_block],
+                tool_call_chunks=[tool_call_chunk],  # type: ignore
+            )
     elif event.type == "message_delta" and stream_usage:
         output_tokens = event.usage.output_tokens
         message_chunk = AIMessageChunk(
@@ -1144,6 +1229,10 @@ def _make_message_chunk_from_anthropic_event(
                 output_tokens=output_tokens,
                 total_tokens=output_tokens,
             ),
+            response_metadata={
+                "stop_reason": event.delta.stop_reason,
+                "stop_sequence": event.delta.stop_sequence,
+            },
         )
     else:
         pass

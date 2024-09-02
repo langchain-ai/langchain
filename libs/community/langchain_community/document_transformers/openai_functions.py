@@ -1,4 +1,5 @@
 """Document transformers that use OpenAI Functions models"""
+
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.documents import BaseDocumentTransformer, Document

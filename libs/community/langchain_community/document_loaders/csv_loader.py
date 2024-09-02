@@ -16,8 +16,9 @@ from langchain_community.document_loaders.unstructured import (
 class CSVLoader(BaseLoader):
     """Load a `CSV` file into a list of Documents.
 
-    Each document represents one row of the CSV file. Every row is converted into a
-    key/value pair and outputted to a new line in the document's page_content.
+    Each document represents one row of the CSV file. Every row is converted
+    into a key/value pair and outputted to a new line in the document's
+    page_content.
 
     The source for each document loaded from csv is set to the value of the
     `file_path` argument for all documents by default.
@@ -32,6 +33,67 @@ class CSVLoader(BaseLoader):
             column1: value1
             column2: value2
             column3: value3
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import CSVLoader
+
+            loader = CSVLoader(file_path='./hw_200.csv',
+                csv_args={
+                'delimiter': ',',
+                'quotechar': '"',
+                'fieldnames': ['Index', 'Height', 'Weight']
+            })
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Index: Index
+            Height: Height(Inches)"
+            Weight: "Weight(Pounds)"
+            {'source': './hw_200.csv', 'row': 0}
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Index: Index
+            Height: Height(Inches)"
+            Weight: "Weight(Pounds)"
+            {'source': './hw_200.csv', 'row': 0}
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Index: Index
+            Height: Height(Inches)"
+            Weight: "Weight(Pounds)"
+            {'source': './hw_200.csv', 'row': 0}
     """
 
     def __init__(
@@ -42,6 +104,8 @@ class CSVLoader(BaseLoader):
         csv_args: Optional[Dict] = None,
         encoding: Optional[str] = None,
         autodetect_encoding: bool = False,
+        *,
+        content_columns: Sequence[str] = (),
     ):
         """
 
@@ -54,6 +118,8 @@ class CSVLoader(BaseLoader):
               Optional. Defaults to None.
             encoding: The encoding of the CSV file. Optional. Defaults to None.
             autodetect_encoding: Whether to try to autodetect the file encoding.
+            content_columns: A sequence of column names to use for the document content.
+                If not present, use all columns that are not part of the metadata.
         """
         self.file_path = file_path
         self.source_column = source_column
@@ -61,6 +127,7 @@ class CSVLoader(BaseLoader):
         self.encoding = encoding
         self.csv_args = csv_args or {}
         self.autodetect_encoding = autodetect_encoding
+        self.content_columns = content_columns
 
     def lazy_load(self) -> Iterator[Document]:
         try:
@@ -101,7 +168,11 @@ class CSVLoader(BaseLoader):
                 if isinstance(v, str) else ','.join(map(str.strip, v))
                 if isinstance(v, list) else v}"""
                 for k, v in row.items()
-                if k not in self.metadata_columns
+                if (
+                    k in self.content_columns
+                    if self.content_columns
+                    else k not in self.metadata_columns
+                )
             )
             metadata = {"source": source, "row": i}
             for col in self.metadata_columns:

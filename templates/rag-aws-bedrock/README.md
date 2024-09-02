@@ -1,7 +1,6 @@
+# RAG - AWS Bedrock
 
-# rag-aws-bedrock
-
-This template is designed to connect with the AWS Bedrock service, a managed server that offers a set of foundation models.
+This template is designed to connect with the `AWS Bedrock` service, a managed server that offers a set of foundation models.
 
 It primarily uses the `Anthropic Claude` for text generation and `Amazon Titan` for text embedding, and utilizes FAISS as the vectorstore.
 
