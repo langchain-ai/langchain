@@ -7,7 +7,7 @@ from langchain_core.runnables.config import run_in_executor
 
 
 class Embeddings(ABC):
-    """An interface for embedding models.
+    """Interface for embedding models.
 
     This is an interface meant for implementing text embedding models.
 
@@ -36,16 +36,44 @@ class Embeddings(ABC):
 
     @abstractmethod
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
+        """Embed search docs.
+
+        Args:
+            texts: List of text to embed.
+
+        Returns:
+            List of embeddings.
+        """
 
     @abstractmethod
     def embed_query(self, text: str) -> List[float]:
-        """Embed query text."""
+        """Embed query text.
+
+        Args:
+            text: Text to embed.
+
+        Returns:
+            Embedding.
+        """
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronous Embed search docs."""
+        """Asynchronous Embed search docs.
+
+        Args:
+            texts: List of text to embed.
+
+        Returns:
+            List of embeddings.
+        """
         return await run_in_executor(None, self.embed_documents, texts)
 
     async def aembed_query(self, text: str) -> List[float]:
-        """Asynchronous Embed query text."""
+        """Asynchronous Embed query text.
+
+        Args:
+            text: Text to embed.
+
+        Returns:
+            Embedding.
+        """
         return await run_in_executor(None, self.embed_query, text)

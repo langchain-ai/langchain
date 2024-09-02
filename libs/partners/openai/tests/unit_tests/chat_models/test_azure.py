@@ -23,6 +23,8 @@ def test_initialize_more() -> None:
         azure_deployment="35-turbo-dev",
         openai_api_version="2023-05-15",
         temperature=0,
+        model="gpt-35-turbo",
+        model_version="0125",
     )
     assert llm.openai_api_key is not None
     assert llm.openai_api_key.get_secret_value() == "xyz"
@@ -33,7 +35,7 @@ def test_initialize_more() -> None:
 
     ls_params = llm._get_ls_params()
     assert ls_params["ls_provider"] == "azure"
-    assert ls_params["ls_model_name"] == "35-turbo-dev"
+    assert ls_params["ls_model_name"] == "gpt-35-turbo-0125"
 
 
 def test_initialize_azure_openai_with_openai_api_base_set() -> None:

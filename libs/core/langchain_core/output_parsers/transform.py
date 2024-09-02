@@ -17,6 +17,7 @@ from langchain_core.outputs import (
     Generation,
     GenerationChunk,
 )
+from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
@@ -37,9 +38,13 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
     ) -> AsyncIterator[T]:
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
-                yield self.parse_result([ChatGeneration(message=chunk)])
+                yield await run_in_executor(
+                    None, self.parse_result, [ChatGeneration(message=chunk)]
+                )
             else:
-                yield self.parse_result([Generation(text=chunk)])
+                yield await run_in_executor(
+                    None, self.parse_result, [Generation(text=chunk)]
+                )
 
     def transform(
         self,
@@ -153,7 +158,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             parsed = await self.aparse_result([acc_gen], partial=True)
             if parsed is not None and parsed != prev_parsed:
                 if self.diff:
-                    yield self._diff(prev_parsed, parsed)
+                    yield await run_in_executor(None, self._diff, prev_parsed, parsed)
                 else:
                     yield parsed
                 prev_parsed = parsed

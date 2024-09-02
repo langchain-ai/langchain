@@ -279,7 +279,7 @@ class CustomChat(GenericFakeChatModel):
 async def test_can_swap_caches() -> None:
     """Test that we can use a different cache object.
 
-    This test verifies that when we fetch teh llm_string representation
+    This test verifies that when we fetch the llm_string representation
     of the chat model, we can swap the cache object and still get the same
     result.
     """

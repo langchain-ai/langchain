@@ -22,7 +22,7 @@ class ExtractTextTool(BaseBrowserTool):
     description: str = "Extract all the text on the current webpage"
     args_schema: Type[BaseModel] = BaseModel
 
-    @root_validator
+    @root_validator(pre=True)
     def check_acheck_bs_importrgs(cls, values: dict) -> dict:
         """Check that the arguments are valid."""
         try:

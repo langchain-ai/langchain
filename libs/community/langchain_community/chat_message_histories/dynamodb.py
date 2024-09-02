@@ -45,6 +45,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             [AWS DynamoDB documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-how-to.html)
         history_size: Maximum number of messages to store. If None then there is no
             limit. If not None then only the latest `history_size` messages are stored.
+        history_messages_key: Key for the chat history where the messages
+            are stored and updated
     """
 
     def __init__(
@@ -59,6 +61,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         ttl: Optional[int] = None,
         ttl_key_name: str = "expireAt",
         history_size: Optional[int] = None,
+        history_messages_key: Optional[str] = "History",
+        *,
         vertical_partition: Optional[bool] = None,
     ):
         if boto3_session:
@@ -80,6 +84,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.ttl = ttl
         self.ttl_key_name = ttl_key_name
         self.history_size = history_size
+        self.history_messages_key = history_messages_key
         self.vertical_partition = vertical_partition
 
         if kms_key_id:
@@ -98,7 +103,9 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
             actions = AttributeActions(
                 default_action=CryptoAction.DO_NOTHING,
-                attribute_actions={"History": CryptoAction.ENCRYPT_AND_SIGN},
+                attribute_actions={
+                    self.history_messages_key: CryptoAction.ENCRYPT_AND_SIGN
+                },
             )
             aws_kms_cmp = AwsKmsCryptographicMaterialsProvider(key_id=kms_key_id)
             self.table = EncryptedTable(
@@ -124,12 +131,14 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                 response = self.table.get_item(Key=self.key)
             except ClientError as error:
                 if error.response["Error"]["Code"] == "ResourceNotFoundException":
-                    logger.warning("No record found with session id: %s", self.session_id)
+                    logger.warning(
+                        "No record found with session id: %s", self.session_id
+                    )
                 else:
                     logger.error(error)
 
             if response and "Item" in response:
-                items = response["Item"]["History"]
+                items = response["Item"][self.history_messages_key]
             else:
                 items = []
         else:
@@ -141,18 +150,18 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                 ) from e
             try:
                 key, value = next(iter(self.key.items()))
-                response = self.table.query(
-                    KeyConditionExpression=Key(key).eq(value)
-                )
+                response = self.table.query(KeyConditionExpression=Key(key).eq(value))
             except ClientError as error:
                 if error.response["Error"]["Code"] == "ResourceNotFoundException":
-                    logger.warning("No record found with session id: %s", self.session_id)
+                    logger.warning(
+                        "No record found with session id: %s", self.session_id
+                    )
                 else:
                     logger.error(error)
 
             if response and "Items" in response:
                 items = []
-                for item in response['Items']:
+                for item in response["Items"]:
                     items.append(item["History"][0])
             else:
                 items = []
@@ -193,10 +202,16 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
 
                 expireAt = int(time.time()) + self.ttl
                 self.table.put_item(
-                    Item={**self.key, "History": messages, self.ttl_key_name: expireAt}
+                    Item={
+                        **self.key,
+                        self.history_messages_key: messages,
+                        self.ttl_key_name: expireAt,
+                    }
                 )
             else:
-                self.table.put_item(Item={**self.key, "History": messages})
+                self.table.put_item(
+                    Item={**self.key, self.history_messages_key: messages}
+                )
         except ClientError as err:
             logger.error(err)
 
@@ -222,17 +237,15 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
                 ) from e
             try:
                 key, value = next(iter(self.key.items()))
-                response = self.table.query(
-                    KeyConditionExpression=Key(key).eq(value)
-                )
-                items = response.get('Items', [])
+                response = self.table.query(KeyConditionExpression=Key(key).eq(value))
+                items = response.get("Items", [])
             except ClientError as error:
                 if error.response["Error"]["Code"] == "ResourceNotFoundException":
-                    logger.warning("No record found with session id: %s", self.session_id)
+                    logger.warning(
+                        "No record found with session id: %s", self.session_id
+                    )
                 else:
                     logger.error(error)
             with self.table.batch_writer() as batch:
                 for item in items:
-                    batch.delete_item(
-                        Key={k: item[k] for k in self.key}        
-                    )
+                    batch.delete_item(Key={k: item[k] for k in self.key})
