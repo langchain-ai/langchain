@@ -108,7 +108,7 @@ class TestCSVLoader:
         # Assert
         assert result == expected_docs
 
-    def test_csv_loader_load_none_column_file(self) -> None:
+    def test_csv_loader_content_columns(self) -> None:
         # Setup
         file_path = self._get_csv_file_path("test_none_col.csv")
         expected_docs = [
