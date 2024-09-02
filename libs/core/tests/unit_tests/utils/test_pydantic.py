@@ -183,7 +183,7 @@ def test_fields_pydantic_v2_proper() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
 def test_fields_pydantic_v1_from_2() -> None:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
+    from pydantic import BaseModel  # pydantic: ignore
 
     class Foo(BaseModel):
         x: int

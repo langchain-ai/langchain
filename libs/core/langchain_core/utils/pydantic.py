@@ -8,7 +8,8 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
 
 import pydantic  # pydantic: ignore
-from pydantic import BaseModel, FieldInfo, root_validator  # pydantic: ignore
+from pydantic import BaseModel, root_validator  # pydantic: ignore
+from pydantic.fields import FieldInfo
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue  # pydantic: ignore
 from pydantic_core import core_schema  # pydantic: ignore
 
