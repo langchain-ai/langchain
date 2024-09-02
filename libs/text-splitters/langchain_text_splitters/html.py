@@ -4,10 +4,21 @@ import copy
 import pathlib
 import re
 from io import BytesIO, StringIO
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, TypedDict, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypedDict,
+    cast,
+)
 
 import requests
-from langchain_core.documents import Document
+from langchain_core.documents import BaseDocumentTransformer, Document
 
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
@@ -322,7 +333,7 @@ class HTMLSectionSplitter:
         ]
 
 
-class HTMLSemanticPreservingSplitter:
+class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     """
     Splits HTML content by headers into generalized chunks, preserving semantic
     structure. If chunks exceed the maximum chunk size, it uses
@@ -333,17 +344,19 @@ class HTMLSemanticPreservingSplitter:
     elements by converting them into Markdown format. Note that some chunks may
     exceed the maximum size to maintain semantic integrity.
 
-    Attributes:
+    .. versionadded: 0.2.4
+
+    Args:
         headers_to_split_on (List[Tuple[str, str]]): HTML headers (e.g., "h1", "h2")
-        that define content sections.
+            that define content sections.
         max_chunk_size (int): Maximum size for each chunk, with allowance for
-        exceeding this limit to preserve semantics.
+            exceeding this limit to preserve semantics.
         chunk_overlap (int): Number of characters to overlap between chunks to ensure
-        contextual continuity.
+            contextual continuity.
         separators (List[str]): Delimiters used by RecursiveCharacterTextSplitter for
-        further splitting.
+            further splitting.
         elements_to_preserve (List[str]): HTML tags (e.g., <table>, <ul>) to remain
-        intact during splitting.
+            intact during splitting.
         preserve_links (bool): Converts <a> tags to Markdown links ([text](url)).
         preserve_images (bool): Converts <img> tags to Markdown images (![alt](src)).
         preserve_videos (bool): Converts <video> tags to Markdown
@@ -351,18 +364,24 @@ class HTMLSemanticPreservingSplitter:
         preserve_audio (bool): Converts <audio> tags to Markdown
         audio links (![audio](src)).
         custom_handlers (Dict[str, Callable[[Any], str]]): Optional custom handlers for
-        specific HTML tags, allowing tailored extraction or processing.
+            specific HTML tags, allowing tailored extraction or processing.
         stopword_removal (bool): Optionally remove stopwords from the text.
         stopword_lang (str): The language of stopwords to remove.
         normalize_text (bool): Optionally normalize text
-        (e.g., lowercasing, removing punctuation).
+            (e.g., lowercasing, removing punctuation).
         external_metadata (Optional[Dict[str, str]]): Additional metadata to attach to
-        the Document objects.
+            the Document objects.
         allowlist_tags (Optional[List[str]]): Only these tags will be retained in
-        the HTML.
+            the HTML.
         denylist_tags (Optional[List[str]]): These tags will be removed from the HTML.
+        preserve_parent_metadata (bool): Whether to pass through parent document
+            metadata to split documents when calling
+            ``transform_documents/atransform_documents()``.
 
     Example:
+        .. code-block:: python
+
+        from langchain_text_splitters.html import HTMLSemanticPreservingSplitter
 
         def custom_iframe_extractor(iframe_tag):
             ```
@@ -390,10 +409,11 @@ class HTMLSemanticPreservingSplitter:
     def __init__(
         self,
         headers_to_split_on: List[Tuple[str, str]],
+        *,
         max_chunk_size: int = 1000,
         chunk_overlap: int = 0,
         separators: Optional[List[str]] = None,
-        elements_to_preserve: List[str] = [],
+        elements_to_preserve: Optional[List[str]] = None,
         preserve_links: bool = False,
         preserve_images: bool = False,
         preserve_videos: bool = False,
@@ -405,35 +425,8 @@ class HTMLSemanticPreservingSplitter:
         external_metadata: Optional[Dict[str, str]] = None,
         allowlist_tags: Optional[List[str]] = None,
         denylist_tags: Optional[List[str]] = None,
+        preserve_parent_metadata: bool = False,
     ):
-        """
-        Initializes the HTMLSemanticPreservingSplitter with the provided configuration
-        to handle complex HTML splitting scenarios.
-
-        Args:
-            headers_to_split_on (List[Tuple[str, str]]): Headers to guide content
-            splitting.
-            max_chunk_size (int): Upper limit for each content chunk.
-            chunk_overlap (int): Amount of overlap between chunks to maintain context.
-            separators (Optional[List[str]]): Delimiters RecursiveCharacterTextSplitter.
-            elements_to_preserve (List[str]): HTML tags to preserve during splitting.
-            preserve_links (bool): Converts links to Markdown format.
-            preserve_images (bool): Converts images to Markdown format.
-            preserve_videos (bool): Converts videos to Markdown format.
-            preserve_audio (bool): Converts audio elements to Markdown format.
-            custom_handlers (Optional[Dict[str, Callable[[Any], str]]]): Handlers for
-                custom processing of specific HTML tags,
-                where the key is the tag name and the value is the processing function.
-            stopword_removal (bool): Optionally remove stopwords from the text.
-            stopword_lang (str): The language of stopwords to remove.
-            normalize_text (bool): Optionally normalize text (e.g., lowercasing).
-            external_metadata (Optional[Dict[str, str]]): Additional metadata to add to
-            the documents.
-            allowlist_tags (Optional[List[str]]): Only these tags will be retained in
-            the HTML.
-            denylist_tags (Optional[List[str]]): These tags will be removed from
-            the HTML.
-        """
         try:
             from bs4 import BeautifulSoup, Tag
 
@@ -447,7 +440,7 @@ class HTMLSemanticPreservingSplitter:
 
         self._headers_to_split_on = sorted(headers_to_split_on)
         self._max_chunk_size = max_chunk_size
-        self._elements_to_preserve = elements_to_preserve
+        self._elements_to_preserve = elements_to_preserve or []
         self._preserve_links = preserve_links
         self._preserve_images = preserve_images
         self._preserve_videos = preserve_videos
@@ -458,6 +451,7 @@ class HTMLSemanticPreservingSplitter:
         self._normalize_text = normalize_text
         self._external_metadata = external_metadata or {}
         self._allowlist_tags = allowlist_tags
+        self._preserve_parent_metadata = preserve_parent_metadata
         if allowlist_tags:
             self._allowlist_tags = list(
                 set(allowlist_tags + [header[0] for header in headers_to_split_on])
@@ -513,6 +507,24 @@ class HTMLSemanticPreservingSplitter:
             self._filter_tags(soup)
 
         return self._process_html(soup)
+
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> List[Document]:
+        """Transform sequence of documents by splitting them."""
+        transformed = []
+        for doc in documents:
+            splits = self.split_text(doc.page_content)
+            if self._preserve_parent_metadata:
+                splits = [
+                    Document(
+                        page_content=split_doc.page_content,
+                        metadata={**doc.metadata, **split_doc.metadata},
+                    )
+                    for split_doc in splits
+                ]
+            transformed.extend(splits)
+        return transformed
 
     def _process_media(self, soup: Any) -> None:
         """
