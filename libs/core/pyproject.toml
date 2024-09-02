@@ -41,8 +41,19 @@ python = ">=3.12.4"
 [tool.poetry.extras]
 
 [tool.ruff.lint]
-select = [ "B", "E", "F", "I", "T201", "UP",]
+select = [
+    "B",
+    "E",
+    "F",
+    "I",
+    "T201",
+    "UP",
+    "D",    # pydocstyle
+]
 ignore = [ "UP006", "UP007",]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.coverage.run]
 omit = [ "tests/*",]
@@ -71,6 +82,7 @@ optional = true
 "tests/unit_tests/prompts/test_chat.py" = [ "E501",]
 "tests/unit_tests/runnables/test_runnable.py" = [ "E501",]
 "tests/unit_tests/runnables/test_graph.py" = [ "E501",]
+"tests/**" = ["D"]  # ignore docstring checks for tests
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
