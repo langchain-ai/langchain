@@ -69,7 +69,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         if "model_name" not in kwargs:
-            since = "0.2.5"
+            since = "0.2.16"
             removal = "0.4.0"
             warn_deprecated(
                 since=since,
@@ -174,7 +174,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         if "model_name" not in kwargs:
-            since = "0.2.5"
+            since = "0.2.16"
             removal = "0.4.0"
             warn_deprecated(
                 since=since,
