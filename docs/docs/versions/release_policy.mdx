@@ -1,42 +1,61 @@
 ---
 sidebar_position: 2
-sidebar_label: Release Policy
+sidebar_label: Release policy
 ---
 
-# LangChain releases
+# LangChain release policy
 
 The LangChain ecosystem is composed of different component packages (e.g., `langchain-core`, `langchain`, `langchain-community`, `langgraph`, `langserve`, partner packages etc.)
 
 ## Versioning
 
-### `langchain` and `langchain-core`
+### `langchain`, `langchain-core`, and integration packages
 
-`langchain` and `langchain-core` follow [semantic versioning](https://semver.org/) in the format of 0.**Y**.**Z**. The packages are under rapid development, and so are currently versioning the packages with a major version of 0.
+`langchain`, `langchain-core`, `langchain-text-splitters`, and integration packages (`langchain-openai`, `langchain-anthropic`, etc.) follow [semantic versioning](https://semver.org/) in the format of 0.**Y**.**Z**. The packages are under rapid development, and so are currently versioning the packages with a major version of 0.
 
 Minor version increases will occur for:
 
-- Breaking changes for any public interfaces marked as `beta`.
+- Breaking changes for any public interfaces *not* marked as `beta`.
 
 Patch version increases will occur for:
 
-- Bug fixes
-- New features
-- Any changes to private interfaces
-- Any changes to `beta` features
+- Bug fixes,
+- New features,
+- Any changes to private interfaces,
+- Any changes to `beta` features.
 
 When upgrading between minor versions, users should review the list of breaking changes and deprecations.
 
 From time to time, we will version packages as **release candidates**. These are versions that are intended to be released as stable versions, but we want to get feedback from the community before doing so. Release candidates will be versioned as 0.**Y**.**Z**rc**N**. For example, 0.2.0rc1. If no issues are found, the release candidate will be released as a stable version with the same version number. If issues are found, we will release a new release candidate with an incremented `N` value (e.g., 0.2.0rc2).
 
-### Other packages in the langchain ecosystem
+### `langchain-community`
 
-Other packages in the ecosystem (including user packages) can follow a different versioning scheme, but are generally expected to pin to specific minor versions of `langchain` and `langchain-core`.
+`langchain-community` is currently on version `0.2.x`.
+
+Minor version increases will occur for:
+
+- Updates to the major/minor versions of required `langchain-x` dependencies. E.g., when updating the required version of `langchain-core` from `^0.2.x` to `0.3.0`.
+
+Patch version increases will occur for:
+
+- Bug fixes,
+- New features,
+- Any changes to private interfaces,
+- Any changes to `beta` features,
+- Breaking changes to integrations to reflect breaking changes in the third-party service.
+
+Whenever possible we will avoid making breaking changes in patch versions.
+However, if an external API makes a breaking change then breaking changes to the corresponding `langchain-community` integration can occur in a patch version.
+
+### `langchain-experimental`
+
+`langchain-experimental` is currently on version `0.0.x`. All changes will be accompanied with patch version increases.
 
 ## Release cadence
 
-We expect to space out **minor** releases (e.g., from 0.2.0 to 0.3.0) of `langchain` and `langchain-core` by at least 2-3 months, as such releases may contain breaking changes.
+We expect to space out **minor** releases (e.g., from 0.2.x to 0.3.0) of `langchain` and `langchain-core` by at least 2-3 months, as such releases may contain breaking changes.
 
-Patch versions are released frequently as they contain bug fixes and new features.
+Patch versions are released frequently, up to a few times per week, as they contain bug fixes and new features.
 
 ## API stability
 

@@ -1,15 +1,18 @@
+# RAG - Chroma multi-modal multi-vector
 
-# rag-chroma-multi-modal-multi-vector
+`Multi-modal LLMs` enable visual assistants that can perform 
+question-answering about images. 
 
-Multi-modal LLMs enable visual assistants that can perform question-answering about images. 
+This template create a visual assistant for slide decks, 
+which often contain visuals such as graphs or figures.
 
-This template create a visual assistant for slide decks, which often contain visuals such as graphs or figures.
-
-It uses GPT-4V to create image summaries for each slide, embeds the summaries, and stores them in Chroma.
+It uses `GPT-4V` to create image summaries for each slide, 
+embeds the summaries, and stores them in `Chroma`.
  
-Given a question, relevant slides are retrieved and passed to GPT-4V for answer synthesis.
+Given a question, relevant slides are retrieved and passed 
+to GPT-4V for answer synthesis.
 
-![Diagram illustrating the multi-modal LLM process with a slide deck, captioning, storage, question input, and answer synthesis with year-over-year growth percentages.](https://github.com/langchain-ai/langchain/assets/122662504/5277ef6b-d637-43c7-8dc1-9b1567470503 "Multi-modal LLM Process Diagram")
+![Diagram illustrating the multi-modal LLM process with a slide deck, captioning, storage, question input, and answer synthesis with year-over-year growth percentages.](https://github.com/langchain-ai/langchain/assets/122662504/5277ef6b-d637-43c7-8dc1-9b1567470503) "Multi-modal LLM Process Diagram"
 
 ## Input
 

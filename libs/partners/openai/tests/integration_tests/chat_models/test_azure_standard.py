@@ -3,6 +3,7 @@
 import os
 from typing import Type
 
+import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 
@@ -30,3 +31,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
             "azure_endpoint": OPENAI_API_BASE,
             "api_key": OPENAI_API_KEY,
         }
+
+    @pytest.mark.xfail(reason="Not yet supported.")
+    def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
+        super().test_usage_metadata_streaming(model)

@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Optional, Union
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import pre_init
 
 
 class CTranslate2(BaseLLM):
@@ -50,7 +51,7 @@ class CTranslate2(BaseLLM):
     explicitly specified.
     """
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that python package exists in environment."""
 

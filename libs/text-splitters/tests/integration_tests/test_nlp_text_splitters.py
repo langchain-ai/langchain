@@ -37,3 +37,16 @@ def test_spacy_text_splitter(pipeline: str) -> None:
     output = splitter.split_text(text)
     expected_output = [f"This is sentence one.{separator}And this is sentence two."]
     assert output == expected_output
+
+
+@pytest.mark.parametrize("pipeline", ["sentencizer", "en_core_web_sm"])
+def test_spacy_text_splitter_strip_whitespace(pipeline: str) -> None:
+    """Test splitting by sentence using Spacy."""
+    text = "This is sentence one. And this is sentence two."
+    separator = "|||"
+    splitter = SpacyTextSplitter(
+        separator=separator, pipeline=pipeline, strip_whitespace=False
+    )
+    output = splitter.split_text(text)
+    expected_output = [f"This is sentence one. {separator}And this is sentence two."]
+    assert output == expected_output

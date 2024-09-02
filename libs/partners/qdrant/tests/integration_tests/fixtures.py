@@ -2,6 +2,7 @@ import logging
 import os
 from typing import List
 
+from langchain_qdrant.qdrant import RetrievalMode
 from tests.integration_tests.common import qdrant_running_locally
 
 logger = logging.getLogger(__name__)
@@ -23,3 +24,20 @@ def qdrant_locations(use_in_memory: bool = True) -> List[str]:
         locations.append(qdrant_url)
 
     return locations
+
+
+def retrieval_modes(
+    *, dense: bool = True, sparse: bool = True, hybrid: bool = True
+) -> List[RetrievalMode]:
+    modes = []
+
+    if dense:
+        modes.append(RetrievalMode.DENSE)
+
+    if sparse:
+        modes.append(RetrievalMode.SPARSE)
+
+    if hybrid:
+        modes.append(RetrievalMode.HYBRID)
+
+    return modes

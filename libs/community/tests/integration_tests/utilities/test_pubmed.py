@@ -1,4 +1,5 @@
 """Integration test for PubMed API Wrapper."""
+
 from typing import Any, List
 
 import pytest
