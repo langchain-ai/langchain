@@ -292,7 +292,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     # Value is still falsy here!
     if field.default_factory is list and isinstance(value, list):
         return False
-      
+
     # Handle edge case: a value cannot be converted to a boolean (e.g. a
     # Pandas DataFrame).
     try:
