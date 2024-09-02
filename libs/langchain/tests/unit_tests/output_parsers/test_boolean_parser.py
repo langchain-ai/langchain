@@ -39,3 +39,8 @@ def test_boolean_output_parser_parse() -> None:
     # Bad input
     with pytest.raises(ValueError):
         parser.parse("BOOM")
+
+
+def test_boolean_output_parser_output_type() -> None:
+    """Test the output type of the boolean output parser is a boolean."""
+    assert BooleanOutputParser().OutputType is bool

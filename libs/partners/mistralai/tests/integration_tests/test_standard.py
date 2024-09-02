@@ -1,33 +1,25 @@
 """Standard LangChain interface tests"""
 
-from typing import Type
+from typing import Optional, Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_standard_tests.integration_tests import (  # type: ignore[import-not-found]
+    ChatModelIntegrationTests,  # type: ignore[import-not-found]
+)
 
 from langchain_mistralai import ChatMistralAI
 
 
 class TestMistralStandard(ChatModelIntegrationTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatMistralAI
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
-        return {
-            "model": "mistral-large-latest",
-            "temperature": 0,
-        }
+        return {"model": "mistral-large-latest", "temperature": 0}
 
-    @pytest.mark.xfail(reason="Not implemented.")
-    def test_usage_metadata(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_usage_metadata(
-            chat_model_class,
-            chat_model_params,
-        )
+    @property
+    def tool_choice_value(self) -> Optional[str]:
+        """Value to use for tool choice when used in tests."""
+        return "any"

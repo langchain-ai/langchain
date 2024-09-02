@@ -11,8 +11,18 @@ os.environ["OPENAI_API_KEY"] = "foo"
 def test_openai_model_param() -> None:
     llm = OpenAI(model="foo")
     assert llm.model_name == "foo"
-    llm = OpenAI(model_name="foo")
+    llm = OpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+
+    # Test standard tracing params
+    ls_params = llm._get_ls_params()
+    assert ls_params == {
+        "ls_provider": "openai",
+        "ls_model_type": "llm",
+        "ls_model_name": "foo",
+        "ls_temperature": 0.7,
+        "ls_max_tokens": 256,
+    }
 
 
 def test_openai_model_kwargs() -> None:
@@ -27,7 +37,7 @@ def test_openai_invalid_model_kwargs() -> None:
 
 def test_openai_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = OpenAI(foo="bar")
+        llm = OpenAI(foo="bar")  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 
@@ -45,13 +55,7 @@ def mock_completion() -> dict:
     }
 
 
-@pytest.mark.parametrize(
-    "model",
-    [
-        "gpt-3.5-turbo-instruct",
-        "text-davinci-003",
-    ],
-)
+@pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct", "text-davinci-003"])
 def test_get_token_ids(model: str) -> None:
     OpenAI(model=model).get_token_ids("foo")
     return

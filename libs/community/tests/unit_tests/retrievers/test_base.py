@@ -74,6 +74,11 @@ async def test_fake_retriever_v1_upgrade_async(
     assert callbacks.retriever_errors == 0
 
 
+def test_fake_retriever_v1_standard_params(fake_retriever_v1: BaseRetriever) -> None:
+    ls_params = fake_retriever_v1._get_ls_params()
+    assert ls_params == {"ls_retriever_name": "fakeretrieverv1"}
+
+
 @pytest.fixture
 def fake_retriever_v1_with_kwargs() -> BaseRetriever:
     # Test for things like the Weaviate V1 Retriever.
@@ -213,3 +218,8 @@ async def test_fake_retriever_v2_async(
         await fake_erroring_retriever_v2.ainvoke(
             "Foo", config={"callbacks": [callbacks]}
         )
+
+
+def test_fake_retriever_v2_standard_params(fake_retriever_v2: BaseRetriever) -> None:
+    ls_params = fake_retriever_v2._get_ls_params()
+    assert ls_params == {"ls_retriever_name": "fakeretrieverv2"}

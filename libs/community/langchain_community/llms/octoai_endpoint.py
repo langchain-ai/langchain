@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.openai import BaseOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -66,7 +66,7 @@ class OctoAIEndpoint(BaseOpenAI):
         """Return type of llm."""
         return "octoai_endpoint"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["octoai_api_base"] = get_from_dict_or_env(

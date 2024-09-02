@@ -1,9 +1,12 @@
 import asyncio
+import inspect
+import typing
+from contextvars import copy_context
+from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
-    Awaitable,
     Dict,
     Iterator,
     List,
@@ -20,6 +23,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
+    _set_config_context,
     ensure_config,
     get_async_callback_manager_for_config,
     get_callback_manager_for_config,
@@ -30,6 +34,7 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
+    asyncio_accepts_context,
     get_unique_config_specs,
 )
 from langchain_core.utils.aiter import py_anext
@@ -88,7 +93,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """
 
     runnable: Runnable[Input, Output]
-    """The runnable to run first."""
+    """The Runnable to run first."""
     fallbacks: Sequence[Runnable[Input, Output]]
     """A sequence of fallbacks to try."""
     exceptions_to_handle: Tuple[Type[BaseException], ...] = (Exception,)
@@ -99,7 +104,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     exception_key: Optional[str] = None
     """If string is specified then handled exceptions will be passed to fallbacks as 
         part of the input under the specified key. If None, exceptions
-        will not be passed to fallbacks. If used, the base runnable and its fallbacks 
+        will not be passed to fallbacks. If used, the base Runnable and its fallbacks 
         must accept a dictionary as input."""
 
     class Config:
@@ -169,9 +174,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
-                output = runnable.invoke(
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
+                output = context.run(
+                    runnable.invoke,
                     input,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    config,
                     **kwargs,
                 )
             except self.exceptions_to_handle as e:
@@ -217,11 +226,14 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
-                output = await runnable.ainvoke(
-                    input,
-                    patch_config(config, callbacks=run_manager.get_child()),
-                    **kwargs,
-                )
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
+                coro = runnable.ainvoke(input, child_config, **kwargs)
+                if asyncio_accepts_context():
+                    output = await asyncio.create_task(coro, context=context)  # type: ignore
+                else:
+                    output = await coro
             except self.exceptions_to_handle as e:
                 if first_error is None:
                     first_error = e
@@ -457,12 +469,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
-                stream = runnable.stream(
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
+                stream = context.run(
+                    runnable.stream,
                     input,
-                    patch_config(config, callbacks=run_manager.get_child()),
                     **kwargs,
                 )
-                chunk = next(stream)
+                chunk: Output = context.run(next, stream)  # type: ignore
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -517,12 +532,21 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
+                child_config = patch_config(config, callbacks=run_manager.get_child())
+                context = copy_context()
+                context.run(_set_config_context, child_config)
                 stream = runnable.astream(
                     input,
-                    patch_config(config, callbacks=run_manager.get_child()),
+                    child_config,
                     **kwargs,
                 )
-                chunk = await cast(Awaitable[Output], py_anext(stream))
+                if asyncio_accepts_context():
+                    chunk: Output = await asyncio.create_task(  # type: ignore[call-arg]
+                        py_anext(stream),  # type: ignore[arg-type]
+                        context=context,
+                    )
+                else:
+                    chunk = cast(Output, await py_anext(stream))
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -549,3 +573,77 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_error(e)
             raise e
         await run_manager.on_chain_end(output)
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute from the wrapped Runnable and its fallbacks.
+
+        Returns:
+            If the attribute is anything other than a method that outputs a Runnable,
+            returns getattr(self.runnable, name). If the attribute is a method that
+            does return a new Runnable (e.g. llm.bind_tools([...]) outputs a new
+            RunnableBinding) then self.runnable and each of the runnables in
+            self.fallbacks is replaced with getattr(x, name).
+
+        Example:
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_anthropic import ChatAnthropic
+
+                gpt_4o = ChatOpenAI(model="gpt-4o")
+                claude_3_sonnet = ChatAnthropic(model="claude-3-sonnet-20240229")
+                llm = gpt_4o.with_fallbacks([claude_3_sonnet])
+
+                llm.model_name
+                # -> "gpt-4o"
+
+                # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
+                # Equivalent to:
+                # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
+                llm.bind_tools([...])
+                # -> RunnableWithFallbacks(
+                    runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
+                    fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
+                )
+
+        """  # noqa: E501
+        attr = getattr(self.runnable, name)
+        if _returns_runnable(attr):
+
+            @wraps(attr)
+            def wrapped(*args: Any, **kwargs: Any) -> Any:
+                new_runnable = attr(*args, **kwargs)
+                new_fallbacks = []
+                for fallback in self.fallbacks:
+                    fallback_attr = getattr(fallback, name)
+                    new_fallbacks.append(fallback_attr(*args, **kwargs))
+
+                return self.__class__(
+                    **{
+                        **self.dict(),
+                        **{"runnable": new_runnable, "fallbacks": new_fallbacks},
+                    }
+                )
+
+            return wrapped
+
+        return attr
+
+
+def _returns_runnable(attr: Any) -> bool:
+    if not callable(attr):
+        return False
+    return_type = typing.get_type_hints(attr).get("return")
+    return bool(return_type and _is_runnable_type(return_type))
+
+
+def _is_runnable_type(type_: Any) -> bool:
+    if inspect.isclass(type_):
+        return issubclass(type_, Runnable)
+    origin = getattr(type_, "__origin__", None)
+    if inspect.isclass(origin):
+        return issubclass(origin, Runnable)
+    elif origin is typing.Union:
+        return all(_is_runnable_type(t) for t in type_.__args__)
+    else:
+        return False

@@ -1,0 +1,81 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "langchain-couchbase"
+version = "0.1.1"
+description = "An integration package connecting Couchbase and LangChain"
+authors = []
+readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+ignore_missing_imports = "True"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/couchbase"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-couchbase%3D%3D0%22&expanded=true"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain-core = ">=0.2.0,<0.3"
+couchbase = "^4.2.1"
+
+[tool.ruff.lint]
+select = [ "E", "F", "I", "T201",]
+
+[tool.coverage.run]
+omit = [ "tests/*",]
+
+[tool.pytest.ini_options]
+addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
+markers = [ "compile: mark placeholder test used to compile integration tests without running them",]
+asyncio_mode = "auto"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.codespell]
+optional = true
+
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.23.2"
+pytest-socket = "^0.7.0"
+syrupy = "^4.0.2"
+langchain = "^0.2.9"
+
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.6"
+
+[tool.poetry.group.test_integration.dependencies]
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.5"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^1.10"
+
+[tool.poetry.group.test.dependencies.langchain-core]
+path = "../../core"
+develop = true
+
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../../core"
+develop = true
+
+[tool.poetry.group.typing.dependencies.langchain-core]
+path = "../../core"
+develop = true

@@ -5,6 +5,7 @@ from typing import Any, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -22,6 +23,11 @@ DEFAULT_MILVUS_CONNECTION = {
 }
 
 
+@deprecated(
+    since="0.2.0",
+    removal="1.0",
+    alternative_import="langchain_milvus.MilvusVectorStore",
+)
 class Milvus(VectorStore):
     """`Milvus` vector store.
 
@@ -1047,7 +1053,7 @@ class Milvus(VectorStore):
         pks = [item.get(self._primary_field) for item in query_result]
         return pks
 
-    def upsert(
+    def upsert(  # type: ignore[override]
         self,
         ids: Optional[List[str]] = None,
         documents: List[Document] | None = None,
@@ -1070,6 +1076,7 @@ class Milvus(VectorStore):
             return None
 
         if ids is not None and len(ids):
+            kwargs["ids"] = ids
             try:
                 self.delete(ids=ids)
             except MilvusException:

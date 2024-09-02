@@ -12,7 +12,7 @@ python = ">=3.9,<4.0"
 langchain = "^0.1"
 gpt4all = ">=1.0.8"
 tiktoken = ">=0.5.1"
-chromadb = ">=0.4.14"
+langchain-chroma = "^0.1.2"
 fireworks-ai = ">=0.6.0"
 langchain-text-splitters = ">=0.0.1,<0.1"
 

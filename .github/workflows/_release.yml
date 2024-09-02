@@ -97,7 +97,7 @@ jobs:
         run: |
           REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
           echo $REGEX
-          PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX | head -1)
+          PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX || true | head -1)
           TAG="${PKG_NAME}==${VERSION}"
           if [ "$TAG" == "$PREV_TAG" ]; then
             echo "No new version to release"
@@ -122,7 +122,6 @@ jobs:
           fi
           {
             echo 'release-body<<EOF'
-            echo "# Release $TAG"
             echo $PREAMBLE
             echo
             git log --format="%s" "$PREV_TAG"..HEAD -- $WORKING_DIR
@@ -135,6 +134,7 @@ jobs:
       - release-notes
     uses:
       ./.github/workflows/_test_release.yml
+    permissions: write-all
     with:
       working-directory: ${{ inputs.working-directory }}
       dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
@@ -189,7 +189,7 @@ jobs:
             --extra-index-url https://test.pypi.org/simple/ \
             "$PKG_NAME==$VERSION" || \
           ( \
-            sleep 5 && \
+            sleep 15 && \
             poetry run pip install \
               --extra-index-url https://test.pypi.org/simple/ \
               "$PKG_NAME==$VERSION" \
@@ -202,7 +202,7 @@ jobs:
           poetry run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
       - name: Import test dependencies
-        run: poetry install --with test,test_integration
+        run: poetry install --with test
         working-directory: ${{ inputs.working-directory }}
 
       # Overwrite the local version of the package with the test PyPI version.
@@ -221,12 +221,17 @@ jobs:
         run: make tests
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Check for prerelease versions
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          poetry run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
+
       - name: Get minimum versions
         working-directory: ${{ inputs.working-directory }}
         id: min-version
         run: |
           poetry run pip install packaging
-          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml)"
+          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml release)"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
           echo "min-versions=$min_versions"
 
@@ -244,6 +249,10 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: Import integration test dependencies
+        run: poetry install --with test,test_integration
+        working-directory: ${{ inputs.working-directory }}
 
       - name: Run integration tests
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
@@ -281,6 +290,7 @@ jobs:
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          UNSTRUCTURED_API_KEY: ${{ secrets.UNSTRUCTURED_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
