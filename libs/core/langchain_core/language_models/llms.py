@@ -48,7 +48,11 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models.base import BaseLanguageModel, LanguageModelInput
+from langchain_core.language_models.base import (
+    BaseLanguageModel,
+    LangSmithParams,
+    LanguageModelInput,
+)
 from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
@@ -110,13 +114,12 @@ def create_base_retry_decorator(
                     _log_error_once(f"Error in on_retry: {e}")
             else:
                 run_manager.on_retry(retry_state)
-        return None
 
     min_seconds = 4
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    retry_instance: "retry_base" = retry_if_exception_type(error_types[0])
+    retry_instance: retry_base = retry_if_exception_type(error_types[0])
     for error in error_types[1:]:
         retry_instance = retry_instance | retry_if_exception_type(error)
     return retry(
@@ -298,8 +301,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     """[DEPRECATED]"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @root_validator(pre=True)
@@ -309,6 +310,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
+                stacklevel=5,
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
@@ -332,6 +334,43 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 f"Invalid input type {type(input)}. "
                 "Must be a PromptValue, str, or list of BaseMessages."
             )
+
+    def _get_ls_params(
+        self,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+
+        # get default provider from class name
+        default_provider = self.__class__.__name__
+        if default_provider.endswith("LLM"):
+            default_provider = default_provider[:-3]
+        default_provider = default_provider.lower()
+
+        ls_params = LangSmithParams(ls_provider=default_provider, ls_model_type="llm")
+        if stop:
+            ls_params["ls_stop"] = stop
+
+        # model
+        if hasattr(self, "model") and isinstance(self.model, str):
+            ls_params["ls_model_name"] = self.model
+        elif hasattr(self, "model_name") and isinstance(self.model_name, str):
+            ls_params["ls_model_name"] = self.model_name
+
+        # temperature
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+            ls_params["ls_temperature"] = kwargs["temperature"]
+        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+            ls_params["ls_temperature"] = self.temperature
+
+        # max_tokens
+        if "max_tokens" in kwargs and isinstance(kwargs["max_tokens"], int):
+            ls_params["ls_max_tokens"] = kwargs["max_tokens"]
+        elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
+            ls_params["ls_max_tokens"] = self.max_tokens
+
+        return ls_params
 
     def invoke(
         self,
@@ -489,13 +528,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             params["stop"] = stop
             params = {**params, **kwargs}
             options = {"stop": stop}
+            inheritable_metadata = {
+                **(config.get("metadata") or {}),
+                **self._get_ls_params(stop=stop, **kwargs),
+            }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
                 self.callbacks,
                 self.verbose,
                 config.get("tags"),
                 self.tags,
-                config.get("metadata"),
+                inheritable_metadata,
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_llm_start(
@@ -550,13 +593,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         params["stop"] = stop
         params = {**params, **kwargs}
         options = {"stop": stop}
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params(stop=stop, **kwargs),
+        }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
             self.callbacks,
             self.verbose,
             config.get("tags"),
             self.tags,
-            config.get("metadata"),
+            inheritable_metadata,
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_llm_start(
@@ -798,6 +845,21 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 f" argument of type {type(prompts)}."
             )
         # Create callback managers
+        if isinstance(metadata, list):
+            metadata = [
+                {
+                    **(meta or {}),
+                    **self._get_ls_params(stop=stop, **kwargs),
+                }
+                for meta in metadata
+            ]
+        elif isinstance(metadata, dict):
+            metadata = {
+                **(metadata or {}),
+                **self._get_ls_params(stop=stop, **kwargs),
+            }
+        else:
+            pass
         if (
             isinstance(callbacks, list)
             and callbacks
@@ -1019,6 +1081,21 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+        if isinstance(metadata, list):
+            metadata = [
+                {
+                    **(meta or {}),
+                    **self._get_ls_params(stop=stop, **kwargs),
+                }
+                for meta in metadata
+            ]
+        elif isinstance(metadata, dict):
+            metadata = {
+                **(metadata or {}),
+                **self._get_ls_params(stop=stop, **kwargs),
+            }
+        else:
+            pass
         # Create callback managers
         if isinstance(callbacks, list) and (
             isinstance(callbacks[0], (list, BaseCallbackManager))
@@ -1152,7 +1229,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def __call__(
         self,
         prompt: str,
@@ -1222,7 +1299,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         )
         return result.generations[0][0].text
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1232,7 +1309,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         return self(text, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -1248,7 +1325,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         content = self(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1258,7 +1335,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         return await self._call_async(text, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],

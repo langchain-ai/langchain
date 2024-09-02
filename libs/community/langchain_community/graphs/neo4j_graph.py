@@ -246,7 +246,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         )
                 elif prop["type"] == "LIST":
                     # Skip embeddings
-                    if prop["min_size"] > LIST_LIMIT:
+                    if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                         continue
                     example = (
                         f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
@@ -555,10 +555,11 @@ class Neo4jGraph(GraphStore):
                     el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
                     and el["properties"] == ["id"]
                     for el in self.structured_schema.get("metadata", {}).get(
-                        "constraint"
+                        "constraint", []
                     )
                 ]
             )
+
             if not constraint_exists:
                 # Create constraint
                 self.query(

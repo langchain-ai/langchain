@@ -13,8 +13,7 @@ import json
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-
-from langchain_community.tools import BaseTool
+from langchain_core.tools import BaseTool
 
 
 class YouTubeSearchTool(BaseTool):
