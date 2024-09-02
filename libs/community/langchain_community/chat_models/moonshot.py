@@ -1,10 +1,11 @@
 """Wrapper around Moonshot chat models."""
+
 from typing import Dict
 
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
+    pre_init,
 )
 
 from langchain_community.chat_models import ChatOpenAI
@@ -28,11 +29,15 @@ class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
             moonshot = MoonshotChat(model="moonshot-v1-8k")
     """
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the environment is set up correctly."""
         values["moonshot_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "moonshot_api_key", "MOONSHOT_API_KEY")
+            get_from_dict_or_env(
+                values,
+                ["moonshot_api_key", "api_key", "openai_api_key"],
+                "MOONSHOT_API_KEY",
+            )
         )
 
         try:

@@ -1,4 +1,5 @@
 """Fake ChatModel for testing purposes."""
+
 import asyncio
 import re
 import time
@@ -41,6 +42,10 @@ class FakeMessagesListChatModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "fake-messages-list-chat-model"
+
+
+class FakeListChatModelError(Exception):
+    pass
 
 
 class FakeListChatModel(SimpleChatModel):
@@ -92,7 +97,7 @@ class FakeListChatModel(SimpleChatModel):
                 self.error_on_chunk_number is not None
                 and i_c == self.error_on_chunk_number
             ):
-                raise Exception("Fake error")
+                raise FakeListChatModelError
 
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
@@ -115,7 +120,7 @@ class FakeListChatModel(SimpleChatModel):
                 self.error_on_chunk_number is not None
                 and i_c == self.error_on_chunk_number
             ):
-                raise Exception("Fake error")
+                raise FakeListChatModelError
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     @property

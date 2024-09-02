@@ -13,6 +13,7 @@ from langchain_core.prompts import (
     PromptTemplate,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.runnables import RunnableConfig
 
 examples = [
     {
@@ -332,6 +333,7 @@ def create_simple_model(
             ),
         ),
     }
+
     if node_properties:
         if isinstance(node_properties, list) and "id" in node_properties:
             raise ValueError("The node property 'id' is reserved and cannot be used.")
@@ -347,6 +349,7 @@ def create_simple_model(
                 node_properties_mapped,
                 description="Property key.",
                 input_type="property",
+                llm_type=llm_type,
             )
             value: str = Field(..., description="value")
 
@@ -370,6 +373,7 @@ def create_simple_model(
                 node_labels,
                 description="The type or label of the source node.",
                 input_type="node",
+                llm_type=llm_type,
             ),
         ),
         "target_node_id": (
@@ -385,6 +389,7 @@ def create_simple_model(
                 node_labels,
                 description="The type or label of the target node.",
                 input_type="node",
+                llm_type=llm_type,
             ),
         ),
         "type": (
@@ -393,6 +398,7 @@ def create_simple_model(
                 rel_types,
                 description="The type of the relationship.",
                 input_type="relationship",
+                llm_type=llm_type,
             ),
         ),
     }
@@ -416,6 +422,7 @@ def create_simple_model(
                 relationship_properties_mapped,
                 description="Property key.",
                 input_type="property",
+                llm_type=llm_type,
             )
             value: str = Field(..., description="value")
 
@@ -472,7 +479,7 @@ def _parse_and_clean_json(
         nodes.append(
             Node(
                 id=node["id"],
-                type=node.get("type"),
+                type=node.get("type", "Node"),
                 properties=node_properties,
             )
         )
@@ -534,7 +541,9 @@ def _format_nodes(nodes: List[Node]) -> List[Node]:
     return [
         Node(
             id=el.id.title() if isinstance(el.id, str) else el.id,
-            type=el.type.capitalize() if el.type else None,  # handle empty strings
+            type=el.type.capitalize()  # type: ignore[arg-type]
+            if el.type
+            else None,  # handle empty strings  # type: ignore[arg-type]
             properties=el.properties,
         )
         for el in nodes
@@ -575,9 +584,20 @@ def _convert_to_graph_document(
                     ]
                 )
             except Exception:  # Google type response
-                argument_json = json.loads(
-                    raw_schema["raw"].additional_kwargs["function_call"]["arguments"]
-                )
+                try:
+                    argument_json = json.loads(
+                        raw_schema["raw"].additional_kwargs["function_call"][
+                            "arguments"
+                        ]
+                    )
+                except Exception:  # Ollama type response
+                    argument_json = raw_schema["raw"].tool_calls[0]["args"]
+                    if isinstance(argument_json["nodes"], str):
+                        argument_json["nodes"] = json.loads(argument_json["nodes"])
+                    if isinstance(argument_json["relationships"], str):
+                        argument_json["relationships"] = json.loads(
+                            argument_json["relationships"]
+                        )
 
             nodes, relationships = _parse_and_clean_json(argument_json)
         except Exception:  # If we can't parse JSON
@@ -702,13 +722,15 @@ class LLMGraphTransformer:
             prompt = prompt or default_prompt
             self.chain = prompt | structured_llm
 
-    def process_response(self, document: Document) -> GraphDocument:
+    def process_response(
+        self, document: Document, config: Optional[RunnableConfig] = None
+    ) -> GraphDocument:
         """
         Processes a single document, transforming it into a graph document using
         an LLM based on the model's schema and constraints.
         """
         text = document.page_content
-        raw_schema = self.chain.invoke({"input": text})
+        raw_schema = self.chain.invoke({"input": text}, config=config)
         if self._function_call:
             raw_schema = cast(Dict[Any, Any], raw_schema)
             nodes, relationships = _convert_to_graph_document(raw_schema)
@@ -718,6 +740,8 @@ class LLMGraphTransformer:
             if not isinstance(raw_schema, str):
                 raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
+            if isinstance(parsed_json, dict):
+                parsed_json = [parsed_json]
             for rel in parsed_json:
                 # Nodes need to be deduplicated using a set
                 nodes_set.add((rel["head"], rel["head_type"]))
@@ -757,26 +781,28 @@ class LLMGraphTransformer:
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     def convert_to_graph_documents(
-        self, documents: Sequence[Document]
+        self, documents: Sequence[Document], config: Optional[RunnableConfig] = None
     ) -> List[GraphDocument]:
         """Convert a sequence of documents into graph documents.
 
         Args:
             documents (Sequence[Document]): The original documents.
-            **kwargs: Additional keyword arguments.
+            kwargs: Additional keyword arguments.
 
         Returns:
             Sequence[GraphDocument]: The transformed documents as graphs.
         """
-        return [self.process_response(document) for document in documents]
+        return [self.process_response(document, config) for document in documents]
 
-    async def aprocess_response(self, document: Document) -> GraphDocument:
+    async def aprocess_response(
+        self, document: Document, config: Optional[RunnableConfig] = None
+    ) -> GraphDocument:
         """
         Asynchronously processes a single document, transforming it into a
         graph document.
         """
         text = document.page_content
-        raw_schema = await self.chain.ainvoke({"input": text})
+        raw_schema = await self.chain.ainvoke({"input": text}, config=config)
         raw_schema = cast(Dict[Any, Any], raw_schema)
         nodes, relationships = _convert_to_graph_document(raw_schema)
 
@@ -803,13 +829,13 @@ class LLMGraphTransformer:
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     async def aconvert_to_graph_documents(
-        self, documents: Sequence[Document]
+        self, documents: Sequence[Document], config: Optional[RunnableConfig] = None
     ) -> List[GraphDocument]:
         """
         Asynchronously convert a sequence of documents into graph documents.
         """
         tasks = [
-            asyncio.create_task(self.aprocess_response(document))
+            asyncio.create_task(self.aprocess_response(document, config))
             for document in documents
         ]
         results = await asyncio.gather(*tasks)

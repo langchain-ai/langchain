@@ -1,7 +1,8 @@
-"""Module contains typedefs that are used with runnables."""
+"""Module contains typedefs that are used with Runnables."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Literal, Sequence, Union
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -10,7 +11,7 @@ class EventData(TypedDict, total=False):
     """Data associated with a streaming event."""
 
     input: Any
-    """The input passed to the runnable that generated the event.
+    """The input passed to the Runnable that generated the event.
     
     Inputs will sometimes be available at the *START* of the Runnable, and 
     sometimes at the *END* of the Runnable.
@@ -36,7 +37,7 @@ class EventData(TypedDict, total=False):
     """
 
 
-class StreamEvent(TypedDict):
+class BaseStreamEvent(TypedDict):
     """Streaming event.
 
     Schema of a streaming event which is produced from the astream_events method.
@@ -84,53 +85,49 @@ class StreamEvent(TypedDict):
     event: str
     """Event names are of the format: on_[runnable_type]_(start|stream|end).
     
-    Runnable types are one of: 
-    * llm - used by non chat models
-    * chat_model - used by chat models
-    * prompt --  e.g., ChatPromptTemplate
-    * tool -- from tools defined via @tool decorator or inheriting from Tool/BaseTool
-    * chain - most Runnables are of this type
+    Runnable types are one of:
+    
+    - **llm** - used by non chat models
+    - **chat_model** - used by chat models
+    - **prompt** --  e.g., ChatPromptTemplate
+    - **tool** -- from tools defined via @tool decorator or inheriting
+        from Tool/BaseTool
+    - **chain** - most Runnables are of this type
     
     Further, the events are categorized as one of:
-    * start - when the runnable starts
-    * stream - when the runnable is streaming
-    * end - when the runnable ends
+    
+    - **start** - when the Runnable starts
+    - **stream** - when the Runnable is streaming
+    - **end* - when the Runnable ends
     
     start, stream and end are associated with slightly different `data` payload.
     
     Please see the documentation for `EventData` for more details.
     """
-    name: str
-    """The name of the runnable that generated the event."""
     run_id: str
-    """An randomly generated ID to keep track of the execution of the given runnable.
+    """An randomly generated ID to keep track of the execution of the given Runnable.
     
-    Each child runnable that gets invoked as part of the execution of a parent runnable
+    Each child Runnable that gets invoked as part of the execution of a parent Runnable
     is assigned its own unique ID.
     """
     tags: NotRequired[List[str]]
-    """Tags associated with the runnable that generated this event.
+    """Tags associated with the Runnable that generated this event.
     
-    Tags are always inherited from parent runnables.
+    Tags are always inherited from parent Runnables.
     
-    Tags can either be bound to a runnable using `.with_config({"tags":  ["hello"]})`
+    Tags can either be bound to a Runnable using `.with_config({"tags":  ["hello"]})`
     or passed at run time using `.astream_events(..., {"tags": ["hello"]})`.
     """
     metadata: NotRequired[Dict[str, Any]]
-    """Metadata associated with the runnable that generated this event.
+    """Metadata associated with the Runnable that generated this event.
     
-    Metadata can either be bound to a runnable using 
+    Metadata can either be bound to a Runnable using 
     
         `.with_config({"metadata": { "foo": "bar" }})`
         
     or passed at run time using 
     
         `.astream_events(..., {"metadata": {"foo": "bar"}})`.
-    """
-    data: EventData
-    """Event data.
-
-    The contents of the event data depend on the event type.
     """
 
     parent_ids: Sequence[str]
@@ -145,3 +142,33 @@ class StreamEvent(TypedDict):
     
     Only supported as of v2 of the astream events API. v1 will return an empty list.
     """
+
+
+class StandardStreamEvent(BaseStreamEvent):
+    """A standard stream event that follows LangChain convention for event data."""
+
+    data: EventData
+    """Event data.
+
+    The contents of the event data depend on the event type.
+    """
+    name: str
+    """The name of the Runnable that generated the event."""
+
+
+class CustomStreamEvent(BaseStreamEvent):
+    """Custom stream event created by the user.
+
+    .. versionadded:: 0.2.15
+    """
+
+    # Overwrite the event field to be more specific.
+    event: Literal["on_custom_event"]  # type: ignore[misc]
+    """The event type."""
+    name: str
+    """User defined name for the event."""
+    data: Any
+    """The data associated with the event. Free form and can be anything."""
+
+
+StreamEvent = Union[StandardStreamEvent, CustomStreamEvent]

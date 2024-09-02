@@ -7,7 +7,7 @@ This page covers how to use the `GPT4All` wrapper within LangChain. The tutorial
 - Install the Python package with `pip install gpt4all`
 - Download a [GPT4All model](https://gpt4all.io/index.html) and place it in your desired directory
 
-In this example, We are using `mistral-7b-openorca.Q4_0.gguf`(Best overall fast chat model):
+In this example, we are using `mistral-7b-openorca.Q4_0.gguf`:
 
 ```bash
 mkdir models
@@ -30,7 +30,7 @@ model = GPT4All(model="./models/mistral-7b-openorca.Q4_0.gguf", n_threads=8)
 response = model.invoke("Once upon a time, ")
 ```
 
-You can also customize the generation parameters, such as n_predict, temp, top_p, top_k, and others.
+You can also customize the generation parameters, such as `n_predict`, `temp`, `top_p`, `top_k`, and others.
 
 To stream the model's predictions, add in a CallbackManager.
 
@@ -45,11 +45,11 @@ callbacks = [StreamingStdOutCallbackHandler()]
 model = GPT4All(model="./models/mistral-7b-openorca.Q4_0.gguf", n_threads=8)
 
 # Generate text. Tokens are streamed through the callback manager.
-model("Once upon a time, ", callbacks=callbacks)
+model.invoke("Once upon a time, ", callbacks=callbacks)
 ```
 
 ## Model File
 
-You can find links to model file downloads in the [https://gpt4all.io/](https://gpt4all.io/index.html).
+You can download model files from the GPT4All client. You can download the client from the [GPT4All](https://gpt4all.io/index.html) website.
 
 For a more detailed walkthrough of this, see [this notebook](/docs/integrations/llms/gpt4all)

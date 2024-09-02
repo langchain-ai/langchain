@@ -1,4 +1,5 @@
 """Abstract interface for document loader implementations."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 from langchain_core.documents.base import Blob
 
 
-class BaseLoader(ABC):
+class BaseLoader(ABC):  # noqa: B024
     """Interface for Document Loader.
 
     Implementations should implement the lazy-loading method using generators

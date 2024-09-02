@@ -1,4 +1,5 @@
 """Util that calls Google Search using the Serper.dev API."""
+
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -42,8 +43,6 @@ class GoogleSerperAPIWrapper(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     @root_validator(pre=True)

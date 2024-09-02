@@ -1,4 +1,5 @@
 """Wrapper for Rememberizer APIs."""
+
 from typing import Dict, List, Optional, cast
 
 import requests

@@ -6,7 +6,14 @@ from langchain_core.load.serializable import Serializable, to_json_not_implement
 
 def default(obj: Any) -> Any:
     """Return a default value for a Serializable object or
-    a SerializedNotImplemented object."""
+    a SerializedNotImplemented object.
+
+    Args:
+        obj: The object to serialize to json if it is a Serializable object.
+
+    Returns:
+        A json serializable object or a SerializedNotImplemented object.
+    """
     if isinstance(obj, Serializable):
         return obj.to_json()
     else:
@@ -17,13 +24,17 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
     """Return a json string representation of an object.
 
     Args:
-        obj: The object to dump
+        obj: The object to dump.
         pretty: Whether to pretty print the json. If true, the json will be
-            indented with 2 spaces (if no indent is provided as part of kwargs)
-        **kwargs: Additional arguments to pass to json.dumps
+            indented with 2 spaces (if no indent is provided as part of kwargs).
+            Default is False.
+        kwargs: Additional arguments to pass to json.dumps
 
     Returns:
-        A json string representation of the object
+        A json string representation of the object.
+
+    Raises:
+        ValueError: If `default` is passed as a kwarg.
     """
     if "default" in kwargs:
         raise ValueError("`default` should not be passed to dumps")

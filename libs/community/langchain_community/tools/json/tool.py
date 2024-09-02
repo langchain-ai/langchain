@@ -1,5 +1,6 @@
 # flake8: noqa
 """Tools for working with JSON specs."""
+
 from __future__ import annotations
 
 import json

@@ -1,9 +1,12 @@
+# RAG - Pinecone - fusion
 
-# rag-fusion
+This template enables `RAG fusion` using a re-implementation of 
+the project found [here](https://github.com/Raudaschl/rag-fusion). 
 
-This template enables RAG fusion using a re-implementation of the project found [here](https://github.com/Raudaschl/rag-fusion). 
+It performs multiple query generation and `Reciprocal Rank Fusion` 
+to re-rank search results.
 
-It performs multiple query generation and Reciprocal Rank Fusion to re-rank search results.
+It uses the `Pinecone` vectorstore and the `OpenAI` chat and embedding models.
 
 ## Environment Setup
 

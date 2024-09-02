@@ -19,24 +19,35 @@ from langchain_core.utils.interactive_env import is_interactive_env
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
     """Format a template using jinja2.
 
-    *Security warning*: As of LangChain 0.0.329, this method uses Jinja2's
+    *Security warning*:
+        As of LangChain 0.0.329, this method uses Jinja2's
         SandboxedEnvironment by default. However, this sand-boxing should
         be treated as a best-effort approach rather than a guarantee of security.
         Do not accept jinja2 templates from untrusted sources as they may lead
         to arbitrary Python code execution.
 
         https://jinja.palletsprojects.com/en/3.1.x/sandbox/
+
+    Args:
+        template: The template string.
+        **kwargs: The variables to format the template with.
+
+    Returns:
+        The formatted string.
+
+    Raises:
+        ImportError: If jinja2 is not installed.
     """
     try:
         from jinja2.sandbox import SandboxedEnvironment
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
             "Please be cautious when using jinja2 templates. "
             "Do not expand jinja2 templates using unverified or user-controlled "
             "inputs as that can result in arbitrary Python code execution."
-        )
+        ) from e
 
     # This uses a sandboxed environment to prevent arbitrary code execution.
     # Jinja2 uses an opt-out rather than opt-in approach for sand-boxing.
@@ -70,17 +81,17 @@ def validate_jinja2(template: str, input_variables: List[str]) -> None:
         warning_message += f"Extra variables: {extra_variables}"
 
     if warning_message:
-        warnings.warn(warning_message.strip())
+        warnings.warn(warning_message.strip(), stacklevel=7)
 
 
 def _get_jinja2_variables_from_template(template: str) -> Set[str]:
     try:
         from jinja2 import Environment, meta
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
-        )
+        ) from e
     env = Environment()
     ast = env.parse(template)
     variables = meta.find_undeclared_variables(ast)
@@ -88,14 +99,29 @@ def _get_jinja2_variables_from_template(template: str) -> Set[str]:
 
 
 def mustache_formatter(template: str, **kwargs: Any) -> str:
-    """Format a template using mustache."""
+    """Format a template using mustache.
+
+    Args:
+        template: The template string.
+        **kwargs: The variables to format the template with.
+
+    Returns:
+        The formatted string.
+    """
     return mustache.render(template, kwargs)
 
 
 def mustache_template_vars(
     template: str,
 ) -> Set[str]:
-    """Get the variables from a mustache template."""
+    """Get the variables from a mustache template.
+
+    Args:
+        template: The template string.
+
+    Returns:
+        The variables from the template.
+    """
     vars: Set[str] = set()
     section_depth = 0
     for type, key in mustache.tokenize(template):
@@ -118,7 +144,14 @@ Defs = Dict[str, "Defs"]
 def mustache_schema(
     template: str,
 ) -> Type[BaseModel]:
-    """Get the variables from a mustache template."""
+    """Get the variables from a mustache template.
+
+    Args:
+        template: The template string.
+
+    Returns:
+        The variables from the template as a Pydantic model.
+    """
     fields = {}
     prefix: Tuple[str, ...] = ()
     section_stack: List[Tuple[str, ...]] = []
@@ -178,6 +211,7 @@ def check_valid_template(
 
     Raises:
         ValueError: If the template format is not supported.
+        ValueError: If the prompt schema is invalid.
     """
     try:
         validator_func = DEFAULT_VALIDATOR_MAPPING[template_format]
@@ -232,12 +266,36 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         return ["langchain", "prompts", "base"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         return StringPromptValue(text=self.format(**kwargs))
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        """Async format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         return StringPromptValue(text=await self.aformat(**kwargs))
 
     def pretty_repr(self, html: bool = False) -> str:
+        """Get a pretty representation of the prompt.
+
+        Args:
+            html: Whether to return an HTML-formatted string.
+
+        Returns:
+            A pretty representation of the prompt.
+        """
         # TODO: handle partials
         dummy_vars = {
             input_var: "{" + f"{input_var}" + "}" for input_var in self.input_variables
@@ -249,4 +307,5 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         return self.format(**dummy_vars)
 
     def pretty_print(self) -> None:
+        """Print a pretty representation of the prompt."""
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
