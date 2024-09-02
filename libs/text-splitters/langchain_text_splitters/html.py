@@ -381,29 +381,29 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     Example:
         .. code-block:: python
 
-        from langchain_text_splitters.html import HTMLSemanticPreservingSplitter
+            from langchain_text_splitters.html import HTMLSemanticPreservingSplitter
 
-        def custom_iframe_extractor(iframe_tag):
-            ```
-            Custom handler function to extract the 'src' attribute from an <iframe> tag.
-            Converts the iframe to a Markdown-like link: [iframe:<src>](src).
+            def custom_iframe_extractor(iframe_tag):
+                ```
+                Custom handler function to extract the 'src' attribute from an <iframe> tag.
+                Converts the iframe to a Markdown-like link: [iframe:<src>](src).
 
-            Args:
-                iframe_tag (bs4.element.Tag): The <iframe> tag to be processed.
+                Args:
+                    iframe_tag (bs4.element.Tag): The <iframe> tag to be processed.
 
-            Returns:
-                str: A formatted string representing the iframe in Markdown-like format.
-            ```
-            iframe_src = iframe_tag.get('src', '')
-            return f"[iframe:{iframe_src}]({iframe_src})"
+                Returns:
+                    str: A formatted string representing the iframe in Markdown-like format.
+                ```
+                iframe_src = iframe_tag.get('src', '')
+                return f"[iframe:{iframe_src}]({iframe_src})"
 
-        text_splitter = HTMLSemanticPreservingSplitter(
-            headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
-            max_chunk_size=500,
-            preserve_links=True,
-            preserve_images=True,
-            custom_handlers={"iframe": custom_iframe_extractor}
-        )
+            text_splitter = HTMLSemanticPreservingSplitter(
+                headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+                max_chunk_size=500,
+                preserve_links=True,
+                preserve_images=True,
+                custom_handlers={"iframe": custom_iframe_extractor}
+            )
     """
 
     def __init__(
