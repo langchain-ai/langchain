@@ -14,6 +14,7 @@ from typing import (
     Optional,
 )
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -215,6 +216,7 @@ class _BaseGigaChat(Serializable):
         return await self._client.aget_image(file_id)
 
 
+@deprecated(alternative="gigachain_community.chat_models.gigachat")
 class GigaChat(_BaseGigaChat, BaseLLM):
     """`GigaChat` large language models API.
 
