@@ -7,6 +7,7 @@ import pytest
 from unstructured.documents.elements import Text  # type: ignore
 
 from langchain_unstructured.document_loaders import (
+    UnstructuredLoader,
     _SingleDocumentLoader,  # type: ignore
 )
 
@@ -14,6 +15,45 @@ EXAMPLE_DOCS_DIRECTORY = str(
     Path(__file__).parent.parent.parent.parent.parent
     / "community/tests/integration_tests/examples/"
 )
+
+
+# --- UnstructuredLoader.__init__() ---
+
+
+def test_it_initializes_with_file_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("UNSTRUCTURED_API_KEY", raising=False)
+
+    loader = UnstructuredLoader(file_path="dummy_path")
+
+    assert loader.file_path == "dummy_path"
+    assert loader.file is None
+    assert loader.partition_via_api is False
+    assert loader.post_processors is None
+    assert loader.unstructured_kwargs == {}
+    # A client is always created and passed to _SingleDocumentLoader, but it's not
+    # used unless partition_via_api=True
+    assert loader.client is not None
+    assert loader.client.sdk_configuration.security.api_key_auth == ""  # type: ignore
+    assert (
+        loader.client.sdk_configuration.server_url == "https://api.unstructuredapp.io"
+    )
+
+
+def test_it_initializes_with_env_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("UNSTRUCTURED_API_KEY", "FAKE_API_KEY")
+
+    loader = UnstructuredLoader(file_path="dummy_path")
+
+    assert loader.file_path == "dummy_path"
+    assert loader.file is None
+    assert loader.partition_via_api is False
+    assert loader.post_processors is None
+    assert loader.unstructured_kwargs == {}
+    assert loader.client is not None
+    assert loader.client.sdk_configuration.security.api_key_auth == "FAKE_API_KEY"  # type: ignore
+    assert (
+        loader.client.sdk_configuration.server_url == "https://api.unstructuredapp.io"
+    )
 
 
 # --- _SingleDocumentLoader._get_content() ---

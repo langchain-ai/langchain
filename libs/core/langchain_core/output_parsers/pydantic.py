@@ -1,5 +1,5 @@
 import json
-from typing import Generic, List, Type
+from typing import Generic, List, Optional, Type
 
 import pydantic  # pydantic: ignore
 
@@ -32,12 +32,12 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                             {self.pydantic_object.__class__}"
                     )
             except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
-                raise self._parser_exception(e, obj)
+                raise self._parser_exception(e, obj) from e
         else:  # pydantic v1
             try:
                 return self.pydantic_object.parse_obj(obj)
             except pydantic.ValidationError as e:
-                raise self._parser_exception(e, obj)
+                raise self._parser_exception(e, obj) from e
 
     def _parser_exception(
         self, e: Exception, json_object: dict
@@ -49,7 +49,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
 
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
-    ) -> TBaseModel:
+    ) -> Optional[TBaseModel]:
         """Parse the result of an LLM call to a pydantic object.
 
         Args:
@@ -62,8 +62,13 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         Returns:
             The parsed pydantic object.
         """
-        json_object = super().parse_result(result)
-        return self._parse_obj(json_object)
+        try:
+            json_object = super().parse_result(result)
+            return self._parse_obj(json_object)
+        except OutputParserException as e:
+            if partial:
+                return None
+            raise e
 
     def parse(self, text: str) -> TBaseModel:
         """Parse the output of an LLM call to a pydantic object.
@@ -92,7 +97,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         if "type" in reduced_schema:
             del reduced_schema["type"]
         # Ensure json in context is well-formed with double quotes.
-        schema_str = json.dumps(reduced_schema)
+        schema_str = json.dumps(reduced_schema, ensure_ascii=False)
 
         return _PYDANTIC_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
