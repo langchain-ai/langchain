@@ -123,7 +123,6 @@ def _get_search_client(
     additional_search_client_options = additional_search_client_options or {}
     default_fields = default_fields or []
 
-
     credential: Union[AzureKeyCredential, TokenCredential, InteractiveBrowserCredential]
     # Determine the appropriate credential to use
     if azure_credential:
@@ -352,7 +351,7 @@ class AzureSearch(VectorStore):
             user_agent=user_agent,
             cors_options=cors_options,
             additional_search_client_options=additional_search_client_options,
-            azure_credential = azure_credential,
+            azure_credential=azure_credential,
         )
         self.async_client = _get_search_client(
             azure_search_endpoint,
