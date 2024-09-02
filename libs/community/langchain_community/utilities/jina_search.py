@@ -7,7 +7,6 @@ from langchain_core.pydantic_v1 import BaseModel
 from yarl import URL
 
 
-
 class JinaSearchAPIWrapper(BaseModel):
     """Wrapper around the Jina search engine."""
 
