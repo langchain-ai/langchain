@@ -122,39 +122,39 @@ def mock_requests(loader):
     return docs
 
 
-def test_sync__init__():
+def test_sync__init__() -> None:
     loader = RecursiveUrlLoader("http://test.com", max_depth=1)
     docs = mock_requests(loader)
     assert len(docs) == 1
 
 
-def test_async__init__(mocker):
+def test_async__init__(mocker: Any) -> None:
     mocker.patch.object(aiohttp.ClientSession, "get", new=MockGet)
     loader = RecursiveUrlLoader("http://test.com", max_depth=1, use_async=True)
     docs = loader.load()
     assert len(docs) == 1
 
 
-def test_sync_default_depth():
+def test_sync_default_depth() -> None:
     loader = RecursiveUrlLoader("http://test.com")
     docs = mock_requests(loader)
     assert len(docs) == 3
 
 
-def test_async_default_depth(mocker):
+def test_async_default_depth(mocker: Any) -> None:
     mocker.patch.object(aiohttp.ClientSession, "get", new=MockGet)
     loader = RecursiveUrlLoader("http://test.com", use_async=True)
     docs = loader.load()
     assert len(docs) == 3
 
 
-def test_sync_deduplication():
+def test_sync_deduplication() -> None:
     loader = RecursiveUrlLoader("http://test.com", max_depth=3)
     docs = mock_requests(loader)
     assert len(docs) == 4
 
 
-def test_async_deduplication(mocker):
+def test_async_deduplication(mocker: Any) -> None:
     mocker.patch.object(aiohttp.ClientSession, "get", new=MockGet)
     loader = RecursiveUrlLoader("http://test.com", max_depth=3, use_async=True)
     docs = loader.load()
