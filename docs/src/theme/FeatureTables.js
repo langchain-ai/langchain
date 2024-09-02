@@ -209,7 +209,7 @@ const FEATURE_TABLES = {
                 "name": "ChatDatabricks",
                 "package": "langchain-databricks",
                 "link": "databricks",
-                "structured_output": false,
+                "structured_output": true,
                 "tool_calling": true,
                 "json_mode": false, 
                 "multimodal": false,
