@@ -1012,7 +1012,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "PGVector",
-                link: "pg_vector",
+                link: "pgvector",
                 deleteById: true,
                 filtering: true,
                 searchByVector: true,
