@@ -2,38 +2,37 @@
 from typing import Any, AsyncGenerator, Iterable, List
 
 import pytest
-from pytest_mock import MockerFixture
-
 from gigachat.models import (
     ChatCompletion,
     ChatCompletionChunk,
     Choices,
     ChoicesChunk,
     Messages,
-    MessagesRole,
     MessagesChunk,
+    MessagesRole,
     Usage,
-)
-from langchain.chat_models.gigachat import GigaChat
-from langchain_community.chat_models.gigachat import (
-    _convert_dict_to_message,
-    _convert_message_to_dict,
 )
 from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
-    FunctionMessage,
 )
+from langchain_community.chat_models.gigachat import (
+    GigaChat,
+    _convert_dict_to_message,
+    _convert_message_to_dict,
+)
+from langchain_core.pydantic_v1 import BaseModel, Field
+from pytest_mock import MockerFixture
+from tests.unit_tests.stubs import AnyStr
 
 from ..callbacks.fake_callback_handler import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
-
-from tests.unit_tests.stubs import AnyStr
 
 
 def test__convert_dict_to_message_system() -> None:
@@ -298,8 +297,23 @@ def test_gigachat_build_payload_non_existing_parameter() -> None:
     assert getattr(payload, "fake_param", None) is None
 
 
-# def test_gigachat_build_payload_function_not_json() -> None:
-#     llm = GigaChat()
-#     messages: List[BaseMessage] = [FunctionMessage(content="hello")]
-#     payload = llm._build_payload(messages, max_tokens=1)
-#     assert None == None
+async def test_gigachat_bind_without_description() -> None:
+    class Person(BaseModel):
+        name: str = Field(..., title="Name", description="The person's name")
+
+    llm = GigaChat()
+    with pytest.raises(ValueError):
+        llm.bind_functions(functions=[Person], function_call="Person")
+    with pytest.raises(ValueError):
+        llm.bind_tools(tools=[Person], tool_choice="Person")
+
+
+async def test_gigachat_bind_with_description() -> None:
+    class Person(BaseModel):
+        """Simple description"""
+
+        name: str = Field(..., title="Name")
+
+    llm = GigaChat()
+    llm.bind_functions(functions=[Person], function_call="Person")
+    llm.bind_tools(tools=[Person], tool_choice="Person")

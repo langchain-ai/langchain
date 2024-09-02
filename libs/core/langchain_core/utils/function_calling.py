@@ -167,9 +167,15 @@ def convert_pydantic_to_gigachat_function(
     else:
         return_schema = None
 
+    description = description or schema.get("description", None)
+    if not description or description == "":
+        raise ValueError(
+            "Incorrect function or tool description. Description is required."
+        )
+
     return GigaFunctionDescription(
         name=name or title,
-        description=description or schema["description"],
+        description=description,
         parameters=schema,
         return_parameters=return_schema,
         few_shot_examples=few_shot_examples,
@@ -365,6 +371,10 @@ def _convert_any_typed_dicts_to_pydantic(
 )
 def format_tool_to_gigachat_function(tool: BaseTool) -> GigaFunctionDescription:
     """Format tool into the GigaChat function API."""
+    if not tool.description or tool.description == "":
+        raise Exception(
+            "Incorrect function or tool description. Description is required."
+        )
     if tool.args_schema:
         return convert_pydantic_to_gigachat_function(
             tool.args_schema,
