@@ -186,16 +186,16 @@ class AdobePDFExtractParser(BaseBlobParser):
         from adobe.pdfservices.operation.pdfjobs.jobs.extract_pdf_job import (
             ExtractPDFJob,
         )
-        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_element_type import (
+        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_element_type import (  # noqa: E501
             ExtractElementType,
         )
-        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_pdf_params import (
+        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_pdf_params import (  # noqa: E501
             ExtractPDFParams,
         )
-        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_renditions_element_type import (
+        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_renditions_element_type import (  # noqa: E501
             ExtractRenditionsElementType,
         )
-        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.table_structure_type import (
+        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.table_structure_type import (  # noqa: E501
             TableStructureType,
         )
         from adobe.pdfservices.operation.pdfjobs.result.extract_pdf_result import (

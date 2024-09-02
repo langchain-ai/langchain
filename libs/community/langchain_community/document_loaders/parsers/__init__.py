@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 
 _module_lookup = {
-    "AdobePDFExtractionParser": "langchain_community.document_loaders.parsers.adobe_pdf_services",
+    "AdobePDFExtractionParser": "langchain_community.document_loaders.parsers.adobe_pdf_services",  # noqa: E501
     "AzureAIDocumentIntelligenceParser": "langchain_community.document_loaders.parsers.doc_intelligence",  # noqa: E501
     "BS4HTMLParser": "langchain_community.document_loaders.parsers.html",
     "DocAIParser": "langchain_community.document_loaders.parsers.docai",
