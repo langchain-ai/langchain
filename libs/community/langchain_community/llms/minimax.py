@@ -31,7 +31,7 @@ class _MinimaxEndpointClient(BaseModel):
     api_key: SecretStr
     api_url: str
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "api_url" not in values:
             host = values["host"]

@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-mongodb"
-version = "0.1.7"
+version = "0.1.8"
 description = "An integration package connecting MongoDB and LangChain"
 authors = []
 readme = "README.md"
@@ -67,13 +67,16 @@ pytest-asyncio = "^0.21.1"
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
-[tool.poetry.group.test_integration.dependencies]
+[tool.poetry.group.test_integration.dependencies.langchain-openai]
+path = "../openai"
+develop = true
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
+simsimd = "^5.0.0"
 
 [tool.poetry.group.test.dependencies.langchain]
 path = "../../langchain"

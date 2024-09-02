@@ -140,7 +140,7 @@ class LangChainProjectNameTest(unittest.TestCase):
                     projects = []
 
                     def mock_create_run(**kwargs: Any) -> Any:
-                        projects.append(kwargs.get("project_name"))
+                        projects.append(kwargs.get("project_name"))  # noqa: B023
                         return unittest.mock.MagicMock()
 
                     client.create_run = mock_create_run
@@ -151,6 +151,4 @@ class LangChainProjectNameTest(unittest.TestCase):
                         run_id=UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a"),
                     )
                     tracer.wait_for_futures()
-                    assert (
-                        len(projects) == 1 and projects[0] == case.expected_project_name
-                    )
+                    assert projects == [case.expected_project_name]

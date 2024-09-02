@@ -347,16 +347,14 @@ def _init_chat_model_helper(
             _check_pkg("langchain_ollama")
             from langchain_ollama import ChatOllama
         except ImportError:
-            pass
-
-        # For backwards compatibility
-        try:
-            _check_pkg("langchain_community")
-            from langchain_community.chat_models import ChatOllama
-        except ImportError:
-            # If both langchain-ollama and langchain-community aren't available, raise
-            # an error related to langchain-ollama
-            _check_pkg("langchain_ollama")
+            # For backwards compatibility
+            try:
+                _check_pkg("langchain_community")
+                from langchain_community.chat_models import ChatOllama
+            except ImportError:
+                # If both langchain-ollama and langchain-community aren't available,
+                # raise an error related to langchain-ollama
+                _check_pkg("langchain_ollama")
 
         return ChatOllama(model=model, **kwargs)
     elif model_provider == "together":

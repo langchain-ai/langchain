@@ -551,13 +551,13 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                             input_variables=input_variables, template=img_template
                         )
                     else:
-                        raise ValueError()
+                        raise ValueError(f"Invalid image template: {tmpl}")
                     prompt.append(img_template_obj)
                 else:
-                    raise ValueError()
+                    raise ValueError(f"Invalid template: {tmpl}")
             return cls(prompt=prompt, **kwargs)
         else:
-            raise ValueError()
+            raise ValueError(f"Invalid template: {template}")
 
     @classmethod
     def from_template_file(
@@ -576,7 +576,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             A new instance of this class.
         """
-        with open(str(template_file), "r") as f:
+        with open(str(template_file)) as f:
             template = f.read()
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 
@@ -941,13 +941,14 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                   A message can be represented using the following formats:
                   (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
                   (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (4) a string which is
+                  (4) 2-tuple of (message class, template), (5) a string which is
                   shorthand for ("human", template); e.g., "{user_input}".
             template_format: format of the template. Defaults to "f-string".
             input_variables: A list of the names of the variables whose values are
                 required as inputs to the prompt.
-            optional_variables: A list of the names of the variables that are optional
-                in the prompt.
+            optional_variables: A list of the names of the variables for placeholder
+            or MessagePlaceholder that are optional. These variables are auto inferred
+            from the prompt and user need not provide them.
             partial_variables: A dictionary of the partial variables the prompt
                 template carries. Partial variables populate the template so that you
                 don't need to pass them in every time you call the prompt.
@@ -1176,7 +1177,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                   A message can be represented using the following formats:
                   (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
                   (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (4) a string which is
+                  (4) 2-tuple of (message class, template), (5) a string which is
                   shorthand for ("human", template); e.g., "{user_input}".
             template_format: format of the template. Defaults to "f-string".
 

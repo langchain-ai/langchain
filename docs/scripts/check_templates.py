@@ -17,15 +17,15 @@ INFO_BY_DIR: Dict[str, Dict[str, Union[int, str]]] = {
     "document_loaders": {
         "issue_number": 22866,
     },
-    "stores": {},
+    "stores": {"issue_number": 24888},
     "llms": {
         "issue_number": 24803,
     },
     "text_embedding": {"issue_number": 14856},
-    "toolkits": {"issue_number": "TODO"},
+    "toolkits": {"issue_number": 24820},
     "tools": {"issue_number": "TODO"},
     "vectorstores": {"issue_number": 24800},
-    "retrievers": {"issue_number": "TODO"},
+    "retrievers": {"issue_number": 24908},
 }
 
 
@@ -52,6 +52,9 @@ def _get_headers(doc_dir: str) -> Iterable[str]:
 
 
 def check_header_order(path: Path) -> None:
+    if path.name.startswith("index."):
+        # skip index pages
+        return
     doc_dir = path.parent.name
     if doc_dir not in INFO_BY_DIR:
         # Skip if not a directory we care about
@@ -63,19 +66,22 @@ def check_header_order(path: Path) -> None:
 
     with open(path, "r") as f:
         doc = f.read()
-    regex = r".*".join(headers)
-    if not re.search(regex, doc, re.DOTALL):
-        issueline = (
-            (
-                " Please see https://github.com/langchain-ai/langchain/issues/"
-                f"{issue_number} for instructions on how to correctly format a "
-                f"{doc_dir} integration page."
-            )
-            if isinstance(issue_number, int)
-            else ""
-        )
+    notfound = []
+    for header in headers:
+        index = doc.find(header)
+        if index == -1:
+            notfound.append(header)
+        doc = doc[index + len(header) :]
+    if notfound:
+        notfound_headers = "\n- ".join(notfound)
         raise ValueError(
-            f"Document {path} does not match the expected header order.{issueline}"
+            f"Document {path} is missing headers:"
+            "\n- "
+            f"{notfound_headers}"
+            "\n\n"
+            "Please see https://github.com/langchain-ai/langchain/issues/"
+            f"{issue_number} for instructions on how to correctly format a "
+            f"{doc_dir} integration page."
         )
 
 

@@ -21,7 +21,7 @@ class BaseGitHubLoader(BaseLoader, BaseModel, ABC):
     github_api_url: str = "https://api.github.com"
     """URL of GitHub API"""
 
-    @root_validator(pre=True, allow_reuse=True)
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that access token exists in environment."""
         values["access_token"] = get_from_dict_or_env(
@@ -178,7 +178,6 @@ class GitHubIssuesLoader(BaseGitHubLoader):
 class GithubFileLoader(BaseGitHubLoader, ABC):
     """Load GitHub File"""
 
-    file_extension: str = ".md"
     branch: str = "main"
 
     file_filter: Optional[Callable[[str], bool]]
@@ -207,7 +206,10 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
         ]
 
     def get_file_content_by_path(self, path: str) -> str:
-        base_url = f"{self.github_api_url}/repos/{self.repo}/contents/{path}"
+        queryparams = f"?ref={self.branch}" if self.branch else ""
+        base_url = (
+            f"{self.github_api_url}/repos/{self.repo}/contents/{path}{queryparams}"
+        )
         response = requests.get(base_url, headers=self.headers)
         response.raise_for_status()
 
