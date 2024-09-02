@@ -1,7 +1,7 @@
-# retrieval-agent
+# Retrieval agent
 
-This package uses Azure OpenAI to do retrieval using an agent architecture.
-By default, this does retrieval over Arxiv.
+This package uses `Azure OpenAI` to do retrieval using an agent architecture.
+By default, this does retrieval over `Arxiv`.
 
 ## Environment Setup
 

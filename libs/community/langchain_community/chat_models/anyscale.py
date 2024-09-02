@@ -1,4 +1,5 @@
 """Anyscale Endpoints chat wrapper. Relies heavily on ChatOpenAI."""
+
 from __future__ import annotations
 
 import logging
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
-DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
+DEFAULT_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 
 class ChatAnyscale(ChatOpenAI):
@@ -101,7 +102,7 @@ class ChatAnyscale(ChatOpenAI):
 
         return {model["id"] for model in models_response.json()["data"]}
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["anyscale_api_key"] = convert_to_secret_str(

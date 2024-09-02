@@ -14,7 +14,7 @@ from langchain_fireworks import ChatFireworks
 
 def test_chat_fireworks_call() -> None:
     """Test valid call to fireworks."""
-    llm = ChatFireworks(
+    llm = ChatFireworks(  # type: ignore[call-arg]
         model="accounts/fireworks/models/firefunction-v1", temperature=0
     )
 
@@ -26,7 +26,7 @@ def test_chat_fireworks_call() -> None:
 
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
-    llm = ChatFireworks(
+    llm = ChatFireworks(  # type: ignore[call-arg]
         model="accounts/fireworks/models/firefunction-v1", temperature=0
     )
 
@@ -58,7 +58,7 @@ def test_tool_choice() -> None:
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
 
-    llm = ChatFireworks(
+    llm = ChatFireworks(  # type: ignore[call-arg]
         model="accounts/fireworks/models/firefunction-v1", temperature=0
     )
 
@@ -84,7 +84,7 @@ def test_tool_choice_bool() -> None:
 
 def test_stream() -> None:
     """Test streaming tokens from ChatFireworks."""
-    llm = ChatFireworks()
+    llm = ChatFireworks()  # type: ignore[call-arg]
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
@@ -92,7 +92,7 @@ def test_stream() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from ChatFireworks."""
-    llm = ChatFireworks()
+    llm = ChatFireworks()  # type: ignore[call-arg]
 
     full: Optional[BaseMessageChunk] = None
     chunks_with_token_counts = 0
@@ -120,7 +120,7 @@ async def test_astream() -> None:
 
 async def test_abatch() -> None:
     """Test abatch tokens from ChatFireworks."""
-    llm = ChatFireworks()
+    llm = ChatFireworks()  # type: ignore[call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -129,7 +129,7 @@ async def test_abatch() -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatFireworks."""
-    llm = ChatFireworks()
+    llm = ChatFireworks()  # type: ignore[call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -140,7 +140,7 @@ async def test_abatch_tags() -> None:
 
 def test_batch() -> None:
     """Test batch tokens from ChatFireworks."""
-    llm = ChatFireworks()
+    llm = ChatFireworks()  # type: ignore[call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -149,7 +149,7 @@ def test_batch() -> None:
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatFireworks."""
-    llm = ChatFireworks()
+    llm = ChatFireworks()  # type: ignore[call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -157,7 +157,7 @@ async def test_ainvoke() -> None:
 
 def test_invoke() -> None:
     """Test invoke tokens from ChatFireworks."""
-    llm = ChatFireworks()
+    llm = ChatFireworks()  # type: ignore[call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)

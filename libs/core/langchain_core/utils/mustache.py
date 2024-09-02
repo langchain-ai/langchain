@@ -3,13 +3,17 @@ Adapted from https://github.com/noahmorrison/chevron
 MIT License
 """
 
+from __future__ import annotations
+
 import logging
+from types import MappingProxyType
 from typing import (
     Any,
     Dict,
     Iterator,
     List,
     Literal,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -22,7 +26,7 @@ from typing_extensions import TypeAlias
 logger = logging.getLogger(__name__)
 
 
-Scopes: TypeAlias = List[Union[Literal[False, 0], Dict[str, Any]]]
+Scopes: TypeAlias = List[Union[Literal[False, 0], Mapping[str, Any]]]
 
 
 # Globals
@@ -42,7 +46,15 @@ class ChevronError(SyntaxError):
 
 
 def grab_literal(template: str, l_del: str) -> Tuple[str, str]:
-    """Parse a literal from the template."""
+    """Parse a literal from the template.
+
+    Args:
+        template: The template to parse.
+        l_del: The left delimiter.
+
+    Returns:
+        Tuple[str, str]: The literal and the template.
+    """
 
     global _CURRENT_LINE
 
@@ -59,7 +71,16 @@ def grab_literal(template: str, l_del: str) -> Tuple[str, str]:
 
 
 def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
-    """Do a preliminary check to see if a tag could be a standalone."""
+    """Do a preliminary check to see if a tag could be a standalone.
+
+    Args:
+        template: The template. (Not used.)
+        literal: The literal.
+        is_standalone: Whether the tag is standalone.
+
+    Returns:
+        bool: Whether the tag could be a standalone.
+    """
 
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
@@ -77,7 +98,16 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
 
 
 def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
-    """Do a final check to see if a tag could be a standalone."""
+    """Do a final check to see if a tag could be a standalone.
+
+    Args:
+        template: The template.
+        tag_type: The type of the tag.
+        is_standalone: Whether the tag is standalone.
+
+    Returns:
+        bool: Whether the tag could be a standalone.
+    """
 
     # Check right side if we might be a standalone
     if is_standalone and tag_type not in ["variable", "no escape"]:
@@ -95,7 +125,20 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
 
 
 def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], str]:
-    """Parse a tag from a template."""
+    """Parse a tag from a template.
+
+    Args:
+        template: The template.
+        l_del: The left delimiter.
+        r_del: The right delimiter.
+
+    Returns:
+        Tuple[Tuple[str, str], str]: The tag and the template.
+
+    Raises:
+        ChevronError: If the tag is unclosed.
+        ChevronError: If the set delimiter tag is unclosed.
+    """
     global _CURRENT_LINE
     global _LAST_TAG_LINE
 
@@ -113,8 +156,8 @@ def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], s
     # Get the tag
     try:
         tag, template = template.split(r_del, 1)
-    except ValueError:
-        raise ChevronError("unclosed tag " "at line {0}".format(_CURRENT_LINE))
+    except ValueError as e:
+        raise ChevronError("unclosed tag " f"at line {_CURRENT_LINE}") from e
 
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
@@ -135,7 +178,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], s
         # Otherwise we should complain
         else:
             raise ChevronError(
-                "unclosed set delimiter tag\n" "at line {0}".format(_CURRENT_LINE)
+                "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
             )
 
     # If we might be a no html escape tag
@@ -240,18 +283,18 @@ def tokenize(
             # is the same as us
             try:
                 last_section = open_sections.pop()
-            except IndexError:
+            except IndexError as e:
                 raise ChevronError(
-                    'Trying to close tag "{0}"\n'
+                    f'Trying to close tag "{tag_key}"\n'
                     "Looks like it was not opened.\n"
-                    "line {1}".format(tag_key, _CURRENT_LINE + 1)
-                )
+                    f"line {_CURRENT_LINE + 1}"
+                ) from e
             if tag_key != last_section:
                 # Otherwise we need to complain
                 raise ChevronError(
-                    'Trying to close tag "{0}"\n'
-                    'last open tag is "{1}"\n'
-                    "line {2}".format(tag_key, last_section, _CURRENT_LINE + 1)
+                    f'Trying to close tag "{tag_key}"\n'
+                    f'last open tag is "{last_section}"\n'
+                    f"line {_CURRENT_LINE + 1}"
                 )
 
         # Do the second check to see if we're a standalone
@@ -281,8 +324,8 @@ def tokenize(
         # Then we need to complain
         raise ChevronError(
             "Unexpected EOF\n"
-            'the tag "{0}" was never closed\n'
-            "was opened at line {1}".format(open_sections[-1], _LAST_TAG_LINE)
+            f'the tag "{open_sections[-1]}" was never closed\n'
+            f"was opened at line {_LAST_TAG_LINE}"
         )
 
 
@@ -364,15 +407,15 @@ def _get_key(
     # We couldn't find the key in any of the scopes
 
     if warn:
-        logger.warn("Could not find key '%s'" % (key))
+        logger.warn(f"Could not find key '{key}'")
 
     if keep:
-        return "%s %s %s" % (def_ldel, key, def_rdel)
+        return f"{def_ldel} {key} {def_rdel}"
 
     return ""
 
 
-def _get_partial(name: str, partials_dict: Dict[str, str]) -> str:
+def _get_partial(name: str, partials_dict: Mapping[str, str]) -> str:
     """Load a partial"""
     try:
         # Maybe the partial is in the dictionary
@@ -386,11 +429,13 @@ def _get_partial(name: str, partials_dict: Dict[str, str]) -> str:
 #
 g_token_cache: Dict[str, List[Tuple[str, str]]] = {}
 
+EMPTY_DICT: MappingProxyType[str, str] = MappingProxyType({})
+
 
 def render(
     template: Union[str, List[Tuple[str, str]]] = "",
-    data: Dict[str, Any] = {},
-    partials_dict: Dict[str, str] = {},
+    data: Mapping[str, Any] = EMPTY_DICT,
+    partials_dict: Mapping[str, str] = EMPTY_DICT,
     padding: str = "",
     def_ldel: str = "{{",
     def_rdel: str = "}}",
@@ -404,36 +449,36 @@ def render(
 
     Arguments:
 
-    template      -- A file-like object or a string containing the template
+    template      -- A file-like object or a string containing the template.
 
-    data          -- A python dictionary with your data scope
+    data          -- A python dictionary with your data scope.
 
-    partials_path -- The path to where your partials are stored
+    partials_path -- The path to where your partials are stored.
                      If set to None, then partials won't be loaded from the file system
-                     (defaults to '.')
+                     (defaults to '.').
 
     partials_ext  -- The extension that you want the parser to look for
-                     (defaults to 'mustache')
+                     (defaults to 'mustache').
 
     partials_dict -- A python dictionary which will be search for partials
                      before the filesystem is. {'include': 'foo'} is the same
                      as a file called include.mustache
-                     (defaults to {})
+                     (defaults to {}).
 
     padding       -- This is for padding partials, and shouldn't be used
-                     (but can be if you really want to)
+                     (but can be if you really want to).
 
     def_ldel      -- The default left delimiter
-                     ("{{" by default, as in spec compliant mustache)
+                     ("{{" by default, as in spec compliant mustache).
 
     def_rdel      -- The default right delimiter
-                     ("}}" by default, as in spec compliant mustache)
+                     ("}}" by default, as in spec compliant mustache).
 
-    scopes        -- The list of scopes that get_key will look through
+    scopes        -- The list of scopes that get_key will look through.
 
     warn          -- Log a warning when a template substitution isn't found in the data
 
-    keep          -- Keep unreplaced tags when a substitution isn't found in the data
+    keep          -- Keep unreplaced tags when a substitution isn't found in the data.
 
 
     Returns:
@@ -526,9 +571,9 @@ def render(
                     if tag_type == "literal":
                         text += tag_key
                     elif tag_type == "no escape":
-                        text += "%s& %s %s" % (def_ldel, tag_key, def_rdel)
+                        text += f"{def_ldel}& {tag_key} {def_rdel}"
                     else:
-                        text += "%s%s %s%s" % (
+                        text += "{}{} {}{}".format(
                             def_ldel,
                             {
                                 "comment": "!",

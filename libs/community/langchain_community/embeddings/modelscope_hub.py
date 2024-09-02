@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 
 
 class ModelScopeEmbeddings(BaseModel, Embeddings):
@@ -40,9 +40,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         )
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a modelscope embedding model.

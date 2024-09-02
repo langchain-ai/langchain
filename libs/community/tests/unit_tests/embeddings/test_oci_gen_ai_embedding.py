@@ -1,4 +1,5 @@
 """Test OCI Generative AI embedding service."""
+
 from unittest.mock import MagicMock
 
 import pytest

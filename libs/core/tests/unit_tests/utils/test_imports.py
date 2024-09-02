@@ -6,6 +6,8 @@ EXPECTED_ALL = [
     "convert_to_secret_str",
     "formatter",
     "get_bolded_text",
+    "abatch_iterate",
+    "batch_iterate",
     "get_color_mapping",
     "get_colored_text",
     "get_pydantic_field_names",
@@ -22,6 +24,9 @@ EXPECTED_ALL = [
     "stringify_dict",
     "comma_list",
     "stringify_value",
+    "pre_init",
+    "from_env",
+    "secret_from_env",
 ]
 
 
