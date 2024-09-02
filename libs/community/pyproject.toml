@@ -30,7 +30,7 @@ ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogy
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "0.2.36"
+langchain-core = "^0.2.37"
 langchain = "^0.2.15"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
