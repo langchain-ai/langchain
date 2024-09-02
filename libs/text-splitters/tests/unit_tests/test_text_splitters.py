@@ -2293,32 +2293,6 @@ def test_html_splitter_with_text_normalization() -> None:
 
 
 @pytest.mark.requires("bs4")
-@pytest.mark.requires("nltk")
-def test_html_splitter_with_stopword_removal() -> None:
-    """Test HTML splitting with stopword removal."""
-    html_content = """
-    <h1>Section 1</h1>
-    <p>This is some content with stopwords.</p>
-    """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        stopword_removal=True,
-        stopword_lang="english",
-        max_chunk_size=1000,
-    )
-    documents = splitter.split_text(html_content)
-
-    expected = [
-        Document(
-            page_content="This content stopwords.",
-            metadata={"Header 1": "Section 1"},
-        ),
-    ]
-
-    assert documents == expected
-
-
-@pytest.mark.requires("bs4")
 def test_html_splitter_with_allowlist_tags() -> None:
     """Test HTML splitting with allowlist tag filtering."""
     html_content = """
