@@ -4,7 +4,8 @@ from typing import List
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.tools import BaseTool, BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 from langchain_core.vectorstores import VectorStore
 
 
@@ -16,8 +17,6 @@ class VectorStoreInfo(BaseModel):
     description: str
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
 
@@ -28,8 +27,6 @@ class VectorStoreToolkit(BaseToolkit):
     llm: BaseLanguageModel
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:
@@ -71,8 +68,6 @@ class VectorStoreRouterToolkit(BaseToolkit):
     llm: BaseLanguageModel
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

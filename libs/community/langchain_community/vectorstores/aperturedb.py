@@ -460,7 +460,45 @@ class ApertureDB(VectorStore):
         assert db.last_query_ok(), response
         return response[0]["FindDescriptorSet"]["entities"]
 
-    @override
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Add or update documents in the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            kwargs: Additional keyword arguments.
+                if kwargs contains ids and documents contain ids,
+                the ids in the kwargs will receive precedence.
+
+        Returns:
+            List of IDs of the added texts.
+
+        Raises:
+            ValueError: If the number of ids does not match the number of documents.
+        """
+
+        if "ids" in kwargs:
+            ids = kwargs.pop("ids")
+            if ids and len(ids) != len(documents):
+                raise ValueError(
+                    "The number of ids must match the number of documents. "
+                    "Got {len(ids)} ids and {len(documents)} documents."
+                )
+
+            documents_ = []
+
+            for id_, document in zip(ids, documents):
+                doc_with_id = Document(
+                    page_content=document.page_content,
+                    metadata=document.metadata,
+                    id=id_,
+                )
+                documents_.append(doc_with_id)
+        else:
+            documents_ = documents
+
+        # If upsert has been implemented, we can use it to add documents
+        return self.upsert(documents_, **kwargs)["succeeded"]
+
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Insert or update items
 

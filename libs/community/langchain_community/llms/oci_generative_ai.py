@@ -8,7 +8,7 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -231,9 +231,7 @@ class OCIGenAI(LLM, OCIGenAIBase):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @property
     def _llm_type(self) -> str:
