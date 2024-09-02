@@ -15,7 +15,71 @@ class SearchDepth(Enum):
 
 
 class TavilySearchAPIRetriever(BaseRetriever):
-    """Tavily Search API retriever."""
+    """Tavily Search API retriever.
+
+    Setup:
+        Install ``langchain-community`` and set environment variable ``TAVILY_API_KEY``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-community
+            export TAVILY_API_KEY="your-api-key"
+
+    Key init args:
+        k: int
+            Number of results to include.
+        include_generated_answer: bool
+            Include a generated answer with results
+        include_raw_content: bool
+            Include raw content with results.
+        include_images: bool
+            Return images in addition to text.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.retrievers import TavilySearchAPIRetriever
+
+            retriever = TavilySearchAPIRetriever(k=3)
+
+    Usage:
+        .. code-block:: python
+
+            query = "what year was breath of the wild released?"
+
+            retriever.invoke(query)
+
+    Use within a chain:
+        .. code-block:: python
+
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnablePassthrough
+            from langchain_openai import ChatOpenAI
+
+            prompt = ChatPromptTemplate.from_template(
+                \"\"\"Answer the question based only on the context provided.
+
+            Context: {context}
+
+            Question: {question}\"\"\"
+            )
+
+            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+
+            def format_docs(docs):
+                return "\n\n".join(doc.page_content for doc in docs)
+
+            chain = (
+                {"context": retriever | format_docs, "question": RunnablePassthrough()}
+                | prompt
+                | llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("how many units did bretch of the wild sell in 2020")
+
+    """  # noqa: E501
 
     k: int = 10
     include_generated_answer: bool = False

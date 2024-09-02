@@ -21,17 +21,42 @@ DEFAULT_HISTORY_KEY = "History"
 class MongoDBChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in MongoDB.
 
-    Args:
-        connection_string: connection string to connect to MongoDB
-        session_id: arbitrary key that is used to store the messages
-            of a single chat session.
-        database_name: name of the database to use
-        collection_name: name of the collection to use
-        session_id_key: name of the field that stores the session id
-        history_key: name of the field that stores the chat history
-        create_index: whether to create an index on the session id field
-        index_kwargs: additional keyword arguments to pass to the index creation
-    """
+    Setup:
+        Install ``langchain-mongodb`` python package.
+
+        .. code-block:: bash
+
+            pip install langchain-mongodb
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_mongodb import MongoDBChatMessageHistory
+
+
+            history = MongoDBChatMessageHistory(
+                connection_string="mongodb://your-host:your-port/",  # mongodb://localhost:27017/
+                session_id = "your-session-id",
+            )
+
+    Add and retrieve messages:
+        .. code-block:: python
+
+            # Add single message
+            history.add_message(message)
+
+            # Add batch messages
+            history.add_messages([message1, message2, message3, ...])
+
+            # Add human message
+            history.add_user_message(human_message)
+
+            # Add ai message
+            history.add_ai_message(ai_message)
+
+            # Retrieve messages
+            messages = history.messages
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -43,14 +68,39 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         session_id_key: str = DEFAULT_SESSION_ID_KEY,
         history_key: str = DEFAULT_HISTORY_KEY,
         create_index: bool = True,
+        history_size: Optional[int] = None,
         index_kwargs: Optional[Dict] = None,
     ):
+        """Initialize with a MongoDBChatMessageHistory instance.
+
+        Args:
+            connection_string: str
+                connection string to connect to MongoDB.
+            session_id: str
+                arbitrary key that is used to store the messages of
+                 a single chat session.
+            database_name: Optional[str]
+                name of the database to use.
+            collection_name: Optional[str]
+                name of the collection to use.
+            session_id_key: Optional[str]
+                name of the field that stores the session id.
+            history_key: Optional[str]
+                name of the field that stores the chat history.
+            create_index: Optional[bool]
+                whether to create an index on the session id field.
+            history_size: Optional[int]
+                count of (most recent) messages to fetch from MongoDB.
+            index_kwargs: Optional[Dict]
+                additional keyword arguments to pass to the index creation.
+        """
         self.connection_string = connection_string
         self.session_id = session_id
         self.database_name = database_name
         self.collection_name = collection_name
         self.session_id_key = session_id_key
         self.history_key = history_key
+        self.history_size = history_size
 
         try:
             self.client: MongoClient = MongoClient(connection_string)
@@ -68,7 +118,15 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from MongoDB"""
         try:
-            cursor = self.collection.find({self.session_id_key: self.session_id})
+            if self.history_size is None:
+                cursor = self.collection.find({self.session_id_key: self.session_id})
+            else:
+                skip_count = max(
+                    0, self.collection.count_documents({}) - self.history_size
+                )
+                cursor = self.collection.find(
+                    {self.session_id_key: self.session_id}, skip=skip_count
+                )
         except errors.OperationFailure as error:
             logger.error(error)
 

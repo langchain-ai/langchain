@@ -70,7 +70,7 @@ class MockGradientaiPackage(MagicMock):
     """Mock Gradientai package."""
 
     Gradient = MockGradient
-    __version__ = "1.4.0"
+    __version__: str = "1.4.0"
 
 
 def test_gradient_llm_sync() -> None:

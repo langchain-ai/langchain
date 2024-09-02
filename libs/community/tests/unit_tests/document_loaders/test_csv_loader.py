@@ -108,6 +108,27 @@ class TestCSVLoader:
         # Assert
         assert result == expected_docs
 
+    def test_csv_loader_content_columns(self) -> None:
+        # Setup
+        file_path = self._get_csv_file_path("test_none_col.csv")
+        expected_docs = [
+            Document(
+                page_content="column1: value1\n" "column3: value3",
+                metadata={"source": file_path, "row": 0},
+            ),
+            Document(
+                page_content="column1: value6\n" "column3: value8",
+                metadata={"source": file_path, "row": 1},
+            ),
+        ]
+
+        # Exercise
+        loader = CSVLoader(file_path=file_path, content_columns=("column1", "column3"))
+        result = loader.load()
+
+        # Assert
+        assert result == expected_docs
+
     # utility functions
     def _get_csv_file_path(self, file_name: str) -> str:
         return str(Path(__file__).resolve().parent / "test_docs" / "csv" / file_name)

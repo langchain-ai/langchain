@@ -63,8 +63,9 @@ class ExtractHyperlinksTool(BaseBrowserTool):
             links = [urljoin(base_url, anchor.get("href", "")) for anchor in anchors]
         else:
             links = [anchor.get("href", "") for anchor in anchors]
-        # Return the list of links as a JSON string
-        return json.dumps(links)
+        # Return the list of links as a JSON string. Duplicated link
+        # only appears once in the list
+        return json.dumps(list(set(links)))
 
     def _run(
         self,

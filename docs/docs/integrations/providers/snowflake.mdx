@@ -7,8 +7,8 @@ This page covers how to use the `Snowflake` ecosystem within `LangChain`.
 
 ## Embedding models
 
-Snowflake offers their open weight `arctic` line of embedding models for free
-on [Hugging Face](https://huggingface.co/Snowflake/snowflake-arctic-embed-l). 
+Snowflake offers their open-weight `arctic` line of embedding models for free
+on [Hugging Face](https://huggingface.co/Snowflake/snowflake-arctic-embed-m-v1.5). The most recent model, snowflake-arctic-embed-m-v1.5 feature [matryoshka embedding](https://arxiv.org/abs/2205.13147) which allows for effective vector truncation. 
 You can use these models via the 
 [HuggingFaceEmbeddings](/docs/integrations/text_embedding/huggingfacehub) connector:
 
@@ -19,7 +19,7 @@ pip install langchain-community sentence-transformers
 ```python
 from langchain_huggingface import HuggingFaceEmbeddings
 
-model = HuggingFaceEmbeddings(model_name="snowflake/arctic-embed-l")
+model = HuggingFaceEmbeddings(model_name="snowflake/arctic-embed-m-v1.5")
 ```
 
 ## Document loader

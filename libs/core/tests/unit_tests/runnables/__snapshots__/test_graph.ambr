@@ -880,6 +880,15 @@
                   'title': 'Response Metadata',
                   'type': 'object',
                 }),
+                'status': dict({
+                  'default': 'success',
+                  'enum': list([
+                    'success',
+                    'error',
+                  ]),
+                  'title': 'Status',
+                  'type': 'string',
+                }),
                 'tool_call_id': dict({
                   'title': 'Tool Call Id',
                   'type': 'string',
@@ -1054,6 +1063,63 @@
   
   '''
 # ---
+# name: test_parallel_subgraph_mermaid[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	__start__([__start__]):::first
+  	outer_1(outer_1)
+  	inner_1_inner_1(inner_1)
+  	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
+  	inner_2_inner_1(inner_1)
+  	inner_2_inner_2(inner_2)
+  	outer_2(outer_2)
+  	__end__([__end__]):::last
+  	__start__ --> outer_1;
+  	inner_1_inner_2 --> outer_2;
+  	inner_2_inner_2 --> outer_2;
+  	outer_1 --> inner_1_inner_1;
+  	outer_1 --> inner_2_inner_1;
+  	outer_2 --> __end__;
+  	subgraph inner_1
+  	inner_1_inner_1 --> inner_1_inner_2;
+  	end
+  	subgraph inner_2
+  	inner_2_inner_1 --> inner_2_inner_2;
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_double_nested_subgraph_mermaid[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	__start__([__start__]):::first
+  	parent_1(parent_1)
+  	child_child_1_grandchild_1(grandchild_1)
+  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child_child_2(child_2)
+  	parent_2(parent_2)
+  	__end__([__end__]):::last
+  	__start__ --> parent_1;
+  	child_child_2 --> parent_2;
+  	parent_1 --> child_child_1_grandchild_1;
+  	parent_2 --> __end__;
+  	subgraph child
+  	child_child_1_grandchild_2 --> child_child_2;
+  	subgraph child_1
+  	child_child_1_grandchild_1 --> child_child_1_grandchild_2;
+  	end
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
 # name: test_graph_single_runnable[ascii]
   '''
   +----------------------+   
@@ -1087,4 +1153,66 @@
   	classDef last fill:#bfb6fc
   
   '''
+# ---
+# name: test_trim
+  dict({
+    'edges': list([
+      dict({
+        'source': '__start__',
+        'target': 'ask_question',
+      }),
+      dict({
+        'source': 'ask_question',
+        'target': 'answer_question',
+      }),
+      dict({
+        'conditional': True,
+        'source': 'answer_question',
+        'target': 'ask_question',
+      }),
+      dict({
+        'conditional': True,
+        'source': 'answer_question',
+        'target': '__end__',
+      }),
+    ]),
+    'nodes': list([
+      dict({
+        'data': '__start__',
+        'id': '__start__',
+        'type': 'schema',
+      }),
+      dict({
+        'data': dict({
+          'id': list([
+            'langchain',
+            'schema',
+            'output_parser',
+            'StrOutputParser',
+          ]),
+          'name': 'ask_question',
+        }),
+        'id': 'ask_question',
+        'type': 'runnable',
+      }),
+      dict({
+        'data': dict({
+          'id': list([
+            'langchain',
+            'schema',
+            'output_parser',
+            'StrOutputParser',
+          ]),
+          'name': 'answer_question',
+        }),
+        'id': 'answer_question',
+        'type': 'runnable',
+      }),
+      dict({
+        'data': '__end__',
+        'id': '__end__',
+        'type': 'schema',
+      }),
+    ]),
+  })
 # ---

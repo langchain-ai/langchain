@@ -10,6 +10,7 @@ Some examples of what you can do with these functions include:
 from __future__ import annotations
 
 import inspect
+import json
 from functools import partial
 from typing import (
     TYPE_CHECKING,
@@ -213,7 +214,23 @@ def _create_message_from_message_type(
     if id is not None:
         kwargs["id"] = id
     if tool_calls is not None:
-        kwargs["tool_calls"] = tool_calls
+        kwargs["tool_calls"] = []
+        for tool_call in tool_calls:
+            # Convert OpenAI-format tool call to LangChain format.
+            if "function" in tool_call:
+                args = tool_call["function"]["arguments"]
+                if isinstance(args, str):
+                    args = json.loads(args, strict=False)
+                kwargs["tool_calls"].append(
+                    {
+                        "name": tool_call["function"]["name"],
+                        "args": args,
+                        "id": tool_call["id"],
+                        "type": "tool_call",
+                    }
+                )
+            else:
+                kwargs["tool_calls"].append(tool_call)
     if message_type in ("human", "user"):
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
@@ -271,11 +288,12 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 msg_type = msg_kwargs.pop("role")
             except KeyError:
                 msg_type = msg_kwargs.pop("type")
-            msg_content = msg_kwargs.pop("content")
-        except KeyError:
+            # None msg content is not allowed
+            msg_content = msg_kwargs.pop("content") or ""
+        except KeyError as e:
             raise ValueError(
                 f"Message dict must contain 'role' and 'content' keys, got {message}"
-            )
+            ) from e
         _message = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
@@ -326,9 +344,7 @@ def _runnable_support(func: Callable) -> Callable:
         if messages is not None:
             return func(messages, **kwargs)
         else:
-            return RunnableLambda(
-                partial(func, **kwargs), name=getattr(func, "__name__")
-            )
+            return RunnableLambda(partial(func, **kwargs), name=func.__name__)
 
     wrapped.__doc__ = func.__doc__
     return wrapped
@@ -425,6 +441,8 @@ def filter_messages(
 @_runnable_support
 def merge_message_runs(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    *,
+    chunk_separator: str = "\n",
 ) -> List[BaseMessage]:
     """Merge consecutive Messages of the same type.
 
@@ -433,13 +451,16 @@ def merge_message_runs(
 
     Args:
         messages: Sequence Message-like objects to merge.
+        chunk_separator: Specify the string to be inserted between message chunks.
+        Default is "\n".
 
     Returns:
         List of BaseMessages with consecutive runs of message types merged into single
-        messages. If two messages being merged both have string contents, the merged
-        content is a concatenation of the two strings with a new-line separator. If at
-        least one of the messages has a list of content blocks, the merged content is a
-        list of content blocks.
+        messages. By default, if two messages being merged both have string contents,
+        the merged content is a concatenation of the two strings with a new-line separator.
+        The separator inserted between message chunks can be controlled by specifying
+        any string with ``chunk_separator``. If at least one of the messages has a list of
+        content blocks, the merged content is a list of content blocks.
 
     Example:
         .. code-block:: python
@@ -503,14 +524,19 @@ def merge_message_runs(
         else:
             last_chunk = _msg_to_chunk(last)
             curr_chunk = _msg_to_chunk(curr)
-            if isinstance(last_chunk.content, str) and isinstance(
-                curr_chunk.content, str
+            if (
+                isinstance(last_chunk.content, str)
+                and isinstance(curr_chunk.content, str)
+                and last_chunk.content
+                and curr_chunk.content
             ):
-                last_chunk.content += "\n"
+                last_chunk.content += chunk_separator
             merged.append(_chunk_to_msg(last_chunk + curr_chunk))
     return merged
 
 
+# TODO: Update so validation errors (for token_counter, for example) are raised on
+# init not at runtime.
 @_runnable_support
 def trim_messages(
     messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
@@ -756,24 +782,30 @@ def trim_messages(
                     AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
                 ]
     """  # noqa: E501
-    from langchain_core.language_models import BaseLanguageModel
 
     if start_on and strategy == "first":
         raise ValueError
     if include_system and strategy == "first":
         raise ValueError
     messages = convert_to_messages(messages)
-    if isinstance(token_counter, BaseLanguageModel):
+    if hasattr(token_counter, "get_num_tokens_from_messages"):
         list_token_counter = token_counter.get_num_tokens_from_messages
-    elif (
-        list(inspect.signature(token_counter).parameters.values())[0].annotation
-        is BaseMessage
-    ):
+    elif callable(token_counter):
+        if (
+            list(inspect.signature(token_counter).parameters.values())[0].annotation
+            is BaseMessage
+        ):
 
-        def list_token_counter(messages: Sequence[BaseMessage]) -> int:
-            return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+            def list_token_counter(messages: Sequence[BaseMessage]) -> int:
+                return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+        else:
+            list_token_counter = token_counter  # type: ignore[assignment]
     else:
-        list_token_counter = token_counter  # type: ignore[assignment]
+        raise ValueError(
+            f"'token_counter' expected to be a model that implements "
+            f"'get_num_tokens_from_messages()' or a function. Received object of type "
+            f"{type(token_counter)}."
+        )
 
     try:
         from langchain_text_splitters import TextSplitter

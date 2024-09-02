@@ -105,7 +105,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             llm: The language model to use for filtering. **Must implement
                 BaseLanguageModel.with_structured_output().**
             prompt: The prompt to use for the filter.
-            **kwargs: Additional arguments to pass to the constructor.
+            kwargs: Additional arguments to pass to the constructor.
 
         Returns:
             A LLMListwiseRerank document compressor that uses the given language model.
