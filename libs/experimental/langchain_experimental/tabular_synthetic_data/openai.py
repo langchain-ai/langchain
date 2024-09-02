@@ -41,7 +41,7 @@ def create_openai_data_generator(
         from the function types.
 
 
-        **kwargs: Additional keyword arguments to be passed to
+        kwargs: Additional keyword arguments to be passed to
         `create_structured_output_chain`.
 
 

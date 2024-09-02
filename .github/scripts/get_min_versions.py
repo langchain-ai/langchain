@@ -1,6 +1,11 @@
 import sys
 
-import tomllib
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    # for python 3.10 and below, which doesnt have stdlib tomllib
+    import tomli as tomllib
+
 from packaging.version import parse as parse_version
 import re
 
@@ -11,6 +16,8 @@ MIN_VERSION_LIBS = [
     "langchain-text-splitters",
     "SQLAlchemy",
 ]
+
+SKIP_IF_PULL_REQUEST = ["langchain-core"]
 
 
 def get_min_version(version: str) -> str:
@@ -38,7 +45,7 @@ def get_min_version(version: str) -> str:
     raise ValueError(f"Unrecognized version format: {version}")
 
 
-def get_min_version_from_toml(toml_path: str):
+def get_min_version_from_toml(toml_path: str, versions_for: str):
     # Parse the TOML file
     with open(toml_path, "rb") as file:
         toml_data = tomllib.load(file)
@@ -51,6 +58,10 @@ def get_min_version_from_toml(toml_path: str):
 
     # Iterate over the libs in MIN_VERSION_LIBS
     for lib in MIN_VERSION_LIBS:
+        if versions_for == "pull_request" and lib in SKIP_IF_PULL_REQUEST:
+            # some libs only get checked on release because of simultaneous
+            # changes
+            continue
         # Check if the lib is present in the dependencies
         if lib in dependencies:
             # Get the version string
@@ -71,8 +82,10 @@ def get_min_version_from_toml(toml_path: str):
 if __name__ == "__main__":
     # Get the TOML file path from the command line argument
     toml_file = sys.argv[1]
+    versions_for = sys.argv[2]
+    assert versions_for in ["release", "pull_request"]
 
     # Call the function to get the minimum versions
-    min_versions = get_min_version_from_toml(toml_file)
+    min_versions = get_min_version_from_toml(toml_file, versions_for)
 
     print(" ".join([f"{lib}=={version}" for lib, version in min_versions.items()]))

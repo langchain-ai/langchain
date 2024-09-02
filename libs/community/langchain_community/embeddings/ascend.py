@@ -60,7 +60,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
             raise ValueError("model_path is required")
         if not os.access(values["model_path"], os.F_OK):
             raise FileNotFoundError(
-                f"Unabled to find valid model path in [{values['model_path']}]"
+                f"Unable to find valid model path in [{values['model_path']}]"
             )
         try:
             import torch_npu

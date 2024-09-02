@@ -36,8 +36,6 @@ class GenerativeAgent(BaseModel):
     """Summary of the events in the plan that the agent took."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
     # LLM-related methods

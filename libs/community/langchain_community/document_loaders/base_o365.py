@@ -38,9 +38,9 @@ class _O365Settings(BaseSettings):
     client_secret: SecretStr = Field(..., env="O365_CLIENT_SECRET")
 
     class Config:
-        env_prefix = ""
         case_sentive = False
         env_file = ".env"
+        env_prefix = ""
 
 
 class _O365TokenStorage(BaseSettings):

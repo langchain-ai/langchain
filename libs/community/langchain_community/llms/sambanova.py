@@ -5,7 +5,6 @@ import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Extra
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 
@@ -16,7 +15,7 @@ class SVEndpointHandler:
     :param str host_url: Base URL of the DaaS API service
     """
 
-    API_BASE_PATH = "/api/predict"
+    API_BASE_PATH: str = "/api/predict"
 
     def __init__(self, host_url: str):
         """
@@ -190,6 +189,7 @@ class Sambaverse(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1.0,
                 "top_k": 50,
+                "process_prompt": False
             },
         )
     """
@@ -210,9 +210,7 @@ class Sambaverse(LLM):
     """Streaming flag to get streamed response."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -388,7 +386,7 @@ class Sambaverse(LLM):
             prompt: The prompt to pass into the model.
             stop: Optional list of stop words to use when generating.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -425,7 +423,7 @@ class Sambaverse(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -452,7 +450,7 @@ class Sambaverse(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:
@@ -672,7 +670,7 @@ class SambaStudio(LLM):
     Example:
     .. code-block:: python
 
-        from langchain_community.llms.sambanova  import Sambaverse
+        from langchain_community.llms.sambanova  import SambaStudio
         SambaStudio(
             sambastudio_base_url="your-SambaStudio-environment-URL",
             sambastudio_base_uri="your-SambaStudio-base-URI",
@@ -687,6 +685,8 @@ class SambaStudio(LLM):
                 "top_p": 1.0,
                 "repetition_penalty": 1,
                 "top_k": 50,
+                #"process_prompt": False,
+                #"select_expert": "Meta-Llama-3-8B-Instruct"
             },
         )
     """
@@ -713,9 +713,7 @@ class SambaStudio(LLM):
     """Streaming flag to get streamed response."""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -741,7 +739,7 @@ class SambaStudio(LLM):
             values,
             "sambastudio_base_uri",
             "SAMBASTUDIO_BASE_URI",
-            default="api/predict/nlp",
+            default="api/predict/generic",
         )
         values["sambastudio_project_id"] = get_from_dict_or_env(
             values, "sambastudio_project_id", "SAMBASTUDIO_PROJECT_ID"
@@ -948,7 +946,7 @@ class SambaStudio(LLM):
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of the stop substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Additional keyword arguments. directly passed
+            kwargs: Additional keyword arguments. directly passed
                 to the sambaverse model in API call.
 
         Returns:

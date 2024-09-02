@@ -118,6 +118,11 @@ def accepts_context(callable: Callable[..., Any]) -> bool:
         return False
 
 
+@lru_cache(maxsize=1)
+def asyncio_accepts_context() -> bool:
+    return accepts_context(asyncio.create_task)
+
+
 class IsLocalDict(ast.NodeVisitor):
     """Check if a name is a local dict."""
 
@@ -388,7 +393,9 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
         visitor = FunctionNonLocals()
         visitor.visit(tree)
         values: List[Any] = []
-        for k, v in inspect.getclosurevars(func).nonlocals.items():
+        closure = inspect.getclosurevars(func)
+        candidates = {**closure.globals, **closure.nonlocals}
+        for k, v in candidates.items():
             if k in visitor.nonlocals:
                 values.append(v)
             for kk in visitor.nonlocals:
@@ -743,7 +750,7 @@ def is_async_generator(
     """
     return (
         inspect.isasyncgenfunction(func)
-        or hasattr(func, "__call__")
+        or hasattr(func, "__call__")  # noqa: B004
         and inspect.isasyncgenfunction(func.__call__)
     )
 
@@ -762,6 +769,6 @@ def is_async_callable(
     """
     return (
         asyncio.iscoroutinefunction(func)
-        or hasattr(func, "__call__")
+        or hasattr(func, "__call__")  # noqa: B004
         and asyncio.iscoroutinefunction(func.__call__)
     )

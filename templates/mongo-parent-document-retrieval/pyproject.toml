@@ -10,7 +10,7 @@ python = ">=3.8.1,<4.0"
 langchain = "^0.1"
 openai = "<2"
 pymongo = "^4.6.0"
-pypdf = "^3.17.0"
+pypdf = "^4.0.0"
 tiktoken = "^0.5.1"
 langchain-text-splitters = ">=0.0.1,<0.1"
 
