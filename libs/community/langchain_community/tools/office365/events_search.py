@@ -4,6 +4,7 @@ Free, but setup is required. See link below.
 https://learn.microsoft.com/en-us/graph/auth/
 """
 
+import logging
 from datetime import datetime as dt
 from typing import Any, Dict, List, Optional, Type
 
@@ -12,8 +13,8 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_community.tools.office365.base import O365BaseTool
 from langchain_community.tools.office365.utils import UTC_FORMAT, clean_body
-from zoneinfo import ZoneInfo
-import tzlocal
+
+logger = logging.getLogger(__name__)
 
 
 class SearchEventsInput(BaseModel):
@@ -41,9 +42,12 @@ class SearchEventsInput(BaseModel):
             " hours from Coordinated Universal Time (UTC)."
         )
     )
-    timezone: str = Field(
-        description="The timezone for the event should be provided in the following format: 'America/New_York'. "
-                    "For example, the zoneinfo for a +05:30 timezone offset is 'Asia/Kolkata'."
+    timezone: Optional[str] = Field(
+        default=None,
+        description="The timezone for the event should be provided in the following "
+        "format: 'America/New_York'. "
+        "For example, the zoneinfo for a +05:30 timezone offset is "
+        "'Asia/Kolkata'.",
     )
     max_results: int = Field(
         default=10,
@@ -80,22 +84,48 @@ class O365SearchEvents(O365BaseTool):
         extra = "forbid"
 
     def _run(
-            self,
-            start_datetime: str,
-            end_datetime: str,
-            timezone: str = tzlocal.get_localzone(),
-            max_results: int = 10,
-            truncate: bool = True,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
-            truncate_limit: int = 150,
+        self,
+        start_datetime: str,
+        end_datetime: str,
+        max_results: int = 10,
+        truncate: bool = True,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        truncate_limit: int = 150,
+        timezone: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
+        if not timezone:
+            try:
+                import tzlocal
+            except ImportError:
+                logger.debug(
+                    "'timezone' not set and 'tzlocal' is not installed so local "
+                    "timezone cannot be inferred."
+                )
+                pass
+            else:
+                timezone = timezone or tzlocal.get_localzone()
+
         # Get calendar object
         schedule = self.account.schedule()
         calendar = schedule.get_default_calendar()
 
         # Process the date range parameters
-        start_datetime_query = dt.strptime(start_datetime, UTC_FORMAT).replace(tzinfo=ZoneInfo(timezone))
-        end_datetime_query = dt.strptime(end_datetime, UTC_FORMAT).replace(tzinfo=ZoneInfo(timezone))
+        start_datetime_query = dt.strptime(start_datetime, UTC_FORMAT)
+        end_datetime_query = dt.strptime(end_datetime, UTC_FORMAT)
+
+        if timezone:
+            try:
+                from zoneinfo import ZoneInfo
+            except ImportError:
+                logger.debug("Cannot set timezone because 'zoneinfo' isn't installed.")
+                pass
+            else:
+                start_datetime_query = start_datetime_query.replace(
+                    tzinfo=ZoneInfo(timezone)
+                )
+                end_datetime_query = end_datetime_query.replace(
+                    tzinfo=ZoneInfo(timezone)
+                )
 
         # Run the query
         q = calendar.new_query("start").greater_equal(start_datetime_query)
