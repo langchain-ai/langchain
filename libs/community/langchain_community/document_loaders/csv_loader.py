@@ -101,10 +101,11 @@ class CSVLoader(BaseLoader):
         file_path: Union[str, Path],
         source_column: Optional[str] = None,
         metadata_columns: Sequence[str] = (),
-        content_columns: Sequence[str] = (),
         csv_args: Optional[Dict] = None,
         encoding: Optional[str] = None,
         autodetect_encoding: bool = False,
+        *,
+        content_columns: Sequence[str] = (),
     ):
         """
 
@@ -123,10 +124,10 @@ class CSVLoader(BaseLoader):
         self.file_path = file_path
         self.source_column = source_column
         self.metadata_columns = metadata_columns
-        self.content_columns = content_columns
         self.encoding = encoding
         self.csv_args = csv_args or {}
         self.autodetect_encoding = autodetect_encoding
+        self.content_columns = content_columns
 
     def lazy_load(self) -> Iterator[Document]:
         try:
@@ -167,7 +168,11 @@ class CSVLoader(BaseLoader):
                 if isinstance(v, str) else ','.join(map(str.strip, v))
                 if isinstance(v, list) else v}"""
                 for k, v in row.items()
-                if (k in self.content_columns if self.content_columns else k not in self.metadata_columns)
+                if (
+                    k in self.content_columns
+                    if self.content_columns
+                    else k not in self.metadata_columns
+                )
             )
             metadata = {"source": source, "row": i}
             for col in self.metadata_columns:
