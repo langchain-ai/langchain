@@ -4,21 +4,27 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from langchain_community.document_loaders import AdobePDFExtractLoader
 from langchain_community.document_loaders.parsers import (
     AdobePDFExtractParser,
 )
-from langchain_community.document_loaders import AdobePDFExtractLoader
 
 
 @pytest.mark.requires("adobe.pdfservices")
-@patch("adobe.pdfservices.operation.auth.service_principal_credentials.ServicePrincipalCredentials")
+@patch(
+    "adobe.pdfservices.operation.auth.service_principal_credentials.ServicePrincipalCredentials"
+)
 @patch("adobe.pdfservices.operation.pdf_services.PDFServices")
-def test_adobe_pdf_services(mock_pdf_services: MagicMock, mock_credentials: MagicMock) -> None:
+def test_adobe_pdf_services(
+    mock_pdf_services: MagicMock, mock_credentials: MagicMock
+) -> None:
     client_id = "client_id"
     client_secret = "client_secret"
 
     parser = AdobePDFExtractParser(client_id=client_id, client_secret=client_secret)
-    mock_credentials.assert_called_once_with(client_id=client_id, client_secret=client_secret)
+    mock_credentials.assert_called_once_with(
+        client_id=client_id, client_secret=client_secret
+    )
     mock_pdf_services.assert_called_once_with(credentials=mock_credentials())
 
     assert parser.mode == "chunks"
@@ -28,9 +34,13 @@ def test_adobe_pdf_services(mock_pdf_services: MagicMock, mock_credentials: Magi
 
 
 @pytest.mark.parametrize("mode", ["json", "chunks", "data"])
-@patch("adobe.pdfservices.operation.auth.service_principal_credentials.ServicePrincipalCredentials")
+@patch(
+    "adobe.pdfservices.operation.auth.service_principal_credentials.ServicePrincipalCredentials"
+)
 @patch("adobe.pdfservices.operation.pdf_services.PDFServices")
-def test_adobe_pdf_services_loader_modes(mock_pdf_services: MagicMock, mock_credentials: MagicMock, mode: str) -> None:
+def test_adobe_pdf_services_loader_modes(
+    mock_pdf_services: MagicMock, mock_credentials: MagicMock, mode: str
+) -> None:
     loader = AdobePDFExtractLoader(
         client_id="client_id",
         client_secret="client_secret",
@@ -38,7 +48,9 @@ def test_adobe_pdf_services_loader_modes(mock_pdf_services: MagicMock, mock_cred
         mode=mode,
         embed_figures=True,
     )
-    mock_credentials.assert_called_once_with(client_id="client_id", client_secret="client_secret")
+    mock_credentials.assert_called_once_with(
+        client_id="client_id", client_secret="client_secret"
+    )
     mock_pdf_services.assert_called_once_with(credentials=mock_credentials())
     assert loader.parser.mode == mode
 

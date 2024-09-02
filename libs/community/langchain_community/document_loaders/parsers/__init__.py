@@ -2,11 +2,11 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from langchain_community.document_loaders.parsers.audio import (
-        OpenAIWhisperParser,
-    )
     from langchain_community.document_loaders.parsers.adobe_pdf_extract import (
         AdobePDFExtractParser,
+    )
+    from langchain_community.document_loaders.parsers.audio import (
+        OpenAIWhisperParser,
     )
     from langchain_community.document_loaders.parsers.doc_intelligence import (
         AzureAIDocumentIntelligenceParser,

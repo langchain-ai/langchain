@@ -1,32 +1,70 @@
-from typing import Iterator
+from __future__ import annotations
+
+import io
 import json
 import zipfile
-import io
+from typing import TYPE_CHECKING, Iterator, Literal
 
+from langchain_core.document_loaders import BaseBlobParser
 from langchain_core.documents import Document
 
-from langchain_community.document_loaders.base import BaseBlobParser
-from langchain_community.document_loaders.blob_loaders import Blob
+if TYPE_CHECKING:
+    from langchain_core.documents.base import Blob
 
 
 class AdobePDFExtractParser(BaseBlobParser):
-    """Loads a document using the Adobe PDF Services API."""
+    """Loads a document using the Adobe PDF Services API.
+
+    Args:
+        client_id: Adobe PDF Services client ID.
+        client_secret: Adobe PDF Services client secret.
+        mode: One of 'chunks', 'json', or 'data'.
+        embed_figures: Whether to include figures in loaded results.
+
+    .. dropdown:: Lazy load as Documents
+        .. code-block:: python
+
+            from langchain_community.document_loaders.parsers import AdobePDFExtractParser
+            from langchain_community.document_loaders import GenericLoader
+
+            file_path = "<filepath>"
+            client_id = "<client_id>"
+            client_secret = "<client_secret>"
+
+            parser = AdobePDFExtractParser(
+                client_id=client_id,
+                client_secret=client_secret,
+                mode="chunk",
+            )
+            loader = GenericLoader.from_filesystem(
+                file_path,
+                parser=parser
+            )
+
+            for doc in loader.lazy_load():
+                print(doc)
+
+    """  # noqa: E501
 
     def __init__(
         self,
         client_id: str,
         client_secret: str,
-        mode: str = "chunks",
+        *,
+        mode: Literal["chunks", "json", "data"] = "chunks",
         embed_figures: bool = True,
     ):
-        from adobe.pdfservices.operation.auth.service_principal_credentials import ServicePrincipalCredentials
+        from adobe.pdfservices.operation.auth.service_principal_credentials import (
+            ServicePrincipalCredentials,
+        )
         from adobe.pdfservices.operation.pdf_services import PDFServices
 
-        self.credentials = ServicePrincipalCredentials(client_id=client_id, client_secret=client_secret)
+        self.credentials = ServicePrincipalCredentials(
+            client_id=client_id, client_secret=client_secret
+        )
         self.pdf_services = PDFServices(credentials=self.credentials)
         self.mode = mode
         self.embed_figures = embed_figures
-        assert self.mode in ["json", "chunks", "data"]
 
     def _encode_image_as_base64(self, image_path: str, archive: zipfile.ZipFile) -> str:
         """Encode an image as a base64 string."""
@@ -42,7 +80,9 @@ class AdobePDFExtractParser(BaseBlobParser):
             df = pd.read_csv(filepath_or_buffer=file, on_bad_lines="warn")
         return df.to_markdown()
 
-    def _generate_docs_chunks(self, json_data: dict, data: zipfile.ZipFile) -> Iterator[Document]:
+    def _generate_docs_chunks(
+        self, json_data: dict, data: zipfile.ZipFile
+    ) -> Iterator[Document]:
         headers = []
         current_paragraphs = []
         header_page = None
@@ -94,7 +134,11 @@ class AdobePDFExtractParser(BaseBlobParser):
                     for file_path in file_paths:
                         if path not in figures:
                             figures[path] = []
-                        figures[path].append(self._encode_image_as_base64(image_path=file_path, archive=data))
+                        figures[path].append(
+                            self._encode_image_as_base64(
+                                image_path=file_path, archive=data
+                            )
+                        )
                         current_paragraphs.append(f"{{{file_path}}}\n")
 
                 elif "Figure" in path and text and not self.embed_figures:
@@ -102,7 +146,9 @@ class AdobePDFExtractParser(BaseBlobParser):
 
                 elif "Table" in path and file_paths:
                     for file_path in file_paths:
-                        table = self._load_table_as_markdown(file_path=file_path, archive=data)
+                        table = self._load_table_as_markdown(
+                            file_path=file_path, archive=data
+                        )
                         current_paragraphs.append(table + "\n")
 
                 elif "Lbl" in path:
@@ -118,24 +164,42 @@ class AdobePDFExtractParser(BaseBlobParser):
         for name in archive.namelist():
             mime_type, _ = guess_type(name)
             if mime_type == "image/png":
-                figure_base64 = self._encode_image_as_base64(image_path=name, archive=archive)
-                yield Document(page_content=figure_base64, metadata={"content_type": "base64"})
+                figure_base64 = self._encode_image_as_base64(
+                    image_path=name, archive=archive
+                )
+                yield Document(
+                    page_content=figure_base64, metadata={"content_type": "base64"}
+                )
             elif mime_type == "text/csv":
                 table_md = self._load_table_as_markdown(file_path=name, archive=archive)
-                yield Document(page_content=table_md, metadata={"content_type": "markdown"})
+                yield Document(
+                    page_content=table_md, metadata={"content_type": "markdown"}
+                )
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
         from adobe.pdfservices.operation.io.cloud_asset import CloudAsset
         from adobe.pdfservices.operation.io.stream_asset import StreamAsset
-        from adobe.pdfservices.operation.pdf_services_media_type import PDFServicesMediaType
-        from adobe.pdfservices.operation.pdfjobs.jobs.extract_pdf_job import ExtractPDFJob
-        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_element_type import ExtractElementType
-        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_pdf_params import ExtractPDFParams
-        from adobe.pdfservices.operation.pdfjobs.result.extract_pdf_result import ExtractPDFResult
-        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.table_structure_type import TableStructureType
+        from adobe.pdfservices.operation.pdf_services_media_type import (
+            PDFServicesMediaType,
+        )
+        from adobe.pdfservices.operation.pdfjobs.jobs.extract_pdf_job import (
+            ExtractPDFJob,
+        )
+        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_element_type import (
+            ExtractElementType,
+        )
+        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_pdf_params import (
+            ExtractPDFParams,
+        )
         from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.extract_renditions_element_type import (
             ExtractRenditionsElementType,
+        )
+        from adobe.pdfservices.operation.pdfjobs.params.extract_pdf.table_structure_type import (
+            TableStructureType,
+        )
+        from adobe.pdfservices.operation.pdfjobs.result.extract_pdf_result import (
+            ExtractPDFResult,
         )
 
         blob_bytes = blob.as_bytes()
@@ -145,18 +209,27 @@ class AdobePDFExtractParser(BaseBlobParser):
             temp_file.write(blob_bytes)
             temp_file.seek(0)
 
-            input_asset = self.pdf_services.upload(input_stream=temp_file, mime_type=PDFServicesMediaType.PDF)
+            input_asset = self.pdf_services.upload(
+                input_stream=temp_file, mime_type=PDFServicesMediaType.PDF
+            )
 
             extract_pdf_params = ExtractPDFParams(
-                elements_to_extract=[ExtractElementType.TEXT, ExtractElementType.TABLES],
+                elements_to_extract=[
+                    ExtractElementType.TEXT,
+                    ExtractElementType.TABLES,
+                ],
                 table_structure_type=TableStructureType.CSV,
                 elements_to_extract_renditions=[ExtractRenditionsElementType.FIGURES],
             )
 
-            extract_pdf_job = ExtractPDFJob(input_asset=input_asset, extract_pdf_params=extract_pdf_params)
+            extract_pdf_job = ExtractPDFJob(
+                input_asset=input_asset, extract_pdf_params=extract_pdf_params
+            )
 
             location = self.pdf_services.submit(extract_pdf_job)
-            pdf_services_response = self.pdf_services.get_job_result(location, ExtractPDFResult)
+            pdf_services_response = self.pdf_services.get_job_result(
+                location, ExtractPDFResult
+            )
 
             result_asset: CloudAsset = pdf_services_response.get_result().get_resource()
             stream_asset: StreamAsset = self.pdf_services.get_content(result_asset)
@@ -172,6 +245,8 @@ class AdobePDFExtractParser(BaseBlobParser):
                         elif self.mode == "data":
                             yield from self._generate_docs_data(archive=archive)
                         elif self.mode == "chunks":
-                            yield from self._generate_docs_chunks(json_data=data, data=archive)
+                            yield from self._generate_docs_chunks(
+                                json_data=data, data=archive
+                            )
                         else:
                             raise ValueError(f"Invalid mode: {self.mode}")
