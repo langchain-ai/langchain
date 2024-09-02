@@ -1,5 +1,5 @@
 import sys
-from typing import Callable, Dict
+from typing import Callable, Dict, Tuple
 
 import pytest
 
@@ -59,7 +59,7 @@ def test_nonlocals() -> None:
     def my_func4(input: str) -> str:
         return global_agent.invoke(input)
 
-    def my_func5() -> Callable[[str], str]:
+    def my_func5() -> Tuple[Callable[[str], str], RunnableLambda]:
         global_agent = RunnableLambda(lambda x: x * 3)
 
         def my_func6(input: str) -> str:
