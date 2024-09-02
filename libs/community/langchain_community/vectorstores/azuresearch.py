@@ -266,11 +266,10 @@ class AzureSearch(VectorStore):
 
     def __init__(
         self,
-        azure_search_endpoint: str = "",
-        azure_search_key: str = "",
-        index_name: str = "",
-        embedding_function: Union[Callable, Embeddings] = lambda x: x,
-        azure_credential: Optional[Callable] = None,
+        azure_search_endpoint: str,
+        azure_search_key: Optional[str] = None,
+        index_name: Optional[str] = None,
+        embedding_function: Union[Callable, Embeddings, None] = None,
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         fields: Optional[List[SearchField]] = None,
@@ -285,6 +284,7 @@ class AzureSearch(VectorStore):
         vector_search_dimensions: Optional[int] = None,
         additional_search_client_options: Optional[Dict[str, Any]] = None,
         azure_ad_access_token: Optional[str] = None,
+        azure_credential: Optional[Callable] = None,
         **kwargs: Any,
     ):
         try:
