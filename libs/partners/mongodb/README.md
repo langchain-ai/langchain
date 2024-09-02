@@ -18,7 +18,7 @@ MONGODB_ATLAS_CLUSTER_URI = os.environ.get("MONGODB_ATLAS_CLUSTER_URI")
 DB_NAME = "langchain_db"
 COLLECTION_NAME = "test"
 ATLAS_VECTOR_SEARCH_INDEX_NAME = "index_name"
-MONGODB_COLLECTION = client[DB_NAME][COLLECITON_NAME]
+MONGODB_COLLECTION = client[DB_NAME][COLLECTION_NAME]
 
 # Create the vector search via `from_connection_string`
 vector_search = MongoDBAtlasVectorSearch.from_connection_string(

@@ -62,8 +62,8 @@ def py_anext(
         __anext__ = cast(
             Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
         )
-    except AttributeError:
-        raise TypeError(f"{iterator!r} is not an async iterator")
+    except AttributeError as e:
+        raise TypeError(f"{iterator!r} is not an async iterator") from e
 
     if default is _no_default:
         return __anext__(iterator)

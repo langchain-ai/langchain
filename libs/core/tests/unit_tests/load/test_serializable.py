@@ -46,6 +46,7 @@ def test_simple_serialization_secret() -> None:
         bar: int
         baz: str
         secret: SecretStr
+        secret_2: str
 
         @classmethod
         def is_lc_serializable(cls) -> bool:
@@ -53,15 +54,18 @@ def test_simple_serialization_secret() -> None:
 
         @property
         def lc_secrets(self) -> Dict[str, str]:
-            return {"secret": "woof"}
+            return {"secret": "MASKED_SECRET", "secret_2": "MASKED_SECRET_2"}
 
-    foo = Foo(bar=1, baz="baz", secret=SecretStr("meow"))
+    foo = Foo(
+        bar=1, baz="baz", secret=SecretStr("SUPER_SECRET"), secret_2="SUPER_SECRET"
+    )
     assert dumpd(foo) == {
         "id": ["tests", "unit_tests", "load", "test_serializable", "Foo"],
         "kwargs": {
             "bar": 1,
             "baz": "baz",
-            "secret": {"id": ["woof"], "lc": 1, "type": "secret"},
+            "secret": {"id": ["MASKED_SECRET"], "lc": 1, "type": "secret"},
+            "secret_2": {"id": ["MASKED_SECRET_2"], "lc": 1, "type": "secret"},
         },
         "lc": 1,
         "type": "constructor",

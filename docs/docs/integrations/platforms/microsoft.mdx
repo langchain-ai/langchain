@@ -7,6 +7,7 @@ keywords: [azure]
 All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
 ## Chat Models
+
 ### Azure OpenAI
 
 >[Microsoft Azure](https://en.wikipedia.org/wiki/Microsoft_Azure), often referred to as `Azure` is a cloud computing platform run by `Microsoft`, which offers access, management, and development of applications and services through global data centers. It provides a range of capabilities, including software as a service (SaaS), platform as a service (PaaS), and infrastructure as a service (IaaS). `Microsoft Azure` supports many programming languages, tools, and frameworks, including Microsoft-specific and third-party software and systems.
@@ -32,6 +33,12 @@ See a [usage example](/docs/integrations/chat/azure_chat_openai)
 ```python
 from langchain_openai import AzureChatOpenAI
 ```
+
+### Azure ML Chat Online Endpoint
+
+See the documentation [here](/docs/integrations/chat/azureml_chat_endpoint) for accessing chat
+models hosted with [Azure Machine Learning](https://azure.microsoft.com/en-us/products/machine-learning/).
+
 
 ## LLMs
 
@@ -237,10 +244,31 @@ See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
 
+### Playwright URL Loader
+
+>[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool 
+> developed by `Microsoft` that allows you to programmatically control and automate 
+> web browsers. It is designed for end-to-end testing, scraping, and automating 
+> tasks across various web browsers such as `Chromium`, `Firefox`, and `WebKit`.
+
+
+First, let's install dependencies:
+
+```bash
+pip install playwright unstructured
+```
+
+See a [usage example](/docs/integrations/document_loaders/url/#playwright-url-loader).
+
+```python
+from langchain_community.document_loaders.onenote import OneNoteLoader
+```
+
 ## AI Agent Memory System
 
 [AI agent](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents) needs robust memory systems that support multi-modality, offer strong operational performance, and enable agent memory sharing as well as separation.
 
+### Azure Cosmos DB
 AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode. 
 
 Below are two available Azure Cosmos DB APIs that can provide vector store functionalities.
@@ -307,7 +335,28 @@ See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
 from langchain_community.vectorstores import AzureCosmosDBNoSQLVectorSearch
 ```
 
+### Azure Database for PostgreSQL
+>[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
+
+See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
+
+See a [usage example](/docs/integrations/memory/postgres_chat_message_history/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal. 
+
+Since Azure Database for PostgreSQL is open-source Postgres, you can use the [LangChain's Postgres support](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL.
+
+
+### Azure AI Search
+
+[Azure AI Search](https://learn.microsoft.com/azure/search/search-what-is-azure-search) is a cloud search service
+that gives developers infrastructure, APIs, and tools for information retrieval of vector, keyword, and hybrid
+queries at scale. See [here](/docs/integrations/vectorstores/azuresearch) for usage examples.
+
+```python
+from langchain_community.vectorstores.azuresearch import AzureSearch
+```
+
 ## Retrievers
+
 ### Azure AI Search
 
 >[Azure AI Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search` or `Azure Cognitive Search` ) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
@@ -324,8 +373,19 @@ See [set up instructions](https://learn.microsoft.com/en-us/azure/search/search-
 See a [usage example](/docs/integrations/retrievers/azure_ai_search).
 
 ```python
-from langchain.retrievers import AzureAISearchRetriever
+from langchain_community.retrievers import AzureAISearchRetriever
 ```
+
+## Vector Store
+### Azure Database for PostgreSQL
+>[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
+
+See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
+
+You need to [enable pgvector extension](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-use-pgvector) in your database to use Postgres as a vector store. Once you have the extension enabled, you can use the [PGVector in LangChain](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL. 
+
+See a [usage example](/docs/integrations/vectorstores/pgvector/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal. 
+
 
 ## Tools
 
@@ -370,11 +430,20 @@ We need to install several python packages.
 pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
 ```
 
-See a [usage example](/docs/integrations/toolkits/azure_ai_services).
+See a [usage example](/docs/integrations/tools/azure_ai_services).
 
 ```python
 from langchain_community.agent_toolkits import azure_ai_services
 ```
+
+The `azure_ai_services` toolkit includes the following tools:
+
+- Image Analysis: [AzureAiServicesImageAnalysisTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.image_analysis.AzureAiServicesImageAnalysisTool.html)
+- Document Intelligence: [AzureAiServicesDocumentIntelligenceTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.document_intelligence.AzureAiServicesDocumentIntelligenceTool.html)
+- Speech to Text: [AzureAiServicesSpeechToTextTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.speech_to_text.AzureAiServicesSpeechToTextTool.html)
+- Text to Speech: [AzureAiServicesTextToSpeechTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_to_speech.AzureAiServicesTextToSpeechTool.html)
+- Text Analytics for Health: [AzureAiServicesTextAnalyticsForHealthTool](https://python.langchain.com/v0.2/api_reference/community/tools/langchain_community.tools.azure_ai_services.text_analytics_for_health.AzureAiServicesTextAnalyticsForHealthTool.html)
+
 
 ### Microsoft Office 365 email and calendar
 
@@ -385,7 +454,7 @@ pip install O365
 ```
 
 
-See a [usage example](/docs/integrations/toolkits/office365).
+See a [usage example](/docs/integrations/tools/office365).
 
 ```python
 from langchain_community.agent_toolkits import O365Toolkit
@@ -399,13 +468,45 @@ We need to install `azure-identity` python package.
 pip install azure-identity
 ```
 
-See a [usage example](/docs/integrations/toolkits/powerbi).
+See a [usage example](/docs/integrations/tools/powerbi).
 
 ```python
 from langchain_community.agent_toolkits import PowerBIToolkit
 from langchain_community.utilities.powerbi import PowerBIDataset
 ```
 
+### PlayWright Browser Toolkit
+
+>[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool 
+> developed by `Microsoft` that allows you to programmatically control and automate 
+> web browsers. It is designed for end-to-end testing, scraping, and automating 
+> tasks across various web browsers such as `Chromium`, `Firefox`, and `WebKit`.
+
+We need to install several python packages.
+
+```bash
+pip install playwright lxml
+```
+
+See a [usage example](/docs/integrations/tools/playwright).
+
+```python
+from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
+```
+
+#### PlayWright Browser individual tools
+
+You can use individual tools from the PlayWright Browser Toolkit.
+
+```python
+from langchain_community.tools.playwright import ClickTool
+from langchain_community.tools.playwright import CurrentWebPageTool
+from langchain_community.tools.playwright import ExtractHyperlinksTool
+from langchain_community.tools.playwright import ExtractTextTool
+from langchain_community.tools.playwright import GetElementsTool
+from langchain_community.tools.playwright import NavigateTool
+from langchain_community.tools.playwright import NavigateBackTool
+```
 
 ## Graphs
 
@@ -458,4 +559,3 @@ See [usage examples](https://python.langchain.com/v0.1/docs/guides/productioniza
 ```python
 from langchain_experimental.data_anonymizer import PresidioAnonymizer, PresidioReversibleAnonymizer
 ```
-

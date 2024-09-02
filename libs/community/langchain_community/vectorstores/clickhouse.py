@@ -97,8 +97,8 @@ class ClickhouseSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_prefix = "clickhouse_"
         env_file_encoding = "utf-8"
+        env_prefix = "clickhouse_"
 
 
 class Clickhouse(VectorStore):

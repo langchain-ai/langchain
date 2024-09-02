@@ -516,15 +516,19 @@ class _TracerCore(ABC):
 
     def _end_trace(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """End a trace for a run."""
+        return None
 
     def _on_run_create(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process a run upon creation."""
+        return None
 
     def _on_run_update(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process a run upon update."""
+        return None
 
     def _on_llm_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run upon start."""
+        return None
 
     def _on_llm_new_token(
         self,
@@ -533,39 +537,52 @@ class _TracerCore(ABC):
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
     ) -> Union[None, Coroutine[Any, Any, None]]:
         """Process new LLM token."""
+        return None
 
     def _on_llm_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run."""
+        return None
 
     def _on_llm_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run upon error."""
+        return None
 
     def _on_chain_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run upon start."""
+        return None
 
     def _on_chain_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run."""
+        return None
 
     def _on_chain_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run upon error."""
+        return None
 
     def _on_tool_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run upon start."""
+        return None
 
     def _on_tool_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run."""
+        return None
 
     def _on_tool_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run upon error."""
+        return None
 
     def _on_chat_model_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chat Model Run upon start."""
+        return None
 
     def _on_retriever_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run upon start."""
+        return None
 
     def _on_retriever_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run."""
+        return None
 
     def _on_retriever_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run upon error."""
+        return None

@@ -5,11 +5,12 @@ from __future__ import annotations
 import inspect
 import textwrap
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, overload
 
 import pydantic  # pydantic: ignore
 from pydantic import BaseModel, root_validator  # pydantic: ignore
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue  # pydantic: ignore
+from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic_core import core_schema  # pydantic: ignore
 
 
@@ -28,8 +29,12 @@ PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 if PYDANTIC_MAJOR_VERSION == 1:
     PydanticBaseModel = BaseModel
+    from pydantic.fields import FieldInfo as FieldInfoV1
+
     TypeBaseModel = Type[BaseModel]
 elif PYDANTIC_MAJOR_VERSION == 2:
+    from pydantic.v1.fields import FieldInfo as FieldInfoV1  # type: ignore[assignment]
+
     # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
     PydanticBaseModel = Union[pydantic.BaseModel, BaseModel]  # type: ignore
     TypeBaseModel = Union[Type[pydantic.BaseModel], BaseModel]  # type: ignore
@@ -190,7 +195,7 @@ def v1_repr(obj: BaseModel) -> str:
     if not is_basemodel_instance(obj):
         raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
     repr_ = []
-    for name, field in _get_fields(obj).items():
+    for name, field in get_fields(obj).items():
         value = getattr(obj, name)
 
         if isinstance(value, BaseModel):
@@ -319,13 +324,35 @@ def _create_subset_model(
         )
 
 
-def _get_fields(
-    obj: Union[BaseModel, Type[BaseModel]],
-) -> Dict[str, Any]:
-    """Get the fields of a pydantic model."""
-    if hasattr(obj, "model_fields"):
-        return obj.model_fields
-    elif hasattr(obj, "__fields__"):
-        return obj.__fields__  # type: ignore
+@overload
+def get_fields(model: Type[BaseModelV2]) -> Dict[str, FieldInfoV2]: ...
+
+
+@overload
+def get_fields(model: BaseModelV2) -> Dict[str, FieldInfoV2]: ...
+
+
+@overload
+def get_fields(model: Type[BaseModelV1]) -> Dict[str, FieldInfoV1]: ...
+
+
+@overload
+def get_fields(model: BaseModelV1) -> Dict[str, FieldInfoV1]: ...
+
+
+def get_fields(
+    model: Union[
+        BaseModelV2,
+        BaseModelV1,
+        Type[BaseModelV2],
+        Type[BaseModelV1],
+    ],
+) -> Union[Dict[str, FieldInfoV2], Dict[str, FieldInfoV1]]:
+    """Get the field names of a Pydantic model."""
+    if hasattr(model, "model_fields"):
+        return model.model_fields  # type: ignore
+
+    elif hasattr(model, "__fields__"):
+        return model.__fields__  # type: ignore
     else:
-        raise TypeError(f"Expected a pydantic BaseModel, got {type(obj)}")
+        raise TypeError(f"Expected a Pydantic model. Got {type(model)}")

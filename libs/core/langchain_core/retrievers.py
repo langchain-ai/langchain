@@ -27,6 +27,7 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import ConfigDict
+from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -50,6 +51,19 @@ RetrieverInput = str
 RetrieverOutput = List[Document]
 RetrieverLike = Runnable[RetrieverInput, RetrieverOutput]
 RetrieverOutputLike = Runnable[Any, RetrieverOutput]
+
+
+class LangSmithRetrieverParams(TypedDict, total=False):
+    """LangSmith parameters for tracing."""
+
+    ls_retriever_name: str
+    """Retriever name."""
+    ls_vector_store_provider: Optional[str]
+    """Vector store provider."""
+    ls_embedding_provider: Optional[str]
+    """Embedding provider."""
+    ls_embedding_model: Optional[str]
+    """Embedding model."""
 
 
 class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
@@ -143,6 +157,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 "Retrievers must implement abstract `_get_relevant_documents` method"
                 " instead of `get_relevant_documents`",
                 DeprecationWarning,
+                stacklevel=4,
             )
             swap = cls.get_relevant_documents
             cls.get_relevant_documents = (  # type: ignore[assignment]
@@ -157,6 +172,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 "Retrievers must implement abstract `_aget_relevant_documents` method"
                 " instead of `aget_relevant_documents`",
                 DeprecationWarning,
+                stacklevel=4,
             )
             aswap = cls.aget_relevant_documents
             cls.aget_relevant_documents = (  # type: ignore[assignment]
@@ -169,6 +185,19 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         cls._expects_other_args = (
             len(set(parameters.keys()) - {"self", "query", "run_manager"}) > 0
         )
+
+    def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
+        """Get standard params for tracing."""
+
+        default_retriever_name = self.get_name()
+        if default_retriever_name.startswith("Retriever"):
+            default_retriever_name = default_retriever_name[9:]
+        elif default_retriever_name.endswith("Retriever"):
+            default_retriever_name = default_retriever_name[:-9]
+        default_retriever_name = default_retriever_name.lower()
+
+        ls_params = LangSmithRetrieverParams(ls_retriever_name=default_retriever_name)
+        return ls_params
 
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -194,13 +223,17 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         from langchain_core.callbacks.manager import CallbackManager
 
         config = ensure_config(config)
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params(**kwargs),
+        }
         callback_manager = CallbackManager.configure(
             config.get("callbacks"),
             None,
             verbose=kwargs.get("verbose", False),
             inheritable_tags=config.get("tags"),
             local_tags=self.tags,
-            inheritable_metadata=config.get("metadata"),
+            inheritable_metadata=inheritable_metadata,
             local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
@@ -253,13 +286,17 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
         config = ensure_config(config)
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params(**kwargs),
+        }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
             None,
             verbose=kwargs.get("verbose", False),
             inheritable_tags=config.get("tags"),
             local_tags=self.tags,
-            inheritable_metadata=config.get("metadata"),
+            inheritable_metadata=inheritable_metadata,
             local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
@@ -316,7 +353,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             run_manager=run_manager.get_sync(),
         )
 
-    @deprecated(since="0.1.46", alternative="invoke", removal="0.3.0")
+    @deprecated(since="0.1.46", alternative="invoke", removal="1.0")
     def get_relevant_documents(
         self,
         query: str,
@@ -360,7 +397,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             config["run_name"] = run_name
         return self.invoke(query, config, **kwargs)
 
-    @deprecated(since="0.1.46", alternative="ainvoke", removal="0.3.0")
+    @deprecated(since="0.1.46", alternative="ainvoke", removal="1.0")
     async def aget_relevant_documents(
         self,
         query: str,
