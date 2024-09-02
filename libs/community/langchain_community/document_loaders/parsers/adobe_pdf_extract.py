@@ -97,7 +97,9 @@ class AdobePDFExtractParser(BaseBlobParser):
                     page_content=merged_paragraphs,
                     metadata={
                         "headers": headers.copy(),
-                        "page": header_page + 1 if header_page else paragraph_page + 1,
+                        "page": header_page + 1
+                        if header_page
+                        else (paragraph_page or 0) + 1,
                         "figures": figures,
                     },
                 )
