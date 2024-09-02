@@ -404,7 +404,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 preserve_images=True,
                 custom_handlers={"iframe": custom_iframe_extractor}
             )
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
