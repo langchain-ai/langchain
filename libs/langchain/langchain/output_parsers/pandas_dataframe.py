@@ -10,7 +10,7 @@ from langchain.output_parsers.format_instructions import (
 )
 
 
-class PandasDataFrameOutputParser(BaseOutputParser):
+class PandasDataFrameOutputParser(BaseOutputParser[Dict[str, Any]]):
     """Parse an output using Pandas DataFrame format."""
 
     """The Pandas DataFrame to parse."""

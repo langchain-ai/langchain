@@ -5,7 +5,6 @@ from typing import Any, Callable, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -36,7 +35,9 @@ def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
     """Send a pipeline to a device on the cluster."""
     if isinstance(pipeline, str):
         with open(pipeline, "rb") as f:
-            pipeline = pickle.load(f)
+            # This code path can only be triggered if the user
+            # passed allow_dangerous_deserialization=True
+            pipeline = pickle.load(f)  # ignore[pickle]: explicit-opt-in
 
     if importlib.util.find_spec("torch") is not None:
         import torch
@@ -143,9 +144,7 @@ class SelfHostedPipeline(LLM):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def __init__(self, **kwargs: Any):
         """Init the pipeline with an auxiliary function.

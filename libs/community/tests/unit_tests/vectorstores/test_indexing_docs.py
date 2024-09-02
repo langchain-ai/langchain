@@ -48,8 +48,10 @@ def test_compatible_vectorstore_documentation() -> None:
     documented = {
         "Aerospike",
         "AnalyticDB",
+        "ApertureDB",
         "AstraDB",
         "AzureCosmosDBVectorSearch",
+        "AzureCosmosDBNoSqlVectorSearch",
         "AzureSearch",
         "AwaDB",
         "Bagel",
@@ -83,6 +85,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Rockset",
         "ScaNN",
         "SemaDB",
+        "SingleStoreDB",
         "SupabaseVectorStore",
         "SurrealDBStore",
         "TileDB",

@@ -22,6 +22,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.anyscale import (
         AnyscaleEmbeddings,
     )
+    from langchain_community.embeddings.ascend import (
+        AscendEmbeddings,
+    )
     from langchain_community.embeddings.awa import (
         AwaEmbeddings,
     )
@@ -176,6 +179,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.oracleai import (
         OracleEmbeddings,
     )
+    from langchain_community.embeddings.ovhcloud import (
+        OVHCloudEmbeddings,
+    )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
     )
@@ -207,6 +213,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.tensorflow_hub import (
         TensorflowHubEmbeddings,
     )
+    from langchain_community.embeddings.textembed import (
+        TextEmbedEmbeddings,
+    )
     from langchain_community.embeddings.titan_takeoff import (
         TitanTakeoffEmbed,
     )
@@ -225,11 +234,15 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.yandex import (
         YandexGPTEmbeddings,
     )
+    from langchain_community.embeddings.zhipuai import (
+        ZhipuAIEmbeddings,
+    )
 
 __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
     "AnyscaleEmbeddings",
+    "AscendEmbeddings",
     "AwaEmbeddings",
     "AzureOpenAIEmbeddings",
     "BaichuanTextEmbeddings",
@@ -283,6 +296,7 @@ __all__ = [
     "OpenVINOBgeEmbeddings",
     "OpenVINOEmbeddings",
     "OracleEmbeddings",
+    "OVHCloudEmbeddings",
     "PremAIEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "QuantizedBgeEmbeddings",
@@ -297,12 +311,14 @@ __all__ = [
     "SpacyEmbeddings",
     "SparkLLMTextEmbeddings",
     "TensorflowHubEmbeddings",
+    "TextEmbedEmbeddings",
     "TitanTakeoffEmbed",
     "VertexAIEmbeddings",
     "VolcanoEmbeddings",
     "VoyageEmbeddings",
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
+    "ZhipuAIEmbeddings",
 ]
 
 _module_lookup = {
@@ -365,6 +381,7 @@ _module_lookup = {
     "QuantizedBgeEmbeddings": "langchain_community.embeddings.itrex",
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "OracleEmbeddings": "langchain_community.embeddings.oracleai",
+    "OVHCloudEmbeddings": "langchain_community.embeddings.ovhcloud",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SambaStudioEmbeddings": "langchain_community.embeddings.sambanova",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
@@ -379,9 +396,12 @@ _module_lookup = {
     "VolcanoEmbeddings": "langchain_community.embeddings.volcengine",
     "VoyageEmbeddings": "langchain_community.embeddings.voyageai",
     "XinferenceEmbeddings": "langchain_community.embeddings.xinference",
+    "TextEmbedEmbeddings": "langchain_community.embeddings.textembed",
     "TitanTakeoffEmbed": "langchain_community.embeddings.titan_takeoff",
     "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
+    "AscendEmbeddings": "langchain_community.embeddings.ascend",
+    "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
 }
 
 

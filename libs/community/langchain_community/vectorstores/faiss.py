@@ -72,21 +72,132 @@ def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
 
 
 class FAISS(VectorStore):
-    """`Meta Faiss` vector store.
+    """FAISS vector store integration.
 
-    To use, you must have the ``faiss`` python package installed.
+    See [The FAISS Library](https://arxiv.org/pdf/2401.08281) paper.
 
-    Example:
+    Setup:
+        Install ``langchain_community`` and ``faiss-cpu`` python packages.
+
+        .. code-block:: bash
+
+            pip install -qU langchain_community faiss-cpu
+
+    Key init args — indexing params:
+        embedding_function: Embeddings
+            Embedding function to use.
+
+    Key init args — client params:
+        index: Any
+            FAISS index to use.
+        docstore: Docstore
+            Docstore to use.
+        index_to_docstore_id: Dict[int, str]
+            Mapping of index to docstore id.
+
+    Instantiate:
         .. code-block:: python
 
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            import faiss
             from langchain_community.vectorstores import FAISS
+            from langchain_community.docstore.in_memory import InMemoryDocstore
+            from langchain_openai import OpenAIEmbeddings
 
-            embeddings = OpenAIEmbeddings()
-            texts = ["FAISS is an important library", "LangChain supports FAISS"]
-            faiss = FAISS.from_texts(texts, embeddings)
+            index = faiss.IndexFlatL2(len(OpenAIEmbeddings().embed_query("hello world")))
 
-    """
+            vector_store = FAISS(
+                embedding_function=OpenAIEmbeddings(),
+                index=index,
+                docstore= InMemoryDocstore(),
+                index_to_docstore_id={}
+            )
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'bar': 'baz'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'bar': 'baz'}]
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.335304] foo [{'baz': 'bar'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.335304] foo [{'baz': 'bar'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            [Document(metadata={'bar': 'baz'}, page_content='thud')]
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -1093,7 +1204,13 @@ class FAISS(VectorStore):
 
         # load docstore and index_to_docstore_id
         with open(path / f"{index_name}.pkl", "rb") as f:
-            docstore, index_to_docstore_id = pickle.load(f)
+            (
+                docstore,
+                index_to_docstore_id,
+            ) = pickle.load(  # ignore[pickle]: explicit-opt-in
+                f
+            )
+
         return cls(embeddings, index, docstore, index_to_docstore_id, **kwargs)
 
     def serialize_to_bytes(self) -> bytes:
@@ -1105,10 +1222,31 @@ class FAISS(VectorStore):
         cls,
         serialized: bytes,
         embeddings: Embeddings,
+        *,
+        allow_dangerous_deserialization: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
-        index, docstore, index_to_docstore_id = pickle.loads(serialized)
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "The de-serialization relies loading a pickle file. "
+                "Pickle files can be modified to deliver a malicious payload that "
+                "results in execution of arbitrary code on your machine."
+                "You will need to set `allow_dangerous_deserialization` to `True` to "
+                "enable deserialization. If you do this, make sure that you "
+                "trust the source of the data. For example, if you are loading a "
+                "file that you created, and know that no one else has modified the "
+                "file, then this is safe to do. Do not set this to `True` if you are "
+                "loading a file from an untrusted source (e.g., some random site on "
+                "the internet.)."
+            )
+        (
+            index,
+            docstore,
+            index_to_docstore_id,
+        ) = pickle.loads(  # ignore[pickle]: explicit-opt-in
+            serialized
+        )
         return cls(embeddings, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
@@ -1152,7 +1290,7 @@ class FAISS(VectorStore):
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
-                "normalize_score_fn must be provided to"
+                "relevance_score_fn must be provided to"
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(
@@ -1181,7 +1319,7 @@ class FAISS(VectorStore):
         relevance_score_fn = self._select_relevance_score_fn()
         if relevance_score_fn is None:
             raise ValueError(
-                "normalize_score_fn must be provided to"
+                "relevance_score_fn must be provided to"
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = await self.asimilarity_search_with_score(

@@ -1,4 +1,5 @@
 """Agent for working with pandas objects."""
+
 import warnings
 from typing import Any, Dict, List, Literal, Optional, Sequence, Union, cast
 
@@ -168,9 +169,22 @@ def create_pandas_dataframe_agent(
     number_of_head_rows: int = 5,
     extra_tools: Sequence[BaseTool] = (),
     engine: Literal["pandas", "modin"] = "pandas",
+    allow_dangerous_code: bool = False,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Construct a Pandas agent from an LLM and dataframe(s).
+
+    Security Notice:
+        This agent relies on access to a python repl tool which can execute
+        arbitrary code. This can be dangerous and requires a specially sandboxed
+        environment to be safely used. Failure to run this code in a properly
+        sandboxed environment can lead to arbitrary code execution vulnerabilities,
+        which can lead to data breaches, data loss, or other security incidents.
+
+        Do not use this code with untrusted inputs, with elevated permissions,
+        or without consulting your security team about proper sandboxing!
+
+        You must opt-in to use this functionality by setting allow_dangerous_code=True.
 
     Args:
         llm: Language model to use for the agent. If agent_type is "tool-calling" then
@@ -198,6 +212,16 @@ def create_pandas_dataframe_agent(
             include_df_in_prompt is True.
         extra_tools: Additional tools to give to agent on top of a PythonAstREPLTool.
         engine: One of "modin" or "pandas". Defaults to "pandas".
+        allow_dangerous_code: bool, default False
+            This agent relies on access to a python repl tool which can execute
+            arbitrary code. This can be dangerous and requires a specially sandboxed
+            environment to be safely used.
+            Failure to properly sandbox this class can lead to arbitrary code execution
+            vulnerabilities, which can lead to data breaches, data loss, or
+            other security incidents.
+            You must opt in to use this functionality by setting
+            allow_dangerous_code=True.
+
         **kwargs: DEPRECATED. Not used, kept for backwards compatibility.
 
     Returns:
@@ -221,6 +245,16 @@ def create_pandas_dataframe_agent(
             )
 
     """
+    if not allow_dangerous_code:
+        raise ValueError(
+            "This agent relies on access to a python repl tool which can execute "
+            "arbitrary code. This can be dangerous and requires a specially sandboxed "
+            "environment to be safely used. Please read the security notice in the "
+            "doc-string of this function. You must opt-in to use this functionality "
+            "by setting allow_dangerous_code=True."
+            "For general security guidelines, please see: "
+            "https://python.langchain.com/v0.2/docs/security/"
+        )
     try:
         if engine == "modin":
             import modin.pandas as pd

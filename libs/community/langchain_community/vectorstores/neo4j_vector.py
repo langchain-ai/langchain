@@ -15,13 +15,17 @@ from typing import (
     Type,
 )
 
+import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.graphs import Neo4jGraph
-from langchain_community.vectorstores.utils import DistanceStrategy
+from langchain_community.vectorstores.utils import (
+    DistanceStrategy,
+    maximal_marginal_relevance,
+)
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
 DISTANCE_MAPPING = {
@@ -587,7 +591,11 @@ class Neo4jVector(VectorStore):
                 pass
 
     def query(
-        self, query: str, *, params: Optional[dict] = None
+        self,
+        query: str,
+        *,
+        params: Optional[dict] = None,
+        retry_on_session_expired: bool = True,
     ) -> List[Dict[str, Any]]:
         """
         This method sends a Cypher query to the connected Neo4j database
@@ -600,7 +608,7 @@ class Neo4jVector(VectorStore):
         Returns:
             List[Dict[str, Any]]: List of dictionaries containing the query results.
         """
-        from neo4j.exceptions import CypherSyntaxError
+        from neo4j.exceptions import CypherSyntaxError, SessionExpired
 
         params = params or {}
         with self._driver.session(database=self._database) as session:
@@ -609,6 +617,15 @@ class Neo4jVector(VectorStore):
                 return [r.data() for r in data]
             except CypherSyntaxError as e:
                 raise ValueError(f"Cypher Statement is not valid\n{e}")
+            except (
+                SessionExpired
+            ) as e:  # Session expired is a transient error that can be retried
+                if retry_on_session_expired:
+                    return self.query(
+                        query, params=params, retry_on_session_expired=False
+                    )
+                else:
+                    raise e
 
     def verify_version(self) -> None:
         """
@@ -675,9 +692,10 @@ class Neo4jVector(VectorStore):
             self.node_label = index_information[0]["labelsOrTypes"][0]
             self.embedding_node_property = index_information[0]["properties"][0]
             self._index_type = index_information[0]["entityType"]
-            embedding_dimension = index_information[0]["options"]["indexConfig"][
-                "vector.dimensions"
-            ]
+            embedding_dimension = None
+            index_config = index_information[0]["options"]["indexConfig"]
+            if "vector.dimensions" in index_config:
+                embedding_dimension = index_config["vector.dimensions"]
 
             return embedding_dimension, index_information[0]["entityType"]
         except IndexError:
@@ -791,10 +809,12 @@ class Neo4jVector(VectorStore):
             )
 
         # If the vector index doesn't exist yet
-        if not embedding_dimension:
+        if not index_type:
             store.create_new_index()
         # If the index already exists, check if embedding dimensions match
-        elif not store.embedding_dimension == embedding_dimension:
+        elif (
+            embedding_dimension and not store.embedding_dimension == embedding_dimension
+        ):
             raise ValueError(
                 f"Index with name {store.index_name} already exists."
                 "The provided embedding function and vector index "
@@ -854,11 +874,11 @@ class Neo4jVector(VectorStore):
             "CALL { WITH row "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
-            f"CALL db.create.setVectorProperty(c, "
+            f"CALL db.create.setNodeVectorProperty(c, "
             f"'{self.embedding_node_property}', row.embedding) "
-            "YIELD node "
             f"SET c.`{self.text_node_property}` = row.text "
-            "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
+            "SET c += row.metadata "
+            "} IN TRANSACTIONS OF 1000 ROWS "
         )
 
         parameters = {
@@ -909,6 +929,11 @@ class Neo4jVector(VectorStore):
         Args:
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query.
@@ -936,6 +961,11 @@ class Neo4jVector(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -972,6 +1002,11 @@ class Neo4jVector(VectorStore):
         Args:
             embedding (List[float]): The embedding vector to compare against.
             k (int, optional): The number of top similar documents to retrieve.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
 
         Returns:
             List[Tuple[Document, float]]: A list of tuples, each containing
@@ -1014,17 +1049,35 @@ class Neo4jVector(VectorStore):
             filter_params = {}
 
         if self._index_type == IndexType.RELATIONSHIP:
-            default_retrieval = (
-                f"RETURN relationship.`{self.text_node_property}` AS text, score, "
-                f"relationship {{.*, `{self.text_node_property}`: Null, "
-                f"`{self.embedding_node_property}`: Null, id: Null }} AS metadata"
-            )
+            if kwargs.get("return_embeddings"):
+                default_retrieval = (
+                    f"RETURN relationship.`{self.text_node_property}` AS text, score, "
+                    f"relationship {{.*, `{self.text_node_property}`: Null, "
+                    f"`{self.embedding_node_property}`: Null, id: Null, "
+                    f"_embedding_: relationship.`{self.embedding_node_property}`}} "
+                    "AS metadata"
+                )
+            else:
+                default_retrieval = (
+                    f"RETURN relationship.`{self.text_node_property}` AS text, score, "
+                    f"relationship {{.*, `{self.text_node_property}`: Null, "
+                    f"`{self.embedding_node_property}`: Null, id: Null }} AS metadata"
+                )
+
         else:
-            default_retrieval = (
-                f"RETURN node.`{self.text_node_property}` AS text, score, "
-                f"node {{.*, `{self.text_node_property}`: Null, "
-                f"`{self.embedding_node_property}`: Null, id: Null }} AS metadata"
-            )
+            if kwargs.get("return_embeddings"):
+                default_retrieval = (
+                    f"RETURN node.`{self.text_node_property}` AS text, score, "
+                    f"node {{.*, `{self.text_node_property}`: Null, "
+                    f"`{self.embedding_node_property}`: Null, id: Null, "
+                    f"_embedding_: node.`{self.embedding_node_property}`}} AS metadata"
+                )
+            else:
+                default_retrieval = (
+                    f"RETURN node.`{self.text_node_property}` AS text, score, "
+                    f"node {{.*, `{self.text_node_property}`: Null, "
+                    f"`{self.embedding_node_property}`: Null, id: Null }} AS metadata"
+                )
 
         retrieval_query = (
             self.retrieval_query if self.retrieval_query else default_retrieval
@@ -1055,6 +1108,20 @@ class Neo4jVector(VectorStore):
                     "Inspect the `retrieval_query` and ensure it doesn't "
                     "return None for the `text` column"
                 )
+        if kwargs.get("return_embeddings") and any(
+            result["metadata"]["_embedding_"] is None for result in results
+        ):
+            if not self.retrieval_query:
+                raise ValueError(
+                    f"Make sure that none of the `{self.embedding_node_property}` "
+                    f"properties on nodes with label `{self.node_label}` "
+                    "are missing or empty"
+                )
+            else:
+                raise ValueError(
+                    "Inspect the `retrieval_query` and ensure it doesn't "
+                    "return None for the `_embedding_` metadata column"
+                )
 
         docs = [
             (
@@ -1077,6 +1144,7 @@ class Neo4jVector(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
+        params: Dict[str, Any] = {},
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -1084,12 +1152,17 @@ class Neo4jVector(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
+            params (Dict[str, Any]): The search params for the index type.
+                Defaults to empty dict.
 
         Returns:
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter, **kwargs
+            embedding=embedding, k=k, filter=filter, params=params, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -1205,14 +1278,14 @@ class Neo4jVector(VectorStore):
                 "`from_existing_relationship_index` method."
             )
 
-        if not embedding_dimension:
+        if not index_type:
             raise ValueError(
                 "The specified vector index name does not exist. "
                 "Make sure to check if you spelled it correctly"
             )
 
         # Check if embedding function and vector index dimensions match
-        if not store.embedding_dimension == embedding_dimension:
+        if embedding_dimension and not store.embedding_dimension == embedding_dimension:
             raise ValueError(
                 "The provided embedding function and vector index "
                 "dimensions do not match.\n"
@@ -1267,7 +1340,7 @@ class Neo4jVector(VectorStore):
 
         embedding_dimension, index_type = store.retrieve_existing_index()
 
-        if not embedding_dimension:
+        if not index_type:
             raise ValueError(
                 "The specified vector index name does not exist. "
                 "Make sure to check if you spelled it correctly"
@@ -1281,7 +1354,7 @@ class Neo4jVector(VectorStore):
             )
 
         # Check if embedding function and vector index dimensions match
-        if not store.embedding_dimension == embedding_dimension:
+        if embedding_dimension and not store.embedding_dimension == embedding_dimension:
             raise ValueError(
                 "The provided embedding function and vector index "
                 "dimensions do not match.\n"
@@ -1394,10 +1467,12 @@ class Neo4jVector(VectorStore):
             )
 
         # If the vector index doesn't exist yet
-        if not embedding_dimension:
+        if not index_type:
             store.create_new_index()
         # If the index already exists, check if embedding dimensions match
-        elif not store.embedding_dimension == embedding_dimension:
+        elif (
+            embedding_dimension and not store.embedding_dimension == embedding_dimension
+        ):
             raise ValueError(
                 f"Index with name {store.index_name} already exists."
                 "The provided embedding function and vector index "
@@ -1428,6 +1503,8 @@ class Neo4jVector(VectorStore):
                 "LIMIT 1000"
             )
             data = store.query(fetch_query, params={"props": text_node_properties})
+            if not data:
+                break
             text_embeddings = embedding.embed_documents([el["text"] for el in data])
 
             params = {
@@ -1441,15 +1518,73 @@ class Neo4jVector(VectorStore):
                 "UNWIND $data AS row "
                 f"MATCH (n:`{node_label}`) "
                 "WHERE elementId(n) = row.id "
-                f"CALL db.create.setVectorProperty(n, "
+                f"CALL db.create.setNodeVectorProperty(n, "
                 f"'{embedding_node_property}', row.embedding) "
-                "YIELD node RETURN count(*)",
+                "RETURN count(*)",
                 params=params,
             )
             # If embedding calculation should be stopped
             if len(data) < 1000:
                 break
         return store
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: search query text.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter: Filter on metadata properties, e.g.
+                            {
+                                "str_property": "foo",
+                                "int_property": 123
+                            }
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        # Embed the query
+        query_embedding = self.embedding.embed_query(query)
+
+        # Fetch the initial documents
+        got_docs = self.similarity_search_with_score_by_vector(
+            embedding=query_embedding,
+            query=query,
+            k=fetch_k,
+            return_embeddings=True,
+            filter=filter,
+            **kwargs,
+        )
+
+        # Get the embeddings for the fetched documents
+        got_embeddings = [doc.metadata["_embedding_"] for doc, _ in got_docs]
+
+        # Select documents using maximal marginal relevance
+        selected_indices = maximal_marginal_relevance(
+            np.array(query_embedding), got_embeddings, lambda_mult=lambda_mult, k=k
+        )
+        selected_docs = [got_docs[i][0] for i in selected_indices]
+
+        # Remove embedding values from metadata
+        for doc in selected_docs:
+            del doc.metadata["_embedding_"]
+
+        return selected_docs
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """

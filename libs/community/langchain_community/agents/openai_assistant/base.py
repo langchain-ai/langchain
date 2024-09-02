@@ -91,7 +91,7 @@ def _is_assistants_builtin_tool(
         A boolean response of true or false indicating if the tool corresponds to
         OpenAI Assistants built-in.
     """
-    assistants_builtin_tools = ("code_interpreter", "retrieval")
+    assistants_builtin_tools = ("code_interpreter", "retrieval", "file_search")
     return (
         isinstance(tool, dict)
         and ("type" in tool)
@@ -209,7 +209,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
     as_agent: bool = False
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_async_client(cls, values: dict) -> dict:
         if values["async_client"] is None:
             import openai
@@ -288,6 +288,9 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise,
                 will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
+
+        Raises:
+            BaseException: If an error occurs during the invocation.
         """
 
         config = ensure_config(config)
@@ -507,8 +510,10 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
+            if k in ("instructions", "model", "tools", "run_metadata")
         }
+        if tool_resources := input.get("tool_resources"):
+            thread["tool_resources"] = tool_resources
         run = self.client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
             thread=thread,
@@ -532,8 +537,10 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
+            if k in ("instructions", "model", "tools", "run_metadata")
         }
+        if tool_resources := input.get("tool_resources"):
+            thread["tool_resources"] = tool_resources
         run = await self.async_client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
             thread=thread,

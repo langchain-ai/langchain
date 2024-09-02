@@ -1,4 +1,5 @@
 """Test the loading function for evaluators."""
+
 from typing import List
 
 import pytest

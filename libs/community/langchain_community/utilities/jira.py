@@ -1,7 +1,8 @@
 """Util that calls Jira."""
+
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -14,16 +15,17 @@ class JiraAPIWrapper(BaseModel):
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
+    jira_cloud: Optional[bool] = None
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        jira_username = get_from_dict_or_env(values, "jira_username", "JIRA_USERNAME")
+        jira_username = get_from_dict_or_env(
+            values, "jira_username", "JIRA_USERNAME", default=""
+        )
         values["jira_username"] = jira_username
 
         jira_api_token = get_from_dict_or_env(
@@ -36,6 +38,10 @@ class JiraAPIWrapper(BaseModel):
         )
         values["jira_instance_url"] = jira_instance_url
 
+        jira_cloud_str = get_from_dict_or_env(values, "jira_cloud", "JIRA_CLOUD")
+        jira_cloud = jira_cloud_str.lower() == "true"
+        values["jira_cloud"] = jira_cloud
+
         try:
             from atlassian import Confluence, Jira
         except ImportError:
@@ -44,18 +50,25 @@ class JiraAPIWrapper(BaseModel):
                 "Please install it with `pip install atlassian-python-api`"
             )
 
-        jira = Jira(
-            url=jira_instance_url,
-            username=jira_username,
-            password=jira_api_token,
-            cloud=True,
-        )
+        if jira_username == "":
+            jira = Jira(
+                url=jira_instance_url,
+                token=jira_api_token,
+                cloud=jira_cloud,
+            )
+        else:
+            jira = Jira(
+                url=jira_instance_url,
+                username=jira_username,
+                password=jira_api_token,
+                cloud=jira_cloud,
+            )
 
         confluence = Confluence(
             url=jira_instance_url,
             username=jira_username,
             password=jira_api_token,
-            cloud=True,
+            cloud=jira_cloud,
         )
 
         values["jira"] = jira
