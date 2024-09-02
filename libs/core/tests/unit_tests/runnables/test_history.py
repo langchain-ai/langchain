@@ -1,6 +1,7 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
 
 import pytest
+from typing_extensions import TypedDict
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -421,39 +422,32 @@ async def test_output_dict_async() -> None:
 
 
 def test_get_input_schema_input_dict() -> None:
-    class RunnableWithChatHistoryInput(BaseModel):
+    class RunnableWithChatHistoryInput(TypedDict):
         input: Union[str, BaseMessage, Sequence[BaseMessage]]
         input_key_1: str
         input_key_2: str
 
-    class RunnableInput(BaseModel):
+    class RunnableInput(TypedDict):
         input: Union[str, BaseMessage, Sequence[BaseMessage]]
-        history: Union[str, BaseMessage, Sequence[BaseMessage]]
+        history: List[BaseMessage]
         input_key_1: str
         input_key_2: str
 
-    def _callable(input: RunnableInput) -> dict[str, Any]:
-        return {
-            "output": [
-                AIMessage(
-                    content="you said: "
-                    + "\n".join(
-                        [
-                            str(m.content)
-                            for m in input["history"]
-                            if isinstance(m, HumanMessage)
-                        ]
-                        + [input["input"]]
-                    )
-                )
-            ]
-        }
+    def _callable(input: RunnableInput) -> Dict[str, Any]:
+        history = "\n".join(str(m.content) for m in input["history"])
+        if isinstance(input["input"], str):
+            input_str = input["input"]
+        elif isinstance(input["input"], BaseMessage):
+            input_str = str(input["input"].content)
+        else:
+            input_str = "\n".join(str(m.content) for m in input["input"])
+        return {"output": [AIMessage("\n".join(["you said:", history, input_str]))]}
 
     runnable = RunnableLambda(_callable)
 
     get_session_history = _get_get_session_history()
     with_history = RunnableWithMessageHistory(
-        runnable,
+        cast(Runnable, runnable),
         get_session_history,
         input_messages_key="input",
         history_messages_key="history",
