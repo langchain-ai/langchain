@@ -4,6 +4,8 @@ Example code for building applications with LangChain, with an emphasis on more 
 
 Notebook | Description
 :- | :-
+[agent_fireworks_ai_langchain_mongodb.ipynb](https://github.com/langchain-ai/langchain/tree/master/cookbook/agent_fireworks_ai_langchain_mongodb.ipynb) | Build an AI Agent With Memory Using MongoDB, LangChain and FireWorksAI.
+[mongodb-langchain-cache-memory.ipynb](https://github.com/langchain-ai/langchain/tree/master/cookbook/mongodb-langchain-cache-memory.ipynb) | Build a RAG Application with Semantic Cache Using MongoDB and LangChain.
 [LLaMA2_sql_chat.ipynb](https://github.com/langchain-ai/langchain/tree/master/cookbook/LLaMA2_sql_chat.ipynb) | Build a chat application that interacts with a SQL database using an open source llm (llama2), specifically demonstrated on an SQLite database containing rosters.
 [Semi_Structured_RAG.ipynb](https://github.com/langchain-ai/langchain/tree/master/cookbook/Semi_Structured_RAG.ipynb) | Perform retrieval-augmented generation (rag) on documents with semi-structured data, including text and tables, using unstructured for parsing, multi-vector retriever for storing, and lcel for implementing chains.
 [Semi_structured_and_multi_moda...](https://github.com/langchain-ai/langchain/tree/master/cookbook/Semi_structured_and_multi_modal_RAG.ipynb) | Perform retrieval-augmented generation (rag) on documents with semi-structured data and images, using unstructured for parsing, multi-vector retriever for storage and retrieval, and lcel for implementing chains.
