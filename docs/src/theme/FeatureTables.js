@@ -890,7 +890,7 @@ const FEATURE_TABLES = {
             {title: "Passes Standard Tests", formatter: (item) => item.passesStandardTests ? "✅" : "❌"},
             {title: "Multi Tenancy", formatter: (item) => item.multiTenancy ? "✅" : "❌"},
             {title: "IDs in add Documents", formatter: (item) => item.idsInAddDocuments ? "✅" : "❌"},
-            {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
+            // {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
         ],
         items: [
             {
