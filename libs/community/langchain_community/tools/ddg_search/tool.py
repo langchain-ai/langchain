@@ -90,7 +90,9 @@ class DuckDuckGoSearchResults(BaseTool):
     backend: str = "text"
     args_schema: Type[BaseModel] = DDGInput
     keys_to_include: Optional[List[str]] = None
+    """Which keys from each result to include. If None all keys are included."""
     results_separator: str = ", "
+    """Character for separating results."""
 
     def _run(
         self,
