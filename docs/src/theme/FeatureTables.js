@@ -890,7 +890,7 @@ const FEATURE_TABLES = {
             {title: "Passes Standard Tests", formatter: (item) => item.passesStandardTests ? "✅" : "❌"},
             {title: "Multi Tenancy", formatter: (item) => item.multiTenancy ? "✅" : "❌"},
             {title: "IDs in add Documents", formatter: (item) => item.idsInAddDocuments ? "✅" : "❌"},
-            {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
+            // {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
         ],
         items: [
             {
@@ -951,7 +951,7 @@ const FEATURE_TABLES = {
                 deleteById: true,
                 filtering: true,
                 searchByVector: true,
-                searchWithScore: false,
+                searchWithScore: true,
                 async: true,
                 passesStandardTests: false,
                 multiTenancy: false,
@@ -1012,7 +1012,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "PGVector",
-                link: "pg_vector",
+                link: "pgvector",
                 deleteById: true,
                 filtering: true,
                 searchByVector: true,
