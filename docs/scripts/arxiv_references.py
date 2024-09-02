@@ -397,7 +397,7 @@ class ArxivAPIWrapper(BaseModel):
 
 
 def _format_doc_url(doc_path: str) -> str:
-    return f"https://{LANGCHAIN_PYTHON_URL}/{doc_path}"
+    return f"https://{LANGCHAIN_PYTHON_URL}/v0.2/{doc_path}"
 
 
 def _format_api_ref_url(doc_path: str, compact: bool = False) -> str:
@@ -418,9 +418,9 @@ def _compact_module_full_name(doc_path: str) -> str:
     module = doc_path.split("#")[1].replace("module-", "")
     if module.count(".") > 2:
         # langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI
-        # -> langchain_community.llms...OCIModelDeploymentTGI
+        # -> langchain_community...OCIModelDeploymentTGI
         module_parts = module.split(".")
-        module = f"{module_parts[0]}.{module_parts[1]}...{module_parts[-1]}"
+        module = f"{module_parts[0]}...{module_parts[-1]}"
     return module
 
 
@@ -515,17 +515,24 @@ def log_results(arxiv_id2type2key2urls):
 def generate_arxiv_references_page(file_name: Path, papers: list[ArxivPaper]) -> None:
     with open(file_name, "w") as f:
         # Write the table headers
-        f.write("""# arXiv
+        f.write(
+            """# arXiv
             
 LangChain implements the latest research in the field of Natural Language Processing.
 This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
  Templates, and Cookbooks.
 
+From the opposite direction, scientists use `LangChain` in research and reference it in the research papers. 
+
+`arXiv` papers with references to:
+ [LangChain](https://arxiv.org/search/?query=langchain&searchtype=all&source=header) | [LangGraph](https://arxiv.org/search/?query=langgraph&searchtype=all&source=header) | [LangSmith](https://arxiv.org/search/?query=langsmith&searchtype=all&source=header)
+
 ## Summary
 
 | arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation|
 |------------------|---------|-------------------|------------------------|
-""")
+"""
+        )
         for paper in papers:
             refs = []
             if paper.referencing_doc2url:
@@ -556,7 +563,7 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
                 refs += [
                     "`Cookbook:` "
                     + ", ".join(
-                        f"[{key}]({url})"
+                        f"[{str(key).replace('_', ' ').title()}]({url})"
                         for key, url in paper.referencing_cookbook2url.items()
                     )
                 ]
@@ -564,7 +571,7 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
 
             title_link = f"[{paper.title}]({paper.url})"
             f.write(
-                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date, refs_str])}\n"
+                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date.replace('-', '&#8209;'), refs_str])}\n"
             )
 
         for paper in papers:
@@ -595,20 +602,19 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
                     if el
                 ]
             )
-            f.write(f"""
+            f.write(
+                f"""
 ## {paper.title}
 
-- **arXiv id:** {paper.arxiv_id}
-- **Title:** {paper.title}
 - **Authors:** {', '.join(paper.authors)}
-- **Published Date:** {paper.published_date}
-- **URL:** {paper.url}
+- **arXiv id:** [{paper.arxiv_id}]({paper.url})  **Published Date:** {paper.published_date}
 - **LangChain:**
 
 {refs}
 
 **Abstract:** {paper.abstract}
-                """)
+                """
+            )
 
     logger.warning(f"Created the {file_name} file with {len(papers)} arXiv references.")
 

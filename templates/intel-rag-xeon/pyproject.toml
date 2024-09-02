@@ -14,7 +14,7 @@ fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 sentence-transformers = "2.2.2"
 tiktoken = ">=0.5.1"
-chromadb = ">=0.4.14"
+langchain-chroma = "^0.1.2"
 beautifulsoup4 = ">=4.12.2"
 
 [tool.poetry.dependencies.unstructured]

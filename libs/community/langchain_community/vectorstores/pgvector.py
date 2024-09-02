@@ -20,7 +20,7 @@ from typing import (
 import numpy as np
 import sqlalchemy
 from langchain_core._api import deprecated, warn_deprecated
-from sqlalchemy import SQLColumnExpression, delete, func
+from sqlalchemy import delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
@@ -28,6 +28,12 @@ try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
+
+try:
+    from sqlalchemy import SQLColumnExpression
+except ImportError:
+    # for sqlalchemy < 2
+    SQLColumnExpression = Any  # type: ignore
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -218,7 +224,7 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
         "Please read the guidelines in the doc-string of this class "
         "to follow prior to migrating as there are some differences "
         "between the implementations. "
-        "See https://github.com/langchain-ai/langchain-postgres for details about"
+        "See <https://github.com/langchain-ai/langchain-postgres> for details about"
         "the new implementation."
     ),
     alternative="from langchain_postgres import PGVector;",
@@ -268,22 +274,22 @@ class PGVector(VectorStore):
             disabling creation is useful when using ReadOnly Databases.
 
     Example:
-        .. code-block:: python
 
-            from langchain_community.vectorstores import PGVector
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+       .. code-block:: python
 
-            CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
-            COLLECTION_NAME = "state_of_the_union_test"
-            embeddings = OpenAIEmbeddings()
-            vectorestore = PGVector.from_documents(
-                embedding=embeddings,
-                documents=docs,
-                collection_name=COLLECTION_NAME,
-                connection_string=CONNECTION_STRING,
-                use_jsonb=True,
-            )
-    """
+           from langchain_community.vectorstores import PGVector
+           from langchain_community.embeddings.openai import OpenAIEmbeddings
+           CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
+           COLLECTION_NAME = "state_of_the_union_test"
+           embeddings = OpenAIEmbeddings()
+           vectorestore = PGVector.from_documents(
+               embedding=embeddings,
+               documents=docs,
+               collection_name=COLLECTION_NAME,
+               connection_string=CONNECTION_STRING,
+               use_jsonb=True,
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -733,7 +739,7 @@ class PGVector(VectorStore):
             if operator in {"$in"}:
                 return queried_field.in_([str(val) for val in filter_value])
             elif operator in {"$nin"}:
-                return queried_field.nin_([str(val) for val in filter_value])
+                return queried_field.not_in([str(val) for val in filter_value])
             elif operator in {"$like"}:
                 return queried_field.like(filter_value)
             elif operator in {"$ilike"}:

@@ -137,18 +137,28 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                     if content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "image_url":
-                        if isinstance(content_part.get("image_url"), str):
-                            image_url_components = content_part["image_url"].split(",")
-                            # Support data:image/jpeg;base64,<image> format
-                            # and base64 strings
-                            if len(image_url_components) > 1:
-                                images.append(image_url_components[1])
-                            else:
-                                images.append(image_url_components[0])
+                        image_url = None
+                        temp_image_url = content_part.get("image_url")
+                        if isinstance(temp_image_url, str):
+                            image_url = content_part["image_url"]
+                        elif (
+                            isinstance(temp_image_url, dict) and "url" in temp_image_url
+                        ):
+                            image_url = temp_image_url["url"]
                         else:
                             raise ValueError(
-                                "Only string image_url " "content parts are supported."
+                                "Only string image_url or dict with string 'url' "
+                                "inside content parts are supported."
                             )
+
+                        image_url_components = image_url.split(",")
+                        # Support data:image/jpeg;base64,<image> format
+                        # and base64 strings
+                        if len(image_url_components) > 1:
+                            images.append(image_url_components[1])
+                        else:
+                            images.append(image_url_components[0])
+
                     else:
                         raise ValueError(
                             "Unsupported message content type. "

@@ -35,11 +35,11 @@ class Chat__ModuleName__(BaseChatModel):
 
     # TODO: Populate with relevant params.
     Key init args — client params:
-        timeout:
+        timeout: Optional[float]
             Timeout for requests.
-        max_retries:
+        max_retries: int
             Max number of retries.
-        api_key:
+        api_key: Optional[str]
             __ModuleName__ API key. If not passed in will be read from env var __MODULE_NAME___API_KEY.
 
     See full list of supported init args and their descriptions in the params section.

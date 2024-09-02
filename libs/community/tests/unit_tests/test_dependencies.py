@@ -1,4 +1,5 @@
 """A unit test meant to catch accidental introduction of non-optional dependencies."""
+
 from pathlib import Path
 from typing import Any, Dict, Mapping
 
@@ -28,6 +29,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     is_required = {
         package_name: isinstance(requirements, str)
+        or isinstance(requirements, list)
         or not requirements.get("optional", False)
         for package_name, requirements in dependencies.items()
     }
@@ -54,7 +56,9 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     unrequired_dependencies = [
         package_name for package_name, required in is_required.items() if not required
     ]
-    in_extras = [dep for group in poetry_conf["extras"].values() for dep in group]
+    in_extras = [
+        dep for group in poetry_conf.get("extras", {}).values() for dep in group
+    ]
     assert set(unrequired_dependencies) == set(in_extras)
 
 
@@ -74,6 +78,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "duckdb-engine",
             "freezegun",
             "langchain-core",
+            "langchain-standard-tests",
             "langchain",
             "lark",
             "pandas",

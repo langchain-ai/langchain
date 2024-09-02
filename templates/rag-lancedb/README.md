@@ -1,8 +1,9 @@
-# rag-lancedb
+# RAG - LanceDB
 
-This template performs RAG using LanceDB and OpenAI.
+This template performs RAG using `LanceDB` and `OpenAI`.
 
 ## Environment Setup
+
 Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 

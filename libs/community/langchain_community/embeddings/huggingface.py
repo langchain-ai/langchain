@@ -1,8 +1,10 @@
+import warnings
 from typing import Any, Dict, List, Optional
 
 import requests
+from langchain_core._api import deprecated, warn_deprecated
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -17,6 +19,11 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
 
 
+@deprecated(
+    since="0.2.2",
+    removal="1.0",
+    alternative_import="langchain_huggingface.HuggingFaceEmbeddings",
+)
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
@@ -60,6 +67,19 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            since = "0.2.16"
+            removal = "0.4.0"
+            warn_deprecated(
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
+            )
+
         try:
             import sentence_transformers
 
@@ -74,9 +94,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         )
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -148,10 +166,25 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     """Instruction to use for embedding documents."""
     query_instruction: str = DEFAULT_QUERY_INSTRUCTION
     """Instruction to use for embedding query."""
+    show_progress: bool = False
+    """Whether to show a progress bar."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            since = "0.2.16"
+            removal = "0.4.0"
+            warn_deprecated(
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
+            )
+
         try:
             from InstructorEmbedding import INSTRUCTOR
 
@@ -161,10 +194,22 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         except ImportError as e:
             raise ImportError("Dependencies for InstructorEmbedding not found.") from e
 
-    class Config:
-        """Configuration for this pydantic object."""
+        if "show_progress_bar" in self.encode_kwargs:
+            warn_deprecated(
+                since="0.2.5",
+                removal="1.0",
+                name="encode_kwargs['show_progress_bar']",
+                alternative=f"the show_progress method on {self.__class__.__name__}",
+            )
+            if self.show_progress:
+                warnings.warn(
+                    "Both encode_kwargs['show_progress_bar'] and show_progress are set;"
+                    "encode_kwargs['show_progress_bar'] takes precedence"
+                )
+            self.show_progress = self.encode_kwargs.pop("show_progress_bar")
 
-        extra = Extra.forbid
+    class Config:
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
@@ -176,7 +221,11 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         instruction_pairs = [[self.embed_instruction, text] for text in texts]
-        embeddings = self.client.encode(instruction_pairs, **self.encode_kwargs)
+        embeddings = self.client.encode(
+            instruction_pairs,
+            show_progress_bar=self.show_progress,
+            **self.encode_kwargs,
+        )
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -189,7 +238,11 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         instruction_pair = [self.query_instruction, text]
-        embedding = self.client.encode([instruction_pair], **self.encode_kwargs)[0]
+        embedding = self.client.encode(
+            [instruction_pair],
+            show_progress_bar=self.show_progress,
+            **self.encode_kwargs,
+        )[0]
         return embedding.tolist()
 
 
@@ -204,7 +257,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
 
             from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 
-            model_name = "BAAI/bge-large-en"
+            model_name = "BAAI/bge-large-en-v1.5"
             model_kwargs = {'device': 'cpu'}
             encode_kwargs = {'normalize_embeddings': True}
             hf = HuggingFaceBgeEmbeddings(
@@ -246,10 +299,25 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """Instruction to use for embedding query."""
     embed_instruction: str = ""
     """Instruction to use for embedding document."""
+    show_progress: bool = False
+    """Whether to show a progress bar."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            since = "0.2.5"
+            removal = "0.4.0"
+            warn_deprecated(
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
+            )
+
         try:
             import sentence_transformers
 
@@ -262,13 +330,26 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         self.client = sentence_transformers.SentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
+
         if "-zh" in self.model_name:
             self.query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_ZH
 
-    class Config:
-        """Configuration for this pydantic object."""
+        if "show_progress_bar" in self.encode_kwargs:
+            warn_deprecated(
+                since="0.2.5",
+                removal="1.0",
+                name="encode_kwargs['show_progress_bar']",
+                alternative=f"the show_progress method on {self.__class__.__name__}",
+            )
+            if self.show_progress:
+                warnings.warn(
+                    "Both encode_kwargs['show_progress_bar'] and show_progress are set;"
+                    "encode_kwargs['show_progress_bar'] takes precedence"
+                )
+            self.show_progress = self.encode_kwargs.pop("show_progress_bar")
 
-        extra = Extra.forbid
+    class Config:
+        extra = "forbid"
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -280,7 +361,9 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         texts = [self.embed_instruction + t.replace("\n", " ") for t in texts]
-        embeddings = self.client.encode(texts, **self.encode_kwargs)
+        embeddings = self.client.encode(
+            texts, show_progress_bar=self.show_progress, **self.encode_kwargs
+        )
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -294,7 +377,9 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         """
         text = text.replace("\n", " ")
         embedding = self.client.encode(
-            self.query_instruction + text, **self.encode_kwargs
+            self.query_instruction + text,
+            show_progress_bar=self.show_progress,
+            **self.encode_kwargs,
         )
         return embedding.tolist()
 
@@ -347,7 +432,9 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         Example:
             .. code-block:: python
 
-                from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+                from langchain_community.embeddings import (
+                    HuggingFaceInferenceAPIEmbeddings,
+                )
 
                 hf_embeddings = HuggingFaceInferenceAPIEmbeddings(
                     api_key="your_api_key",

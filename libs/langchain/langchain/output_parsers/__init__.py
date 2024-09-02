@@ -12,6 +12,7 @@
 
     Serializable, Generation, PromptValue
 """  # noqa: E501
+
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.output_parsers import (

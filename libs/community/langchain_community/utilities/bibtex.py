@@ -1,8 +1,9 @@
 """Util that calls bibtexparser."""
+
 import logging
 from typing import Any, Dict, List, Mapping
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +37,9 @@ class BibtexparserWrapper(BaseModel):
     """
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:

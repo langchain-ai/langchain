@@ -14,10 +14,14 @@ T = TypeVar("T")
 
 
 class SimpleModel(BaseModel, Generic[T]):
+    """Simple model for a single item."""
+
     item: T
 
 
 class PropertySettings(BaseModel):
+    """Property settings for a prompty model."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
     type: Literal["string", "number", "array", "object", "boolean"]
     default: Union[str, int, float, List, Dict, bool] = Field(default=None)
@@ -25,6 +29,8 @@ class PropertySettings(BaseModel):
 
 
 class ModelSettings(BaseModel):
+    """Model settings for a prompty model."""
+
     api: str = Field(default="")
     configuration: dict = Field(default={})
     parameters: dict = Field(default={})
@@ -40,11 +46,15 @@ class ModelSettings(BaseModel):
 
 
 class TemplateSettings(BaseModel):
+    """Template settings for a prompty model."""
+
     type: str = Field(default="mustache")
     parser: str = Field(default="")
 
 
 class Prompty(BaseModel):
+    """Base Prompty model."""
+
     # metadata
     name: str = Field(default="")
     description: str = Field(default="")
@@ -147,6 +157,16 @@ class Prompty(BaseModel):
 def param_hoisting(
     top: Dict[str, Any], bottom: Dict[str, Any], top_key: Any = None
 ) -> Dict[str, Any]:
+    """Merge two dictionaries with hoisting of parameters from bottom to top.
+
+    Args:
+        top: The top dictionary.
+        bottom: The bottom dictionary.
+        top_key: The key to hoist from the bottom to the top.
+
+    Returns:
+        The merged dictionary.
+    """
     if top_key:
         new_dict = {**top[top_key]} if top_key in top else {}
     else:
@@ -158,6 +178,8 @@ def param_hoisting(
 
 
 class Invoker(abc.ABC):
+    """Base class for all invokers."""
+
     def __init__(self, prompty: Prompty) -> None:
         self.prompty = prompty
 
@@ -170,11 +192,15 @@ class Invoker(abc.ABC):
 
 
 class NoOpParser(Invoker):
+    """NoOp parser for invokers."""
+
     def invoke(self, data: BaseModel) -> BaseModel:
         return data
 
 
 class InvokerFactory(object):
+    """Factory for creating invokers."""
+
     _instance = None
     _renderers: Dict[str, Type[Invoker]] = {}
     _parsers: Dict[str, Type[Invoker]] = {}
@@ -259,6 +285,8 @@ class InvokerFactory(object):
 
 
 class Frontmatter:
+    """Class for reading frontmatter from a string or file."""
+
     _yaml_delim = r"(?:---|\+\+\+)"
     _yaml = r"(.*?)"
     _content = r"\s*(.+)$"
