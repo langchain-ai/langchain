@@ -17,7 +17,6 @@ from pydantic import BaseModel
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
-from langchain_core.runnables import RunnableBranch
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (

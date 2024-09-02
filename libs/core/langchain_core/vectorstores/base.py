@@ -44,7 +44,6 @@ from typing import (
 
 from pydantic import ConfigDict, Field, model_validator
 
-from langchain_core._api import beta
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor

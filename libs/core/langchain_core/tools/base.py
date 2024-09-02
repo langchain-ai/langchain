@@ -31,11 +31,10 @@ from pydantic import (  # pydantic: ignore
     Field,
     SkipValidation,
     ValidationError,
-    create_model,
     model_validator,
     validate_arguments,
 )
-from typing_extensions import Annotated, TypeVar, cast, get_args, get_origin
+from typing_extensions import Annotated, TypeVar, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (

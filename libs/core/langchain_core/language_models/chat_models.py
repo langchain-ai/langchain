@@ -29,7 +29,6 @@ from pydantic import (
     Field,
     model_validator,
 )
-from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache

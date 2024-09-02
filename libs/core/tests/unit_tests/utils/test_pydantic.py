@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from langchain_core.utils.pydantic import (
     PYDANTIC_MAJOR_VERSION,
@@ -165,7 +165,6 @@ def test_with_field_metadata() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Only tests Pydantic v1")
 def test_fields_pydantic_v1() -> None:
-    from pydantic import BaseModel  # pydantic: ignore
 
     class Foo(BaseModel):
         x: int
@@ -176,7 +175,6 @@ def test_fields_pydantic_v1() -> None:
 
 @pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Only tests Pydantic v2")
 def test_fields_pydantic_v2_proper() -> None:
-    from pydantic import BaseModel  # pydantic: ignore
 
     class Foo(BaseModel):
         x: int
