@@ -12,7 +12,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Self,
     Type,
     TypeVar,
     Union,
@@ -20,6 +19,7 @@ from typing import (
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (

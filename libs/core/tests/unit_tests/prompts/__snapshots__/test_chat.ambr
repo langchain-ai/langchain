@@ -2291,9 +2291,6 @@
                   'input_variables': list([
                     'my_image',
                   ]),
-                  'template': dict({
-                    'url': 'data:image/jpeg;base64,{my_image}',
-                  }),
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2347,9 +2344,6 @@
                   'input_variables': list([
                     'my_image',
                   ]),
-                  'template': dict({
-                    'url': 'data:image/jpeg;base64,{my_image}',
-                  }),
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2403,9 +2397,6 @@
                   'input_variables': list([
                     'my_other_image',
                   ]),
-                  'template': dict({
-                    'url': '{my_other_image}',
-                  }),
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2459,10 +2450,6 @@
                   'input_variables': list([
                     'my_other_image',
                   ]),
-                  'template': dict({
-                    'detail': 'medium',
-                    'url': '{my_other_image}',
-                  }),
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2515,9 +2502,6 @@
                 'kwargs': dict({
                   'input_variables': list([
                   ]),
-                  'template': dict({
-                    'url': 'https://www.langchain.com/image.png',
-                  }),
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2570,9 +2554,6 @@
                 'kwargs': dict({
                   'input_variables': list([
                   ]),
-                  'template': dict({
-                    'url': 'data:image/jpeg;base64,foobar',
-                  }),
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2625,9 +2606,6 @@
                 'kwargs': dict({
                   'input_variables': list([
                   ]),
-                  'template': dict({
-                    'url': 'data:image/jpeg;base64,foobar',
-                  }),
                 }),
                 'lc': 1,
                 'name': 'ImagePromptTemplate',
@@ -2669,10 +2647,6 @@
       'optional_variables': list([
         'chat_history',
       ]),
-      'partial_variables': dict({
-        'chat_history': list([
-        ]),
-      }),
     }),
     'lc': 1,
     'name': 'ChatPromptTemplate',

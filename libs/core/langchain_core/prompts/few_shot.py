@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Self, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -12,6 +12,7 @@ from pydantic import (
     Field,
     model_validator,
 )
+from typing_extensions import Self
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string

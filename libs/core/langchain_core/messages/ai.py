@@ -1,8 +1,8 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Self, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import model_validator
-from typing_extensions import TypedDict
+from typing_extensions import Self, TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,

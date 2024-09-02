@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Literal, Self, Union
+from typing import List, Literal, Union
 
 from pydantic import model_validator
+from typing_extensions import Self
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
