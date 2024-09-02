@@ -25,7 +25,7 @@ DEFAULT_MILVUS_CONNECTION = {
 
 @deprecated(
     since="0.2.0",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_milvus.MilvusVectorStore",
 )
 class Milvus(VectorStore):
@@ -1053,7 +1053,7 @@ class Milvus(VectorStore):
         pks = [item.get(self._primary_field) for item in query_result]
         return pks
 
-    def upsert(
+    def upsert(  # type: ignore[override]
         self,
         ids: Optional[List[str]] = None,
         documents: List[Document] | None = None,

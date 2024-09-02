@@ -69,6 +69,10 @@ class FakeListLLM(LLM):
         return {"responses": self.responses}
 
 
+class FakeListLLMError(Exception):
+    """Fake error for testing purposes."""
+
+
 class FakeStreamingListLLM(FakeListLLM):
     """Fake streaming list LLM for testing purposes.
 
@@ -98,7 +102,7 @@ class FakeStreamingListLLM(FakeListLLM):
                 self.error_on_chunk_number is not None
                 and i_c == self.error_on_chunk_number
             ):
-                raise Exception("Fake error")
+                raise FakeListLLMError
             yield c
 
     async def astream(
@@ -118,5 +122,5 @@ class FakeStreamingListLLM(FakeListLLM):
                 self.error_on_chunk_number is not None
                 and i_c == self.error_on_chunk_number
             ):
-                raise Exception("Fake error")
+                raise FakeListLLMError
             yield c

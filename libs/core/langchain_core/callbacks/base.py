@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypeVar, Union
 from uuid import UUID
 
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
     from langchain_core.messages import BaseMessage
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class RetrieverManagerMixin:
@@ -25,7 +28,14 @@ class RetrieverManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when Retriever errors."""
+        """Run when Retriever errors.
+
+        Args:
+            error (BaseException): The error that occurred.
+            run_id (UUID): The run ID. This is the ID of the current run.
+            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
+            kwargs (Any): Additional keyword arguments.
+        """
 
     def on_retriever_end(
         self,
@@ -35,7 +45,14 @@ class RetrieverManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when Retriever ends running."""
+        """Run when Retriever ends running.
+
+        Args:
+            documents (Sequence[Document]): The documents retrieved.
+            run_id (UUID): The run ID. This is the ID of the current run.
+            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
+            kwargs (Any): Additional keyword arguments.
+        """
 
 
 class LLMManagerMixin:
@@ -370,6 +387,31 @@ class RunManagerMixin:
             kwargs (Any): Additional keyword arguments.
         """
 
+    def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Override to define a handler for a custom event.
+
+        Args:
+            name: The name of the custom event.
+            data: The data for the custom event. Format will match
+                  the format specified by the user.
+            run_id: The ID of the run.
+            tags: The tags associated with the custom event
+                (includes inherited tags).
+            metadata: The metadata associated with the custom event
+                (includes inherited metadata).
+
+        .. versionadded:: 0.2.15
+        """
+
 
 class BaseCallbackHandler(
     LLMManagerMixin,
@@ -415,6 +457,11 @@ class BaseCallbackHandler(
     @property
     def ignore_chat_model(self) -> bool:
         """Whether to ignore chat model callbacks."""
+        return False
+
+    @property
+    def ignore_custom_event(self) -> bool:
+        """Ignore custom event."""
         return False
 
 
@@ -799,6 +846,31 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             kwargs (Any): Additional keyword arguments.
         """
 
+    async def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Override to define a handler for a custom event.
+
+        Args:
+            name: The name of the custom event.
+            data: The data for the custom event. Format will match
+                  the format specified by the user.
+            run_id: The ID of the run.
+            tags: The tags associated with the custom event
+                (includes inherited tags).
+            metadata: The metadata associated with the custom event
+                (includes inherited metadata).
+
+        .. versionadded:: 0.2.15
+        """
+
 
 T = TypeVar("T", bound="BaseCallbackManager")
 
@@ -842,14 +914,66 @@ class BaseCallbackManager(CallbackManagerMixin):
     def copy(self: T) -> T:
         """Copy the callback manager."""
         return self.__class__(
-            handlers=self.handlers,
-            inheritable_handlers=self.inheritable_handlers,
+            handlers=self.handlers.copy(),
+            inheritable_handlers=self.inheritable_handlers.copy(),
             parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            inheritable_tags=self.inheritable_tags,
-            metadata=self.metadata,
-            inheritable_metadata=self.inheritable_metadata,
+            tags=self.tags.copy(),
+            inheritable_tags=self.inheritable_tags.copy(),
+            metadata=self.metadata.copy(),
+            inheritable_metadata=self.inheritable_metadata.copy(),
         )
+
+    def merge(self: T, other: BaseCallbackManager) -> T:
+        """Merge the callback manager with another callback manager.
+
+        May be overwritten in subclasses. Primarily used internally
+        within merge_configs.
+
+        Returns:
+            BaseCallbackManager: The merged callback manager of the same type
+                as the current object.
+
+        Example: Merging two callback managers.
+
+            .. code-block:: python
+
+                from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
+                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+
+                manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+                with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                    merged_manager = group_manager.merge(manager)
+                    print(merged_manager.handlers)
+                    # [
+                    #    <langchain_core.callbacks.stdout.StdOutCallbackHandler object at ...>,
+                    #    <langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler object at ...>,
+                    # ]
+
+                    print(merged_manager.tags)
+                    #    ['tag2', 'tag1']
+
+        """  # noqa: E501
+        manager = self.__class__(
+            parent_run_id=self.parent_run_id or other.parent_run_id,
+            handlers=[],
+            inheritable_handlers=[],
+            tags=list(set(self.tags + other.tags)),
+            inheritable_tags=list(set(self.inheritable_tags + other.inheritable_tags)),
+            metadata={
+                **self.metadata,
+                **other.metadata,
+            },
+        )
+
+        handlers = self.handlers + other.handlers
+        inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
+
+        for handler in handlers:
+            manager.add_handler(handler)
+
+        for handler in inheritable_handlers:
+            manager.add_handler(handler, inherit=True)
+        return manager
 
     @property
     def is_async(self) -> bool:

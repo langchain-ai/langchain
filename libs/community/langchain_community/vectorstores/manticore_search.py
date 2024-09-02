@@ -48,7 +48,7 @@ class ManticoreSearchSettings(BaseSettings):
     hnsw_m: int = 16  # The default is 16.
 
     # An optional setting that defines a construction time/accuracy trade-off.
-    hnsw_ef_construction = 100
+    hnsw_ef_construction: int = 100
 
     def get_connection_string(self) -> str:
         return self.proto + "://" + self.host + ":" + str(self.port)
@@ -58,8 +58,8 @@ class ManticoreSearchSettings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_prefix = "manticore_"
         env_file_encoding = "utf-8"
+        env_prefix = "manticore_"
 
 
 class ManticoreSearch(VectorStore):
