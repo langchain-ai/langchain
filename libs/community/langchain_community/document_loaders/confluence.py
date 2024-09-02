@@ -168,7 +168,7 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool = False,
         content_format: ContentFormat = ContentFormat.STORAGE,
         limit: Optional[int] = 50,
-        max_pages: Optional[int] = None,
+        max_pages: Optional[int] = 1000,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: bool = False,
         keep_newlines: bool = False,
@@ -445,7 +445,7 @@ class ConfluenceLoader(BaseLoader):
         """
 
         docs: List[dict] = []
-        max_pages = kwargs.pop("max_pages") if "max_pages" in kwargs else -1
+        max_pages = kwargs.pop("max_pages", -1)
         pages_limit_condition = (len(docs) < max_pages) if max_pages != -1 else True
 
         while pages_limit_condition:
