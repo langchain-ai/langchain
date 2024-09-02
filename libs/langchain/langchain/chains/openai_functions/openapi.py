@@ -78,7 +78,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
             schema = spec.get_schema(p.param_schema)
         else:
             media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore
-            schema = spec.get_schema(media_type_schema, 0)
+            schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
         properties[p.name] = json.loads(schema.json(exclude_none=True))
