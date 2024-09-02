@@ -75,8 +75,9 @@ class Epsilla(VectorStore):
         self._db_name = db_name
         self._embeddings = embeddings
         self._collection_name = Epsilla._LANGCHAIN_DEFAULT_TABLE_NAME
-        self._client.load_db(db_name=db_name, db_path=db_path)
-        self._client.use_db(db_name=db_name)
+        if isinstance(client, pyepsilla.vectordb.Client):
+            self._client.load_db(db_name=db_name, db_path=db_path)
+            self._client.use_db(db_name=db_name)
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
