@@ -3,11 +3,12 @@ from __future__ import annotations
 import inspect
 import uuid
 from types import TracebackType
-from typing import Any, Type
+from typing import Any, List, Type
 
 import aiohttp
 import pytest
 import requests_mock
+from langchain_core.documents import Document
 
 from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
@@ -99,7 +100,7 @@ def test_no_runtime_args(method: str) -> None:
     assert args == ["self"]
 
 
-def mock_requests(loader):
+def mock_requests(loader: RecursiveUrlLoader) -> List[Document]:
     html1 = (
         '<div><a class="blah" href="/one">hullo</a></div>'
         '<div><a class="bleh" href="/two">buhbye</a></div>'
