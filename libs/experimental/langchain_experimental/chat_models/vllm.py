@@ -102,7 +102,7 @@ _StructuredInput = Union[Dict[str, Any], str, List[str], Type[_BM]]
 _StructuredOutput = Union[Dict, str, _BM]
 
 
-@beta
+@beta()
 class ChatVLLMStructured(ChatOpenAI):
     """vLLM OpenAI-compatible API client with experimental output structured."""
 
