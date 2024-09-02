@@ -18,7 +18,7 @@ DEFAULT_COLLECTION_NAME = "message_store"
 
 @deprecated(
     since="0.0.25",
-    removal="0.3.0",
+    removal="1.0",
     alternative_import="langchain_mongodb.MongoDBChatMessageHistory",
 )
 class MongoDBChatMessageHistory(BaseChatMessageHistory):

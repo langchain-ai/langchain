@@ -3,6 +3,7 @@
 Migration script only updates imports not the rest of the code that uses the
 import.
 """
+
 from langchain_cli.namespaces.migrate.codemods.replace_imports import (
     RULE_TO_PATHS,
     _load_migrations_from_fixtures,

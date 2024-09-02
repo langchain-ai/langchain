@@ -1,4 +1,5 @@
 """Test ChatDeepInfra wrapper."""
+
 from typing import List
 
 from langchain_core.messages import BaseMessage, HumanMessage

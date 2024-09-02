@@ -13,8 +13,8 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field, PrivateAttr
+from langchain_core.tools import BaseTool, Tool
 
-from langchain_community.tools import BaseTool, Tool
 from langchain_community.tools.e2b_data_analysis.unparse import Unparser
 
 if TYPE_CHECKING:
@@ -234,7 +234,7 @@ class E2BDataAnalysisTool(BaseTool):
         ]
         self.description = self.description + "\n" + self.uploaded_files_description
 
-    def as_tool(self) -> Tool:
+    def as_tool(self) -> Tool:  # type: ignore[override]
         return Tool.from_function(
             func=self._run,
             name=self.name,
