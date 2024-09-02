@@ -1,7 +1,7 @@
 """Tool for the DuckDuckGo search API."""
 
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -99,8 +99,16 @@ class DuckDuckGoSearchResults(BaseTool):
     ) -> str:
         """Use the tool."""
         res = self.api_wrapper.results(query, self.max_results, source=self.backend)
-        res_strs = [", ".join([f"{k}: {v}" for k, v in d.items() 
-                    if not self.keys_to_include or k in self.keys_to_include]) for d in res]
+        res_strs = [
+            ", ".join(
+                [
+                    f"{k}: {v}"
+                    for k, v in d.items()
+                    if not self.keys_to_include or k in self.keys_to_include
+                ]
+            )
+            for d in res
+        ]
         return self.results_separator.join(res_strs)
 
 

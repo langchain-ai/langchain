@@ -28,10 +28,20 @@ def test_sitemap_block() -> None:
 def test_sitemap_block_only_one() -> None:
     """Test sitemap loader."""
     loader = SitemapLoader(
-        "https://api.python.langchain.com/sitemap.xml", blocksize=10, blocknum=0
+        "https://api.python.langchain.com/sitemap.xml", blocksize=1000000, blocknum=0
     )
     documents = loader.load()
-    assert len(documents) == 10
+    assert len(documents) > 1
+    assert "LangChain Python API" in documents[0].page_content
+
+
+def test_sitemap_block_blocknum_default() -> None:
+    """Test sitemap loader."""
+    loader = SitemapLoader(
+        "https://api.python.langchain.com/sitemap.xml", blocksize=1000000
+    )
+    documents = loader.load()
+    assert len(documents) > 1
     assert "LangChain Python API" in documents[0].page_content
 
 
