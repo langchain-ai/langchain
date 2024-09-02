@@ -16,7 +16,10 @@ class JinaInput(BaseModel):
 
 
 class JinaSearch(BaseTool):
-    """Tool that queries the JinaSearch."""
+    """Tool that queries the JinaSearch.
+
+    ..versionadded:: 0.2.16
+    """
 
     name: str = "jina_search"
     description: str = (
