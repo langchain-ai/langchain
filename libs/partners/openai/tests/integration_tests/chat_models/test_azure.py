@@ -1,5 +1,6 @@
 """Test AzureChatOpenAI wrapper."""
 
+import json
 import os
 from typing import Any, Optional
 
@@ -12,7 +13,6 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_openai import AzureChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -27,7 +27,7 @@ DEPLOYMENT_NAME = os.environ.get(
 
 
 def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
-    return AzureChatOpenAI(
+    return AzureChatOpenAI(  # type: ignore[call-arg, call-arg, call-arg]
         deployment_name=DEPLOYMENT_NAME,
         openai_api_version=OPENAI_API_VERSION,
         azure_endpoint=OPENAI_API_BASE,
@@ -228,16 +228,37 @@ def test_openai_invoke(llm: AzureChatOpenAI) -> None:
     assert result.response_metadata.get("model_name") is not None
 
 
-@pytest.mark.skip(reason="Need tool calling model deployed on azure")
-def test_openai_structured_output(llm: AzureChatOpenAI) -> None:
-    class MyModel(BaseModel):
-        """A Person"""
+def test_json_mode(llm: AzureChatOpenAI) -> None:
+    response = llm.invoke(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    )
+    assert isinstance(response.content, str)
+    assert json.loads(response.content) == {"a": 1}
 
-        name: str
-        age: int
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    ):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, str)
+    assert json.loads(full.content) == {"a": 1}
 
-    llm_structure = llm.with_structured_output(MyModel)
-    result = llm_structure.invoke("I'm a 27 year old named Erick")
-    assert isinstance(result, MyModel)
-    assert result.name == "Erick"
-    assert result.age == 27
+
+async def test_json_mode_async(llm: AzureChatOpenAI) -> None:
+    response = await llm.ainvoke(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    )
+    assert isinstance(response.content, str)
+    assert json.loads(response.content) == {"a": 1}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream(
+        "Return this as json: {'a': 1}", response_format={"type": "json_object"}
+    ):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, str)
+    assert json.loads(full.content) == {"a": 1}

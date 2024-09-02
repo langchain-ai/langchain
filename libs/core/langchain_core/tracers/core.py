@@ -46,7 +46,8 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
 class _TracerCore(ABC):
     """
-    Abstract base class for tracers
+    Abstract base class for tracers.
+
     This class provides common methods, and reusable methods for tracers.
     """
 
@@ -65,17 +66,18 @@ class _TracerCore(ABC):
         Args:
             _schema_format: Primarily changes how the inputs and outputs are
                 handled. For internal use only. This API will change.
+
                 - 'original' is the format used by all current tracers.
-                   This format is slightly inconsistent with respect to inputs
-                   and outputs.
+                  This format is slightly inconsistent with respect to inputs
+                  and outputs.
                 - 'streaming_events' is used for supporting streaming events,
-                   for internal usage. It will likely change in the future, or
-                   be deprecated entirely in favor of a dedicated async tracer
-                   for streaming events.
+                  for internal usage. It will likely change in the future, or
+                  be deprecated entirely in favor of a dedicated async tracer
+                  for streaming events.
                 - 'original+chat' is a format that is the same as 'original'
-                   except it does NOT raise an attribute error on_chat_model_start
+                  except it does NOT raise an attribute error on_chat_model_start
             kwargs: Additional keyword arguments that will be passed to
-                    the super class.
+                the superclass.
         """
         super().__init__(**kwargs)
         self._schema_format = _schema_format  # For internal use only API will change.
@@ -207,7 +209,7 @@ class _TracerCore(ABC):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Create a llm run"""
+        """Create a llm run."""
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -234,7 +236,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """
-        Append token event to LLM run and return the run
+        Append token event to LLM run and return the run.
         """
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         event_kwargs: Dict[str, Any] = {"token": token}
@@ -314,7 +316,7 @@ class _TracerCore(ABC):
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> Run:
-        """Create a chain Run"""
+        """Create a chain Run."""
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -514,15 +516,19 @@ class _TracerCore(ABC):
 
     def _end_trace(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """End a trace for a run."""
+        return None
 
     def _on_run_create(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process a run upon creation."""
+        return None
 
     def _on_run_update(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process a run upon update."""
+        return None
 
     def _on_llm_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run upon start."""
+        return None
 
     def _on_llm_new_token(
         self,
@@ -531,39 +537,52 @@ class _TracerCore(ABC):
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
     ) -> Union[None, Coroutine[Any, Any, None]]:
         """Process new LLM token."""
+        return None
 
     def _on_llm_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run."""
+        return None
 
     def _on_llm_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the LLM Run upon error."""
+        return None
 
     def _on_chain_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run upon start."""
+        return None
 
     def _on_chain_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run."""
+        return None
 
     def _on_chain_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chain Run upon error."""
+        return None
 
     def _on_tool_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run upon start."""
+        return None
 
     def _on_tool_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run."""
+        return None
 
     def _on_tool_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Tool Run upon error."""
+        return None
 
     def _on_chat_model_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Chat Model Run upon start."""
+        return None
 
     def _on_retriever_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run upon start."""
+        return None
 
     def _on_retriever_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run."""
+        return None
 
     def _on_retriever_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
         """Process the Retriever Run upon error."""
+        return None

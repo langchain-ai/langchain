@@ -1,7 +1,8 @@
-""" Kafka-based chat message history by using confluent-kafka-python.
-    confluent-kafka-python is under Apache 2.0 license.
-    https://github.com/confluentinc/confluent-kafka-python
+"""Kafka-based chat message history by using confluent-kafka-python.
+confluent-kafka-python is under Apache 2.0 license.
+https://github.com/confluentinc/confluent-kafka-python
 """
+
 from __future__ import annotations
 
 import json
