@@ -2162,7 +2162,7 @@ def test_html_splitter_with_preserved_elements() -> None:
 
     expected = [
         Document(
-            page_content="Row 1 Row 2  Item 1 Item 2 ",
+            page_content="Row 1 Row 2 Item 1 Item 2",
             metadata={"Header 1": "Section 1"},
         ),
     ]
@@ -2217,3 +2217,224 @@ def test_html_splitter_with_small_chunk_size() -> None:
     ]
 
     assert documents == expected  # Should split into multiple chunks
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_denylist_tags() -> None:
+    """Test HTML splitting with denylist tag filtering."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This paragraph should be kept.</p>
+    <span>This span should be removed.</span>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        denylist_tags=["span"],
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This paragraph should be kept.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_external_metadata() -> None:
+    """Test HTML splitting with external metadata integration."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some content.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        external_metadata={"source": "example.com"},
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some content.",
+            metadata={"Header 1": "Section 1", "source": "example.com"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_text_normalization() -> None:
+    """Test HTML splitting with text normalization."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some TEXT that should be normalized!</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        normalize_text=True,
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="this is some text that should be normalized",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("nltk")
+def test_html_splitter_with_stopword_removal() -> None:
+    """Test HTML splitting with stopword removal."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some content with stopwords.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        stopword_removal=True,
+        stopword_lang="english",
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This content stopwords.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_allowlist_tags() -> None:
+    """Test HTML splitting with allowlist tag filtering."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This paragraph should be kept.</p>
+    <span>This span should be kept.</span>
+    <div>This div should be removed.</div>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        allowlist_tags=["p", "span"],
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This paragraph should be kept. This span should be kept.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_mixed_preserve_and_filter() -> None:
+    """Test HTML splitting with both preserved elements and denylist tags."""
+    html_content = """
+    <h1>Section 1</h1>
+    <table>
+        <tr>
+            <td>Keep this table</td>
+            <td>Cell contents kept, span removed
+                <span>This span should be removed.</span>
+            </td>
+        </tr>
+    </table>
+    <p>This paragraph should be kept.</p>
+    <span>This span should be removed.</span>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        elements_to_preserve=["table"],
+        denylist_tags=["span"],
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Keep this table Cell contents kept, span removed"
+            " This paragraph should be kept.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_no_headers() -> None:
+    """Test HTML splitting when there are no headers to split on."""
+    html_content = """
+    <p>This is content without any headers.</p>
+    <p>It should still produce a valid document.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[],
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is content without any headers. It should still produce"
+            " a valid document.",
+            metadata={},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_media_preservation() -> None:
+    """Test HTML splitting with media elements preserved and converted to Markdown-like
+    links."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is an image:</p>
+    <img src="http://example.com/image.png" />
+    <p>This is a video:</p>
+    <video src="http://example.com/video.mp4"></video>
+    <p>This is audio:</p>
+    <audio src="http://example.com/audio.mp3"></audio>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        preserve_images=True,
+        preserve_videos=True,
+        preserve_audio=True,
+        max_chunk_size=1000,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is an image: ![image:http://example.com/image.png]"
+            "(http://example.com/image.png) "
+            "This is a video: ![video:http://example.com/video.mp4]"
+            "(http://example.com/video.mp4) "
+            "This is audio: ![audio:http://example.com/audio.mp3]"
+            "(http://example.com/audio.mp3)",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected

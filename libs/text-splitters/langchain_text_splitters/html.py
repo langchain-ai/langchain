@@ -325,18 +325,19 @@ class HTMLSectionSplitter:
 class HTMLSemanticPreservingSplitter:
     """
     Splits HTML content by headers into generalized chunks, preserving semantic
-    structure. If chunks exceed the maximum chunk size,
-    uses RecursiveCharacterTextSplitter for further splitting.
+    structure. If chunks exceed the maximum chunk size, it uses
+    RecursiveCharacterTextSplitter for further splitting.
 
-    The splitter preserves full HTML elements (e.g., <table>, <ul>) and converts links,
-    to Markdown-like links.
-    Note that some chunks may exceed the maximum size to maintain semantic integrity.
+    The splitter preserves full HTML elements (e.g., <table>, <ul>) and converts
+    links to Markdown-like links. It can also preserve images, videos, and audio
+    elements by converting them into Markdown format. Note that some chunks may
+    exceed the maximum size to maintain semantic integrity.
 
     Attributes:
         headers_to_split_on (List[Tuple[str, str]]): HTML headers (e.g., "h1", "h2")
         that define content sections.
-        max_chunk_size (int): Maximum size for each chunk, with allowance for exceeding
-        this limit to preserve semantics.
+        max_chunk_size (int): Maximum size for each chunk, with allowance for
+        exceeding this limit to preserve semantics.
         chunk_overlap (int): Number of characters to overlap between chunks to ensure
         contextual continuity.
         separators (List[str]): Delimiters used by RecursiveCharacterTextSplitter for
@@ -344,8 +345,22 @@ class HTMLSemanticPreservingSplitter:
         elements_to_preserve (List[str]): HTML tags (e.g., <table>, <ul>) to remain
         intact during splitting.
         preserve_links (bool): Converts <a> tags to Markdown links ([text](url)).
+        preserve_images (bool): Converts <img> tags to Markdown images (![alt](src)).
+        preserve_videos (bool): Converts <video> tags to Markdown
+        video links (![video](src)).
+        preserve_audio (bool): Converts <audio> tags to Markdown
+        audio links (![audio](src)).
         custom_handlers (Dict[str, Callable[[Any], str]]): Optional custom handlers for
         specific HTML tags, allowing tailored extraction or processing.
+        stopword_removal (bool): Optionally remove stopwords from the text.
+        stopword_lang (str): The language of stopwords to remove.
+        normalize_text (bool): Optionally normalize text
+        (e.g., lowercasing, removing punctuation).
+        external_metadata (Optional[Dict[str, str]]): Additional metadata to attach to
+        the Document objects.
+        allowlist_tags (Optional[List[str]]): Only these tags will be retained in
+        the HTML.
+        denylist_tags (Optional[List[str]]): These tags will be removed from the HTML.
 
     Example:
 
@@ -367,6 +382,7 @@ class HTMLSemanticPreservingSplitter:
             headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
             max_chunk_size=500,
             preserve_links=True,
+            preserve_images=True,
             custom_handlers={"iframe": custom_iframe_extractor}
         )
     """
@@ -379,7 +395,16 @@ class HTMLSemanticPreservingSplitter:
         separators: Optional[List[str]] = None,
         elements_to_preserve: List[str] = [],
         preserve_links: bool = False,
+        preserve_images: bool = False,
+        preserve_videos: bool = False,
+        preserve_audio: bool = False,
         custom_handlers: Optional[Dict[str, Callable[[Any], str]]] = None,
+        stopword_removal: bool = False,
+        stopword_lang: str = "english",
+        normalize_text: bool = False,
+        external_metadata: Optional[Dict[str, str]] = None,
+        allowlist_tags: Optional[List[str]] = None,
+        denylist_tags: Optional[List[str]] = None,
     ):
         """
         Initializes the HTMLSemanticPreservingSplitter with the provided configuration
@@ -393,9 +418,21 @@ class HTMLSemanticPreservingSplitter:
             separators (Optional[List[str]]): Delimiters RecursiveCharacterTextSplitter.
             elements_to_preserve (List[str]): HTML tags to preserve during splitting.
             preserve_links (bool): Converts links to Markdown format.
+            preserve_images (bool): Converts images to Markdown format.
+            preserve_videos (bool): Converts videos to Markdown format.
+            preserve_audio (bool): Converts audio elements to Markdown format.
             custom_handlers (Optional[Dict[str, Callable[[Any], str]]]): Handlers for
                 custom processing of specific HTML tags,
                 where the key is the tag name and the value is the processing function.
+            stopword_removal (bool): Optionally remove stopwords from the text.
+            stopword_lang (str): The language of stopwords to remove.
+            normalize_text (bool): Optionally normalize text (e.g., lowercasing).
+            external_metadata (Optional[Dict[str, str]]): Additional metadata to add to
+            the documents.
+            allowlist_tags (Optional[List[str]]): Only these tags will be retained in
+            the HTML.
+            denylist_tags (Optional[List[str]]): These tags will be removed from
+            the HTML.
         """
         try:
             from bs4 import BeautifulSoup, Tag
@@ -412,7 +449,26 @@ class HTMLSemanticPreservingSplitter:
         self._max_chunk_size = max_chunk_size
         self._elements_to_preserve = elements_to_preserve
         self._preserve_links = preserve_links
+        self._preserve_images = preserve_images
+        self._preserve_videos = preserve_videos
+        self._preserve_audio = preserve_audio
         self._custom_handlers = custom_handlers or {}
+        self._stopword_removal = stopword_removal
+        self._stopword_lang = stopword_lang
+        self._normalize_text = normalize_text
+        self._external_metadata = external_metadata or {}
+        self._allowlist_tags = allowlist_tags
+        if allowlist_tags:
+            self._allowlist_tags = list(
+                set(allowlist_tags + [header[0] for header in headers_to_split_on])
+            )
+        self._denylist_tags = denylist_tags
+        if denylist_tags:
+            self._denylist_tags = [
+                tag
+                for tag in denylist_tags
+                if tag not in [header[0] for header in headers_to_split_on]
+            ]
         if separators:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
                 separators=separators,
@@ -423,6 +479,18 @@ class HTMLSemanticPreservingSplitter:
             self._recursive_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=max_chunk_size, chunk_overlap=chunk_overlap
             )
+
+        if self._stopword_removal:
+            try:
+                import nltk  # type: ignore
+                from nltk.corpus import stopwords  # type: ignore
+
+                nltk.download("stopwords")
+                self._stopwords = set(stopwords.words(self._stopword_lang))
+            except ImportError:
+                raise ImportError(
+                    "Could not import nltk. Please install it with 'pip install nltk'."
+                )
 
     def split_text(self, text: str) -> List[Document]:
         """
@@ -436,14 +504,101 @@ class HTMLSemanticPreservingSplitter:
         """
         soup = self._BeautifulSoup(text, "html.parser")
 
+        self._process_media(soup)
+
         if self._preserve_links:
-            for a_tag in soup.find_all("a"):
-                link_text = a_tag.get_text(strip=True)
-                link_href = a_tag.get("href", "")
-                markdown_link = f"[{link_text}]({link_href})"
-                a_tag.replace_with(markdown_link)
+            self._process_links(soup)
+
+        if self._allowlist_tags or self._denylist_tags:
+            self._filter_tags(soup)
 
         return self._process_html(soup)
+
+    def _process_media(self, soup: Any) -> None:
+        """
+        Processes the media elements in the HTML content by wrapping them in a
+        <media-wrapper> tag and converting them to Markdown format.
+
+        Args:
+            soup (Any): Parsed HTML content using BeautifulSoup.
+        """
+
+        if self._preserve_images:
+            for img_tag in soup.find_all("img"):
+                img_src = img_tag.get("src", "")
+                markdown_img = f"![image:{img_src}]({img_src})"
+                wrapper = soup.new_tag("media-wrapper")
+                wrapper.string = markdown_img
+                img_tag.replace_with(wrapper)
+
+        if self._preserve_videos:
+            for video_tag in soup.find_all("video"):
+                video_src = video_tag.get("src", "")
+                markdown_video = f"![video:{video_src}]({video_src})"
+                wrapper = soup.new_tag("media-wrapper")
+                wrapper.string = markdown_video
+                video_tag.replace_with(wrapper)
+
+        if self._preserve_audio:
+            for audio_tag in soup.find_all("audio"):
+                audio_src = audio_tag.get("src", "")
+                markdown_audio = f"![audio:{audio_src}]({audio_src})"
+                wrapper = soup.new_tag("media-wrapper")
+                wrapper.string = markdown_audio
+                audio_tag.replace_with(wrapper)
+
+    def _process_links(self, soup: Any) -> None:
+        """
+        Processes the links in the HTML content.
+
+        Args:
+            soup (Any): Parsed HTML content using BeautifulSoup.
+        """
+        for a_tag in soup.find_all("a"):
+            a_href = a_tag.get("href", "")
+            a_text = a_tag.get_text(strip=True)
+            markdown_link = f"[{a_text}]({a_href})"
+            wrapper = soup.new_tag("link-wrapper")
+            wrapper.string = markdown_link
+            a_tag.replace_with(markdown_link)
+
+    def _filter_tags(self, soup: Any) -> None:
+        """
+        Filters the HTML content based on the allowlist and denylist tags.
+
+        Args:
+            soup (Any): Parsed HTML content using BeautifulSoup.
+        """
+        if self._allowlist_tags:
+            for tag in soup.find_all(True):
+                if tag.name not in self._allowlist_tags:
+                    tag.decompose()
+
+        if self._denylist_tags:
+            for tag in soup.find_all(self._denylist_tags):
+                tag.decompose()
+
+    def _normalize_and_clean_text(self, text: str) -> str:
+        """
+        Normalizes the text by removing extra spaces and newlines.
+
+        Args:
+            text (str): The text to be normalized.
+
+        Returns:
+            str: The normalized text.
+        """
+        if self._normalize_text:
+            text = text.lower()
+            text = re.sub(r"[^\w\s]", "", text)
+            text = re.sub(r"\s+", " ", text).strip()
+
+        if self._stopword_removal:
+            text = " ".join(
+                [word for word in text.split() if word not in self._stopwords]
+            )
+
+        return text
 
     def _process_html(self, soup: Any) -> List[Document]:
         """
@@ -463,11 +618,31 @@ class HTMLSemanticPreservingSplitter:
         placeholder_count: int = 0
 
         def _get_element_text(element: Any) -> str:
-            if self._custom_handlers:
-                handler = self._custom_handlers.get(element.name)
-                if handler:
-                    return handler(element)
-            return element.get_text(separator=" ", strip=True) + " "
+            """
+            Recursively extracts and processes the text of an element,
+            applying custom handlers where applicable, and ensures correct spacing.
+
+            Args:
+                element (Any): The HTML element to process.
+
+            Returns:
+                str: The processed text of the element.
+            """
+            if element.name in self._custom_handlers:
+                return self._custom_handlers[element.name](element)
+
+            text = ""
+
+            if element.name is not None:
+                for child in element.children:
+                    child_text = _get_element_text(child).strip()
+                    if text and child_text:
+                        text += " "
+                    text += child_text
+            elif element.string:
+                text += element.string
+
+            return self._normalize_and_clean_text(text)
 
         elements = soup.find_all(recursive=False)
 
@@ -573,13 +748,15 @@ class HTMLSemanticPreservingSplitter:
         """
         content = re.sub(r"\s+", " ", content).strip()
 
+        metadata = {**headers, **self._external_metadata}
+
         if len(content) <= self._max_chunk_size:
             page_content = self._reinsert_preserved_elements(
                 content, preserved_elements
             )
-            return [Document(page_content=page_content, metadata=headers)]
+            return [Document(page_content=page_content, metadata=metadata)]
         else:
-            return self._further_split_chunk(content, headers, preserved_elements)
+            return self._further_split_chunk(content, metadata, preserved_elements)
 
     def _further_split_chunk(
         self, content: str, metadata: dict, preserved_elements: dict
@@ -627,5 +804,5 @@ class HTMLSemanticPreservingSplitter:
             str: The content with placeholders replaced by preserved elements.
         """
         for placeholder, preserved_content in preserved_elements.items():
-            content = content.replace(placeholder, preserved_content)
+            content = content.replace(placeholder, preserved_content.strip())
         return content
