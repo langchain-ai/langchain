@@ -70,17 +70,15 @@ def _format_url(url: str, path_params: dict) -> str:
     return url.format(**new_params)
 
 
-def _openapi_params_to_json_schema(
-    params: List[Parameter], spec: OpenAPISpec, max_depth: Optional[int]
-) -> dict:
+def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -> dict:
     properties = {}
     required = []
     for p in params:
         if p.param_schema:
-            schema = spec.get_schema(p.param_schema, 0, max_depth)
+            schema = spec.get_schema(p.param_schema)
         else:
             media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore
-            schema = spec.get_schema(media_type_schema, 0, max_depth)
+            schema = spec.get_schema(media_type_schema, 0)
         if p.description and not schema.description:
             schema.description = p.description
         properties[p.name] = json.loads(schema.json(exclude_none=True))
@@ -91,14 +89,12 @@ def _openapi_params_to_json_schema(
 
 def openapi_spec_to_openai_fn(
     spec: OpenAPISpec,
-    max_depth: Optional[int] = None,
 ) -> Tuple[List[Dict[str, Any]], Callable]:
     """Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
         functions.
 
     Args:
         spec: OpenAPI spec to convert.
-        max_depth: Maximum depth to resolve $ref s.
 
     Returns:
         Tuple of the OpenAI functions JSON schema and a default function for executing
@@ -138,7 +134,7 @@ def openapi_spec_to_openai_fn(
             for param_loc, arg_name in param_loc_to_arg_name.items():
                 if params_by_type[param_loc]:
                     request_args[arg_name] = _openapi_params_to_json_schema(
-                        params_by_type[param_loc], spec, max_depth
+                        params_by_type[param_loc], spec
                     )
             request_body = spec.get_request_body_for_operation(op)
             # TODO: Support more MIME types.
@@ -146,9 +142,7 @@ def openapi_spec_to_openai_fn(
                 media_types = {}
                 for media_type, media_type_object in request_body.content.items():
                     if media_type_object.media_type_schema:
-                        schema = spec.get_schema(
-                            media_type_object.media_type_schema, 0, max_depth=max_depth
-                        )
+                        schema = spec.get_schema(media_type_object.media_type_schema)
                         media_types[media_type] = json.loads(
                             schema.json(exclude_none=True)
                         )

@@ -132,7 +132,7 @@ class OpenAPISpec(OpenAPI):
     def get_schema(
         self,
         schema: Union[Reference, Schema],
-        depth: int,
+        depth: int = 0,
         max_depth: Optional[int] = None,
     ) -> Schema:
         if max_depth is not None and depth >= max_depth:
