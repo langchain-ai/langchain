@@ -38,6 +38,8 @@ class BaseLLMOutputParser(Generic[T], ABC):
         Args:
             result: A list of Generations to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
+            partial: Whether to parse the output as a partial result. This is useful
+                for parsers that can parse partial results. Default is False.
 
         Returns:
             Structured output.
@@ -46,11 +48,13 @@ class BaseLLMOutputParser(Generic[T], ABC):
     async def aparse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> T:
-        """Parse a list of candidate model Generations into a specific format.
+        """Async parse a list of candidate model Generations into a specific format.
 
         Args:
             result: A list of Generations to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
+            partial: Whether to parse the output as a partial result. This is useful
+                for parsers that can parse partial results. Default is False.
 
         Returns:
             Structured output.
@@ -65,10 +69,12 @@ class BaseGenerationOutputParser(
 
     @property
     def InputType(self) -> Any:
+        """Return the input type for the parser."""
         return Union[str, AnyMessage]
 
     @property
     def OutputType(self) -> Type[T]:
+        """Return the output type for the parser."""
         # even though mypy complains this isn't valid,
         # it is good enough for pydantic to build the schema from
         return T  # type: ignore[misc]
@@ -148,10 +154,18 @@ class BaseOutputParser(
 
     @property
     def InputType(self) -> Any:
+        """Return the input type for the parser."""
         return Union[str, AnyMessage]
 
     @property
     def OutputType(self) -> Type[T]:
+        """Return the output type for the parser.
+
+        This property is inferred from the first type argument of the class.
+
+        Raises:
+            TypeError: If the class doesn't have an inferable OutputType.
+        """
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == 1:
@@ -214,6 +228,8 @@ class BaseOutputParser(
         Args:
             result: A list of Generations to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
+            partial: Whether to parse the output as a partial result. This is useful
+                for parsers that can parse partial results. Default is False.
 
         Returns:
             Structured output.
@@ -234,7 +250,7 @@ class BaseOutputParser(
     async def aparse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> T:
-        """Parse a list of candidate model Generations into a specific format.
+        """Async parse a list of candidate model Generations into a specific format.
 
         The return value is parsed from only the first Generation in the result, which
             is assumed to be the highest-likelihood Generation.
@@ -242,6 +258,8 @@ class BaseOutputParser(
         Args:
             result: A list of Generations to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
+            partial: Whether to parse the output as a partial result. This is useful
+                for parsers that can parse partial results. Default is False.
 
         Returns:
             Structured output.
@@ -249,7 +267,7 @@ class BaseOutputParser(
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
     async def aparse(self, text: str) -> T:
-        """Parse a single string model output into some structure.
+        """Async parse a single string model output into some structure.
 
         Args:
             text: String output of a language model.
@@ -272,7 +290,7 @@ class BaseOutputParser(
             prompt: Input PromptValue.
 
         Returns:
-            Structured output
+            Structured output.
         """
         return self.parse(completion)
 

@@ -1,7 +1,7 @@
 from langchain.retrievers.merger_retriever import MergerRetriever
+from langchain_core.vectorstores import InMemoryVectorStore
 
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 
 
 def test_merger_retriever_get_relevant_docs() -> None:
@@ -17,12 +17,12 @@ def test_merger_retriever_get_relevant_docs() -> None:
         "Real stupidity beats artificial intelligence every time. TP",
     ]
     embeddings = OpenAIEmbeddings()
-    retriever_a = Chroma.from_texts(texts_group_a, embedding=embeddings).as_retriever(
-        search_kwargs={"k": 1}
-    )
-    retriever_b = Chroma.from_texts(texts_group_b, embedding=embeddings).as_retriever(
-        search_kwargs={"k": 1}
-    )
+    retriever_a = InMemoryVectorStore.from_texts(
+        texts_group_a, embedding=embeddings
+    ).as_retriever(search_kwargs={"k": 1})
+    retriever_b = InMemoryVectorStore.from_texts(
+        texts_group_b, embedding=embeddings
+    ).as_retriever(search_kwargs={"k": 1})
 
     # The Lord of the Retrievers.
     lotr = MergerRetriever(retrievers=[retriever_a, retriever_b])

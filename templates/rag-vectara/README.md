@@ -1,11 +1,8 @@
+# RAG - Vectara
 
-# rag-vectara
-
-This template performs RAG with vectara.
+This template performs RAG with `Vectara` vectorstore.
 
 ## Environment Setup
-
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
 
 Also, ensure the following environment variables are set:
 * `VECTARA_CUSTOMER_ID`

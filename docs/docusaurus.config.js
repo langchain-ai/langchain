@@ -165,9 +165,19 @@ const config = {
             label: "Integrations",
           },
           {
-            href: "https://api.python.langchain.com",
-            label: "API Reference",
+            type: "dropdown",
+            label: "API reference",
             position: "left",
+            items: [
+              {
+                label: "Latest",
+                to: "https://python.langchain.com/v0.2/api_reference/reference.html",
+              },
+              {
+                label: "Legacy",
+                href: "https://api.python.langchain.com/"
+              }
+            ]
           },
           {
             type: "dropdown",
@@ -183,11 +193,6 @@ const config = {
                 type: "doc",
                 docId: "contributing/index",
                 label: "Contributing",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "templates",
-                label: "Templates",
               },
               {
                 label: "Cookbooks",
@@ -238,18 +243,6 @@ const config = {
                 label: "LangSmith Docs",
               },
               {
-                href: "https://github.com/langchain-ai/langserve",
-                label: "LangServe GitHub",
-              },
-              {
-                href: "https://github.com/langchain-ai/langchain/tree/master/templates",
-                label: "Templates GitHub",
-              },
-              {
-                label: "Templates Hub",
-                href: "https://templates.langchain.com",
-              },
-              {
                 href: "https://smith.langchain.com/hub",
                 label: "LangChain Hub",
               },
@@ -280,10 +273,6 @@ const config = {
             title: "Community",
             items: [
               {
-                label: "Discord",
-                href: "https://discord.gg/cU2adEyC7w",
-              },
-              {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",
               },
@@ -292,6 +281,10 @@ const config = {
           {
             title: "GitHub",
             items: [
+              {
+                label: "Organization",
+                href: "https://github.com/langchain-ai",
+              },
               {
                 label: "Python",
                 href: "https://github.com/langchain-ai/langchain",

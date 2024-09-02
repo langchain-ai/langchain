@@ -126,7 +126,7 @@ def _destrip(tool_input: Any) -> Any:
 
 @deprecated(
     since="0.0.54",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_anthropic.experimental.ChatAnthropicTools",
 )
 class AnthropicFunctions(BaseChatModel):
@@ -200,7 +200,7 @@ class AnthropicFunctions(BaseChatModel):
 
             kwargs = {
                 "function_call": {
-                    "name": function_call_name,
+                    "name": function_call_name,  # type: ignore[has-type]
                     "arguments": arguments,
                 }
             }

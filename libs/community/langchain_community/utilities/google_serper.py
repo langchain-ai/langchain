@@ -1,4 +1,5 @@
 """Util that calls Google Search using the Serper.dev API."""
+
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -42,11 +43,9 @@ class GoogleSerperAPIWrapper(BaseModel):
     aiosession: Optional[aiohttp.ClientSession] = None
 
     class Config:
-        """Configuration for this pydantic object."""
-
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         serper_api_key = get_from_dict_or_env(

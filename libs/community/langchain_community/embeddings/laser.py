@@ -2,7 +2,8 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils import pre_init
 
 LASER_MULTILINGUAL_MODEL: str = "laser2"
 
@@ -37,11 +38,9 @@ class LaserEmbeddings(BaseModel, Embeddings):
     _encoder_pipeline: Any  # : :meta private:
 
     class Config:
-        """Configuration for this pydantic object."""
+        extra = "forbid"
 
-        extra = Extra.forbid
-
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that laser_encoders has been installed."""
         try:

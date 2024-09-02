@@ -1,3 +1,8 @@
+"""This is the langchain_chroma.vectorstores module.
+
+It contains the Chroma class which is a vector store for handling various tasks.
+"""
+
 from __future__ import annotations
 
 import base64
@@ -98,7 +103,6 @@ def maximal_marginal_relevance(
     Returns:
         List of indices of embeddings selected by maximal marginal relevance.
     """
-
     if min(k, len(embedding_list)) <= 0:
         return []
     if query_embedding.ndim == 1:
@@ -127,19 +131,137 @@ def maximal_marginal_relevance(
 
 
 class Chroma(VectorStore):
-    """`ChromaDB` vector store.
+    """Chroma vector store integration.
 
-    To use, you should have the ``chromadb`` python package installed.
+    Setup:
+        Install ``chromadb``, ``langchain-chroma`` packages:
 
-    Example:
+        .. code-block:: bash
+
+            pip install -qU chromadb langchain-chroma
+
+    Key init args — indexing params:
+        collection_name: str
+            Name of the collection.
+        embedding_function: Embeddings
+            Embedding function to use.
+
+    Key init args — client params:
+        client: Optional[Client]
+            Chroma client to use.
+        client_settings: Optional[chromadb.config.Settings]
+            Chroma client settings.
+        persist_directory: Optional[str]
+            Directory to persist the collection.
+
+    Instantiate:
         .. code-block:: python
 
-                from langchain_chroma import Chroma
-                from langchain_openai import OpenAIEmbeddings
+            from langchain_chroma import Chroma
+            from langchain_openai import OpenAIEmbeddings
 
-                embeddings = OpenAIEmbeddings()
-                vectorstore = Chroma("langchain_store", embeddings)
-    """
+            vector_store = Chroma(
+                collection_name="foo",
+                embedding_function=OpenAIEmbeddings(),
+                # other params...
+            )
+
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Update Documents:
+        .. code-block:: python
+
+            updated_document = Document(
+                page_content="qux",
+                metadata={"bar": "baz"}
+            )
+
+            vector_store.update_documents(ids=["1"],documents=[updated_document])
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * thud [{'baz': 'bar'}]
+
+    Search with filter:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1,filter={"baz": "bar"})
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * foo [{'baz': 'bar'}]
+
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.000000] qux [{'bar': 'baz', 'baz': 'bar'}]
+
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            * [SIM=0.335463] foo [{'baz': 'bar'}]
+
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            [Document(metadata={'baz': 'bar'}, page_content='thud')]
+
+    """  # noqa: E501
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
@@ -159,7 +281,7 @@ class Chroma(VectorStore):
         Args:
             collection_name: Name of the collection to create.
             embedding_function: Embedding class object. Used to embed texts.
-            persist_director: Directory to persist the collection.
+            persist_directory: Directory to persist the collection.
             client_settings: Chroma client settings
             collection_metadata: Collection configurations.
             client: Chroma client. Documentation:
@@ -223,6 +345,7 @@ class Chroma(VectorStore):
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
+        """Access the query embedding object."""
         return self._embedding_function
 
     @xor_args(("query_texts", "query_embeddings"))
@@ -245,6 +368,7 @@ class Chroma(VectorStore):
                     e.g. {"color" : "red", "price": 4.20}.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of `n_results` nearest neighbor embeddings for provided
@@ -280,6 +404,7 @@ class Chroma(VectorStore):
             metadatas: Optional list of metadatas.
                     When querying, you can filter on this metadata.
             ids: Optional list of IDs.
+            kwargs: Additional keyword arguments to pass.
 
         Returns:
             List of IDs of the added images.
@@ -367,6 +492,7 @@ class Chroma(VectorStore):
             metadatas: Optional list of metadatas.
                     When querying, you can filter on this metadata.
             ids: Optional list of IDs.
+            kwargs: Additional keyword arguments.
 
         Returns:
             List of IDs of the added texts.
@@ -374,7 +500,6 @@ class Chroma(VectorStore):
         Raises:
             ValueError: When metadata is incorrect.
         """
-
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         embeddings = None
@@ -449,6 +574,7 @@ class Chroma(VectorStore):
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text.
@@ -474,6 +600,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents most similar to the query vector.
@@ -495,8 +622,7 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """
-        Return docs most similar to embedding vector and similarity score.
+        """Return docs most similar to embedding vector and similarity score.
 
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
@@ -504,6 +630,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text and relevance score
@@ -534,6 +661,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text and
@@ -574,7 +702,6 @@ class Chroma(VectorStore):
         Raises:
             ValueError: If the distance metric is not supported.
         """
-
         if self.override_relevance_score_fn:
             return self.override_relevance_score_fn
 
@@ -597,6 +724,94 @@ class Chroma(VectorStore):
                 f" for distance metric of type: {distance}."
                 "Consider providing relevance_score_fn to Chroma constructor."
             )
+
+    def similarity_search_by_image(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return. Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+
+        Returns:
+            List of Images most similar to the provided image.
+            Each element in list is a Langchain Document Object.
+            The page content is b64 encoded image, metadata is default or
+            as defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
+
+    def similarity_search_by_image_with_relevance_score(
+        self,
+        uri: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Search for similar images based on the given image URI.
+
+        Args:
+            uri (str): URI of the image to search for.
+            k (int, optional): Number of results to return.
+            Defaults to DEFAULT_K.
+            filter (Optional[Dict[str, str]], optional): Filter by metadata.
+            **kwargs (Any): Additional arguments to pass to function.
+
+        Returns:
+            List[Tuple[Document, float]]: List of tuples containing documents similar
+            to the query image and their similarity scores.
+            0th element in each tuple is a Langchain Document Object.
+            The page content is b64 encoded img, metadata is default or defined by user.
+
+        Raises:
+            ValueError: If the embedding function does not support image embeddings.
+        """
+        if self._embedding_function is None or not hasattr(
+            self._embedding_function, "embed_image"
+        ):
+            raise ValueError("The embedding function must support image embedding.")
+
+        # Obtain image embedding
+        # Assuming embed_image returns a single embedding
+        image_embedding = self._embedding_function.embed_image(uris=[uri])
+
+        # Perform similarity search based on the obtained embedding
+        results = self.similarity_search_by_vector_with_relevance_scores(
+            embedding=image_embedding,
+            k=k,
+            filter=filter,
+            **kwargs,
+        )
+
+        return results
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -623,11 +838,13 @@ class Chroma(VectorStore):
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
             filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by the documents.
+                    E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-
         results = self.__query_collection(
             query_embeddings=embedding,
             n_results=fetch_k,
@@ -659,6 +876,7 @@ class Chroma(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
 
@@ -673,6 +891,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -701,8 +920,10 @@ class Chroma(VectorStore):
         self._chroma_collection = None
 
     def reset_collection(self) -> None:
-        """Resets the collection by deleting the collection
-        and recreating an empty one."""
+        """Resets the collection.
+
+        Resets the collection by deleting the collection and recreating an empty one.
+        """
         self.delete_collection()
         self.__ensure_collection()
 
@@ -827,9 +1048,12 @@ class Chroma(VectorStore):
             embedding: Embedding function. Defaults to None.
             metadatas: List of metadatas. Defaults to None.
             ids: List of document IDs. Defaults to None.
-            client_settings: Chroma client settings
+            client_settings: Chroma client settings.
+            client: Chroma client. Documentation:
+                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
             collection_metadata: Collection configurations.
                                                   Defaults to None.
+            kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -889,9 +1113,12 @@ class Chroma(VectorStore):
             ids : List of document IDs. Defaults to None.
             documents: List of documents to add to the vectorstore.
             embedding: Embedding function. Defaults to None.
-            client_settings: Chroma client settings
+            client_settings: Chroma client settings.
+            client: Chroma client. Documentation:
+                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
             collection_metadata: Collection configurations.
                                                   Defaults to None.
+            kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -916,5 +1143,6 @@ class Chroma(VectorStore):
 
         Args:
             ids: List of ids to delete.
+            kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids)

@@ -1,11 +1,10 @@
+# RAG - Vectara - multi-query
 
-# rag-vectara-multiquery
-
-This template performs multiquery RAG with vectara.
+This template performs multiquery RAG with `Vectara` vectorstore.
 
 ## Environment Setup
 
-Set the `OPENAI_API_KEY` environment variable to access the OpenAI models.
+Set the `OPENAI_API_KEY` environment variable to access the OpenAI models for the multi-query processing.
 
 Also, ensure the following environment variables are set:
 * `VECTARA_CUSTOMER_ID`

@@ -306,7 +306,10 @@ def test_functions_call() -> None:
 
 def test_rate_limit() -> None:
     chat = QianfanChatEndpoint(model="ERNIE-Bot", init_kwargs={"query_per_second": 2})  # type: ignore[call-arg]
-    assert chat.client._client._rate_limiter._sync_limiter._query_per_second == 2
+    assert (
+        chat.client._client._rate_limiter._internal_qps_rate_limiter._sync_limiter._query_per_second
+        == 1.8
+    )
     responses = chat.batch(
         [
             [HumanMessage(content="Hello")],
@@ -362,3 +365,19 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
     )
     assert cast(SecretStr, chat.qianfan_ak).get_secret_value() == "test-api-key"
     assert cast(SecretStr, chat.qianfan_sk).get_secret_value() == "test-secret-key"
+
+
+def test_init_api_key_param() -> None:
+    """Test the standardized parameters -- api_key and secret_key"""
+    for chat in [
+        QianfanChatEndpoint(  # type: ignore[call-arg]
+            api_key="test-api-key",  # type: ignore[arg-type]
+            secret_key="test-secret-key",  # type: ignore[arg-type]
+        ),
+        QianfanChatEndpoint(  # type: ignore[call-arg]
+            qianfan_ak="test-api-key",  # type: ignore[arg-type]
+            qianfan_sk="test-secret-key",  # type: ignore[arg-type]
+        ),
+    ]:
+        assert cast(SecretStr, chat.qianfan_ak).get_secret_value() == "test-api-key"
+        assert cast(SecretStr, chat.qianfan_sk).get_secret_value() == "test-secret-key"

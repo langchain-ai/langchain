@@ -81,7 +81,7 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
 
 @deprecated(
     since="0.0.26",
-    removal="0.3",
+    removal="1.0",
     alternative_import="langchain_fireworks.ChatFireworks",
 )
 class ChatFireworks(BaseChatModel):
@@ -112,7 +112,7 @@ class ChatFireworks(BaseChatModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "fireworks"]
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
         try:
