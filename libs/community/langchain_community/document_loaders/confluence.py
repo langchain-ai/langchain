@@ -256,22 +256,53 @@ class ConfluenceLoader(BaseLoader):
             x is not None for x in ((api_key or username), session, oauth2, token)
         )
         if sum(non_null_creds) > 1:
-            all_names = ("(api_key, username)", "session", "oath2", "token")
+            all_names = ("(api_key, username)", "session", "oauth2", "token")
             provided = tuple(n for x, n in zip(non_null_creds, all_names) if x)
             errors.append(
                 f"Cannot provide a value for more than one of: {all_names}. Received "
                 f"values for: {provided}"
             )
-        if oauth2 and set(oauth2.keys()) != {
-            "access_token",
-            "access_token_secret",
-            "consumer_key",
-            "key_cert",
-        }:
+
+        if (
+            oauth2
+            and set(oauth2.keys())
+            == {
+                "token",
+                "client_id",
+            }
+            and set(oauth2["token"].keys())
+            != {
+                "access_token",
+                "token_type",
+            }
+        ):
+            # OAuth2 token authentication
             errors.append(
                 "You have either omitted require keys or added extra "
                 "keys to the oauth2 dictionary. key values should be "
-                "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']`"
+                "`['client_id', 'token': ['access_token', 'token_type']]`"
+            )
+
+        if (
+            oauth2
+            and set(oauth2.keys())
+            != {
+                "access_token",
+                "access_token_secret",
+                "consumer_key",
+                "key_cert",
+            }
+            and set(oauth2.keys())
+            != {
+                "token",
+                "client_id",
+            }
+        ):
+            errors.append(
+                "You have either omitted required keys or added extra "
+                "keys to the oauth2 dictionary. key values should be "
+                "`['access_token', 'access_token_secret', 'consumer_key', 'key_cert']` "
+                "or `['client_id', 'token': ['access_token', 'token_type']]`"
             )
         return errors or None
 
@@ -359,6 +390,7 @@ class ConfluenceLoader(BaseLoader):
                 content_format,
                 ocr_languages,
                 keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
 
         if page_ids:

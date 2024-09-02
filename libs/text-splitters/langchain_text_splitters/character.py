@@ -65,7 +65,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(
         self,
         separators: Optional[List[str]] = None,
-        keep_separator: bool = True,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,
         is_separator_regex: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -126,7 +126,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     @staticmethod
     def get_separators_for_language(language: Language) -> List[str]:
-        if language == Language.CPP:
+        if language == Language.C or language == Language.CPP:
             return [
                 # Split along class definitions
                 "\nclass ",
@@ -345,7 +345,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             ]
         elif language == Language.ELIXIR:
             return [
-                # Split along method function and module definiton
+                # Split along method function and module definition
                 "\ndef ",
                 "\ndefp ",
                 "\ndefmodule ",
@@ -654,6 +654,30 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n= {",
                 "\n, ",
                 # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+        elif language == Language.POWERSHELL:
+            return [
+                # Split along function definitions
+                "\nfunction ",
+                # Split along parameter declarations (escape parentheses)
+                "\nparam ",
+                # Split along control flow statements
+                "\nif ",
+                "\nforeach ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                # Split along class definitions (for PowerShell 5.0 and above)
+                "\nclass ",
+                # Split along try-catch-finally blocks
+                "\ntry ",
+                "\ncatch ",
+                "\nfinally ",
+                # Split by normal lines and empty spaces
                 "\n\n",
                 "\n",
                 " ",

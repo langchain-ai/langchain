@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-openai"
-version = "0.1.13"
+version = "0.1.23"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
@@ -19,11 +19,12 @@ ignore_missing_imports = true
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-openai%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.2.2,<0.3"
-openai = "^1.32.0"
+langchain-core = "^0.2.35"
+openai = "^1.40.0"
 tiktoken = ">=0.7,<1"
 
 [tool.ruff.lint]
@@ -76,11 +77,7 @@ python = ">=3.12"
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
-types-tqdm = "^4.66.0.5"
+ruff = "^0.5"
 
 [tool.poetry.group.test_integration.dependencies]
 httpx = "^0.27.0"
@@ -93,6 +90,10 @@ python = "<3.12"
 version = "^1.26.0"
 python = ">=3.12"
 
+[tool.poetry.group.typing.dependencies]
+mypy = "^1.10"
+types-tqdm = "^4.66.0.5"
+
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../../core"
 develop = true
@@ -101,10 +102,10 @@ develop = true
 path = "../../standard-tests"
 develop = true
 
-[tool.poetry.group.typing.dependencies.langchain-core]
+[tool.poetry.group.dev.dependencies.langchain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.dev.dependencies.langchain-core]
+[tool.poetry.group.typing.dependencies.langchain-core]
 path = "../../core"
 develop = true

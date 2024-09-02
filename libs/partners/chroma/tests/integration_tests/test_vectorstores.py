@@ -4,7 +4,7 @@ import uuid
 from typing import Generator
 
 import chromadb
-import pytest
+import pytest  # type: ignore[import-not-found]
 import requests
 from chromadb.api.client import SharedSystemClient
 from langchain_core.documents import Document
@@ -346,7 +346,7 @@ def test_chroma_large_batch() -> None:
         "my_collection",
         embedding_function=embedding_function.embed_documents,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore
     db = Chroma.from_texts(
         client=client,
         collection_name=col.name,
@@ -374,7 +374,7 @@ def test_chroma_large_batch_update() -> None:
         "my_collection",
         embedding_function=embedding_function.embed_documents,  # type: ignore
     )
-    docs = ["This is a test document"] * (client.max_batch_size + 100)
+    docs = ["This is a test document"] * (client.max_batch_size + 100)  # type: ignore
     ids = [str(uuid.uuid4()) for _ in range(len(docs))]
     db = Chroma.from_texts(
         client=client,

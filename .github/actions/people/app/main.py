@@ -350,11 +350,7 @@ def get_graphql_pr_edges(*, settings: Settings, after: Union[str, None] = None):
         print("Querying PRs...")
     else:
         print(f"Querying PRs with cursor {after}...")
-    data = get_graphql_response(
-        settings=settings,
-        query=prs_query,
-        after=after
-    )
+    data = get_graphql_response(settings=settings, query=prs_query, after=after)
     graphql_response = PRsResponse.model_validate(data)
     return graphql_response.data.repository.pullRequests.edges
 
@@ -484,10 +480,16 @@ def get_contributors(settings: Settings):
             lines_changed = pr.additions + pr.deletions
             score = _logistic(files_changed, 20) + _logistic(lines_changed, 100)
             contributor_scores[pr.author.login] += score
-            three_months_ago = (datetime.now(timezone.utc) - timedelta(days=3*30))
+            three_months_ago = datetime.now(timezone.utc) - timedelta(days=3 * 30)
             if pr.createdAt > three_months_ago:
                 recent_contributor_scores[pr.author.login] += score
-    return contributors, contributor_scores, recent_contributor_scores, reviewers, authors
+    return (
+        contributors,
+        contributor_scores,
+        recent_contributor_scores,
+        reviewers,
+        authors,
+    )
 
 
 def get_top_users(
@@ -524,9 +526,13 @@ if __name__ == "__main__":
     # question_commentors, question_last_month_commentors, question_authors = get_experts(
     #     settings=settings
     # )
-    contributors, contributor_scores, recent_contributor_scores, reviewers, pr_authors = get_contributors(
-        settings=settings
-    )
+    (
+        contributors,
+        contributor_scores,
+        recent_contributor_scores,
+        reviewers,
+        pr_authors,
+    ) = get_contributors(settings=settings)
     # authors = {**question_authors, **pr_authors}
     authors = {**pr_authors}
     maintainers_logins = {
@@ -559,7 +565,7 @@ if __name__ == "__main__":
         maintainers.append(
             {
                 "login": login,
-                "count": contributors[login], #+ question_commentors[login],
+                "count": contributors[login],  # + question_commentors[login],
                 "avatarUrl": user.avatarUrl,
                 "twitterUsername": user.twitterUsername,
                 "url": user.url,
@@ -615,9 +621,7 @@ if __name__ == "__main__":
     new_people_content = yaml.dump(
         people, sort_keys=False, width=200, allow_unicode=True
     )
-    if (
-        people_old_content == new_people_content
-    ):
+    if people_old_content == new_people_content:
         logging.info("The LangChain People data hasn't changed, finishing.")
         sys.exit(0)
     people_path.write_text(new_people_content, encoding="utf-8")
@@ -630,9 +634,7 @@ if __name__ == "__main__":
     logging.info(f"Creating a new branch {branch_name}")
     subprocess.run(["git", "checkout", "-B", branch_name], check=True)
     logging.info("Adding updated file")
-    subprocess.run(
-        ["git", "add", str(people_path)], check=True
-    )
+    subprocess.run(["git", "add", str(people_path)], check=True)
     logging.info("Committing updated file")
     message = "👥 Update LangChain people data"
     result = subprocess.run(["git", "commit", "-m", message], check=True)

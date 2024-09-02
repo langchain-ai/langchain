@@ -6,8 +6,6 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
 
@@ -33,9 +31,7 @@ class NeuralDBVectorStore(VectorStore):
     """NeuralDB instance"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     @staticmethod
@@ -165,18 +161,6 @@ class NeuralDBVectorStore(VectorStore):
         source_id = self.insert([ndb.CSV(temp.name)], **kwargs)[0]
         offset = self.db._savable_state.documents.get_source_by_id(source_id)[1]
         return [str(offset + i) for i in range(len(texts))]  # type: ignore[arg-type]
-
-    @root_validator(allow_reuse=True)
-    def validate_environments(cls, values: Dict) -> Dict:
-        """Validate ThirdAI environment variables."""
-        values["thirdai_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "thirdai_key",
-                "THIRDAI_KEY",
-            )
-        )
-        return values
 
     def insert(  # type: ignore[no-untyped-def, no-untyped-def]
         self,
@@ -347,9 +331,7 @@ class NeuralDBClientVectorStore(VectorStore):
     """NeuralDB Client instance"""
 
     class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+        extra = "forbid"
         underscore_attrs_are_private = True
 
     def similarity_search(

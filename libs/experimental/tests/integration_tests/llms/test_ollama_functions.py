@@ -65,7 +65,7 @@ class TestOllamaFunctions(unittest.TestCase):
     def test_ollama_functions_tools(self) -> None:
         base_model = OllamaFunctions(model="phi3", format="json")
         model = base_model.bind_tools(
-            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]
+            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]  # type: ignore[call-arg]
         )
         res = model.invoke("What causes lung cancer?")
         self.assertIsInstance(res, AIMessage)

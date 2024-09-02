@@ -24,45 +24,161 @@ from langchain_core.vectorstores import VectorStore
 
 
 class CouchbaseVectorStore(VectorStore):
-    """Couchbase vector store.
+    """__ModuleName__ vector store integration.
 
-     To use it, you need
-        - a Couchbase database with a pre-defined Search index with support for
-            vector fields
+    Setup:
+        Install ``langchain-couchbase`` and head over to the Couchbase [website](https://cloud.couchbase.com) and create a new connection, with a bucket, collection, and search index.
 
-    Example:
+        .. code-block:: bash
+
+            pip install -U langchain-couchbase
+
         .. code-block:: python
 
-            from langchain_couchbase import CouchbaseVectorStore
-            from langchain_openai import OpenAIEmbeddings
+            import getpass
 
-            from couchbase.cluster import Cluster
-            from couchbase.auth import PasswordAuthenticator
-            from couchbase.options import ClusterOptions
+            COUCHBASE_CONNECTION_STRING = getpass.getpass("Enter the connection string for the Couchbase cluster: ")
+            DB_USERNAME = getpass.getpass("Enter the username for the Couchbase cluster: ")
+            DB_PASSWORD = getpass.getpass("Enter the password for the Couchbase cluster: ")
+
+    Key init args — indexing params:
+        embedding: Embeddings
+            Embedding function to use.
+
+    Key init args — client params:
+        cluster: Cluster
+            Couchbase cluster object with active connection.
+        bucket_name: str
+            Name of the bucket to store documents in.
+        scope_name: str
+            Name of the scope in the bucket to store documents in.
+        collection_name: str
+            Name of the collection in the scope to store documents in.
+        index_name: str
+            Name of the Search index to use.
+
+    Instantiate:
+        .. code-block:: python
+
             from datetime import timedelta
+            from langchain_openai import OpenAIEmbeddings
+            from couchbase.auth import PasswordAuthenticator
+            from couchbase.cluster import Cluster
+            from couchbase.options import ClusterOptions
 
-            auth = PasswordAuthenticator(username, password)
+            auth = PasswordAuthenticator(DB_USERNAME, DB_PASSWORD)
             options = ClusterOptions(auth)
-            connect_string = "couchbases://localhost"
-            cluster = Cluster(connect_string, options)
+            cluster = Cluster(COUCHBASE_CONNECTION_STRING, options)
 
             # Wait until the cluster is ready for use.
             cluster.wait_until_ready(timedelta(seconds=5))
 
-            embeddings = OpenAIEmbeddings()
+            BUCKET_NAME = "langchain_bucket"
+            SCOPE_NAME = "_default"
+            COLLECTION_NAME = "default"
+            SEARCH_INDEX_NAME = "langchain-test-index"
 
-            vectorstore = CouchbaseVectorStore(
+            vector_store = CouchbaseVectorStore(
                 cluster=cluster,
-                bucket_name="",
-                scope_name="",
-                collection_name="",
+                bucket_name=BUCKET_NAME,
+                scope_name=SCOPE_NAME,
+                collection_name=COLLECTION_NAME,
                 embedding=embeddings,
-                index_name="vector-index",
+                index_name=SEARCH_INDEX_NAME,
             )
 
-            vectorstore.add_texts(["hello", "world"])
-            results = vectorstore.similarity_search("ola", k=1)
-    """
+    Add Documents:
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+            document_3 = Document(page_content="i will be deleted :(")
+
+            documents = [document_1, document_2, document_3]
+            ids = ["1", "2", "3"]
+            vector_store.add_documents(documents=documents, ids=ids)
+
+    Delete Documents:
+        .. code-block:: python
+
+            vector_store.delete(ids=["3"])
+
+    # TODO: Fill out with example output.
+    Search:
+        .. code-block:: python
+
+            results = vector_store.similarity_search(query="thud",k=1)
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with relevant variables and example output.
+    Search with filter:
+        .. code-block:: python
+
+            # TODO: Update filter to correct format
+            results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
+            for doc in results:
+                print(f"* {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with example output.
+    Search with score:
+        .. code-block:: python
+
+            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            for doc, score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with example output.
+    Async:
+        .. code-block:: python
+
+            # add documents
+            # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+            # delete documents
+            # await vector_store.adelete(ids=["3"])
+
+            # search
+            # results = vector_store.asimilarity_search(query="thud",k=1)
+
+            # search with score
+            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+            for doc,score in results:
+                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    # TODO: Fill out with example output.
+    Use as Retriever:
+        .. code-block:: python
+
+            retriever = vector_store.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+            )
+            retriever.invoke("thud")
+
+        .. code-block:: python
+
+            # TODO: Example output
+
+    """  # noqa: E501
 
     # Default batch size
     DEFAULT_BATCH_SIZE = 100

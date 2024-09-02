@@ -1,6 +1,7 @@
 """
 python scripts/release_branch.py anthropic bagatur
 """
+
 import glob
 import tomllib
 import toml

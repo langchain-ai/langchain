@@ -31,7 +31,8 @@ class Generation(Serializable):
     May include things like the reason for finishing or token log probabilities.
     """
     type: Literal["Generation"] = "Generation"
-    """Type is used exclusively for serialization purposes."""
+    """Type is used exclusively for serialization purposes.
+    Set to "Generation" for this class."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
