@@ -114,12 +114,12 @@ class CSVLoader(BaseLoader):
             source_column: The name of the column in the CSV file to use as the source.
               Optional. Defaults to None.
             metadata_columns: A sequence of column names to use as metadata. Optional.
-            content_columns: A sequence of column names to use for the document content. If not present, use all columns
-                that are not part of the metadata. Optional.
             csv_args: A dictionary of arguments to pass to the csv.DictReader.
               Optional. Defaults to None.
             encoding: The encoding of the CSV file. Optional. Defaults to None.
             autodetect_encoding: Whether to try to autodetect the file encoding.
+            content_columns: A sequence of column names to use for the document content.
+                If not present, use all columns that are not part of the metadata.
         """
         self.file_path = file_path
         self.source_column = source_column
