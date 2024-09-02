@@ -13,7 +13,7 @@ tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -vv tests/unit_tests
+	poetry run ptw --snapshot-update --now . -- -vv $(TEST_FILE)
 
 test_profile:
 	poetry run pytest -vv tests/unit_tests/ --profile-svg
