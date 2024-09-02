@@ -677,35 +677,39 @@ class GraphVectorStoreRetriever(VectorStoreRetriever):
     )
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
+        _kwargs = {**self.search_kwargs, **kwargs}
         if self.search_type == "traversal":
-            return list(self.vectorstore.traversal_search(query, **self.search_kwargs))
+            return list(self.vectorstore.traversal_search(query, **_kwargs))
         elif self.search_type == "mmr_traversal":
-            return list(
-                self.vectorstore.mmr_traversal_search(query, **self.search_kwargs)
-            )
+            return list(self.vectorstore.mmr_traversal_search(query, **_kwargs))
         else:
-            return super()._get_relevant_documents(query, run_manager=run_manager)
+            return super()._get_relevant_documents(
+                query, run_manager=run_manager, **_kwargs
+            )
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
+        _kwargs = {**self.search_kwargs, **kwargs}
         if self.search_type == "traversal":
             return [
                 doc
-                async for doc in self.vectorstore.atraversal_search(
-                    query, **self.search_kwargs
-                )
+                async for doc in self.vectorstore.atraversal_search(query, **_kwargs)
             ]
         elif self.search_type == "mmr_traversal":
             return [
                 doc
                 async for doc in self.vectorstore.ammr_traversal_search(
-                    query, **self.search_kwargs
+                    query, **_kwargs
                 )
             ]
         else:
             return await super()._aget_relevant_documents(
-                query, run_manager=run_manager
+                query, run_manager=run_manager, **_kwargs
             )
