@@ -23,5 +23,6 @@ from langchain_experimental.chat_models.llm_wrapper import (
     Orca,
     Vicuna,
 )
+from langchain_experimental.chat_models.vllm import ChatVLLMStructured
 
-__all__ = ["Llama2Chat", "Orca", "Vicuna", "Mixtral"]
+__all__ = ["Llama2Chat", "Orca", "Vicuna", "Mixtral", "ChatVLLMStructured"]

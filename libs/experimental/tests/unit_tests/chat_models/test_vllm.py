@@ -11,7 +11,7 @@ from langchain_experimental.chat_models.vllm import ChatVLLMStructured
 class TestChatVLLMStructured:
     def test_import_class(self) -> None:
         """Test that the class can be imported."""
-        module_name = "langchain_community.chat_models.vllm"
+        module_name = "langchain_experimental.chat_models.vllm"
         class_name = "ChatVLLMStructured"
 
         module = import_module(module_name)
