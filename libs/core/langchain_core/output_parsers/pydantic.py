@@ -1,7 +1,8 @@
 import json
-from typing import Generic, List, Optional, Type
+from typing import Annotated, Generic, List, Optional, Type
 
 import pydantic  # pydantic: ignore
+from pydantic import SkipValidation  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
@@ -16,7 +17,7 @@ from langchain_core.utils.pydantic import (
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Type[TBaseModel]  # type: ignore
+    pydantic_object: Annotated[Type[TBaseModel], SkipValidation()]  # type: ignore
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
@@ -109,6 +110,9 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def OutputType(self) -> Type[TBaseModel]:
         """Return the pydantic model."""
         return self.pydantic_object
+
+
+PydanticOutputParser.model_rebuild()
 
 
 _PYDANTIC_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance that conforms to the JSON schema below.

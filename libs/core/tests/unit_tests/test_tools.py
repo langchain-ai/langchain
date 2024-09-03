@@ -22,6 +22,7 @@ from typing import (
 )
 
 import pytest
+from pydantic import BaseModel, Field, ValidationError
 from pydantic import BaseModel as BaseModelProper  # pydantic: ignore
 from typing_extensions import Annotated, TypedDict, TypeVar
 
@@ -31,7 +32,6 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.messages import ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -54,6 +54,7 @@ from langchain_core.tools.base import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, _create_subset_model
+from langchain_core.utils.pydantic import TypeBaseModel as TypeBaseModel
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -874,15 +875,13 @@ async def test_async_validation_error_handling_non_validation_error(
 
 def test_optional_subset_model_rewrite() -> None:
     class MyModel(BaseModel):
-        a: Optional[str]
+        a: Optional[str] = None
         b: str
-        c: Optional[List[Optional[str]]]
+        c: Optional[List[Optional[str]]] = None
 
     model2 = _create_subset_model("model2", MyModel, ["a", "b", "c"])
 
-    assert "a" not in _schema(model2)["required"]  # should be optional
-    assert "b" in _schema(model2)["required"]  # should be required
-    assert "c" not in _schema(model2)["required"]  # should be optional
+    assert set(_schema(model2)["required"]) == {"b"}
 
 
 @pytest.mark.parametrize(
@@ -986,6 +985,9 @@ class FooBase(BaseTool):
 
     def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return assert_bar(bar, bar_config)
+
+
+FooBase.model_rebuild()
 
 
 class AFooBase(FooBase):

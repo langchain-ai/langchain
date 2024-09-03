@@ -5,20 +5,15 @@ from typing import Literal, Optional
 
 import pydantic  # pydantic: ignore
 import pytest
+from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel as V1BaseModel  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import ParrotFakeChatModel
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION, TBaseModel
-
-V1BaseModel = pydantic.BaseModel
-if PYDANTIC_MAJOR_VERSION == 2:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
-
-    V1BaseModel = BaseModel  # type: ignore
+from langchain_core.utils.pydantic import TBaseModel
 
 
 class ForecastV2(pydantic.BaseModel):
@@ -194,7 +189,7 @@ def test_pydantic_output_parser_type_inference() -> None:
 
 def test_format_instructions_preserves_language() -> None:
     """Test format instructions does not attempt to encode into ascii."""
-    from langchain_core.pydantic_v1 import BaseModel, Field
+    from pydantic import BaseModel, Field
 
     description = (
         "你好, こんにちは, नमस्ते, Bonjour, Hola, "

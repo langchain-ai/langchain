@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 from json import JSONDecodeError
-from typing import Any, List, Optional, Type, TypeVar, Union
+from typing import Annotated, Any, List, Optional, Type, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
 import pydantic  # pydantic: ignore
+from pydantic import SkipValidation  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
@@ -40,7 +41,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
+    pydantic_object: Annotated[Optional[Type[TBaseModel]], SkipValidation()] = None  # type: ignore
     """The Pydantic object to use for validation. 
     If None, no validation is performed."""
 

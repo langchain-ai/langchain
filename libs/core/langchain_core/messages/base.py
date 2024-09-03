@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
+from pydantic import ConfigDict, Extra, Field
+
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
+from langchain_core.utils.pydantic import v1_repr
 
 if TYPE_CHECKING:
     from langchain_core.prompts.chat import ChatPromptTemplate
@@ -51,8 +53,9 @@ class BaseMessage(Serializable):
     """An optional unique identifier for the message. This should ideally be
     provided by the provider/model which created the message."""
 
-    class Config:
-        extra = Extra.allow
+    model_config = ConfigDict(
+        extra=Extra.allow,
+    )
 
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
@@ -107,6 +110,10 @@ class BaseMessage(Serializable):
 
     def pretty_print(self) -> None:
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
+
+    def __repr__(self) -> str:
+        # TODO(0.3): Remove this override after confirming unit tests!
+        return v1_repr(self)
 
 
 def merge_content(

@@ -28,12 +28,18 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
+from pydantic import BaseModel, ConfigDict, RootModel  # pydantic: ignore
+from pydantic import create_model as _create_model_base  # pydantic :ignore
+from pydantic.json_schema import (
+    DEFAULT_REF_TEMPLATE,
+    GenerateJsonSchema,
+    JsonSchemaMode,
+)
 from typing_extensions import TypeGuard
 
-from langchain_core.pydantic_v1 import BaseConfig, BaseModel
-from langchain_core.pydantic_v1 import create_model as _create_model_base
 from langchain_core.runnables.schema import StreamEvent
 
 Input = TypeVar("Input", contravariant=True)
@@ -350,7 +356,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
-        return list(visitor.keys) if visitor.keys else None
+        return sorted(visitor.keys) if visitor.keys else None
     except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
@@ -699,9 +705,57 @@ class _RootEventFilter:
         return include
 
 
-class _SchemaConfig(BaseConfig):
-    arbitrary_types_allowed = True
-    frozen = True
+_SchemaConfig = ConfigDict(arbitrary_types_allowed=True, frozen=True)
+
+NO_DEFAULT = object()
+
+
+def create_base_class(
+    name: str, type_: Any, default_: object = NO_DEFAULT
+) -> Type[BaseModel]:
+    """Create a base class."""
+
+    def schema(
+        cls: Type[BaseModel],
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+    ) -> Dict[str, Any]:
+        # Complains about schema not being defined in superclass
+        schema_ = super(cls, cls).schema(  # type: ignore[misc]
+            by_alias=by_alias, ref_template=ref_template
+        )
+        schema_["title"] = name
+        return schema_
+
+    def model_json_schema(
+        cls: Type[BaseModel],
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        mode: JsonSchemaMode = "validation",
+    ) -> Dict[str, Any]:
+        # Complains about model_json_schema not being defined in superclass
+        schema_ = super(cls, cls).model_json_schema(  # type: ignore[misc]
+            by_alias=by_alias,
+            ref_template=ref_template,
+            schema_generator=schema_generator,
+            mode=mode,
+        )
+        schema_["title"] = name
+        return schema_
+
+    base_class_attributes = {
+        "__annotations__": {"root": type_},
+        "model_config": ConfigDict(arbitrary_types_allowed=True),
+        "schema": classmethod(schema),
+        "model_json_schema": classmethod(model_json_schema),
+        "__module__": "langchain_core.runnables.utils",
+    }
+
+    if default_ is not NO_DEFAULT:
+        base_class_attributes["root"] = default_
+    custom_root_type = type(name, (RootModel,), base_class_attributes)
+    return cast(Type[BaseModel], custom_root_type)
 
 
 def create_model(
@@ -717,6 +771,21 @@ def create_model(
     Returns:
         Type[BaseModel]: The created model.
     """
+
+    # Move this to caching path
+    if "__root__" in field_definitions:
+        if len(field_definitions) > 1:
+            raise NotImplementedError(
+                "When specifying __root__ no other "
+                f"fields should be provided. Got {field_definitions}"
+            )
+
+        arg = field_definitions["__root__"]
+        if isinstance(arg, tuple):
+            named_root_model = create_base_class(__model_name, arg[0], arg[1])
+        else:
+            named_root_model = create_base_class(__model_name, arg)
+        return named_root_model
     try:
         return _create_model_cached(__model_name, **field_definitions)
     except TypeError:

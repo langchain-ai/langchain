@@ -1,12 +1,13 @@
 import uuid
 from typing import Any, Dict, List, Optional, Sequence, cast
 
+from pydantic import Field
+
 from langchain_core._api import beta
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.indexing import UpsertResponse
 from langchain_core.indexing.base import DeleteResponse, DocumentIndex
-from langchain_core.pydantic_v1 import Field
 
 
 @beta(message="Introduced in version 0.2.29. Underlying abstraction subject to change.")
