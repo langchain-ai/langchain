@@ -10,7 +10,6 @@ from abc import ABC, abstractmethod
 from contextvars import copy_context
 from inspect import signature
 from typing import (
-    Annotated,
     Any,
     Callable,
     Dict,
@@ -38,6 +37,7 @@ from pydantic import (
     model_validator,
     validate_arguments,
 )
+from typing_extensions import Annotated
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
