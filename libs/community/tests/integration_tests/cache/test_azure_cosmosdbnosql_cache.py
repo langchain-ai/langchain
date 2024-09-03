@@ -1,8 +1,9 @@
-"""Test Azure CosmosDB NoSql cache functionality."""
+"""Test` Azure CosmosDB NoSql cache functionality."""
 
 from typing import Any, Dict
 
 from azure.cosmos import CosmosClient, PartitionKey
+import pytest
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
 from libs.community.tests.integration_tests.cache.fake_embeddings import (
@@ -14,8 +15,19 @@ from langchain_community.cache import AzureCosmosDBNoSqlSemanticCache
 
 URI = "COSMOS_DB_URI"
 KEY = "COSMOS_DB_KEY"
-test_client = CosmosClient(URI, credential=KEY)
 
+
+@pytest.fixture()
+def cosmos_client() -> Any:
+    from azure.cosmos import CosmosClient
+
+    return CosmosClient(HOST, KEY)
+
+@pytest.fixture()
+def partition_key() -> Any:
+    from azure.cosmos import PartitionKey
+
+    return PartitionKey(path="/id")
 
 # cosine, euclidean, innerproduct
 def indexing_policy(index_type: str) -> dict:
@@ -40,7 +52,6 @@ def vector_embedding_policy(distance_function: str) -> dict:
     }
 
 
-partition_key = PartitionKey(path="/id")
 cosmos_container_properties_test = {"partition_key": partition_key}
 cosmos_database_properties_test: Dict[str, Any] = {}
 
@@ -48,7 +59,7 @@ cosmos_database_properties_test: Dict[str, Any] = {}
 def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
-            cosmos_client=test_client,
+            cosmos_client=cosmos_client,
             embedding=FakeEmbeddings(),
             vector_embedding_policy=vector_embedding_policy("cosine"),
             indexing_policy=indexing_policy("quantizedFlat"),
@@ -74,7 +85,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_quantizedflat() -> None:
 def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
-            cosmos_client=test_client,
+            cosmos_client=cosmos_client,
             embedding=FakeEmbeddings(),
             vector_embedding_policy=vector_embedding_policy("cosine"),
             indexing_policy=indexing_policy("flat"),
@@ -100,7 +111,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_cosine_flat() -> None:
 def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
-            cosmos_client=test_client,
+            cosmos_client=cosmos_client,
             embedding=FakeEmbeddings(),
             vector_embedding_policy=vector_embedding_policy("dotProduct"),
             indexing_policy=indexing_policy("quantizedFlat"),
@@ -128,7 +139,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_quantizedflat() -> None
 def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
-            cosmos_client=test_client,
+            cosmos_client=cosmos_client,
             embedding=FakeEmbeddings(),
             vector_embedding_policy=vector_embedding_policy("dotProduct"),
             indexing_policy=indexing_policy("flat"),
@@ -156,7 +167,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_dotproduct_flat() -> None:
 def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
-            cosmos_client=test_client,
+            cosmos_client=cosmos_client,
             embedding=FakeEmbeddings(),
             vector_embedding_policy=vector_embedding_policy("euclidean"),
             indexing_policy=indexing_policy("quantizedFlat"),
@@ -182,7 +193,7 @@ def test_azure_cosmos_db_nosql_semantic_cache_euclidean_quantizedflat() -> None:
 def test_azure_cosmos_db_nosql_semantic_cache_euclidean_flat() -> None:
     set_llm_cache(
         AzureCosmosDBNoSqlSemanticCache(
-            cosmos_client=test_client,
+            cosmos_client=cosmos_client,
             embedding=FakeEmbeddings(),
             vector_embedding_policy=vector_embedding_policy("euclidean"),
             indexing_policy=indexing_policy("flat"),
