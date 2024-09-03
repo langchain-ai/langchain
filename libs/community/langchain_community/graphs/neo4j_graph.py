@@ -351,10 +351,14 @@ class Neo4jGraph(GraphStore):
             auth = None
         else:
             username = get_from_dict_or_env(
-                {"username": username}, "username", "NEO4J_USERNAME",
+                {"username": username},
+                "username",
+                "NEO4J_USERNAME",
             )
             password = get_from_dict_or_env(
-                {"password": password}, "password", "NEO4J_PASSWORD",
+                {"password": password},
+                "password",
+                "NEO4J_PASSWORD",
             )
             auth = (username, password)
         database = get_from_dict_or_env(
